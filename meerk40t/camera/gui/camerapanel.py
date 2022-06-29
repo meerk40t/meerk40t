@@ -737,6 +737,7 @@ class CameraInterface(MWindow):
     def sub_register(kernel):
         CAM_FOUND = "cam_found_indices"
         CAM_INDEX = "cam_%d_uri"
+        CAM_MAX = "cam_search_range"
 
         def camera_click(index=None):
             def specific(event=None):
@@ -769,6 +770,8 @@ class CameraInterface(MWindow):
             def specific(event=None):
                 available_cameras = []
                 # Reset stuff...
+                # Max range to look at
+                kernel.root.setting(int, CAM_MAX, 5)
                 kernel.root.setting(str, CAM_FOUND, "")
                 for ci in range(5):
                     ukey = CAM_INDEX % ci
@@ -778,17 +781,19 @@ class CameraInterface(MWindow):
                     import cv2
                 except ImportError:
                     return
-                MAXFIND = 5
+                MAXFIND = getattr(kernel.root, CAM_MAX)
+                if MAXFIND is None or MAXFIND < 1:
+                    MAXFIND = 5
                 found = 0
                 fstr = _("Cameras found: %d")
                 progress = wx.ProgressDialog(
-                    _("Looking for Cameras"),
+                    _("Looking for Cameras (Range=%d)") % MAXFIND,
                     fstr % found,
                     maximum=MAXFIND,
                     parent=None,
                     style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
                 )
-                # checks for cameras in the first 5 USB
+                # checks for cameras in the first x USB ports
                 index = 0
                 keepgoing = True
                 while index < MAXFIND and keepgoing:

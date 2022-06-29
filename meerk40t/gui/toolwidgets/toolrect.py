@@ -94,7 +94,7 @@ class RectTool(ToolWidget):
                         node.fill = self.scene.default_fill
 
                     elements.classify([node])
-                    self.notify_created()
+                    self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
             except IndexError:

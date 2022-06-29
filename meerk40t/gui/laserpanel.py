@@ -353,3 +353,5 @@ class LaserPanel(wx.Panel):
         self.selected_device.kernel.activate_service_path(
             "device", self.selected_device.path
         )
+        # Device change, so let's focus properly...
+        self.context("scene focus -4% -4% 104% 104%\n")

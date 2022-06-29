@@ -313,6 +313,7 @@ class AttractionWidget(Widget):
             "bounds center_left": TYPE_MIDDLE,
             "bounds center_right": TYPE_MIDDLE,
             "endpoint": TYPE_POINT,
+            "point": TYPE_POINT,
         }
 
         for e in self.scene.context.elements.flat(types=elem_nodes):

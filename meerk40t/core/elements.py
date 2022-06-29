@@ -277,9 +277,10 @@ class Elemental(Service):
                 channel(_("No such file."))
                 return
             try:
+                channel(_("loading..."))
                 result = self.load(new_file)
                 if result:
-                    channel(_("loading..."))
+                    channel(_("Done."))
             except AttributeError:
                 raise CommandSyntaxError(_("Loading files was not defined"))
             return "file", new_file
@@ -3663,7 +3664,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("rebuild_tree")
+                # self.signal("rebuild_tree")
+                self.signal("refresh_tree")
             return "elements", data
 
         @self.console_option(
@@ -3731,7 +3733,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("rebuild_tree")
+                self.signal("refresh_tree")
+#                self.signal("rebuild_tree")
             return "elements", data
 
         @self.console_argument(
@@ -5657,20 +5660,22 @@ class Elemental(Service):
                 n.focus()
 
         @self.tree_submenu(_("Clone reference"))
-        @self.tree_operation(_("Make 1 copy"), node_type="reference", help="")
+        @self.tree_operation(_("Make 1 copy"), node_type=("reference",), help="")
         def clone_single_element_op(node, **kwargs):
             clone_element_op(node, copies=1, **kwargs)
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="reference", help=""
+            _("Make %s copies") % "{copies}", node_type=("reference",), help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
-            index = node.parent.children.index(node)
-            for i in range(copies):
-                node.parent.add_reference(node.node, type="reference", pos=index)
-            node.modified()
+            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
+            for snode in nodes:
+                index = snode.parent.children.index(snode)
+                for i in range(copies):
+                    snode.parent.add_reference(snode.node, pos=index)
+                snode.modified()
             self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
@@ -5964,7 +5969,8 @@ class Elemental(Service):
             add_nodes *= copies
             for n in add_nodes:
                 node.add_reference(n.node)
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree")
+#            self.signal("rebuild_tree")
 
         @self.tree_operation(
             _("Make raster image"),
@@ -6555,7 +6561,6 @@ class Elemental(Service):
                 name = func.name.format_map(func_dict)
                 func.func_dict = func_dict
                 func.real_name = name
-
                 yield func
 
     def flat(self, **kwargs):
@@ -7911,7 +7916,9 @@ class Elemental(Service):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
+                        self.signal("freeze_tree", True)
                         results = loader.load(self, self, pathname, **kwargs)
+                        self.signal("freeze_tree", False)
                     except FileNotFoundError:
                         return False
                     except BadFileError as e:
