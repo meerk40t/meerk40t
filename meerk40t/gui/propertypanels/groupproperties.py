@@ -71,7 +71,11 @@ class GroupPropertiesPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: ElementProperty.<event_handler>
         if len(self.text_label.GetValue()):
-            self.node.label = self.text_label.GetValue()
+            try:
+                self.node.label = self.text_label.GetValue()
+            except AttributeError:
+                # Can throw an error if non valid
+                pass
         else:
             self.node.label = None
         self.context.elements.signal("element_property_update", self.node)
