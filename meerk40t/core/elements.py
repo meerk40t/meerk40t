@@ -6294,16 +6294,34 @@ class Elemental(Service):
         )
         def move_back(node, **kwargs):
             # Drag and Drop
+            signal_needed = False
             drop_node = self.elem_branch
-            drop_node.drop(node)
-            self.signal("tree_changed")
+            data = list()
+            for item in list(self.regmarks()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                drop_node.drop(item)
+                signal_needed = True
+            if signal_needed:
+                self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
         def move_to_regmark(node, **kwargs):
             # Drag and Drop
+            signal_needed = False
             drop_node = self.reg_branch
+            data = list()
+            for item in list(self.elems_nodes()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                drop_node.drop(item)
+                signal_needed = True
+            if signal_needed:
+                self.signal("tree_changed")
             drop_node.drop(node)
             self.signal("tree_changed")
 
