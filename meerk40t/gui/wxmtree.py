@@ -562,6 +562,9 @@ class ShadowTree:
             child, cookie = tree.GetNextChild(node, cookie)
         if level == 0:
             self.update_op_labels()
+        self.wxtree.Expand(self.elements.get(type="branch ops").item)
+        self.wxtree.Expand(self.elements.get(type="branch elems").item)
+        self.wxtree.Expand(self.elements.get(type="branch reg").item)
 
     def freeze_tree(self, status=None):
         if status is None:
