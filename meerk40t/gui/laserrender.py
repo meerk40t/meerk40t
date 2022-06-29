@@ -797,7 +797,7 @@ class LaserRender:
         yymin = float("inf")
         xxmax = -float("inf")
         yymax = -float("inf")
-        print ("Recursion=%d" % recursion)
+        # print ("Recursion=%d" % recursion)
         if not isinstance(nodes, (tuple, list)):
             mynodes = [nodes]
         else:
@@ -810,7 +810,7 @@ class LaserRender:
                     if item.text.width == 0 or item.text.height == 0:
                         textnodes.append(item)
             if len(textnodes)>0:
-                print ("Invalid textnodes found, call me again...")
+                # print ("Invalid textnodes found, call me again...")
                 self.make_raster(nodes=textnodes, bounds=bounds,
                     width=width, height=height, bitmap=bitmap,
                     step_x=step_x, step_y=step_y, keep_ratio=keep_ratio,
@@ -818,8 +818,8 @@ class LaserRender:
 
         for item in mynodes:
             bb = item.bounds
-            if item.type == "elem text":
-                print ("Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
+            # if item.type == "elem text":
+            #     print ("Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
             if bb[0]<xxmin:
                 xxmin = bb[0]
             if bb[1]<yymin:
@@ -837,7 +837,7 @@ class LaserRender:
         ymax = ceil(ymax)
         xmin = floor(xmin)
         ymin = floor(ymin)
-        print ("Bounds: %.1f, %.1f, %.1f, %.1f, Mine: %.1f, %.1f, %.1f, %.1f)" % (xmin, ymin, xmax, ymax, xxmin, yymin, xxmax, yymax))
+        # print ("Bounds: %.1f, %.1f, %.1f, %.1f, Mine: %.1f, %.1f, %.1f, %.1f)" % (xmin, ymin, xmax, ymax, xxmin, yymin, xxmax, yymax))
 
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -899,10 +899,10 @@ class LaserRender:
         if bitmap:
             return bmp
 
-        for item in mynodes:
-            bb = item.bounds
-            if item.type == "elem text":
-                print ("Afterwards Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
+        # for item in mynodes:
+        #     bb = item.bounds
+        #     if item.type == "elem text":
+        #         print ("Afterwards Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
 
         return image
 
