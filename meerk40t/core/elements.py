@@ -5241,7 +5241,16 @@ class Elemental(Service):
             _("Remove all items from operation"), node_type=op_nodes, help=""
         )
         def clear_all_op_entries(node, **kwargs):
-            node.remove_all_children()
+            data = list()
+            removed = False
+            for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+                data.append(item)
+            for item in data:
+                removed = True
+                item.remove_all_children()
+            if removed:
+                self.signal("tree_changed")
+
 
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
