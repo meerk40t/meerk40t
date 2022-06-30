@@ -9,6 +9,41 @@ from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
+class PromptingComboBox(wx.ComboBox) :
+    def __init__(self, parent, choices=[], style=0, **args):
+        wx.ComboBox.__init__(self, parent, wx.ID_ANY, style=style|wx.CB_DROPDOWN, choices=choices, **args)
+        self.choices = choices
+        self.Bind(wx.EVT_TEXT, self.OnText)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnPress)
+        self.ignore_evt_text = False
+        self.delete_key = False
+        self.pre_found = False
+
+    def OnPress(self, event):
+        if event.GetKeyCode() == 8:
+            self.delete_key = True
+        event.Skip()
+
+    def OnText(self, event):
+        current_text = event.GetString()
+        if self.ignore_evt_text:
+            self.ignore_evt_text = False
+            return
+        if self.delete_key:
+            self.delete_key = False
+            if self.pre_found:
+                current_text =  current_text[:-1]
+
+        self.pre_found = False
+        for choice in self.choices :
+            if choice.startswith(current_text):
+                self.ignore_evt_text = True
+                self.SetValue(choice)
+                self.SetInsertionPoint(len(current_text))
+                self.SetTextSelection(len(current_text), len(choice))
+                self.pre_found = True
+                break
+        event.Skip()
 
 class TextPropertyPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -18,7 +53,8 @@ class TextPropertyPanel(wx.Panel):
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.node = node
-        self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "")
+        self.label_fonttest = wx.StaticText(self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE)
+        self.label_fonttest.SetMinSize((-1, 90))
         self.label_fonttest.SetFont(
             wx.Font(
                 16,
@@ -66,6 +102,20 @@ class TextPropertyPanel(wx.Panel):
         self.button_fill_000 = wx.Button(self, wx.ID_ANY, "")
         self.button_fill_000.name = "fill #000"
 
+        flist = wx.FontEnumerator()
+        flist.EnumerateFacenames()
+        elist= flist.GetFacenames()
+        elist.sort()
+
+        self.combo_font = PromptingComboBox(self, choices=elist, style=wx.TE_PROCESS_ENTER)
+#        self.combo_font = wx.ComboBox(self, id=wx.ID_ANY, choices = elist, style = wx.CB_READONLY)
+        self.button_attrib_larger = wx.Button(self, id=wx.ID_ANY, label="A", size=wx.Size(23,23))
+        self.button_attrib_smaller = wx.Button(self, id=wx.ID_ANY, label="a", size=wx.Size(23,23))
+        self.button_attrib_bold = wx.ToggleButton(self, id=wx.ID_ANY, label="b", size=wx.Size(23,23))
+        self.button_attrib_italic = wx.ToggleButton(self, id=wx.ID_ANY, label="i", size=wx.Size(23,23))
+        self.button_attrib_underline = wx.ToggleButton(self, id=wx.ID_ANY, label="u", size=wx.Size(23,23))
+        self.button_attrib_strikethrough = wx.ToggleButton(self, id=wx.ID_ANY, label="s", size=wx.Size(23,23))
+
         self.__set_properties()
         self.__do_layout()
 
@@ -88,6 +138,17 @@ class TextPropertyPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_0FF)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
+
+        self.Bind(wx.EVT_COMBOBOX, self.on_font_choice, self.combo_font)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_font_choice, self.combo_font)
+        self.Bind(wx.EVT_KILL_FOCUS, self.on_font_choice, self.combo_font)
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_larger, self.button_attrib_larger)
+        self.Bind(wx.EVT_BUTTON, self.on_button_smaller, self.button_attrib_smaller)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_bold, self.button_attrib_bold)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_italic, self.button_attrib_italic)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_underline, self.button_attrib_underline)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_strikethrough, self.button_attrib_strikethrough)
 
     @staticmethod
     def accepts(node):
@@ -148,43 +209,74 @@ class TextPropertyPanel(wx.Panel):
         self.button_fill_FF0.SetToolTip(_("#FFFF00 defined values."))
         self.button_fill_000.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.button_fill_000.SetToolTip(_("#000000 defined values."))
+
+        self.button_attrib_bold.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, 0, ""))
+        self.button_attrib_italic.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, 0, ""))
+        self.button_attrib_underline.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, 1, ""))
+        special_font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, 0, "")
+        special_font.SetUnderlined(True)
+        self.button_attrib_strikethrough.SetFont(special_font)
+
+        self.combo_font.SetToolTip(_("Choose System-font"))
+        self.button_attrib_smaller.SetToolTip(_("Decrease fontsize"))
+        self.button_attrib_larger.SetToolTip(_("Increase fontsize"))
+        self.button_attrib_bold.SetToolTip(_("Toggle bold"))
+        self.button_attrib_italic.SetToolTip(_("Toggle italic"))
+        self.button_attrib_underline.SetToolTip(_("Toggle underline"))
+        self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: TextProperty.__do_layout
-        sizer_8 = wx.BoxSizer(wx.VERTICAL)
-        sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_9 = wx.StaticBoxSizer(
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_fill = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL
         )
-        sizer_7 = wx.StaticBoxSizer(
+        sizer_stroke = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Stroke Color")), wx.VERTICAL
         )
-        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_8.Add(self.text_text, 0, wx.EXPAND, 0)
-        sizer_3.Add(self.button_choose_font, 0, 0, 0)
-        sizer_3.Add(self.label_fonttest, 1, wx.EXPAND, 0)
-        sizer_8.Add(sizer_3, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_0F0, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_00F, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_F0F, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_0FF, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_FF0, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_000, 0, wx.EXPAND, 0)
-        sizer_6.Add(sizer_7, 1, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_none, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_F00, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_0F0, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_00F, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_F0F, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_0FF, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_FF0, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_000, 0, wx.EXPAND, 0)
-        sizer_6.Add(sizer_9, 1, wx.EXPAND, 0)
-        sizer_8.Add(sizer_6, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_8)
+        sizer_main.Add(self.text_text, 0, wx.EXPAND, 0)
+
+        sizer_font = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_font.Add(self.button_choose_font, 0, 0, 0)
+        sizer_font.Add(self.label_fonttest, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_font, 0, wx.EXPAND, 0)
+
+        sizer_attrib = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_attrib.Add(self.combo_font, 0, 0, 0)
+        sizer_attrib.Add(self.button_attrib_larger, 0, 0, 0)
+        sizer_attrib.Add(self.button_attrib_smaller, 0, 0, 0)
+        sizer_attrib.Add(self.button_attrib_bold, 0, 0, 0)
+        sizer_attrib.Add(self.button_attrib_italic, 0, 0, 0)
+        sizer_attrib.Add(self.button_attrib_underline, 0, 0, 0)
+        sizer_attrib.Add(self.button_attrib_strikethrough, 0, 0, 0)
+
+        sizer_main.Add(sizer_attrib, 0, wx.EXPAND, 0)
+
+        sizer_colors = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_stroke.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
+        sizer_stroke.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
+        sizer_stroke.Add(self.button_stroke_0F0, 0, wx.EXPAND, 0)
+        sizer_stroke.Add(self.button_stroke_00F, 0, wx.EXPAND, 0)
+        sizer_stroke.Add(self.button_stroke_F0F, 0, wx.EXPAND, 0)
+        sizer_stroke.Add(self.button_stroke_0FF, 0, wx.EXPAND, 0)
+        sizer_stroke.Add(self.button_stroke_FF0, 0, wx.EXPAND, 0)
+        sizer_stroke.Add(self.button_stroke_000, 0, wx.EXPAND, 0)
+        sizer_colors.Add(sizer_stroke, 1, wx.EXPAND, 0)
+
+        sizer_fill.Add(self.button_fill_none, 0, wx.EXPAND, 0)
+        sizer_fill.Add(self.button_fill_F00, 0, wx.EXPAND, 0)
+        sizer_fill.Add(self.button_fill_0F0, 0, wx.EXPAND, 0)
+        sizer_fill.Add(self.button_fill_00F, 0, wx.EXPAND, 0)
+        sizer_fill.Add(self.button_fill_F0F, 0, wx.EXPAND, 0)
+        sizer_fill.Add(self.button_fill_0FF, 0, wx.EXPAND, 0)
+        sizer_fill.Add(self.button_fill_FF0, 0, wx.EXPAND, 0)
+        sizer_fill.Add(self.button_fill_000, 0, wx.EXPAND, 0)
+        sizer_colors.Add(sizer_fill, 1, wx.EXPAND, 0)
+
+        sizer_main.Add(sizer_colors, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()
         # end wxGlade
@@ -196,10 +288,108 @@ class TextPropertyPanel(wx.Panel):
             pass
         self.label_fonttest.SetLabelText(self.node.text.text)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
+        self.button_attrib_bold.SetValue(self.node.text.font_weight != "normal")
+        self.button_attrib_italic.SetValue(self.node.font_style != "normal")
+        self.button_attrib_underline.SetValue(self.node.underline)
+        self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
+        self.combo_font.SetValue(self.node.wxfont.GetFaceName())
 
     def refresh(self):
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+
+    def on_button_smaller(self, event):
+        try:
+            size = self.node.wxfont.GetFractionalPointSize()
+            intmode = False
+        except:
+            size = self.node.wxfont.GetPointSize()
+            intmode = True
+        if intmode:
+            size = int(size / 1.2)
+            if size<4:
+                size = 4
+            self.node.wxfont.SetPointSize(size)
+        else:
+            size = size / 1.2
+            if size < 4:
+                size = 4.0
+            self.node.wxfont.SetFractionalPointSize(size)
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+        event.Skip()
+
+    def on_button_larger(self, event):
+        try:
+            size = self.node.wxfont.GetFractionalPointSize()
+            intmode = False
+        except:
+            size = self.node.wxfont.GetPointSize()
+            intmode = True
+        if intmode:
+            size = int(size * 1.2)
+            self.node.wxfont.SetPointSize(size)
+        else:
+            size = size * 1.2
+            self.node.wxfont.SetFractionalPointSize(size)
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+        event.Skip()
+
+    def on_font_choice(self, event):
+        lastfont = self.node.wxfont.GetFaceName()
+        fface = self.combo_font.GetValue()
+        self.node.wxfont.SetFaceName(fface)
+        if not self.node.wxfont.IsOk():
+            self.node.wxfont.SetFaceName(lastfont)
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+        event.Skip()
+
+    def on_button_bold(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        if state:
+            self.node.wxfont.SetWeight(wx.FONTWEIGHT_BOLD)
+        else:
+            self.node.wxfont.SetWeight(wx.FONTWEIGHT_NORMAL)
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+        event.Skip()
+
+    def on_button_italic(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        if state:
+            self.node.wxfont.SetStyle(wx.FONTSTYLE_ITALIC)
+        else:
+            self.node.wxfont.SetStyle(wx.FONTSTYLE_NORMAL)
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+        event.Skip()
+
+    def on_button_underline(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        self.node.wxfont.SetUnderlined(state)
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+        event.Skip()
+
+    def on_button_strikethrough(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        self.node.wxfont.SetStrikethrough(state)
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+        event.Skip()
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
