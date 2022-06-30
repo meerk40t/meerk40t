@@ -34,7 +34,7 @@ class InputOperation(Node):
     def bitstring(self):
         mask = self.mask
         value = self.value
-        bits = bytearray("X" * 8)
+        bits = bytearray(b"X" * 8)
         for m in range(8):
             if (mask >> m) & 1:
                 bits[m] = "1" if (value >> m) & 1 else "0"
