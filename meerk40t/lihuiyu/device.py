@@ -20,6 +20,7 @@ from meerk40t.kernel import (
     Service,
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
+from ..core.cutcode import InputCut, DwellCut, WaitCut, OutputCut
 
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
@@ -1719,7 +1720,24 @@ class LhystudiosDriver(Parameters):
         @param plot:
         @return:
         """
-        self.plot_planner.push(plot)
+        if isinstance(plot, InputCut):
+            self.plot_start()
+            self.wait_finish()
+        elif isinstance(plot, OutputCut):
+            self.plot_start()
+            self.wait_finish()
+        elif isinstance(plot, DwellCut):
+            self.plot_start()
+            self.rapid_mode()
+            start = plot.start
+            self.move_abs(start[0], start[1])
+            self.wait_finish()
+            self.dwell(plot.dwell_time)
+        elif isinstance(plot, WaitCut):
+            self.plot_start()
+            self.wait(plot.dwell_time)
+        else:
+            self.plot_planner.push(plot)
 
     def plot_start(self):
         if self.plot_data is None:
