@@ -8,7 +8,7 @@ from serial import SerialException
 
 from meerk40t.kernel import Service
 
-from ..core.cutcode import CubicCut, LineCut, QuadCut
+from ..core.cutcode import CubicCut, LineCut, QuadCut, WaitCut, DwellCut, InputCut, OutputCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
@@ -611,6 +611,13 @@ class GRBLDriver(Parameters):
                     t += step_size
                 last_x, last_y = q.end
                 self.move(last_x, last_y)
+            elif isinstance(q, WaitCut):
+                self.wait(q.dwell_time)
+            elif isinstance(q, DwellCut):
+                self.dwell(q.dwell_time)
+            elif isinstance(q, (InputCut, OutputCut)):
+                # GRBL has no core GPIO functionality
+                pass
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
