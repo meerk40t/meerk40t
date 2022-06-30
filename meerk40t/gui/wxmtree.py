@@ -42,47 +42,6 @@ def register_panel_tree(window, context):
     window.on_pane_add(pane)
     context.register("pane/tree", pane)
 
-    context.register(
-        "format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
-    )
-    context.register(
-        "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
-    )
-    context.register(
-        "format/op hatch", "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}"
-    )
-    context.register(
-        "format/op raster",
-        "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
-    )
-    context.register(
-        "format/op image",
-        "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
-    )
-    context.register(
-        "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
-    )
-    context.register("format/op console", "{enabled}{command}")
-    context.register("format/op wait", "{enabled}{element_type} {wait}")
-    context.register("format/layer", "{element_type} {name}")
-    context.register("format/elem ellipse", "{element_type} {id}")
-    context.register("format/elem image", "{element_type} {width}x{height}")
-    context.register("format/elem line", "{element_type} {id}")
-    context.register("format/elem path", "{element_type} {id}")
-    context.register("format/elem point", "{element_type} {id}")
-    context.register("format/elem polyline", "{element_type} {id}")
-    context.register("format/elem rect", "{element_type} {id}")
-    context.register("format/elem text", "{element_type} {id}: {text}")
-    context.register("format/reference", "*{reference}")
-    context.register("format/group", "{element_type} {id}")
-    context.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
-    context.register("format/file", "{element_type}: {filename}")
-    context.register("format/lasercode", "{element_type}")
-    context.register("format/cutcode", "{element_type}")
-    context.register("format/branch ops", _("Operations"))
-    context.register("format/branch elems", _("Elements"))
-    context.register("format/branch reg", _("Regmarks"))
-
 
 class TreePanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
