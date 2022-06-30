@@ -323,7 +323,6 @@ class Planner(Service):
         self.register("plan/home", home)
         self.register("plan/origin", origin)
         self.register("plan/unlock", unlock)
-        self.register("plan/wait", wait)
         self.register("plan/beep", beep)
         self.register("function/interrupt", interrupt_text)
         self.register("plan/interrupt", interrupt)
