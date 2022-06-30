@@ -708,7 +708,7 @@ class SVGLoader:
         yield "Scalable Vector Graphics", ("svg", "svgz"), "image/svg+xml"
 
     @staticmethod
-    def load(context, elements_modifier, pathname, **kwargs):
+    def load(context, elements_service, pathname, **kwargs):
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
@@ -731,6 +731,6 @@ class SVGLoader:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
-        svg_processor = SVGProcessor(elements_modifier)
+        svg_processor = SVGProcessor(elements_service)
         svg_processor.process(svg, pathname)
         return True
