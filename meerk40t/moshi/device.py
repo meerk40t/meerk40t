@@ -13,6 +13,7 @@ from meerk40t.kernel import (
     STATE_WAIT,
     Service,
 )
+from ..core.cutcode import LineCut, QuadCut, CubicCut, WaitCut, DwellCut, InputCut, OutputCut
 
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -111,11 +112,18 @@ class MoshiDevice(Service, ViewPort):
 
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
-        self.setting(str, "label", path)
         self.setting(int, "rapid_speed", 40)
 
         _ = self._
         choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": path,
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+            },
             {
                 "attr": "bedwidth",
                 "object": self,
@@ -150,6 +158,24 @@ class MoshiDevice(Service, ViewPort):
                 "label": _("Y Scale Factor"),
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
+                ),
+            },
+            {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "tip": _("Distance of the curve interpolation in mils"),
+            },
+            {
+                "attr": "mock",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Run mock-usb backend"),
+                "tip": _(
+                    "This starts connects to fake software laser rather than real one for debugging."
                 ),
             },
         ]
@@ -322,6 +348,7 @@ class MoshiDriver(Parameters):
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_data = None
+        self.queue = list()
 
         self.program = MoshiBlob()
 
@@ -383,7 +410,7 @@ class MoshiDriver(Parameters):
         @param plot:
         @return:
         """
-        self.plot_planner.push(plot)
+        self.queue.append(plot)
 
     def plot_start(self):
         """
@@ -391,9 +418,84 @@ class MoshiDriver(Parameters):
 
         @return:
         """
-        if self.plot_data is None:
-            self.plot_data = self.plot_planner.gen()
-        self.plotplanner_process()
+        for q in self.queue:
+            x = self.native_x
+            y = self.native_y
+            start_x, start_y = q.start
+            if x != start_x or y != start_y:
+                self._goto_absolute(start_x, start_y, 0)
+            self.settings.update(q.settings)
+            if isinstance(q, LineCut):
+                self._goto_absolute(*q.end, 1)
+            elif isinstance(q, (QuadCut, CubicCut)):
+                interp = self.service.interpolate
+                step_size = 1.0 / float(interp)
+                t = step_size
+                for p in range(int(interp)):
+                    while self.hold_work():
+                        time.sleep(0.05)
+                    self._goto_absolute(*q.point(t), 1)
+                    t += step_size
+                last_x, last_y = q.end
+                self._goto_absolute(last_x, last_y, 1)
+            elif isinstance(q, WaitCut):
+                # Moshi has no forced wait functionality.
+                self.wait_finish()
+                self.wait(q.dwell_time)
+            elif isinstance(q, DwellCut):
+                # Moshi cannot fire in place.
+                pass
+            elif isinstance(q, (InputCut, OutputCut)):
+                # Moshi has no core GPIO functionality
+                pass
+            else:
+                self.plot_planner.push(q)
+                for x, y, on in self.plot_data:
+                    if self.hold_work():
+                        time.sleep(0.05)
+                        continue
+                    on = int(on)
+                    if on > 1:
+                        # Special Command.
+                        if on & (
+                            PLOT_RAPID | PLOT_JOG
+                        ):  # Plot planner requests position change.
+                            # self.rapid_jog(x, y)
+                            self.native_x = x
+                            self.native_y = y
+                            if self.state != DRIVER_STATE_RAPID:
+                                self._move_absolute(x, y)
+                            continue
+                        elif on & PLOT_FINISH:  # Plot planner is ending.
+                            self.finished_mode()
+                            break
+                        elif on & PLOT_START:
+                            self._ensure_program_or_raster_mode(
+                                self.preferred_offset_x,
+                                self.preferred_offset_y,
+                                self.native_x,
+                                self.native_y,
+                            )
+                        elif on & PLOT_LEFT_UPPER:
+                            self.preferred_offset_x = x
+                            self.preferred_offset_y = y
+                        elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                            p_set = self.plot_planner.settings
+                            s_set = self.settings
+                            if p_set.power != s_set.power:
+                                self._set_power(p_set.power)
+                            if (
+                                p_set.speed != s_set.speed
+                                or p_set.raster_step_x != s_set.raster_step_x
+                                or p_set.raster_step_y != s_set.raster_step_y
+                            ):
+                                self._set_speed(p_set.speed)
+                                self._set_step(p_set.raster_step_x, p_set.raster_step_y)
+                                self.rapid_mode()
+                            self.settings.update(p_set.settings)
+                        continue
+                    self._goto_absolute(x, y, on & 1)
+        self.queue.clear()
 
     def move_abs(self, x, y):
         x, y = self.service.physical_to_device_position(x, y, 1)
@@ -761,66 +863,6 @@ class MoshiDriver(Parameters):
             self.service.controller.push_program(self.program)
             self.program = MoshiBlob()
             self.program.channel = self.pipe_channel
-
-    def plotplanner_process(self):
-        """
-        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
-        movements. Or updating the laser state based on the settings of the cutcode.
-
-        @return:
-        """
-        if self.plot_data is None:
-            return False
-        if self.hold:
-            return True
-
-        for x, y, on in self.plot_data:
-            if self.hold_work():
-                time.sleep(0.05)
-                continue
-            on = int(on)
-            if on > 1:
-                # Special Command.
-                if on & (
-                    PLOT_RAPID | PLOT_JOG
-                ):  # Plot planner requests position change.
-                    # self.rapid_jog(x, y)
-                    self.native_x = x
-                    self.native_y = y
-                    if self.state != DRIVER_STATE_RAPID:
-                        self._move_absolute(x, y)
-                    continue
-                elif on & PLOT_FINISH:  # Plot planner is ending.
-                    self.finished_mode()
-                    break
-                elif on & PLOT_START:
-                    self._ensure_program_or_raster_mode(
-                        self.preferred_offset_x,
-                        self.preferred_offset_y,
-                        self.native_x,
-                        self.native_y,
-                    )
-                elif on & PLOT_LEFT_UPPER:
-                    self.preferred_offset_x = x
-                    self.preferred_offset_y = y
-                elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                    p_set = self.plot_planner.settings
-                    s_set = self.settings
-                    if p_set.power != s_set.power:
-                        self._set_power(p_set.power)
-                    if (
-                        p_set.speed != s_set.speed
-                        or p_set.raster_step_x != s_set.raster_step_x
-                        or p_set.raster_step_y != s_set.raster_step_y
-                    ):
-                        self._set_speed(p_set.speed)
-                        self._set_step(p_set.raster_step_x, p_set.raster_step_y)
-                        self.rapid_mode()
-                    self.settings.update(p_set.settings)
-                continue
-            self._goto_absolute(x, y, on & 1)
-        self.plot_data = None
-        return False
 
     def _ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
         """
