@@ -8,11 +8,11 @@ class ConsoleOperation(Node):
 
     NOTE: This will eventually replace ConsoleOperation.
 
-    Node type "op console"
+    Node type "util console"
     """
 
     def __init__(self, command=None, **kwargs):
-        super().__init__(type="op console", **kwargs)
+        super().__init__(type="util console", **kwargs)
         self.settings = {}
         if command is not None:
             self.settings["command"] = command

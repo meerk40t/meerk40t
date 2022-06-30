@@ -63,10 +63,10 @@ def plugin(kernel, lifecycle=None):
         kernel.register(
             "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
         )
-        kernel.register("format/op console", "{enabled}{command}")
-        kernel.register("format/op wait", "{enabled}{element_type} {wait}")
-        kernel.register("format/op output", "{enabled}{element_type} {bits}")
-        kernel.register("format/op input", "{enabled}{element_type} {bits}")
+        kernel.register("format/util console", "{enabled}{command}")
+        kernel.register("format/util wait", "{enabled}{element_type} {wait}")
+        kernel.register("format/util output", "{enabled}{element_type} {bits}")
+        kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
         kernel.register("format/elem ellipse", "{element_type} {id}")
         kernel.register("format/elem image", "{element_type} {width}x{height}")
@@ -5205,7 +5205,7 @@ class Elemental(Service):
                 activate(node)
 
         @self.tree_separator_after()
-        @self.tree_operation(_("Edit"), node_type="op console", help="")
+        @self.tree_operation(_("Edit"), node_type="util console", help="")
         def edit_console_command(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -5629,7 +5629,10 @@ class Elemental(Service):
                 "op engrave",
                 "op dots",
                 "op hatch",
-                "op console",
+                "util console",
+                "util wait",
+                "util output",
+                "util input",
                 "lasercode",
                 "cutcode",
                 "blob",
@@ -5852,7 +5855,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="op console",
+                type="util console",
                 pos=pos,
                 command="home -f",
             )
@@ -5863,7 +5866,7 @@ class Elemental(Service):
         )
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="op console",
+                type="util console",
                 pos=pos,
                 command="move_abs 0 0",
             )
@@ -5872,7 +5875,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="op console",
+                type="util console",
                 pos=pos,
                 command="beep",
             )
@@ -5881,7 +5884,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
         def append_operation_interrupt(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="op console",
+                type="util console",
                 pos=pos,
                 command='interrupt "Spooling was interrupted"',
             )
@@ -5893,7 +5896,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Wait"), node_type="branch ops", help="")
         def append_operation_wait(node, wait_time, pos=None, **kwargs):
             self.op_branch.add(
-                type="op wait",
+                type="util wait",
                 pos=pos,
                 wait=wait_time,
             )
@@ -5902,7 +5905,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Output"), node_type="branch ops", help="")
         def append_operation_output(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="op output",
+                type="util output",
                 pos=pos,
                 output_mask=0,
                 output_value=0,
@@ -5913,7 +5916,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Input"), node_type="branch ops", help="")
         def append_operation_input(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="op input",
+                type="util input",
                 pos=pos,
                 input_mask=0,
                 input_value=0,
@@ -5933,7 +5936,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="op console",
+                type="util console",
                 pos=pos,
                 command="quit",
             )
@@ -5943,7 +5946,7 @@ class Elemental(Service):
         @self.tree_operation(_("Append Console"), node_type="branch ops", help="")
         def append_operation_custom(node, opname, pos=None, **kwargs):
             self.op_branch.add(
-                type="op console",
+                type="util console",
                 pos=pos,
                 command=opname,
             )

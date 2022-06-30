@@ -827,20 +827,19 @@ class ShadowTree:
                 except AttributeError:
                     c = None
                 self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
-            elif node.type == "op console":
+            elif node.type == "util console":
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
                 self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
-            elif node.type == "op wait":
+            elif node.type == "util wait":
                 self.set_icon(node, icons8_timer_20.GetBitmap())
-            elif node.type == "op output":
+            elif node.type == "util output":
                 self.set_icon(node, icons8_vga_20.GetBitmap())
-            elif node.type == "op input":
+            elif node.type == "util input":
                 self.set_icon(node, icons8_input_20.GetBitmap())
-
             elif node.type == "file":
                 self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":

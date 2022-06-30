@@ -45,7 +45,7 @@ class BalorDevice(Service, ViewPort):
             "format/op dots",
             "{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz",
         )
-        self.register("format/op console", "{enabled}{command}")
+        self.register("format/util console", "{enabled}{command}")
 
         choices = [
             {

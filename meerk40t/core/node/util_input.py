@@ -3,30 +3,30 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
 
-class OutputOperation(Node):
+class InputOperation(Node):
     """
-    OutputOperation sets GPIO values.
+    InputOperation sets GPIO values.
 
-    Node type "op output"
+    Node type "util input"
     """
 
     def __init__(self, mask=0, value=0, message=None, **kwargs):
-        super().__init__(type="op output", **kwargs)
-        self.settings = {"output_mask": mask, "output_value": value, "output_message": message, "output": True}
+        super().__init__(type="util input", **kwargs)
+        self.settings = {"input_mask": mask, "input_value": value, "input_message": message, "output": True}
 
     def __repr__(self):
-        return f"OutputOperation('{self.mask}')"
+        return f"InputOperation('{self.mask}')"
 
     def __str__(self):
         parts = list()
         if not self.output:
             parts.append("(Disabled)")
-        parts.append("Output")
+        parts.append("Input")
         parts.append(self.bitstring())
         return " ".join(parts)
 
     def __copy__(self):
-        return OutputOperation(self.mask, self.value, self.message)
+        return InputOperation(self.mask, self.value, self.message)
 
     def __len__(self):
         return 1
@@ -42,27 +42,27 @@ class OutputOperation(Node):
 
     @property
     def mask(self):
-        return int(self.settings.get("output_mask"))
+        return int(self.settings.get("input_mask"))
 
     @mask.setter
     def mask(self, v):
-        self.settings["output_mask"] = v
+        self.settings["input_mask"] = v
 
     @property
     def value(self):
-        return int(self.settings.get("output_value"))
+        return int(self.settings.get("input_value"))
 
     @value.setter
     def value(self, v):
-        self.settings["output_value"] = v
+        self.settings["input_value"] = v
 
     @property
     def message(self):
-        return str(self.settings.get("output_message"))
+        return str(self.settings.get("input_message"))
 
     @message.setter
     def message(self, v):
-        self.settings["output_message"] = v
+        self.settings["input_message"] = v
 
     @property
     def output(self):
@@ -77,8 +77,8 @@ class OutputOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super(OutputOperation, self).default_map(default_map=default_map)
-        default_map["element_type"] = "Output"
+        default_map = super(InputOperation, self).default_map(default_map=default_map)
+        default_map["element_type"] = "Input"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["mask"] = self.mask
         default_map["value"] = self.value
