@@ -142,8 +142,8 @@ class DXFProcessor:
             except Exception:
                 color = Color("black")
             node.stroke = color
-        node.matrix.post_translate_y(translate_y)
         node.matrix.post_scale(scale, scale)
+        node.matrix.post_translate_y(translate_y)
         node.modified()
 
     def parse(self, entity, context_node, e_list):
@@ -451,7 +451,7 @@ class DXFProcessor:
             if entity.closed:
                 element.closed()
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            path = abs(Path(element))
+            path = abs(element)
             if len(path) != 0:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path
