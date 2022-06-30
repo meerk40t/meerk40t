@@ -892,13 +892,6 @@ class offset:
         yield "wait_finish"
         yield "set_position", -int(self.x), -int(self.y)
 
-
-def wait():
-    wait_amount = 5.0
-    yield "wait_finish"
-    yield "wait", wait_amount
-
-
 def beep():
     yield "wait_finish"
     yield "beep"

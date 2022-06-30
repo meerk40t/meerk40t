@@ -256,7 +256,7 @@ def plugin(kernel, lifecycle):
                     yield "move_abs", "3in", "3in"
                     yield "wait_finish"
                     yield "laser_on"
-                    yield "wait", 0.05
+                    yield "wait", 50
                     yield "laser_off"
                     yield "wait_finish"
                 yield "home"

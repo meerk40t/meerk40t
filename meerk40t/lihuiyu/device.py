@@ -268,10 +268,9 @@ class LihuiyuDevice(Service, ViewPort):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
-            value = time / 1000.0
-            if value > 1.0:
+            if time > 1000.0:
                 channel(
-                    _('"%s" exceeds 1 second limit to fire a standing laser.') % value
+                    _('"%sms" exceeds 1 second limit to fire a standing laser.') % time
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -282,11 +281,11 @@ class LihuiyuDevice(Service, ViewPort):
             def timed_fire():
                 yield "wait_finish"
                 yield "laser_on"
-                yield "wait", value
+                yield "wait", time
                 yield "laser_off"
 
             if self.spooler.job_if_idle(timed_fire):
-                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
+                channel(_("Pulse laser for %f milliseconds") % time)
             else:
                 channel(_("Pulse laser failed: Busy"))
             return
@@ -706,7 +705,7 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "move_abs", 3000, 3000
                 yield "wait_finish"
                 yield "laser_on"
-                yield "wait", 0.05
+                yield "wait", 50
                 yield "laser_off"
                 yield "wait_finish"
                 yield "set", "speed", 10.0
@@ -743,7 +742,7 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "rapid_mode"
                     yield "wait_finish"
                     yield "laser_on"
-                    yield "wait", 0.05
+                    yield "wait", 50
                     yield "laser_off"
                     yield "wait_finish"
 
@@ -1072,7 +1071,7 @@ class LhystudiosDriver(Parameters):
         self.raster_mode()
         self.wait_finish()
         self.laser_on()  # This can't be sent early since these are timed operations.
-        self.wait(time_in_ms / 1000.0)
+        self.wait(time_in_ms)
         self.laser_off()
 
     def move(self, x, y):
@@ -1737,6 +1736,7 @@ class LhystudiosDriver(Parameters):
             self.dwell(plot.dwell_time)
         elif isinstance(plot, WaitCut):
             self.plot_start()
+            self.wait_finish()
             self.wait(plot.dwell_time)
         else:
             self.plot_planner.push(plot)
@@ -1787,7 +1787,7 @@ class LhystudiosDriver(Parameters):
         self.native_y = y
 
     def wait(self, t):
-        time.sleep(float(t))
+        time.sleep(float(t) / 1000.0)
 
     def wait_finish(self, *values):
         """Adds a temp hold requirement if the pipe has any data."""

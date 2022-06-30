@@ -12,7 +12,7 @@ from meerk40t.core.cutcode import (
     PlotCut,
     QuadCut,
     RasterCut,
-    RawCut,
+    RawCut, WaitCut, InputCut, OutputCut,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.gui.fonts import svgfont_to_wx
@@ -409,6 +409,12 @@ class LaserRender:
                     else:
                         p.AddLineToPoint(px + x, py + y)
             elif isinstance(cut, DwellCut):
+                pass
+            elif isinstance(cut, WaitCut):
+                pass
+            elif isinstance(cut, InputCut):
+                pass
+            elif isinstance(cut, OutputCut):
                 pass
             last_point = end
         if p is not None:

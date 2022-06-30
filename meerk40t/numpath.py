@@ -346,7 +346,7 @@ class Numpath:
         Add in dwell time to fire the laser standing at a particular point.
 
         @param position: Position at which to fire the laser
-        @param time: time in seconds to fire the laser
+        @param time: time in ms to fire the laser
         @return:
         """
         self._ensure_capacity(self.length + 1)

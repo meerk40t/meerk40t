@@ -533,7 +533,7 @@ class GRBLDriver(Parameters):
 
     def dwell(self, time_in_ms):
         self.laser_on()  # This can't be sent early since these are timed operations.
-        self.wait(time_in_ms / 1000.0)
+        self.wait(time_in_ms)
         self.laser_off()
 
     def laser_off(self, *values):

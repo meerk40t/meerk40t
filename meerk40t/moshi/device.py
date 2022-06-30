@@ -668,7 +668,7 @@ class MoshiDriver(Parameters):
         @param t:
         @return:
         """
-        time.sleep(float(t))
+        time.sleep(float(t) / 1000.0)
 
     def wait_finish(self, *values):
         """
