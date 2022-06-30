@@ -14,6 +14,10 @@ INT_PARAMETERS = (
     "raster_preference_right",
     "raster_preference_left",
     "raster_preference_bottom",
+    "input_mask",
+    "input_value",
+    "output_mask",
+    "output_value",
 )
 
 FLOAT_PARAMETERS = (
@@ -50,6 +54,8 @@ STRING_PARAMETERS = (
     "hatch_type",
     "penbox_value",
     "penbox_pass",
+    "output_message",
+    "input_message",
 )
 
 COLOR_PARAMETERS = ("color", "line_color")
@@ -373,6 +379,11 @@ class Parameters:
     def penbox_value(self, value):
         self.settings["penbox_value"] = value
 
+
+    #####################
+    # ACCEL PROPERTIES
+    #####################
+
     @property
     def acceleration(self):
         return self.settings.get("acceleration", 0)
@@ -395,6 +406,10 @@ class Parameters:
             return None
         return self.acceleration
 
+    #####################
+    # DRATIO PROPERTIES
+    #####################
+
     @property
     def dratio(self):
         return self.settings.get("dratio", 0.261)
@@ -416,6 +431,11 @@ class Parameters:
         if not self.dratio_custom:
             return None
         return self.dratio
+
+
+    #####################
+    # RASTER POSITION PROPERTIES
+    #####################
 
     @property
     def raster_preference_top(self):
@@ -449,6 +469,11 @@ class Parameters:
     def raster_preference_bottom(self, value):
         self.settings["raster_preference_bottom"] = value
 
+
+    #####################
+    # JOG PROPERTIES
+    #####################
+
     @property
     def jog_distance(self):
         return self.settings.get("jog_distance", 15)
@@ -465,6 +490,11 @@ class Parameters:
     def jog_enable(self, value):
         self.settings["jog_enable"] = value
 
+
+    #####################
+    # DWELL PROPERTIES
+    #####################
+
     @property
     def dwell_time(self):
         return self.settings.get("dwell_time", 50.0)
@@ -480,6 +510,68 @@ class Parameters:
     @raster_alt.setter
     def raster_alt(self, value):
         self.settings["raster_alt"] = value
+
+
+    #####################
+    # INPUT PROPERTIES
+    #####################
+
+    @property
+    def input_mask(self):
+        return self.settings.get("input_mask", 0)
+
+    @input_mask.setter
+    def input_mask(self, value):
+        self.settings["input_mask"] = value
+
+    @property
+    def input_value(self):
+        return self.settings.get("input_value", 0)
+
+    @input_value.setter
+    def input_value(self, value):
+        self.settings["input_value"] = value
+
+    @property
+    def input_message(self):
+        return self.settings.get("input_message", None)
+
+    @input_message.setter
+    def input_message(self, value):
+        self.settings["input_message"] = value
+
+
+    #####################
+    # OUTPUT PROPERTIES
+    #####################
+
+    @property
+    def output_mask(self):
+        return self.settings.get("output_mask", 0)
+
+    @output_mask.setter
+    def output_mask(self, value):
+        self.settings["output_mask"] = value
+
+    @property
+    def output_value(self):
+        return self.settings.get("output_value", 0)
+
+    @output_value.setter
+    def output_value(self, value):
+        self.settings["output_value"] = value
+
+    @property
+    def output_message(self):
+        return self.settings.get("output_message", None)
+
+    @output_message.setter
+    def output_message(self, value):
+        self.settings["output_message"] = value
+
+    #####################
+    # MISC PROPERTIES
+    #####################
 
     @property
     def force_twitchless(self):
