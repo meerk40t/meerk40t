@@ -1723,9 +1723,11 @@ class LhystudiosDriver(Parameters):
         if isinstance(plot, InputCut):
             self.plot_start()
             self.wait_finish()
+            # We do not have any GPIO-output abilities
         elif isinstance(plot, OutputCut):
             self.plot_start()
             self.wait_finish()
+            # We do not have any GPIO-input abilities
         elif isinstance(plot, DwellCut):
             self.plot_start()
             self.rapid_mode()
