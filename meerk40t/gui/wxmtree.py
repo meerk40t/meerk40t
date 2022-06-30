@@ -13,7 +13,7 @@ from .icons import (
     icons8_smartphone_ram_50,
     icons8_system_task_20,
     icons8_timer_20,
-    icons8_vector_20,
+    icons8_vector_20, icons8_vga_20, icons8_input_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -836,6 +836,11 @@ class ShadowTree:
                 self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
             elif node.type == "op wait":
                 self.set_icon(node, icons8_timer_20.GetBitmap())
+            elif node.type == "op output":
+                self.set_icon(node, icons8_vga_20.GetBitmap())
+            elif node.type == "op input":
+                self.set_icon(node, icons8_input_20.GetBitmap())
+
             elif node.type == "file":
                 self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":
