@@ -224,9 +224,13 @@ class TreePanel(wx.Panel):
         self.shadow_tree.refresh_tree(source="signal_{org}".format(org=origin))
         if nodes is not None:
             if isinstance(nodes, (tuple, list)):
+                for node in nodes:
+                    self.shadow_tree.set_icon(node, force=True)
                 node = nodes[0]
             else:
                 node = nodes
+                self.shadow_tree.set_icon(node, force=True)
+
 
             self.shadow_tree.wxtree.EnsureVisible(node.item)
 
@@ -562,6 +566,9 @@ class ShadowTree:
             child, cookie = tree.GetNextChild(node, cookie)
         if level == 0:
             self.update_op_labels()
+        self.wxtree.Expand(self.elements.get(type="branch ops").item)
+        self.wxtree.Expand(self.elements.get(type="branch elems").item)
+        self.wxtree.Expand(self.elements.get(type="branch reg").item)
 
     def freeze_tree(self, status=None):
         if status is None:
@@ -639,6 +646,8 @@ class ShadowTree:
         elemtree = self.elements._tree
         self.dragging_nodes = None
         self.wxtree.DeleteAllItems()
+        if self.tree_images is not None:
+            self.tree_images.Destroy()
 
         self.tree_images = wx.ImageList()
         self.tree_images.Create(width=20, height=20)
@@ -817,7 +826,10 @@ class ShadowTree:
 
             if node.type == "elem image":
                 image = self.renderer.make_thumbnail(node.image, width=20, height=20)
-                image_id = self.tree_images.Add(bitmap=image)
+                if image_id<0:
+                    image_id = self.tree_images.Add(bitmap=image)
+                else:
+                    self.tree_images.Replace(index=image_id, bitmap=image)
                 tree.SetItemImage(item, image=image_id)
             elif node.type == "elem point":
                 if node.stroke is not None and node.stroke.rgb is not None:
@@ -845,7 +857,10 @@ class ShadowTree:
                     node, node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
                 )
                 if image is not None:
-                    image_id = self.tree_images.Add(bitmap=image)
+                    if image_id<0:
+                        image_id = self.tree_images.Add(bitmap=image)
+                    else:
+                        self.tree_images.Replace(index=image_id, bitmap=image)
                     tree.SetItemImage(item, image=image_id)
             elif node.type in ("op raster", "op image"):
                 try:
@@ -882,7 +897,15 @@ class ShadowTree:
             elif node.type == "group":
                 self.set_icon(node, icons8_group_objects_20.GetBitmap())
         else:
-            image_id = self.tree_images.Add(bitmap=icon)
+            image_id = tree.GetItemImage(item)
+            if image_id >= self.tree_images.ImageCount:
+                image_id = -1
+                # Reset Image Node in List
+            if image_id<0:
+                image_id = self.tree_images.Add(bitmap=icon)
+            else:
+                self.tree_images.Replace(index=image_id, bitmap=icon)
+
             tree.SetItemImage(item, image=image_id)
 
     def update_op_labels(self):
