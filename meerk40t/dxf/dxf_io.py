@@ -3,6 +3,7 @@ import os
 import ezdxf
 from ezdxf import units
 
+from ..core.node.elem_path import PathNode
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 
 try:
@@ -44,7 +45,7 @@ class DxfLoader:
         yield "Drawing Exchange Format", ("dxf",), "image/vnd.dxf"
 
     @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
+    def load(kernel, elements_service, pathname, **kwargs):
         """
         Load dxf content. Requires ezdxf which tends to also require Python 3.6 or greater.
 
@@ -87,7 +88,7 @@ class DxfLoader:
                     )
                     matrix = bb.transform(Viewbox(bx, by, bw, bh))
                     for node in elements:
-                        node.matrix *= matrix
+                        node *= matrix
                 elif x < bx or y < by or x + w > bw or y + h > bh:
                     # Is outside the bed but sized correctly, center
                     bcx = bw / 2.0
@@ -96,21 +97,25 @@ class DxfLoader:
                     cy = (bbox[1] + bbox[3]) / 2.0
                     matrix = Matrix.translate(bcx - cx, bcy - cy)
                     for node in elements:
-                        node.matrix *= matrix
+                        node *= matrix
                 # else, is within the bed dimensions correctly, change nothing.
         for node in elements:
             try:
                 node.reify()
             except AttributeError:
                 pass
-        element_branch = elements_modifier.get(type="branch elems")
+        element_branch = elements_service.get(type="branch elems")
         basename = os.path.basename(pathname)
 
         file_node = element_branch.add(type="file", label=basename)
         file_node.filepath = pathname
-        file_node.add_elems(elements)
+        element_nodes = []
+        for e in elements:
+            n = PathNode(path=e)
+            file_node.add_node(n)
+            element_nodes.append(n)
         file_node.focus()
-        elements_modifier.classify(elements)
+        elements_service.classify(element_nodes)
         return True
 
     @staticmethod
