@@ -28,8 +28,32 @@ class ImageNode(Node):
         **kwargs,
     ):
         super(ImageNode, self).__init__(type="elem image", **kwargs)
-        self.image = image
-        self.matrix = matrix
+        if "href" in kwargs:
+            self.matrix = Matrix()
+            try:
+                from PIL import Image as PILImage
+                self.image = PILImage.open(kwargs['href'])
+                if "x" in kwargs:
+                    self.matrix.post_translate_x(kwargs["x"])
+                if "y" in kwargs:
+                    self.matrix.post_translate_x(kwargs["y"])
+                real_width, real_height = self.image.size
+                declared_width, declared_height = real_width, real_height
+                if "width" in kwargs:
+                    declared_width = kwargs["width"]
+                if "height" in kwargs:
+                    declared_height = kwargs["height"]
+                try:
+                    sx = declared_width / real_width
+                    sy = declared_height / real_height
+                    self.matrix.post_scale(sx, sy)
+                except ZeroDivisionError:
+                    pass
+            except ImportError:
+                self.image = None
+        else:
+            self.image = image
+            self.matrix = matrix
         self.processed_image = None
         self.processed_matrix = None
         self.process_image_failed = False

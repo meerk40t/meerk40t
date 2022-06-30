@@ -24,16 +24,14 @@ from ..svgelements import (
     Circle,
     Color,
     Ellipse,
-    Group,
     Matrix,
     Move,
     Path,
     Polygon,
     Polyline,
     SimpleLine,
-    SVGImage,
     SVGText,
-    Viewbox,
+    Viewbox, Point,
 )
 
 MILS_PER_MM = 39.3701
@@ -52,7 +50,6 @@ class DxfLoader:
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
         dxf = ezdxf.readfile(pathname)
-        elements = []
         unit = dxf.header.get("$INSUNITS")
 
         if unit is not None and unit != 0:
@@ -61,18 +58,35 @@ class DxfLoader:
         else:
             scale = UNITS_PER_MM
 
-        for entity in dxf.entities:
-            DxfLoader.entity_to_svg(
-                elements, dxf, entity, scale, kernel.device.unit_height
-            )
+        dxf_processor = DXFProcessor(elements_service, dxf=dxf, scale=scale)
+        dxf_processor.process(dxf.entities, pathname)
+        return True
 
-        kernel.setting(bool, "dxf_center", True)
-        if kernel.dxf_center:
-            g = Group()
-            g.extend(elements)
-            bbox = g.bbox()
+
+class DXFProcessor:
+    def __init__(self, elements_modifier, dxf, scale=1.0):
+        self.elements = elements_modifier
+        self.dxf = dxf
+        self.scale = scale
+        self.elements_list = list()
+        self.reverse = False
+        self.requires_classification = True
+        self.pathname = None
+
+    def process(self, entities, pathname):
+        self.pathname = pathname
+        # basename = os.path.basename(pathname)
+        context_node = self.elements.get(type="branch elems")
+        file_node = context_node.add(type="file", filepath=pathname)
+        file_node.focus()
+        for entity in entities:
+            self.parse(entity, file_node, self.elements_list)
+
+        dxf_center = self.elements.root.setting(bool, "dxf_center", True)
+        if dxf_center:
+            bbox = file_node.bounds
             if bbox is not None:
-                viewport = kernel.device
+                viewport = self.elements.device
                 bw = viewport.unit_width
                 bh = viewport.unit_height
                 bx = 0
@@ -87,8 +101,8 @@ class DxfLoader:
                         "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"
                     )
                     matrix = bb.transform(Viewbox(bx, by, bw, bh))
-                    for node in elements:
-                        node *= matrix
+                    for node in self.elements_list:
+                        node.matrix *= matrix
                 elif x < bx or y < by or x + w > bw or y + h > bh:
                     # Is outside the bed but sized correctly, center
                     bcx = bw / 2.0
@@ -96,37 +110,54 @@ class DxfLoader:
                     cx = (bbox[0] + bbox[2]) / 2.0
                     cy = (bbox[1] + bbox[3]) / 2.0
                     matrix = Matrix.translate(bcx - cx, bcy - cy)
-                    for node in elements:
-                        node *= matrix
+                    for node in self.elements_list:
+                        node.matrix *= matrix
                 # else, is within the bed dimensions correctly, change nothing.
-        for node in elements:
-            try:
-                node.reify()
-            except AttributeError:
-                pass
-        element_branch = elements_service.get(type="branch elems")
-        basename = os.path.basename(pathname)
 
-        file_node = element_branch.add(type="file", label=basename)
-        file_node.filepath = pathname
-        element_nodes = []
-        for e in elements:
-            n = PathNode(path=e)
-            file_node.add_node(n)
-            element_nodes.append(n)
-        file_node.focus()
-        elements_service.classify(element_nodes)
+        self.elements.classify(self.elements_list)
         return True
 
-    @staticmethod
-    def entity_to_svg(elements, dxf, entity, scale, translate_y):
-        element = None
+    def check_for_attributes(self, node, entity):
+        scale = self.scale
+        dxf = self.dxf
+        translate_y = self.elements.device.unit_height
+        if entity.rgb is not None:
+            if isinstance(entity.rgb, tuple):
+                node.stroke = Color(*entity.rgb)
+            else:
+                node.stroke = Color(entity.rgb)
+        else:
+            c = entity.dxf.color
+            if c == 256:  # Bylayer.
+                if entity.dxf.layer in dxf.layers:
+                    layer = dxf.layers.get(entity.dxf.layer)
+                    c = layer.color
+            try:
+                if c == 7:
+                    color = Color(
+                        "black"
+                    )  # Color 7 is black on light backgrounds, light on black.
+                else:
+                    color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
+            except Exception:
+                color = Color("black")
+            node.stroke = color
+        node.matrix.post_translate_y(translate_y)
+        node.matrix.post_scale(scale, scale)
+        node.modified()
+
+    def parse(self, entity, context_node, e_list):
         try:
             entity.transform_to_wcs(entity.ocs())
         except AttributeError:
             pass
         if entity.dxftype() == "CIRCLE":
             element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
+            node = context_node.add(shape=element, type="elem ellipse")
+            self.check_for_attributes(node, entity)
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            e_list.append(node)
+            return
         elif entity.dxftype() == "ARC":
             circ = Circle(center=entity.dxf.center, r=entity.dxf.radius)
             start_angle = Angle.degrees(entity.dxf.start_angle)
@@ -134,8 +165,17 @@ class DxfLoader:
             if end_angle < start_angle:
                 end_angle += Angle.turns(1)
             element = Path(circ.arc_angle(start_angle, end_angle))
-        elif entity.dxftype() == "ELLIPSE":
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            path = abs(Path(element))
+            if len(path) != 0:
+                if not isinstance(path[0], Move):
+                    path = Move(path.first_point) + path
 
+            node = context_node.add(path=path, type="elem path")
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
+        elif entity.dxftype() == "ELLIPSE":
             # TODO: needs more math, axis is vector, ratio is to minor.
             element = Ellipse(
                 center=entity.dxf.center,
@@ -146,6 +186,11 @@ class DxfLoader:
                 start_angle=entity.dxf.start_param,
                 end_angle=entity.dxf.end_param,
             )
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            node = context_node.add(shape=element, type="elem ellipse")
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "LINE":
             #  https://ezdxf.readthedocs.io/en/stable/dxfentities/line.html
             element = SimpleLine(
@@ -154,8 +199,17 @@ class DxfLoader:
                 x2=entity.dxf.end[0],
                 y2=entity.dxf.end[1],
             )
+            node = context_node.add(shape=element, type="elem line")
+            self.check_for_attributes(node, entity)
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            e_list.append(node)
+            return
         elif entity.dxftype() == "POINT":
-            element = Path(Move(entity.dxf.location)) + "z"
+            element = Point(entity.dxf.location)
+            node = context_node.add(point=element, matrix=Matrix(), type="elem point")
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "POLYLINE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
             if entity.is_2d_polyline:
@@ -164,6 +218,11 @@ class DxfLoader:
                         element = Polygon([(p[0], p[1]) for p in entity.points()])
                     else:
                         element = Polyline([(p[0], p[1]) for p in entity.points()])
+                    node = context_node.add(shape=element, type="elem polyline")
+                    self.check_for_attributes(node, entity)
+                    element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                    e_list.append(node)
+                    return
                 else:
                     element = Path()
                     bulge = 0
@@ -188,6 +247,15 @@ class DxfLoader:
                                 bulge=bulge,
                             )
                             element.closed()
+                    element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                    path = abs(Path(element))
+                    if len(path) != 0:
+                        if not isinstance(path[0], Move):
+                            path = Move(path.first_point) + path
+                    node = context_node.add(path=path, type="elem path")
+                    self.check_for_attributes(node, entity)
+                    e_list.append(node)
+                    return
         elif entity.dxftype() == "LWPOLYLINE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/lwpolyline.html
             if not entity.has_arc:
@@ -195,6 +263,11 @@ class DxfLoader:
                     element = Polygon(*[(p[0], p[1]) for p in entity])
                 else:
                     element = Polyline(*[(p[0], p[1]) for p in entity])
+                node = context_node.add(shape=element, type="elem polyline")
+                self.check_for_attributes(node, entity)
+                element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                e_list.append(node)
+                return
             else:
                 element = Path()
                 bulge = 0
@@ -216,6 +289,15 @@ class DxfLoader:
                             bulge=bulge,
                         )
                         element.closed()
+                element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                path = abs(Path(element))
+                if len(path) != 0:
+                    if not isinstance(path[0], Move):
+                        path = Move(path.first_point) + path
+                node = context_node.add(path=path, type="elem path")
+                self.check_for_attributes(node, entity)
+                e_list.append(node)
+                return
         elif entity.dxftype() == "HATCH":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/hatch.html
             element = Path()
@@ -266,25 +348,53 @@ class DxfLoader:
                                 for i in range(len(e.knot_values)):
                                     knot = e.knot_values[i]
                                     element.line(knot)
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            path = abs(Path(element))
+            if len(path) != 0:
+                if not isinstance(path[0], Move):
+                    path = Move(path.first_point) + path
+            node = context_node.add(path=path, type="elem path")
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "IMAGE":
             bottom_left_position = entity.dxf.insert
             size = entity.dxf.image_size
             imagedef = entity.dxf.image_def_handle
             if not isinstance(imagedef, str):
                 imagedef = imagedef.filename
-            element = SVGImage(
-                href=imagedef,
-                x=bottom_left_position[0],
-                y=bottom_left_position[1] - size[1],
-                width=size[0],
-                height=size[1],
-            )
+            try:
+                node = context_node.add(
+                    href=imagedef,
+                    x=bottom_left_position[0],
+                    y=bottom_left_position[1] - size[1],
+                    width=size[0],
+                    height=size[1],
+                    type="elem image",
+                )
+            except FileNotFoundError:
+                return
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "MTEXT":
             insert = entity.dxf.insert
             element = SVGText(x=insert[0], y=insert[1], text=entity.text)
+
+            node = context_node.add(text=element, type="elem text")
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "TEXT":
             insert = entity.dxf.insert
             element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
+
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            node = context_node.add(text=element, type="elem text")
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "SOLID" or entity.dxftype() == "TRACE":
             # https://ezdxf.readthedocs.io/en/stable/dxfentities/solid.html
             element = Path()
@@ -294,6 +404,12 @@ class DxfLoader:
             element.line((entity[3][0], entity[3][1]))
             element.closed()
             element.fill = Color("black")
+            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+            path = abs(Path(element))
+            node = context_node.add(path=path, type="elem path")
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
         elif entity.dxftype() == "SPLINE":
             element = Path()
             try:
@@ -316,7 +432,7 @@ class DxfLoader:
                     # Version before 0.15
                     try:
                         for (
-                            bezier
+                                bezier
                         ) in entity.construction_tool().cubic_bezier_approximation(4):
                             b = bezier.control_points
                             if len(b) == 4:
@@ -334,47 +450,23 @@ class DxfLoader:
                             element.line(entity.control_points[i])
             if entity.closed:
                 element.closed()
-        elif entity.dxftype() == "INSERT":
-            for e in entity.virtual_entities():
-                if e is None:
-                    continue
-                DxfLoader.entity_to_svg(elements, dxf, e, scale, translate_y)
-            return
-        else:
-            # We need a channel comment here so that this is not silently ignored.
-            return  # Might be something unsupported.
-        if element is None:
-            return
-        if entity.rgb is not None:
-            if isinstance(entity.rgb, tuple):
-                element.stroke = Color(*entity.rgb)
-            else:
-                element.stroke = Color(entity.rgb)
-        else:
-            c = entity.dxf.color
-            if c == 256:  # Bylayer.
-                if entity.dxf.layer in dxf.layers:
-                    layer = dxf.layers.get(entity.dxf.layer)
-                    c = layer.color
-            try:
-                if c == 7:
-                    color = Color(
-                        "black"
-                    )  # Color 7 is black on light backgrounds, light on black.
-                else:
-                    color = Color(*int2rgb(DXF_DEFAULT_COLORS[c]))
-            except Exception:
-                color = Color("black")
-            element.stroke = color
-        element.transform.post_scale(scale, -scale)
-        element.transform.post_translate_y(translate_y)
-
-        if isinstance(element, SVGText):
-            elements.append(element)
-        else:
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             path = abs(Path(element))
             if len(path) != 0:
                 if not isinstance(path[0], Move):
                     path = Move(path.first_point) + path
-            elements.append(path)
+            node = context_node.add(path=path, type="elem path")
+            self.check_for_attributes(node, entity)
+            e_list.append(node)
+            return
+        elif entity.dxftype() == "INSERT":
+            # Insert creates virtual grouping.
+            context_node = context_node.add(type="group")
+            for e in entity.virtual_entities():
+                if e is None:
+                    continue
+                self.parse(e, context_node, e_list)
+            return
+        else:
+            # We need a channel comment here so that this is not silently ignored.
+            return  # Might be something unsupported.
