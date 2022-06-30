@@ -154,8 +154,8 @@ class CutPlan:
             if last_type is not None:
                 if (
                     c_type.startswith("op") != last_type.startswith("op")
-                    or c_type in ("op wait", "op console")
-                    or last_type in ("op wait", "op console")
+                    or c_type in ("op wait", "op console", "op output", "op input")
+                    or last_type in ("op wait", "op console", "op output", "op input")
                 ):
                     # This is not able to be merged
                     grouped_plan.append(group)

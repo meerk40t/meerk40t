@@ -5856,6 +5856,28 @@ class Elemental(Service):
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Output"), node_type="branch ops", help="")
+        def append_operation_output(node, pos=None, **kwargs):
+            self.op_branch.add(
+                type="op output",
+                pos=pos,
+                output_mask=0,
+                output_value=0,
+                output_message=None,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Input"), node_type="branch ops", help="")
+        def append_operation_input(node, pos=None, **kwargs):
+            self.op_branch.add(
+                type="op input",
+                pos=pos,
+                input_mask=0,
+                input_value=0,
+                input_message=None,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(
             _("Append Home/Beep/Interrupt"), node_type="branch ops", help=""
         )
