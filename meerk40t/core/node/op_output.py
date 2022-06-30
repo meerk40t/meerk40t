@@ -1,0 +1,118 @@
+from meerk40t.core.cutcode import WaitCut, OutputCut
+from meerk40t.core.element_types import *
+from meerk40t.core.node.node import Node
+
+
+class OutputOperation(Node):
+    """
+    OutputOperation sets GPIO values.
+
+    Node type "op output"
+    """
+
+    def __init__(self, mask=0, value=0, message=None, **kwargs):
+        super().__init__(type="op output", **kwargs)
+        self.settings = {"output_mask": mask, "output_value": value, "output_message": message, "output": True}
+
+    def __repr__(self):
+        return f"OutputOperation('{self.mask}')"
+
+    def __str__(self):
+        parts = list()
+        if not self.output:
+            parts.append("(Disabled)")
+        parts.append("Wait")
+        parts.append(self.bitstring())
+        return " ".join(parts)
+
+    def __copy__(self):
+        return OutputOperation(self.mask, self.value, self.message)
+
+    def __len__(self):
+        return 1
+
+    def bitstring(self):
+        mask = self.mask
+        value = self.value
+        bits = bytearray("X" * 8)
+        for m in range(8):
+            if (mask >> m) & 1:
+                bits[m] = "1" if (value >> m) & 1 else "0"
+        return bits.decode('utf8')
+
+    @property
+    def mask(self):
+        return int(self.settings.get("output_mask"))
+
+    @mask.setter
+    def mask(self, v):
+        self.settings["output_mask"] = v
+
+    @property
+    def value(self):
+        return int(self.settings.get("value_value"))
+
+    @value.setter
+    def value(self, v):
+        self.settings["output_value"] = v
+
+    @property
+    def message(self):
+        return str(self.settings.get("output_message"))
+
+    @message.setter
+    def message(self, v):
+        self.settings["output_message"] = v
+
+    @property
+    def output(self):
+        return self.settings.get("output", True)
+
+    @output.setter
+    def output(self, v):
+        self.settings["output"] = v
+
+    @property
+    def implicit_passes(self):
+        return 1
+
+    def default_map(self, default_map=None):
+        default_map = super(OutputOperation, self).default_map(default_map=default_map)
+        default_map["element_type"] = "Output"
+        default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["mask"] = self.mask
+        default_map["value"] = self.value
+        default_map["message"] = self.message
+        default_map["bits"] = self.bitstring()
+        default_map.update(self.settings)
+        return default_map
+
+    def drop(self, drag_node):
+        drop_node = self
+        if drag_node.type in op_nodes:
+            drop_node.insert_sibling(drag_node)
+            return True
+        elif drop_node.type == "branch ops":
+            # Dragging operation to op branch to effectively move to bottom.
+            drop_node.append_child(drag_node)
+            return True
+        return False
+
+    def load(self, settings, section):
+        update_dict = settings.read_persistent_string_dict(section, suffix=True)
+        self.settings.update(update_dict)
+
+    def save(self, settings, section):
+        settings.write_persistent_dict(section, self.settings)
+
+    def as_cutobjects(self, closed_distance=15, passes=1):
+        """
+        Generator of cutobjects for a raster operation. This takes any image node children
+        and converts them into rastercut objects. These objects should have already been converted
+        from vector shapes.
+
+        The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
+        """
+        output = OutputCut(self.mask, self.value, self.message)
+        output.original_op = self.type
+        yield output
