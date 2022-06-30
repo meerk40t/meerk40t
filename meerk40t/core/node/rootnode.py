@@ -22,6 +22,8 @@ from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_input import InputOperation
+from meerk40t.core.node.op_output import OutputOperation
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.op_wait import WaitOperation
 from meerk40t.core.node.refnode import ReferenceNode
@@ -50,6 +52,8 @@ class RootNode(Node):
             "op hatch": HatchOpNode,
             "op console": ConsoleOperation,
             "op wait": WaitOperation,
+            "op input": InputOperation,
+            "op output": OutputOperation,
             "lasercode": LaserCodeNode,
             "blob": BlobNode,
             "group": GroupNode,

@@ -488,6 +488,8 @@ class Planner(Service):
                     "cutcode",
                     "op console",
                     "op wait",
+                    "op input",
+                    "op output",
                     "lasercode",
                     "blob",
                 ),
