@@ -140,6 +140,10 @@ class BalorController:
             return self.connection.get_port()
         return None
 
+    def wait_for_input(self, mask, value):
+        self.wait_finished()
+        self.write(("wait_input", (mask, value)))
+
     def wait_finished(self):
         while len(self._queue) or len(self._preempt):
             time.sleep(0.01)

@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode import OutputCut
+from meerk40t.core.cutcode import OutputCut, InputCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
@@ -113,6 +113,6 @@ class InputOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        output = OutputCut(self.mask, self.value, self.message)
-        output.original_op = self.type
-        yield output
+        input = InputCut(self.mask, self.value, self.message)
+        input.original_op = self.type
+        yield input
