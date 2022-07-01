@@ -37,7 +37,7 @@ class InputOperation(Node):
         bits = bytearray(b"X" * 8)
         for m in range(8):
             if (mask >> m) & 1:
-                bits[m] = "1" if (value >> m) & 1 else "0"
+                bits[m] = ord("1") if (value >> m) & 1 else ord("0")
         return bits.decode('utf8')
 
     @property
