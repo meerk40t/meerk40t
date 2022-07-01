@@ -5,6 +5,7 @@ from copy import copy
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
 from meerk40t.device.basedevice import DRIVER_STATE_RAPID, DRIVER_STATE_PROGRAM
+from meerk40t.fill.fills import Wobble
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -210,6 +211,7 @@ class GalvoController:
         self._travel_speed = None
         self._frequency = None
         self._power = None
+        self._pulse_width = None
 
         self._delay_jump = None
         self._delay_on = None
@@ -288,15 +290,104 @@ class GalvoController:
     # MODE SHIFTS
     #######################
 
+
     def rapid_mode(self):
         if self.mode != DRIVER_STATE_RAPID:
-            self.flush()
+            self._list_end()
             self.mode = DRIVER_STATE_RAPID
 
     def program_mode(self):
         if self.mode != DRIVER_STATE_PROGRAM:
-            self.flush()
             self.mode = DRIVER_STATE_PROGRAM
+            self.list_ready()
+            # self.list_delay_time(0x0320)
+            self.list_write_port()
+            self.list_jump_speed(self.service.default_rapid_speed)
+
+    def set_settings(self, settings):
+        """
+        Sets the primary settings. Rapid, frequency, speed, and timings.
+
+        @param settings: The current settings dictionary
+        @return:
+        """
+        if self.service.pulse_width_enabled:
+            # Global Pulse Width is enabled.
+            if str(settings.get("pulse_width_enabled", False)).lower() == "true":
+                # Local Pulse Width value is enabled.
+                # OpFiberYLPMPulseWidth
+
+                self.list_fiber_ylpm_pulse_width(
+                    int(settings.get("pulse_width", self.service.default_pulse_width))
+                )
+            else:
+                # Only global is enabled, use global pulse width value.
+                self.list_fiber_ylpm_pulse_width(self.service.default_pulse_width)
+
+        if str(settings.get("rapid_enabled", False)).lower() == "true":
+            self.list_jump_speed(
+                float(settings.get("rapid_speed", self.service.default_rapid_speed))
+            )
+        else:
+            self.list_jump_speed(self.service.default_rapid_speed)
+
+        self.power(
+            (float(settings.get("power", self.service.default_power)) / 10.0)
+        )  # Convert power, out of 1000
+        self.frequency(
+            float(settings.get("frequency", self.service.default_frequency))
+        )
+        self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
+
+        if str(settings.get("timing_enabled", False)).lower() == "true":
+            self.list_laser_on_delay(
+                settings.get("delay_laser_on", self.service.delay_laser_on)
+            )
+            self.list_laser_off_delay(
+                settings.get("delay_laser_off", self.service.delay_laser_off)
+            )
+            self.list_polygon_delay(
+                settings.get("delay_laser_polygon", self.service.delay_polygon)
+            )
+        else:
+            # Use globals
+            self.list_laser_on_delay(self.service.delay_laser_on)
+            self.list_laser_off_delay(self.service.delay_laser_off)
+            self.list_polygon_delay(self.service.delay_polygon)
+
+    def set_wobble(self, settings):
+        """
+        Set the wobble parameters and mark modifications routines.
+
+        @param settings: The dict setting to extract parameters from.
+        @return:
+        """
+        if settings is None:
+            self._wobble = None
+            return
+        wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
+        if not wobble_enabled:
+            self._wobble = None
+            return
+        wobble_radius = settings.get("wobble_radius", "1.5mm")
+        wobble_r = self.service.physical_to_device_length(wobble_radius, 0)[0]
+        wobble_interval = settings.get("wobble_interval", "0.3mm")
+        wobble_speed = settings.get("wobble_speed", 50.0)
+        wobble_type = settings.get("wobble_type", "circle")
+        wobble_interval = self.service.physical_to_device_length(wobble_interval, 0)[0]
+        algorithm = self.service.lookup(f"wobble/{wobble_type}")
+        if self._wobble is None:
+            self._wobble = Wobble(
+                algorithm=algorithm,
+                radius=wobble_r,
+                speed=wobble_speed,
+                interval=wobble_interval,
+            )
+        else:
+            # set our parameterizations
+            self._wobble.algorithm = algorithm
+            self._wobble.radius = wobble_r
+            self._wobble.speed = wobble_speed
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -328,6 +419,9 @@ class GalvoController:
 
     def set_xy(self, x, y):
         self.goto_xy(x, y)
+
+    def get_last_xy(self):
+        return self._last_x, self._last_y
 
     #######################
     # Command Shortcuts
@@ -364,6 +458,12 @@ class GalvoController:
         self.send(empty)
         self.set_end_of_list(1)
         self.execute_list()
+
+    def pause(self):
+        pass
+
+    def resume(self):
+        pass
 
     def init_laser(self):
         cor_file = self.service.corfile if self.service.corfile_enabled else None
@@ -409,6 +509,18 @@ class GalvoController:
 
         self.set_fiber_mo(0)
 
+    def power(self, power):
+        """
+        Accepts power in percent, automatically converts to power_ratio
+
+        @param power:
+        @return:
+        """
+        if self._power == power:
+            return
+        self._power = power
+        self.list_mark_power_ratio(self._convert_power(power))
+
     def frequency(self, frequency):
         if self._frequency == frequency:
             return
@@ -435,6 +547,10 @@ class GalvoController:
 
     def port_off(self, bit):
         self._port_bits = ~((~self._port_bits) | (1 << bit))
+
+    def port_set(self, mask, values):
+        self._port_bits &= ~mask  # Unset mask.
+        self._port_bits |= values & mask  # Set masked bits.
 
     #######################
     # LIST APPENDING OPERATIONS
@@ -490,6 +606,13 @@ class GalvoController:
         @return:
         """
         return int(round(20000.0 / frequency_khz))
+
+    def _convert_power(self, power):
+        """
+        Converts power percent to int value
+        @return:
+        """
+        return int(round(power * 0xFFF / 100.0))
 
     #######################
     # HIGH LEVEL OPERATIONS
@@ -558,8 +681,8 @@ class GalvoController:
     def list_end_of_list(self):
         self._list_write(listEndOfList)
 
-    def list_laser_on_point(self):
-        self._list_write(listLaserOnPoint)
+    def list_laser_on_point(self, dwell_time):
+        self._list_write(listLaserOnPoint, dwell_time)
 
     def list_delay_time(self, time):
         """
@@ -629,7 +752,7 @@ class GalvoController:
         @return:
         """
         # listMarkPowerRatio
-        raise NotImplementedError
+        self._list_write(listMarkPowerRatio, power_ratio)
 
     def list_mark_speed(self, speed):
         """
@@ -757,13 +880,13 @@ class GalvoController:
         """
         self._list_write(listFiberOpenMO, open_mo)
 
-    def list_wait_for_input(self):
+    def list_wait_for_input(self, wait_state):
         """
         Unknown.
 
         @return:
         """
-        self._list_write(listWaitForInput)
+        self._list_write(listWaitForInput, wait_state)
 
     def list_change_mark_count(self, count):
         """
@@ -799,6 +922,9 @@ class GalvoController:
         @param pulse_width:
         @return:
         """
+        if self._pulse_width == pulse_width:
+            return
+        self._pulse_width = pulse_width
         self._list_write(listFiberYLPMPulseWidth, pulse_width)
 
     def list_fly_encoder_count(self, count):
