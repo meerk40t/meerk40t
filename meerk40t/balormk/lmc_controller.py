@@ -138,7 +138,7 @@ class GalvoController:
 
         self.connection = USBConnection(self.usb_log)
 
-        self._light_bit = service.setting("light_pin", 8)
+        self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
         self._active_list = None
         self._active_index = 0
@@ -251,6 +251,9 @@ class GalvoController:
             self.list_write_port()
         self.list_jump_speed(self._dark_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
+
+    def set_xy(self, x, y):
+        self.goto_xy(x, y)
 
     #######################
     # Command Shortcuts
@@ -459,7 +462,7 @@ class GalvoController:
         return table
 
     def _write_correction_table(self, table):
-        assert (len(table), 65 * 65)
+        assert len(table) == 65 * 65
         self.write_cor_table(True)
         first = True
         for dx, dy in table:

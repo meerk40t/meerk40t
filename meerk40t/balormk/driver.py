@@ -23,7 +23,11 @@ class BalorDriver:
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
-        self.connection = BalorController(service)
+
+        from meerk40t.balormk.lmc_controller import GalvoController
+        self.connection = GalvoController(service)
+
+        # self.connection = BalorController(service)
         self.service.add_service_delegate(self.connection)
         self.paused = False
 
