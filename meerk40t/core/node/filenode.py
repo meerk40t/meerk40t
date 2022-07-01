@@ -22,7 +22,12 @@ class FileNode(Node):
     def default_map(self, default_map=None):
         default_map = super(FileNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "File"
-        default_map["filename"] = self._filepath
+        if self.filepath is None:
+            s = "None"
+        else:
+            s = os.path.basename(self._filepath)
+        default_map["full_filename"] = self._filepath
+        default_map["filename"] = s
         return default_map
 
     def drop(self, drag_node):

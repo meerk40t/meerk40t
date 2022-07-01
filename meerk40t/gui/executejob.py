@@ -257,10 +257,6 @@ class PlannerPanel(wx.Panel):
         self.context("plan%s command -o origin\n" % self.plan_name)
         self.update_gui()
 
-    def jobadd_wait(self, event=None):
-        self.context("plan%s command -o wait\n" % self.plan_name)
-        self.update_gui()
-
     def jobadd_beep(self, event=None):
         self.context("plan%s command -o beep\n" % self.plan_name)
         self.update_gui()
@@ -473,11 +469,6 @@ class ExecuteJob(MWindow):
             wx.EVT_MENU,
             self.panel.jobadd_physicalhome,
             wx_menu.Append(wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.panel.jobadd_wait,
-            wx_menu.Append(wx.ID_ANY, _("Wait"), _("Add a wait")),
         )
         self.Bind(
             wx.EVT_MENU,

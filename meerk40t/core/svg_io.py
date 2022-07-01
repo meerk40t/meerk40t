@@ -518,46 +518,46 @@ class SVGProcessor:
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
-                # Maybe superceded by concrete values later, so do it first
-                fst = element.values.get("font")
-                if fst is not None:
-                    # This comes inherited from a class so lets split it up...
-                    subvalues = fst.split()
-                    for sv in subvalues:
-                        svl = sv.lower()
-                        if svl in ("italic", "normal", "oblique"):
-                            node.font_style = svl
-                        elif svl in ("lighter", "bold", "bolder"):
-                            node.text.font_weight = svl
-                        elif svl in (
+                # Maybe superseded by concrete values later, so do it first
+                font_style = element.values.get("font")
+                if font_style is not None:
+                    # This comes inherited from a class so let's split it up...
+                    subvalues = font_style.split()
+                    for subvalue in subvalues:
+                        subvalue_lower = subvalue.lower()
+                        if subvalue_lower in ("italic", "normal", "oblique"):
+                            node.font_style = subvalue_lower
+                        elif subvalue_lower in ("lighter", "bold", "bolder"):
+                            node.text.font_weight = subvalue_lower
+                        elif subvalue_lower in (
                             "fantasy",
                             "serif",
                             "cursive",
                             "sans-serif",
                             "monospace",
                         ):
-                            node.text.font_family = svl
-                fst = element.values.get("font-style")
-                if not fst is None:
-                    node.font_style = fst
-                fst = element.values.get("text-transform")
-                if not fst is None:
-                    node.texttransform = fst
-                fst = element.values.get("text-decoration")
-                if not fst is None:
-                    fst = fst.lower()
-                    node.underline = "underline" in fst
-                    node.overline = "overline" in fst
-                    node.strikethrough = "line-through" in fst
-                fst = element.values.get(SVG_ATTR_TEXT_ANCHOR)
-                if not fst is None:
-                    node.text.anchor = fst
-                fst = element.values.get("x")
-                if not fst is None:
-                    node.text.x = Length(fst).value()
-                fst = element.values.get("y")
-                if not fst is None:
-                    node.text.y = Length(fst).value()
+                            node.text.font_family = subvalue_lower
+                font_style = element.values.get("font-style")
+                if font_style is not None:
+                    node.font_style = font_style
+                font_style = element.values.get("text-transform")
+                if font_style is not None:
+                    node.texttransform = font_style
+                font_style = element.values.get("text-decoration")
+                if font_style is not None:
+                    font_style = font_style.lower()
+                    node.underline = "underline" in font_style
+                    node.overline = "overline" in font_style
+                    node.strikethrough = "line-through" in font_style
+                font_style = element.values.get(SVG_ATTR_TEXT_ANCHOR)
+                if font_style is not None:
+                    node.text.anchor = font_style
+                font_style = element.values.get("x")
+                if font_style is not None:
+                    node.text.x = Length(font_style).value()
+                font_style = element.values.get("y")
+                if font_style is not None:
+                    node.text.y = Length(font_style).value()
 
                 svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
                 if svgfont_to_wx:
@@ -708,7 +708,7 @@ class SVGLoader:
         yield "Scalable Vector Graphics", ("svg", "svgz"), "image/svg+xml"
 
     @staticmethod
-    def load(context, elements_modifier, pathname, **kwargs):
+    def load(context, elements_service, pathname, **kwargs):
         if "svg_ppi" in kwargs:
             ppi = float(kwargs["svg_ppi"])
         else:
@@ -731,6 +731,6 @@ class SVGLoader:
             )
         except ParseError as e:
             raise BadFileError(str(e)) from e
-        svg_processor = SVGProcessor(elements_modifier)
+        svg_processor = SVGProcessor(elements_service)
         svg_processor.process(svg, pathname)
         return True

@@ -126,7 +126,6 @@ class HatchOpNode(Node, Parameters):
         return False
 
     def classify(self, node):
-
         def is_valid_closed_path(p):
             result = False
             if len(p) != 0:

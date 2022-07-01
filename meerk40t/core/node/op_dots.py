@@ -29,12 +29,8 @@ class DotsOpNode(Node, Parameters):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
-        self.allowed_elements_dnd = (
-            "elem point",
-        )
-        self.allowed_elements = (
-            "elem point",
-        )
+        self.allowed_elements_dnd = ("elem point",)
+        self.allowed_elements = ("elem point",)
 
     def __repr__(self):
         return "DotsOpNode()"
@@ -109,23 +105,7 @@ class DotsOpNode(Node, Parameters):
         return False
 
     def classify(self, node):
-        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
-            plain_color_op = abs(self.color)
-            plain_color_node = abs(node.stroke)
-            if plain_color_op != plain_color_node:
-                return False, False
         if node.type in self.allowed_elements:
-            self.add_reference(node)
-            return True, True
-        return False, False
-
-    def classify(self, node):
-        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
-            plain_color_op = abs(self.color)
-            plain_color_node = abs(node.stroke)
-            if plain_color_op != plain_color_node:
-                return False, False
-        if node.type in ("elem point",):
             self.add_reference(node)
             return True, True
         return False, False

@@ -320,6 +320,23 @@ class Sender:
             if self._terminate_execution:
                 return
 
+    def wait_input(self, mask, value):
+        while True:
+            status = self.raw_read_port()[0]
+            if status & mask == value & mask:
+                # Input has been met.
+                return
+            time.sleep(self.sleep_time)
+            if self._terminate_execution:
+                # Terminated.
+                return
+
+    def wait_footpedal(self):
+        # Wait footpedal down
+        self.wait_input(0x8000, 0x8000)
+        # Wait Footpedal up
+        self.wait_input(0x8000, 0x0000)
+
     def execute(
         self, command_list: CommandSource, loop_count=1, callback_finished=None
     ):

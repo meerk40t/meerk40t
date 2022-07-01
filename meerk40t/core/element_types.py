@@ -38,8 +38,10 @@ non_structural_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
-    "op console",
-    "op wait",
+    "util console",
+    "util wait",
+    "util output",
+    "util input",
     "reference",
     "lasercode",
     "cutcode",
@@ -55,15 +57,13 @@ non_structural_nodes = (
     "file",
     "group",
 )
-operate_nodes = (
+op_parent_nodes = (
     "op cut",
     "op raster",
     "op image",
     "op engrave",
     "op dots",
     "op hatch",
-    "op console",
-    "op wait",
 )
 op_nodes = (
     "op cut",
@@ -72,8 +72,10 @@ op_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
-    "op console",
-    "op wait",
+    "util console",
+    "util wait",
+    "util output",
+    "util input",
 )
 elem_nodes = (
     "elem ellipse",

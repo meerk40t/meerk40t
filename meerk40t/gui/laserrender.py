@@ -8,11 +8,14 @@ from meerk40t.core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    InputCut,
     LineCut,
+    OutputCut,
     PlotCut,
     QuadCut,
     RasterCut,
     RawCut,
+    WaitCut,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.gui.fonts import svgfont_to_wx
@@ -410,6 +413,12 @@ class LaserRender:
                         p.AddLineToPoint(px + x, py + y)
             elif isinstance(cut, DwellCut):
                 pass
+            elif isinstance(cut, WaitCut):
+                pass
+            elif isinstance(cut, InputCut):
+                pass
+            elif isinstance(cut, OutputCut):
+                pass
             last_point = end
         if p is not None:
             gc.StrokePath(p)
@@ -634,6 +643,9 @@ class LaserRender:
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
         text = node.text
+        if text.text is None or text.text == "":
+            return
+
         try:
             matrix = node.matrix
             width_scale = sqrt(abs(matrix.determinant))
@@ -657,63 +669,60 @@ class LaserRender:
 
         x = text.x
         y = text.y
-        if text.text is not None:
-            textstr = text.text
-            if draw_mode & DRAW_MODE_VARIABLES:
-                # Only if flag show the translated values
-                textstr = self.context.elements.mywordlist.translate(textstr)
-            if not node.texttransform is None:
-                ttf = node.texttransform.lower()
-                if ttf == "capitalize":
-                    textstr = textstr.capitalize()
-                elif ttf == "uppercase":
-                    textstr = textstr.upper()
-                if ttf == "lowercase":
-                    textstr = textstr.lower()
-            # There's a fundamental flaw in wxPython to get the right fontsize
-            # Both GetTextExtent as well as GetFullTextextent provide the fontmetric-size
-            # as result for the font-height and dont take the real glyphs into account
-            # That means that ".", "a", "g" and "T" all have the same height...
-            # Consequently the size is always off... This can be somewhat compensated by taking
-            # the descent from the font-metric into account.
-            # A 'real' height routine would most probably need to draw the string on an
-            # empty canvas and find the first and last dots on a line...
-            f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(
-                textstr
+        textstr = text.text
+        if draw_mode & DRAW_MODE_VARIABLES:
+            # Only if flag show the translated values
+            textstr = self.context.elements.mywordlist.translate(textstr)
+        if not node.texttransform is None:
+            ttf = node.texttransform.lower()
+            if ttf == "capitalize":
+                textstr = textstr.capitalize()
+            elif ttf == "uppercase":
+                textstr = textstr.upper()
+            if ttf == "lowercase":
+                textstr = textstr.lower()
+        # There's a fundamental flaw in wxPython to get the right fontsize
+        # Both GetTextExtent as well as GetFullTextextent provide the fontmetric-size
+        # as result for the font-height and dont take the real glyphs into account
+        # That means that ".", "a", "g" and "T" all have the same height...
+        # Consequently the size is always off... This can be somewhat compensated by taking
+        # the descent from the font-metric into account.
+        # A 'real' height routine would most probably need to draw the string on an
+        # empty canvas and find the first and last dots on a line...
+        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
+        # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
+        # print ("Scale Width=%.1f" % width_scale)
+        # That stuff drives my crazy...
+        # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
+        has_underscore = any(
+            substring in textstr for substring in ("g", "j", "p", "q", "y", ",", ";")
+        )
+        delta = self.fontdescent_factor * f_descent
+        if has_underscore:
+            delta -= self.fontdescent_factor / 2 * f_descent
+        delta -= f_externalLeading
+        f_height -= delta
+        text.width = f_width
+        text.height = f_height
+        # print ("Anchor= %s" % text.anchor)
+        if not hasattr(text, "anchor") or text.anchor == "start":
+            y -= (
+                text.height
+                + self.fontdescent_factor * self.fontdescent_delta * f_descent
             )
-            # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
-            # That stuff drives my crazy...
-            # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
-            has_underscore = any(
-                substring in textstr
-                for substring in ("g", "j", "p", "q", "y", ",", ";")
+        elif text.anchor == "middle":
+            x -= text.width / 2
+            y -= (
+                text.height
+                + self.fontdescent_factor * self.fontdescent_delta * f_descent
             )
-            delta = self.fontdescent_factor * f_descent
-            if has_underscore:
-                delta -= self.fontdescent_factor / 2 * f_descent
-            delta -= f_externalLeading
-            f_height -= delta
-            text.width = f_width
-            text.height = f_height
-            # print ("Anchor= %s" % text.anchor)
-            if not hasattr(text, "anchor") or text.anchor == "start":
-                y -= (
-                    text.height
-                    + self.fontdescent_factor * self.fontdescent_delta * f_descent
-                )
-            elif text.anchor == "middle":
-                x -= text.width / 2
-                y -= (
-                    text.height
-                    + self.fontdescent_factor * self.fontdescent_delta * f_descent
-                )
-            elif text.anchor == "end":
-                x -= text.width
-                y -= (
-                    text.height
-                    + self.fontdescent_factor * self.fontdescent_delta * f_descent
-                )
-            gc.DrawText(textstr, x, y)
+        elif text.anchor == "end":
+            x -= text.width
+            y -= (
+                text.height
+                + self.fontdescent_factor * self.fontdescent_delta * f_descent
+            )
+        gc.DrawText(textstr, x, y)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -768,7 +777,16 @@ class LaserRender:
             gc.PopState()
 
     def make_raster(
-        self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1, keep_ratio=False,
+        self,
+        nodes,
+        bounds,
+        width=None,
+        height=None,
+        bitmap=False,
+        step_x=1,
+        step_y=1,
+        keep_ratio=False,
+        recursion=0,
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -790,11 +808,58 @@ class LaserRender:
         """
         if bounds is None:
             return None
-        xmin, ymin, xmax, ymax = bounds
+        xxmin = float("inf")
+        yymin = float("inf")
+        xxmax = -float("inf")
+        yymax = -float("inf")
+        # print ("Recursion=%d" % recursion)
+        if not isinstance(nodes, (tuple, list)):
+            mynodes = [nodes]
+        else:
+            mynodes = nodes
+        if recursion == 0:
+            # Do it only once...
+            textnodes = []
+            for item in mynodes:
+                if item.type == "elem text":
+                    if item.text.width == 0 or item.text.height == 0:
+                        textnodes.append(item)
+            if len(textnodes) > 0:
+                # print ("Invalid textnodes found, call me again...")
+                self.make_raster(
+                    nodes=textnodes,
+                    bounds=bounds,
+                    width=width,
+                    height=height,
+                    bitmap=bitmap,
+                    step_x=step_x,
+                    step_y=step_y,
+                    keep_ratio=keep_ratio,
+                    recursion=1,
+                )
+
+        for item in mynodes:
+            bb = item.bounds
+            # if item.type == "elem text":
+            #     print ("Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
+            if bb[0] < xxmin:
+                xxmin = bb[0]
+            if bb[1] < yymin:
+                yymin = bb[1]
+            if bb[2] > xxmax:
+                xxmax = bb[2]
+            if bb[3] > yymax:
+                yymax = bb[3]
+
+        xmin = xxmin
+        ymin = yymin
+        xmax = xxmax
+        ymax = yymax
         xmax = ceil(xmax)
         ymax = ceil(ymax)
         xmin = floor(xmin)
         ymin = floor(ymin)
+        # print ("Bounds: %.1f, %.1f, %.1f, %.1f, Mine: %.1f, %.1f, %.1f, %.1f)" % (xmin, ymin, xmax, ymax, xxmin, yymin, xxmax, yymax))
 
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -843,7 +908,7 @@ class LaserRender:
             nodes = [nodes]
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
-        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE)
+        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(
@@ -855,6 +920,12 @@ class LaserRender:
         del dc
         if bitmap:
             return bmp
+
+        # for item in mynodes:
+        #     bb = item.bounds
+        #     if item.type == "elem text":
+        #         print ("Afterwards Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
+
         return image
 
     def make_thumbnail(

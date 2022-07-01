@@ -199,7 +199,9 @@ class TestActualize(unittest.TestCase):
 
         for step in range(1, 20):
             transform = Matrix()
-            actual, transform = actualize(image, transform, step_x=step, step_y=step, crop=False)
+            actual, transform = actualize(
+                image, transform, step_x=step, step_y=step, crop=False
+            )
             self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_black(self):
@@ -220,7 +222,7 @@ class TestActualize(unittest.TestCase):
             self.assertEqual(actual.getpixel((-1, -1)), 0)
 
         # Note: inverted flag not set. White edge pixel is correct.
-        actual, transform = actualize(image, Matrix(), step_x=3, step_y=3,  crop=False)
+        actual, transform = actualize(image, Matrix(), step_x=3, step_y=3, crop=False)
         self.assertEqual(actual.getpixel((-1, -1)), 255)
 
     # def test_actualize_largecircle(self):
@@ -259,7 +261,9 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "white")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, matrix=Matrix(), dpi=1000.0, type="elem image")
+            node = elements.elem_branch.add(
+                image=image, matrix=Matrix(), dpi=1000.0, type="elem image"
+            )
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():
@@ -282,7 +286,9 @@ class TestActualize(unittest.TestCase):
             # kernel_root("channel print console\n")
             image = Image.new("RGBA", (256, 256), "black")
             elements = kernel_root.elements
-            node = elements.elem_branch.add(image=image, dpi=1000.0, matrix=Matrix(), type="elem image")
+            node = elements.elem_branch.add(
+                image=image, dpi=1000.0, matrix=Matrix(), type="elem image"
+            )
             node.emphasized = True
             kernel_root("image resample\n")
             for element in kernel_root.elements.elems():

@@ -241,28 +241,31 @@ class Wordlist:
     def load_csv_file(self, filename):
         self.empty_csv()
         headers = []
-        with open(filename, newline="", mode="r") as csvfile:
-            buffer = csvfile.read(1024)
-            has_header = csv.Sniffer().has_header(buffer)
-            dialect = csv.Sniffer().sniff(buffer)
-            csvfile.seek(0)
-            reader = csv.reader(csvfile, dialect)
-            headers = next(reader)
-            if not has_header:
-                # Use Line as Data amd set some default names
-                for idx, entry in enumerate(headers):
-                    skey = "Column_{ct}".format(ct=idx + 1)
-                    self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
-                    headers[idx] = skey
-                ct = 1
-            else:
-                ct = 0
-            for row in reader:
-                for idx, entry in enumerate(row):
-                    skey = headers[idx]
-                    # Append...
-                    self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
-                ct += 1
-
+        try:
+            with open(filename, newline="", mode="r") as csvfile:
+                buffer = csvfile.read(1024)
+                has_header = csv.Sniffer().has_header(buffer)
+                dialect = csv.Sniffer().sniff(buffer)
+                csvfile.seek(0)
+                reader = csv.reader(csvfile, dialect)
+                headers = next(reader)
+                if not has_header:
+                    # Use Line as Data and set some default names
+                    for idx, entry in enumerate(headers):
+                        skey = "Column_{ct}".format(ct=idx + 1)
+                        self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
+                        headers[idx] = skey
+                    ct = 1
+                else:
+                    ct = 0
+                for row in reader:
+                    for idx, entry in enumerate(row):
+                        skey = headers[idx]
+                        # Append...
+                        self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
+                    ct += 1
+        except (csv.Error, PermissionError, OSError, FileNotFoundError):
+            ct = 0
+            headers = []
         colcount = len(headers)
         return ct, colcount, headers

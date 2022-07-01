@@ -323,7 +323,6 @@ class Planner(Service):
         self.register("plan/home", home)
         self.register("plan/origin", origin)
         self.register("plan/unlock", unlock)
-        self.register("plan/wait", wait)
         self.register("plan/beep", beep)
         self.register("function/interrupt", interrupt_text)
         self.register("plan/interrupt", interrupt)
@@ -487,8 +486,10 @@ class Planner(Service):
                     "op dots",
                     "op hatch",
                     "cutcode",
-                    "op console",
-                    "op wait",
+                    "util console",
+                    "util wait",
+                    "util input",
+                    "util output",
                     "lasercode",
                     "blob",
                 ),
@@ -891,12 +892,6 @@ class offset:
             self.y = args[1]
         yield "wait_finish"
         yield "set_position", -int(self.x), -int(self.y)
-
-
-def wait():
-    wait_amount = 5.0
-    yield "wait_finish"
-    yield "wait", wait_amount
 
 
 def beep():

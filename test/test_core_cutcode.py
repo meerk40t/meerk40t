@@ -266,7 +266,7 @@ class TestCutcode(unittest.TestCase):
         laserop.add_node(inode)
 
         # Add SVG Image3
-        inode = ImageNode(image=image2, matrix=Matrix(), dpi=1000.0/3.0)
+        inode = ImageNode(image=image2, matrix=Matrix(), dpi=1000.0 / 3.0)
         inode.step_x = 3
         inode.step_y = 3
         inode.process_image()

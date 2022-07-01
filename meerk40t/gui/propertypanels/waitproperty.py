@@ -1,6 +1,7 @@
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -30,6 +31,10 @@ class WaitPropertyPanel(wx.Panel):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(main_sizer)
         self.Layout()
+
+    @signal_listener("wait")
+    def wait_changed(self, *args):
+        self.context.elements.signal("element_property_update", self.operation)
 
     def pane_hide(self):
         self.panel.pane_hide()

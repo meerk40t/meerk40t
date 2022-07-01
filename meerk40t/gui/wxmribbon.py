@@ -1,5 +1,6 @@
 import copy
 import threading
+
 import wx
 import wx.lib.agw.ribbon as RB
 
@@ -42,7 +43,9 @@ class RibbonButtonBar(RB.RibbonButtonBar):
             dc = wx.AutoBufferedPaintDC(self)
             if not dc is None:
 
-                self._art.DrawButtonBarBackground(dc, self, wx.Rect(0, 0, *self.GetSize()))
+                self._art.DrawButtonBarBackground(
+                    dc, self, wx.Rect(0, 0, *self.GetSize())
+                )
 
                 try:
                     layout = self._layouts[self._current_layout]
@@ -60,7 +63,8 @@ class RibbonButtonBar(RB.RibbonButtonBar):
                         bitmap_small = base.bitmap_small_disabled
 
                     rect = wx.Rect(
-                        button.position + self._layout_offset, base.sizes[button.size].size
+                        button.position + self._layout_offset,
+                        base.sizes[button.size].size,
                     )
                     self._art.DrawButtonBarButton(
                         dc,

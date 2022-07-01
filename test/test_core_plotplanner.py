@@ -368,7 +368,9 @@ class TestPlotplanner(unittest.TestCase):
         rasterop.raster_step_y = 1
 
         vectorop = EngraveOpNode()
-        vectorop.add_node(PathNode(path=Path(Circle(cx=127, cy=127, r=128)), fill="black"))
+        vectorop.add_node(
+            PathNode(path=Path(Circle(cx=127, cy=127, r=128)), fill="black")
+        )
         cutcode = CutCode()
         cutcode.extend(vectorop.as_cutobjects())
         cutcode.extend(rasterop.as_cutobjects())
