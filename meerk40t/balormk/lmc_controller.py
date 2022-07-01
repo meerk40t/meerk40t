@@ -572,7 +572,7 @@ class GalvoController:
         if self._active_list is None:
             self._list_new()
         self._active_list[
-            self._active_index : self._active_list + 12
+            self._active_index : self._active_index + 12
         ] = self._command_to_bytes(command, v1, v2, v3, v4, v5)
         self._active_index += 12
 
