@@ -132,6 +132,14 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Flip the Y axis for the Balor device"),
             },
             {
+                "attr": "swap_xy",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Swap XY"),
+                "tip": _("Swap the X and Y axis for the device"),
+            },
+            {
                 "attr": "interpolate",
                 "object": self,
                 "default": 50,
@@ -476,6 +484,7 @@ class BalorDevice(Service, ViewPort):
             show_origin_y=0.5,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
         )
         self.spooler = Spooler(self)
         self.driver = BalorDriver(self)
