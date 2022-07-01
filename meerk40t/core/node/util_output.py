@@ -76,6 +76,34 @@ class OutputOperation(Node):
     def implicit_passes(self):
         return 1
 
+    def get_mask(self, bit=None):
+        if bit is None:
+            return self.mask
+        return (self.mask >> bit) & 1
+
+    def get_value(self, bit=None):
+        if bit is None:
+            return self.value
+        return (self.value >> bit) & 1
+
+    def mask_toggle(self, bit):
+        self.mask = self.mask ^ (1 << bit)
+
+    def mask_on(self, bit):
+        self.mask = self.mask | (1 << bit)
+
+    def mask_off(self, bit):
+        self.mask = ~((~self.mask) | (1 << bit))
+
+    def value_toggle(self, bit):
+        self.value = self.value ^ (1 << bit)
+
+    def value_on(self, bit):
+        self.value = self.value | (1 << bit)
+
+    def value_off(self, bit):
+        self.value = ~((~self.value) | (1 << bit))
+
     def default_map(self, default_map=None):
         default_map = super(OutputOperation, self).default_map(default_map=default_map)
         default_map["element_type"] = "Output"
