@@ -586,10 +586,25 @@ class MeerK40t(MWindow):
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
+        context.setting(bool, "disable_auto_zoom", False)
         context.setting(bool, "enable_sel_move", True)
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
+        choices = [
+            {
+                "attr": "disable_auto_zoom",
+                "object": self.context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Don't autoadjust zoom level"),
+                "tip": _(
+                    "Don't autoadjust zoom level when resizing the main window"
+                ),
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+
         choices = [
             {
                 "attr": "select_smallest",
@@ -617,6 +632,7 @@ class MeerK40t(MWindow):
             },
         ]
         context.kernel.register_choices("preferences", choices)
+
         choices = [
             {
                 "attr": "outer_handles",
@@ -2603,6 +2619,8 @@ class MeerK40t(MWindow):
         if self.context is None:
             return
         self.Layout()
+        if not self.context.disable_auto_zoom:
+            self.context("scene focus -4% -4% 104% 104%\n")
 
     def on_focus_lost(self, event):
         self.context("-laser\nend\n")

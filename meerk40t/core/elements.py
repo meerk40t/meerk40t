@@ -1939,13 +1939,24 @@ class Elemental(Service):
                 data = list(self.elems(emphasized=True))
 
             # Element conversion.
+            # We need to establish, if for a given node within a group all it's siblings are selected as well,
+            # if that's the case then use the parent instead
             d = list()
             elem_branch = self.elem_branch
             for node in data:
-                while node.parent and node.parent is not elem_branch:
-                    node = node.parent
-                if node not in d:
-                    d.append(node)
+                snode = node
+                if snode.parent and snode.parent is not elem_branch:
+                    # I need all other siblings
+                    singular = False
+                    for n in list(node.parent.children):
+                        if n not in data:
+                            singular = True
+                            break
+                    if not singular:
+                        while snode.parent and snode.parent is not elem_branch:
+                            snode = snode.parent
+                if snode is not None and snode not in d:
+                    d.append(snode)
             data = d
             return "align", data
 
@@ -5284,7 +5295,16 @@ class Elemental(Service):
             _("Remove all items from operation"), node_type=op_parent_nodes, help=""
         )
         def clear_all_op_entries(node, **kwargs):
-            node.remove_all_children()
+            data = list()
+            removed = False
+            for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+                data.append(item)
+            for item in data:
+                removed = True
+                item.remove_all_children()
+            if removed:
+                self.signal("tree_changed")
+
 
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
@@ -6372,16 +6392,34 @@ class Elemental(Service):
         )
         def move_back(node, **kwargs):
             # Drag and Drop
+            signal_needed = False
             drop_node = self.elem_branch
-            drop_node.drop(node)
-            self.signal("tree_changed")
+            data = list()
+            for item in list(self.regmarks()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                drop_node.drop(item)
+                signal_needed = True
+            if signal_needed:
+                self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
         def move_to_regmark(node, **kwargs):
             # Drag and Drop
+            signal_needed = False
             drop_node = self.reg_branch
+            data = list()
+            for item in list(self.elems_nodes()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                drop_node.drop(item)
+                signal_needed = True
+            if signal_needed:
+                self.signal("tree_changed")
             drop_node.drop(node)
             self.signal("tree_changed")
 
