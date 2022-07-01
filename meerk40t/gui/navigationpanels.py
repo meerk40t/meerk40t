@@ -965,7 +965,7 @@ class MovePanel(wx.Panel):
 
     def on_text_position_x(self, event):
         try:
-            Length(self.text_position_x.GetValue())
+            pos = self.context.device.length(self.text_position_x.Value)
             self.text_position_x.SetBackgroundColour(None)
         except ValueError:
             self.text_position_x.SetBackgroundColour(wx.RED)
@@ -975,7 +975,7 @@ class MovePanel(wx.Panel):
 
     def on_text_position_y(self, event):
         try:
-            Length(self.text_position_y.GetValue())
+            pos = self.context.device.length(self.text_position_y.Value)
             self.text_position_y.SetBackgroundColour(None)
         except ValueError:
             self.text_position_y.SetBackgroundColour(wx.RED)
@@ -998,7 +998,9 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            self.context("move %s %s\n" % (x, y))
+            pos_x = self.context.device.length(self.text_position_x.Value, new_units=self.context.units_name)
+            pos_y = self.context.device.length(self.text_position_y.Value, new_units=self.context.units_name)
+            self.context("move %s %s\n" % (pos_x, pos_y))
         except ValueError:
             return
 
