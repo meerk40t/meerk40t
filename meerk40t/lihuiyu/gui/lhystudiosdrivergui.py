@@ -1,6 +1,6 @@
 # -*- coding: ISO-8859-1 -*-
-
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
@@ -500,7 +500,7 @@ class ConfigurationLaserPanel(wx.Panel):
             self.text_scale_y.Refresh()
 
 
-class ConfigurationInterfacePanel(wx.Panel):
+class ConfigurationInterfacePanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -659,6 +659,7 @@ class ConfigurationInterfacePanel(wx.Panel):
         else:
             self.radio_usb.SetValue(True)
             self.panel_tcp_config.Hide()
+        self.SetupScrolling()
 
     def pane_show(self):
         self.ConfigurationLaserPanel.pane_show()
@@ -725,7 +726,7 @@ class ConfigurationInterfacePanel(wx.Panel):
         self.Layout()
 
 
-class ConfigurationSetupPanel(wx.Panel):
+class ConfigurationSetupPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationSetupPanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -998,6 +999,7 @@ class ConfigurationSetupPanel(wx.Panel):
         self.check_max_speed_raster.Enable(False)
         self.check_max_speed_vector.Enable(False)
         self.check_scale_speed.Enable(False)
+        self.SetupScrolling()
 
     def pane_show(self):
         pass
@@ -1124,7 +1126,7 @@ class LhystudiosDriverGui(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_(_("Lhystudios-Configuration")))
+        self.SetTitle(_("Lhystudios-Configuration"))
 
         # self.notebook_main = wx.Notebook(self, wx.ID_ANY)
         self.notebook_main = wx.aui.AuiNotebook(
