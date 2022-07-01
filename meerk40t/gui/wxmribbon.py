@@ -82,98 +82,36 @@ class RibbonButtonBar(RB.RibbonButtonBar):
         # else:
         #     print ("OnPaint was locked...")
 
+class MyRibbonPanel(RB.RibbonPanel):
 
-def debug_system_colors():
-    reslist = list()
-    slist = (
-        (wx.SYS_COLOUR_SCROLLBAR, "The scrollbar grey area."),
-        (wx.SYS_COLOUR_DESKTOP, "The desktop colour."),
-        (wx.SYS_COLOUR_ACTIVECAPTION, "Active window caption colour."),
-        (wx.SYS_COLOUR_INACTIVECAPTION, "Inactive window caption colour."),
-        (wx.SYS_COLOUR_MENU, "Menu background colour."),
-        (wx.SYS_COLOUR_WINDOW, "Window background colour."),
-        (wx.SYS_COLOUR_WINDOWFRAME, "Window frame colour."),
-        (wx.SYS_COLOUR_MENUTEXT, "Colour of the text used in the menus."),
-        (wx.SYS_COLOUR_WINDOWTEXT, "Colour of the text used in generic windows."),
-        (
-            wx.SYS_COLOUR_CAPTIONTEXT,
-            "Colour of the text used in captions, size boxes and scrollbar arrow boxes.",
-        ),
-        (wx.SYS_COLOUR_ACTIVEBORDER, "Active window border colour."),
-        (wx.SYS_COLOUR_INACTIVEBORDER, "Inactive window border colour."),
-        (wx.SYS_COLOUR_APPWORKSPACE, "Background colour for MDI applications."),
-        (wx.SYS_COLOUR_HIGHLIGHT, "Colour of item(s) selected in a control."),
-        (
-            wx.SYS_COLOUR_HIGHLIGHTTEXT,
-            "Colour of the text of item(s) selected in a control.",
-        ),
-        (wx.SYS_COLOUR_BTNFACE, "Face shading colour on push buttons."),
-        (wx.SYS_COLOUR_BTNSHADOW, "Edge shading colour on push buttons."),
-        (wx.SYS_COLOUR_GRAYTEXT, "Colour of greyed (disabled) text."),
-        (wx.SYS_COLOUR_BTNTEXT, "Colour of the text on push buttons."),
-        (wx.SYS_COLOUR_INACTIVECAPTIONTEXT, "Colour of the text in inactive captions."),
-        (wx.SYS_COLOUR_BTNHIGHLIGHT, "Highlight colour for buttons."),
-        (
-            wx.SYS_COLOUR_3DDKSHADOW,
-            "Dark shadow colour for three-dimensional display elements.",
-        ),
-        (wx.SYS_COLOUR_3DLIGHT, "Light colour for three-dimensional display elements."),
-        (wx.SYS_COLOUR_INFOTEXT, "Text colour for tooltip controls."),
-        (wx.SYS_COLOUR_INFOBK, "Background colour for tooltip controls."),
-        # (wx.SYS_COLOUR_LISTBOX, "Background colour for list-like controls."),
-        # (wx.SYS_COLOUR_HOTLIGHT, "Colour for a hyperlink or hot-tracked item."),
-        # (wx.SYS_COLOUR_GRADIENTACTIVECAPTION, "Right side colour in the colour gradient of an active window’s title bar."),
-        # (wx.SYS_COLOUR_GRADIENTINACTIVECAPTION, "Right side colour in the colour gradient of an inactive window’s title bar."),
-        # (wx.SYS_COLOUR_MENUHILIGHT, "The colour used to highlight menu items when the menu appears as a flat menu."),
-        # (wx.SYS_COLOUR_MENUBAR, "The background colour for the menu bar when menus appear as flat menus."),
-        # (wx.SYS_COLOUR_LISTBOXTEXT, "Text colour for list-like controls."),
-        # (wx.SYS_COLOUR_LISTBOXHIGHLIGHTTEXT, "Text colour for the unfocused selection of list-like controls."),
-        # (wx.SYS_COLOUR_BACKGROUND, "Synonym for SYS_COLOUR_DESKTOP ."),
-        # (wx.SYS_COLOUR_3DFACE, "Synonym for SYS_COLOUR_BTNFACE ."),
-        # (wx.SYS_COLOUR_3DSHADOW, "Synonym for SYS_COLOUR_BTNSHADOW ."),
-        # (wx.SYS_COLOUR_BTNHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-        # (wx.SYS_COLOUR_3DHIGHLIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-        # (wx.SYS_COLOUR_3DHILIGHT, "Synonym for SYS_COLOUR_BTNHIGHLIGHT ."),
-        # (wx.SYS_COLOUR_FRAMEBK, "Synonym for SYS_COLOUR_BTNFACE "),
-    )
-    is_dark = False
-    dark_bg = False
-    try:
-        sysappearance = wx.SystemSettings().GetAppearance()
-        source = "Sysappearance"
-        is_dark = sysappearance.IsDark()
-        dark_bg = sysappearance.IsUsingDarkBackground()
-        reslist.append(
-            "%s delivered: is_dark=%s, dark_bg=%s" % (source, is_dark, dark_bg)
-        )
-        source = "Default"
-        is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        reslist.append(
-            "%s delivered: is_dark=%s, dark_bg=%s" % (source, is_dark, dark_bg)
-        )
-    except:
-        source = "Default"
-        is_dark = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        dark_bg = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        reslist.append(
-            "%s delivered: is_dark=%s, dark_bg=%s" % (source, is_dark, dark_bg)
-        )
-    for colpair in slist:
-        syscol = wx.SystemSettings().GetColour(colpair[0])
-        if syscol is None:
-            s = "Null"
-        else:
-            try:
-                s = syscol.GetAsString(wx.C2S_NAME)
-            except AssertionError:
-                s = syscol.GetAsString(wx.C2S_CSS_SYNTAX)
-        reslist.append("{col} for {desc}".format(col=s, desc=colpair[1]))
-    return reslist
+    def __init__(self, parent, id=wx.ID_ANY, label="", minimised_icon=wx.NullBitmap,
+                 pos=wx.DefaultPosition, size=wx.DefaultSize, agwStyle=RB.RIBBON_PANEL_DEFAULT_STYLE,
+                 name="RibbonPanel"):
+        super().__init__(parent=parent, id=id, label=label, minimised_icon=minimised_icon,
+                 pos=pos, size=size, agwStyle=agwStyle, name=name)
+
+    def GetBestSize(self):
+        size = super().GetBestSize()
+        if size[0]<50: # There's something wrong here
+            # print ("Wrong best size for %s = %s" % (self.GetLabel(), size))
+            for bar in self.GetChildren():
+                if isinstance(bar, RB.RibbonButtonBar):
+                    wd = 0
+                    ht = 0
+                    for layout in bar._layouts:
+                        wd = max(wd, layout.overall_size.GetWidth())
+                        ht = max(ht, layout.overall_size.GetHeight())
+                    wd += 10
+                    ht += 10
+                    if self.GetLabel() != "":
+                        ht += 23
+                    # print ("Found: wd=%s, ht=%s" % (wd, ht))
+                    size = wx.Size(wd, ht)
+                    break
+        return size
 
 
 def register_panel_ribbon(window, context):
-    # debug_system_colors()
     minh = 150
     pane = (
         aui.AuiPaneInfo()
@@ -477,10 +415,10 @@ class RibbonPanel(wx.Panel):
         #    lambda e: self.context("webhelp help\n"),
         # )
 
-        self.project_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Project"),
+        self.project_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Project"),
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.project_panel)
@@ -489,11 +427,11 @@ class RibbonPanel(wx.Panel):
         self.project_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.control_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Control"),
-            icons8_opened_folder_50.GetBitmap(),
+        self.control_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Control"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.control_panel)
@@ -502,11 +440,11 @@ class RibbonPanel(wx.Panel):
         self.control_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.config_panel = RB.RibbonPanel(
-            home,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Configuration"),
-            icons8_opened_folder_50.GetBitmap(),
+        self.config_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Configuration"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.config_panel)
@@ -523,11 +461,11 @@ class RibbonPanel(wx.Panel):
         )
         self.ribbon_pages.append(tool)
 
-        self.tool_panel = RB.RibbonPanel(
-            tool,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Tools"),
-            icons8_opened_folder_50.GetBitmap(),
+        self.tool_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Tools"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.tool_panel)
@@ -536,11 +474,11 @@ class RibbonPanel(wx.Panel):
         self.tool_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.modify_panel = RB.RibbonPanel(
-            tool,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Modification"),
-            icons8_opened_folder_50.GetBitmap(),
+        self.modify_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Modification"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.modify_panel)
@@ -549,11 +487,11 @@ class RibbonPanel(wx.Panel):
         self.modify_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.geometry_panel = RB.RibbonPanel(
-            tool,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Geometry"),
-            icons8_opened_folder_50.GetBitmap(),
+        self.geometry_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Geometry"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.geometry_panel)
@@ -561,11 +499,11 @@ class RibbonPanel(wx.Panel):
         self.geometry_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.align_panel = RB.RibbonPanel(
-            tool,
-            wx.ID_ANY,
-            "" if self.is_dark else _("Alignment"),
-            icons8_opened_folder_50.GetBitmap(),
+        self.align_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Alignment"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=RB.RIBBON_PANEL_MINIMISE_BUTTON,
         )
         self.ribbon_panels.append(self.align_panel)
