@@ -6135,6 +6135,16 @@ class Elemental(Service):
             append_operation_wait(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")
+        def add_operation_output(node, **kwargs):
+            append_operation_output(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Input"), node_type=op_nodes, help="")
+        def add_operation_input(node, **kwargs):
+            append_operation_input(node, pos=add_after_index(self, node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(self, node)
