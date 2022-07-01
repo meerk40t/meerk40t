@@ -573,7 +573,7 @@ class GalvoController:
             self._list_new()
         self._active_list[
             self._active_index : self._active_index + 12
-        ] = self._command_to_bytes(command, v1, v2, v3, v4, v5)
+        ] = self._command_to_bytes(command, int(v1), int(v2), int(v3), int(v4), int(v5))
         self._active_index += 12
 
     def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
