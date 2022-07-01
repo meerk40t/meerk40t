@@ -377,6 +377,7 @@ class BalorDriver:
         @param y:
         @return:
         """
+        old_current = self.service.current
         self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
@@ -388,6 +389,11 @@ class BalorDriver:
         if self.native_y < 0:
             self.native_y = 0
         self.connection.set_xy(self.native_x, self.native_y)
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
 
     def move_rel(self, dx, dy):
         """
@@ -397,6 +403,7 @@ class BalorDriver:
         @param dy:
         @return:
         """
+        old_current = self.service.current
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
         self.native_x += unit_dx
         self.native_y += unit_dy
@@ -411,6 +418,11 @@ class BalorDriver:
         if self.native_y < 0:
             self.native_y = 0
         self.connection.set_xy(self.native_x, self.native_y)
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
 
     def home(self, x=None, y=None):
         """
