@@ -1251,7 +1251,7 @@ class MeerK40t(MWindow):
                 return
 
     def __set_panes(self):
-        self.context.setting(bool, "pane_lock", True)
+        self.context.setting(bool, "pane_lock", False)
 
         for register_panel in list(self.context.lookup_all("wxpane")):
             register_panel(self, self.context)
@@ -1623,7 +1623,7 @@ class MeerK40t(MWindow):
                 pass
 
         self.panes_menu.AppendSeparator()
-        item = self.main_menubar.panereset = self.panes_menu.Append(
+        item = self.main_menubar.lockpane = self.panes_menu.Append(
             ID_MENU_PANE_LOCK, _("Lock Panes"), "", wx.ITEM_CHECK
         )
         item.Check(self.context.pane_lock)
