@@ -125,7 +125,6 @@ class GalvoController:
 
     def __init__(self, service, x=0x8000, y=0x8000, mark_speed=None, goto_speed=None, light_speed=None, dark_speed=None):
         self.service = service
-        self.state = STATE_UNKNOWN
         self.is_shutdown = False  # Shutdown finished.
 
         self.max_attempts = 5
@@ -137,12 +136,10 @@ class GalvoController:
         self.usb_log = service.channel("%s/usb" % name, buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
-        # self.usb_send_channel = service.channel("%s/usb_send" % name)
-        # self.recv_channel = service.channel("%s/recv" % name)
-
         self.connection = USBConnection(self.usb_log)
 
         self._light_bit = service.setting("light_pin", 8)
+        self._foot_bit = service.setting(int, "footpedal_pin", 15)
         self._active_list = None
         self._active_index = 0
         self._last_x = x
