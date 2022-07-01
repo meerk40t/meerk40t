@@ -4,6 +4,8 @@ import random
 class MockConnection:
     def __init__(self, channel):
         self.channel = channel
+        self.send = None
+        self.recv = None
         self.devices = {}
         self.interface = {}
         self.backend_error_code = None
@@ -42,13 +44,34 @@ class MockConnection:
             device = self.devices[index]
             if not device:
                 raise ConnectionError
-            self.channel(str(packet))
+            if self.send:
+                if packet_length == 0xC:
+                    self.send(self._parse_single(packet))
+                else:
+                    self.send(self._parse_list(packet))
+
+    def _parse_list(self, packet):
+        return f"{str(packet)}"
+
+    def _parse_single(self, packet):
+        b0 = packet[1] << 8 | packet[0]
+        b1 = packet[3] << 8 | packet[2]
+        b2 = packet[5] << 8 | packet[4]
+        b3 = packet[7] << 8 | packet[6]
+        b4 = packet[9] << 8 | packet[8]
+        b5 = packet[11] << 8 | packet[10]
+        from meerk40t.balormk.lmc_controller import single_command_lookup
+        string_value = single_command_lookup.get(b0, "Unknown")
+        return f"{b0:04x}:{b1:04x}:{b2:04x}:{b3:04x}:{b4:04x}:{b5:04x} {string_value}"
 
     def read(self, index=0):
         read = bytearray(8)
         for r in range(len(read)):
-            read[r] = random.randint(0,255)
+            read[r] = random.randint(0, 255)
         device = self.devices[index]
         if not device:
             raise ConnectionError
+        if self.recv:
+            self.recv(f"{read[0]:02x}:{read[1]:02x}:{read[2]:02x}:{read[3]:02x}"
+                      f"{read[4]:02x}:{read[5]:02x}:{read[6]:02x}:{read[7]:02x}")
         return read

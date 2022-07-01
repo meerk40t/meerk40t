@@ -101,7 +101,6 @@ SetZData = 0x003B
 SetSPISimmerCurrent = 0x003C
 SetFpkParam = 0x0062
 Reset = 0x0040
-Unknown_Init = 0x0024
 GetFlySpeed = 0x0038
 FiberPulseWidth = 0x002F
 FiberGetConfigExtend = 0x0030
@@ -109,6 +108,63 @@ InputPort = 0x0031  # ClearLockInputPort calls 0x04, then if EnableLockInputPort
 GetMarkTime = 0x0041
 GetUserData = 0x0036
 SetFlyRes = 0x0032
+
+single_command_lookup = {
+    0x0002: "DisableLaser",
+    0x0004: "EnableLaser",
+    0x0005: "ExecuteList",
+    0x0006: "SetPwmPulseWidth",
+    0x0007: "GetVersion",
+    0x0009: "GetSerialNo",
+    0x000A: "GetListStatus",
+    0x000C: "GetPositionXY",
+    0x000D: "GotoXY",
+    0x000E: "LaserSignalOff",
+    0x000F: "LaserSignalOn",
+    0x0010: "WriteCorLine",
+    0x0012: "ResetList",
+    0x0013: "RestartList",
+    0x0015: "WriteCorTable",
+    0x0016: "SetControlMode",
+    0x0017: "SetDelayMode",
+    0x0018: "SetMaxPolyDelay",
+    0x0019: "SetEndOfList",
+    0x001A: "SetFirstPulseKiller",
+    0x001B: "SetLaserMode",
+    0x001C: "SetTiming",
+    0x001D: "SetStandby",
+    0x001E: "SetPwmHalfPeriod",
+    0x001F: "StopExecute",
+    0x0020: "StopList",
+    0x0021: "WritePort",
+    0x0022: "WriteAnalogPort1",
+    0x0023: "WriteAnalogPort2",
+    0x0024: "WriteAnalogPortX",
+    0x0025: "ReadPort",
+    0x0026: "SetAxisMotionParam",
+    0x0027: "SetAxisOriginParam",
+    0x0028: "AxisGoOrigin",
+    0x0029: "MoveAxisTo",
+    0x002A: "GetAxisPos",
+    0x002B: "GetFlyWaitCount",
+    0x002D: "GetMarkCount",
+    0x002E: "SetFpkParam2",
+    0x0033: "Fiber_SetMo",
+    0x0034: "Fiber_GetStMO_AP",
+    0x003A: "EnableZ",
+    0x0039: "DisableZ",
+    0x003B: "SetZData",
+    0x003C: "SetSPISimmerCurrent",
+    0x0062: "SetFpkParam",
+    0x0040: "Reset",
+    0x0038: "GetFlySpeed",
+    0x002F: "FiberPulseWidth",
+    0x0030: "FiberGetConfigExtend",
+    0x0031: "InputPort",
+    0x0041: "GetMarkTime",
+    0x0036: "GetUserData",
+    0x0032: "SetFlyRes",
+}
 
 BUSY = 0x04
 READY = 0x20
@@ -133,9 +189,7 @@ class GalvoController:
         self.count = 0
 
         name = self.service.label
-        self.pipe_channel = service.channel("%s/events" % name)
-
-        self.usb_log = service.channel("%s/usb" % name, buffer_size=500)
+        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
         self.connection = None
@@ -181,6 +235,9 @@ class GalvoController:
         if self.connection is None:
             if self.service.setting(bool, "mock", False):
                 self.connection = MockConnection(self.usb_log)
+                name = self.service.label
+                self.connection.send = self.service.channel(f"{name}/send")
+                self.connection.recv = self.service.channel(f"{name}/recv")
             else:
                 self.connection = USBConnection(self.usb_log)
         while not self.connection.is_open(self._machine_index):
@@ -930,9 +987,6 @@ class GalvoController:
 
     def reset(self):
         self._command(Reset)
-
-    def unknown_init(self):
-        self._command(Unknown_Init)
 
     def get_fly_speed(self):
         self._command(GetFlySpeed)
