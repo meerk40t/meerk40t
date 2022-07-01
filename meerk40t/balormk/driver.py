@@ -305,9 +305,14 @@ class BalorDriver:
                 current_ports |= q.output_value & q.output_mask  # Set masked bits.
                 job.set_write_port(current_ports)
             elif isinstance(q, InputCut):
-                self.rapid_mode()
-                self.wait_finished()
-                self.connection.wait_for_input(q.input_mask, q.input_value)
+                input_value = q.input_value
+                job.raw_wait_for_input(input_value)
+
+                # TODO: REENABLE- CHANGED FOR TESTING
+                # self.rapid_mode()
+                # self.wait_finished()
+                #
+                # self.connection.wait_for_input(q.input_mask, q.input_value)
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
