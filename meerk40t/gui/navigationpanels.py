@@ -911,7 +911,7 @@ class MovePanel(wx.Panel):
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
         )
         units = self.context.units_name
-        default_pos = "0{units}".format(units=units)
+        default_pos = f"0{units}"
         self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, default_pos)
         self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, default_pos)
 
@@ -927,6 +927,8 @@ class MovePanel(wx.Panel):
         self.Bind(
             wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_y
         )
+        self.Bind(wx.EVT_TEXT, self.on_text_position_x, self.text_position_x)
+        self.Bind(wx.EVT_TEXT, self.on_text_position_y, self.text_position_y)
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
@@ -960,6 +962,25 @@ class MovePanel(wx.Panel):
         sizer_12.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_text_position_x(self, event):
+        try:
+            Length(self.text_position_x.GetValue())
+            self.text_position_x.SetBackgroundColour(None)
+        except ValueError:
+            self.text_position_x.SetBackgroundColour(wx.RED)
+            self.Refresh()
+        self.text_position_x.Refresh()
+        event.Skip()
+
+    def on_text_position_y(self, event):
+        try:
+            Length(self.text_position_y.GetValue())
+            self.text_position_y.SetBackgroundColour(None)
+        except ValueError:
+            self.text_position_y.SetBackgroundColour(wx.RED)
+        self.text_position_y.Refresh()
+        event.Skip()
 
     def on_button_navigate_move_to(
         self, event=None
@@ -1222,12 +1243,12 @@ class SizePanel(wx.Panel):
                 digits=3,
             )
             if self.text_width.GetBackgroundColour() == wx.RED:
-                print(self.text_width.GetBackgroundColour())
                 self.text_width.SetBackgroundColour(None)
+                self.Refresh()
         except ValueError:
             if self.text_width.GetBackgroundColour() != wx.RED:
                 self.text_width.SetBackgroundColour(wx.RED)
-        self.Refresh()
+                self.Refresh()
 
     def on_text_height(self, event):
         try:
@@ -1241,10 +1262,11 @@ class SizePanel(wx.Panel):
             )
             if self.text_height.GetBackgroundColour() == wx.RED:
                 self.text_height.SetBackgroundColour(None)
+                self.Refresh()
         except ValueError:
             if self.text_height.GetBackgroundColour() != wx.RED:
                 self.text_height.SetBackgroundColour(wx.RED)
-        self.Refresh()
+                self.Refresh()
 
     def on_textenter_width(self, event):  # wxGlade: SizePanel.<event_handler>
         try:
