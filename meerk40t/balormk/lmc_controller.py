@@ -3,6 +3,7 @@ import time
 from copy import copy
 
 from meerk40t.balormk.usb_connection import USBConnection
+from meerk40t.device.basedevice import DRIVER_STATE_RAPID, DRIVER_STATE_PROGRAM
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -128,7 +129,6 @@ class GalvoController:
         self.is_shutdown = False  # Shutdown finished.
 
         self.max_attempts = 5
-        self.refuse_counts = 0
         self.count = 0
 
         name = self.service.label
@@ -167,6 +167,7 @@ class GalvoController:
         self._wobble = None
         self._port_bits = 0
         self._machine_index = 0
+        self.mode = DRIVER_STATE_RAPID
 
     def added(self):
         pass
@@ -188,6 +189,7 @@ class GalvoController:
                         self.count += 1
                         time.sleep(0.1)
                         continue
+                    self.init_laser()
                 self.connection.write(self._machine_index, data)
             except (ConnectionError, ConnectionRefusedError):
                 self.connection.close(self._machine_index)
@@ -209,6 +211,21 @@ class GalvoController:
                 v5 >> 8 & 0xFF,
             ]
         )
+
+
+    #######################
+    # MODE SHIFTS
+    #######################
+
+    def rapid_mode(self):
+        if self.mode != DRIVER_STATE_RAPID:
+            self.flush()
+            self.mode = DRIVER_STATE_RAPID
+
+    def program_mode(self):
+        if self.mode != DRIVER_STATE_PROGRAM:
+            self.flush()
+            self.mode = DRIVER_STATE_PROGRAM
 
     #######################
     # PLOTLIKE SHORTCUTS
@@ -263,6 +280,14 @@ class GalvoController:
         while not self.is_ready_and_not_busy():
             time.sleep(0.01)
 
+    def wait_ready(self):
+        while not self.is_ready():
+            time.sleep(0.01)
+
+    def wait_idle(self):
+        while self.is_busy():
+            time.sleep(0.01)
+
     def abort(self):
         self.stop_execute()
         self.set_fiber_mo(0)
@@ -270,6 +295,50 @@ class GalvoController:
         self.send(empty)
         self.set_end_of_list(1)
         self.execute_list()
+
+    def init_laser(self):
+        cor_file = self.service.corfile if self.service.corfile_enabled else None
+        first_pulse_killer = self.service.first_pulse_killer
+        pwm_pulse_width = self.service.pwm_pulse_width
+        pwm_half_period = self.service.pwm_half_period
+        standby_param_1 = self.service.standby_param_1
+        standby_param_2 = self.service.standby_param_2
+        timing_mode = self.service.timing_mode
+        delay_mode = self.service.delay_mode
+        laser_mode = self.service.laser_mode
+        control_mode = self.service.control_mode
+        fpk2_p1 = self.service.fpk2_p1
+        fpk2_p2 = self.service.fpk2_p2
+        fpk2_p3 = self.service.fpk2_p3
+        fpk2_p4 = self.service.fpk2_p3
+        fly_res_p1 = self.service.fly_res_p1
+        fly_res_p2 = self.service.fly_res_p2
+        fly_res_p3 = self.service.fly_res_p3
+        fly_res_p4 = self.service.fly_res_p4
+        self.reset()
+        self.write_correction_file(cor_file)
+        self.set_control_mode(control_mode)
+        self.set_laser_mode(laser_mode)
+        self.set_delay_mode(delay_mode)
+        self.set_timing(timing_mode)
+        self.set_standby(standby_param_1, standby_param_2)
+        self.set_first_pulse_killer(first_pulse_killer)
+        self.set_pwm_half_period(pwm_half_period)
+        self.set_pwm_pulse_width(pwm_pulse_width)
+        self.set_fiber_mo(0)  # Close
+        self.set_pfk_param_2(fpk2_p1, fpk2_p2, fpk2_p3, fpk2_p4)
+        self.set_fly_res(fly_res_p1, fly_res_p2, fly_res_p3, fly_res_p4)
+        self.enable_z()
+        self.write_analog_port_1(0x7FF)
+        self.enable_z()
+
+    def flush(self):
+        self.wait_finished()
+        self.reset_list()
+        self.port_on(bit=0)
+        self.set_fiber_mo(1)
+
+        self.set_fiber_mo(0)
 
     def frequency(self, frequency):
         if self._frequency == frequency:
@@ -768,8 +837,8 @@ class GalvoController:
     def set_timing(self, timing):
         self._command(SetTiming, timing)
 
-    def set_standby(self, standby):
-        self._command(SetStandby, standby)
+    def set_standby(self, standby1, standby2):
+        self._command(SetStandby, standby1, standby2)
 
     def set_pwm_half_period(self, pwm_half_period):
         self._command(SetPwmPulseWidth, pwm_half_period)
@@ -816,8 +885,8 @@ class GalvoController:
     def get_mark_count(self):
         self._command(GetMarkCount)
 
-    def set_pfk_param_2(self, param):
-        self._command(SetFpkParam2, param)
+    def set_pfk_param_2(self, param1, param2, param3, param4):
+        self._command(SetFpkParam2, param1, param2, param3, param4)
 
     def set_fiber_mo(self, mo):
         """
@@ -883,5 +952,5 @@ class GalvoController:
     def get_user_data(self):
         self._command(GetUserData)
 
-    def set_fly_res(self, fly_res):
-        self._command(SetFlyRes, fly_res)
+    def set_fly_res(self, fly_res1, fly_res2, fly_res3, fly_res4):
+        self._command(SetFlyRes, fly_res1, fly_res2, fly_res3, fly_res4)
