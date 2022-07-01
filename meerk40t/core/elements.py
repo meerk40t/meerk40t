@@ -5197,7 +5197,7 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
         @self.tree_operation(
-            _("Operation properties"), node_type=operate_nodes, help=""
+            _("Operation properties"), node_type=op_nodes, help=""
         )
         def operation_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
@@ -5293,7 +5293,7 @@ class Elemental(Service):
                 n.notify_update()
 
         @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
         def convert_operation_image(node, **kwargs):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
@@ -5301,7 +5301,7 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
         def convert_operation_raster(node, **kwargs):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
@@ -5309,7 +5309,7 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Convert to Engrave"), node_type=op_parent_nodes, help="")
         def convert_operation_engrave(node, **kwargs):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
@@ -5317,7 +5317,7 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
         def convert_operation_cut(node, **kwargs):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
@@ -5325,7 +5325,7 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Hatch"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
         def convert_operation_hatch(node, **kwargs):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
@@ -5333,7 +5333,7 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Dots"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
         def convert_operation_dots(node, **kwargs):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
@@ -5422,7 +5422,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
         @self.tree_operation(
-            _("Passes %s") % "{passvalue}", node_type=operate_nodes, help=""
+            _("Passes %s") % "{passvalue}", node_type=op_parent_nodes, help=""
         )
         def set_n_passes(node, passvalue=1, **kwargs):
             node.passes = passvalue
@@ -5432,7 +5432,7 @@ class Elemental(Service):
         @self.tree_separator_before()
         @self.tree_operation(
             _("Execute operation(s)"),
-            node_type=operate_nodes,
+            node_type=op_nodes,
             help=_("Execute Job for the selected operation(s)."),
         )
         def execute_job(node, **kwargs):
@@ -5443,7 +5443,7 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(
             _("Simulate operation(s)"),
-            node_type=operate_nodes,
+            node_type=op_nodes,
             help=_("Run simulation for the selected operation(s)"),
         )
         def compile_and_simulate(node, **kwargs):
@@ -5962,7 +5962,7 @@ class Elemental(Service):
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
-            node_type=operate_nodes,
+            node_type=op_nodes,
             help=_("duplicate operation nodes"),
         )
         def duplicate_operation(node, **kwargs):
@@ -6080,32 +6080,32 @@ class Elemental(Service):
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Insert operation"))
-        @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Add Image"), node_type=op_nodes, help="")
         def add_operation_image(node, **kwargs):
             append_operation_image(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
-        @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Add Raster"), node_type=op_nodes, help="")
         def add_operation_raster(node, **kwargs):
             append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
-        @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Add Engrave"), node_type=op_nodes, help="")
         def add_operation_engrave(node, **kwargs):
             append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
-        @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Add Cut"), node_type=op_nodes, help="")
         def add_operation_cut(node, **kwargs):
             append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
-        @self.tree_operation(_("Add Hatch"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Add Hatch"), node_type=op_nodes, help="")
         def add_operation_hatch(node, **kwargs):
             append_operation_hatch(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
-        @self.tree_operation(_("Add Dots"), node_type=operate_nodes, help="")
+        @self.tree_operation(_("Add Dots"), node_type=op_nodes, help="")
         def add_operation_dots(node, **kwargs):
             append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
 
