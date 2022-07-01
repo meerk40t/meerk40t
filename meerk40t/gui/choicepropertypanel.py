@@ -177,6 +177,15 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return check
 
+                bit_sizer = wx.BoxSizer(wx.VERTICAL)
+                label_text = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL)
+                bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+                label_text = wx.StaticText(self, wx.ID_ANY, _("mask") + " ", style=wx.ALIGN_CENTRE_HORIZONTAL)
+                bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+                label_text = wx.StaticText(self, wx.ID_ANY, _("value") + " ", style=wx.ALIGN_CENTRE_HORIZONTAL)
+                bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+                control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
+
                 bits = c.get("bits", 8)
                 for b in range(bits):
                     # Label
