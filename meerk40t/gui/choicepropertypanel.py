@@ -150,6 +150,58 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_combo_text(attr, control, obj),
                 )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+            elif data_type == int and data_style == "binary":
+                mask = c.get("mask")
+
+                # get default value
+                mask_bits = 0
+                if mask is not None and hasattr(obj, mask):
+                    mask_bits = getattr(obj, mask)
+
+                control_sizer = wx.StaticBoxSizer(
+                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                )
+
+                def on_checkbox_check(param, ctrl, obj, bit, enable_ctrl=None):
+                    def check(event=None):
+                        v = ctrl.GetValue()
+                        if enable_ctrl is not None:
+                            enable_ctrl.Enable(v)
+                        current = getattr(obj, param)
+                        if v:
+                            current |= 1 << bit
+                        else:
+                            current = ~((~current) | (1 << bit))
+                        setattr(obj, param, current)
+                        self.context.signal(f"{param}", v)
+
+                    return check
+
+                bits = c.get("bits", 8)
+                for b in range(bits):
+                    # Label
+                    bit_sizer = wx.BoxSizer(wx.VERTICAL)
+                    label_text = wx.StaticText(self, wx.ID_ANY, str(b), style=wx.ALIGN_CENTRE_HORIZONTAL)
+                    bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+
+                    # value bit
+                    control = wx.CheckBox(self)
+                    control.SetValue(bool((data >> b) & 1))
+                    if mask:
+                        control.Enable(bool((mask_bits >> b) & 1))
+                    control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj, b))
+
+                    # mask bit
+                    if mask:
+                        mask_ctrl = wx.CheckBox(self)
+                        mask_ctrl.SetValue(bool((mask_bits >> b) & 1))
+                        mask_ctrl.Bind(wx.EVT_CHECKBOX, on_checkbox_check(mask, mask_ctrl, obj, b, enable_ctrl=control))
+                        bit_sizer.Add(mask_ctrl, 0, wx.EXPAND, 0)
+
+                    bit_sizer.Add(control, 0, wx.EXPAND, 0)
+                    control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
+
+                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(

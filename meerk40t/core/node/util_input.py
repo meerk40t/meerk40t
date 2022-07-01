@@ -39,8 +39,8 @@ class InputOperation(Node):
     def bitstring(self):
         mask = self.mask
         value = self.value
-        bits = bytearray(b"X" * 8)
-        for m in range(8):
+        bits = bytearray(b"X" * 16)
+        for m in range(16):
             if (mask >> m) & 1:
                 bits[m] = ord("1") if (value >> m) & 1 else ord("0")
         return bits.decode("utf8")
