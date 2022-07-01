@@ -57,6 +57,14 @@ non_structural_nodes = (
     "file",
     "group",
 )
+op_parent_nodes = (
+    "op cut",
+    "op raster",
+    "op image",
+    "op engrave",
+    "op dots",
+    "op hatch",
+)
 operate_nodes = (
     "op cut",
     "op raster",

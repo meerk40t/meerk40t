@@ -5281,7 +5281,7 @@ class Elemental(Service):
             >= 1
         )
         @self.tree_operation(
-            _("Remove all items from operation"), node_type=op_nodes, help=""
+            _("Remove all items from operation"), node_type=op_parent_nodes, help=""
         )
         def clear_all_op_entries(node, **kwargs):
             node.remove_all_children()
