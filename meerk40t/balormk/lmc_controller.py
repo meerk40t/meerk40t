@@ -108,6 +108,9 @@ GetMarkTime = 0x0041
 GetUserData = 0x0036
 SetFlyRes = 0x0032
 
+BUSY = 0x04
+READY = 0x20
+
 
 class GalvoController:
     """
@@ -239,15 +242,33 @@ class GalvoController:
     # Command Shortcuts
     #######################
 
+    def status(self):
+        self.read_port()
+        status = self.connection.read(self._machine_index)
+        return status
+
+    def is_busy(self):
+        status = self.status()
+        return bool(status & BUSY)
+
+    def is_ready(self):
+        status = self.status()
+        return bool(status & READY)
+
+    def is_ready_and_not_busy(self):
+        status = self.status()
+        return bool(status & READY) and not bool(status & BUSY)
+
     def wait_finished(self):
-        pass
+        while not self.is_ready_and_not_busy():
+            time.sleep(0.01)
 
     def abort(self):
         self.stop_execute()
         self.set_fiber_mo(0)
         self.reset_list()
         self.send(empty)
-        self.set_end_of_list()
+        self.set_end_of_list(1)
         self.execute_list()
 
     def frequency(self, frequency):
