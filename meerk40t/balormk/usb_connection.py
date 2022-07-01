@@ -242,7 +242,7 @@ class USBConnection:
 
     def write(self, index=0, packet=None):
         packet_length = len(packet)
-        assert(packet_length == 0x12 or packet_length == 0xC00)
+        assert(packet_length == 0xC or packet_length == 0xC00)
         if packet is not None:
             device = self.devices[index]
             try:

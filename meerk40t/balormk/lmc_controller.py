@@ -2,6 +2,7 @@ import threading
 import time
 from copy import copy
 
+from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
 from meerk40t.device.basedevice import DRIVER_STATE_RAPID, DRIVER_STATE_PROGRAM
 from meerk40t.kernel import (
@@ -128,6 +129,7 @@ class GalvoController:
         self.is_shutdown = False  # Shutdown finished.
 
         self.max_attempts = 5
+        self.refused_count = 0
         self.count = 0
 
         name = self.service.label
@@ -136,7 +138,7 @@ class GalvoController:
         self.usb_log = service.channel("%s/usb" % name, buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
-        self.connection = USBConnection(self.usb_log)
+        self.connection = None
 
         self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
@@ -175,21 +177,36 @@ class GalvoController:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
-    def send(self, data):
-        while True:
-            if self.is_shutdown:
-                return
+    def connect_if_needed(self):
+        if self.connection is None:
+            if self.service.setting(bool, "mock", False):
+                self.connection = MockConnection(self.usb_log)
+            else:
+                self.connection = USBConnection(self.usb_log)
+        while not self.connection.is_open(self._machine_index):
             try:
-                if not self.connection.is_open(self._machine_index):
-                    v = self.connection.open(self._machine_index)
-                    if v < 0:
-                        self.count += 1
-                        time.sleep(0.1)
-                        continue
-                    self.init_laser()
-                self.connection.write(self._machine_index, data)
+                v = self.connection.open(self._machine_index)
+                if v < 0:
+                    self.count += 1
+                    time.sleep(0.3)
+                    continue
+                self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
                 self.connection.close(self._machine_index)
+                self.refused_count += 1
+                time.sleep(0.5)
+                continue
+
+    def send(self, data):
+        if self.is_shutdown:
+            return
+        self.connect_if_needed()
+        self.connection.write(self._machine_index, data)
+
+    def status(self):
+        self.read_port()
+        status = self.connection.read(self._machine_index)
+        return status
 
     def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         return bytes(
@@ -258,11 +275,6 @@ class GalvoController:
     #######################
     # Command Shortcuts
     #######################
-
-    def status(self):
-        self.read_port()
-        status = self.connection.read(self._machine_index)
-        return status
 
     def is_busy(self):
         status = self.status()
