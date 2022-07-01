@@ -221,8 +221,6 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
-        self.viewbuffer = ""
-
         _ = self.kernel.translation
 
         @self.console_command(
@@ -747,6 +745,11 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "wait_finish"
 
             spooler.job(jog_transition_test)
+
+    @property
+    def viewbuffer(self):
+        buffer = self.driver.out_pipe._realtime_buffer + self.driver.out_pipe._buffer
+        return buffer.decode("utf8")
 
     @property
     def current(self):
