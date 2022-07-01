@@ -892,7 +892,15 @@ class WaitCut(CutObject):
 
 
 class InputCut(CutObject):
-    def __init__(self, input_mask, input_value, input_message=None, settings=None, passes=1, parent=None):
+    def __init__(
+        self,
+        input_mask,
+        input_value,
+        input_message=None,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
         CutObject.__init__(
             self,
             (0, 0),
@@ -916,7 +924,15 @@ class InputCut(CutObject):
 
 
 class OutputCut(CutObject):
-    def __init__(self, output_mask, output_value, output_message=None, settings=None, passes=1, parent=None):
+    def __init__(
+        self,
+        output_mask,
+        output_value,
+        output_message=None,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
         CutObject.__init__(
             self,
             (0, 0),
@@ -937,7 +953,6 @@ class OutputCut(CutObject):
 
     def reverse(self):
         pass
-
 
 
 class PlotCut(CutObject):

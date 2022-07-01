@@ -379,7 +379,6 @@ class Parameters:
     def penbox_value(self, value):
         self.settings["penbox_value"] = value
 
-
     #####################
     # ACCEL PROPERTIES
     #####################
@@ -432,7 +431,6 @@ class Parameters:
             return None
         return self.dratio
 
-
     #####################
     # RASTER POSITION PROPERTIES
     #####################
@@ -469,7 +467,6 @@ class Parameters:
     def raster_preference_bottom(self, value):
         self.settings["raster_preference_bottom"] = value
 
-
     #####################
     # JOG PROPERTIES
     #####################
@@ -490,7 +487,6 @@ class Parameters:
     def jog_enable(self, value):
         self.settings["jog_enable"] = value
 
-
     #####################
     # DWELL PROPERTIES
     #####################
@@ -510,7 +506,6 @@ class Parameters:
     @raster_alt.setter
     def raster_alt(self, value):
         self.settings["raster_alt"] = value
-
 
     #####################
     # INPUT PROPERTIES
@@ -539,7 +534,6 @@ class Parameters:
     @input_message.setter
     def input_message(self, value):
         self.settings["input_message"] = value
-
 
     #####################
     # OUTPUT PROPERTIES

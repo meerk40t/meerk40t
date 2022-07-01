@@ -998,8 +998,12 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            pos_x = self.context.device.length(self.text_position_x.Value, axis=0, new_units=self.context.units_name)
-            pos_y = self.context.device.length(self.text_position_y.Value, axis=1, new_units=self.context.units_name)
+            pos_x = self.context.device.length(
+                self.text_position_x.Value, axis=0, new_units=self.context.units_name
+            )
+            pos_y = self.context.device.length(
+                self.text_position_y.Value, axis=1, new_units=self.context.units_name
+            )
             self.context("move %s %s\n" % (pos_x, pos_y))
         except ValueError:
             return
@@ -1303,7 +1307,9 @@ class SizePanel(wx.Panel):
                     preferred_units=units,
                     digits=3,
                 )
-                self.text_width.SetValue((new_height * self.object_ratio).preferred_length)
+                self.text_width.SetValue(
+                    (new_height * self.object_ratio).preferred_length
+                )
             self.on_button_navigate_resize(event)
         except ValueError:
             # This was not a value, reset this to the last actually used value.
@@ -1344,7 +1350,9 @@ class SizePanel(wx.Panel):
                 digits=3,
             )
             if self.btn_lock_ratio.GetValue():
-                self.text_width.SetValue((new_height * self.object_ratio).preferred_length)
+                self.text_width.SetValue(
+                    (new_height * self.object_ratio).preferred_length
+                )
         except ValueError:
             # This was not a value, reset this to the last actually used value.
             if self.object_height is not None:

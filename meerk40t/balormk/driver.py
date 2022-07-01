@@ -2,7 +2,16 @@ import time
 
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.controller import BalorController
-from meerk40t.core.cutcode import CubicCut, DwellCut, LineCut, PlotCut, QuadCut, WaitCut, OutputCut, InputCut
+from meerk40t.core.cutcode import (
+    CubicCut,
+    DwellCut,
+    InputCut,
+    LineCut,
+    OutputCut,
+    PlotCut,
+    QuadCut,
+    WaitCut,
+)
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.fill.fills import Wobble
@@ -293,7 +302,7 @@ class BalorDriver:
                     dwell_time -= d
             elif isinstance(q, OutputCut):
                 current_ports &= ~q.output_mask  # Unset mask.
-                current_ports |= (q.output_value & q.output_mask)  # Set masked bits.
+                current_ports |= q.output_value & q.output_mask  # Set masked bits.
                 job.set_write_port(current_ports)
             elif isinstance(q, InputCut):
                 self.rapid_mode()

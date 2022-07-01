@@ -16,17 +16,17 @@ from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
 from meerk40t.core.node.node import Node
-from meerk40t.core.node.util_console import ConsoleOperation
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
+from meerk40t.core.node.op_raster import RasterOpNode
+from meerk40t.core.node.refnode import ReferenceNode
+from meerk40t.core.node.util_console import ConsoleOperation
 from meerk40t.core.node.util_input import InputOperation
 from meerk40t.core.node.util_output import OutputOperation
-from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.util_wait import WaitOperation
-from meerk40t.core.node.refnode import ReferenceNode
 
 
 class RootNode(Node):

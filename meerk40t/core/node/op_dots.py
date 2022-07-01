@@ -29,12 +29,8 @@ class DotsOpNode(Node, Parameters):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
-        self.allowed_elements_dnd = (
-            "elem point",
-        )
-        self.allowed_elements = (
-            "elem point",
-        )
+        self.allowed_elements_dnd = ("elem point",)
+        self.allowed_elements = ("elem point",)
 
     def __repr__(self):
         return "DotsOpNode()"

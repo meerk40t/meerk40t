@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode import OutputCut, InputCut
+from meerk40t.core.cutcode import InputCut, OutputCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
@@ -12,7 +12,12 @@ class InputOperation(Node):
 
     def __init__(self, mask=0, value=0, message=None, **kwargs):
         super().__init__(type="util input", **kwargs)
-        self.settings = {"input_mask": mask, "input_value": value, "input_message": message, "output": True}
+        self.settings = {
+            "input_mask": mask,
+            "input_value": value,
+            "input_message": message,
+            "output": True,
+        }
 
     def __repr__(self):
         return f"InputOperation('{self.mask}')"
@@ -38,7 +43,7 @@ class InputOperation(Node):
         for m in range(8):
             if (mask >> m) & 1:
                 bits[m] = ord("1") if (value >> m) & 1 else ord("0")
-        return bits.decode('utf8')
+        return bits.decode("utf8")
 
     @property
     def mask(self):

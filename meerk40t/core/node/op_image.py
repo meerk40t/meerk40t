@@ -33,13 +33,9 @@ class ImageOpNode(Node, Parameters):
             elif isinstance(obj, dict):
                 self.settings.update(obj)
         # Which elements can be added to an operation (manually via DND)?
-        self.allowed_elements_dnd = (
-            "elem image",
-        )
+        self.allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
-        self.allowed_elements = (
-            "elem image",
-        )
+        self.allowed_elements = ("elem image",)
 
     def __repr__(self):
         return "ImageOpNode()"

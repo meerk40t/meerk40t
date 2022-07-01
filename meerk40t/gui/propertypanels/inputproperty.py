@@ -79,7 +79,6 @@ class InputPropertyPanel(wx.Panel):
                 "label": _("Mask Bit7"),
                 "tip": _("Mask Bit7"),
             },
-
             {
                 "attr": "value_bit0",
                 "object": self,

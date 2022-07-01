@@ -19,7 +19,15 @@ class LihuiyuEmulator(Module):
             if p is None:
                 return
             x0, y0, x1, y1 = p
-            self.context.signal("emulator;position", (x0 * UNITS_PER_MIL, y0 * UNITS_PER_MIL, x1 * UNITS_PER_MIL, y1* UNITS_PER_MIL))
+            self.context.signal(
+                "emulator;position",
+                (
+                    x0 * UNITS_PER_MIL,
+                    y0 * UNITS_PER_MIL,
+                    x1 * UNITS_PER_MIL,
+                    y1 * UNITS_PER_MIL,
+                ),
+            )
 
         self.parser.position = pos
         self._attached_device = None

@@ -12,7 +12,12 @@ class OutputOperation(Node):
 
     def __init__(self, mask=0, value=0, message=None, **kwargs):
         super().__init__(type="util output", **kwargs)
-        self.settings = {"output_mask": mask, "output_value": value, "output_message": message, "output": True}
+        self.settings = {
+            "output_mask": mask,
+            "output_value": value,
+            "output_message": message,
+            "output": True,
+        }
 
     def __repr__(self):
         return f"OutputOperation('{self.mask}')"
@@ -38,7 +43,7 @@ class OutputOperation(Node):
         for m in range(8):
             if (mask >> m) & 1:
                 bits[m] = ord("1") if (value >> m) & 1 else ord("0")
-        return bits.decode('utf8')
+        return bits.decode("utf8")
 
     @property
     def mask(self):

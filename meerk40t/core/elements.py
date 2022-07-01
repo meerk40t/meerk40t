@@ -50,7 +50,8 @@ def plugin(kernel, lifecycle=None):
             "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
         )
         kernel.register(
-            "format/op hatch", "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op hatch",
+            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}",
         )
         kernel.register(
             "format/op raster",
@@ -3788,7 +3789,7 @@ class Elemental(Service):
                     for e in apply:
                         e.emphasized = True
                 self.signal("refresh_tree")
-#                self.signal("rebuild_tree")
+            #                self.signal("rebuild_tree")
             return "elements", data
 
         @self.console_argument(
@@ -5207,9 +5208,7 @@ class Elemental(Service):
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
-        @self.tree_operation(
-            _("Operation properties"), node_type=op_nodes, help=""
-        )
+        @self.tree_operation(_("Operation properties"), node_type=op_nodes, help="")
         def operation_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
@@ -5305,7 +5304,6 @@ class Elemental(Service):
             if removed:
                 self.signal("tree_changed")
 
-
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
@@ -5329,7 +5327,9 @@ class Elemental(Service):
                 n.replace_node(**new_settings)
 
         @self.tree_submenu(_("Convert operation"))
-        @self.tree_operation(_("Convert to Engrave"), node_type=op_parent_nodes, help="")
+        @self.tree_operation(
+            _("Convert to Engrave"), node_type=op_parent_nodes, help=""
+        )
         def convert_operation_engrave(node, **kwargs):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
@@ -6058,7 +6058,8 @@ class Elemental(Service):
             for n in add_nodes:
                 node.add_reference(n.node)
             self.signal("refresh_tree")
-#            self.signal("rebuild_tree")
+
+        #            self.signal("rebuild_tree")
 
         @self.tree_operation(
             _("Make raster image"),

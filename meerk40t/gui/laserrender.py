@@ -8,11 +8,14 @@ from meerk40t.core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    InputCut,
     LineCut,
+    OutputCut,
     PlotCut,
     QuadCut,
     RasterCut,
-    RawCut, WaitCut, InputCut, OutputCut,
+    RawCut,
+    WaitCut,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.gui.fonts import svgfont_to_wx
@@ -640,7 +643,7 @@ class LaserRender:
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
         text = node.text
-        if text.text is None or text.text=="":
+        if text.text is None or text.text == "":
             return
 
         try:
@@ -686,16 +689,13 @@ class LaserRender:
         # the descent from the font-metric into account.
         # A 'real' height routine would most probably need to draw the string on an
         # empty canvas and find the first and last dots on a line...
-        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(
-            textstr
-        )
+        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
         # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
         # print ("Scale Width=%.1f" % width_scale)
         # That stuff drives my crazy...
         # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
         has_underscore = any(
-            substring in textstr
-            for substring in ("g", "j", "p", "q", "y", ",", ";")
+            substring in textstr for substring in ("g", "j", "p", "q", "y", ",", ";")
         )
         delta = self.fontdescent_factor * f_descent
         if has_underscore:
@@ -777,7 +777,16 @@ class LaserRender:
             gc.PopState()
 
     def make_raster(
-        self, nodes, bounds, width=None, height=None, bitmap=False, step_x=1, step_y=1, keep_ratio=False, recursion = 0,
+        self,
+        nodes,
+        bounds,
+        width=None,
+        height=None,
+        bitmap=False,
+        step_x=1,
+        step_y=1,
+        keep_ratio=False,
+        recursion=0,
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -815,24 +824,31 @@ class LaserRender:
                 if item.type == "elem text":
                     if item.text.width == 0 or item.text.height == 0:
                         textnodes.append(item)
-            if len(textnodes)>0:
+            if len(textnodes) > 0:
                 # print ("Invalid textnodes found, call me again...")
-                self.make_raster(nodes=textnodes, bounds=bounds,
-                    width=width, height=height, bitmap=bitmap,
-                    step_x=step_x, step_y=step_y, keep_ratio=keep_ratio,
-                    recursion = 1)
+                self.make_raster(
+                    nodes=textnodes,
+                    bounds=bounds,
+                    width=width,
+                    height=height,
+                    bitmap=bitmap,
+                    step_x=step_x,
+                    step_y=step_y,
+                    keep_ratio=keep_ratio,
+                    recursion=1,
+                )
 
         for item in mynodes:
             bb = item.bounds
             # if item.type == "elem text":
             #     print ("Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
-            if bb[0]<xxmin:
+            if bb[0] < xxmin:
                 xxmin = bb[0]
-            if bb[1]<yymin:
+            if bb[1] < yymin:
                 yymin = bb[1]
-            if bb[2]>xxmax:
+            if bb[2] > xxmax:
                 xxmax = bb[2]
-            if bb[3]>yymax:
+            if bb[3] > yymax:
                 yymax = bb[3]
 
         xmin = xxmin
@@ -892,7 +908,7 @@ class LaserRender:
             nodes = [nodes]
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
-        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE|DRAW_MODE_VARIABLES)
+        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(

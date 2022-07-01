@@ -230,29 +230,29 @@ class TestRasterWizard(unittest.TestCase):
     #         kernel.shutdown()
 
     # def test_rasterwizard_pureblack(self):
-        # """
-        # Test that a pure black image does not crash.
-        #
-        # :return:
-        # """
-        # kernel = bootstrap.bootstrap()
-        # try:
-        #     kernel_root = kernel.get_context("/")
-        #     # kernel_root("channel print console\n")
-        #     image = Image.new("RGBA", (256, 256), "black")
-        #     elements = kernel_root.elements
-        #     node = elements.elem_branch.add(image=image, matrix=Matrix(),  dpi=1000.0, type="elem image")
-        #     node.emphasized = True
-        #     kernel_root("image wizard Gravy\n")
-        #     for node in kernel_root.elements.elems():
-        #         if node.type == "elem image":
-        #             self.assertEqual(
-        #                 node.image.size, (floor(256 / 3), floor(256 / 3))
-        #             )
-        #             # Gravy is default 3 step.
-        #             # Default non-inverted gives white line at edge which is cropped, therefore floor()
-        #             # since the additional line does not count as part of the image.
-        #             self.assertEqual(node.matrix.value_trans_x(), 0)
-        #             self.assertEqual(node.matrix.value_trans_y(), 0)
-        # finally:
-        #     kernel.shutdown()
+    # """
+    # Test that a pure black image does not crash.
+    #
+    # :return:
+    # """
+    # kernel = bootstrap.bootstrap()
+    # try:
+    #     kernel_root = kernel.get_context("/")
+    #     # kernel_root("channel print console\n")
+    #     image = Image.new("RGBA", (256, 256), "black")
+    #     elements = kernel_root.elements
+    #     node = elements.elem_branch.add(image=image, matrix=Matrix(),  dpi=1000.0, type="elem image")
+    #     node.emphasized = True
+    #     kernel_root("image wizard Gravy\n")
+    #     for node in kernel_root.elements.elems():
+    #         if node.type == "elem image":
+    #             self.assertEqual(
+    #                 node.image.size, (floor(256 / 3), floor(256 / 3))
+    #             )
+    #             # Gravy is default 3 step.
+    #             # Default non-inverted gives white line at edge which is cropped, therefore floor()
+    #             # since the additional line does not count as part of the image.
+    #             self.assertEqual(node.matrix.value_trans_x(), 0)
+    #             self.assertEqual(node.matrix.value_trans_y(), 0)
+    # finally:
+    #     kernel.shutdown()

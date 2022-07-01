@@ -27,11 +27,12 @@ from ..svgelements import (
     Matrix,
     Move,
     Path,
+    Point,
     Polygon,
     Polyline,
     SimpleLine,
     SVGText,
-    Viewbox, Point,
+    Viewbox,
 )
 
 MILS_PER_MM = 39.3701
@@ -220,7 +221,9 @@ class DXFProcessor:
                         element = Polyline([(p[0], p[1]) for p in entity.points()])
                     node = context_node.add(shape=element, type="elem polyline")
                     self.check_for_attributes(node, entity)
-                    element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[
+                        SVG_ATTR_VECTOR_EFFECT
+                    ] = SVG_VALUE_NON_SCALING_STROKE
                     e_list.append(node)
                     return
                 else:
@@ -247,7 +250,9 @@ class DXFProcessor:
                                 bulge=bulge,
                             )
                             element.closed()
-                    element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[
+                        SVG_ATTR_VECTOR_EFFECT
+                    ] = SVG_VALUE_NON_SCALING_STROKE
                     path = abs(Path(element))
                     if len(path) != 0:
                         if not isinstance(path[0], Move):
@@ -432,7 +437,7 @@ class DXFProcessor:
                     # Version before 0.15
                     try:
                         for (
-                                bezier
+                            bezier
                         ) in entity.construction_tool().cubic_bezier_approximation(4):
                             b = bezier.control_points
                             if len(b) == 4:

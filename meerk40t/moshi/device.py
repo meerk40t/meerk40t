@@ -13,8 +13,16 @@ from meerk40t.kernel import (
     STATE_WAIT,
     Service,
 )
-from ..core.cutcode import LineCut, QuadCut, CubicCut, WaitCut, DwellCut, InputCut, OutputCut
 
+from ..core.cutcode import (
+    CubicCut,
+    DwellCut,
+    InputCut,
+    LineCut,
+    OutputCut,
+    QuadCut,
+    WaitCut,
+)
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler

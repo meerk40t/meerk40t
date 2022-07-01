@@ -32,7 +32,8 @@ class ImageNode(Node):
             self.matrix = Matrix()
             try:
                 from PIL import Image as PILImage
-                self.image = PILImage.open(kwargs['href'])
+
+                self.image = PILImage.open(kwargs["href"])
                 if "x" in kwargs:
                     self.matrix.post_translate_x(kwargs["x"])
                 if "y" in kwargs:

@@ -8,7 +8,6 @@ from meerk40t.svgelements import Circle, Rect
 
 
 class TestElements(unittest.TestCase):
-
     def test_elements_type(self):
         """
         Tests some generic elements commands and validates output as correct type
@@ -22,7 +21,9 @@ class TestElements(unittest.TestCase):
 
         try:
             for cmd, path, command in kernel.find("command/elements.*"):
-                kernel.console("element* " + command.split("/")[-1] + " validate_type\n")
+                kernel.console(
+                    "element* " + command.split("/")[-1] + " validate_type\n"
+                )
         finally:
             kernel.shutdown()
 
