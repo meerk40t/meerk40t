@@ -598,9 +598,7 @@ class MeerK40t(MWindow):
                 "default": False,
                 "type": bool,
                 "label": _("Don't autoadjust zoom level"),
-                "tip": _(
-                    "Don't autoadjust zoom level when resizing the main window"
-                ),
+                "tip": _("Don't autoadjust zoom level when resizing the main window"),
             },
         ]
         context.kernel.register_choices("preferences", choices)

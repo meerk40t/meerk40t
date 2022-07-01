@@ -21,6 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
+from ..core.cutcode import DwellCut, InputCut, OutputCut, WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -220,8 +221,6 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
-        self.viewbuffer = ""
-
         _ = self.kernel.translation
 
         @self.console_command(
@@ -267,10 +266,9 @@ class LihuiyuDevice(Service, ViewPort):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
-            value = time / 1000.0
-            if value > 1.0:
+            if time > 1000.0:
                 channel(
-                    _('"%s" exceeds 1 second limit to fire a standing laser.') % value
+                    _('"%sms" exceeds 1 second limit to fire a standing laser.') % time
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -281,11 +279,11 @@ class LihuiyuDevice(Service, ViewPort):
             def timed_fire():
                 yield "wait_finish"
                 yield "laser_on"
-                yield "wait", value
+                yield "wait", time
                 yield "laser_off"
 
             if self.spooler.job_if_idle(timed_fire):
-                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
+                channel(_("Pulse laser for %f milliseconds") % time)
             else:
                 channel(_("Pulse laser failed: Busy"))
             return
@@ -705,7 +703,7 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "move_abs", 3000, 3000
                 yield "wait_finish"
                 yield "laser_on"
-                yield "wait", 0.05
+                yield "wait", 50
                 yield "laser_off"
                 yield "wait_finish"
                 yield "set", "speed", 10.0
@@ -742,11 +740,16 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "rapid_mode"
                     yield "wait_finish"
                     yield "laser_on"
-                    yield "wait", 0.05
+                    yield "wait", 50
                     yield "laser_off"
                     yield "wait_finish"
 
             spooler.job(jog_transition_test)
+
+    @property
+    def viewbuffer(self):
+        buffer = self.driver.out_pipe._realtime_buffer + self.driver.out_pipe._buffer
+        return buffer.decode("utf8")
 
     @property
     def current(self):
@@ -1071,7 +1074,7 @@ class LhystudiosDriver(Parameters):
         self.raster_mode()
         self.wait_finish()
         self.laser_on()  # This can't be sent early since these are timed operations.
-        self.wait(time_in_ms / 1000.0)
+        self.wait(time_in_ms)
         self.laser_off()
 
     def move(self, x, y):
@@ -1719,7 +1722,27 @@ class LhystudiosDriver(Parameters):
         @param plot:
         @return:
         """
-        self.plot_planner.push(plot)
+        if isinstance(plot, InputCut):
+            self.plot_start()
+            self.wait_finish()
+            # We do not have any GPIO-output abilities
+        elif isinstance(plot, OutputCut):
+            self.plot_start()
+            self.wait_finish()
+            # We do not have any GPIO-input abilities
+        elif isinstance(plot, DwellCut):
+            self.plot_start()
+            self.rapid_mode()
+            start = plot.start
+            self.move_abs(start[0], start[1])
+            self.wait_finish()
+            self.dwell(plot.dwell_time)
+        elif isinstance(plot, WaitCut):
+            self.plot_start()
+            self.wait_finish()
+            self.wait(plot.dwell_time)
+        else:
+            self.plot_planner.push(plot)
 
     def plot_start(self):
         if self.plot_data is None:
@@ -1767,7 +1790,7 @@ class LhystudiosDriver(Parameters):
         self.native_y = y
 
     def wait(self, t):
-        time.sleep(float(t))
+        time.sleep(float(t) / 1000.0)
 
     def wait_finish(self, *values):
         """Adds a temp hold requirement if the pipe has any data."""

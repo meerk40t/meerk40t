@@ -1,6 +1,14 @@
 import unittest
 
-from meerk40t.fill.fills import Wobble, circle, slowtooth, gear, jigsaw, sawtooth, sinewave
+from meerk40t.fill.fills import (
+    Wobble,
+    circle,
+    slowtooth,
+    gear,
+    jigsaw,
+    sawtooth,
+    sinewave,
+)
 
 
 class TestWobble(unittest.TestCase):
@@ -14,10 +22,10 @@ class TestWobble(unittest.TestCase):
             interval=1,
         )
         for i in range(1000):
-            if (i+1) % 10 == 0:
+            if (i + 1) % 10 == 0:
                 self.assertEqual(1, len(list(wobble(i / 10, 0, (i + 1) / 10, 0))))
             else:
-                self.assertEqual(0, len(list(wobble(i/10, 0, (i+1)/10, 0))))
+                self.assertEqual(0, len(list(wobble(i / 10, 0, (i + 1) / 10, 0))))
         self.assertEqual(50, len(list(wobble(0, 0, 50.5, 0))))
         self.assertEqual(51, len(list(wobble(0, 0, 50.5, 0))))
         self.assertEqual(201, wobble._total_distance)
@@ -84,7 +92,6 @@ class TestWobble(unittest.TestCase):
         self.assertEqual(6, len(list(wobble(0, 0, 55, 0))))
         self.assertAlmostEqual(0.1 / 10, wobble._remainder)
         self.assertEqual(210, wobble._total_distance)
-
 
     def test_wobble_jigsaw_10_2(self):
         wobble = Wobble(

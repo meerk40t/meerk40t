@@ -8,7 +8,8 @@ from test import bootstrap
 
 def draw(fill, w, h, filename="test.png"):
     from PIL import Image, ImageDraw
-    im = Image.new('RGBA', (w, h), "white")
+
+    im = Image.new("RGBA", (w, h), "white")
     draw = ImageDraw.Draw(im)
     last_x = None
     last_y = None

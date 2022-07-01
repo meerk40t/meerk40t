@@ -2,7 +2,16 @@ import time
 
 from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.controller import BalorController
-from meerk40t.core.cutcode import CubicCut, DwellCut, LineCut, PlotCut, QuadCut, WaitCut
+from meerk40t.core.cutcode import (
+    CubicCut,
+    DwellCut,
+    InputCut,
+    LineCut,
+    OutputCut,
+    PlotCut,
+    QuadCut,
+    WaitCut,
+)
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.fill.fills import Wobble
@@ -204,10 +213,11 @@ class BalorDriver:
 
         @return:
         """
+        current_ports = self.connection.get_port()
         job = CommandList()
         job.ready()
         job.raw_mark_end_delay(0x0320)
-        job.set_write_port(self.connection.get_port())
+        job.set_write_port(current_ports)
         job.set_travel_speed(self.service.default_rapid_speed)
         job.goto(0x8000, 0x8000)
         last_on = None
@@ -285,11 +295,19 @@ class BalorDriver:
                     dwell_time -= d
                 job.raw_mark_end_delay(self.service.delay_end)
             elif isinstance(q, WaitCut):
-                dwell_time = q.dwell_time * 1000  # Dwell time in ms units in us
+                dwell_time = q.dwell_time  # Dwell time in ms units in us
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
                     job.raw_mark_end_delay(int(d))
                     dwell_time -= d
+            elif isinstance(q, OutputCut):
+                current_ports &= ~q.output_mask  # Unset mask.
+                current_ports |= q.output_value & q.output_mask  # Set masked bits.
+                job.set_write_port(current_ports)
+            elif isinstance(q, InputCut):
+                self.rapid_mode()
+                self.wait_finished()
+                self.connection.wait_for_input(q.input_mask, q.input_value)
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
@@ -352,8 +370,8 @@ class BalorDriver:
                         job.mark(x, y)
         job.flush()
         job.raw_mark_end_delay(self.service.delay_end)
-
         self.connection.job(job)
+
         if self.service.redlight_preferred:
             self.connection.light_on()
         else:
@@ -368,6 +386,7 @@ class BalorDriver:
         @param y:
         @return:
         """
+        old_current = self.service.current
         self.native_x, self.native_y = self.service.physical_to_device_position(x, y)
         if self.native_x > 0xFFFF:
             self.native_x = 0xFFFF
@@ -379,6 +398,11 @@ class BalorDriver:
         if self.native_y < 0:
             self.native_y = 0
         self.connection.set_xy(self.native_x, self.native_y)
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
 
     def move_rel(self, dx, dy):
         """
@@ -388,6 +412,7 @@ class BalorDriver:
         @param dy:
         @return:
         """
+        old_current = self.service.current
         unit_dx, unit_dy = self.service.physical_to_device_length(dx, dy)
         self.native_x += unit_dx
         self.native_y += unit_dy
@@ -402,6 +427,11 @@ class BalorDriver:
         if self.native_y < 0:
             self.native_y = 0
         self.connection.set_xy(self.native_x, self.native_y)
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
 
     def home(self, x=None, y=None):
         """
@@ -471,8 +501,8 @@ class BalorDriver:
     def function(self, function):
         function()
 
-    def wait(self, secs):
-        time.sleep(secs)
+    def wait(self, time_in_ms):
+        time.sleep(time_in_ms * 1000.0)
 
     def console(self, value):
         self.service(value)

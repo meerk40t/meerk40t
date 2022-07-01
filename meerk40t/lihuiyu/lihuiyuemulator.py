@@ -19,22 +19,32 @@ class LihuiyuEmulator(Module):
             if p is None:
                 return
             x0, y0, x1, y1 = p
-            self.context.signal("emulator;position", (x0, y0, x1, y1))
+            self.context.signal(
+                "emulator;position",
+                (
+                    x0 * UNITS_PER_MIL,
+                    y0 * UNITS_PER_MIL,
+                    x1 * UNITS_PER_MIL,
+                    y1 * UNITS_PER_MIL,
+                ),
+            )
 
         self.parser.position = pos
+        self._attached_device = None
 
     def __repr__(self):
         return "LihuiyuEmulator(%s)" % self.name
 
-    def initialize(self, *args, **kwargs):
+    def module_open(self, *args, **kwargs):
         context = self.context
-        active = self.context.root.active
+        active = self.context.driver.name
+        self._attached_device = active
         send = context.channel("%s/usb_send" % active)
         send.watch(self.parser.write_packet)
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         context = self.context
-        active = self.context.root.active
+        active = self._attached_device
         send = context.channel("%s/usb_send" % active)
         send.unwatch(self.parser.write_packet)
 

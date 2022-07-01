@@ -152,11 +152,7 @@ class CutPlan:
         for c in self.plan:
             c_type = c.type if hasattr(c, "type") else type(c).__name__
             if last_type is not None:
-                if (
-                    c_type.startswith("op") != last_type.startswith("op")
-                    or c_type in ("op wait", "op console")
-                    or last_type in ("op wait", "op console")
-                ):
+                if c_type.startswith("op") != last_type.startswith("op"):
                     # This is not able to be merged
                     grouped_plan.append(group)
                     group = list()
@@ -178,7 +174,11 @@ class CutPlan:
                     if not hasattr(op, "type"):
                         blob_plan.append(op)
                         continue
-                    if not op.type.startswith("op") or op.type == "op console":
+                    if (
+                        not op.type.startswith("op")
+                        and not op.type.startswith("util")
+                        or op.type == "util console"
+                    ):
                         blob_plan.append(op)
                         continue
                     copies = op.implicit_passes

@@ -215,28 +215,5 @@ def plugin(kernel, lifecycle):
                         kernel.console(
                             "window open {window}\n".format(window=window_name)
                         )
-            # RC-REMOVE
-            kernel_root.setting(bool, "developer_mode", False)
-            if not kernel_root.developer_mode:
-                message = """This version of MeerK40t somewhat stable. It is intended primarily for testing purposes. Please report all problems, even small ones to the github issue opened for this version. Do not continue using this version if it is not the latest RC or if your work requires a more stable version.
-                
-                Open Issue Page?"""
-                caption = _("Report Candidate.")
-                import wx
-
-                style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
-                dlg = wx.MessageDialog(
-                    None,
-                    message,
-                    caption=caption,
-                    style=style,
-                )
-                answer = dlg.ShowModal()
-                if answer in (wx.YES, wx.ID_YES):
-                    issue_page = "https://github.com/meerk40t/meerk40t/issues/1113"
-                    import webbrowser
-
-                    webbrowser.open(issue_page, new=0, autoraise=True)
-            # END RC-REMOVE
 
             meerk40tgui.MainLoop()

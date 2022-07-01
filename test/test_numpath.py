@@ -12,7 +12,8 @@ from test import bootstrap
 
 def draw(segments, w, h, filename="test.png"):
     from PIL import Image, ImageDraw
-    im = Image.new('RGBA', (w, h), "white")
+
+    im = Image.new("RGBA", (w, h), "white")
     draw = ImageDraw.Draw(im)
     for segment in segments:
         f = segment[0]
@@ -28,109 +29,129 @@ class TestNumpath(unittest.TestCase):
         w = 10000
         h = 10000
         numpath = Numpath()
-        numpath.polyline((
+        numpath.polyline(
+            (
                 complex(0.05, 0.05),
                 complex(0.95, 0.05),
                 complex(0.95, 0.95),
                 complex(0.05, 0.95),
                 complex(0.05, 0.05),
-        ))
-        numpath.polyline((
+            )
+        )
+        numpath.polyline(
+            (
                 complex(0.25, 0.25),
                 complex(0.75, 0.25),
                 complex(0.75, 0.75),
                 complex(0.25, 0.75),
                 complex(0.25, 0.25),
-            ))
+            )
+        )
         numpath.uscale(w)
 
         numpath2 = Numpath()
-        numpath2.polyline((
+        numpath2.polyline(
+            (
                 complex(w * 0.05, h * 0.05),
                 complex(w * 0.95, h * 0.05),
                 complex(w * 0.95, h * 0.95),
                 complex(w * 0.05, h * 0.95),
                 complex(w * 0.05, h * 0.05),
-        ))
-        numpath2.polyline((
+            )
+        )
+        numpath2.polyline(
+            (
                 complex(w * 0.25, h * 0.25),
                 complex(w * 0.75, h * 0.25),
                 complex(w * 0.75, h * 0.75),
                 complex(w * 0.25, h * 0.75),
                 complex(w * 0.25, h * 0.25),
-            ))
+            )
+        )
         self.assertTrue(np.all(numpath.segments == numpath2.segments))
-        numpath.translate(3,3)
+        numpath.translate(3, 3)
         self.assertFalse(np.all(numpath.segments == numpath2.segments))
-        numpath.translate(-3,-3)
+        numpath.translate(-3, -3)
         self.assertTrue(np.all(numpath.segments == numpath2.segments))
 
     def test_numpath_bbox(self):
         w = 10000
         numpath = Numpath()
-        numpath.polyline((
+        numpath.polyline(
+            (
                 complex(0.05, 0.05),
                 complex(0.95, 0.05),
                 complex(0.95, 0.95),
                 complex(0.05, 0.95),
                 complex(0.05, 0.05),
-        ))
-        numpath.polyline((
+            )
+        )
+        numpath.polyline(
+            (
                 complex(0.25, 0.25),
                 complex(0.75, 0.25),
                 complex(0.75, 0.75),
                 complex(0.25, 0.75),
                 complex(0.25, 0.25),
-            ))
+            )
+        )
         numpath.uscale(w)
         self.assertEqual(numpath.bbox(), (500.0, 500.0, 9500.0, 9500.0))
-        numpath.rotate(tau * .25)
+        numpath.rotate(tau * 0.25)
         for x, y in zip(numpath.bbox(), (-9500.0, 500.00000000000057, -500.0, 9500.0)):
             self.assertAlmostEqual(x, y)
 
     def test_numpath_transform(self):
         numpath = Numpath()
-        numpath.polyline((
-            complex(0.05, 0.05),
-            complex(0.95, 0.05),
-            complex(0.95, 0.95),
-            complex(0.05, 0.95),
-            complex(0.05, 0.05),
-        ))
-        numpath.polyline((
-            complex(0.25, 0.25),
-            complex(0.75, 0.25),
-            complex(0.75, 0.75),
-            complex(0.25, 0.75),
-            complex(0.25, 0.25),
-        ))
+        numpath.polyline(
+            (
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+            )
+        )
+        numpath.polyline(
+            (
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            )
+        )
         numpath.uscale(10000)
         c = copy(numpath)
-        numpath.rotate(tau * .25)
+        numpath.rotate(tau * 0.25)
         c.transform(Matrix("rotate(.25turn)"))
         t = numpath.segments == c.segments
         self.assertTrue(np.all(t))
 
     def test_numpath_close(self):
         numpath = Numpath()
-        numpath.polyline((
-            complex(0.05, 0.05),
-            complex(0.95, 0.05),
-            complex(0.95, 0.95),
-            complex(0.05, 0.95),
-            complex(0.05, 0.05),
-        ))
+        numpath.polyline(
+            (
+                complex(0.05, 0.05),
+                complex(0.95, 0.05),
+                complex(0.95, 0.95),
+                complex(0.05, 0.95),
+                complex(0.05, 0.05),
+            )
+        )
         numpath.close()
         numpath.end()
-        numpath.polyline((
-            complex(0.25, 0.25),
-            complex(0.75, 0.25),
-            complex(0.75, 0.75),
-            complex(0.25, 0.75),
-            complex(0.25, 0.25),
-        ))
+        numpath.polyline(
+            (
+                complex(0.25, 0.25),
+                complex(0.75, 0.25),
+                complex(0.75, 0.75),
+                complex(0.25, 0.75),
+                complex(0.25, 0.25),
+            )
+        )
         numpath.uscale(10000)
-        numpath.rotate(tau * .25)
+        numpath.rotate(tau * 0.25)
         subpaths = list(numpath.as_subpaths())
         for subpath in subpaths:
             for seg in subpath.segments:
@@ -158,7 +179,11 @@ class TestNumpath(unittest.TestCase):
             ),
         )
 
-        fill = list(scanline_fill(settings={"hatch_distance": "0.02mm"}, outlines=paths, matrix=None))
+        fill = list(
+            scanline_fill(
+                settings={"hatch_distance": "0.02mm"}, outlines=paths, matrix=None
+            )
+        )
         path = Numpath()
         last_x = None
         last_y = None
@@ -181,4 +206,3 @@ class TestNumpath(unittest.TestCase):
         # print(p.travel_distance())
         # print(p.segments)
         # draw(p.segments, w, h)
-

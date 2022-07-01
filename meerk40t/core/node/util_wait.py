@@ -7,11 +7,11 @@ class WaitOperation(Node):
     """
     WaitOperation tells the controller to wait for a specified period of time.
 
-    Node type "op wait"
+    Node type "util wait"
     """
 
     def __init__(self, wait=1.0, **kwargs):
-        super().__init__(type="op wait", **kwargs)
+        super().__init__(type="util wait", **kwargs)
         self.settings = {"wait": wait, "output": True}
 
     def __repr__(self):

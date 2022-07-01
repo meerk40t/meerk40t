@@ -109,6 +109,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             self.Layout()
                             try:
                                 setattr(obj, param, pathname)
+                                self.context.signal(param, pathname)
                             except ValueError:
                                 # cannot cast to data_type, pass
                                 pass
@@ -139,6 +140,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     def select(event=None):
                         v = data_type(ctrl.GetValue())
                         setattr(obj, param, v)
+                        self.context.signal(param, v)
 
                     return select
 
@@ -161,7 +163,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     def text(event=None):
                         v = ctrl.GetValue()
                         try:
-                            setattr(obj, param, dtype(v))
+                            dtype_v = dtype(v)
+                            setattr(obj, param, dtype_v)
+                            self.context.signal(param, dtype_v)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -192,7 +196,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                             ctrl.Refresh()
                             return
                         try:
-                            setattr(obj, param, v.preferred_length)
+                            data_v = v.preferred_length
+                            setattr(obj, param, data_v)
+                            self.context.signal(param, data_v)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -223,7 +229,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                             ctrl.Refresh()
                             return
                         try:
-                            setattr(obj, param, str(v))
+                            data_v = str(v)
+                            setattr(obj, param, data_v)
+                            self.context.signal(param, data_v)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -258,7 +266,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                             )
                             set_color(data)
                             try:
-                                setattr(obj, param, data_type(data))
+                                data_v = data_type(data)
+                                setattr(obj, param, data_v)
+                                self.context.signal(param, data_v)
                             except ValueError:
                                 # cannot cast to data_type, pass
                                 pass

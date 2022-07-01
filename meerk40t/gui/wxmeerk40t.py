@@ -7,6 +7,8 @@ from datetime import datetime
 import wx
 from wx import aui
 
+from .propertypanels.inputproperty import InputPropertyPanel
+from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
 
 try:
@@ -339,6 +341,8 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
+        kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
+        kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
         kernel.register("property/ImageNode/SharpenProperty", SharpenPanel)
@@ -390,8 +394,7 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.snapoptions import register_panel_snapoptions
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
-        #
-        # if kernel.root.setting(bool, "developer_mode", False):
+
         from meerk40t.gui.auitoolbars import register_toolbars
 
         kernel.register("wxpane/Toolbars", register_toolbars)

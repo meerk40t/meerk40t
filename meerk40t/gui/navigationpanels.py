@@ -652,14 +652,6 @@ class Drag(wx.Panel):
             orgy = (bb[1] + bb[3]) / 2
         dx = pos[2] - orgx
         dy = pos[3] - orgy
-        # print(
-        #    "x={x0}, y={y0} - x={x1}, y={y1}".format(
-        #        x0=Length(amount=pos[0]).length_mm,
-        #        y0=Length(amount=pos[1]).length_mm,
-        #        x1=Length(amount=pos[2]).length_mm,
-        #        y1=Length(amount=pos[3]).length_mm,
-        #    )
-        # )
 
         self.context(
             "translate {dx} {dy}\n".format(
@@ -919,7 +911,7 @@ class MovePanel(wx.Panel):
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
         )
         units = self.context.units_name
-        default_pos = "0{units}".format(units=units)
+        default_pos = f"0{units}"
         self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, default_pos)
         self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, default_pos)
 
@@ -935,6 +927,8 @@ class MovePanel(wx.Panel):
         self.Bind(
             wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_y
         )
+        self.Bind(wx.EVT_TEXT, self.on_text_position_x, self.text_position_x)
+        self.Bind(wx.EVT_TEXT, self.on_text_position_y, self.text_position_y)
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
@@ -969,6 +963,25 @@ class MovePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def on_text_position_x(self, event):
+        try:
+            pos = self.context.device.length(self.text_position_x.Value, axis=0)
+            self.text_position_x.SetBackgroundColour(None)
+        except ValueError:
+            self.text_position_x.SetBackgroundColour(wx.RED)
+            self.Refresh()
+        self.text_position_x.Refresh()
+        event.Skip()
+
+    def on_text_position_y(self, event):
+        try:
+            pos = self.context.device.length(self.text_position_y.Value, axis=1)
+            self.text_position_y.SetBackgroundColour(None)
+        except ValueError:
+            self.text_position_y.SetBackgroundColour(wx.RED)
+        self.text_position_y.Refresh()
+        event.Skip()
+
     def on_button_navigate_move_to(
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
@@ -985,7 +998,13 @@ class MovePanel(wx.Panel):
                 dlg.ShowModal()
                 dlg.Destroy()
                 return
-            self.context("move %s %s\n" % (x, y))
+            pos_x = self.context.device.length(
+                self.text_position_x.Value, axis=0, new_units=self.context.units_name
+            )
+            pos_y = self.context.device.length(
+                self.text_position_y.Value, axis=1, new_units=self.context.units_name
+            )
+            self.context("move %s %s\n" % (pos_x, pos_y))
         except ValueError:
             return
 
@@ -1049,6 +1068,12 @@ class PulsePanel(wx.Panel):
 
 
 class SizePanel(wx.Panel):
+    object_ratio = None
+    object_x = None
+    object_y = None
+    object_width = None
+    object_height = None
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: SizePanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1078,12 +1103,12 @@ class SizePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
         )
-        self.text_width.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_w)
-        self.text_height.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_h)
-        self.text_width.Bind(wx.EVT_TEXT_ENTER, self.on_enter_w)
-        self.text_height.Bind(wx.EVT_TEXT_ENTER, self.on_enter_h)
-        # self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_lock_toggle, self.btn_lock_ratio)
-        # end wxGlade
+        self.text_width.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_width)
+        self.text_height.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_height)
+        self.text_width.Bind(wx.EVT_TEXT_ENTER, self.on_textenter_width)
+        self.text_height.Bind(wx.EVT_TEXT_ENTER, self.on_textenter_height)
+        self.text_width.Bind(wx.EVT_TEXT, self.on_text_width)
+        self.text_height.Bind(wx.EVT_TEXT, self.on_text_height)
 
     def __set_properties(self):
         # begin wxGlade: SizePanel.__set_properties
@@ -1153,12 +1178,6 @@ class SizePanel(wx.Panel):
     def on_emphasized_elements_changed(self, origin, elements):
         self.update_sizes()
 
-    object_ratio = None
-    object_x = None
-    object_y = None
-    object_width = None
-    object_height = None
-
     def update_sizes(self):
         self.object_x = None
         self.object_y = None
@@ -1219,8 +1238,8 @@ class SizePanel(wx.Panel):
             )
         )
 
-    def on_enter_w(self, event):  # wxGlade: SizePanel.<event_handler>
-        if self.btn_lock_ratio.GetValue():
+    def on_text_width(self, event):
+        try:
             p = self.context
             units = p.units_name
             new_width = Length(
@@ -1229,14 +1248,16 @@ class SizePanel(wx.Panel):
                 preferred_units=units,
                 digits=3,
             )
-            self.text_height.SetValue(
-                (new_width * (1.0 / self.object_ratio)).preferred_length
-            )
-        self.on_button_navigate_resize(event)
-        event.Skip()
+            if self.text_width.GetBackgroundColour() == wx.RED:
+                self.text_width.SetBackgroundColour(None)
+                self.Refresh()
+        except ValueError:
+            if self.text_width.GetBackgroundColour() != wx.RED:
+                self.text_width.SetBackgroundColour(wx.RED)
+                self.Refresh()
 
-    def on_enter_h(self, event):  # wxGlade: SizePanel.<event_handler>
-        if self.btn_lock_ratio.GetValue():
+    def on_text_height(self, event):
+        try:
             p = self.context
             units = p.units_name
             new_height = Length(
@@ -1245,12 +1266,60 @@ class SizePanel(wx.Panel):
                 preferred_units=units,
                 digits=3,
             )
-            self.text_width.SetValue((new_height * self.object_ratio).preferred_length)
-        self.on_button_navigate_resize(event)
+            if self.text_height.GetBackgroundColour() == wx.RED:
+                self.text_height.SetBackgroundColour(None)
+                self.Refresh()
+        except ValueError:
+            if self.text_height.GetBackgroundColour() != wx.RED:
+                self.text_height.SetBackgroundColour(wx.RED)
+                self.Refresh()
+
+    def on_textenter_width(self, event):  # wxGlade: SizePanel.<event_handler>
+        try:
+            if self.btn_lock_ratio.GetValue():
+                p = self.context
+                units = p.units_name
+                new_width = Length(
+                    self.text_width.Value,
+                    relative_length=self.object_width,
+                    preferred_units=units,
+                    digits=3,
+                )
+                self.text_height.SetValue(
+                    (new_width * (1.0 / self.object_ratio)).preferred_length
+                )
+            self.on_button_navigate_resize(event)
+        except ValueError:
+            # This was not a value, reset this to the last actually used value.
+            if self.object_width is not None:
+                self.text_width.SetValue(self.object_width.preferred_length)
+            return
         event.Skip()
 
-    def on_lostfocus_w(self, event):  # wxGlade: SizePanel.<event_handler>
-        if self.btn_lock_ratio.GetValue():
+    def on_textenter_height(self, event):  # wxGlade: SizePanel.<event_handler>
+        try:
+            if self.btn_lock_ratio.GetValue():
+                p = self.context
+                units = p.units_name
+                new_height = Length(
+                    self.text_height.Value,
+                    relative_length=self.object_height,
+                    preferred_units=units,
+                    digits=3,
+                )
+                self.text_width.SetValue(
+                    (new_height * self.object_ratio).preferred_length
+                )
+            self.on_button_navigate_resize(event)
+        except ValueError:
+            # This was not a value, reset this to the last actually used value.
+            if self.object_height is not None:
+                self.text_height.SetValue(self.object_height.preferred_length)
+            return
+        event.Skip()
+
+    def on_lostfocus_width(self, event):  # wxGlade: SizePanel.<event_handler>
+        try:
             p = self.context
             units = p.units_name
             new_width = Length(
@@ -1259,13 +1328,19 @@ class SizePanel(wx.Panel):
                 preferred_units=units,
                 digits=3,
             )
-            self.text_height.SetValue(
-                (new_width * (1.0 / self.object_ratio)).preferred_length
-            )
+            if self.btn_lock_ratio.GetValue():
+                self.text_height.SetValue(
+                    (new_width * (1.0 / self.object_ratio)).preferred_length
+                )
+        except ValueError:
+            # This was not a value, reset this to the last actually used value.
+            if self.object_width is not None:
+                self.text_width.SetValue(self.object_width.preferred_length)
+            return
         event.Skip()
 
-    def on_lostfocus_h(self, event):  # wxGlade: SizePanel.<event_handler>
-        if self.btn_lock_ratio.GetValue():
+    def on_lostfocus_height(self, event):  # wxGlade: SizePanel.<event_handler>
+        try:
             p = self.context
             units = p.units_name
             new_height = Length(
@@ -1274,8 +1349,15 @@ class SizePanel(wx.Panel):
                 preferred_units=units,
                 digits=3,
             )
-            self.text_width.SetValue((new_height * self.object_ratio).preferred_length)
-
+            if self.btn_lock_ratio.GetValue():
+                self.text_width.SetValue(
+                    (new_height * self.object_ratio).preferred_length
+                )
+        except ValueError:
+            # This was not a value, reset this to the last actually used value.
+            if self.object_height is not None:
+                self.text_height.SetValue(self.object_height.preferred_length)
+            return
         event.Skip()
 
 
@@ -1739,7 +1821,11 @@ class JogDistancePanel(wx.Panel):
             jog = self.context.device.length(
                 self.text_jog_amount.GetValue(), new_units=self.context.units_name
             )
+            self.text_jog_amount.SetBackgroundColour(None)
+            self.text_jog_amount.Refresh()
         except ValueError:
+            self.text_jog_amount.SetBackgroundColour(wx.RED)
+            self.text_jog_amount.Refresh()
             return
         self.context.jog_amount = str(jog)
         self.context.signal("jog_amount", str(jog))
