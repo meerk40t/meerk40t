@@ -308,10 +308,9 @@ class BalorDriver:
                 input_value = q.input_value
                 job.raw_wait_for_input(input_value)
 
-                # TODO: REENABLE- CHANGED FOR TESTING
+                # Old constant polling code.
                 # self.rapid_mode()
                 # self.wait_finished()
-                #
                 # self.connection.wait_for_input(q.input_mask, q.input_value)
             else:
                 self.plot_planner.push(q)
