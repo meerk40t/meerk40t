@@ -1813,7 +1813,11 @@ class JogDistancePanel(wx.Panel):
             jog = self.context.device.length(
                 self.text_jog_amount.GetValue(), new_units=self.context.units_name
             )
+            self.text_jog_amount.SetBackgroundColour(None)
+            self.text_jog_amount.Refresh()
         except ValueError:
+            self.text_jog_amount.SetBackgroundColour(wx.RED)
+            self.text_jog_amount.Refresh()
             return
         self.context.jog_amount = str(jog)
         self.context.signal("jog_amount", str(jog))
