@@ -143,6 +143,8 @@ class Sender:
 
     def __init__(self, service, debug=False):
         self.service = service
+        self.foot_pedal_pin = 15
+        self.light_pin = 8
         self._lock = threading.Lock()
         self._terminate_execution = False
         self._footswitch_callback = None
@@ -332,10 +334,11 @@ class Sender:
                 return
 
     def wait_footpedal(self):
+        foot_pedal = 1 << self.foot_pedal_pin
         # Wait footpedal down
-        self.wait_input(0x8000, 0x8000)
+        self.wait_input(foot_pedal, foot_pedal)
         # Wait Footpedal up
-        self.wait_input(0x8000, 0x0000)
+        self.wait_input(foot_pedal, 0x0000)
 
     def execute(
         self, command_list: CommandSource, loop_count=1, callback_finished=None
@@ -450,14 +453,15 @@ class Sender:
         return (self._write_port >> bit) & 1
 
     def light_on(self):
-        self.port_on(bit=8)  # 0x100
+        self.port_on(bit=self.light_pin)  # 0x100
 
     def light_off(self):
-        self.port_off(bit=8)
+        self.port_off(bit=self.light_pin)
 
     def read_port(self):
         port = self.raw_read_port()
-        if port[0] & 0x8000 and self._footswitch_callback:
+        foot_pedal = 1 << self.foot_pedal_pin
+        if port[0] & foot_pedal and self._footswitch_callback:
             callback = self._footswitch_callback
             self._footswitch_callback = None
             callback(port)
