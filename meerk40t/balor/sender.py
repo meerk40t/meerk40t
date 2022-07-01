@@ -143,8 +143,8 @@ class Sender:
 
     def __init__(self, service, debug=False):
         self.service = service
-        self.foot_pedal_pin = 15
-        self.light_pin = 8
+        self.foot_pedal_pin = service.setting(int, "footpedal_pin", 15)
+        self.light_pin = service.setting(int, "light_pin", 8)
         self._lock = threading.Lock()
         self._terminate_execution = False
         self._footswitch_callback = None
@@ -223,6 +223,9 @@ class Sender:
         fly_res_p2 = self.service.fly_res_p2
         fly_res_p3 = self.service.fly_res_p3
         fly_res_p4 = self.service.fly_res_p4
+
+        self.foot_pedal_pin = self.service.setting(int, "footpedal_pin", 15)
+        self.light_pin = self.service.setting(int, "light_pin", 8)
 
         # Unknown function
         self.raw_reset()

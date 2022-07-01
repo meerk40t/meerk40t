@@ -167,6 +167,26 @@ class BalorDevice(Service, ViewPort):
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
             },
+            {
+                "attr": "footpedal_pin",
+                "object": self,
+                "default": 15,
+                "type": int,
+                "label": _("Pin Index of footpedal"),
+                "tip": _(
+                    "What pin is your foot pedal hooked to on the GPIO"
+                ),
+            },
+            {
+                "attr": "light_pin",
+                "object": self,
+                "default": 8,
+                "type": int,
+                "label": _("Pin Index of redlight laser"),
+                "tip": _(
+                    "What pin is your redlight hooked to on the GPIO"
+                ),
+            },
         ]
         self.register_choices("balor", choices)
 
