@@ -65,18 +65,6 @@ op_parent_nodes = (
     "op dots",
     "op hatch",
 )
-operate_nodes = (
-    "op cut",
-    "op raster",
-    "op image",
-    "op engrave",
-    "op dots",
-    "op hatch",
-    "util console",
-    "util wait",
-    "util output",
-    "util input",
-)
 op_nodes = (
     "op cut",
     "op raster",
