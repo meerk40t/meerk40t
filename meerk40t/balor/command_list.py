@@ -444,6 +444,14 @@ class OpLaserControl(Operation):
         sim.laser_on = bool(self.params[0])
 
 
+class OpWaitForInput(Operation):
+    name = "Wait For Input"
+    opcode = 0x8022
+
+    def text_decode(self):
+        return f"Wait for Input: {self.params[0]}"
+
+
 class OpChangeMarkCount(Operation):
     opcode = 0x8023
     # name = "Name"
@@ -1270,6 +1278,9 @@ class CommandList(CommandSource):
 
     def raw_laser_control(self, *args):
         self.append(OpLaserControl(*args))
+
+    def raw_wait_for_input(self, *args):
+        self.append(OpWaitForInput(*args))
 
     def raw_change_mark_count(self, *args):
         self.append(OpChangeMarkCount(*args))
