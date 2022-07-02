@@ -97,7 +97,7 @@ class BalorDriver:
         self.connection.light_mode()
         while job(self.connection):
             time.sleep(0.1)
-        self.connection.rapid_mode()
+        self.connection.abort()
 
     def plot(self, plot):
         """
