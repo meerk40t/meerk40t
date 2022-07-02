@@ -349,7 +349,6 @@ class GalvoController:
             except ConnectionError:
                 return -1, -1, -1, -1
 
-
     def status(self):
         b0, b1, b2, b3 = self.read_port()
         return b3
@@ -386,6 +385,11 @@ class GalvoController:
         self.list_write_port()
         self.list_jump_speed(self.service.default_rapid_speed)
         self.list_fiber_open_mo(1)
+
+
+    #######################
+    # SETS FOR PLOTLIKES
+    #######################
 
     def set_settings(self, settings):
         """
@@ -475,6 +479,8 @@ class GalvoController:
     #######################
 
     def mark(self, x, y):
+        if x == self._last_x and y == self._last_y:
+            return
         if self._mark_speed is not None:
             self.list_mark_speed(self._mark_speed)
         if self._wobble:
@@ -484,11 +490,15 @@ class GalvoController:
             self.list_mark(x, y)
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
+        if x == self._last_x and y == self._last_y:
+            return
         if self._goto_speed is not None:
             self.list_jump_speed(self._goto_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def light(self, x, y, long=None, short=None, distance_limit=None):
+        if x == self._last_x and y == self._last_y:
+            return
         if self.light_on():
             self.list_write_port()
         if self._light_speed is not None:
@@ -496,6 +506,8 @@ class GalvoController:
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def dark(self, x, y, long=None, short=None, distance_limit=None):
+        if x == self._last_x and y == self._last_y:
+            return
         if self.light_off():
             self.list_write_port()
         if self._dark_speed is not None:
@@ -793,7 +805,11 @@ class GalvoController:
         angle = 0
         if time:
             self.list_jump_delay(time)
-        self._list_write(listJumpTo, int(x), int(y), angle, distance)
+        x = int(x)
+        y = int(y)
+        self._list_write(listJumpTo, x, y, angle, distance)
+        self._last_x = x
+        self._last_y = y
 
     def list_end_of_list(self):
         self._list_write(listEndOfList)
@@ -814,7 +830,11 @@ class GalvoController:
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
         if distance > 0xFFFF:
             distance = 0xFFFF
+        x = int(x)
+        y = int(y)
         self._list_write(listMarkTo, x, y, angle, distance)
+        self._last_x = x
+        self._last_y = y
 
     def list_jump_speed(self, speed):
         if self._travel_speed == speed:
