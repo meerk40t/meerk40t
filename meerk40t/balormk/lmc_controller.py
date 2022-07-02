@@ -294,10 +294,18 @@ class GalvoController:
         self.connect_if_needed()
         self.connection.write(self._machine_index, data)
 
+    def convert_bytes_to_words(self, r):
+        b0 = r[1] << 8 | r[0]
+        b1 = r[3] << 8 | r[2]
+        b2 = r[5] << 8 | r[4]
+        b3 = r[7] << 8 | r[6]
+        return b0, b1, b2, b3
+
     def status(self):
         self.read_port()
-        status = self.connection.read(self._machine_index)
-        return status
+        r = self.connection.read(self._machine_index)
+        b3 = r[7] << 8 | r[6]
+        return b3
 
     def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         return bytes(
