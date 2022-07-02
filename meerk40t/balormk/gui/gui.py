@@ -54,13 +54,13 @@ def plugin(service, lifecycle):
                     service.light_default = index
                 v = service.light_default
                 if v == 0:
-                    service("element* hull light loop\n")
+                    service("element* hull light\n")
                 if v == 1:
-                    service("box light loop\n")
+                    service("box light\n")
                 if v == 2:
-                    service("element* ants light loop\n")
+                    service("element* ants light\n")
                 if v == 3:
-                    service("element* path light loop\n")
+                    service("element* path light\n")
                 if v == 4:
                     service("element* path light --speed loop\n")
 
