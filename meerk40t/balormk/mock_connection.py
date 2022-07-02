@@ -51,16 +51,40 @@ class MockConnection:
                     self.send(self._parse_list(packet))
 
     def _parse_list(self, packet):
-        return f"{str(packet)}"
+        commands = []
+        from meerk40t.balormk.lmc_controller import list_command_lookup
+        last_cmd = None
+        repeats = 0
+        for i in range(0, len(packet), 12):
+            b0 = packet[i + 1] << 8 | packet[i + 0]
+            b1 = packet[i + 3] << 8 | packet[i + 2]
+            b2 = packet[i + 5] << 8 | packet[i + 4]
+            b3 = packet[i + 7] << 8 | packet[i + 6]
+            b4 = packet[i + 9] << 8 | packet[i + 8]
+            b5 = packet[i + 11] << 8 | packet[i + 10]
+            string_value = list_command_lookup.get(b0, "Unknown")
+            cmd = f"{b0:04x}:{b1:04x}:{b2:04x}:{b3:04x}:{b4:04x}:{b5:04x} {string_value}"
+            if cmd == last_cmd:
+                repeats += 1
+                continue
+
+            if repeats:
+                commands.append(f"... repeated {repeats} times ...")
+            repeats = 0
+            commands.append(cmd)
+            last_cmd = cmd
+        if repeats:
+            commands.append(f"... repeated {repeats} times ...")
+        return "\n".join(commands)
 
     def _parse_single(self, packet):
+        from meerk40t.balormk.lmc_controller import single_command_lookup
         b0 = packet[1] << 8 | packet[0]
         b1 = packet[3] << 8 | packet[2]
         b2 = packet[5] << 8 | packet[4]
         b3 = packet[7] << 8 | packet[6]
         b4 = packet[9] << 8 | packet[8]
         b5 = packet[11] << 8 | packet[10]
-        from meerk40t.balormk.lmc_controller import single_command_lookup
         string_value = single_command_lookup.get(b0, "Unknown")
         return f"{b0:04x}:{b1:04x}:{b2:04x}:{b3:04x}:{b4:04x}:{b5:04x} {string_value}"
 
