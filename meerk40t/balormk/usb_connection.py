@@ -18,7 +18,7 @@ class USBConnection:
         self.devices = {}
         self.interface = {}
         self.backend_error_code = None
-        self.timeout = 500
+        self.timeout = 100
 
     def find_device(self, index=0):
         _ = self.channel._
