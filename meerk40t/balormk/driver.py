@@ -93,9 +93,11 @@ class BalorDriver:
         """
         self.laser = True
 
-    def loop(self, job):
+    def light_loop(self, job):
+        self.connection.light_mode()
         while job(self.connection):
             time.sleep(0.1)
+        self.connection.rapid_mode()
 
     def plot(self, plot):
         """
@@ -338,14 +340,14 @@ class BalorDriver:
         Expects to be in rapid jogging mode.
         @return:
         """
-        pass
+        self.connection.rapid_mode()
 
     def program_mode(self):
         """
         Expects to run jobs at a speed in a programmed mode.
         @return:
         """
-        pass
+        self.connection.program_mode()
 
     def raster_mode(self, *args):
         """

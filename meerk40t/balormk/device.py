@@ -8,10 +8,24 @@ from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
 
 
 class ElementLightJob:
-    def __init__(self, service, elements):
+    def __init__(
+        self,
+        service,
+        elements,
+        travel_speed=None,
+        jump_delay=200.0,
+        simulation_speed=None,
+        quantization=500,
+        simulate=True,
+    ):
         self.service = service
         self.elements = elements
         self.stopped = False
+        self.travel_speed = travel_speed
+        self.jump_delay = jump_delay
+        self.simulation_speed = simulation_speed
+        self.quantization = quantization
+        self.simulate = simulate
 
     def stop(self):
         self.stopped = True
@@ -21,17 +35,23 @@ class ElementLightJob:
             return False
         con.light_mode()
 
-        x_offset = self.service.length(self.service.redlight_offset_x, axis=0, as_float=True)
-        y_offset = self.service.length(self.service.redlight_offset_y, axis=1, as_float=True)
+        x_offset = self.service.length(
+            self.service.redlight_offset_x, axis=0, as_float=True
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y, axis=1, as_float=True
+        )
         travel_speed = self.service.default_rapid_speed
-        jump_delay = 200
+        jump_delay = self.jump_delay
+
         dark_delay = 8
-        quantization = 50
+        quantization = self.quantization
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
 
         con.light_on()
+        con.light_speed = travel_speed
 
         def mx_rotate(pt):
             if pt is None:
@@ -40,6 +60,7 @@ class ElementLightJob:
                 pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
+
         for e in self.elements:
             if self.stopped:
                 return False
@@ -238,9 +259,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 15,
                 "type": int,
                 "label": _("Pin Index of footpedal"),
-                "tip": _(
-                    "What pin is your foot pedal hooked to on the GPIO"
-                ),
+                "tip": _("What pin is your foot pedal hooked to on the GPIO"),
             },
             {
                 "attr": "light_pin",
@@ -248,9 +267,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 8,
                 "type": int,
                 "label": _("Pin Index of redlight laser"),
-                "tip": _(
-                    "What pin is your redlight hooked to on the GPIO"
-                ),
+                "tip": _("What pin is your redlight hooked to on the GPIO"),
             },
         ]
         self.register_choices("balor", choices)
@@ -613,13 +630,6 @@ class BalorDevice(Service, ViewPort):
             return "spooler", spooler
 
         @self.console_option(
-            "speed",
-            "s",
-            type=bool,
-            action="store_true",
-            help="Run this light job at slow speed for the parts that would have been cuts.",
-        )
-        @self.console_option(
             "travel_speed", "t", type=float, help="Set the travel speed."
         )
         @self.console_option(
@@ -643,7 +653,7 @@ class BalorDevice(Service, ViewPort):
             help="Number of line segments to break this path into",
         )
         @self.console_command(
-            "light",
+            ("light", "light-simulate"),
             input_type="shapes",
             help=_("runs light on events."),
         )
@@ -651,7 +661,6 @@ class BalorDevice(Service, ViewPort):
             command,
             channel,
             _,
-            speed=False,
             travel_speed=None,
             jump_delay=200,
             simulation_speed=None,
@@ -665,8 +674,27 @@ class BalorDevice(Service, ViewPort):
             if data is None:
                 channel("Nothing sent")
                 return
-            self.job = ElementLightJob(self, data)
-            self.spooler.job(("loop", self.job.process))
+            if command == "light":
+                self.job = ElementLightJob(
+                    self,
+                    data,
+                    travel_speed=travel_speed,
+                    jump_delay=jump_delay,
+                    simulation_speed=simulation_speed,
+                    quantization=quantization,
+                    simulate=False,
+                )
+            else:
+                self.job = ElementLightJob(
+                    self,
+                    data,
+                    travel_speed=travel_speed,
+                    jump_delay=jump_delay,
+                    simulation_speed=simulation_speed,
+                    quantization=quantization,
+                    simulate=True,
+                )
+            self.spooler.job(("light_loop", self.job.process))
 
         @self.console_command(
             "stop",
@@ -678,7 +706,6 @@ class BalorDevice(Service, ViewPort):
                 return
             channel("Stopping idle job")
             self.job.stop()
-            self.driver.connection.rapid_mode()
 
         @self.console_command(
             "estop",

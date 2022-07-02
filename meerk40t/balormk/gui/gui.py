@@ -62,7 +62,7 @@ def plugin(service, lifecycle):
                 if v == 3:
                     service("element* path light\n")
                 if v == 4:
-                    service("element* path light --speed loop\n")
+                    service("element* path light-simulate\n")
 
             return light_program
 
