@@ -811,7 +811,7 @@ class BalorDevice(Service, ViewPort):
             help=_("Sends status check"),
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
-            reply = self.driver.connection.get_status()
+            reply = self.driver.connection.status()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
                 return
