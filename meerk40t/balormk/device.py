@@ -50,7 +50,6 @@ class ElementLightJob:
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
 
-        con.light_on()
         con.light_speed = travel_speed
 
         def mx_rotate(pt):
@@ -773,10 +772,12 @@ class BalorDevice(Service, ViewPort):
         def balor_on(command, channel, _, off=None, remainder=None, **kwgs):
             if off == "off":
                 reply = self.driver.connection.light_off()
+                self.driver.connection.write_port()
                 self.redlight_preferred = False
                 channel("Turning off redlight.")
             else:
                 reply = self.driver.connection.light_on()
+                self.driver.connection.write_port()
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 

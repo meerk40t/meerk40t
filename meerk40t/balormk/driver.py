@@ -267,8 +267,10 @@ class BalorDriver:
 
         if self.service.redlight_preferred:
             con.light_on()
+            con.write_port()
         else:
             con.light_off()
+            con.write_port()
 
     def move_abs(self, x, y):
         """

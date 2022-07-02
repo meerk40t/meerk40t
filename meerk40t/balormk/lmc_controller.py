@@ -721,14 +721,12 @@ class GalvoController:
     def light_on(self):
         if not self.is_port(self._light_bit):
             self.port_on(self._light_bit)
-            self.write_port()
             return True
         return False
 
     def light_off(self):
         if self.is_port(self._light_bit):
             self.port_off(self._light_bit)
-            self.write_port()
             return True
         return False
 
