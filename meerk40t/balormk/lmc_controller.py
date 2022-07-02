@@ -1146,7 +1146,7 @@ class GalvoController:
         self._command(WriteAnalogPortX, port)
 
     def read_port(self):
-        self._command(ReadPort)
+        return self._command(ReadPort)
 
     def set_axis_motion_param(self, param):
         self._command(SetAxisMotionParam, param)
