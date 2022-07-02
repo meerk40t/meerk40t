@@ -3,9 +3,11 @@ from copy import copy
 
 from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
-from meerk40t.device.basedevice import DRIVER_STATE_RAPID, DRIVER_STATE_PROGRAM
 from meerk40t.fill.fills import Wobble
 
+DRIVER_STATE_RAPID = 0
+DRIVER_STATE_LIGHT = 1
+DRIVER_STATE_PROGRAM = 2
 
 nop = [0x02, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 empty = bytearray(nop * 0x100)
@@ -229,8 +231,7 @@ class GalvoController:
 
         self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
-        self._active_list = None
-        self._active_index = 0
+
         self._last_x = x
         self._last_y = y
         self._mark_speed = mark_speed
@@ -254,7 +255,12 @@ class GalvoController:
         self._wobble = None
         self._port_bits = 0
         self._machine_index = 0
+
         self.mode = DRIVER_STATE_RAPID
+        self._active_list = None
+        self._active_index = 0
+        self._list_executing = False
+        self._number_of_list_packets = 0
 
     def added(self):
         pass
@@ -350,17 +356,33 @@ class GalvoController:
     #######################
 
     def rapid_mode(self):
-        if self.mode != DRIVER_STATE_RAPID:
-            self._list_end()
-            self.mode = DRIVER_STATE_RAPID
+        if self.mode == DRIVER_STATE_RAPID:
+            return
+        self.list_fiber_open_mo(0)
+        self._list_end()
+        self.mode = DRIVER_STATE_RAPID
+
+    def light_mode(self):
+        if self.mode == DRIVER_STATE_LIGHT:
+            return
+        if self.mode == DRIVER_STATE_PROGRAM:
+            self.list_fiber_open_mo(0)
+        else:
+            self.list_ready()
+            self.port_on(self._light_bit)
+            self.light_on()
+            self.list_write_port()
+        self.mode = DRIVER_STATE_LIGHT
 
     def program_mode(self):
-        if self.mode != DRIVER_STATE_PROGRAM:
-            self.mode = DRIVER_STATE_PROGRAM
-            self.list_ready()
-            # self.list_delay_time(0x0320)
-            self.list_write_port()
-            self.list_jump_speed(self.service.default_rapid_speed)
+        if self.mode == DRIVER_STATE_PROGRAM:
+            return
+        self.mode = DRIVER_STATE_PROGRAM
+        self.list_ready()
+        # self.list_delay_time(0x0320)
+        self.list_write_port()
+        self.list_jump_speed(self.service.default_rapid_speed)
+        self.list_fiber_open_mo(1)
 
     def set_settings(self, settings):
         """
@@ -664,9 +686,10 @@ class GalvoController:
             self._list_end()
         if self._active_list is None:
             self._list_new()
-        self._active_list[
-            self._active_index : self._active_index + 12
-        ] = self._command_to_bytes(command, int(v1), int(v2), int(v3), int(v4), int(v5))
+        index = self._active_index
+        self._active_list[index : index + 12] = self._command_to_bytes(
+            command, int(v1), int(v2), int(v3), int(v4), int(v5)
+        )
         self._active_index += 12
 
     def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
