@@ -753,51 +753,6 @@ class BalorDevice(Service, ViewPort):
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
             self.spooler.job("disconnect")
 
-        @self.console_command(
-            "print",
-            help=_("print balor info about generated job"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_print(command, channel, _, data=None, remainder=None, **kwgs):
-            for d in data:
-                print(d)
-            return "balor", data
-
-        @self.console_argument("filename", type=str, default="balor.png")
-        @self.console_command(
-            "png",
-            help=_("save image of balor write data"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_png(command, channel, _, data=None, filename="balor.png", **kwargs):
-            from PIL import Image, ImageDraw
-
-            data.scale_x = 1.0
-            data.scale_y = 1.0
-            data.size = "decagalvo"
-            im = Image.new("RGB", (0xFFF, 0xFFF), color=0)
-            data.plot(ImageDraw.Draw(im), 0xFFF)
-            im.save(filename, format="png")
-            return "balor", data
-
-        @self.console_command(
-            "loop",
-            help=_("loop the selected job forever"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_loop(command, channel, _, data=None, remainder=None, **kwgs):
-            channel("Looping job: {job}".format(job=str(data)))
-
-            def looping_job():
-                yield "light", data
-                yield "wait_finished"
-
-            self.spooler.set_idle(looping_job)
-            return "balor", data
-
         @self.console_argument("x", type=float, default=0.0)
         @self.console_argument("y", type=float, default=0.0)
         @self.console_command(
