@@ -362,28 +362,16 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                     kind=bkind,
                 )
-            if "right" in button:
-                self.button_actions.append(
-                    [
-                        button_bar,
-                        new_id,
-                        toggle_grp,
-                        button["action"],
-                        False,
-                        button["right"],
-                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
-                )
-            else:
-                self.button_actions.append(
-                    [
-                        button_bar,
-                        new_id,
-                        toggle_grp,
-                        button["action"],
-                        False,
-                        None,
-                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
-                )
+            self.button_actions.append(
+                [
+                    button_bar,
+                    new_id,
+                    toggle_grp,
+                    button["action"],
+                    False,
+                    button.get("right"),
+                ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
+            )
 
             # button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button_clickbutton["action"], id=new_id)
             button_bar.Bind(
