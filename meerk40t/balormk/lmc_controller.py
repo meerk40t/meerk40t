@@ -692,14 +692,6 @@ class GalvoController:
         time.sleep(0.05)
         self.usb_log("Ready")
 
-    def flush(self):
-        self.wait_finished()
-        self.reset_list()
-        self.port_on(bit=0)
-        self.set_fiber_mo(1)
-
-        self.set_fiber_mo(0)
-
     def power(self, power):
         """
         Accepts power in percent, automatically converts to power_ratio
