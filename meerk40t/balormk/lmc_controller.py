@@ -375,6 +375,18 @@ class GalvoController:
             return
         self.mode = DRIVER_STATE_PROGRAM
         self.set_fiber_mo(1)
+        self._ready = None
+        self._speed = None
+        self._travel_speed = None
+        self._frequency = None
+        self._power = None
+        self._pulse_width = None
+
+        self._delay_jump = None
+        self._delay_on = None
+        self._delay_off = None
+        self._delay_poly = None
+        self._delay_end = None
         self.list_ready()
         # self.list_delay_time(0x0320)
         self.list_write_port()
