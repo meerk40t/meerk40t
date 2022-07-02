@@ -361,30 +361,30 @@ class GalvoController:
         if self.mode == DRIVER_STATE_RAPID:
             return
 
-        self.list_fiber_open_mo(0)
         self._list_end()
         if not self._list_executing:
             self.execute_list()
         self._list_executing = False
         self._number_of_list_packets = 0
         self.wait_idle()
+        self.set_fiber_mo(0)
         self.mode = DRIVER_STATE_RAPID
 
     def program_mode(self):
         if self.mode == DRIVER_STATE_PROGRAM:
             return
         self.mode = DRIVER_STATE_PROGRAM
+        self.set_fiber_mo(1)
         self.list_ready()
         # self.list_delay_time(0x0320)
         self.list_write_port()
         self.list_jump_speed(self.service.default_rapid_speed)
-        self.list_fiber_open_mo(1)
 
     def light_mode(self):
         if self.mode == DRIVER_STATE_LIGHT:
             return
         if self.mode == DRIVER_STATE_PROGRAM:
-            self.list_fiber_open_mo(0)
+            self.set_fiber_mo(0)
         else:
             self.list_ready()
             self.port_on(self._light_bit)
