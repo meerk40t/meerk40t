@@ -375,6 +375,7 @@ class GalvoController:
         if self.mode == DRIVER_STATE_PROGRAM:
             return
         self.mode = DRIVER_STATE_PROGRAM
+        self.reset_list()
         self.set_fiber_mo(1)
         self._ready = None
         self._speed = None
