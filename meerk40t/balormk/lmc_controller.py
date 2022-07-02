@@ -360,21 +360,15 @@ class GalvoController:
     def rapid_mode(self):
         if self.mode == DRIVER_STATE_RAPID:
             return
+
         self.list_fiber_open_mo(0)
         self._list_end()
+        if not self._list_executing:
+            self.execute_list()
+        self._list_executing = False
+        self._number_of_list_packets = 0
+        self.wait_idle()
         self.mode = DRIVER_STATE_RAPID
-
-    def light_mode(self):
-        if self.mode == DRIVER_STATE_LIGHT:
-            return
-        if self.mode == DRIVER_STATE_PROGRAM:
-            self.list_fiber_open_mo(0)
-        else:
-            self.list_ready()
-            self.port_on(self._light_bit)
-            self.light_on()
-            self.list_write_port()
-        self.mode = DRIVER_STATE_LIGHT
 
     def program_mode(self):
         if self.mode == DRIVER_STATE_PROGRAM:
@@ -386,6 +380,51 @@ class GalvoController:
         self.list_jump_speed(self.service.default_rapid_speed)
         self.list_fiber_open_mo(1)
 
+    def light_mode(self):
+        if self.mode == DRIVER_STATE_LIGHT:
+            return
+        if self.mode == DRIVER_STATE_PROGRAM:
+            self.list_fiber_open_mo(0)
+        else:
+            self.list_ready()
+            self.port_on(self._light_bit)
+            self.list_write_port()
+        self.mode = DRIVER_STATE_LIGHT
+
+    #######################
+    # LIST APPENDING OPERATIONS
+    #######################
+
+    def _list_end(self):
+        if self._active_list:
+            self.wait_ready()
+            self.send(self._active_list, False)
+            self.set_end_of_list(0)
+            self._number_of_list_packets += 1
+            self._active_list = None
+            self._active_index = 0
+            if self._number_of_list_packets > 2 and not self._list_executing:
+                self.execute_list()
+                self._list_executing = True
+
+    def _list_new(self):
+        self._active_list = copy(empty)
+        self._active_index = 0
+
+    def _list_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
+        if self._active_index >= 0xC00:
+            self._list_end()
+        if self._active_list is None:
+            self._list_new()
+        index = self._active_index
+        self._active_list[index : index + 12] = _command_to_bytes(
+            command, int(v1), int(v2), int(v3), int(v4), int(v5)
+        )
+        self._active_index += 12
+
+    def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
+        cmd = _command_to_bytes(command, v1, v2, v3, v4, v5)
+        return self.send(cmd, read=read)
 
     #######################
     # SETS FOR PLOTLIKES
@@ -694,35 +733,6 @@ class GalvoController:
         self._port_bits &= ~mask  # Unset mask.
         self._port_bits |= values & mask  # Set masked bits.
 
-    #######################
-    # LIST APPENDING OPERATIONS
-    #######################
-
-    def _list_end(self):
-        if self._active_list:
-            self.send(self._active_list, False)
-            self._active_list = None
-            self._active_index = 0
-
-    def _list_new(self):
-        self._active_list = copy(empty)
-        self._active_index = 0
-
-    def _list_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
-        if self._active_index >= 0xC00:
-            self._list_end()
-        if self._active_list is None:
-            self._list_new()
-        index = self._active_index
-        self._active_list[index : index + 12] = _command_to_bytes(
-            command, int(v1), int(v2), int(v3), int(v4), int(v5)
-        )
-        self._active_index += 12
-
-    def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
-        self._list_end()
-        cmd = _command_to_bytes(command, v1, v2, v3, v4, v5)
-        return self.send(cmd, read=read)
 
     #######################
     # UNIT CONVERSIONS
