@@ -369,6 +369,8 @@ class GalvoController:
         self._number_of_list_packets = 0
         self.wait_idle()
         self.set_fiber_mo(0)
+        self.port_off(bit=0)
+        self.write_port()
         self.mode = DRIVER_STATE_RAPID
 
     def program_mode(self):
@@ -377,6 +379,8 @@ class GalvoController:
         self.mode = DRIVER_STATE_PROGRAM
         self.reset_list()
         self.set_fiber_mo(1)
+        self.port_on(bit=0)
+        self.write_port()
         self._ready = None
         self._speed = None
         self._travel_speed = None
@@ -400,8 +404,12 @@ class GalvoController:
             return
         if self.mode == DRIVER_STATE_PROGRAM:
             self.set_fiber_mo(0)
+            self.port_off(bit=0)
+            self.write_port()
         else:
+            self.reset_list()
             self.list_ready()
+            self.port_off(bit=0)
             self.port_on(self._light_bit)
             self.list_write_port()
         self.mode = DRIVER_STATE_LIGHT
