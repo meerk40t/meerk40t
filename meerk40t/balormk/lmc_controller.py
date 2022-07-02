@@ -1,4 +1,3 @@
-import threading
 import time
 from copy import copy
 
@@ -6,17 +5,6 @@ from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
 from meerk40t.device.basedevice import DRIVER_STATE_RAPID, DRIVER_STATE_PROGRAM
 from meerk40t.fill.fills import Wobble
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_SUSPEND,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-)
 
 
 nop = [0x02, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -110,6 +98,41 @@ GetMarkTime = 0x0041
 GetUserData = 0x0036
 SetFlyRes = 0x0032
 
+list_command_lookup = {
+    0x8001: "listJumpTo",
+    0x8002: "listEndOfList",
+    0x8003: "listLaserOnPoint",
+    0x8004: "listDelayTime",
+    0x8005: "listMarkTo",
+    0x8006: "listJumpSpeed",
+    0x8007: "listLaserOnDelay",
+    0x8008: "listLaserOffDelay",
+    0x800A: "listMarkFreq",
+    0x800B: "listMarkPowerRatio",
+    0x800C: "listMarkSpeed",
+    0x800D: "listJumpDelay",
+    0x800F: "listPolygonDelay",
+    0x8011: "listWritePort",
+    0x8012: "listMarkCurrent",
+    0x8013: "listMarkFreq2",
+    0x801A: "listFlyEnable",
+    0x801B: "listQSwitchPeriod",
+    0x801C: "listDirectLaserSwitch",
+    0x801D: "listFlyDelay",
+    0x801E: "listSetCo2FPK",
+    0x801F: "listFlyWaitInput",
+    0x8021: "listFiberOpenMO",
+    0x8022: "listWaitForInput",
+    0x8023: "listChangeMarkCount",
+    0x8024: "listSetWeldPowerWave",
+    0x8025: "listEnableWeldPowerWave",
+    0x8026: "listFiberYLPMPulseWidth",
+    0x8028: "listFlyEncoderCount",
+    0x8029: "listSetDaZWord",
+    0x8050: "listJptSetParam",
+    0x8051: "listReadyMark",
+}
+
 single_command_lookup = {
     0x0002: "DisableLaser",
     0x0004: "EnableLaser",
@@ -181,7 +204,16 @@ class GalvoController:
     single commands.
     """
 
-    def __init__(self, service, x=0x8000, y=0x8000, mark_speed=None, goto_speed=None, light_speed=None, dark_speed=None):
+    def __init__(
+        self,
+        service,
+        x=0x8000,
+        y=0x8000,
+        mark_speed=None,
+        goto_speed=None,
+        light_speed=None,
+        dark_speed=None,
+    ):
         self.service = service
         self.is_shutdown = False  # Shutdown finished.
 
@@ -285,11 +317,9 @@ class GalvoController:
             ]
         )
 
-
     #######################
     # MODE SHIFTS
     #######################
-
 
     def rapid_mode(self):
         if self.mode != DRIVER_STATE_RAPID:
@@ -334,9 +364,7 @@ class GalvoController:
         self.power(
             (float(settings.get("power", self.service.default_power)) / 10.0)
         )  # Convert power, out of 1000
-        self.frequency(
-            float(settings.get("frequency", self.service.default_frequency))
-        )
+        self.frequency(float(settings.get("frequency", self.service.default_frequency)))
         self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
 
         if str(settings.get("timing_enabled", False)).lower() == "true":
@@ -631,8 +659,6 @@ class GalvoController:
 
     def write_blank_correct_file(self):
         self.write_cor_table(False)
-        # for i in range(65 * 65):
-        #     self.write_cor_line(0, 0, 0 if i == 0 else 1)
 
     def _read_correction_file(self, filename):
         """
