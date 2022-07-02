@@ -203,16 +203,16 @@ class USBConnection:
             device = self.find_device(index)
             self.devices[index] = device
             self.set_config(device)
-            interface = self.get_active_config(device)
-            self.interface[index] = interface
-
-            self.detach_kernel(device, interface)
-            try:
-                self.claim_interface(device, interface)
-            except ConnectionRefusedError:
-                # Attempting interface cycle.
-                self.unclaim_interface(device, interface)
-                self.claim_interface(device, interface)
+            # interface = self.get_active_config(device)
+            # self.interface[index] = interface
+            #
+            # self.detach_kernel(device, interface)
+            # try:
+            #     self.claim_interface(device, interface)
+            # except ConnectionRefusedError:
+            #     # Attempting interface cycle.
+            #     self.unclaim_interface(device, interface)
+            #     self.claim_interface(device, interface)
             self.channel(_("USB Connected."))
             return index
         except usb.core.NoBackendError as e:
