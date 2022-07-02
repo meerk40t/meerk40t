@@ -517,7 +517,7 @@ class BalorDevice(Service, ViewPort):
             "spool",
             help=_("spool <command>"),
             regex=True,
-            input_type=(None, "plan", "device", "balor"),
+            input_type=(None, "plan", "device"),
             output_type="spooler",
         )
         def spool(
@@ -528,9 +528,6 @@ class BalorDevice(Service, ViewPort):
             """
             spooler = self.spooler
             if data is not None:
-                if data_type == "balor":
-                    spooler.job(("balor_job", data))
-                    return "spooler", spooler
                 # If plan data is in data, then we copy that and move on to next step.
                 spooler.jobs(data.plan)
                 channel(_("Spooled Plan."))
@@ -600,6 +597,9 @@ class BalorDevice(Service, ViewPort):
             """
             Creates a light job out of elements. If speed is set then
             """
+            # spooler = self.spooler
+            # if data is not None:
+            #     spooler.job(("balor_job", data))
             # channel("Creating light job out of elements.")
             # paths = data
             # if simulation_speed is not None:
