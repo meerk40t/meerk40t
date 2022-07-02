@@ -794,7 +794,7 @@ class GalvoController:
         if self._speed == speed:
             return
         self._speed = speed
-        self._list_write(self._convert_speed(speed))
+        self._list_write(listMarkSpeed, self._convert_speed(speed))
 
     def list_jump_delay(self, delay):
         """
