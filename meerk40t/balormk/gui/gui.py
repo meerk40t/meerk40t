@@ -15,6 +15,8 @@ def plugin(service, lifecycle):
             icons8_connected_50,
             icons8_light_off_50,
             icons8_light_on_50,
+            icons8_quick_mode_on_50,
+            icons8_flash_off_50,
         )
 
         from .balorconfig import BalorConfiguration
@@ -93,6 +95,24 @@ def plugin(service, lifecycle):
                 "icon": icons8_light_off_50,
                 "tip": _("Turn light off"),
                 "action": lambda v: service("stop\n"),
+            },
+        )
+        service.register(
+            "button/control/Redlight_on",
+            {
+                "label": _("Redlight on"),
+                "icon": icons8_quick_mode_on_50,
+                "tip": _("Turn Redlight On"),
+                "action": lambda v: service("red on\n"),
+            },
+        )
+        service.register(
+            "button/control/Redlight_off",
+            {
+                "label": _("Redlight off"),
+                "icon": icons8_flash_off_50,
+                "tip": _("Turn Redlight Off"),
+                "action": lambda v: service("red off\n"),
             },
         )
         service.add_service_delegate(BalorGui(service))
