@@ -579,7 +579,6 @@ class BalorDevice(Service, ViewPort):
         @self.console_command(
             "light",
             input_type="shapes",
-            output_type="balor",
             help=_("runs light on events."),
         )
         def light(
@@ -595,7 +594,7 @@ class BalorDevice(Service, ViewPort):
             **kwgs,
         ):
             """
-            Creates a light job out of elements. If speed is set then
+            Creates a shape based light job for use with the Galvo driver
             """
             # spooler = self.spooler
             # if data is not None:

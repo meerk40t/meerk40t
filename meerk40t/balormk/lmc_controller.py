@@ -710,7 +710,7 @@ class GalvoController:
         if self._power == power:
             return
         self._power = power
-        self.list_mark_power_ratio(self._convert_power(power))
+        self.list_mark_current(self._convert_power(power))
 
     def frequency(self, frequency):
         if self._frequency == frequency:
