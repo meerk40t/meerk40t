@@ -660,10 +660,10 @@ class GalvoController:
         ] = self._command_to_bytes(command, int(v1), int(v2), int(v3), int(v4), int(v5))
         self._active_index += 12
 
-    def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
+    def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
         self._list_end()
         cmd = self._command_to_bytes(command, v1, v2, v3, v4, v5)
-        return self.send(cmd, True)
+        return self.send(cmd, read=read)
 
     #######################
     # UNIT CONVERSIONS
@@ -1049,26 +1049,19 @@ class GalvoController:
     #######################
 
     def disable_laser(self):
-        self._command(DisableLaser)
+        return self._command(DisableLaser)
 
     def enable_laser(self):
-        self._command(EnableLaser)
+        return self._command(EnableLaser)
 
     def execute_list(self):
-        self._command(ExecuteList)
+        return self._command(ExecuteList)
 
     def set_pwm_pulse_width(self, pulse_width):
-        self._command(SetPwmPulseWidth, pulse_width)
+        return self._command(SetPwmPulseWidth, pulse_width)
 
     def get_version(self):
-        self._command(GetVersion)
-        if self.is_shutdown:
-            return
-        try:
-            r = self.connection.read(self._machine_index)
-            return self.convert_bytes_to_words(r)
-        except ConnectionError:
-            return -1, -1, -1, -1
+        return self._command(GetVersion)
 
     def get_serial_number(self):
         return self._command(GetSerialNo)
@@ -1080,97 +1073,97 @@ class GalvoController:
         return self._command(GetPositionXY)
 
     def goto_xy(self, x, y):
-        self._command(GotoXY, int(x), int(y))
+        return self._command(GotoXY, int(x), int(y))
 
     def laser_signal_off(self):
-        self._command(LaserSignalOff)
+        return self._command(LaserSignalOff)
 
     def laser_signal_on(self):
-        self._command(LaserSignalOn)
+        return self._command(LaserSignalOn)
 
     def write_cor_line(self, dx, dy, non_first):
-        self._command(WriteCorLine, dx, dy, non_first)
+        self._command(WriteCorLine, dx, dy, non_first, read=False)
 
     def reset_list(self):
-        self._command(ResetList)
+        return self._command(ResetList)
 
     def restart_list(self):
-        self._command(RestartList)
+        return self._command(RestartList)
 
     def write_cor_table(self, table: bool = True):
-        self._command(WriteCorTable, int(table))
+        return self._command(WriteCorTable, int(table))
 
     def set_control_mode(self, mode):
-        self._command(SetControlMode, mode)
+        return self._command(SetControlMode, mode)
 
     def set_delay_mode(self, mode):
-        self._command(SetDelayMode, mode)
+        return self._command(SetDelayMode, mode)
 
     def set_max_poly_delay(self, delay):
-        self._command(SetMaxPolyDelay, delay)
+        return self._command(SetMaxPolyDelay, delay)
 
     def set_end_of_list(self, end):
-        self._command(SetEndOfList, end)
+        return self._command(SetEndOfList, end)
 
     def set_first_pulse_killer(self, fpk):
-        self._command(SetFirstPulseKiller, fpk)
+        return self._command(SetFirstPulseKiller, fpk)
 
     def set_laser_mode(self, mode):
-        self._command(SetLaserMode, mode)
+        return self._command(SetLaserMode, mode)
 
     def set_timing(self, timing):
-        self._command(SetTiming, timing)
+        return self._command(SetTiming, timing)
 
     def set_standby(self, standby1, standby2):
-        self._command(SetStandby, standby1, standby2)
+        return self._command(SetStandby, standby1, standby2)
 
     def set_pwm_half_period(self, pwm_half_period):
-        self._command(SetPwmPulseWidth, pwm_half_period)
+        return self._command(SetPwmPulseWidth, pwm_half_period)
 
     def stop_execute(self):
-        self._command(StopExecute)
+        return self._command(StopExecute)
 
     def stop_list(self):
-        self._command(StopList)
+        return self._command(StopList)
 
     def write_port(self):
-        self._command(WritePort, self._port_bits)
+        return self._command(WritePort, self._port_bits)
 
     def write_analog_port_1(self, port):
-        self._command(WriteAnalogPort1, port)
+        return self._command(WriteAnalogPort1, port)
 
     def write_analog_port_2(self, port):
-        self._command(WriteAnalogPort2, port)
+        return self._command(WriteAnalogPort2, port)
 
     def write_analog_port_x(self, port):
-        self._command(WriteAnalogPortX, port)
+        return self._command(WriteAnalogPortX, port)
 
     def read_port(self):
         return self._command(ReadPort)
 
     def set_axis_motion_param(self, param):
-        self._command(SetAxisMotionParam, param)
+        return self._command(SetAxisMotionParam, param)
 
     def set_axis_origin_param(self, param):
-        self._command(SetAxisOriginParam, param)
+        return self._command(SetAxisOriginParam, param)
 
     def axis_go_origin(self):
-        self._command(AxisGoOrigin)
+        return self._command(AxisGoOrigin)
 
     def move_axis_to(self, a):
-        self._command(MoveAxisTo)
+        return self._command(MoveAxisTo)
 
     def get_axis_pos(self):
-        self._command(GetAxisPos)
+        return self._command(GetAxisPos)
 
     def get_fly_wait_count(self):
-        self._command(GetFlyWaitCount)
+        return self._command(GetFlyWaitCount)
 
     def get_mark_count(self):
-        self._command(GetMarkCount)
+        return self._command(GetMarkCount)
 
     def set_pfk_param_2(self, param1, param2, param3, param4):
-        self._command(SetFpkParam2, param1, param2, param3, param4)
+        return self._command(SetFpkParam2, param1, param2, param3, param4)
 
     def set_fiber_mo(self, mo):
         """
@@ -1180,58 +1173,58 @@ class GalvoController:
         @param mo:
         @return:
         """
-        self._command(Fiber_SetMo, mo)
+        return self._command(Fiber_SetMo, mo)
 
     def get_fiber_st_mo_ap(self):
-        self._command(Fiber_GetStMO_AP)
+        return self._command(Fiber_GetStMO_AP)
 
     def enable_z(self):
-        self._command(EnableZ)
+        return self._command(EnableZ)
 
     def disable_z(self):
-        self._command(DisableZ)
+        return self._command(DisableZ)
 
     def set_z_data(self, zdata):
-        self._command(SetZData, zdata)
+        return self._command(SetZData, zdata)
 
     def set_spi_simmer_current(self, current):
-        self._command(SetSPISimmerCurrent, current)
+        return self._command(SetSPISimmerCurrent, current)
 
     def set_fpk_param(self, param):
-        self._command(SetFpkParam, param)
+        return self._command(SetFpkParam, param)
 
     def reset(self):
-        self._command(Reset)
+        return self._command(Reset)
 
     def get_fly_speed(self):
-        self._command(GetFlySpeed)
+        return self._command(GetFlySpeed)
 
     def fiber_pulse_width(self):
-        self._command(FiberPulseWidth)
+        return self._command(FiberPulseWidth)
 
     def get_fiber_config_extend(self):
-        self._command(FiberGetConfigExtend)
+        return self._command(FiberGetConfigExtend)
 
     def input_port(self, port):
-        self._command(InputPort, port)
+        return self._command(InputPort, port)
 
     def clear_lock_input_port(self):
-        self._command(InputPort, 0x04)
+        return self._command(InputPort, 0x04)
 
     def enable_lock_input_port(self):
-        self._command(InputPort, 0x02)
+        return self._command(InputPort, 0x02)
 
     def disable_lock_input_port(self):
-        self._command(InputPort, 0x01)
+        return self._command(InputPort, 0x01)
 
     def get_input_port(self):
-        self._command(InputPort)
+        return self._command(InputPort)
 
     def get_mark_time(self):
-        self._command(GetMarkTime)
+        return self._command(GetMarkTime)
 
     def get_user_data(self):
-        self._command(GetUserData)
+        return self._command(GetUserData)
 
     def set_fly_res(self, fly_res1, fly_res2, fly_res3, fly_res4):
-        self._command(SetFlyRes, fly_res1, fly_res2, fly_res3, fly_res4)
+        return self._command(SetFlyRes, fly_res1, fly_res2, fly_res3, fly_res4)
