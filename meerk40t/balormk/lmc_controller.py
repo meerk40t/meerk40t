@@ -541,22 +541,46 @@ class GalvoController:
         fly_res_p2 = self.service.fly_res_p2
         fly_res_p3 = self.service.fly_res_p3
         fly_res_p4 = self.service.fly_res_p4
+
+        self.usb_log("Initializing Laser")
+        serial_number = self.get_serial_number()
+        self.usb_log(f"Serial Number: {serial_number}")
+        version = self.get_version()
+        self.usb_log(f"Version: {version}")
+
         self.reset()
+        self.usb_log("Reset")
         self.write_correction_file(cor_file)
+        self.usb_log("Correction File Sent")
         self.set_control_mode(control_mode)
+        self.usb_log("Control Mode")
         self.set_laser_mode(laser_mode)
+        self.usb_log("Laser Mode")
         self.set_delay_mode(delay_mode)
+        self.usb_log("Delay Mode")
         self.set_timing(timing_mode)
+        self.usb_log("Timing Mode")
         self.set_standby(standby_param_1, standby_param_2)
+        self.usb_log("Setting Standby")
         self.set_first_pulse_killer(first_pulse_killer)
+        self.usb_log("Set First Pulse Killer")
         self.set_pwm_half_period(pwm_half_period)
+        self.usb_log("Set PWM Half-Period")
         self.set_pwm_pulse_width(pwm_pulse_width)
+        self.usb_log("Set PWM pulse width")
         self.set_fiber_mo(0)  # Close
+        self.usb_log("Set Fiber Mo (Closed)")
         self.set_pfk_param_2(fpk2_p1, fpk2_p2, fpk2_p3, fpk2_p4)
+        self.usb_log("First Pulse Killer Parameters")
         self.set_fly_res(fly_res_p1, fly_res_p2, fly_res_p3, fly_res_p4)
+        self.usb_log("On-The-Fly Res")
         self.enable_z()
+        self.usb_log("Z-Enabled")
         self.write_analog_port_1(0x7FF)
+        self.usb_log("Analog Port 1")
         self.enable_z()
+        self.usb_log("Z-Enabled-part2")
+        time.sleep(0.05)
 
     def flush(self):
         self.wait_finished()
@@ -1033,17 +1057,45 @@ class GalvoController:
     def set_pwm_pulse_width(self, pulse_width):
         self._command(SetPwmPulseWidth, pulse_width)
 
-    def get_state(self):
+    def get_version(self):
         self._command(GetVersion)
+        if self.is_shutdown:
+            return
+        try:
+            r = self.connection.read(self._machine_index)
+            return self.convert_bytes_to_words(r)
+        except ConnectionError:
+            return -1, -1, -1, -1
 
     def get_serial_number(self):
         self._command(GetSerialNo)
+        if self.is_shutdown:
+            return
+        try:
+            r = self.connection.read(self._machine_index)
+            return self.convert_bytes_to_words(r)
+        except ConnectionError:
+            return -1, -1, -1, -1
 
     def get_list_status(self):
         self._command(GetListStatus)
+        if self.is_shutdown:
+            return
+        try:
+            r = self.connection.read(self._machine_index)
+            return self.convert_bytes_to_words(r)
+        except ConnectionError:
+            return -1, -1, -1, -1
 
     def get_position_xy(self):
         self._command(GetPositionXY)
+        if self.is_shutdown:
+            return
+        try:
+            r = self.connection.read(self._machine_index)
+            return self.convert_bytes_to_words(r)
+        except ConnectionError:
+            return -1, -1, -1, -1
 
     def goto_xy(self, x, y):
         self._command(GotoXY, int(x), int(y))

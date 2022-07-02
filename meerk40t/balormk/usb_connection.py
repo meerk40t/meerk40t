@@ -210,7 +210,6 @@ class USBConnection:
                 self.channel(_("Device Reset"))
             except usb.core.USBError:
                 self.channel(_("Device did not reset."))
-            time.sleep(0.1)  # Unknown sacrifice time.
             # interface = self.get_active_config(device)
             # self.interface[index] = interface
             #
