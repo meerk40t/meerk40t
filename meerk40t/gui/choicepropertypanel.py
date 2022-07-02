@@ -381,6 +381,8 @@ class ChoicePropertyPanel(ScrolledPanel):
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
+        # Make sure stuff gets scrolled if necessary by default
+        self.SetupScrolling()
 
     def pane_hide(self):
         for attr, listener in self.listeners:
