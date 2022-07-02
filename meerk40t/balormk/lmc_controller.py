@@ -299,12 +299,12 @@ class GalvoController:
 
     def send(self, data, read=True):
         if self.is_shutdown:
-            return
+            return -1, -1, -1, -1
         self.connect_if_needed()
         try:
             self.connection.write(self._machine_index, data)
         except ConnectionError:
-            return
+            return -1, -1, -1, -1
         if read:
             try:
                 r = self.connection.read(self._machine_index)
@@ -502,14 +502,20 @@ class GalvoController:
     def wait_finished(self):
         while not self.is_ready_and_not_busy():
             time.sleep(0.01)
+            if self.is_shutdown:
+                return
 
     def wait_ready(self):
         while not self.is_ready():
             time.sleep(0.01)
+            if self.is_shutdown:
+                return
 
     def wait_idle(self):
         while self.is_busy():
             time.sleep(0.01)
+            if self.is_shutdown:
+                return
 
     def abort(self):
         self.stop_execute()
