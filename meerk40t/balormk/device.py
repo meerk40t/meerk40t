@@ -811,17 +811,13 @@ class BalorDevice(Service, ViewPort):
             help=_("Sends status check"),
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
-            reply = self.driver.connection.status()
+            reply = self.driver.connection.get_version()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
                 return
-            channel("Command replied: {reply}".format(reply=str(reply)))
+            channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
-                channel(
-                    "Bit {index}: {bits}".format(
-                        index="{0:x}".format(index), bits="{0:b}".format(b)
-                    )
-                )
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
             "lstatus",
@@ -832,13 +828,9 @@ class BalorDevice(Service, ViewPort):
             if reply is None:
                 channel("Not connected, cannot get serial number.")
                 return
-            channel("Command replied: {reply}".format(reply=str(reply)))
+            channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
-                channel(
-                    "Bit {index}: {bits}".format(
-                        index="{0:x}".format(index), bits="{0:b}".format(b)
-                    )
-                )
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
             "serial_number",
@@ -850,13 +842,9 @@ class BalorDevice(Service, ViewPort):
                 channel("Not connected, cannot get serial number.")
                 return
 
-            channel("Command replied: {reply}".format(reply=str(reply)))
+            channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
-                channel(
-                    "Bit {index}: {bits}".format(
-                        index="{0:x}".format(index), bits="{0:b}".format(b)
-                    )
-                )
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_argument("filename", type=str, default=None)
         @self.console_command(
