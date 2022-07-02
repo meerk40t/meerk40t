@@ -98,21 +98,17 @@ def plugin(service, lifecycle):
             },
         )
         service.register(
-            "button/control/Redlight_on",
+            "button/control/Redlight",
             {
                 "label": _("Redlight on"),
                 "icon": icons8_quick_mode_on_50,
                 "tip": _("Turn Redlight On"),
                 "action": lambda v: service("red on\n"),
-            },
-        )
-        service.register(
-            "button/control/Redlight_off",
-            {
-                "label": _("Redlight off"),
-                "icon": icons8_flash_off_50,
-                "tip": _("Turn Redlight Off"),
-                "action": lambda v: service("red off\n"),
+                "toggle": True,
+                "toggle_label": _("Redlight off"),
+                "toggle_action": lambda v: service("red off\n"),
+                "toggle_icon": icons8_flash_off_50,
+
             },
         )
         service.add_service_delegate(BalorGui(service))
