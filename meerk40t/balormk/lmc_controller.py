@@ -390,7 +390,8 @@ class GalvoController:
         self._delay_poly = None
         self._delay_end = None
         self.list_ready()
-        # self.list_delay_time(0x0320)
+        if self.service.delay_openmo != 0:
+            self.list_delay_time(int(self.service.delay_openmo * 100))
         self.list_write_port()
         self.list_jump_speed(self.service.default_rapid_speed)
 
