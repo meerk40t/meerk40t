@@ -1,11 +1,10 @@
 import os
 
-from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
+from meerk40t.svgelements import Path, Point, Polygon
 
 
 class BalorDevice(Service, ViewPort):
@@ -551,91 +550,6 @@ class BalorDevice(Service, ViewPort):
             return "spooler", spooler
 
         @self.console_option(
-            "travel_speed", "t", type=float, help="Set the travel speed."
-        )
-        @self.console_option("power", "p", type=float, help="Set the power level")
-        @self.console_option(
-            "frequency", "q", type=float, help="Set the device's qswitch frequency"
-        )
-        @self.console_option(
-            "cut_speed", "s", type=float, help="Set the cut speed of the device"
-        )
-        @self.console_option("power", "p", type=float, help="Set the power level")
-        @self.console_option(
-            "laser_on_delay", "n", type=float, help="Sets the device's laser on delay"
-        )
-        @self.console_option(
-            "laser_off_delay", "f", type=float, help="Sets the device's laser off delay"
-        )
-        @self.console_option(
-            "polygon_delay",
-            "n",
-            type=float,
-            help="Sets the device's laser polygon delay",
-        )
-        @self.console_option(
-            "quantization",
-            "Q",
-            type=int,
-            default=500,
-            help="Number of line segments to break this path into",
-        )
-        @self.console_command(
-            "mark",
-            input_type="shapes",
-            output_type="balor",
-            help=_("runs mark on path."),
-        )
-        def mark(
-            command,
-            channel,
-            _,
-            data=None,
-            travel_speed=None,
-            power=None,
-            frequency=None,
-            cut_speed=None,
-            laser_on_delay=None,
-            laser_off_delay=None,
-            polygon_delay=None,
-            quantization=500,
-            **kwgs,
-        ):
-            """
-            Mark takes in element types from element* or circle or hull and applies the mark settings, and outputs
-            a Balor job type. These could be spooled, looped, debugged or whatever else might be wanted/needed.
-            """
-            channel("Creating mark job out of elements.")
-            paths = data
-            job = CommandList()
-            job.set_mark_settings(
-                travel_speed=self.default_rapid_speed
-                if travel_speed is None
-                else travel_speed,
-                power=self.default_power if power is None else power,
-                frequency=self.default_frequency if frequency is None else frequency,
-                cut_speed=self.default_speed if cut_speed is None else cut_speed,
-                laser_on_delay=self.delay_laser_on
-                if laser_on_delay is None
-                else laser_on_delay,
-                laser_off_delay=self.delay_laser_off
-                if laser_off_delay is None
-                else laser_off_delay,
-                polygon_delay=self.delay_polygon
-                if polygon_delay is None
-                else polygon_delay,
-            )
-            for e in paths:
-                x, y = e.point(0)
-                x, y = self.scene_to_device_position(x, y)
-                job.goto(x, y)
-                for i in range(1, quantization + 1):
-                    x, y = e.point(i / float(quantization))
-                    x, y = self.scene_to_device_position(x, y)
-                    job.mark(x, y)
-            return "balor", job
-
-        @self.console_option(
             "speed",
             "s",
             type=bool,
@@ -686,70 +600,70 @@ class BalorDevice(Service, ViewPort):
             """
             Creates a light job out of elements. If speed is set then
             """
-            channel("Creating light job out of elements.")
-            paths = data
-            if simulation_speed is not None:
-                # Simulation_speed implies speed
-                speed = True
-            if travel_speed is None:
-                travel_speed = self.default_rapid_speed
-            if speed:
-                # Travel at simulation speed.
-                if simulation_speed is None:
-                    # if simulation speed was not set travel at cut_speed
-                    simulation_speed = self.default_speed
-                job = CommandList(light_speed=simulation_speed, goto_speed=travel_speed)
-            else:
-                # Travel at redlight speed
-                job = CommandList(
-                    light_speed=self.redlight_speed, goto_speed=travel_speed
-                )
-            x_offset = self.length(self.redlight_offset_x, axis=0, as_float=True)
-            y_offset = self.length(self.redlight_offset_y, axis=1, as_float=True)
-
-            rotate = Matrix()
-            rotate.post_rotate(self.redlight_angle.radians, 0x8000, 0x8000)
-            rotate.post_translate(x_offset, y_offset)
-
-            def mx_rotate(pt):
-                if pt is None:
-                    return None
-                return (
-                    pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-                    pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-                )
-
-            job.movement = False
-            dark_delay = 8
-            if jump_delay < 0:
-                jump_delay = None
-                dark_delay = None
-            for e in paths:
-                x, y = e.point(0)
-                x, y = self.scene_to_device_position(x, y)
-                x, y = mx_rotate((x, y))
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
-                if isinstance(e, (Polygon, Polyline)):
-                    job.light(x, y, False, jump_delay=jump_delay)
-                    for pt in e:
-                        x, y = self.scene_to_device_position(*pt)
-                        x, y = mx_rotate((x, y))
-                        x = int(x) & 0xFFFF
-                        y = int(y) & 0xFFFF
-                        job.light(x, y, True, jump_delay=dark_delay)
-                    continue
-
-                job.light(x, y, False, jump_delay=jump_delay)
-                for i in range(1, quantization + 1):
-                    x, y = e.point(i / float(quantization))
-                    x, y = self.scene_to_device_position(x, y)
-                    x, y = mx_rotate((x, y))
-                    x = int(x) & 0xFFFF
-                    y = int(y) & 0xFFFF
-                    job.light(x, y, True, jump_delay=dark_delay)
-            job.light_off()
-            return "balor", job
+            # channel("Creating light job out of elements.")
+            # paths = data
+            # if simulation_speed is not None:
+            #     # Simulation_speed implies speed
+            #     speed = True
+            # if travel_speed is None:
+            #     travel_speed = self.default_rapid_speed
+            # if speed:
+            #     # Travel at simulation speed.
+            #     if simulation_speed is None:
+            #         # if simulation speed was not set travel at cut_speed
+            #         simulation_speed = self.default_speed
+            #     job = CommandList(light_speed=simulation_speed, goto_speed=travel_speed)
+            # else:
+            #     # Travel at redlight speed
+            #     job = CommandList(
+            #         light_speed=self.redlight_speed, goto_speed=travel_speed
+            #     )
+            # x_offset = self.length(self.redlight_offset_x, axis=0, as_float=True)
+            # y_offset = self.length(self.redlight_offset_y, axis=1, as_float=True)
+            #
+            # rotate = Matrix()
+            # rotate.post_rotate(self.redlight_angle.radians, 0x8000, 0x8000)
+            # rotate.post_translate(x_offset, y_offset)
+            #
+            # def mx_rotate(pt):
+            #     if pt is None:
+            #         return None
+            #     return (
+            #         pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+            #         pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            #     )
+            #
+            # job.movement = False
+            # dark_delay = 8
+            # if jump_delay < 0:
+            #     jump_delay = None
+            #     dark_delay = None
+            # for e in paths:
+            #     x, y = e.point(0)
+            #     x, y = self.scene_to_device_position(x, y)
+            #     x, y = mx_rotate((x, y))
+            #     x = int(x) & 0xFFFF
+            #     y = int(y) & 0xFFFF
+            #     if isinstance(e, (Polygon, Polyline)):
+            #         job.light(x, y, False, jump_delay=jump_delay)
+            #         for pt in e:
+            #             x, y = self.scene_to_device_position(*pt)
+            #             x, y = mx_rotate((x, y))
+            #             x = int(x) & 0xFFFF
+            #             y = int(y) & 0xFFFF
+            #             job.light(x, y, True, jump_delay=dark_delay)
+            #         continue
+            #
+            #     job.light(x, y, False, jump_delay=jump_delay)
+            #     for i in range(1, quantization + 1):
+            #         x, y = e.point(i / float(quantization))
+            #         x, y = self.scene_to_device_position(x, y)
+            #         x, y = mx_rotate((x, y))
+            #         x = int(x) & 0xFFFF
+            #         y = int(y) & 0xFFFF
+            #         job.light(x, y, True, jump_delay=dark_delay)
+            # job.light_off()
+            return "balor", None
 
         @self.console_command(
             "stop",
@@ -831,52 +745,6 @@ class BalorDevice(Service, ViewPort):
             im = Image.new("RGB", (0xFFF, 0xFFF), color=0)
             data.plot(ImageDraw.Draw(im), 0xFFF)
             im.save(filename, format="png")
-            return "balor", data
-
-        @self.console_command(
-            "debug",
-            help=_("debug balor job block"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_debug(command, channel, _, data=None, **kwargs):
-            c = CommandList()
-            for packet in data.packet_generator():
-                c.add_packet(packet)
-            for operation in c:
-                print(operation.text_debug(show_tracking=True))
-            return "balor", data
-
-        @self.console_argument("filename", type=str, default="balor.bin")
-        @self.console_command(
-            "save",
-            help=_("print balor info about generated job"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_save(
-            command, channel, _, data=None, filename="balor.bin", remainder=None, **kwgs
-        ):
-            with open(filename, "wb") as f:
-                for d in data:
-                    f.write(d)
-            channel("Saved file {filename} to disk.".format(filename=filename))
-            return "balor", data
-
-        @self.console_argument(
-            "repeats", help="Number of times to duplicate the job", default=1
-        )
-        @self.console_command(
-            "duplicate",
-            help=_("duplicate the balor job the given number of times."),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_dup(
-            command, channel, _, data=None, repeats=1, remainder=None, **kwgs
-        ):
-            data.duplicate(1, None, repeats)
-            channel("Job duplicated")
             return "balor", data
 
         @self.console_command(
