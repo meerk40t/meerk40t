@@ -299,6 +299,7 @@ class ConsolePanel(wx.ScrolledWindow):
                     text = ""
                 self.text_main.Newline()
                 self.text_main.BeginStyle(self.style)
+                continue  # New Line is already processed.
             if b == 27:
                 ansi = True
             if ansi:
