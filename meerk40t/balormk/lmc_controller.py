@@ -288,6 +288,7 @@ class GalvoController:
         self._active_index = 0
         self._list_executing = False
         self._number_of_list_packets = 0
+        self.paused = False
 
     def added(self):
         pass
@@ -412,6 +413,8 @@ class GalvoController:
             return
         if self._active_list:
             self.wait_ready()
+            while self.paused:
+                time.sleep(0.3)
             self.send(self._active_list, False)
             self.set_end_of_list(0)
             self._number_of_list_packets += 1
@@ -629,10 +632,12 @@ class GalvoController:
         self.execute_list()
 
     def pause(self):
-        pass
+        self.paused = True
+        self.stop_list()
 
     def resume(self):
-        pass
+        self.restart_list()
+        self.paused = False
 
     def init_laser(self):
         cor_file = self.service.corfile if self.service.corfile_enabled else None

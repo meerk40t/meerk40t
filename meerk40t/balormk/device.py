@@ -713,11 +713,12 @@ class BalorDevice(Service, ViewPort):
             input_type=(None),
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
-            channel("Stopping idle job")
-            self.job.stop()
+            channel("Stopping Job")
+            if self.job is not None:
+                self.job.stop()
             self.spooler.set_idle(None)
             self.spooler.clear_queue()
-            self.driver.connection.abort()
+            self.spooler.realtime("abort")
 
         @self.console_command(
             "pause",
