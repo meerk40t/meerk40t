@@ -590,6 +590,7 @@ class GalvoController:
         self.enable_z()
         self.usb_log("Z-Enabled-part2")
         time.sleep(0.05)
+        self.usb_log("Ready")
 
     def flush(self):
         self.wait_finished()
