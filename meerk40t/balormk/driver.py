@@ -173,7 +173,7 @@ class BalorDriver:
                                 float(settings.get("power", self.service.default_power))
                                 / 10.0
                             )
-                            con.set_power(current_power * on)
+                            con.power(current_power * on)
                     con.mark(x, y)
             elif isinstance(q, DwellCut):
                 start = q.start
@@ -220,11 +220,11 @@ class BalorDriver:
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            con.set_travel_speed(self.service.default_rapid_speed)
+                            con.list_jump_speed(self.service.default_rapid_speed)
                             con.goto(x, y)
                         continue
                     if on == 0:
-                        con.set_travel_speed(self.service.default_rapid_speed)
+                        con.list_jump_speed(self.service.default_rapid_speed)
                         con.goto(x, y)
                     else:
                         # on is in range 0 exclusive and 1 inclusive.
@@ -254,7 +254,7 @@ class BalorDriver:
                                     )
                                     / 10.0
                                 )
-                                con.set_power(current_power * on)
+                                con.power(current_power * on)
                         con.mark(x, y)
         con.list_delay_time(self.service.delay_end)
         con.rapid_mode()
