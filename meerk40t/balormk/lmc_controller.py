@@ -972,7 +972,7 @@ class GalvoController:
         @return:
         """
         # listMarkCurrent
-        raise NotImplementedError
+        self._list_write(listMarkCurrent, current)
 
     def list_mark_frequency_2(self, frequency):
         """
