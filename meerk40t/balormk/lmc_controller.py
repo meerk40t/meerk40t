@@ -422,7 +422,8 @@ class GalvoController:
     #######################
 
     def mark(self, x, y):
-        self.list_mark_speed(self._mark_speed)
+        if self._mark_speed is not None:
+            self.list_mark_speed(self._mark_speed)
         if self._wobble:
             for wx, wy in self._wobble(self._last_x, self._last_y, x, y):
                 self.list_mark(wx, wy)
@@ -430,19 +431,22 @@ class GalvoController:
             self.list_mark(x, y)
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
-        self.list_jump_speed(self._goto_speed)
+        if self._goto_speed is not None:
+            self.list_jump_speed(self._goto_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def light(self, x, y, long=None, short=None, distance_limit=None):
         if self.light_on():
             self.list_write_port()
-        self.list_jump_speed(self._light_speed)
+        if self._light_speed is not None:
+            self.list_jump_speed(self._light_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def dark(self, x, y, long=None, short=None, distance_limit=None):
         if self.light_off():
             self.list_write_port()
-        self.list_jump_speed(self._dark_speed)
+        if self._dark_speed is not None:
+            self.list_jump_speed(self._dark_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def set_xy(self, x, y):
