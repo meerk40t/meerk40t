@@ -623,6 +623,7 @@ class GalvoController:
         self.stop_execute()
         self.set_fiber_mo(0)
         self.reset_list()
+        self._list_new()
         self.send(empty)
         self.set_end_of_list(1)
         self.execute_list()
