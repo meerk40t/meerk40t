@@ -378,9 +378,9 @@ class GalvoController:
             return
         self.mode = DRIVER_STATE_PROGRAM
         self.reset_list()
-        self.set_fiber_mo(1)
         self.port_on(bit=0)
         self.write_port()
+        self.set_fiber_mo(1)
         self._ready = None
         self._speed = None
         self._travel_speed = None
