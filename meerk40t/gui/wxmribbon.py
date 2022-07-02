@@ -4,20 +4,25 @@ import threading
 import wx
 import wx.lib.agw.ribbon as RB
 
-# import wx.ribbon as RB
 from wx import aui
 
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import icons8_connected_50, icons8_opened_folder_50
-from .mwindow import MWindow
+from .icons import  icons8_opened_folder_50
 
 _ = wx.GetTranslation
 
 ID_PAGE_MAIN = 10
 ID_PAGE_TOOL = 20
 ID_PAGE_TOGGLE = 30
+
+
+BUTTONBASE = 0
+PARENT = 1
+ID = 2
+TOGGLE = 3
+GROUP = 4
 
 
 class RibbonButtonBar(RB.RibbonButtonBar):
@@ -260,8 +265,8 @@ class RibbonPanel(wx.Panel):
             return
 
         for button in self.button_actions:
-            button_base = button[0]
-            button_id = button[2]
+            button_base = button[BUTTONBASE]
+            button_id = button[ID]
             action = button_base.action_right
             if action is not None and button_id == active_button:
                 # Found one...
@@ -273,29 +278,29 @@ class RibbonPanel(wx.Panel):
         evt_id = event.GetId()
         for button in self.button_actions:
             # ButtonBase, Parent, ID, Toggle, group
-            button_base = button[0]
-            parent_obj = button[1]
-            button_id = button[2]
-            group = button[4]
+            button_base = button[BUTTONBASE]
+            parent_obj = button[PARENT]
+            button_id = button[ID]
+            group = button[GROUP]
             if button_id == evt_id:
-                button[3] = not button[3]
+                button[TOGGLE] = not button[TOGGLE]
                 if group != "":
-                    if button[3]:  # got toggled
+                    if button[TOGGLE]:  # got toggled
                         for obutton in self.button_actions:
                             # Untoggle all other buttons in this group.
-                            if obutton[4] == group and obutton[2] != button_id:
-                                obutton[1].ToggleButton(obutton[2], False)
+                            if obutton[GROUP] == group and obutton[ID] != button_id:
+                                obutton[PARENT].ToggleButton(obutton[ID], False)
                     else:  # got untoggled...
                         # so let' activate the first button of the group (implicitly defined as default...)
                         for obutton in self.button_actions:
-                            if obutton[4] == group:
-                                obutton[1].ToggleButton(obutton[2], True)
+                            if obutton[GROUP] == group:
+                                obutton[PARENT].ToggleButton(obutton[ID], True)
 
                                 mevent = event.Clone()
-                                mevent.SetId(obutton[2])
+                                mevent.SetId(obutton[ID])
                                 self.button_click(mevent)
                                 return
-                if button[3]:
+                if button[TOGGLE]:
                     button_base.action_original(0)
                     button_base.bitmap_large = button_base.bitmap_large_toggle
                     button_base.label = button_base.label_toggle
@@ -436,8 +441,8 @@ class RibbonPanel(wx.Panel):
 
     def enable_all_buttons_on_bar(self, button_bar, active):
         for button in self.button_actions:
-            if button[0] is button_bar:
-                b_id = button[1]
+            if button[PARENT] is button_bar:
+                b_id = button[ID]
                 button_bar.EnableButton(b_id, active)
 
     @signal_listener("emphasized")
