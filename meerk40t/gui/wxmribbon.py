@@ -271,37 +271,39 @@ class RibbonPanel(wx.Panel):
 
     def button_click(self, event):
         # Let's figure out what kind of action we need to perform
-        # button["action"]
         evt_id = event.GetId()
-        # print("button_click called for %d" % evt_id)
         for button in self.button_actions:
+            # Parent, ID, Toggle, Action, State, Right-Mouse-Action
             parent_obj = button[0]
-            my_id = button[1]
-            my_grp = button[2]
-            my_code = button[3]
-            if my_id == evt_id:
+            button_id = button[1]
+            toggle_group = button[2]
+            action = button[3]
+            if button_id == evt_id:
                 button[4] = not button[4]
-                if my_grp != "":
+                if toggle_group != "":
                     if button[4]:  # got toggled
                         for obutton in self.button_actions:
-                            if obutton[2] == my_grp and obutton[1] != my_id:
+                            if obutton[2] == toggle_group and obutton[1] != button_id:
                                 obutton[0].ToggleButton(obutton[1], False)
                     else:  # got untoggled...
                         # so let' activate the first button of the group (implicitly defined as default...)
                         for obutton in self.button_actions:
-                            if obutton[2] == my_grp:
+                            if obutton[2] == toggle_group:
                                 obutton[0].ToggleButton(obutton[1], True)
                                 mevent = event.Clone()
                                 mevent.SetId(obutton[1])
-                                # print("Calling master...")
                                 self.button_click(mevent)
-                                # exit
                                 return
-                my_code(0)  # Needs a parameter....
+                if isinstance(action, tuple):
+                    if button[4]:
+                        action[0](0)
+                    else:
+                        action[1](0)
+                else:
+                    action(0)  # Needs a parameter....
                 break
 
     def set_buttons(self, new_values, button_bar):
-
         show_tip = not self.context.disable_tool_tips
         button_bar._current_layout = 0
         button_bar._hovered_button = None
@@ -317,7 +319,7 @@ class RibbonPanel(wx.Panel):
         buttons.sort(key=sort_priority)
         for button in buttons:
             new_id = wx.NewId()
-            toggle_grp = ""
+            group = ""
             if "size" in button:
                 resize_param = button["size"]
             else:
@@ -347,8 +349,8 @@ class RibbonPanel(wx.Panel):
                     id=new_id,
                 )
             else:
-                if "toggle" in button:
-                    toggle_grp = button["toggle"]
+                if "group" in button:
+                    group = button["group"]
                     bkind = RB.RIBBON_BUTTON_TOGGLE
                 else:
                     bkind = RB.RIBBON_BUTTON_NORMAL
@@ -366,8 +368,8 @@ class RibbonPanel(wx.Panel):
                 [
                     button_bar,
                     new_id,
-                    toggle_grp,
-                    button["action"],
+                    group,
+                    action,
                     False,
                     button.get("right"),
                 ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
