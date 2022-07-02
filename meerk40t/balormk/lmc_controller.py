@@ -350,7 +350,7 @@ class GalvoController:
                 return -1, -1, -1, -1
 
     def status(self):
-        b0, b1, b2, b3 = self.read_port()
+        b0, b1, b2, b3 = self.get_version()
         return b3
 
     #######################
