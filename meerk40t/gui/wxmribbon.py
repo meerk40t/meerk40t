@@ -364,6 +364,10 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                     kind=bkind,
                 )
+            action = button["action"]
+            if "toggle_action" in button:
+                action = (action, button["toggle_action"])
+
             self.button_actions.append(
                 [
                     button_bar,
