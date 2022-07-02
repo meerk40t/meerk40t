@@ -196,6 +196,33 @@ BUSY = 0x04
 READY = 0x20
 
 
+def _bytes_to_words(r):
+    b0 = r[1] << 8 | r[0]
+    b1 = r[3] << 8 | r[2]
+    b2 = r[5] << 8 | r[4]
+    b3 = r[7] << 8 | r[6]
+    return b0, b1, b2, b3
+
+
+def _command_to_bytes(command, v1=0, v2=0, v3=0, v4=0, v5=0):
+    return bytes(
+        [
+            command & 0xFF,
+            command >> 8 & 0xFF,
+            v1 & 0xFF,
+            v1 >> 8 & 0xFF,
+            v2 & 0xFF,
+            v2 >> 8 & 0xFF,
+            v3 & 0xFF,
+            v3 >> 8 & 0xFF,
+            v4 & 0xFF,
+            v4 >> 8 & 0xFF,
+            v5 & 0xFF,
+            v5 >> 8 & 0xFF,
+        ]
+    )
+
+
 class GalvoController:
     """
     Galvo controller is tasked with sending queued data to the controller board and ensuring that the connection to the
@@ -322,34 +349,10 @@ class GalvoController:
             except ConnectionError:
                 return -1, -1, -1, -1
 
-    def convert_bytes_to_words(self, r):
-        b0 = r[1] << 8 | r[0]
-        b1 = r[3] << 8 | r[2]
-        b2 = r[5] << 8 | r[4]
-        b3 = r[7] << 8 | r[6]
-        return b0, b1, b2, b3
 
     def status(self):
         b0, b1, b2, b3 = self.read_port()
         return b3
-
-    def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
-        return bytes(
-            [
-                command & 0xFF,
-                command >> 8 & 0xFF,
-                v1 & 0xFF,
-                v1 >> 8 & 0xFF,
-                v2 & 0xFF,
-                v2 >> 8 & 0xFF,
-                v3 & 0xFF,
-                v3 >> 8 & 0xFF,
-                v4 & 0xFF,
-                v4 >> 8 & 0xFF,
-                v5 & 0xFF,
-                v5 >> 8 & 0xFF,
-            ]
-        )
 
     #######################
     # MODE SHIFTS
@@ -687,14 +690,14 @@ class GalvoController:
         if self._active_list is None:
             self._list_new()
         index = self._active_index
-        self._active_list[index : index + 12] = self._command_to_bytes(
+        self._active_list[index : index + 12] = _command_to_bytes(
             command, int(v1), int(v2), int(v3), int(v4), int(v5)
         )
         self._active_index += 12
 
     def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
         self._list_end()
-        cmd = self._command_to_bytes(command, v1, v2, v3, v4, v5)
+        cmd = _command_to_bytes(command, v1, v2, v3, v4, v5)
         return self.send(cmd, read=read)
 
     #######################
