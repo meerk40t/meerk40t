@@ -297,14 +297,24 @@ class GalvoController:
                 time.sleep(0.5)
                 continue
 
-    def send(self, data):
+    def send(self, data, read=True):
         if self.is_shutdown:
             return
         self.connect_if_needed()
         try:
             self.connection.write(self._machine_index, data)
         except ConnectionError:
-            pass
+            return
+        if read:
+            try:
+                r = self.connection.read(self._machine_index)
+                b0 = r[1] << 8 | r[0]
+                b1 = r[3] << 8 | r[2]
+                b2 = r[5] << 8 | r[4]
+                b3 = r[7] << 8 | r[6]
+                return b0, b1, b2, b3
+            except ConnectionError:
+                return -1, -1, -1, -1
 
     def convert_bytes_to_words(self, r):
         b0 = r[1] << 8 | r[0]
@@ -314,15 +324,8 @@ class GalvoController:
         return b0, b1, b2, b3
 
     def status(self):
-        self.read_port()
-        if self.is_shutdown:
-            return
-        try:
-            r = self.connection.read(self._machine_index)
-            b3 = r[7] << 8 | r[6]
-            return b3
-        except ConnectionError:
-            return -1
+        b0, b1, b2, b3 = self.read_port()
+        return b3
 
     def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         return bytes(
@@ -639,7 +642,7 @@ class GalvoController:
 
     def _list_end(self):
         if self._active_list:
-            self.send(self._active_list)
+            self.send(self._active_list, False)
             self._active_list = None
             self._active_index = 0
 
@@ -660,7 +663,7 @@ class GalvoController:
     def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         self._list_end()
         cmd = self._command_to_bytes(command, v1, v2, v3, v4, v5)
-        self.send(cmd)
+        return self.send(cmd, True)
 
     #######################
     # UNIT CONVERSIONS
@@ -1068,34 +1071,13 @@ class GalvoController:
             return -1, -1, -1, -1
 
     def get_serial_number(self):
-        self._command(GetSerialNo)
-        if self.is_shutdown:
-            return
-        try:
-            r = self.connection.read(self._machine_index)
-            return self.convert_bytes_to_words(r)
-        except ConnectionError:
-            return -1, -1, -1, -1
+        return self._command(GetSerialNo)
 
     def get_list_status(self):
-        self._command(GetListStatus)
-        if self.is_shutdown:
-            return
-        try:
-            r = self.connection.read(self._machine_index)
-            return self.convert_bytes_to_words(r)
-        except ConnectionError:
-            return -1, -1, -1, -1
+        return self._command(GetListStatus)
 
     def get_position_xy(self):
-        self._command(GetPositionXY)
-        if self.is_shutdown:
-            return
-        try:
-            r = self.connection.read(self._machine_index)
-            return self.convert_bytes_to_words(r)
-        except ConnectionError:
-            return -1, -1, -1, -1
+        return self._command(GetPositionXY)
 
     def goto_xy(self, x, y):
         self._command(GotoXY, int(x), int(y))
