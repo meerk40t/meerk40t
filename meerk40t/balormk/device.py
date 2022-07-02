@@ -906,11 +906,7 @@ class BalorDevice(Service, ViewPort):
                 return
             x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
             x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
-            channel(
-                "Top Right: ({cx}, {cy}). Lower, Left: ({mx},{my})".format(
-                    cx=x0, cy=y0, mx=x1, my=y1
-                )
-            )
+            channel(f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})")
 
         @self.console_argument("lens_size", type=str, default=None)
         @self.console_command(
