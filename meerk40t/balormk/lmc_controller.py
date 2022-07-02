@@ -408,6 +408,8 @@ class GalvoController:
     #######################
 
     def _list_end(self):
+        if self._active_list is None:
+            return
         if self._active_list:
             self.wait_ready()
             self.send(self._active_list, False)

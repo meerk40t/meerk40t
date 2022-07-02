@@ -4,7 +4,72 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Path, Point, Polygon
+from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
+
+
+class ElementLightJob:
+    def __init__(self, service, elements):
+        self.service = service
+        self.elements = elements
+        self.stopped = False
+
+    def stop(self):
+        self.stopped = True
+
+    def process(self, con):
+        if self.stopped:
+            return False
+        con.light_mode()
+
+        x_offset = self.service.length(self.service.redlight_offset_x, axis=0, as_float=True)
+        y_offset = self.service.length(self.service.redlight_offset_y, axis=1, as_float=True)
+        travel_speed = self.service.default_rapid_speed
+        jump_delay = 200
+        dark_delay = 8
+        quantization = 50
+        rotate = Matrix()
+        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        rotate.post_translate(x_offset, y_offset)
+
+        con.light_on()
+
+        def mx_rotate(pt):
+            if pt is None:
+                return None
+            return (
+                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            )
+        for e in self.elements:
+            if self.stopped:
+                return False
+            x, y = e.point(0)
+            x, y = self.service.scene_to_device_position(x, y)
+            x, y = mx_rotate((x, y))
+            x = int(x) & 0xFFFF
+            y = int(y) & 0xFFFF
+            if isinstance(e, (Polygon, Polyline)):
+                con.dark(x, y, long=dark_delay, short=dark_delay)
+                for pt in e:
+                    x, y = self.service.scene_to_device_position(*pt)
+                    x, y = mx_rotate((x, y))
+                    x = int(x) & 0xFFFF
+                    y = int(y) & 0xFFFF
+                    con.light(x, y, long=jump_delay, short=jump_delay)
+                continue
+
+            con.dark(x, y, long=dark_delay, short=dark_delay)
+            for i in range(1, quantization + 1):
+                if self.stopped:
+                    return False
+                x, y = e.point(i / float(quantization))
+                x, y = self.service.scene_to_device_position(x, y)
+                x, y = mx_rotate((x, y))
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                con.light(x, y, long=jump_delay, short=jump_delay)
+        con.light_off()
+        return True
 
 
 class BalorDevice(Service, ViewPort):
@@ -17,6 +82,7 @@ class BalorDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "balor"
+        self.job = None
 
         _ = kernel.translation
 
@@ -596,82 +662,23 @@ class BalorDevice(Service, ViewPort):
             """
             Creates a shape based light job for use with the Galvo driver
             """
-            # spooler = self.spooler
-            # if data is not None:
-            #     spooler.job(("balor_job", data))
-            # channel("Creating light job out of elements.")
-            # paths = data
-            # if simulation_speed is not None:
-            #     # Simulation_speed implies speed
-            #     speed = True
-            # if travel_speed is None:
-            #     travel_speed = self.default_rapid_speed
-            # if speed:
-            #     # Travel at simulation speed.
-            #     if simulation_speed is None:
-            #         # if simulation speed was not set travel at cut_speed
-            #         simulation_speed = self.default_speed
-            #     job = CommandList(light_speed=simulation_speed, goto_speed=travel_speed)
-            # else:
-            #     # Travel at redlight speed
-            #     job = CommandList(
-            #         light_speed=self.redlight_speed, goto_speed=travel_speed
-            #     )
-            # x_offset = self.length(self.redlight_offset_x, axis=0, as_float=True)
-            # y_offset = self.length(self.redlight_offset_y, axis=1, as_float=True)
-            #
-            # rotate = Matrix()
-            # rotate.post_rotate(self.redlight_angle.radians, 0x8000, 0x8000)
-            # rotate.post_translate(x_offset, y_offset)
-            #
-            # def mx_rotate(pt):
-            #     if pt is None:
-            #         return None
-            #     return (
-            #         pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-            #         pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-            #     )
-            #
-            # job.movement = False
-            # dark_delay = 8
-            # if jump_delay < 0:
-            #     jump_delay = None
-            #     dark_delay = None
-            # for e in paths:
-            #     x, y = e.point(0)
-            #     x, y = self.scene_to_device_position(x, y)
-            #     x, y = mx_rotate((x, y))
-            #     x = int(x) & 0xFFFF
-            #     y = int(y) & 0xFFFF
-            #     if isinstance(e, (Polygon, Polyline)):
-            #         job.light(x, y, False, jump_delay=jump_delay)
-            #         for pt in e:
-            #             x, y = self.scene_to_device_position(*pt)
-            #             x, y = mx_rotate((x, y))
-            #             x = int(x) & 0xFFFF
-            #             y = int(y) & 0xFFFF
-            #             job.light(x, y, True, jump_delay=dark_delay)
-            #         continue
-            #
-            #     job.light(x, y, False, jump_delay=jump_delay)
-            #     for i in range(1, quantization + 1):
-            #         x, y = e.point(i / float(quantization))
-            #         x, y = self.scene_to_device_position(x, y)
-            #         x, y = mx_rotate((x, y))
-            #         x = int(x) & 0xFFFF
-            #         y = int(y) & 0xFFFF
-            #         job.light(x, y, True, jump_delay=dark_delay)
-            # job.light_off()
-            return "balor", None
+            if data is None:
+                channel("Nothing sent")
+                return
+            self.job = ElementLightJob(self, data)
+            self.spooler.job(("loop", self.job.process))
 
         @self.console_command(
             "stop",
             help=_("stops the idle running job"),
         )
         def stoplight(command, channel, _, data=None, remainder=None, **kwgs):
+            if self.job is None:
+                channel("No job is currently set")
+                return
             channel("Stopping idle job")
-            self.spooler.set_idle(None)
-            self.driver.connection.abort()
+            self.job.stop()
+            self.driver.connection.rapid_mode()
 
         @self.console_command(
             "estop",
@@ -680,6 +687,7 @@ class BalorDevice(Service, ViewPort):
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Stopping idle job")
+            self.job.stop()
             self.spooler.set_idle(None)
             self.spooler.clear_queue()
             self.driver.connection.abort()

@@ -93,6 +93,10 @@ class BalorDriver:
         """
         self.laser = True
 
+    def loop(self, job):
+        while job(self.connection):
+            time.sleep(0.1)
+
     def plot(self, plot):
         """
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized
