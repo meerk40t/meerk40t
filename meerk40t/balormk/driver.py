@@ -50,6 +50,12 @@ class BalorDriver:
     def service_detach(self):
         self._shutdown = True
 
+    def connect(self):
+        self.connection.connect_if_needed()
+
+    def disconnect(self):
+        self.connection.disconnect()
+
     def hold_work(self):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.

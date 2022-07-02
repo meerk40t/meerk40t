@@ -283,7 +283,11 @@ class ConsolePanel(wx.ScrolledWindow):
         @param lines:
         @return:
         """
-        self.text_main.SetInsertionPointEnd()
+        try:
+            self.text_main.SetInsertionPointEnd()
+        except RuntimeError:
+            # Console is shutdown.
+            return
         ansi = False
         ansi_text = ""
         text = ""

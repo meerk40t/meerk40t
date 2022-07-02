@@ -265,6 +265,13 @@ class GalvoController:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
+    def disconnect(self):
+        try:
+            self.connection.close(self._machine_index)
+        except (ConnectionError, ConnectionRefusedError):
+            pass
+        self.connection = None
+
     def connect_if_needed(self):
         if self.connection is None:
             if self.service.setting(bool, "mock", False):
@@ -280,6 +287,8 @@ class GalvoController:
                 if v < 0:
                     self.count += 1
                     time.sleep(0.3)
+                    if self.is_shutdown:
+                        return
                     continue
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
@@ -292,7 +301,10 @@ class GalvoController:
         if self.is_shutdown:
             return
         self.connect_if_needed()
-        self.connection.write(self._machine_index, data)
+        try:
+            self.connection.write(self._machine_index, data)
+        except ConnectionError:
+            pass
 
     def convert_bytes_to_words(self, r):
         b0 = r[1] << 8 | r[0]
@@ -303,9 +315,14 @@ class GalvoController:
 
     def status(self):
         self.read_port()
-        r = self.connection.read(self._machine_index)
-        b3 = r[7] << 8 | r[6]
-        return b3
+        if self.is_shutdown:
+            return
+        try:
+            r = self.connection.read(self._machine_index)
+            b3 = r[7] << 8 | r[6]
+            return b3
+        except ConnectionError:
+            return -1
 
     def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         return bytes(

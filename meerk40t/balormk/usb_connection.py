@@ -244,10 +244,9 @@ class USBConnection:
         packet_length = len(packet)
         assert(packet_length == 0xC or packet_length == 0xC00)
         if packet is not None:
-            device = self.devices[index]
             try:
                 # endpoint, data, timeout
-                device.write(
+                self.devices[index].write(
                     endpoint=WRITE_ENDPOINT, data=packet, timeout=self.timeout
                 )
             except usb.core.USBError as e:
@@ -255,6 +254,8 @@ class USBConnection:
 
                 self.channel(str(e))
                 raise ConnectionError
+            except KeyError:
+                raise ConnectionError("Not Connected.")
 
     def read(self, index=0):
         try:
@@ -266,3 +267,5 @@ class USBConnection:
 
             self.channel(str(e))
             raise ConnectionError
+        except KeyError:
+            raise ConnectionError("Not Connected.")
