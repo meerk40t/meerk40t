@@ -424,6 +424,14 @@ class BalorDevice(Service, ViewPort):
                 "label": _("End Delay"),
                 "tip": _("Delay amount for the end TC"),
             },
+            {
+                "attr": "delay_openmo",
+                "object": self,
+                "default": 8.0,
+                "type": float,
+                "label": _("Open MO delay"),
+                "tip": _("OpenMO delay in ms"),
+            },
         ]
         self.register_choices("balor-global-timing", choices)
 
