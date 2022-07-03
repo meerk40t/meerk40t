@@ -94,6 +94,89 @@ class ElementLightJob:
         return True
 
 
+class LiveSelectionLightJob:
+    def __init__(
+        self,
+        service,
+    ):
+        self.service = service
+        self.stopped = False
+
+    def stop(self):
+        self.stopped = True
+
+    def process(self, con):
+        if self.stopped:
+            return False
+        con.light_mode()
+
+        jump_delay = self.service.delay_jump_long
+        dark_delay = self.service.delay_jump_short
+
+        rotate = Matrix()
+        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        x_offset = self.service.length(
+            self.service.redlight_offset_x, axis=0, as_float=True
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y, axis=1, as_float=True
+        )
+        rotate.post_translate(x_offset, y_offset)
+
+        con.light_speed = self.service.default_rapid_speed
+
+        def mx_rotate(pt):
+            if pt is None:
+                return None
+            return (
+                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            )
+
+        bounds = self.service.elements.selected_area()
+        if bounds is None:
+            margin = 5000
+            points = [
+                (0x8000 - margin, 0x8000),
+                (0x8000, 0x8000),
+                (0x8000, 0x8000 - margin),
+                (0x8000, 0x8000),
+                (0x8000 + margin, 0x8000),
+                (0x8000, 0x8000),
+                (0x8000, 0x8000 + margin),
+                (0x8000, 0x8000),
+            ]
+        else:
+            xmin, ymin, xmax, ymax = bounds
+            points = [
+                (xmin, ymin),
+                (xmax, ymin),
+                (xmax, ymax),
+                (xmin, ymax),
+            ]
+
+        if self.stopped:
+            return False
+
+        x, y = points[0]
+        x, y = self.service.scene_to_device_position(x, y)
+        x, y = mx_rotate((x, y))
+        x = int(x) & 0xFFFF
+        y = int(y) & 0xFFFF
+        con.dark(x, y, long=dark_delay, short=dark_delay)
+
+        for pt in points:
+            if self.stopped:
+                return False
+            x, y = self.service.scene_to_device_position(*pt)
+            x, y = mx_rotate((x, y))
+            x = int(x) & 0xFFFF
+            y = int(y) & 0xFFFF
+            con.light(x, y, long=jump_delay, short=jump_delay)
+        con.light_off()
+        return True
+
+
 class BalorDevice(Service, ViewPort):
     """
     The BalorDevice is a MeerK40t service for the device type. It should be the main method of interacting with
@@ -427,6 +510,30 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Delay amount for the end TC"),
             },
             {
+                "attr": "delay_jump_long",
+                "object": self,
+                "default": 200.0,
+                "type": float,
+                "label": _("Jump Delay (long)"),
+                "tip": _("Delay for a long jump distance"),
+            },
+            {
+                "attr": "delay_jump_short",
+                "object": self,
+                "default": 8,
+                "type": float,
+                "label": _("Jump Delay (short)"),
+                "tip": _("Delay for a short jump distance"),
+            },
+            {
+                "attr": "delay_distance_long",
+                "object": self,
+                "default": "10mm",
+                "type": Length,
+                "label": _("Long jump distance"),
+                "tip": _("Distance divide between long and short jump distances"),
+            },
+            {
                 "attr": "delay_openmo",
                 "object": self,
                 "default": 8.0,
@@ -703,6 +810,14 @@ class BalorDevice(Service, ViewPort):
                     quantization=quantization,
                     simulate=True,
                 )
+            self.spooler.job(("light_loop", self.job.process))
+
+        @self.console_command(
+            "select-light",
+            help=_("Execute selection light idle job")
+        )
+        def select_light(**kwargs):
+            self.job = LiveSelectionLightJob(self)
             self.spooler.job(("light_loop", self.job.process))
 
         @self.console_command(
