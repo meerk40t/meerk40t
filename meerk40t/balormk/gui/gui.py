@@ -63,6 +63,8 @@ def plugin(service, lifecycle):
                     service("element* path light\n")
                 if v == 4:
                     service("element* path light-simulate\n")
+                if v == 5:
+                    service("select-light\n")
 
             return light_program
 
@@ -85,6 +87,7 @@ def plugin(service, lifecycle):
                     (_("Ants"), light_click(2)),
                     (_("Full"), light_click(3)),
                     (_("Simulate"), light_click(4)),
+                    (_("Live"), light_click(5)),
                 ),
             },
         )
