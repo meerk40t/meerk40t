@@ -668,7 +668,6 @@ class GalvoController:
         self.port_off(bit=0)
         self.write_port()
         self.mode = DRIVER_STATE_RAPID
-        b0, self._last_y, self._last_x, b3 = self.get_position_xy()
 
     def pause(self):
         self.paused = True
