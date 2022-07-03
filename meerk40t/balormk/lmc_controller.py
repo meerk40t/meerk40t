@@ -640,6 +640,7 @@ class GalvoController:
         self.send(empty)
         self.set_end_of_list(1)
         self.execute_list()
+        self.mode = DRIVER_STATE_RAPID
 
     def pause(self):
         self.paused = True
