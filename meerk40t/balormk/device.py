@@ -875,7 +875,7 @@ class BalorDevice(Service, ViewPort):
                 self.job.stop()
             self.spooler.set_idle(None)
             self.spooler.clear_queue()
-            self.spooler.realtime("reset")
+            self.driver.set_abort()
 
         @self.console_command(
             "pause",
