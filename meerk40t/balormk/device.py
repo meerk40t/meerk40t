@@ -1049,6 +1049,19 @@ class BalorDevice(Service, ViewPort):
             for index, b in enumerate(reply):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
+        @self.console_command(
+            "fiber_config_extend",
+            help=_("Checks the fiber config extend"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fiber_config_extend()
+            if reply is None:
+                channel("Not connected, cannot get fiber config extend.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
 
         @self.console_command(
             "serial_number",
