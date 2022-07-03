@@ -691,12 +691,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/tools/Scene",
             {
-                "label": _("Move"),
+                "label": _("Select"),
                 "icon": icons8_cursor_50,
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "none",
             },
         )
 
@@ -707,8 +708,9 @@ class MeerK40t(MWindow):
                 "icon": icons8_place_marker_50,
                 "tip": _("Set position to given location"),
                 "action": lambda v: kernel.elements("tool relocate\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "relocate",
             },
         )
 
@@ -719,8 +721,9 @@ class MeerK40t(MWindow):
                 "icon": icons8_pencil_drawing_50,
                 "tip": _("Add a free-drawing element"),
                 "action": lambda v: kernel.elements("tool draw\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "draw",
             },
         )
 
@@ -731,8 +734,9 @@ class MeerK40t(MWindow):
                 "icon": icons8_oval_50,
                 "tip": _("Add an ellipse element"),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "ellipse",
             },
         )
 
@@ -743,8 +747,9 @@ class MeerK40t(MWindow):
                 "icon": icons8_circle_50,
                 "tip": _("Add a circle element"),
                 "action": lambda v: kernel.elements("tool circle\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "circle",
             },
         )
 
@@ -757,8 +762,9 @@ class MeerK40t(MWindow):
                     "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool polygon\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "polygon",
             },
         )
 
@@ -771,8 +777,9 @@ class MeerK40t(MWindow):
                     "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool polyline\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "polyline",
             },
         )
 
@@ -783,8 +790,9 @@ class MeerK40t(MWindow):
                 "icon": icons8_rectangular_50,
                 "tip": _("Add a rectangular element"),
                 "action": lambda v: kernel.elements("tool rect\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "rect",
             },
         )
 
@@ -795,8 +803,9 @@ class MeerK40t(MWindow):
                 "icon": icons8_point_50,
                 "tip": _("Add point to the scene"),
                 "action": lambda v: kernel.elements("tool point\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "point",
             },
         )
 
@@ -809,8 +818,9 @@ class MeerK40t(MWindow):
                     "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool vector\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "vector",
             },
         )
 
@@ -821,8 +831,9 @@ class MeerK40t(MWindow):
                 "icon": icons8_type_50,
                 "tip": _("Add a text element"),
                 "action": lambda v: kernel.elements("tool text\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "text",
             },
         )
 
@@ -835,8 +846,9 @@ class MeerK40t(MWindow):
                     "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool measure\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
+                "identifier": "measure",
             },
         )
         # Default Size for smaller buttons
@@ -1251,7 +1263,7 @@ class MeerK40t(MWindow):
                 return
 
     def __set_panes(self):
-        self.context.setting(bool, "pane_lock", True)
+        self.context.setting(bool, "pane_lock", False)
 
         for register_panel in list(self.context.lookup_all("wxpane")):
             register_panel(self, self.context)
@@ -1623,7 +1635,7 @@ class MeerK40t(MWindow):
                 pass
 
         self.panes_menu.AppendSeparator()
-        item = self.main_menubar.panereset = self.panes_menu.Append(
+        item = self.main_menubar.lockpane = self.panes_menu.Append(
             ID_MENU_PANE_LOCK, _("Lock Panes"), "", wx.ITEM_CHECK
         )
         item.Check(self.context.pane_lock)
@@ -2547,6 +2559,8 @@ class MeerK40t(MWindow):
     def load(self, pathname):
         try:
             try:
+                # Reset to standard tool
+                self.context("tool none\n")
                 self.context.signal("freeze_tree", True)
                 # wxPython 4.1.+
                 with wx.BusyInfo(

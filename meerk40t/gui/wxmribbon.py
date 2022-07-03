@@ -4,20 +4,25 @@ import threading
 import wx
 import wx.lib.agw.ribbon as RB
 
-# import wx.ribbon as RB
 from wx import aui
 
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import icons8_connected_50, icons8_opened_folder_50
-from .mwindow import MWindow
+from .icons import icons8_opened_folder_50
 
 _ = wx.GetTranslation
 
 ID_PAGE_MAIN = 10
 ID_PAGE_TOOL = 20
 ID_PAGE_TOGGLE = 30
+
+
+BUTTONBASE = 0
+PARENT = 1
+ID = 2
+TOGGLE = 3
+GROUP = 4
 
 
 class RibbonButtonBar(RB.RibbonButtonBar):
@@ -182,8 +187,6 @@ class RibbonPanel(wx.Panel):
         :param `event`: a :class:`MouseEvent` event to be processed.
         """
         evt_id = event.GetId()
-        # cursor = event.GetPosition()
-        # print("Id%d, cursor=%s" % (evt_id, cursor))
         bar = None
         active_button = 0
         for item in self.ribbon_bars:
@@ -200,46 +203,101 @@ class RibbonPanel(wx.Panel):
             return
 
         for button in self.button_actions:
-            my_id = button[1]
-            my_code = button[5]
-            if my_code is not None and my_id == active_button:
+            button_base = button[BUTTONBASE]
+            button_id = button[ID]
+            action = button_base.action_right
+            if action is not None and button_id == active_button:
                 # Found one...
-                my_code(0)  # Needs a parameter....
+                action(0)  # Needs a parameter....
                 break
 
     def button_click(self, event):
         # Let's figure out what kind of action we need to perform
-        # button["action"]
         evt_id = event.GetId()
-        # print("button_click called for %d" % evt_id)
         for button in self.button_actions:
-            parent_obj = button[0]
-            my_id = button[1]
-            my_grp = button[2]
-            my_code = button[3]
-            if my_id == evt_id:
-                button[4] = not button[4]
-                if my_grp != "":
-                    if button[4]:  # got toggled
+            # ButtonBase, Parent, ID, Toggle, group
+            button_base = button[BUTTONBASE]
+            parent_obj = button[PARENT]
+            button_id = button[ID]
+            group = button[GROUP]
+            if button_id == evt_id:
+                button[TOGGLE] = not button[TOGGLE]
+                if group != "":
+                    if button[TOGGLE]:  # got toggled
                         for obutton in self.button_actions:
-                            if obutton[2] == my_grp and obutton[1] != my_id:
-                                obutton[0].ToggleButton(obutton[1], False)
+                            # Untoggle all other buttons in this group.
+                            if obutton[GROUP] == group and obutton[ID] != button_id:
+                                obutton[PARENT].ToggleButton(obutton[ID], False)
                     else:  # got untoggled...
                         # so let' activate the first button of the group (implicitly defined as default...)
                         for obutton in self.button_actions:
-                            if obutton[2] == my_grp:
-                                obutton[0].ToggleButton(obutton[1], True)
+                            if obutton[GROUP] == group:
+                                obutton[PARENT].ToggleButton(obutton[ID], True)
+
                                 mevent = event.Clone()
-                                mevent.SetId(obutton[1])
-                                # print("Calling master...")
+                                mevent.SetId(obutton[ID])
                                 self.button_click(mevent)
-                                # exit
                                 return
-                my_code(0)  # Needs a parameter....
+                if button_base.action is not None:
+                    button_base.action(0)
+                if button_base.state_pressed is not None:
+                    if button[TOGGLE]:
+                        self._restore_button_state(button_base, button_base.state_pressed)
+                    else:
+                        self._restore_button_state(button_base, button_base.state_unpressed)
+                    self.ensure_realize()
                 break
 
-    def set_buttons(self, new_values, button_bar):
+    def _restore_button_state(self, base_button, key):
+        if not hasattr(base_button, "alternatives"):
+            return
+        alt = base_button.alternatives[key]
+        base_button.action = alt.get("action", base_button.action)
+        base_button.label = alt.get("label", base_button.label)
+        base_button.help_string = alt.get("help_string", base_button.help_string)
+        base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
+        base_button.bitmap_large_disabled = alt.get(
+            "bitmap_large_disabled", base_button.bitmap_large_disabled
+        )
+        base_button.bitmap_small = alt.get("bitmap_small", base_button.bitmap_small)
+        base_button.bitmap_small_disabled = alt.get(
+            "bitmap_small_disabled", base_button.bitmap_small_disabled
+        )
+        base_button.client_data = alt.get("client_data", base_button.client_data)
+        base_button.id = alt.get("id", base_button.id)
+        base_button.kind = alt.get("kind", base_button.kind)
+        # base_button.state = alt.get("state", base_button.state)
 
+    def _store_button_state(self, base_button, key, **kwargs):
+        if not hasattr(base_button, "alternatives"):
+            base_button.alternatives = {}
+        base_button.alternatives[key] = {
+            "action": base_button.action,
+            "label": base_button.label,
+            "help_string": base_button.help_string,
+            "bitmap_large": base_button.bitmap_large,
+            "bitmap_large_disabled": base_button.bitmap_large_disabled,
+            "bitmap_small": base_button.bitmap_small,
+            "bitmap_small_disabled": base_button.bitmap_small_disabled,
+            "client_data": base_button.client_data,
+            "id": base_button.id,
+            "kind": base_button.kind,
+            # "state": base_button.state,
+        }
+        key_dict = base_button.alternatives[key]
+        for k in kwargs:
+            if kwargs[k] is not None:
+                key_dict[k] = kwargs[k]
+
+    def _update_button_state(self, base_button, key, **kwargs):
+        if not hasattr(base_button, "alternatives"):
+            base_button.alternatives = {}
+        key_dict = base_button.alternatives[key]
+        for k in kwargs:
+            if kwargs[k] is not None:
+                key_dict[k] = kwargs[k]
+
+    def set_buttons(self, new_values, button_bar):
         show_tip = not self.context.disable_tool_tips
         button_bar._current_layout = 0
         button_bar._hovered_button = None
@@ -255,42 +313,50 @@ class RibbonPanel(wx.Panel):
         buttons.sort(key=sort_priority)
         for button in buttons:
             new_id = wx.NewId()
-            toggle_grp = ""
-            if "size" in button:
-                resize_param = button["size"]
-            else:
-                resize_param = None
-            if "alt-action" in button:
-                button_bar.AddHybridButton(
+            group = ""
+            resize_param = button.get("size")
+            if "multi" in button:
+                b = button_bar.AddHybridButton(
                     button_id=new_id,
                     label=button["label"],
                     bitmap=button["icon"].GetBitmap(resize=resize_param),
                     help_string=button["tip"] if show_tip else "",
                 )
 
-                def drop_bind(alt_action):
+                def drop_bind(multi_action, button_obj):
                     def on_dropdown(event):
+                        def drop_and_act(multi_opt):
+                            def on_dropdown_click(event):
+                                key_id = multi_opt.get("identifier")
+                                setattr(self.context, button_obj.save_id, key_id)
+                                button_obj.state_unpressed = key_id
+                                self._restore_button_state(button_obj, key_id)
+                                self.ensure_realize()
+
+                            return on_dropdown_click
                         menu = wx.Menu()
-                        for act_label, act_func in alt_action:
+                        for v in multi_action:
                             hybrid_id = wx.NewId()
-                            menu.Append(hybrid_id, act_label)
-                            button_bar.Bind(wx.EVT_MENU, act_func, id=hybrid_id)
+                            menu.Append(hybrid_id, v.get("label"))
+                            button_bar.Bind(wx.EVT_MENU, drop_and_act(v), id=hybrid_id)
                         event.PopupMenu(menu)
 
                     return on_dropdown
 
                 button_bar.Bind(
                     RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                    drop_bind(button["alt-action"]),
+                    drop_bind(button["multi"], b),
                     id=new_id,
                 )
             else:
-                if "toggle" in button:
-                    toggle_grp = button["toggle"]
+                if "group" in button:
+                    group = button["group"]
                     bkind = RB.RIBBON_BUTTON_TOGGLE
                 else:
                     bkind = RB.RIBBON_BUTTON_NORMAL
-                button_bar.AddButton(
+                if "toggle" in button:
+                    bkind = RB.RIBBON_BUTTON_TOGGLE
+                b = button_bar.AddButton(
                     button_id=new_id,
                     label=button["label"],
                     bitmap=button["icon"].GetBitmap(resize=resize_param),
@@ -300,30 +366,67 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                     kind=bkind,
                 )
-            if "right" in button:
-                self.button_actions.append(
-                    [
-                        button_bar,
-                        new_id,
-                        toggle_grp,
-                        button["action"],
-                        False,
-                        button["right"],
-                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
-                )
-            else:
-                self.button_actions.append(
-                    [
-                        button_bar,
-                        new_id,
-                        toggle_grp,
-                        button["action"],
-                        False,
-                        None,
-                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
-                )
+            b.button_dict = button
+            b.state_pressed = None
+            b.state_unpressed = None
+            b.identifier = button.get("identifier")
+            b.action = button.get("action")
+            b.action_right = button.get("right")
+            if "multi" in button:
+                multi_action = button["multi"]
+                multi_ident = button.get("identifier")
+                b.save_id = multi_ident
+                initial_id = self.context.setting(str, b.save_id, "default")
 
-            # button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button_clickbutton["action"], id=new_id)
+                for i, v in enumerate(multi_action):
+                    key = v.get("identifier", i)
+                    self._store_button_state(b, key)
+                    self._update_button_state(b, key, **v)
+                    if "icon" in v:
+                        v_icon = button.get("icon")
+                        self._update_button_state(
+                            b,
+                            key,
+                            bitmap_large=v_icon.GetBitmap(resize=resize_param),
+                            bitmap_large_disabled=v_icon.GetBitmap(
+                                resize=resize_param, color=Color("grey")
+                            ),
+                        )
+                    if key == initial_id:
+                        self._restore_button_state(b, key)
+            if "toggle" in button:
+                b.state_pressed = "toggle"
+                b.state_unpressed = "original"
+
+                self._store_button_state(b, "original")
+
+                toggle_action = button["toggle"]
+                key = toggle_action.get("identifier", "toggle")
+                self._store_button_state(
+                    b,
+                    key,
+                    **toggle_action
+                )
+                if "icon" in toggle_action:
+                    toggle_icon = toggle_action.get("icon")
+                    self._update_button_state(
+                        b,
+                        key,
+                        bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
+                        bitmap_large_disabled=toggle_icon.GetBitmap(
+                            resize=resize_param, color=Color("grey")
+                        ),
+                    )
+            self.button_actions.append(
+                [
+                    b,
+                    button_bar,
+                    new_id,
+                    False,
+                    group,
+                ]  # ButtonBase, Parent, ID, Toggle, group
+            )
+
             button_bar.Bind(
                 RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
             )
@@ -363,8 +466,8 @@ class RibbonPanel(wx.Panel):
 
     def enable_all_buttons_on_bar(self, button_bar, active):
         for button in self.button_actions:
-            if button[0] is button_bar:
-                b_id = button[1]
+            if button[PARENT] is button_bar:
+                b_id = button[ID]
                 button_bar.EnableButton(b_id, active)
 
     @signal_listener("emphasized")
@@ -377,6 +480,32 @@ class RibbonPanel(wx.Panel):
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
     #     self._ribbon.ShowPanels(True)
+
+    @signal_listener("tool_changed")
+    def on_tool_changed(self, origin, newtool=None, *args):
+        # Signal provides a tuple with (togglegroup, id)
+        if newtool is None:
+            return
+        if isinstance(newtool, (list, tuple)):
+            group = newtool[0].lower() if newtool[0] is not None else ""
+            identifier = newtool[1].lower() if newtool[1] is not None else ""
+        else:
+            group = newtool
+            identifier = ""
+
+        for button in self.button_actions:
+            button_base = button[BUTTONBASE]
+            parent_obj = button[PARENT]
+            button_id = button[ID]
+            bgroup = button[GROUP]
+
+            if bgroup == group:
+                # Reset toggle state
+                if button_base.identifier == identifier:
+                    # Set toggle state
+                    parent_obj.ToggleButton(button_id, True)
+                else:
+                    parent_obj.ToggleButton(button_id, False)
 
     @property
     def is_dark(self):
@@ -511,9 +640,10 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
+        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_changing)
         # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, "Click me")
         # self.ribbon_pages.append(minmaxpage)
+        self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGED, self.on_page_changed)
 
         self.ensure_realize()
 
@@ -523,7 +653,7 @@ class RibbonPanel(wx.Panel):
     def pane_hide(self):
         pass
 
-    # def on_page_change(self, event):
+    # def on_page_changing(self, event):
     #     page = event.GetPage()
     #     p_id = page.GetId()
     #     # print ("Page Changing to ", p_id)
@@ -534,6 +664,13 @@ class RibbonPanel(wx.Panel):
     #             msg += s + "\n"
     #         wx.MessageBox(msg, "Info", wx.OK | wx.ICON_INFORMATION)
     #         event.Veto()
+
+    def on_page_changed(self, event):
+        page = event.GetPage()
+        p_id = page.GetId()
+        if p_id != ID_PAGE_TOOL:
+            self.context("tool none\n")
+        event.Skip()
 
 
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16

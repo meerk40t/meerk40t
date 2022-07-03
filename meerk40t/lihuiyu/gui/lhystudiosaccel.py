@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
@@ -8,7 +9,7 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class LhystudiosAccelerationChartPanel(wx.Panel):
+class LhystudiosAccelerationChartPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -97,6 +98,7 @@ class LhystudiosAccelerationChartPanel(wx.Panel):
         )
         # end wxGlade
         self.set_widgets()
+        self.SetupScrolling()
 
     def __set_properties(self):
         self.checkbox_vector_accel_enable.SetToolTip(
@@ -149,105 +151,105 @@ class LhystudiosAccelerationChartPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: AccelBuild.__do_layout
         sizer_accel = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_13 = wx.StaticBoxSizer(
+        sizer_hraster = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Horizontal Raster")), wx.VERTICAL
         )
         sizer_19 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_18 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_16 = wx.StaticBoxSizer(
+        sizer_vraster = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Vertical Raster")), wx.VERTICAL
         )
         sizer_22 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_21 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_17 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_8 = wx.StaticBoxSizer(
+        sizer_vector = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Vector")), wx.VERTICAL
         )
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_10 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_9 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_8.Add(self.checkbox_vector_accel_enable, 0, 0, 0)
+        sizer_vector.Add(self.checkbox_vector_accel_enable, 0, 0, 0)
         label_2 = wx.StaticText(self, wx.ID_ANY, "1 <")
         sizer_9.Add(label_2, 1, 0, 0)
         sizer_9.Add(self.text_vector_accel_1, 1, 0, 0)
         label_3 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_9.Add(label_3, 1, 0, 0)
-        sizer_8.Add(sizer_9, 1, wx.EXPAND, 0)
+        sizer_vector.Add(sizer_9, 0, 0, 0)
         label_4 = wx.StaticText(self, wx.ID_ANY, "2 <")
         sizer_10.Add(label_4, 1, 0, 0)
         sizer_10.Add(self.text_vector_accel_2, 1, 0, 0)
         label_5 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_10.Add(label_5, 1, 0, 0)
-        sizer_8.Add(sizer_10, 1, wx.EXPAND, 0)
+        sizer_vector.Add(sizer_10, 0, 0, 0)
         label_6 = wx.StaticText(self, wx.ID_ANY, "3 <")
         sizer_11.Add(label_6, 1, 0, 0)
         sizer_11.Add(self.text_vector_accel_3, 1, 0, 0)
         label_7 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_11.Add(label_7, 1, 0, 0)
-        sizer_8.Add(sizer_11, 1, wx.EXPAND, 0)
+        sizer_vector.Add(sizer_11, 0, 0, 0)
         label_8 = wx.StaticText(self, wx.ID_ANY, "4 <")
         sizer_12.Add(label_8, 1, 0, 0)
         sizer_12.Add(self.text_vector_accel_4, 1, 0, 0)
         label_13 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_12.Add(label_13, 1, 0, 0)
-        sizer_8.Add(sizer_12, 1, wx.EXPAND, 0)
-        sizer_accel.Add(sizer_8, 1, wx.EXPAND, 0)
-        sizer_16.Add(self.checkbox_vraster_accel_enable, 0, 0, 0)
+        sizer_vector.Add(sizer_12, 0, 0, 0)
+        sizer_accel.Add(sizer_vector, 1, wx.EXPAND, 0)
+        sizer_vraster.Add(self.checkbox_vraster_accel_enable, 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "1 <")
         sizer_17.Add(label_9, 1, 0, 0)
         sizer_17.Add(self.text_vraster_accel_1, 1, 0, 0)
         label_10 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_17.Add(label_10, 1, 0, 0)
-        sizer_16.Add(sizer_17, 1, wx.EXPAND, 0)
+        sizer_vraster.Add(sizer_17, 0, 0, 0)
         label_11 = wx.StaticText(self, wx.ID_ANY, "2 <")
         sizer_20.Add(label_11, 1, 0, 0)
         sizer_20.Add(self.text_vraster_accel_2, 1, 0, 0)
         label_12 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_20.Add(label_12, 1, 0, 0)
-        sizer_16.Add(sizer_20, 1, wx.EXPAND, 0)
+        sizer_vraster.Add(sizer_20, 0, 0, 0)
         label_14 = wx.StaticText(self, wx.ID_ANY, "3 <")
         sizer_21.Add(label_14, 1, 0, 0)
         sizer_21.Add(self.text_vraster_accel_3, 1, 0, 0)
         label_23 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_21.Add(label_23, 1, 0, 0)
-        sizer_16.Add(sizer_21, 1, wx.EXPAND, 0)
+        sizer_vraster.Add(sizer_21, 0, 0, 0)
         label_24 = wx.StaticText(self, wx.ID_ANY, "4 <")
         sizer_22.Add(label_24, 1, 0, 0)
         sizer_22.Add(self.text_vraster_accel_4, 1, 0, 0)
         label_25 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_22.Add(label_25, 1, 0, 0)
-        sizer_16.Add(sizer_22, 1, wx.EXPAND, 0)
-        sizer_accel.Add(sizer_16, 1, wx.EXPAND, 0)
-        sizer_13.Add(self.checkbox_raster_accel_enable, 0, 0, 0)
+        sizer_vraster.Add(sizer_22, 0, 0, 0)
+        sizer_accel.Add(sizer_vraster, 1, wx.EXPAND, 0)
+        sizer_hraster.Add(self.checkbox_raster_accel_enable, 0, 0, 0)
         label_15 = wx.StaticText(self, wx.ID_ANY, "1 <")
         sizer_14.Add(label_15, 1, 0, 0)
         sizer_14.Add(self.text_raster_accel_1, 1, 0, 0)
         label_16 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_14.Add(label_16, 1, 0, 0)
-        sizer_13.Add(sizer_14, 1, wx.EXPAND, 0)
+        sizer_hraster.Add(sizer_14, 0, 0, 0)
         label_17 = wx.StaticText(self, wx.ID_ANY, "2 <")
         sizer_15.Add(label_17, 1, 0, 0)
         sizer_15.Add(self.text_raster_accel_2, 1, 0, 0)
         label_18 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_15.Add(label_18, 1, 0, 0)
-        sizer_13.Add(sizer_15, 1, wx.EXPAND, 0)
+        sizer_hraster.Add(sizer_15, 0, 0, 0)
         label_19 = wx.StaticText(self, wx.ID_ANY, "3 <")
         sizer_18.Add(label_19, 1, 0, 0)
         sizer_18.Add(self.text_raster_accel_3, 1, 0, 0)
         label_20 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
         sizer_18.Add(label_20, 1, 0, 0)
-        sizer_13.Add(sizer_18, 1, wx.EXPAND, 0)
+        sizer_hraster.Add(sizer_18, 0, 0, 0)
         label_21 = wx.StaticText(self, wx.ID_ANY, "4 <")
         sizer_19.Add(label_21, 1, 0, 0)
         sizer_19.Add(self.text_raster_accel_4, 1, 0, 0)
         label_22 = wx.StaticText(self, wx.ID_ANY, "mm/s")
         sizer_19.Add(label_22, 1, 0, 0)
-        sizer_13.Add(sizer_19, 1, wx.EXPAND, 0)
-        sizer_accel.Add(sizer_13, 4, wx.EXPAND, 0)
+        sizer_hraster.Add(sizer_19, 0, 0, 0)
+        sizer_accel.Add(sizer_hraster, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_accel)
         self.Layout()
         # end wxGlade

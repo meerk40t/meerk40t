@@ -103,7 +103,7 @@ class ScenePanel(wx.Panel):
             literal += "ctrl+"
         if self.isAltPressed and not keystates[2]:
             literal += "alt+"
-        # key = evt.GetKeyCode()
+        key = evt.GetKeyCode()
         # print("Key-Up: %f - literal: %s" % (key, literal))
 
         if "shift+" in literal:
@@ -118,6 +118,13 @@ class ScenePanel(wx.Panel):
             if self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = False
                 self.scene.event(self.scene.last_position, "kb_alt_release", None)
+        if key == 27: # ESC
+            # Is a tool active? If yes -> stop it, if no -> reset tool to none
+            if self.scene.tool_active:
+                self.scene.event(self.scene.last_position, "lost", None)
+                self.scene.request_refresh()
+            else:
+                self.scene.context("tool none\n")
         evt.Skip()
 
     def on_size(self, event=None):

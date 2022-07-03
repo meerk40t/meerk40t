@@ -116,10 +116,12 @@ class BalorControllerPanel(wx.ScrolledWindow):
             self.context("usb_connect\n")
 
     def pane_show(self):
-        self.context.channel("balor").watch(self.update_text)
+        name = self.context.device.label
+        self.context.channel(f"{name}/usb").watch(self.update_text)
 
     def pane_hide(self):
-        self.context.channel("balor").unwatch(self.update_text)
+        name = self.context.device.label
+        self.context.channel(f"{name}/usb").unwatch(self.update_text)
 
 
 class BalorController(MWindow):

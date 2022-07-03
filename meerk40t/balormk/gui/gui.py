@@ -15,6 +15,8 @@ def plugin(service, lifecycle):
             icons8_connected_50,
             icons8_light_off_50,
             icons8_light_on_50,
+            icons8_quick_mode_on_50,
+            icons8_flash_off_50,
         )
 
         from .balorconfig import BalorConfiguration
@@ -45,25 +47,6 @@ def plugin(service, lifecycle):
             },
         )
 
-        def light_click(index=None):
-            def light_program(event=None):
-                service.setting(int, "light_default", 0)
-                if index is not None:
-                    service.light_default = index
-                v = service.light_default
-                if v == 0:
-                    service("element* hull light loop\n")
-                if v == 1:
-                    service("box light loop\n")
-                if v == 2:
-                    service("element* ants light loop\n")
-                if v == 3:
-                    service("element* path light loop\n")
-                if v == 4:
-                    service("element* path light --speed loop\n")
-
-            return light_program
-
         service.register("property/RasterOpNode/Balor", BalorOperationPanel)
         service.register("property/CutOpNode/Balor", BalorOperationPanel)
         service.register("property/EngraveOpNode/Balor", BalorOperationPanel)
@@ -76,23 +59,54 @@ def plugin(service, lifecycle):
                 "label": _("Galvo Light"),
                 "icon": icons8_light_on_50,
                 "tip": _("Runs outline on selection"),
-                "action": light_click(),
-                "alt-action": (
-                    (_("Hull"), light_click(0)),
-                    (_("Box"), light_click(1)),
-                    (_("Ants"), light_click(2)),
-                    (_("Full"), light_click(3)),
-                    (_("Simulate"), light_click(4)),
-                ),
+                "identifier": "light_default",
+                "multi": [
+                    {
+                        "identifier": "live",
+                        "label": _("Live"),
+                        "action": lambda e: service("select-light\n")
+                    },
+                    {
+                        "identifier": "hull",
+                        "label": _("Hull"),
+                        "action": lambda e: service("element* hull light\n")
+                    },
+                    {
+                        "identifier": "box",
+                        "label": _("Box"),
+                        "action": lambda e: service("box light\n")
+                    },
+                    {
+                        "identifier": "ants",
+                        "label": _("Ants"),
+                        "action": lambda e: service("element* ants light\n")
+                    },
+                    {
+                        "identifier": "full",
+                        "label": _("Full"),
+                        "action": lambda e: service("element* path light\n")
+                    },
+                ],
+                "toggle": {
+                        "label": _("No Galvo Light"),
+                        "icon": icons8_light_off_50,
+                        "tip": _("Turn light off"),
+                        "action": lambda v: service("stop\n"),
+                    },
             },
         )
         service.register(
-            "button/control/Light_Off",
+            "button/control/Redlight",
             {
-                "label": _("No Galvo Light"),
-                "icon": icons8_light_off_50,
-                "tip": _("Turn light off"),
-                "action": lambda v: service("stop\n"),
+                "label": _("Redlight on"),
+                "icon": icons8_quick_mode_on_50,
+                "tip": _("Turn Redlight On"),
+                "action": lambda v: service("red on\n"),
+                "toggle": {
+                    "label": _("Redlight off"),
+                    "action": lambda v: service("red off\n"),
+                    "icon": icons8_flash_off_50,
+                }
             },
         )
         service.add_service_delegate(BalorGui(service))

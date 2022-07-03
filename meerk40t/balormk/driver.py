@@ -1,7 +1,5 @@
 import time
 
-from meerk40t.balor.command_list import CommandList
-from meerk40t.balormk.controller import BalorController
 from meerk40t.core.cutcode import (
     CubicCut,
     DwellCut,
@@ -14,7 +12,7 @@ from meerk40t.core.cutcode import (
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
-from meerk40t.fill.fills import Wobble
+from meerk40t.balormk.lmc_controller import GalvoController
 
 
 class BalorDriver:
@@ -23,7 +21,9 @@ class BalorDriver:
         self.native_x = 0x8000
         self.native_y = 0x8000
         self.name = str(self.service)
-        self.connection = BalorController(service)
+
+        self.connection = GalvoController(service)
+
         self.service.add_service_delegate(self.connection)
         self.paused = False
 
@@ -38,9 +38,10 @@ class BalorDriver:
         self.plot_planner = PlotPlanner(
             dict(), single=True, smooth=False, ppi=False, shift=False, group=True
         )
-        self.wobble = None
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True
+        self._aborting = False
+        self._list_bits = None
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
@@ -50,6 +51,12 @@ class BalorDriver:
 
     def service_detach(self):
         self._shutdown = True
+
+    def connect(self):
+        self.connection.connect_if_needed()
+
+    def disconnect(self):
+        self.connection.disconnect()
 
     def hold_work(self):
         """
@@ -70,13 +77,6 @@ class BalorDriver:
         """
         return False
 
-    def balor_job(self, job):
-        self.connection.job(job)
-        if self.service.redlight_preferred:
-            self.connection.light_on()
-        else:
-            self.connection.light_off()
-
     def laser_off(self, *values):
         """
         This command expects to stop pulsing the laser in place.
@@ -95,6 +95,14 @@ class BalorDriver:
         """
         self.laser = True
 
+    def light_loop(self, job):
+        self.connection.rapid_mode()
+        self.connection.light_mode()
+        while job(self.connection):
+            if self._shutdown:
+                break
+        self.connection.abort()
+
     def plot(self, plot):
         """
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized
@@ -105,123 +113,17 @@ class BalorDriver:
         """
         self.queue.append(plot)
 
-    def light(self, job):
-        """
-        This is not a typical meerk40t command. But, the light commands in the main balor add this as the idle job.
-
-        self.spooler.set_idle(("light", self.driver.cutcode_to_light_job(cutcode)))
-        That will the spooler's idle job be calling "light" on the driver with the light job. Which is a BalorJob.Job class
-        We serialize that and hand it to the send_data routine of the connection.
-
-        @param job:
-        @return:
-        """
-        self.connection.light_off()
-        self.connection.job(job)
-        if self.service.redlight_preferred:
-            self.connection.light_on()
-        else:
-            self.connection.light_off()
-
-    def _set_settings(self, job, settings):
-        """
-        Sets the primary settings. Rapid, frequency, speed, and timings.
-
-        @param job: The job to set these settings on
-        @param settings: The current settings dictionary
-        @return:
-        """
-        if self.service.pulse_width_enabled:
-            # Global Pulse Width is enabled.
-            if str(settings.get("pulse_width_enabled", False)).lower() == "true":
-                # Local Pulse Width value is enabled.
-                # OpFiberYLPMPulseWidth
-
-                job.set_fiber_pulse_width(
-                    int(settings.get("pulse_width", self.service.default_pulse_width))
-                )
-            else:
-                # Only global is enabled, use global pulse width value.
-                job.set_fiber_pulse_width(self.service.default_pulse_width)
-
-        if str(settings.get("rapid_enabled", False)).lower() == "true":
-            job.set_travel_speed(
-                float(settings.get("rapid_speed", self.service.default_rapid_speed))
-            )
-        else:
-            job.set_travel_speed(self.service.default_rapid_speed)
-        job.set_power(
-            (float(settings.get("power", self.service.default_power)) / 10.0)
-        )  # Convert power, out of 1000
-        job.set_frequency(
-            float(settings.get("frequency", self.service.default_frequency))
-        )
-        job.set_cut_speed(float(settings.get("speed", self.service.default_speed)))
-
-        if str(settings.get("timing_enabled", False)).lower() == "true":
-            job.set_laser_on_delay(
-                settings.get("delay_laser_on", self.service.delay_laser_on)
-            )
-            job.set_laser_off_delay(
-                settings.get("delay_laser_off", self.service.delay_laser_off)
-            )
-            job.set_polygon_delay(
-                settings.get("delay_laser_polygon", self.service.delay_polygon)
-            )
-        else:
-            # Use globals
-            job.set_laser_on_delay(self.service.delay_laser_on)
-            job.set_laser_off_delay(self.service.delay_laser_off)
-            job.set_polygon_delay(self.service.delay_polygon)
-
-    def _set_wobble(self, job, settings):
-        """
-        Set the wobble parameters and mark modifications routines.
-
-        @param job: The job to set these wobble parameters on.
-        @param settings: The dict setting to extract parameters from.
-        @return:
-        """
-        wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
-        if not wobble_enabled:
-            job._mark_modification = None
-            return
-        wobble_radius = settings.get("wobble_radius", "1.5mm")
-        wobble_r = self.service.physical_to_device_length(wobble_radius, 0)[0]
-        wobble_interval = settings.get("wobble_interval", "0.3mm")
-        wobble_speed = settings.get("wobble_speed", 50.0)
-        wobble_type = settings.get("wobble_type", "circle")
-        wobble_interval = self.service.physical_to_device_length(wobble_interval, 0)[0]
-        algorithm = self.service.lookup(f"wobble/{wobble_type}")
-        if self.wobble is None:
-            self.wobble = Wobble(
-                algorithm=algorithm,
-                radius=wobble_r,
-                speed=wobble_speed,
-                interval=wobble_interval,
-            )
-        else:
-            # set our parameterizations
-            self.wobble.algorithm = algorithm
-            self.wobble.radius = wobble_r
-            self.wobble.speed = wobble_speed
-        job._mark_modification = self.wobble
-
     def plot_start(self):
         """
         This is called after all the cutcode objects are sent. This says it shouldn't expect more cutcode for a bit.
 
         @return:
         """
-        current_ports = self.connection.get_port()
-        job = CommandList()
-        job.ready()
-        job.raw_mark_end_delay(0x0320)
-        job.set_write_port(current_ports)
-        job.set_travel_speed(self.service.default_rapid_speed)
-        job.goto(0x8000, 0x8000)
+        con = self.connection
+        con.program_mode()
+        self._list_bits = con._port_bits
         last_on = None
-        self.wobble = None
+        con.set_wobble(None)
         queue = self.queue
         self.queue = list()
         for q in queue:
@@ -232,35 +134,62 @@ class BalorDriver:
                     self.value_penbox = self.service.elements.penbox[penbox]
                 except KeyError:
                     self.value_penbox = None
-            self._set_settings(job, settings)
-            self._set_wobble(job, settings)
-
+            con.set_settings(settings)
+            con.set_wobble(settings)
+            # LOOP CHECKS
+            if self._aborting:
+                con.abort()
+                self._aborting = False
+                return
+            if con._port_bits != self._list_bits:
+                con.list_write_port()
+                self._list_bits = con._port_bits
             if isinstance(q, LineCut):
-                last_x, last_y = job.get_last_xy()
+                last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
-                    job.goto(x, y)
-                job.mark(*q.end)
+                    con.goto(x, y)
+                con.mark(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
-                last_x, last_y = job.get_last_xy()
+                last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
-                    job.goto(x, y)
+                    con.goto(x, y)
                 interp = self.service.interpolate
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    if con._port_bits != self._list_bits:
+                        con.list_write_port()
+                        self._list_bits = con._port_bits
                     while self.hold_work():
                         time.sleep(0.05)
+
                     p = q.point(t)
-                    job.mark(*p)
+                    con.mark(*p)
                     t += step_size
             elif isinstance(q, PlotCut):
-                last_x, last_y = job.get_last_xy()
+                last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
-                    job.goto(x, y)
+                    con.goto(x, y)
                 for x, y, on in q.plot[1:]:
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    if con._port_bits != self._list_bits:
+                        con.list_write_port()
+                        self._list_bits = con._port_bits
+                    while self.hold_work():
+                        time.sleep(0.05)
+
                     # q.plot can have different on values, these are parsed
                     if last_on is None or on != last_on:
                         last_on = on
@@ -275,7 +204,7 @@ class BalorDriver:
                             except IndexError:
                                 pass
                             # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
-                            self._set_settings(job, settings)
+                            con.set_settings(settings)
                         else:
                             # We are using traditional power-scaling
                             settings = self.plot_planner.settings
@@ -283,36 +212,43 @@ class BalorDriver:
                                 float(settings.get("power", self.service.default_power))
                                 / 10.0
                             )
-                            job.set_power(current_power * on)
-                    job.mark(x, y)
+                            con.power(current_power * on)
+                    con.mark(x, y)
             elif isinstance(q, DwellCut):
                 start = q.start
-                job.goto(start[0], start[1])
+                con.goto(start[0], start[1])
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
-                    job.raw_laser_on_point(int(d))
+                    con.list_laser_on_point(int(d))
                     dwell_time -= d
-                job.raw_mark_end_delay(self.service.delay_end)
+                con.list_delay_time(int(self.service.delay_end / 10.0))
             elif isinstance(q, WaitCut):
-                dwell_time = q.dwell_time  # Dwell time in ms units in us
+                dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
-                    job.raw_mark_end_delay(int(d))
+                    con.list_delay_time(int(d))
                     dwell_time -= d
             elif isinstance(q, OutputCut):
-                current_ports &= ~q.output_mask  # Unset mask.
-                current_ports |= q.output_value & q.output_mask  # Set masked bits.
-                job.set_write_port(current_ports)
+                con.port_set(q.output_mask, q.output_value)
+                con.list_write_port()
             elif isinstance(q, InputCut):
-                self.rapid_mode()
-                self.wait_finished()
-                self.connection.wait_for_input(q.input_mask, q.input_value)
+                input_value = q.input_value
+                con.list_wait_for_input(input_value)
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
+                    # LOOP CHECKS
+                    if self._aborting:
+                        con.abort()
+                        self._aborting = False
+                        return
+                    if con._port_bits != self._list_bits:
+                        self._list_bits = con._port_bits
+                        con.list_write_port()
                     while self.hold_work():
                         time.sleep(0.05)
+
                     if on > 1:
                         # Special Command.
                         if on & PLOT_FINISH:  # Plot planner is ending.
@@ -327,17 +263,17 @@ class BalorDriver:
                                     ]
                                 except KeyError:
                                     self.value_penbox = None
-                            self._set_settings(job, settings)
-                            self._set_wobble(job, settings)
+                            con.set_settings(settings)
+                            con.set_wobble(settings)
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            job.set_travel_speed(self.service.default_rapid_speed)
-                            job.goto(x, y)
+                            con.list_jump_speed(self.service.default_rapid_speed)
+                            con.goto(x, y)
                         continue
                     if on == 0:
-                        job.set_travel_speed(self.service.default_rapid_speed)
-                        job.goto(x, y)
+                        con.list_jump_speed(self.service.default_rapid_speed)
+                        con.goto(x, y)
                     else:
                         # on is in range 0 exclusive and 1 inclusive.
                         # This is a regular cut position
@@ -354,7 +290,7 @@ class BalorDriver:
                                 except IndexError:
                                     pass
                                 # Power scaling is exclusive to this penbox. on is used as a lookup and does not scale power.
-                                self._set_settings(job, settings)
+                                con.set_settings(settings)
                             else:
                                 # We are using traditional power-scaling
                                 settings = self.plot_planner.settings
@@ -366,16 +302,18 @@ class BalorDriver:
                                     )
                                     / 10.0
                                 )
-                                job.set_power(current_power * on)
-                        job.mark(x, y)
-        job.flush()
-        job.raw_mark_end_delay(self.service.delay_end)
-        self.connection.job(job)
+                                con.power(current_power * on)
+                        con.mark(x, y)
+        con.list_delay_time(int(self.service.delay_end / 10.0))
+        self._list_bits = None
+        con.rapid_mode()
 
         if self.service.redlight_preferred:
-            self.connection.light_on()
+            con.light_on()
+            con.write_port()
         else:
-            self.connection.light_off()
+            con.light_off()
+            con.write_port()
 
     def move_abs(self, x, y):
         """
@@ -442,44 +380,19 @@ class BalorDriver:
         """
         self.move_abs("50%", "50%")
 
-    def blob(self, data_type, data):
-        """
-        This is called to give pure data to the backend. Data is assumed to be native data-type as loaded from a file.
-
-        @param data_type:
-        @param data:
-        @return:
-        """
-        if data_type == "balor":
-            self.connection.job(data)
-
-    def set(self, attribute, value):
-        """
-        This is called to set particular attributes. These attributes will be set in the cutcode as well but sometimes
-        there is a need to set these outside that context. This can also set the default values to be used inside
-        the cutcode being processed.
-
-        @param attribute:
-        @param value:
-        @return:
-        """
-        if attribute == "speed":
-            pass
-        print(attribute, value)
-
     def rapid_mode(self):
         """
         Expects to be in rapid jogging mode.
         @return:
         """
-        pass
+        self.connection.rapid_mode()
 
     def program_mode(self):
         """
         Expects to run jobs at a speed in a programmed mode.
         @return:
         """
-        pass
+        self.connection.program_mode()
 
     def raster_mode(self, *args):
         """
@@ -534,7 +447,7 @@ class BalorDriver:
             self.resume()
             return
         self.paused = True
-        self.connection.realtime_pause()
+        self.connection.pause()
 
     def resume(self):
         """
@@ -546,7 +459,7 @@ class BalorDriver:
         @return:
         """
         self.paused = False
-        self.connection.realtime_resume()
+        self.connection.resume()
 
     def reset(self):
         """
@@ -562,3 +475,27 @@ class BalorDriver:
         @return:
         """
         pass
+
+    def pulse(self, pulse_time):
+        con = self.connection
+        con.program_mode()
+        con.frequency(self.service.default_frequency)
+        con.power(self.service.default_power)
+        if self.service.pulse_width_enabled:
+            con.list_fiber_ylpm_pulse_width(self.service.default_pulse_width)
+        dwell_time = pulse_time * 100  # Dwell time in ms units in 10 us
+        while dwell_time > 0:
+            d = min(dwell_time, 60000)
+            con.list_laser_on_point(int(d))
+            dwell_time -= d
+        con.list_delay_time(int(self.service.delay_end / 10.0))
+        con.rapid_mode()
+        if self.service.redlight_preferred:
+            con.light_on()
+            con.write_port()
+        else:
+            con.light_off()
+            con.write_port()
+
+    def set_abort(self):
+        self._aborting = True

@@ -4,6 +4,7 @@
 #
 
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.gui.icons import (
     icons8_connected_50,
@@ -33,7 +34,7 @@ _advanced_width = 952
 _default_height = 584
 
 
-class LhystudiosControllerPanel(wx.Panel):
+class LhystudiosControllerPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -81,6 +82,7 @@ class LhystudiosControllerPanel(wx.Panel):
         self.last_control_state = None
         self.retries = 0
         self.set_widgets()
+        self.SetupScrolling()
 
     def __set_properties(self):
         self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))

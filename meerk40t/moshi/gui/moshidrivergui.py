@@ -1,6 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
@@ -9,7 +10,7 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class MoshiConfigurationPanel(wx.Panel):
+class MoshiConfigurationPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -34,6 +35,7 @@ class MoshiConfigurationPanel(wx.Panel):
         )
         # self.Bind(wx.EVT_CHECKBOX, self.on_check_random_ppi, self.checkbox_random_ppi)
         # end wxGlade
+        self.SetupScrolling()
 
     def __set_properties(self):
         self.checkbox_home_right.SetToolTip(
@@ -71,7 +73,7 @@ class MoshiConfigurationPanel(wx.Panel):
         )
         sizer_config.Add(self.checkbox_home_right, 0, 0, 0)
         sizer_config.Add(self.checkbox_home_bottom, 0, 0, 0)
-        sizer_main.Add(sizer_config, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_config, 0, wx.EXPAND, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X")
         sizer_4.Add(label_9, 0, 0, 0)
         sizer_4.Add(self.text_home_x, 0, 0, 0)
@@ -85,7 +87,7 @@ class MoshiConfigurationPanel(wx.Panel):
         sizer_2.Add(label_11, 1, 0, 0)
         sizer_home.Add(sizer_2, 2, wx.EXPAND, 0)
         sizer_home.Add(self.button_home_by_current, 1, 0, 0)
-        sizer_main.Add(sizer_home, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_home, 0, wx.EXPAND, 0)
         # sizer_6.Add(self.checkbox_random_ppi, 0, 0, 0)
         sizer_main.Add(sizer_6, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_main)

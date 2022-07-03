@@ -819,15 +819,40 @@ class CameraInterface(MWindow):
                 "label": _("Camera"),
                 "icon": icons8_camera_50,
                 "tip": _("Opens Camera Window"),
+                "identifier": "camera_id",
                 "action": camera_click(),
-                "alt-action": (
-                    (_("Camera %d") % 0, camera_click(0)),
-                    (_("Camera %d") % 1, camera_click(1)),
-                    (_("Camera %d") % 2, camera_click(2)),
-                    (_("Camera %d") % 3, camera_click(3)),
-                    (_("Camera %d") % 4, camera_click(4)),
-                    (_("Identify cameras"), get_cameras(True)),
-                ),
+                "multi": [
+                    {
+                        "identifier": "cam0",
+                        "label": _("Camera %d") % 0,
+                        "action": camera_click(0),
+                    },
+                    {
+                        "identifier": "cam1",
+                        "label": _("Camera %d") % 1,
+                        "action": camera_click(1),
+                    },
+                    {
+                        "identifier": "cam2",
+                        "label": _("Camera %d") % 2,
+                        "action": camera_click(2),
+                    },
+                    {
+                        "identifier": "cam3",
+                        "label": _("Camera %d") % 3,
+                        "action": camera_click(3),
+                    },
+                    {
+                        "identifier": "cam4",
+                        "label": _("Camera %d") % 4,
+                        "action": camera_click(5),
+                    },
+                    {
+                        "identifier": "id_cam",
+                        "label": _("Identify cameras"),
+                        "action": get_cameras(True),
+                    },
+                ],
             },
         )
         kernel.register("window/CameraURI", CameraURI)

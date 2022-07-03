@@ -283,7 +283,11 @@ class ConsolePanel(wx.ScrolledWindow):
         @param lines:
         @return:
         """
-        self.text_main.SetInsertionPointEnd()
+        try:
+            self.text_main.SetInsertionPointEnd()
+        except RuntimeError:
+            # Console is shutdown.
+            return
         ansi = False
         ansi_text = ""
         text = ""
@@ -299,6 +303,7 @@ class ConsolePanel(wx.ScrolledWindow):
                     text = ""
                 self.text_main.Newline()
                 self.text_main.BeginStyle(self.style)
+                continue  # New Line is already processed.
             if b == 27:
                 ansi = True
             if ansi:
