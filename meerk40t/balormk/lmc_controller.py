@@ -1217,7 +1217,7 @@ class GalvoController:
         return self._command(SetStandby, standby1, standby2)
 
     def set_pwm_half_period(self, pwm_half_period):
-        return self._command(SetPwmPulseWidth, pwm_half_period)
+        return self._command(SetPwmHalfPeriod, pwm_half_period)
 
     def stop_execute(self):
         return self._command(StopExecute)
