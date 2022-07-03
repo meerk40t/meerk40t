@@ -1010,6 +1010,31 @@ class BalorDevice(Service, ViewPort):
             for index, b in enumerate(reply):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
+        @self.console_command(
+            "position_xy",
+            help=_("Checks the Position XY"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_position_xy()
+            if reply is None:
+                channel("Not connected, cannot get position xy.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "fly_speed",
+            help=_("Checks the Fly Speed."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fly_speed()
+            if reply is None:
+                channel("Not connected, cannot get fly speed.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
             "serial_number",
