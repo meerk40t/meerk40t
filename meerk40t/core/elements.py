@@ -5763,7 +5763,7 @@ class Elemental(Service):
         )
         def reverse_layer_order(node, **kwargs):
             node.reverse()
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree", list(self.flat(types=("reference"))))
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -5772,7 +5772,7 @@ class Elemental(Service):
         def refresh_clasifications(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree", list(self.flat(types=("reference"))))
 
         materials = [
             _("Wood"),
@@ -5978,7 +5978,7 @@ class Elemental(Service):
             elems = list(self.elems())
             self.remove_elements_from_operations(elems)
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree")
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
