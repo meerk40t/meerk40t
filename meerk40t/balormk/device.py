@@ -165,7 +165,7 @@ class LiveSelectionLightJob:
         x, y = mx_rotate((x, y))
         x = int(x) & 0xFFFF
         y = int(y) & 0xFFFF
-        con.dark(x, y, long=dark_delay, short=dark_delay)
+        con.light(x, y, long=dark_delay, short=dark_delay)
 
         for pt in points:
             if self.stopped:
