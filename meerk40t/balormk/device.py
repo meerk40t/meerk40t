@@ -1025,7 +1025,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_option(
             "quantization",
             "q",
-            default=500,
+            default=50,
             type=int,
             help="Number of segments to break each path into.",
         )
@@ -1035,7 +1035,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="shapes",
         )
-        def element_ants(command, channel, _, data=None, quantization=500, **kwargs):
+        def element_ants(command, channel, _, data=None, quantization=50, **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1051,7 +1051,7 @@ class BalorDevice(Service, ViewPort):
                 for i in range(0, quantization + 1):
                     x, y = path.point(i / float(quantization))
                     points.append((x, y))
-                points_list.append(list(ant_points(points, int(quantization / 10))))
+                points_list.append(list(ant_points(points, int(quantization / 2))))
             return "shapes", [Polygon(*p) for p in points_list]
 
         @self.console_command(
