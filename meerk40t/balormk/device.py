@@ -896,6 +896,36 @@ class BalorDevice(Service, ViewPort):
             channel("Resume the current job")
             self.driver.resume()
 
+        @self.console_option(
+            "idonotlovemyhouse",
+            type=bool,
+            action="store_true",
+            help=_("override one second laser fire pulse duration"),
+        )
+        @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
+        @self.console_command(
+            "pulse",
+            help=_("pulse <time>: Pulse the laser in place."),
+        )
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+            if time is None:
+                channel(_("Must specify a pulse time in milliseconds."))
+                return
+            if time > 1000.0:
+                channel(
+                    _('"%sms" exceeds 1 second limit to fire a standing laser.') % time
+                )
+                try:
+                    if not idonotlovemyhouse:
+                        return
+                except IndexError:
+                    return
+            if self.spooler.job_if_idle(("pulse", time)):
+                channel(_("Pulse laser for %f milliseconds") % time)
+            else:
+                channel(_("Pulse laser failed: Busy"))
+            return
+
         @self.console_command(
             "usb_connect",
             help=_("connect usb"),

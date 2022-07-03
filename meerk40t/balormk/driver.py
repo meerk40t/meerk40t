@@ -476,5 +476,22 @@ class BalorDriver:
         """
         pass
 
+    def pulse(self, pulse_time):
+        con = self.connection
+        con.program_mode()
+        dwell_time = pulse_time * 100  # Dwell time in ms units in 10 us
+        while dwell_time > 0:
+            d = min(dwell_time, 60000)
+            con.list_laser_on_point(int(d))
+            dwell_time -= d
+        con.list_delay_time(self.service.delay_end)
+        con.rapid_mode()
+        if self.service.redlight_preferred:
+            con.light_on()
+            con.write_port()
+        else:
+            con.light_off()
+            con.write_port()
+
     def set_abort(self):
         self._aborting = True
