@@ -390,6 +390,7 @@ class RibbonPanel(wx.Panel):
                         def drop_and_act(multi_opt):
                             def on_dropdown_click(event):
                                 key_id = multi_opt.get("identifier")
+                                setattr(self.context, button_obj.save_id, key_id)
                                 button_obj.state_unpressed = key_id
                                 self._restore_button_state(button_obj, key_id)
                                 self.ensure_realize()
@@ -435,6 +436,10 @@ class RibbonPanel(wx.Panel):
             b.action_right = button.get("right")
             if "multi" in button:
                 multi_action = button["multi"]
+                multi_ident = button.get("identifier")
+                b.save_id = multi_ident
+                initial_id = self.context.setting(str, b.save_id, "default")
+
                 for i, v in enumerate(multi_action):
                     key = v.get("identifier", i)
                     self._store_button_state(b, key)
@@ -449,6 +454,8 @@ class RibbonPanel(wx.Panel):
                                 resize=resize_param, color=Color("grey")
                             ),
                         )
+                    if key == initial_id:
+                        self._restore_button_state(b, key)
             if "toggle" in button:
                 b.state_pressed = "toggle"
                 b.state_unpressed = "original"
