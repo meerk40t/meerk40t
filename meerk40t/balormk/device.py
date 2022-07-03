@@ -101,6 +101,69 @@ class LiveSelectionLightJob:
         self.service = service
         self.stopped = False
 
+        rotate = Matrix()
+        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        x_offset = self.service.length(
+            self.service.redlight_offset_x, axis=0, as_float=True
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y, axis=1, as_float=True
+        )
+        rotate.post_translate(x_offset, y_offset)
+        self.rotate = rotate
+        margin = 5000
+        points = [
+            (0x8000, 0x8000),
+            (0x8000 - margin, 0x8000),
+            (0x8000, 0x8000),
+            (0x8000, 0x8000 - margin),
+            (0x8000, 0x8000),
+            (0x8000 + margin, 0x8000),
+            (0x8000, 0x8000),
+            (0x8000, 0x8000 + margin),
+            (0x8000, 0x8000),
+        ]
+        for i in range(len(points)):
+            pt = points[i]
+            x, y = self.mx_rotate(pt)
+            x = int(x) & 0xFFFF
+            y = int(y) & 0xFFFF
+            points[i] = x, y
+        self.default_crosshair = points
+        self._current_points = None
+        self._last_bounds = None
+
+    def update_points(self, bounds):
+        if bounds == self._last_bounds and self._current_points is not None:
+            return self._current_points
+        xmin, ymin, xmax, ymax = bounds
+        points = [
+            (xmin, ymin),
+            (xmax, ymin),
+            (xmax, ymax),
+            (xmin, ymax),
+            (xmin, ymin),
+        ]
+        for i in range(len(points)):
+            pt = points[i]
+            x, y = self.service.scene_to_device_position(*pt)
+            x, y = self.mx_rotate((x, y))
+            x = int(x) & 0xFFFF
+            y = int(y) & 0xFFFF
+            points[i] = x, y
+        self._current_points = points
+        self._last_bounds = bounds
+        return self._current_points
+
+    def mx_rotate(self, pt):
+        if pt is None:
+            return None
+        rotate = self.rotate
+        return (
+            pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+            pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+        )
+
     def stop(self):
         self.stopped = True
 
@@ -111,70 +174,19 @@ class LiveSelectionLightJob:
 
         jump_delay = self.service.delay_jump_long
         dark_delay = self.service.delay_jump_short
-
-        rotate = Matrix()
-        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
-        x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
-        )
-        y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
-        )
-        rotate.post_translate(x_offset, y_offset)
-
         con._light_speed = self.service.redlight_speed
-
-        def mx_rotate(pt):
-            if pt is None:
-                return None
-            return (
-                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-            )
 
         bounds = self.service.elements.selected_area()
         if bounds is None:
-            margin = 5000
-            points = [
-                (0x8000, 0x8000),
-                (0x8000 - margin, 0x8000),
-                (0x8000, 0x8000),
-                (0x8000, 0x8000 - margin),
-                (0x8000, 0x8000),
-                (0x8000 + margin, 0x8000),
-                (0x8000, 0x8000),
-                (0x8000, 0x8000 + margin),
-                (0x8000, 0x8000),
-            ]
-            for i in range(len(points)):
-                pt = points[i]
-                x, y = mx_rotate(pt)
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
-                points[i] = x, y
+            points = self.default_crosshair
         else:
-            xmin, ymin, xmax, ymax = bounds
-            points = [
-                (xmin, ymin),
-                (xmax, ymin),
-                (xmax, ymax),
-                (xmin, ymax),
-                (xmin, ymin),
-            ]
-            for i in range(len(points)):
-                pt = points[i]
-                x, y = self.service.scene_to_device_position(*pt)
-                x, y = mx_rotate((x, y))
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
-                points[i] = x, y
+            points = self.update_points(bounds)
 
         if self.stopped:
             return False
         #
         # x, y = points[0]
         # con.light(x, y, long=dark_delay, short=dark_delay)
-
         for pt in points:
             if self.stopped:
                 return False
