@@ -970,6 +970,14 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
+        @self.console_command(
+            "softreboot",
+            help=_("Resets the galvo laser"),
+        )
+        def galvo_reset(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.init_laser()
+            channel(f"Soft reboot: {self.label}")
+
         @self.console_option(
             "duration", "d", type=float, help=_("time to set/unset the port")
         )
