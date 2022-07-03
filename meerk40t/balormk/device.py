@@ -127,8 +127,7 @@ class LiveSelectionLightJob:
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
 
-        if bounds is None:
-            # bounds is None, default crosshair
+        def crosshairs():
             margin = 5000
             points = [
                 (0x8000, 0x8000),
@@ -144,9 +143,14 @@ class LiveSelectionLightJob:
             for i in range(len(points)):
                 pt = points[i]
                 x, y = mx_rotate(pt)
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
+                x = int(x)
+                y = int(y)
                 points[i] = x, y
+            return points
+
+        if bounds is None:
+            # bounds is None, default crosshair
+            points = crosshairs()
         else:
             # Bounds exist
             xmin, ymin, xmax, ymax = bounds
@@ -161,9 +165,14 @@ class LiveSelectionLightJob:
                 pt = points[i]
                 x, y = self.service.scene_to_device_position(*pt)
                 x, y = mx_rotate((x, y))
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
-                points[i] = x, y
+                x = int(x)
+                y = int(y)
+                if 0 <= x <= 0xFFFF and 0 <= y <= 0xFFFF:
+                    points[i] = x, y
+                else:
+                    # Our bounds are not in frame.
+                    points = crosshairs()
+                    break
         self._current_points = points
         self._last_bounds = bounds
         return self._current_points, True
