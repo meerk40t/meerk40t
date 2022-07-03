@@ -358,8 +358,8 @@ class GalvoController:
     # MODE SHIFTS
     #######################
 
-    def rapid_mode(self):
-        if self.mode == DRIVER_STATE_RAPID:
+    def rapid_mode(self, forced=False):
+        if self.mode == DRIVER_STATE_RAPID and not forced:
             return
 
         self._list_end()
@@ -647,7 +647,7 @@ class GalvoController:
         self._list_new()
         # self.send(empty)
         # self.set_end_of_list(1)
-        self.rapid_mode()
+        self.rapid_mode(True)
 
     def pause(self):
         self.paused = True
