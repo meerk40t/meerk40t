@@ -405,6 +405,7 @@ class GalvoController:
         if self.mode == DRIVER_STATE_PROGRAM:
             self.set_fiber_mo(0)
             self.port_off(bit=0)
+            self.port_on(self._light_bit)
             self.write_port()
         else:
             self.reset_list()
