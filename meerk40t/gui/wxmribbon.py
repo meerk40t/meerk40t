@@ -9,7 +9,7 @@ from wx import aui
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import  icons8_opened_folder_50
+from .icons import icons8_opened_folder_50
 
 _ = wx.GetTranslation
 
@@ -300,16 +300,13 @@ class RibbonPanel(wx.Panel):
                                 mevent.SetId(obutton[ID])
                                 self.button_click(mevent)
                                 return
-                if button[TOGGLE]:
-                    button_base.action_original(0)
-                    button_base.bitmap_large = button_base.bitmap_large_toggle
-                    button_base.label = button_base.label_toggle
-                else:
-                    button_base.action_toggle(0)
-                    button_base.bitmap_large = button_base.bitmap_large_original
-                    button_base.label = button_base.label_original
+                button_base.action(0)
                 button_dict = button_base.button_dict
                 if button_dict.get("toggle", False):
+                    if button[TOGGLE]:
+                        self._restore_button_state(button_base, "toggle")
+                    else:
+                        self._restore_button_state(button_base, "original")
                     self.ensure_realize()
                 break
 
@@ -317,21 +314,27 @@ class RibbonPanel(wx.Panel):
         if not hasattr(base_button, "alternatives"):
             return
         alt = base_button.alternatives[key]
+        base_button.action = alt.get("action", base_button.action)
         base_button.label = alt.get("label", base_button.label)
         base_button.help_string = alt.get("help_string", base_button.help_string)
         base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
-        base_button.bitmap_large_disabled = alt.get("bitmap_large_disabled", base_button.bitmap_large_disabled)
+        base_button.bitmap_large_disabled = alt.get(
+            "bitmap_large_disabled", base_button.bitmap_large_disabled
+        )
         base_button.bitmap_small = alt.get("bitmap_small", base_button.bitmap_small)
-        base_button.bitmap_small_disabled = alt.get("bitmap_small_disabled", base_button.bitmap_small_disabled)
+        base_button.bitmap_small_disabled = alt.get(
+            "bitmap_small_disabled", base_button.bitmap_small_disabled
+        )
         base_button.client_data = alt.get("client_data", base_button.client_data)
         base_button.id = alt.get("id", base_button.id)
         base_button.kind = alt.get("kind", base_button.kind)
-        base_button.state = alt.get("state", base_button.state)
+        # base_button.state = alt.get("state", base_button.state)
 
-    def _store_button_state(self, base_button, key):
+    def _store_button_state(self, base_button, key, **kwargs):
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         base_button.alternatives[key] = {
+            "action": base_button.action,
             "label": base_button.label,
             "help_string": base_button.help_string,
             "bitmap_large": base_button.bitmap_large,
@@ -341,8 +344,20 @@ class RibbonPanel(wx.Panel):
             "client_data": base_button.client_data,
             "id": base_button.id,
             "kind": base_button.kind,
-            "state": base_button.state,
+            # "state": base_button.state,
         }
+        key_dict = base_button.alternatives[key]
+        for k in kwargs:
+            if kwargs[k] is not None:
+                key_dict[k] = kwargs[k]
+
+    def _update_button_state(self, base_button, key, **kwargs):
+        if not hasattr(base_button, "alternatives"):
+            base_button.alternatives = {}
+        key_dict = base_button.alternatives[key]
+        for k in kwargs:
+            if kwargs[k] is not None:
+                key_dict[k] = kwargs[k]
 
     def set_buttons(self, new_values, button_bar):
         show_tip = not self.context.disable_tool_tips
@@ -404,27 +419,28 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                     kind=bkind,
                 )
-            self._store_button_state(b, "original")
-            b.identifier = button.get("identifier")
             b.button_dict = button
-
-            b.bitmap_large_original = b.bitmap_large
-            b.bitmap_large_toggle = b.bitmap_large
-
-            b.bitmap_large_disabled_original = b.bitmap_large_disabled
-            b.bitmap_large_disabled_toggle = b.bitmap_large_disabled
-
-            b.label_original = b.label
-            b.label_toggle = button.get("toggle_label", b.label_original)
-            b.action_original = button.get("action")
-            b.action_toggle = button.get("toggle_action", b.action_original)
-            if "toggle_icon" in button:
-                toggle_icon = button["toggle_icon"]
-                b.bitmap_large_toggle = toggle_icon.GetBitmap(resize=resize_param)
-                b.bitmap_large_disabled_toggle = toggle_icon.GetBitmap(
-                    resize=resize_param, color=Color("grey")
-                )
+            b.identifier = button.get("identifier")
+            b.action = button.get("action")
             b.action_right = button.get("right")
+            self._store_button_state(b, "original")
+            if "toggle" in button:
+                self._store_button_state(
+                    b,
+                    "toggle",
+                    label=button.get("toggle_label"),
+                    action=button.get("toggle_action"),
+                )
+                if "toggle_icon" in button:
+                    toggle_icon = button.get("toggle_icon")
+                    self._update_button_state(
+                        b,
+                        "toggle",
+                        bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
+                        bitmap_large_disabled=toggle_icon.GetBitmap(
+                            resize=resize_param, color=Color("grey")
+                        ),
+                    )
             self.button_actions.append(
                 [
                     b,
@@ -514,7 +530,6 @@ class RibbonPanel(wx.Panel):
                     parent_obj.ToggleButton(button_id, True)
                 else:
                     parent_obj.ToggleButton(button_id, False)
-
 
     @property
     def is_dark(self):
@@ -677,9 +692,10 @@ class RibbonPanel(wx.Panel):
     def on_page_changed(self, event):
         page = event.GetPage()
         p_id = page.GetId()
-        if p_id  != ID_PAGE_TOOL:
+        if p_id != ID_PAGE_TOOL:
             self.context("tool none\n")
         event.Skip()
+
 
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
 # RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
