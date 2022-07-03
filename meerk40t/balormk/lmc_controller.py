@@ -653,14 +653,15 @@ class GalvoController:
             if self.is_shutdown:
                 return
 
-    def abort(self):
+    def abort(self, dummy_packet=True):
         self.stop_execute()
         self.set_fiber_mo(0)
         self.reset_list()
-        self._list_new()
-        self._list_end()
-        if not self._list_executing:
-            self.execute_list()
+        if dummy_packet:
+            self._list_new()
+            self._list_end()
+            if not self._list_executing:
+                self.execute_list()
         self._list_executing = False
         self._number_of_list_packets = 0
         self.set_fiber_mo(0)
