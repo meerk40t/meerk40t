@@ -1122,6 +1122,28 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
+        @self.console_argument("filename", type=str, default=None, help="filename or none")
+        @self.console_option("default", "d", type=bool, action="store_true", help="restore to default")
+        @self.console_command(
+            "force_correction",
+            help=_("Resets the galvo laser"),
+        )
+        def force_correction(command, channel, _, filename=None, default=False, remainder=None, **kwgs):
+            if default:
+                filename = self.corfile
+                channel(f"Using default corfile: {filename}")
+            if filename is None:
+                self.driver.connection.write_correction_file(None)
+                channel(f"Force set corrections to blank.")
+            else:
+                from os.path import exists
+
+                if exists(filename):
+                    channel(f"Force set corrections: {filename}")
+                    self.driver.connection.write_correction_file(filename)
+                else:
+                    channel(f"The file at {os.path.realpath(filename)} does not exist.")
+
         @self.console_command(
             "softreboot",
             help=_("Resets the galvo laser"),
