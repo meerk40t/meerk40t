@@ -94,6 +94,7 @@ class BalorDriver:
         self.laser = True
 
     def light_loop(self, job):
+        self.connection.rapid_mode()
         self.connection.light_mode()
         while job(self.connection):
             time.sleep(0.05)

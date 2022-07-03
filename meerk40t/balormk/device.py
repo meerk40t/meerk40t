@@ -818,6 +818,8 @@ class BalorDevice(Service, ViewPort):
             help=_("Execute selection light idle job")
         )
         def select_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
             self.job = LiveSelectionLightJob(self)
             self.spooler.job(("light_loop", self.job.process))
 
