@@ -997,6 +997,19 @@ class BalorDevice(Service, ViewPort):
             for index, b in enumerate(reply):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
+        @self.console_command(
+            "user_data",
+            help=_("Checks the User Data."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_user_data()
+            if reply is None:
+                channel("Not connected, cannot get user data.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
 
         @self.console_command(
             "serial_number",
