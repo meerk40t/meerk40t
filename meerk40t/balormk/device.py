@@ -1037,6 +1037,20 @@ class BalorDevice(Service, ViewPort):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
+            "input_port",
+            help=_("Checks the input_port"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+
+        @self.console_command(
             "serial_number",
             help=_("Checks the serial number."),
         )
