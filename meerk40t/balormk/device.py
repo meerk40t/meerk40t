@@ -985,11 +985,11 @@ class BalorDevice(Service, ViewPort):
             if off:
                 self.driver.connection.port_off(bit)
                 self.driver.connection.write_port()
-                channel(f"Turning on bit {bit}")
+                channel(f"Turning off bit {bit}")
             else:
                 self.driver.connection.port_on(bit)
                 self.driver.connection.write_port()
-                channel(f"Turning off bit {bit}")
+                channel(f"Turning on bit {bit}")
             if duration is not None:
                 if off:
                     self(f".timer 1 {duration} port on {bit}")
