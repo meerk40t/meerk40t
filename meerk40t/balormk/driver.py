@@ -97,6 +97,8 @@ class BalorDriver:
         self.connection.rapid_mode()
         self.connection.light_mode()
         while job(self.connection):
+            if self._shutdown:
+                break
             time.sleep(0.05)
         self.connection.abort()
 
