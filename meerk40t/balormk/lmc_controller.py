@@ -1206,6 +1206,8 @@ class GalvoController:
         return self._command(GetPositionXY)
 
     def goto_xy(self, x, y):
+        self._last_x = x
+        self._last_y = y
         return self._command(GotoXY, int(x), int(y))
 
     def laser_signal_off(self):
