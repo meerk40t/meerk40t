@@ -479,6 +479,10 @@ class BalorDriver:
     def pulse(self, pulse_time):
         con = self.connection
         con.program_mode()
+        con.frequency(self.service.default_frequency)
+        con.power(self.service.default_power)
+        if self.service.pulse_width_enabled:
+            con.list_fiber_ylpm_pulse_width(self.service.default_pulse_width)
         dwell_time = pulse_time * 100  # Dwell time in ms units in 10 us
         while dwell_time > 0:
             d = min(dwell_time, 60000)
