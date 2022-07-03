@@ -392,7 +392,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "redlight_speed",
                 "object": self,
-                "default": "8000",
+                "default": "3000",
                 "type": int,
                 "label": _("Redlight travel speed"),
                 "tip": _("Speed of the galvo when using the red laser."),
