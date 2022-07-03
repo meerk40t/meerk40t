@@ -185,8 +185,20 @@ class TreePanel(wx.Panel):
         self.shadow_tree.refresh_tree(source="signal_{org}".format(org=origin))
         if nodes is not None:
             if isinstance(nodes, (tuple, list)):
+                # All Standard nodes first
                 for node in nodes:
-                    self.shadow_tree.set_icon(node, force=True)
+                    if node is None or node.item is None:
+                        pass
+                    else:
+                        if node.type.startswith("elem "):
+                            self.shadow_tree.set_icon(node, force=True)
+                # Then all others
+                for node in nodes:
+                    if node is None or node.item is None:
+                        pass
+                    else:
+                        if not node.type.startswith("elem "):
+                            self.shadow_tree.set_icon(node, force=True)
                 node = nodes[0]
             else:
                 node = nodes
@@ -760,7 +772,7 @@ class ShadowTree:
 
         @param node: Node to have the icon set.
         @param icon: overriding icon to be forcably set, rather than a default.
-        @return:
+        @return: item_id if newly created / update
         """
         root = self
         drawmode = self.elements.root.draw_mode
@@ -783,7 +795,7 @@ class ShadowTree:
                 image_id = -1
             if image_id >= 0 and not force:
                 # Don't do it twice
-                return
+                return image_id
 
             if node.type == "elem image":
                 image = self.renderer.make_thumbnail(node.image, width=20, height=20)
@@ -797,25 +809,15 @@ class ShadowTree:
                     c = node.stroke
                 else:
                     c = Color("black")
-                self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
-                return
+                image_id = self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
+                return image_id
             elif node.type == "reference":
                 image_id = tree.GetItemImage(node.node.item)
-                if image_id >= self.tree_images.ImageCount:
+                if image_id >= self.tree_images.ImageCount or not node.node.type.startswith("elem "):
                     image_id = -1
                     # Reset Image Node in List
                 if image_id < 0:
-                    image = self.renderer.make_raster(
-                        node.node,
-                        node.node.bounds,
-                        width=20,
-                        height=20,
-                        bitmap=True,
-                        keep_ratio=True,
-                    )
-                    if image is not None:
-                        image_id = self.tree_images.Add(bitmap=image)
-                        tree.SetItemImage(node.node.item, image=image_id)
+                    image_id = self.set_icon(node.node)
                 tree.SetItemImage(item, image=image_id)
 
             elif node.type.startswith("elem "):
@@ -834,38 +836,38 @@ class ShadowTree:
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
-                self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
+                image_id = self.set_icon(node, icons8_direction_20.GetBitmap(color=c))
             elif node.type in ("op engrave", "op cut", "op hatch"):
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
-                self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c))
+                image_id = self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c))
             elif node.type == "op dots":
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
-                self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
+                image_id = self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
             elif node.type == "util console":
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
-                self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
+                image_id = self.set_icon(node, icons8_system_task_20.GetBitmap(color=c))
             elif node.type == "util wait":
-                self.set_icon(node, icons8_timer_20.GetBitmap())
+                image_id = self.set_icon(node, icons8_timer_20.GetBitmap())
             elif node.type == "util output":
-                self.set_icon(node, icons8_vga_20.GetBitmap())
+                image_id = self.set_icon(node, icons8_vga_20.GetBitmap())
             elif node.type == "util input":
-                self.set_icon(node, icons8_input_20.GetBitmap())
+                image_id = self.set_icon(node, icons8_input_20.GetBitmap())
             elif node.type == "file":
-                self.set_icon(node, icons8_file_20.GetBitmap())
+                image_id = self.set_icon(node, icons8_file_20.GetBitmap())
             elif node.type == "group":
-                self.set_icon(node, icons8_group_objects_20.GetBitmap())
+                image_id = self.set_icon(node, icons8_group_objects_20.GetBitmap())
         else:
             image_id = tree.GetItemImage(item)
             if image_id >= self.tree_images.ImageCount:
@@ -877,6 +879,7 @@ class ShadowTree:
                 self.tree_images.Replace(index=image_id, bitmap=icon)
 
             tree.SetItemImage(item, image=image_id)
+        return image_id
 
     def update_op_labels(self):
         startnode = self.elements.get(type="branch ops").item
