@@ -313,6 +313,37 @@ class RibbonPanel(wx.Panel):
                     self.ensure_realize()
                 break
 
+    def _restore_button_state(self, base_button, key):
+        if not hasattr(base_button, "alternatives"):
+            return
+        alt = base_button.alternatives[key]
+        base_button.label = alt.get("label", base_button.label)
+        base_button.help_string = alt.get("help_string", base_button.help_string)
+        base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
+        base_button.bitmap_large_disabled = alt.get("bitmap_large_disabled", base_button.bitmap_large_disabled)
+        base_button.bitmap_small = alt.get("bitmap_small", base_button.bitmap_small)
+        base_button.bitmap_small_disabled = alt.get("bitmap_small_disabled", base_button.bitmap_small_disabled)
+        base_button.client_data = alt.get("client_data", base_button.client_data)
+        base_button.id = alt.get("id", base_button.id)
+        base_button.kind = alt.get("kind", base_button.kind)
+        base_button.state = alt.get("state", base_button.state)
+
+    def _store_button_state(self, base_button, key):
+        if not hasattr(base_button, "alternatives"):
+            base_button.alternatives = {}
+        base_button.alternatives[key] = {
+            "label": base_button.label,
+            "help_string": base_button.help_string,
+            "bitmap_large": base_button.bitmap_large,
+            "bitmap_large_disabled": base_button.bitmap_large_disabled,
+            "bitmap_small": base_button.bitmap_small,
+            "bitmap_small_disabled": base_button.bitmap_small_disabled,
+            "client_data": base_button.client_data,
+            "id": base_button.id,
+            "kind": base_button.kind,
+            "state": base_button.state,
+        }
+
     def set_buttons(self, new_values, button_bar):
         show_tip = not self.context.disable_tool_tips
         button_bar._current_layout = 0
@@ -373,7 +404,7 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                     kind=bkind,
                 )
-               
+            self._store_button_state(b, "original")
             b.identifier = button.get("identifier")
             b.button_dict = button
 
