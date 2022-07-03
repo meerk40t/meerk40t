@@ -33,6 +33,8 @@ class ElementLightJob:
     def process(self, con):
         if self.stopped:
             return False
+        if not self.elements:
+            return False
         con.light_mode()
 
         x_offset = self.service.length(
@@ -58,7 +60,6 @@ class ElementLightJob:
                 pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
-
         for e in self.elements:
             if self.stopped:
                 return False
