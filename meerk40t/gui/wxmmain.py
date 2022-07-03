@@ -695,7 +695,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_cursor_50,
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -707,7 +707,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_place_marker_50,
                 "tip": _("Set position to given location"),
                 "action": lambda v: kernel.elements("tool relocate\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -719,7 +719,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_pencil_drawing_50,
                 "tip": _("Add a free-drawing element"),
                 "action": lambda v: kernel.elements("tool draw\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -731,7 +731,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_oval_50,
                 "tip": _("Add an ellipse element"),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -743,7 +743,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_circle_50,
                 "tip": _("Add a circle element"),
                 "action": lambda v: kernel.elements("tool circle\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -757,7 +757,7 @@ class MeerK40t(MWindow):
                     "Add a polygon element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool polygon\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -771,7 +771,7 @@ class MeerK40t(MWindow):
                     "Add a polyline element\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool polyline\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -783,7 +783,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rectangular_50,
                 "tip": _("Add a rectangular element"),
                 "action": lambda v: kernel.elements("tool rect\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -795,7 +795,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_point_50,
                 "tip": _("Add point to the scene"),
                 "action": lambda v: kernel.elements("tool point\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -809,7 +809,7 @@ class MeerK40t(MWindow):
                     "Add a shape\nLeft click: point/line\nClick and hold: curve\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool vector\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -821,7 +821,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_type_50,
                 "tip": _("Add a text element"),
                 "action": lambda v: kernel.elements("tool text\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )
@@ -835,7 +835,7 @@ class MeerK40t(MWindow):
                     "Measure distance / perimeter / area\nLeft click: point/line\nDouble click: complete\nRight click: cancel"
                 ),
                 "action": lambda v: kernel.elements("tool measure\n"),
-                "toggle": "tool",
+                "group": "tool",
                 "size": buttonsize,
             },
         )

@@ -1,3 +1,4 @@
+import time
 
 import usb.core
 import usb.util
@@ -17,7 +18,7 @@ class USBConnection:
         self.devices = {}
         self.interface = {}
         self.backend_error_code = None
-        self.timeout = 500
+        self.timeout = 100
 
     def find_device(self, index=0):
         _ = self.channel._
@@ -203,16 +204,22 @@ class USBConnection:
             device = self.find_device(index)
             self.devices[index] = device
             self.set_config(device)
-            interface = self.get_active_config(device)
-            self.interface[index] = interface
-
-            self.detach_kernel(device, interface)
             try:
-                self.claim_interface(device, interface)
-            except ConnectionRefusedError:
-                # Attempting interface cycle.
-                self.unclaim_interface(device, interface)
-                self.claim_interface(device, interface)
+                self.channel(_("Resetting Device"))
+                device.reset()
+                self.channel(_("Device Reset"))
+            except usb.core.USBError:
+                self.channel(_("Device did not reset."))
+            # interface = self.get_active_config(device)
+            # self.interface[index] = interface
+            #
+            # self.detach_kernel(device, interface)
+            # try:
+            #     self.claim_interface(device, interface)
+            # except ConnectionRefusedError:
+            #     # Attempting interface cycle.
+            #     self.unclaim_interface(device, interface)
+            #     self.claim_interface(device, interface)
             self.channel(_("USB Connected."))
             return index
         except usb.core.NoBackendError as e:
@@ -242,12 +249,11 @@ class USBConnection:
 
     def write(self, index=0, packet=None):
         packet_length = len(packet)
-        assert(packet_length == 0x12 or packet_length == 0xC00)
+        assert(packet_length == 0xC or packet_length == 0xC00)
         if packet is not None:
-            device = self.devices[index]
             try:
                 # endpoint, data, timeout
-                device.write(
+                self.devices[index].write(
                     endpoint=WRITE_ENDPOINT, data=packet, timeout=self.timeout
                 )
             except usb.core.USBError as e:
@@ -255,6 +261,8 @@ class USBConnection:
 
                 self.channel(str(e))
                 raise ConnectionError
+            except KeyError:
+                raise ConnectionError("Not Connected.")
 
     def read(self, index=0):
         try:
@@ -266,3 +274,5 @@ class USBConnection:
 
             self.channel(str(e))
             raise ConnectionError
+        except KeyError:
+            raise ConnectionError("Not Connected.")

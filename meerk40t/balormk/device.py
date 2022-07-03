@@ -1,11 +1,211 @@
 import os
 
-from meerk40t.balor.command_list import CommandList
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
+from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
+
+
+class ElementLightJob:
+    def __init__(
+        self,
+        service,
+        elements,
+        travel_speed=None,
+        jump_delay=200.0,
+        simulation_speed=None,
+        quantization=500,
+        simulate=True,
+    ):
+        self.service = service
+        self.elements = elements
+        self.stopped = False
+        self.travel_speed = travel_speed
+        self.jump_delay = jump_delay
+        self.simulation_speed = simulation_speed
+        self.quantization = quantization
+        self.simulate = simulate
+
+    def stop(self):
+        self.stopped = True
+
+    def process(self, con):
+        if self.stopped:
+            return False
+        con.light_mode()
+
+        x_offset = self.service.length(
+            self.service.redlight_offset_x, axis=0, as_float=True
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y, axis=1, as_float=True
+        )
+        jump_delay = self.jump_delay
+
+        dark_delay = 8
+        quantization = self.quantization
+        rotate = Matrix()
+        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        rotate.post_translate(x_offset, y_offset)
+
+        con._light_speed = self.service.redlight_speed
+
+        def mx_rotate(pt):
+            if pt is None:
+                return None
+            return (
+                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            )
+
+        for e in self.elements:
+            if self.stopped:
+                return False
+            x, y = e.point(0)
+            x, y = self.service.scene_to_device_position(x, y)
+            x, y = mx_rotate((x, y))
+            x = int(x) & 0xFFFF
+            y = int(y) & 0xFFFF
+            if isinstance(e, (Polygon, Polyline)):
+                con.dark(x, y, long=dark_delay, short=dark_delay)
+                for pt in e:
+                    if self.stopped:
+                        return False
+                    x, y = self.service.scene_to_device_position(*pt)
+                    x, y = mx_rotate((x, y))
+                    x = int(x) & 0xFFFF
+                    y = int(y) & 0xFFFF
+                    con.light(x, y, long=jump_delay, short=jump_delay)
+                continue
+
+            con.dark(x, y, long=dark_delay, short=dark_delay)
+            for i in range(1, quantization + 1):
+                if self.stopped:
+                    return False
+                x, y = e.point(i / float(quantization))
+                x, y = self.service.scene_to_device_position(x, y)
+                x, y = mx_rotate((x, y))
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                con.light(x, y, long=jump_delay, short=jump_delay)
+        con.light_off()
+        return True
+
+
+class LiveSelectionLightJob:
+    def __init__(
+        self,
+        service,
+    ):
+        self.service = service
+        self.stopped = False
+        self._current_points = None
+        self._last_bounds = None
+
+    def update_points(self, bounds):
+        if bounds == self._last_bounds and self._current_points is not None:
+            return self._current_points, False
+
+        # Calculate rotate matrix.
+        rotate = Matrix()
+        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        x_offset = self.service.length(
+            self.service.redlight_offset_x, axis=0, as_float=True
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y, axis=1, as_float=True
+        )
+        rotate.post_translate(x_offset, y_offset)
+
+        # Function for using rotate
+        def mx_rotate(pt):
+            if pt is None:
+                return None
+            return (
+                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            )
+
+        def crosshairs():
+            margin = 5000
+            points = [
+                (0x8000, 0x8000),
+                (0x8000 - margin, 0x8000),
+                (0x8000, 0x8000),
+                (0x8000, 0x8000 - margin),
+                (0x8000, 0x8000),
+                (0x8000 + margin, 0x8000),
+                (0x8000, 0x8000),
+                (0x8000, 0x8000 + margin),
+                (0x8000, 0x8000),
+            ]
+            for i in range(len(points)):
+                pt = points[i]
+                x, y = mx_rotate(pt)
+                x = int(x)
+                y = int(y)
+                points[i] = x, y
+            return points
+
+        if bounds is None:
+            # bounds is None, default crosshair
+            points = crosshairs()
+        else:
+            # Bounds exist
+            xmin, ymin, xmax, ymax = bounds
+            points = [
+                (xmin, ymin),
+                (xmax, ymin),
+                (xmax, ymax),
+                (xmin, ymax),
+                (xmin, ymin),
+            ]
+            for i in range(len(points)):
+                pt = points[i]
+                x, y = self.service.scene_to_device_position(*pt)
+                x, y = mx_rotate((x, y))
+                x = int(x)
+                y = int(y)
+                if 0 <= x <= 0xFFFF and 0 <= y <= 0xFFFF:
+                    points[i] = x, y
+                else:
+                    # Our bounds are not in frame.
+                    points = crosshairs()
+                    break
+        self._current_points = points
+        self._last_bounds = bounds
+        return self._current_points, True
+
+    def stop(self):
+        self.stopped = True
+
+    def process(self, con):
+        if self.stopped:
+            return False
+        con.light_mode()
+
+        jump_delay = self.service.delay_jump_long
+        dark_delay = self.service.delay_jump_short
+        con._light_speed = self.service.redlight_speed
+
+        bounds = self.service.elements.selected_area()
+        first_run = self._current_points is None
+        points, update = self.update_points(bounds)
+        if update and not first_run:
+            con.abort()
+            con.light_mode()
+
+        if self.stopped:
+            return False
+        #
+        # x, y = points[0]
+        # con.light(x, y, long=dark_delay, short=dark_delay)
+        for pt in points:
+            if self.stopped:
+                return False
+            con.light(*pt, long=jump_delay, short=jump_delay)
+        return True
 
 
 class BalorDevice(Service, ViewPort):
@@ -18,6 +218,7 @@ class BalorDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "balor"
+        self.job = None
 
         _ = kernel.translation
 
@@ -166,6 +367,22 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
+            },
+            {
+                "attr": "footpedal_pin",
+                "object": self,
+                "default": 15,
+                "type": int,
+                "label": _("Pin Index of footpedal"),
+                "tip": _("What pin is your foot pedal hooked to on the GPIO"),
+            },
+            {
+                "attr": "light_pin",
+                "object": self,
+                "default": 8,
+                "type": int,
+                "label": _("Pin Index of redlight laser"),
+                "tip": _("What pin is your redlight hooked to on the GPIO"),
             },
         ]
         self.register_choices("balor", choices)
@@ -322,6 +539,38 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("End Delay"),
                 "tip": _("Delay amount for the end TC"),
+            },
+            {
+                "attr": "delay_jump_long",
+                "object": self,
+                "default": 200.0,
+                "type": float,
+                "label": _("Jump Delay (long)"),
+                "tip": _("Delay for a long jump distance"),
+            },
+            {
+                "attr": "delay_jump_short",
+                "object": self,
+                "default": 8,
+                "type": float,
+                "label": _("Jump Delay (short)"),
+                "tip": _("Delay for a short jump distance"),
+            },
+            {
+                "attr": "delay_distance_long",
+                "object": self,
+                "default": "10mm",
+                "type": Length,
+                "label": _("Long jump distance"),
+                "tip": _("Distance divide between long and short jump distances"),
+            },
+            {
+                "attr": "delay_openmo",
+                "object": self,
+                "default": 8.0,
+                "type": float,
+                "label": _("Open MO delay"),
+                "tip": _("OpenMO delay in ms"),
             },
         ]
         self.register_choices("balor-global-timing", choices)
@@ -498,7 +747,7 @@ class BalorDevice(Service, ViewPort):
             "spool",
             help=_("spool <command>"),
             regex=True,
-            input_type=(None, "plan", "device", "balor"),
+            input_type=(None, "plan", "device"),
             output_type="spooler",
         )
         def spool(
@@ -509,9 +758,6 @@ class BalorDevice(Service, ViewPort):
             """
             spooler = self.spooler
             if data is not None:
-                if data_type == "balor":
-                    spooler.job(("balor_job", data))
-                    return "spooler", spooler
                 # If plan data is in data, then we copy that and move on to next step.
                 spooler.jobs(data.plan)
                 channel(_("Spooled Plan."))
@@ -530,98 +776,6 @@ class BalorDevice(Service, ViewPort):
 
             return "spooler", spooler
 
-        @self.console_option(
-            "travel_speed", "t", type=float, help="Set the travel speed."
-        )
-        @self.console_option("power", "p", type=float, help="Set the power level")
-        @self.console_option(
-            "frequency", "q", type=float, help="Set the device's qswitch frequency"
-        )
-        @self.console_option(
-            "cut_speed", "s", type=float, help="Set the cut speed of the device"
-        )
-        @self.console_option("power", "p", type=float, help="Set the power level")
-        @self.console_option(
-            "laser_on_delay", "n", type=float, help="Sets the device's laser on delay"
-        )
-        @self.console_option(
-            "laser_off_delay", "f", type=float, help="Sets the device's laser off delay"
-        )
-        @self.console_option(
-            "polygon_delay",
-            "n",
-            type=float,
-            help="Sets the device's laser polygon delay",
-        )
-        @self.console_option(
-            "quantization",
-            "Q",
-            type=int,
-            default=500,
-            help="Number of line segments to break this path into",
-        )
-        @self.console_command(
-            "mark",
-            input_type="shapes",
-            output_type="balor",
-            help=_("runs mark on path."),
-        )
-        def mark(
-            command,
-            channel,
-            _,
-            data=None,
-            travel_speed=None,
-            power=None,
-            frequency=None,
-            cut_speed=None,
-            laser_on_delay=None,
-            laser_off_delay=None,
-            polygon_delay=None,
-            quantization=500,
-            **kwgs,
-        ):
-            """
-            Mark takes in element types from element* or circle or hull and applies the mark settings, and outputs
-            a Balor job type. These could be spooled, looped, debugged or whatever else might be wanted/needed.
-            """
-            channel("Creating mark job out of elements.")
-            paths = data
-            job = CommandList()
-            job.set_mark_settings(
-                travel_speed=self.default_rapid_speed
-                if travel_speed is None
-                else travel_speed,
-                power=self.default_power if power is None else power,
-                frequency=self.default_frequency if frequency is None else frequency,
-                cut_speed=self.default_speed if cut_speed is None else cut_speed,
-                laser_on_delay=self.delay_laser_on
-                if laser_on_delay is None
-                else laser_on_delay,
-                laser_off_delay=self.delay_laser_off
-                if laser_off_delay is None
-                else laser_off_delay,
-                polygon_delay=self.delay_polygon
-                if polygon_delay is None
-                else polygon_delay,
-            )
-            for e in paths:
-                x, y = e.point(0)
-                x, y = self.scene_to_device_position(x, y)
-                job.goto(x, y)
-                for i in range(1, quantization + 1):
-                    x, y = e.point(i / float(quantization))
-                    x, y = self.scene_to_device_position(x, y)
-                    job.mark(x, y)
-            return "balor", job
-
-        @self.console_option(
-            "speed",
-            "s",
-            type=bool,
-            action="store_true",
-            help="Run this light job at slow speed for the parts that would have been cuts.",
-        )
         @self.console_option(
             "travel_speed", "t", type=float, help="Set the travel speed."
         )
@@ -646,16 +800,14 @@ class BalorDevice(Service, ViewPort):
             help="Number of line segments to break this path into",
         )
         @self.console_command(
-            "light",
+            ("light", "light-simulate"),
             input_type="shapes",
-            output_type="balor",
             help=_("runs light on events."),
         )
         def light(
             command,
             channel,
             _,
-            speed=False,
             travel_speed=None,
             jump_delay=200,
             simulation_speed=None,
@@ -664,81 +816,53 @@ class BalorDevice(Service, ViewPort):
             **kwgs,
         ):
             """
-            Creates a light job out of elements. If speed is set then
+            Creates a shape based light job for use with the Galvo driver
             """
-            channel("Creating light job out of elements.")
-            paths = data
-            if simulation_speed is not None:
-                # Simulation_speed implies speed
-                speed = True
-            if travel_speed is None:
-                travel_speed = self.default_rapid_speed
-            if speed:
-                # Travel at simulation speed.
-                if simulation_speed is None:
-                    # if simulation speed was not set travel at cut_speed
-                    simulation_speed = self.default_speed
-                job = CommandList(light_speed=simulation_speed, goto_speed=travel_speed)
+            if data is None:
+                channel("Nothing sent")
+                return
+            if command == "light":
+                self.job = ElementLightJob(
+                    self,
+                    data,
+                    travel_speed=travel_speed,
+                    jump_delay=jump_delay,
+                    simulation_speed=simulation_speed,
+                    quantization=quantization,
+                    simulate=False,
+                )
             else:
-                # Travel at redlight speed
-                job = CommandList(
-                    light_speed=self.redlight_speed, goto_speed=travel_speed
+                self.job = ElementLightJob(
+                    self,
+                    data,
+                    travel_speed=travel_speed,
+                    jump_delay=jump_delay,
+                    simulation_speed=simulation_speed,
+                    quantization=quantization,
+                    simulate=True,
                 )
-            x_offset = self.length(self.redlight_offset_x, axis=0, as_float=True)
-            y_offset = self.length(self.redlight_offset_y, axis=1, as_float=True)
+            self.spooler.job(("light_loop", self.job.process))
 
-            rotate = Matrix()
-            rotate.post_rotate(self.redlight_angle.radians, 0x8000, 0x8000)
-            rotate.post_translate(x_offset, y_offset)
-
-            def mx_rotate(pt):
-                if pt is None:
-                    return None
-                return (
-                    pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-                    pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-                )
-
-            job.movement = False
-            dark_delay = 8
-            if jump_delay < 0:
-                jump_delay = None
-                dark_delay = None
-            for e in paths:
-                x, y = e.point(0)
-                x, y = self.scene_to_device_position(x, y)
-                x, y = mx_rotate((x, y))
-                x = int(x) & 0xFFFF
-                y = int(y) & 0xFFFF
-                if isinstance(e, (Polygon, Polyline)):
-                    job.light(x, y, False, jump_delay=jump_delay)
-                    for pt in e:
-                        x, y = self.scene_to_device_position(*pt)
-                        x, y = mx_rotate((x, y))
-                        x = int(x) & 0xFFFF
-                        y = int(y) & 0xFFFF
-                        job.light(x, y, True, jump_delay=dark_delay)
-                    continue
-
-                job.light(x, y, False, jump_delay=jump_delay)
-                for i in range(1, quantization + 1):
-                    x, y = e.point(i / float(quantization))
-                    x, y = self.scene_to_device_position(x, y)
-                    x, y = mx_rotate((x, y))
-                    x = int(x) & 0xFFFF
-                    y = int(y) & 0xFFFF
-                    job.light(x, y, True, jump_delay=dark_delay)
-            job.light_off()
-            return "balor", job
+        @self.console_command(
+            "select-light",
+            help=_("Execute selection light idle job")
+        )
+        def select_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveSelectionLightJob(self)
+            self.spooler.job(("light_loop", self.job.process))
 
         @self.console_command(
             "stop",
             help=_("stops the idle running job"),
         )
         def stoplight(command, channel, _, data=None, remainder=None, **kwgs):
+            if self.job is None:
+                channel("No job is currently set")
+                return
             channel("Stopping idle job")
-            self.spooler.set_idle(None)
-            self.driver.connection.abort()
+            self.job.stop()
 
         @self.console_command(
             "estop",
@@ -746,10 +870,12 @@ class BalorDevice(Service, ViewPort):
             input_type=(None),
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
-            channel("Stopping idle job")
+            channel("Stopping Job")
+            if self.job is not None:
+                self.job.stop()
             self.spooler.set_idle(None)
             self.spooler.clear_queue()
-            self.driver.connection.abort()
+            self.driver.set_abort()
 
         @self.console_command(
             "pause",
@@ -770,110 +896,49 @@ class BalorDevice(Service, ViewPort):
             channel("Resume the current job")
             self.driver.resume()
 
+        @self.console_option(
+            "idonotlovemyhouse",
+            type=bool,
+            action="store_true",
+            help=_("override one second laser fire pulse duration"),
+        )
+        @self.console_argument("time", type=float, help=_("laser fire pulse duration"))
+        @self.console_command(
+            "pulse",
+            help=_("pulse <time>: Pulse the laser in place."),
+        )
+        def pulse(command, channel, _, time=None, idonotlovemyhouse=False, **kwargs):
+            if time is None:
+                channel(_("Must specify a pulse time in milliseconds."))
+                return
+            if time > 1000.0:
+                channel(
+                    _('"%sms" exceeds 1 second limit to fire a standing laser.') % time
+                )
+                try:
+                    if not idonotlovemyhouse:
+                        return
+                except IndexError:
+                    return
+            if self.spooler.job_if_idle(("pulse", time)):
+                channel(_("Pulse laser for %f milliseconds") % time)
+            else:
+                channel(_("Pulse laser failed: Busy"))
+            return
+
         @self.console_command(
             "usb_connect",
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.connection.start()
+            self.spooler.job("connect")
 
         @self.console_command(
             "usb_disconnect",
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.connection.stop()
-
-        @self.console_command(
-            "print",
-            help=_("print balor info about generated job"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_print(command, channel, _, data=None, remainder=None, **kwgs):
-            for d in data:
-                print(d)
-            return "balor", data
-
-        @self.console_argument("filename", type=str, default="balor.png")
-        @self.console_command(
-            "png",
-            help=_("save image of balor write data"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_png(command, channel, _, data=None, filename="balor.png", **kwargs):
-            from PIL import Image, ImageDraw
-
-            data.scale_x = 1.0
-            data.scale_y = 1.0
-            data.size = "decagalvo"
-            im = Image.new("RGB", (0xFFF, 0xFFF), color=0)
-            data.plot(ImageDraw.Draw(im), 0xFFF)
-            im.save(filename, format="png")
-            return "balor", data
-
-        @self.console_command(
-            "debug",
-            help=_("debug balor job block"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_debug(command, channel, _, data=None, **kwargs):
-            c = CommandList()
-            for packet in data.packet_generator():
-                c.add_packet(packet)
-            for operation in c:
-                print(operation.text_debug(show_tracking=True))
-            return "balor", data
-
-        @self.console_argument("filename", type=str, default="balor.bin")
-        @self.console_command(
-            "save",
-            help=_("print balor info about generated job"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_save(
-            command, channel, _, data=None, filename="balor.bin", remainder=None, **kwgs
-        ):
-            with open(filename, "wb") as f:
-                for d in data:
-                    f.write(d)
-            channel("Saved file {filename} to disk.".format(filename=filename))
-            return "balor", data
-
-        @self.console_argument(
-            "repeats", help="Number of times to duplicate the job", default=1
-        )
-        @self.console_command(
-            "duplicate",
-            help=_("duplicate the balor job the given number of times."),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_dup(
-            command, channel, _, data=None, repeats=1, remainder=None, **kwgs
-        ):
-            data.duplicate(1, None, repeats)
-            channel("Job duplicated")
-            return "balor", data
-
-        @self.console_command(
-            "loop",
-            help=_("loop the selected job forever"),
-            input_type="balor",
-            output_type="balor",
-        )
-        def balor_loop(command, channel, _, data=None, remainder=None, **kwgs):
-            channel("Looping job: {job}".format(job=str(data)))
-
-            def looping_job():
-                yield "light", data
-                yield "wait_finished"
-
-            self.spooler.set_idle(looping_job)
-            return "balor", data
+            self.spooler.job("disconnect")
 
         @self.console_argument("x", type=float, default=0.0)
         @self.console_argument("y", type=float, default=0.0)
@@ -895,10 +960,12 @@ class BalorDevice(Service, ViewPort):
         def balor_on(command, channel, _, off=None, remainder=None, **kwgs):
             if off == "off":
                 reply = self.driver.connection.light_off()
+                self.driver.connection.write_port()
                 self.redlight_preferred = False
                 channel("Turning off redlight.")
             else:
                 reply = self.driver.connection.light_on()
+                self.driver.connection.write_port()
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
@@ -916,9 +983,11 @@ class BalorDevice(Service, ViewPort):
             off = off == "off"
             if off:
                 self.driver.connection.port_off(bit)
+                self.driver.connection.write_port()
                 channel(f"Turning on bit {bit}")
             else:
                 self.driver.connection.port_on(bit)
+                self.driver.connection.write_port()
                 channel(f"Turning off bit {bit}")
             if duration is not None:
                 if off:
@@ -931,17 +1000,13 @@ class BalorDevice(Service, ViewPort):
             help=_("Sends status check"),
         )
         def balor_status(command, channel, _, remainder=None, **kwgs):
-            reply = self.driver.connection.get_status()
+            reply = self.driver.connection.get_version()
             if reply is None:
                 channel("Not connected, cannot get serial number.")
                 return
-            channel("Command replied: {reply}".format(reply=str(reply)))
+            channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
-                channel(
-                    "Bit {index}: {bits}".format(
-                        index="{0:x}".format(index), bits="{0:b}".format(b)
-                    )
-                )
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
             "lstatus",
@@ -952,13 +1017,139 @@ class BalorDevice(Service, ViewPort):
             if reply is None:
                 channel("Not connected, cannot get serial number.")
                 return
-            channel("Command replied: {reply}".format(reply=str(reply)))
+            channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
-                channel(
-                    "Bit {index}: {bits}".format(
-                        index="{0:x}".format(index), bits="{0:b}".format(b)
-                    )
-                )
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "mark_time",
+            help=_("Checks the Mark Time."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_mark_time()
+            if reply is None:
+                channel("Not connected, cannot get mark time.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "mark_count",
+            help=_("Checks the Mark Count."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_mark_count()
+            if reply is None:
+                channel("Not connected, cannot get mark count.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "axis_pos",
+            help=_("Checks the Axis Position."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_axis_pos()
+            if reply is None:
+                channel("Not connected, cannot get axis position.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "user_data",
+            help=_("Checks the User Data."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_user_data()
+            if reply is None:
+                channel("Not connected, cannot get user data.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "position_xy",
+            help=_("Checks the Position XY"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_position_xy()
+            if reply is None:
+                channel("Not connected, cannot get position xy.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "fly_speed",
+            help=_("Checks the Fly Speed."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fly_speed()
+            if reply is None:
+                channel("Not connected, cannot get fly speed.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "fly_wait_count",
+            help=_("Checks the fiber config extend"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fly_wait_count()
+            if reply is None:
+                channel("Not connected, cannot get fly weight count.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "fiber_st_mo_ap",
+            help=_("Checks the fiber st mo ap"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fiber_st_mo_ap()
+            if reply is None:
+                channel("Not connected, cannot get fiber_st_mo_ap.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "input_port",
+            help=_("Checks the input_port"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_input_port()
+            if reply is None:
+                channel("Not connected, cannot get input port.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "fiber_config_extend",
+            help=_("Checks the fiber config extend"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fiber_config_extend()
+            if reply is None:
+                channel("Not connected, cannot get fiber config extend.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
             "serial_number",
@@ -970,13 +1161,9 @@ class BalorDevice(Service, ViewPort):
                 channel("Not connected, cannot get serial number.")
                 return
 
-            channel("Command replied: {reply}".format(reply=str(reply)))
+            channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
-                channel(
-                    "Bit {index}: {bits}".format(
-                        index="{0:x}".format(index), bits="{0:b}".format(b)
-                    )
-                )
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_argument("filename", type=str, default=None)
         @self.console_command(
@@ -1026,11 +1213,7 @@ class BalorDevice(Service, ViewPort):
                 return
             x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
             x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
-            channel(
-                "Top Right: ({cx}, {cy}). Lower, Left: ({mx},{my})".format(
-                    cx=x0, cy=y0, mx=x1, my=y1
-                )
-            )
+            channel(f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})")
 
         @self.console_argument("lens_size", type=str, default=None)
         @self.console_command(
@@ -1150,7 +1333,7 @@ class BalorDevice(Service, ViewPort):
         @self.console_option(
             "quantization",
             "q",
-            default=500,
+            default=50,
             type=int,
             help="Number of segments to break each path into.",
         )
@@ -1160,7 +1343,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="shapes",
         )
-        def element_ants(command, channel, _, data=None, quantization=500, **kwargs):
+        def element_ants(command, channel, _, data=None, quantization=50, **kwargs):
             """
             Draws an outline of the current shape.
             """
@@ -1176,7 +1359,7 @@ class BalorDevice(Service, ViewPort):
                 for i in range(0, quantization + 1):
                     x, y = path.point(i / float(quantization))
                     points.append((x, y))
-                points_list.append(list(ant_points(points, int(quantization / 10))))
+                points_list.append(list(ant_points(points, int(quantization / 2))))
             return "shapes", [Polygon(*p) for p in points_list]
 
         @self.console_command(

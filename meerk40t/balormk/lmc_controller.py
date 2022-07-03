@@ -1,21 +1,13 @@
-import threading
 import time
 from copy import copy
 
+from meerk40t.balormk.mock_connection import MockConnection
 from meerk40t.balormk.usb_connection import USBConnection
-from meerk40t.device.basedevice import DRIVER_STATE_RAPID, DRIVER_STATE_PROGRAM
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_BUSY,
-    STATE_END,
-    STATE_IDLE,
-    STATE_INITIALIZE,
-    STATE_PAUSE,
-    STATE_SUSPEND,
-    STATE_TERMINATE,
-    STATE_UNKNOWN,
-)
+from meerk40t.fill.fills import Wobble
 
+DRIVER_STATE_RAPID = 0
+DRIVER_STATE_LIGHT = 1
+DRIVER_STATE_PROGRAM = 2
 
 nop = [0x02, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 empty = bytearray(nop * 0x100)
@@ -100,7 +92,6 @@ SetZData = 0x003B
 SetSPISimmerCurrent = 0x003C
 SetFpkParam = 0x0062
 Reset = 0x0040
-Unknown_Init = 0x0024
 GetFlySpeed = 0x0038
 FiberPulseWidth = 0x002F
 FiberGetConfigExtend = 0x0030
@@ -109,8 +100,127 @@ GetMarkTime = 0x0041
 GetUserData = 0x0036
 SetFlyRes = 0x0032
 
+list_command_lookup = {
+    0x8001: "listJumpTo",
+    0x8002: "listEndOfList",
+    0x8003: "listLaserOnPoint",
+    0x8004: "listDelayTime",
+    0x8005: "listMarkTo",
+    0x8006: "listJumpSpeed",
+    0x8007: "listLaserOnDelay",
+    0x8008: "listLaserOffDelay",
+    0x800A: "listMarkFreq",
+    0x800B: "listMarkPowerRatio",
+    0x800C: "listMarkSpeed",
+    0x800D: "listJumpDelay",
+    0x800F: "listPolygonDelay",
+    0x8011: "listWritePort",
+    0x8012: "listMarkCurrent",
+    0x8013: "listMarkFreq2",
+    0x801A: "listFlyEnable",
+    0x801B: "listQSwitchPeriod",
+    0x801C: "listDirectLaserSwitch",
+    0x801D: "listFlyDelay",
+    0x801E: "listSetCo2FPK",
+    0x801F: "listFlyWaitInput",
+    0x8021: "listFiberOpenMO",
+    0x8022: "listWaitForInput",
+    0x8023: "listChangeMarkCount",
+    0x8024: "listSetWeldPowerWave",
+    0x8025: "listEnableWeldPowerWave",
+    0x8026: "listFiberYLPMPulseWidth",
+    0x8028: "listFlyEncoderCount",
+    0x8029: "listSetDaZWord",
+    0x8050: "listJptSetParam",
+    0x8051: "listReadyMark",
+}
+
+single_command_lookup = {
+    0x0002: "DisableLaser",
+    0x0004: "EnableLaser",
+    0x0005: "ExecuteList",
+    0x0006: "SetPwmPulseWidth",
+    0x0007: "GetVersion",
+    0x0009: "GetSerialNo",
+    0x000A: "GetListStatus",
+    0x000C: "GetPositionXY",
+    0x000D: "GotoXY",
+    0x000E: "LaserSignalOff",
+    0x000F: "LaserSignalOn",
+    0x0010: "WriteCorLine",
+    0x0012: "ResetList",
+    0x0013: "RestartList",
+    0x0015: "WriteCorTable",
+    0x0016: "SetControlMode",
+    0x0017: "SetDelayMode",
+    0x0018: "SetMaxPolyDelay",
+    0x0019: "SetEndOfList",
+    0x001A: "SetFirstPulseKiller",
+    0x001B: "SetLaserMode",
+    0x001C: "SetTiming",
+    0x001D: "SetStandby",
+    0x001E: "SetPwmHalfPeriod",
+    0x001F: "StopExecute",
+    0x0020: "StopList",
+    0x0021: "WritePort",
+    0x0022: "WriteAnalogPort1",
+    0x0023: "WriteAnalogPort2",
+    0x0024: "WriteAnalogPortX",
+    0x0025: "ReadPort",
+    0x0026: "SetAxisMotionParam",
+    0x0027: "SetAxisOriginParam",
+    0x0028: "AxisGoOrigin",
+    0x0029: "MoveAxisTo",
+    0x002A: "GetAxisPos",
+    0x002B: "GetFlyWaitCount",
+    0x002D: "GetMarkCount",
+    0x002E: "SetFpkParam2",
+    0x0033: "Fiber_SetMo",
+    0x0034: "Fiber_GetStMO_AP",
+    0x003A: "EnableZ",
+    0x0039: "DisableZ",
+    0x003B: "SetZData",
+    0x003C: "SetSPISimmerCurrent",
+    0x0062: "SetFpkParam",
+    0x0040: "Reset",
+    0x0038: "GetFlySpeed",
+    0x002F: "FiberPulseWidth",
+    0x0030: "FiberGetConfigExtend",
+    0x0031: "InputPort",
+    0x0041: "GetMarkTime",
+    0x0036: "GetUserData",
+    0x0032: "SetFlyRes",
+}
+
 BUSY = 0x04
 READY = 0x20
+
+
+def _bytes_to_words(r):
+    b0 = r[1] << 8 | r[0]
+    b1 = r[3] << 8 | r[2]
+    b2 = r[5] << 8 | r[4]
+    b3 = r[7] << 8 | r[6]
+    return b0, b1, b2, b3
+
+
+def _command_to_bytes(command, v1=0, v2=0, v3=0, v4=0, v5=0):
+    return bytes(
+        [
+            command & 0xFF,
+            command >> 8 & 0xFF,
+            v1 & 0xFF,
+            v1 >> 8 & 0xFF,
+            v2 & 0xFF,
+            v2 >> 8 & 0xFF,
+            v3 & 0xFF,
+            v3 >> 8 & 0xFF,
+            v4 & 0xFF,
+            v4 >> 8 & 0xFF,
+            v5 & 0xFF,
+            v5 >> 8 & 0xFF,
+        ]
+    )
 
 
 class GalvoController:
@@ -123,28 +233,32 @@ class GalvoController:
     single commands.
     """
 
-    def __init__(self, service, x=0x8000, y=0x8000, mark_speed=None, goto_speed=None, light_speed=None, dark_speed=None):
+    def __init__(
+        self,
+        service,
+        x=0x8000,
+        y=0x8000,
+        mark_speed=None,
+        goto_speed=None,
+        light_speed=None,
+        dark_speed=None,
+    ):
         self.service = service
-        self.state = STATE_UNKNOWN
         self.is_shutdown = False  # Shutdown finished.
 
         self.max_attempts = 5
+        self.refused_count = 0
         self.count = 0
 
         name = self.service.label
-        self.pipe_channel = service.channel("%s/events" % name)
-
-        self.usb_log = service.channel("%s/usb" % name, buffer_size=500)
+        self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
-        # self.usb_send_channel = service.channel("%s/usb_send" % name)
-        # self.recv_channel = service.channel("%s/recv" % name)
+        self.connection = None
 
-        self.connection = USBConnection(self.usb_log)
+        self._light_bit = service.setting(int, "light_pin", 8)
+        self._foot_bit = service.setting(int, "footpedal_pin", 15)
 
-        self._light_bit = service.setting("light_pin", 8)
-        self._active_list = None
-        self._active_index = 0
         self._last_x = x
         self._last_y = y
         self._mark_speed = mark_speed
@@ -157,6 +271,7 @@ class GalvoController:
         self._travel_speed = None
         self._frequency = None
         self._power = None
+        self._pulse_width = None
 
         self._delay_jump = None
         self._delay_on = None
@@ -167,7 +282,13 @@ class GalvoController:
         self._wobble = None
         self._port_bits = 0
         self._machine_index = 0
+
         self.mode = DRIVER_STATE_RAPID
+        self._active_list = None
+        self._active_index = 0
+        self._list_executing = False
+        self._number_of_list_packets = 0
+        self.paused = False
 
     def added(self):
         pass
@@ -178,61 +299,280 @@ class GalvoController:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
-    def send(self, data):
-        while True:
-            if self.is_shutdown:
-                return
+    def disconnect(self):
+        try:
+            self.connection.close(self._machine_index)
+        except (ConnectionError, ConnectionRefusedError):
+            pass
+        self.connection = None
+
+    def connect_if_needed(self):
+        if self.connection is None:
+            if self.service.setting(bool, "mock", False):
+                self.connection = MockConnection(self.usb_log)
+                name = self.service.label
+                self.connection.send = self.service.channel(f"{name}/send")
+                self.connection.recv = self.service.channel(f"{name}/recv")
+            else:
+                self.connection = USBConnection(self.usb_log)
+        while not self.connection.is_open(self._machine_index):
             try:
-                if not self.connection.is_open(self._machine_index):
-                    v = self.connection.open(self._machine_index)
-                    if v < 0:
-                        self.count += 1
-                        time.sleep(0.1)
-                        continue
-                    self.init_laser()
-                self.connection.write(self._machine_index, data)
+                v = self.connection.open(self._machine_index)
+                if v < 0:
+                    self.count += 1
+                    time.sleep(0.3)
+                    if self.is_shutdown:
+                        return
+                    continue
+                self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
                 self.connection.close(self._machine_index)
+                self.refused_count += 1
+                time.sleep(0.5)
+                continue
 
-    def _command_to_bytes(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
-        return bytes(
-            [
-                command & 0xFF,
-                command >> 8 & 0xFF,
-                v1 & 0xFF,
-                v1 >> 8 & 0xFF,
-                v2 & 0xFF,
-                v2 >> 8 & 0xFF,
-                v3 & 0xFF,
-                v3 >> 8 & 0xFF,
-                v4 & 0xFF,
-                v4 >> 8 & 0xFF,
-                v5 & 0xFF,
-                v5 >> 8 & 0xFF,
-            ]
-        )
+    def send(self, data, read=True):
+        if self.is_shutdown:
+            return -1, -1, -1, -1
+        self.connect_if_needed()
+        try:
+            self.connection.write(self._machine_index, data)
+        except ConnectionError:
+            return -1, -1, -1, -1
+        if read:
+            try:
+                r = self.connection.read(self._machine_index)
+                b0 = r[1] << 8 | r[0]
+                b1 = r[3] << 8 | r[2]
+                b2 = r[5] << 8 | r[4]
+                b3 = r[7] << 8 | r[6]
+                return b0, b1, b2, b3
+            except ConnectionError:
+                return -1, -1, -1, -1
 
+    def status(self):
+        b0, b1, b2, b3 = self.get_version()
+        return b3
 
     #######################
     # MODE SHIFTS
     #######################
 
     def rapid_mode(self):
-        if self.mode != DRIVER_STATE_RAPID:
-            self.flush()
-            self.mode = DRIVER_STATE_RAPID
+        if self.mode == DRIVER_STATE_RAPID:
+            return
+
+        self._list_end()
+        if not self._list_executing:
+            self.execute_list()
+        self._list_executing = False
+        self._number_of_list_packets = 0
+        self.wait_idle()
+        self.set_fiber_mo(0)
+        self.port_off(bit=0)
+        self.write_port()
+        self.mode = DRIVER_STATE_RAPID
 
     def program_mode(self):
-        if self.mode != DRIVER_STATE_PROGRAM:
-            self.flush()
+        if self.mode == DRIVER_STATE_PROGRAM:
+            return
+        if self.mode == DRIVER_STATE_LIGHT:
             self.mode = DRIVER_STATE_PROGRAM
+            self.light_off()
+            self.port_on(bit=0)
+            self.write_port()
+            self.set_fiber_mo(1)
+        else:
+            self.mode = DRIVER_STATE_PROGRAM
+            self.reset_list()
+            self.port_on(bit=0)
+            self.write_port()
+            self.set_fiber_mo(1)
+            self._ready = None
+            self._speed = None
+            self._travel_speed = None
+            self._frequency = None
+            self._power = None
+            self._pulse_width = None
+
+            self._delay_jump = None
+            self._delay_on = None
+            self._delay_off = None
+            self._delay_poly = None
+            self._delay_end = None
+            self.list_ready()
+            if self.service.delay_openmo != 0:
+                self.list_delay_time(int(self.service.delay_openmo * 100))
+            self.list_write_port()
+            self.list_jump_speed(self.service.default_rapid_speed)
+
+    def light_mode(self):
+        if self.mode == DRIVER_STATE_LIGHT:
+            return
+        if self.mode == DRIVER_STATE_PROGRAM:
+            self.set_fiber_mo(0)
+            self.port_off(bit=0)
+            self.port_on(self._light_bit)
+            self.write_port()
+        else:
+            self._ready = None
+            self._speed = None
+            self._travel_speed = None
+            self._frequency = None
+            self._power = None
+            self._pulse_width = None
+
+            self._delay_jump = None
+            self._delay_on = None
+            self._delay_off = None
+            self._delay_poly = None
+            self._delay_end = None
+
+            self.reset_list()
+            self.list_ready()
+            self.port_off(bit=0)
+            self.port_on(self._light_bit)
+            self.list_write_port()
+        self.mode = DRIVER_STATE_LIGHT
+
+    #######################
+    # LIST APPENDING OPERATIONS
+    #######################
+
+    def _list_end(self):
+        if self._active_list is None:
+            return
+        if self._active_list:
+            self.wait_ready()
+            while self.paused:
+                time.sleep(0.3)
+            self.send(self._active_list, False)
+            self.set_end_of_list(0)
+            self._number_of_list_packets += 1
+            self._active_list = None
+            self._active_index = 0
+            if self._number_of_list_packets > 2 and not self._list_executing:
+                self.execute_list()
+                self._list_executing = True
+
+    def _list_new(self):
+        self._active_list = copy(empty)
+        self._active_index = 0
+
+    def _list_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
+        if self._active_index >= 0xC00:
+            self._list_end()
+        if self._active_list is None:
+            self._list_new()
+        index = self._active_index
+        self._active_list[index : index + 12] = _command_to_bytes(
+            command, int(v1), int(v2), int(v3), int(v4), int(v5)
+        )
+        self._active_index += 12
+
+    def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
+        cmd = _command_to_bytes(command, v1, v2, v3, v4, v5)
+        return self.send(cmd, read=read)
+
+    #######################
+    # SETS FOR PLOTLIKES
+    #######################
+
+    def set_settings(self, settings):
+        """
+        Sets the primary settings. Rapid, frequency, speed, and timings.
+
+        @param settings: The current settings dictionary
+        @return:
+        """
+        if self.service.pulse_width_enabled:
+            # Global Pulse Width is enabled.
+            if str(settings.get("pulse_width_enabled", False)).lower() == "true":
+                # Local Pulse Width value is enabled.
+                # OpFiberYLPMPulseWidth
+
+                self.list_fiber_ylpm_pulse_width(
+                    int(settings.get("pulse_width", self.service.default_pulse_width))
+                )
+            else:
+                # Only global is enabled, use global pulse width value.
+                self.list_fiber_ylpm_pulse_width(self.service.default_pulse_width)
+
+        if str(settings.get("rapid_enabled", False)).lower() == "true":
+            self.list_jump_speed(
+                float(settings.get("rapid_speed", self.service.default_rapid_speed))
+            )
+        else:
+            self.list_jump_speed(self.service.default_rapid_speed)
+
+        self.power(
+            (float(settings.get("power", self.service.default_power)) / 10.0)
+        )  # Convert power, out of 1000
+        self.frequency(float(settings.get("frequency", self.service.default_frequency)))
+        self.list_mark_speed(float(settings.get("speed", self.service.default_speed)))
+
+        if str(settings.get("timing_enabled", False)).lower() == "true":
+            self.list_laser_on_delay(
+                settings.get("delay_laser_on", self.service.delay_laser_on)
+            )
+            self.list_laser_off_delay(
+                settings.get("delay_laser_off", self.service.delay_laser_off)
+            )
+            self.list_polygon_delay(
+                settings.get("delay_laser_polygon", self.service.delay_polygon)
+            )
+        else:
+            # Use globals
+            self.list_laser_on_delay(self.service.delay_laser_on)
+            self.list_laser_off_delay(self.service.delay_laser_off)
+            self.list_polygon_delay(self.service.delay_polygon)
+
+    def set_wobble(self, settings):
+        """
+        Set the wobble parameters and mark modifications routines.
+
+        @param settings: The dict setting to extract parameters from.
+        @return:
+        """
+        if settings is None:
+            self._wobble = None
+            return
+        wobble_enabled = str(settings.get("wobble_enabled", False)).lower() == "true"
+        if not wobble_enabled:
+            self._wobble = None
+            return
+        wobble_radius = settings.get("wobble_radius", "1.5mm")
+        wobble_r = self.service.physical_to_device_length(wobble_radius, 0)[0]
+        wobble_interval = settings.get("wobble_interval", "0.3mm")
+        wobble_speed = settings.get("wobble_speed", 50.0)
+        wobble_type = settings.get("wobble_type", "circle")
+        wobble_interval = self.service.physical_to_device_length(wobble_interval, 0)[0]
+        algorithm = self.service.lookup(f"wobble/{wobble_type}")
+        if self._wobble is None:
+            self._wobble = Wobble(
+                algorithm=algorithm,
+                radius=wobble_r,
+                speed=wobble_speed,
+                interval=wobble_interval,
+            )
+        else:
+            # set our parameterizations
+            self._wobble.algorithm = algorithm
+            self._wobble.radius = wobble_r
+            self._wobble.speed = wobble_speed
 
     #######################
     # PLOTLIKE SHORTCUTS
     #######################
 
     def mark(self, x, y):
-        self.list_mark_speed(self._mark_speed)
+        if x == self._last_x and y == self._last_y:
+            return
+        if x > 0xFFFF or x < 0:
+            # Moves to out of range are not performed.
+            return
+        if self._mark_speed is not None:
+            self.list_mark_speed(self._mark_speed)
         if self._wobble:
             for wx, wy in self._wobble(self._last_x, self._last_y, x, y):
                 self.list_mark(wx, wy)
@@ -240,29 +580,48 @@ class GalvoController:
             self.list_mark(x, y)
 
     def goto(self, x, y, long=None, short=None, distance_limit=None):
-        self.list_jump_speed(self._goto_speed)
+        if x == self._last_x and y == self._last_y:
+            return
+        if x > 0xFFFF or x < 0:
+            # Moves to out of range are not performed.
+            return
+        if self._goto_speed is not None:
+            self.list_jump_speed(self._goto_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def light(self, x, y, long=None, short=None, distance_limit=None):
+        if x == self._last_x and y == self._last_y:
+            return
+        if x > 0xFFFF or x < 0:
+            # Moves to out of range are not performed.
+            return
         if self.light_on():
             self.list_write_port()
-        self.list_jump_speed(self._light_speed)
+        if self._light_speed is not None:
+            self.list_jump_speed(self._light_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def dark(self, x, y, long=None, short=None, distance_limit=None):
+        if x == self._last_x and y == self._last_y:
+            return
+        if x > 0xFFFF or x < 0:
+            # Moves to out of range are not performed.
+            return
         if self.light_off():
             self.list_write_port()
-        self.list_jump_speed(self._dark_speed)
+        if self._dark_speed is not None:
+            self.list_jump_speed(self._dark_speed)
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
+
+    def set_xy(self, x, y):
+        self.goto_xy(x, y)
+
+    def get_last_xy(self):
+        return self._last_x, self._last_y
 
     #######################
     # Command Shortcuts
     #######################
-
-    def status(self):
-        self.read_port()
-        status = self.connection.read(self._machine_index)
-        return status
 
     def is_busy(self):
         status = self.status()
@@ -279,22 +638,44 @@ class GalvoController:
     def wait_finished(self):
         while not self.is_ready_and_not_busy():
             time.sleep(0.01)
+            if self.is_shutdown:
+                return
 
     def wait_ready(self):
         while not self.is_ready():
             time.sleep(0.01)
+            if self.is_shutdown:
+                return
 
     def wait_idle(self):
         while self.is_busy():
             time.sleep(0.01)
+            if self.is_shutdown:
+                return
 
-    def abort(self):
+    def abort(self, dummy_packet=True):
         self.stop_execute()
         self.set_fiber_mo(0)
         self.reset_list()
-        self.send(empty)
-        self.set_end_of_list(1)
-        self.execute_list()
+        if dummy_packet:
+            self._list_new()
+            self._list_end()
+            if not self._list_executing:
+                self.execute_list()
+        self._list_executing = False
+        self._number_of_list_packets = 0
+        self.set_fiber_mo(0)
+        self.port_off(bit=0)
+        self.write_port()
+        self.mode = DRIVER_STATE_RAPID
+
+    def pause(self):
+        self.paused = True
+        self.stop_list()
+
+    def resume(self):
+        self.restart_list()
+        self.paused = False
 
     def init_laser(self):
         cor_file = self.service.corfile if self.service.corfile_enabled else None
@@ -315,30 +696,61 @@ class GalvoController:
         fly_res_p2 = self.service.fly_res_p2
         fly_res_p3 = self.service.fly_res_p3
         fly_res_p4 = self.service.fly_res_p4
+
+        self.usb_log("Initializing Laser")
+        serial_number = self.get_serial_number()
+        self.usb_log(f"Serial Number: {serial_number}")
+        version = self.get_version()
+        self.usb_log(f"Version: {version}")
+
         self.reset()
+        self.usb_log("Reset")
         self.write_correction_file(cor_file)
+        self.usb_log("Correction File Sent")
+        self.enable_laser()
+        self.usb_log("Laser Enabled")
         self.set_control_mode(control_mode)
+        self.usb_log("Control Mode")
         self.set_laser_mode(laser_mode)
+        self.usb_log("Laser Mode")
         self.set_delay_mode(delay_mode)
+        self.usb_log("Delay Mode")
         self.set_timing(timing_mode)
+        self.usb_log("Timing Mode")
         self.set_standby(standby_param_1, standby_param_2)
+        self.usb_log("Setting Standby")
         self.set_first_pulse_killer(first_pulse_killer)
+        self.usb_log("Set First Pulse Killer")
         self.set_pwm_half_period(pwm_half_period)
+        self.usb_log("Set PWM Half-Period")
         self.set_pwm_pulse_width(pwm_pulse_width)
+        self.usb_log("Set PWM pulse width")
         self.set_fiber_mo(0)  # Close
+        self.usb_log("Set Fiber Mo (Closed)")
         self.set_pfk_param_2(fpk2_p1, fpk2_p2, fpk2_p3, fpk2_p4)
+        self.usb_log("First Pulse Killer Parameters")
         self.set_fly_res(fly_res_p1, fly_res_p2, fly_res_p3, fly_res_p4)
+        self.usb_log("On-The-Fly Res")
         self.enable_z()
+        self.usb_log("Z-Enabled")
         self.write_analog_port_1(0x7FF)
+        self.usb_log("Analog Port 1")
         self.enable_z()
+        self.usb_log("Z-Enabled-part2")
+        time.sleep(0.05)
+        self.usb_log("Ready")
 
-    def flush(self):
-        self.wait_finished()
-        self.reset_list()
-        self.port_on(bit=0)
-        self.set_fiber_mo(1)
+    def power(self, power):
+        """
+        Accepts power in percent, automatically converts to power_ratio
 
-        self.set_fiber_mo(0)
+        @param power:
+        @return:
+        """
+        if self._power == power:
+            return
+        self._power = power
+        self.list_mark_current(self._convert_power(power))
 
     def frequency(self, frequency):
         if self._frequency == frequency:
@@ -347,13 +759,13 @@ class GalvoController:
         self.list_qswitch_period(self._convert_frequency(frequency))
 
     def light_on(self):
-        if self.is_port(self._light_bit):
+        if not self.is_port(self._light_bit):
             self.port_on(self._light_bit)
             return True
         return False
 
     def light_off(self):
-        if not self.is_port(self._light_bit):
+        if self.is_port(self._light_bit):
             self.port_off(self._light_bit)
             return True
         return False
@@ -367,34 +779,10 @@ class GalvoController:
     def port_off(self, bit):
         self._port_bits = ~((~self._port_bits) | (1 << bit))
 
-    #######################
-    # LIST APPENDING OPERATIONS
-    #######################
+    def port_set(self, mask, values):
+        self._port_bits &= ~mask  # Unset mask.
+        self._port_bits |= values & mask  # Set masked bits.
 
-    def _list_end(self):
-        if self._active_list:
-            self.send(self._active_list)
-            self._active_list = None
-            self._active_index = 0
-
-    def _list_new(self):
-        self._active_list = copy(empty)
-        self._active_index = 0
-
-    def _list_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
-        if self._active_index >= 0xC00:
-            self._list_end()
-        if self._active_list is None:
-            self._list_new()
-        self._active_list[
-            self._active_index : self._active_list + 12
-        ] = self._command_to_bytes(command, v1, v2, v3, v4, v5)
-        self._active_index += 12
-
-    def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
-        self._list_end()
-        cmd = self._command_to_bytes(command, v1, v2, v3, v4, v5)
-        self.send(cmd)
 
     #######################
     # UNIT CONVERSIONS
@@ -422,6 +810,13 @@ class GalvoController:
         """
         return int(round(20000.0 / frequency_khz))
 
+    def _convert_power(self, power):
+        """
+        Converts power percent to int value
+        @return:
+        """
+        return int(round(power * 0xFFF / 100.0))
+
     #######################
     # HIGH LEVEL OPERATIONS
     #######################
@@ -439,8 +834,6 @@ class GalvoController:
 
     def write_blank_correct_file(self):
         self.write_cor_table(False)
-        # for i in range(65 * 65):
-        #     self.write_cor_line(0, 0, 0 if i == 0 else 1)
 
     def _read_correction_file(self, filename):
         """
@@ -462,7 +855,7 @@ class GalvoController:
         return table
 
     def _write_correction_table(self, table):
-        assert (len(table), 65 * 65)
+        assert len(table) == 65 * 65
         self.write_cor_table(True)
         first = True
         for dx, dy in table:
@@ -484,13 +877,17 @@ class GalvoController:
         angle = 0
         if time:
             self.list_jump_delay(time)
-        self._list_write(listJumpTo, int(x), int(y), angle, distance)
+        x = int(x)
+        y = int(y)
+        self._list_write(listJumpTo, x, y, angle, distance)
+        self._last_x = x
+        self._last_y = y
 
     def list_end_of_list(self):
         self._list_write(listEndOfList)
 
-    def list_laser_on_point(self):
-        self._list_write(listLaserOnPoint)
+    def list_laser_on_point(self, dwell_time):
+        self._list_write(listLaserOnPoint, dwell_time)
 
     def list_delay_time(self, time):
         """
@@ -505,7 +902,11 @@ class GalvoController:
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
         if distance > 0xFFFF:
             distance = 0xFFFF
+        x = int(x)
+        y = int(y)
         self._list_write(listMarkTo, x, y, angle, distance)
+        self._last_x = x
+        self._last_y = y
 
     def list_jump_speed(self, speed):
         if self._travel_speed == speed:
@@ -560,7 +961,7 @@ class GalvoController:
         @return:
         """
         # listMarkPowerRatio
-        raise NotImplementedError
+        self._list_write(listMarkPowerRatio, power_ratio)
 
     def list_mark_speed(self, speed):
         """
@@ -572,7 +973,7 @@ class GalvoController:
         if self._speed == speed:
             return
         self._speed = speed
-        self._list_write(self._convert_speed(speed))
+        self._list_write(listMarkSpeed, self._convert_speed(speed))
 
     def list_jump_delay(self, delay):
         """
@@ -617,7 +1018,7 @@ class GalvoController:
         @return:
         """
         # listMarkCurrent
-        raise NotImplementedError
+        self._list_write(listMarkCurrent, current)
 
     def list_mark_frequency_2(self, frequency):
         """
@@ -688,13 +1089,13 @@ class GalvoController:
         """
         self._list_write(listFiberOpenMO, open_mo)
 
-    def list_wait_for_input(self):
+    def list_wait_for_input(self, wait_state):
         """
         Unknown.
 
         @return:
         """
-        self._list_write(listWaitForInput)
+        self._list_write(listWaitForInput, wait_state)
 
     def list_change_mark_count(self, count):
         """
@@ -730,6 +1131,9 @@ class GalvoController:
         @param pulse_width:
         @return:
         """
+        if self._pulse_width == pulse_width:
+            return
+        self._pulse_width = pulse_width
         self._list_write(listFiberYLPMPulseWidth, pulse_width)
 
     def list_fly_encoder_count(self, count):
@@ -772,121 +1176,121 @@ class GalvoController:
     #######################
 
     def disable_laser(self):
-        self._command(DisableLaser)
+        return self._command(DisableLaser)
 
     def enable_laser(self):
-        self._command(EnableLaser)
+        return self._command(EnableLaser)
 
     def execute_list(self):
-        self._command(ExecuteList)
+        return self._command(ExecuteList)
 
     def set_pwm_pulse_width(self, pulse_width):
-        self._command(SetPwmPulseWidth, pulse_width)
+        return self._command(SetPwmPulseWidth, pulse_width)
 
-    def get_state(self):
-        self._command(GetVersion)
+    def get_version(self):
+        return self._command(GetVersion)
 
     def get_serial_number(self):
-        self._command(GetSerialNo)
+        return self._command(GetSerialNo)
 
     def get_list_status(self):
-        self._command(GetListStatus)
+        return self._command(GetListStatus)
 
     def get_position_xy(self):
-        self._command(GetPositionXY)
+        return self._command(GetPositionXY)
 
     def goto_xy(self, x, y):
-        self._command(GotoXY, int(x), int(y))
+        return self._command(GotoXY, int(x), int(y))
 
     def laser_signal_off(self):
-        self._command(LaserSignalOff)
+        return self._command(LaserSignalOff)
 
     def laser_signal_on(self):
-        self._command(LaserSignalOn)
+        return self._command(LaserSignalOn)
 
     def write_cor_line(self, dx, dy, non_first):
-        self._command(WriteCorLine, dx, dy, non_first)
+        self._command(WriteCorLine, dx, dy, non_first, read=False)
 
     def reset_list(self):
-        self._command(ResetList)
+        return self._command(ResetList)
 
     def restart_list(self):
-        self._command(RestartList)
+        return self._command(RestartList)
 
     def write_cor_table(self, table: bool = True):
-        self._command(WriteCorTable, int(table))
+        return self._command(WriteCorTable, int(table))
 
     def set_control_mode(self, mode):
-        self._command(SetControlMode, mode)
+        return self._command(SetControlMode, mode)
 
     def set_delay_mode(self, mode):
-        self._command(SetDelayMode, mode)
+        return self._command(SetDelayMode, mode)
 
     def set_max_poly_delay(self, delay):
-        self._command(SetMaxPolyDelay, delay)
+        return self._command(SetMaxPolyDelay, delay)
 
     def set_end_of_list(self, end):
-        self._command(SetEndOfList, end)
+        return self._command(SetEndOfList, end)
 
     def set_first_pulse_killer(self, fpk):
-        self._command(SetFirstPulseKiller, fpk)
+        return self._command(SetFirstPulseKiller, fpk)
 
     def set_laser_mode(self, mode):
-        self._command(SetLaserMode, mode)
+        return self._command(SetLaserMode, mode)
 
     def set_timing(self, timing):
-        self._command(SetTiming, timing)
+        return self._command(SetTiming, timing)
 
     def set_standby(self, standby1, standby2):
-        self._command(SetStandby, standby1, standby2)
+        return self._command(SetStandby, standby1, standby2)
 
     def set_pwm_half_period(self, pwm_half_period):
-        self._command(SetPwmPulseWidth, pwm_half_period)
+        return self._command(SetPwmHalfPeriod, pwm_half_period)
 
     def stop_execute(self):
-        self._command(StopExecute)
+        return self._command(StopExecute)
 
     def stop_list(self):
-        self._command(StopList)
+        return self._command(StopList)
 
     def write_port(self):
-        self._command(WritePort, self._port_bits)
+        return self._command(WritePort, self._port_bits)
 
     def write_analog_port_1(self, port):
-        self._command(WriteAnalogPort1, port)
+        return self._command(WriteAnalogPort1, port)
 
     def write_analog_port_2(self, port):
-        self._command(WriteAnalogPort2, port)
+        return self._command(WriteAnalogPort2, port)
 
     def write_analog_port_x(self, port):
-        self._command(WriteAnalogPortX, port)
+        return self._command(WriteAnalogPortX, port)
 
     def read_port(self):
-        self._command(ReadPort)
+        return self._command(ReadPort)
 
     def set_axis_motion_param(self, param):
-        self._command(SetAxisMotionParam, param)
+        return self._command(SetAxisMotionParam, param)
 
     def set_axis_origin_param(self, param):
-        self._command(SetAxisOriginParam, param)
+        return self._command(SetAxisOriginParam, param)
 
     def axis_go_origin(self):
-        self._command(AxisGoOrigin)
+        return self._command(AxisGoOrigin)
 
     def move_axis_to(self, a):
-        self._command(MoveAxisTo)
+        return self._command(MoveAxisTo)
 
     def get_axis_pos(self):
-        self._command(GetAxisPos)
+        return self._command(GetAxisPos)
 
     def get_fly_wait_count(self):
-        self._command(GetFlyWaitCount)
+        return self._command(GetFlyWaitCount)
 
     def get_mark_count(self):
-        self._command(GetMarkCount)
+        return self._command(GetMarkCount)
 
     def set_pfk_param_2(self, param1, param2, param3, param4):
-        self._command(SetFpkParam2, param1, param2, param3, param4)
+        return self._command(SetFpkParam2, param1, param2, param3, param4)
 
     def set_fiber_mo(self, mo):
         """
@@ -896,61 +1300,58 @@ class GalvoController:
         @param mo:
         @return:
         """
-        self._command(Fiber_SetMo, mo)
+        return self._command(Fiber_SetMo, mo)
 
     def get_fiber_st_mo_ap(self):
-        self._command(Fiber_GetStMO_AP)
+        return self._command(Fiber_GetStMO_AP)
 
     def enable_z(self):
-        self._command(EnableZ)
+        return self._command(EnableZ)
 
     def disable_z(self):
-        self._command(DisableZ)
+        return self._command(DisableZ)
 
     def set_z_data(self, zdata):
-        self._command(SetZData, zdata)
+        return self._command(SetZData, zdata)
 
     def set_spi_simmer_current(self, current):
-        self._command(SetSPISimmerCurrent, current)
+        return self._command(SetSPISimmerCurrent, current)
 
     def set_fpk_param(self, param):
-        self._command(SetFpkParam, param)
+        return self._command(SetFpkParam, param)
 
     def reset(self):
-        self._command(Reset)
-
-    def unknown_init(self):
-        self._command(Unknown_Init)
+        return self._command(Reset)
 
     def get_fly_speed(self):
-        self._command(GetFlySpeed)
+        return self._command(GetFlySpeed)
 
     def fiber_pulse_width(self):
-        self._command(FiberPulseWidth)
+        return self._command(FiberPulseWidth)
 
     def get_fiber_config_extend(self):
-        self._command(FiberGetConfigExtend)
+        return self._command(FiberGetConfigExtend)
 
     def input_port(self, port):
-        self._command(InputPort, port)
+        return self._command(InputPort, port)
 
     def clear_lock_input_port(self):
-        self._command(InputPort, 0x04)
+        return self._command(InputPort, 0x04)
 
     def enable_lock_input_port(self):
-        self._command(InputPort, 0x02)
+        return self._command(InputPort, 0x02)
 
     def disable_lock_input_port(self):
-        self._command(InputPort, 0x01)
+        return self._command(InputPort, 0x01)
 
     def get_input_port(self):
-        self._command(InputPort)
+        return self._command(InputPort)
 
     def get_mark_time(self):
-        self._command(GetMarkTime)
+        return self._command(GetMarkTime)
 
     def get_user_data(self):
-        self._command(GetUserData)
+        return self._command(GetUserData)
 
     def set_fly_res(self, fly_res1, fly_res2, fly_res3, fly_res4):
-        self._command(SetFlyRes, fly_res1, fly_res2, fly_res3, fly_res4)
+        return self._command(SetFlyRes, fly_res1, fly_res2, fly_res3, fly_res4)
