@@ -71,6 +71,8 @@ class ElementLightJob:
             if isinstance(e, (Polygon, Polyline)):
                 con.dark(x, y, long=dark_delay, short=dark_delay)
                 for pt in e:
+                    if self.stopped:
+                        return False
                     x, y = self.service.scene_to_device_position(*pt)
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
