@@ -15,6 +15,8 @@ def plugin(service, lifecycle):
             icons8_connected_50,
             icons8_light_off_50,
             icons8_light_on_50,
+            icons8_quick_mode_on_50,
+            icons8_flash_off_50,
         )
 
         from .balorconfig import BalorConfiguration
@@ -52,15 +54,17 @@ def plugin(service, lifecycle):
                     service.light_default = index
                 v = service.light_default
                 if v == 0:
-                    service("element* hull light loop\n")
+                    service("element* hull light\n")
                 if v == 1:
-                    service("box light loop\n")
+                    service("box light\n")
                 if v == 2:
-                    service("element* ants light loop\n")
+                    service("element* ants light\n")
                 if v == 3:
-                    service("element* path light loop\n")
+                    service("element* path light\n")
                 if v == 4:
-                    service("element* path light --speed loop\n")
+                    service("element* path light-simulate\n")
+                if v == 5:
+                    service("select-light\n")
 
             return light_program
 
@@ -83,6 +87,7 @@ def plugin(service, lifecycle):
                     (_("Ants"), light_click(2)),
                     (_("Full"), light_click(3)),
                     (_("Simulate"), light_click(4)),
+                    (_("Live"), light_click(5)),
                 ),
             },
         )
@@ -93,6 +98,20 @@ def plugin(service, lifecycle):
                 "icon": icons8_light_off_50,
                 "tip": _("Turn light off"),
                 "action": lambda v: service("stop\n"),
+            },
+        )
+        service.register(
+            "button/control/Redlight",
+            {
+                "label": _("Redlight on"),
+                "icon": icons8_quick_mode_on_50,
+                "tip": _("Turn Redlight On"),
+                "action": lambda v: service("red on\n"),
+                "toggle": True,
+                "toggle_label": _("Redlight off"),
+                "toggle_action": lambda v: service("red off\n"),
+                "toggle_icon": icons8_flash_off_50,
+
             },
         )
         service.add_service_delegate(BalorGui(service))
