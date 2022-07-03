@@ -1037,6 +1037,32 @@ class BalorDevice(Service, ViewPort):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
+            "fly_wait_count",
+            help=_("Checks the fiber config extend"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fly_wait_count()
+            if reply is None:
+                channel("Not connected, cannot get fly weight count.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "fiber_st_mo_ap",
+            help=_("Checks the fiber st mo ap"),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_fiber_st_mo_ap()
+            if reply is None:
+                channel("Not connected, cannot get fiber_st_mo_ap.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
             "input_port",
             help=_("Checks the input_port"),
         )
@@ -1061,7 +1087,6 @@ class BalorDevice(Service, ViewPort):
             channel(f"Command replied: {reply}")
             for index, b in enumerate(reply):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
-
 
         @self.console_command(
             "serial_number",
