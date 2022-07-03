@@ -22,7 +22,6 @@ class BalorControllerPanel(wx.ScrolledWindow):
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self.log_append = ""
-        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
