@@ -415,6 +415,19 @@ class GalvoController:
             self.port_on(self._light_bit)
             self.write_port()
         else:
+            self._ready = None
+            self._speed = None
+            self._travel_speed = None
+            self._frequency = None
+            self._power = None
+            self._pulse_width = None
+
+            self._delay_jump = None
+            self._delay_on = None
+            self._delay_off = None
+            self._delay_poly = None
+            self._delay_end = None
+
             self.reset_list()
             self.list_ready()
             self.port_off(bit=0)
