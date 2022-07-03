@@ -679,6 +679,8 @@ class GalvoController:
         self.usb_log("Reset")
         self.write_correction_file(cor_file)
         self.usb_log("Correction File Sent")
+        self.enable_laser()
+        self.usb_log("Laser Enabled")
         self.set_control_mode(control_mode)
         self.usb_log("Control Mode")
         self.set_laser_mode(laser_mode)
