@@ -912,7 +912,10 @@ class GalvoController:
         if self._travel_speed == speed:
             return
         self._travel_speed = speed
-        self._list_write(listJumpSpeed, self._convert_speed(speed))
+        c_speed = self._convert_speed(speed)
+        if c_speed > 0xFFFF:
+            c_speed = 0xFFFF
+        self._list_write(listJumpSpeed, c_speed)
 
     def list_laser_on_delay(self, delay):
         """
