@@ -300,13 +300,13 @@ class RibbonPanel(wx.Panel):
                                 mevent.SetId(obutton[ID])
                                 self.button_click(mevent)
                                 return
-                button_base.action(0)
-                button_dict = button_base.button_dict
-                if button_dict.get("toggle", False):
+                if button_base.action is not None:
+                    button_base.action(0)
+                if button_base.state_pressed is not None:
                     if button[TOGGLE]:
-                        self._restore_button_state(button_base, "toggle")
+                        self._restore_button_state(button_base, button_base.state_pressed)
                     else:
-                        self._restore_button_state(button_base, "original")
+                        self._restore_button_state(button_base, button_base.state_unpressed)
                     self.ensure_realize()
                 break
 
@@ -377,7 +377,7 @@ class RibbonPanel(wx.Panel):
             new_id = wx.NewId()
             group = ""
             resize_param = button.get("size")
-            if "alt-action" in button:
+            if "multi" in button:
                 b = button_bar.AddHybridButton(
                     button_id=new_id,
                     label=button["label"],
@@ -385,20 +385,29 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                 )
 
-                def drop_bind(alt_action):
+                def drop_bind(multi_action, button_obj):
                     def on_dropdown(event):
+                        def drop_and_act(multi_opt):
+                            def on_dropdown_click(event):
+                                key_id = multi_opt.get("identifier")
+                                setattr(self.context, button_obj.save_id, key_id)
+                                button_obj.state_unpressed = key_id
+                                self._restore_button_state(button_obj, key_id)
+                                self.ensure_realize()
+
+                            return on_dropdown_click
                         menu = wx.Menu()
-                        for act_label, act_func in alt_action:
+                        for v in multi_action:
                             hybrid_id = wx.NewId()
-                            menu.Append(hybrid_id, act_label)
-                            button_bar.Bind(wx.EVT_MENU, act_func, id=hybrid_id)
+                            menu.Append(hybrid_id, v.get("label"))
+                            button_bar.Bind(wx.EVT_MENU, drop_and_act(v), id=hybrid_id)
                         event.PopupMenu(menu)
 
                     return on_dropdown
 
                 button_bar.Bind(
                     RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                    drop_bind(button["alt-action"]),
+                    drop_bind(button["multi"], b),
                     id=new_id,
                 )
             else:
@@ -420,22 +429,51 @@ class RibbonPanel(wx.Panel):
                     kind=bkind,
                 )
             b.button_dict = button
+            b.state_pressed = None
+            b.state_unpressed = None
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
-            self._store_button_state(b, "original")
+            if "multi" in button:
+                multi_action = button["multi"]
+                multi_ident = button.get("identifier")
+                b.save_id = multi_ident
+                initial_id = self.context.setting(str, b.save_id, "default")
+
+                for i, v in enumerate(multi_action):
+                    key = v.get("identifier", i)
+                    self._store_button_state(b, key)
+                    self._update_button_state(b, key, **v)
+                    if "icon" in v:
+                        v_icon = button.get("icon")
+                        self._update_button_state(
+                            b,
+                            key,
+                            bitmap_large=v_icon.GetBitmap(resize=resize_param),
+                            bitmap_large_disabled=v_icon.GetBitmap(
+                                resize=resize_param, color=Color("grey")
+                            ),
+                        )
+                    if key == initial_id:
+                        self._restore_button_state(b, key)
             if "toggle" in button:
+                b.state_pressed = "toggle"
+                b.state_unpressed = "original"
+
+                self._store_button_state(b, "original")
+
+                toggle_action = button["toggle"]
+                key = toggle_action.get("identifier", "toggle")
                 self._store_button_state(
                     b,
-                    "toggle",
-                    label=button.get("toggle_label"),
-                    action=button.get("toggle_action"),
+                    key,
+                    **toggle_action
                 )
-                if "toggle_icon" in button:
-                    toggle_icon = button.get("toggle_icon")
+                if "icon" in toggle_action:
+                    toggle_icon = toggle_action.get("icon")
                     self._update_button_state(
                         b,
-                        "toggle",
+                        key,
                         bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
                         bitmap_large_disabled=toggle_icon.GetBitmap(
                             resize=resize_param, color=Color("grey")

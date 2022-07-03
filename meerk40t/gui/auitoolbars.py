@@ -153,41 +153,41 @@ class ToolbarManager:
                 kind=wx.ITEM_NORMAL,
                 short_help_string=button["tip"],
             )
-            if "alt-action" in button:
-
-                def on_click(action):
-                    def specific(event=None):
-                        print(event)
-                        action()
-
-                    return specific
-
-                def on_dropdown(b):
-                    def specific(event=None):
-                        if event.IsDropDownClicked():
-                            menu = wx.Menu()
-                            for act_label, act_func in b["alt-action"]:
-                                opt_id = wx.NewId()
-                                menu.Append(opt_id, act_label)
-                                button_bar.Bind(
-                                    wx.EVT_MENU, on_click(act_func), id=opt_id
-                                )
-                            gui.PopupMenu(menu)
-                        else:
-                            b["action"]()
-                        button_bar.SetToolSticky(event.GetId(), False)
-
-                    return specific
-
-                button_bar.SetToolDropDown(new_id, True)
-                button_bar.Bind(
-                    EVT_AUITOOLBAR_TOOL_DROPDOWN,
-                    on_dropdown(button),
-                    id=new_id,
-                )
-            else:
-                button_bar.Bind(
-                    wx.EVT_TOOL,
-                    button["action"],
-                    id=new_id,
-                )
+            # if "alt-action" in button:
+            #
+            #     def on_click(action):
+            #         def specific(event=None):
+            #             print(event)
+            #             action()
+            #
+            #         return specific
+            #
+            #     def on_dropdown(b):
+            #         def specific(event=None):
+            #             if event.IsDropDownClicked():
+            #                 menu = wx.Menu()
+            #                 for act_label, act_func in b["alt-action"]:
+            #                     opt_id = wx.NewId()
+            #                     menu.Append(opt_id, act_label)
+            #                     button_bar.Bind(
+            #                         wx.EVT_MENU, on_click(act_func), id=opt_id
+            #                     )
+            #                 gui.PopupMenu(menu)
+            #             else:
+            #                 b["action"]()
+            #             button_bar.SetToolSticky(event.GetId(), False)
+            #
+            #         return specific
+            #
+            #     button_bar.SetToolDropDown(new_id, True)
+            #     button_bar.Bind(
+            #         EVT_AUITOOLBAR_TOOL_DROPDOWN,
+            #         on_dropdown(button),
+            #         id=new_id,
+            #     )
+            # else:
+            #     button_bar.Bind(
+            #         wx.EVT_TOOL,
+            #         button["action"],
+            #         id=new_id,
+            #     )
