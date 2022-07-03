@@ -376,28 +376,35 @@ class GalvoController:
     def program_mode(self):
         if self.mode == DRIVER_STATE_PROGRAM:
             return
-        self.mode = DRIVER_STATE_PROGRAM
-        self.reset_list()
-        self.port_on(bit=0)
-        self.write_port()
-        self.set_fiber_mo(1)
-        self._ready = None
-        self._speed = None
-        self._travel_speed = None
-        self._frequency = None
-        self._power = None
-        self._pulse_width = None
+        if self.mode == DRIVER_STATE_LIGHT:
+            self.mode = DRIVER_STATE_PROGRAM
+            self.light_off()
+            self.port_on(bit=0)
+            self.write_port()
+            self.set_fiber_mo(1)
+        else:
+            self.mode = DRIVER_STATE_PROGRAM
+            self.reset_list()
+            self.port_on(bit=0)
+            self.write_port()
+            self.set_fiber_mo(1)
+            self._ready = None
+            self._speed = None
+            self._travel_speed = None
+            self._frequency = None
+            self._power = None
+            self._pulse_width = None
 
-        self._delay_jump = None
-        self._delay_on = None
-        self._delay_off = None
-        self._delay_poly = None
-        self._delay_end = None
-        self.list_ready()
-        if self.service.delay_openmo != 0:
-            self.list_delay_time(int(self.service.delay_openmo * 100))
-        self.list_write_port()
-        self.list_jump_speed(self.service.default_rapid_speed)
+            self._delay_jump = None
+            self._delay_on = None
+            self._delay_off = None
+            self._delay_poly = None
+            self._delay_end = None
+            self.list_ready()
+            if self.service.delay_openmo != 0:
+                self.list_delay_time(int(self.service.delay_openmo * 100))
+            self.list_write_port()
+            self.list_jump_speed(self.service.default_rapid_speed)
 
     def light_mode(self):
         if self.mode == DRIVER_STATE_LIGHT:
