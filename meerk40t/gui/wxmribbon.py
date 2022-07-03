@@ -302,12 +302,11 @@ class RibbonPanel(wx.Panel):
                                 return
                 if button_base.action is not None:
                     button_base.action(0)
-                button_dict = button_base.button_dict
-                if button_dict.get("toggle", False):
+                if button_base.state_pressed is not None:
                     if button[TOGGLE]:
-                        self._restore_button_state(button_base, "toggle")
+                        self._restore_button_state(button_base, button_base.state_pressed)
                     else:
-                        self._restore_button_state(button_base, "original")
+                        self._restore_button_state(button_base, button_base.state_unpressed)
                     self.ensure_realize()
                 break
 
@@ -390,7 +389,9 @@ class RibbonPanel(wx.Panel):
                     def on_dropdown(event):
                         def drop_and_act(multi_opt):
                             def on_dropdown_click(event):
-                                self._restore_button_state(button_obj, multi_opt.get("identifier"))
+                                key_id = multi_opt.get("identifier")
+                                button_obj.state_unpressed = key_id
+                                self._restore_button_state(button_obj, key_id)
                                 self.ensure_realize()
 
                             return on_dropdown_click
@@ -427,10 +428,11 @@ class RibbonPanel(wx.Panel):
                     kind=bkind,
                 )
             b.button_dict = button
+            b.state_pressed = None
+            b.state_unpressed = None
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
-            self._store_button_state(b, "original")
             if "multi" in button:
                 multi_action = button["multi"]
                 for i, v in enumerate(multi_action):
@@ -448,6 +450,11 @@ class RibbonPanel(wx.Panel):
                             ),
                         )
             if "toggle" in button:
+                b.state_pressed = "toggle"
+                b.state_unpressed = "original"
+
+                self._store_button_state(b, "original")
+
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
                 self._store_button_state(
