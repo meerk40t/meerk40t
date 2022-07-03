@@ -196,6 +196,7 @@ class LiveSelectionLightJob:
         if update and not first_run:
             con.abort()
             con.light_mode()
+            con.goto_xy(0x8000,0x8000)
 
         if self.stopped:
             return False
