@@ -300,7 +300,8 @@ class RibbonPanel(wx.Panel):
                                 mevent.SetId(obutton[ID])
                                 self.button_click(mevent)
                                 return
-                button_base.action(0)
+                if button_base.action is not None:
+                    button_base.action(0)
                 button_dict = button_base.button_dict
                 if button_dict.get("toggle", False):
                     if button[TOGGLE]:
@@ -377,7 +378,7 @@ class RibbonPanel(wx.Panel):
             new_id = wx.NewId()
             group = ""
             resize_param = button.get("size")
-            if "alt-action" in button:
+            if "multi" in button:
                 b = button_bar.AddHybridButton(
                     button_id=new_id,
                     label=button["label"],
@@ -385,20 +386,26 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                 )
 
-                def drop_bind(alt_action):
+                def drop_bind(multi_action, button_obj):
                     def on_dropdown(event):
+                        def drop_and_act(multi_opt):
+                            def on_dropdown_click(event):
+                                self._restore_button_state(button_obj, multi_opt.get("identifier"))
+                                self.ensure_realize()
+
+                            return on_dropdown_click
                         menu = wx.Menu()
-                        for act_label, act_func in alt_action:
+                        for v in multi_action:
                             hybrid_id = wx.NewId()
-                            menu.Append(hybrid_id, act_label)
-                            button_bar.Bind(wx.EVT_MENU, act_func, id=hybrid_id)
+                            menu.Append(hybrid_id, v.get("label"))
+                            button_bar.Bind(wx.EVT_MENU, drop_and_act(v), id=hybrid_id)
                         event.PopupMenu(menu)
 
                     return on_dropdown
 
                 button_bar.Bind(
                     RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                    drop_bind(button["alt-action"]),
+                    drop_bind(button["multi"], b),
                     id=new_id,
                 )
             else:
@@ -424,6 +431,12 @@ class RibbonPanel(wx.Panel):
             b.action = button.get("action")
             b.action_right = button.get("right")
             self._store_button_state(b, "original")
+            if "multi" in button:
+                multi_action = button["multi"]
+                for i, v in enumerate(multi_action):
+                    key = v.get("identifier", i)
+                    self._store_button_state(b, key)
+                    self._update_button_state(b, key, **v)
             if "toggle" in button:
                 self._store_button_state(
                     b,
