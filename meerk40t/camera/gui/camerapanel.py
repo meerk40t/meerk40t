@@ -742,6 +742,8 @@ class CameraInterface(MWindow):
         def camera_click(index=None):
             def specific(event=None):
                 kernel.root.setting(int, "camera_default", 0)
+                kernel.root.setting(int, CAM_MAX, 5)
+                kernel.root.setting(str, CAM_FOUND, "")
                 for ci in range(5):
                     kernel.root.setting(int, CAM_INDEX % ci, -1)
                 if index is not None:
