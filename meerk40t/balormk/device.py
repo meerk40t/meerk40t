@@ -137,6 +137,7 @@ class LiveSelectionLightJob:
         if bounds is None:
             margin = 5000
             points = [
+                (0x8000, 0x8000),
                 (0x8000 - margin, 0x8000),
                 (0x8000, 0x8000),
                 (0x8000, 0x8000 - margin),
@@ -153,6 +154,7 @@ class LiveSelectionLightJob:
                 (xmax, ymin),
                 (xmax, ymax),
                 (xmin, ymax),
+                (xmin, ymin),
             ]
 
         if self.stopped:
@@ -173,7 +175,6 @@ class LiveSelectionLightJob:
             x = int(x) & 0xFFFF
             y = int(y) & 0xFFFF
             con.light(x, y, long=jump_delay, short=jump_delay)
-        con.light_off()
         return True
 
 
