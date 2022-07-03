@@ -891,7 +891,7 @@ class GalvoController:
 
     def list_delay_time(self, time):
         """
-        Delay time in microseconds units
+        Delay time in 10 microseconds units
 
         @param time:
         @return:

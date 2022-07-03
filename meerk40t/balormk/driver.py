@@ -222,7 +222,7 @@ class BalorDriver:
                     d = min(dwell_time, 60000)
                     con.list_laser_on_point(int(d))
                     dwell_time -= d
-                con.list_delay_time(self.service.delay_end)
+                con.list_delay_time(int(self.service.delay_end / 10.0))
             elif isinstance(q, WaitCut):
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
                 while dwell_time > 0:
@@ -304,7 +304,7 @@ class BalorDriver:
                                 )
                                 con.power(current_power * on)
                         con.mark(x, y)
-        con.list_delay_time(self.service.delay_end)
+        con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()
 
@@ -488,7 +488,7 @@ class BalorDriver:
             d = min(dwell_time, 60000)
             con.list_laser_on_point(int(d))
             dwell_time -= d
-        con.list_delay_time(self.service.delay_end)
+        con.list_delay_time(int(self.service.delay_end / 10.0))
         con.rapid_mode()
         if self.service.redlight_preferred:
             con.light_on()
