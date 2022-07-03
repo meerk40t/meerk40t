@@ -147,6 +147,12 @@ class LiveSelectionLightJob:
                 (0x8000, 0x8000 + margin),
                 (0x8000, 0x8000),
             ]
+            for i in range(len(points)):
+                pt = points[i]
+                x, y = mx_rotate(pt)
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                points[i] = x, y
         else:
             xmin, ymin, xmax, ymax = bounds
             points = [
@@ -156,25 +162,24 @@ class LiveSelectionLightJob:
                 (xmin, ymax),
                 (xmin, ymin),
             ]
+            for i in range(len(points)):
+                pt = points[i]
+                x, y = self.service.scene_to_device_position(*pt)
+                x, y = mx_rotate((x, y))
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                points[i] = x, y
 
         if self.stopped:
             return False
-
-        x, y = points[0]
-        x, y = self.service.scene_to_device_position(x, y)
-        x, y = mx_rotate((x, y))
-        x = int(x) & 0xFFFF
-        y = int(y) & 0xFFFF
-        con.light(x, y, long=dark_delay, short=dark_delay)
+        #
+        # x, y = points[0]
+        # con.light(x, y, long=dark_delay, short=dark_delay)
 
         for pt in points:
             if self.stopped:
                 return False
-            x, y = self.service.scene_to_device_position(*pt)
-            x, y = mx_rotate((x, y))
-            x = int(x) & 0xFFFF
-            y = int(y) & 0xFFFF
-            con.light(x, y, long=jump_delay, short=jump_delay)
+            con.light(*pt, long=jump_delay, short=jump_delay)
         return True
 
 
