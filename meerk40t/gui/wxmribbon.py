@@ -293,7 +293,6 @@ class RibbonPanel(wx.Panel):
                                 obutton[0].ToggleButton(obutton[1], True)
                                 mevent = event.Clone()
                                 mevent.SetId(obutton[1])
-                                # print("Calling master...")
                                 self.button_click(mevent)
                                 # exit
                                 return
@@ -317,7 +316,14 @@ class RibbonPanel(wx.Panel):
         buttons.sort(key=sort_priority)
         for button in buttons:
             new_id = wx.NewId()
-            toggle_grp = ""
+            if "identifier" in button:
+                identifier = button["identifier"].lower()
+            else:
+                identifier = None
+            if "toggle" in button:
+                toggle_grp = button["toggle"].lower()
+            else:
+                toggle_grp = ""
             if "size" in button:
                 resize_param = button["size"]
             else:
@@ -348,7 +354,6 @@ class RibbonPanel(wx.Panel):
                 )
             else:
                 if "toggle" in button:
-                    toggle_grp = button["toggle"]
                     bkind = RB.RIBBON_BUTTON_TOGGLE
                 else:
                     bkind = RB.RIBBON_BUTTON_NORMAL
@@ -371,7 +376,8 @@ class RibbonPanel(wx.Panel):
                         button["action"],
                         False,
                         button["right"],
-                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
+                        identifier,
+                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action, identifier
                 )
             else:
                 self.button_actions.append(
@@ -382,7 +388,8 @@ class RibbonPanel(wx.Panel):
                         button["action"],
                         False,
                         None,
-                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action
+                        identifier,
+                    ]  # Parent, ID, Toggle, Action, State, Right-Mouse-Action, identifier
                 )
 
             # button_bar.Bind(RB.EVT_RIBBONBUTTONBAR_CLICKED, button_clickbutton["action"], id=new_id)
@@ -439,6 +446,33 @@ class RibbonPanel(wx.Panel):
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
     #     self._ribbon.ShowPanels(True)
+
+    @signal_listener("tool_changed")
+    def on_tool_changed(self, origin, newtool=None, *args):
+        # Signal provides a tuple with (togglegroup, id)
+        if newtool is None:
+            return
+        if isinstance(newtool, (list, tuple)):
+            if newtool[0] is None:
+                group =""
+            else:
+                group = newtool[0].lower()
+            if newtool[1] is None:
+                identifier = ""
+            else:
+                identifier = newtool[1].lower()
+        else:
+            group = newtool
+            identifier = ""
+        for button in self.button_actions:
+            if button[2] == group:
+                # Reset toggle state
+                if button[6] == identifier:
+                    # Set toggle state
+                    button[0].ToggleButton(button[1], True)
+                else:
+                    button[0].ToggleButton(button[1], False)
+
 
     @property
     def is_dark(self):
@@ -573,9 +607,10 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
+        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_changing)
         # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, "Click me")
         # self.ribbon_pages.append(minmaxpage)
+        self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGED, self.on_page_changed)
 
         self.ensure_realize()
 
@@ -585,7 +620,7 @@ class RibbonPanel(wx.Panel):
     def pane_hide(self):
         pass
 
-    # def on_page_change(self, event):
+    # def on_page_changing(self, event):
     #     page = event.GetPage()
     #     p_id = page.GetId()
     #     # print ("Page Changing to ", p_id)
@@ -597,6 +632,12 @@ class RibbonPanel(wx.Panel):
     #         wx.MessageBox(msg, "Info", wx.OK | wx.ICON_INFORMATION)
     #         event.Veto()
 
+    def on_page_changed(self, event):
+        page = event.GetPage()
+        p_id = page.GetId()
+        if p_id  != ID_PAGE_TOOL:
+            self.context("tool none\n")
+        event.Skip()
 
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
 # RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
