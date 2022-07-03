@@ -99,7 +99,6 @@ class BalorDriver:
         while job(self.connection):
             if self._shutdown:
                 break
-            time.sleep(0.05)
         self.connection.abort()
 
     def plot(self, plot):
