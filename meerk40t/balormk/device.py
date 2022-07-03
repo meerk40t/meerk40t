@@ -100,7 +100,14 @@ class LiveSelectionLightJob:
     ):
         self.service = service
         self.stopped = False
+        self._current_points = None
+        self._last_bounds = None
 
+    def update_points(self, bounds):
+        if bounds == self._last_bounds and self._current_points is not None:
+            return self._current_points, False
+
+        # Calculate rotate matrix.
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         x_offset = self.service.length(
@@ -110,59 +117,56 @@ class LiveSelectionLightJob:
             self.service.redlight_offset_y, axis=1, as_float=True
         )
         rotate.post_translate(x_offset, y_offset)
-        self.rotate = rotate
-        margin = 5000
-        points = [
-            (0x8000, 0x8000),
-            (0x8000 - margin, 0x8000),
-            (0x8000, 0x8000),
-            (0x8000, 0x8000 - margin),
-            (0x8000, 0x8000),
-            (0x8000 + margin, 0x8000),
-            (0x8000, 0x8000),
-            (0x8000, 0x8000 + margin),
-            (0x8000, 0x8000),
-        ]
-        for i in range(len(points)):
-            pt = points[i]
-            x, y = self.mx_rotate(pt)
-            x = int(x) & 0xFFFF
-            y = int(y) & 0xFFFF
-            points[i] = x, y
-        self.default_crosshair = points
-        self._current_points = None
-        self._last_bounds = None
 
-    def update_points(self, bounds):
-        if bounds == self._last_bounds and self._current_points is not None:
-            return self._current_points
-        xmin, ymin, xmax, ymax = bounds
-        points = [
-            (xmin, ymin),
-            (xmax, ymin),
-            (xmax, ymax),
-            (xmin, ymax),
-            (xmin, ymin),
-        ]
-        for i in range(len(points)):
-            pt = points[i]
-            x, y = self.service.scene_to_device_position(*pt)
-            x, y = self.mx_rotate((x, y))
-            x = int(x) & 0xFFFF
-            y = int(y) & 0xFFFF
-            points[i] = x, y
+        # Function for using rotate
+        def mx_rotate(pt):
+            if pt is None:
+                return None
+            return (
+                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            )
+
+        if bounds is None:
+            # bounds is None, default crosshair
+            margin = 5000
+            points = [
+                (0x8000, 0x8000),
+                (0x8000 - margin, 0x8000),
+                (0x8000, 0x8000),
+                (0x8000, 0x8000 - margin),
+                (0x8000, 0x8000),
+                (0x8000 + margin, 0x8000),
+                (0x8000, 0x8000),
+                (0x8000, 0x8000 + margin),
+                (0x8000, 0x8000),
+            ]
+            for i in range(len(points)):
+                pt = points[i]
+                x, y = mx_rotate(pt)
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                points[i] = x, y
+        else:
+            # Bounds exist
+            xmin, ymin, xmax, ymax = bounds
+            points = [
+                (xmin, ymin),
+                (xmax, ymin),
+                (xmax, ymax),
+                (xmin, ymax),
+                (xmin, ymin),
+            ]
+            for i in range(len(points)):
+                pt = points[i]
+                x, y = self.service.scene_to_device_position(*pt)
+                x, y = mx_rotate((x, y))
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                points[i] = x, y
         self._current_points = points
         self._last_bounds = bounds
-        return self._current_points
-
-    def mx_rotate(self, pt):
-        if pt is None:
-            return None
-        rotate = self.rotate
-        return (
-            pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
-            pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
-        )
+        return self._current_points, True
 
     def stop(self):
         self.stopped = True
