@@ -959,6 +959,46 @@ class BalorDevice(Service, ViewPort):
                 channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
 
         @self.console_command(
+            "mark_time",
+            help=_("Checks the Mark Time."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_mark_time()
+            if reply is None:
+                channel("Not connected, cannot get mark time.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "mark_count",
+            help=_("Checks the Mark Count."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_mark_count()
+            if reply is None:
+                channel("Not connected, cannot get mark count.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+        @self.console_command(
+            "axis_pos",
+            help=_("Checks the Axis Position."),
+        )
+        def balor_status(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.get_axis_pos()
+            if reply is None:
+                channel("Not connected, cannot get axis position.")
+                return
+            channel(f"Command replied: {reply}")
+            for index, b in enumerate(reply):
+                channel(f"Bit {index}: 0x{b:04x} 0b{b:016b}")
+
+
+        @self.console_command(
             "serial_number",
             help=_("Checks the serial number."),
         )
