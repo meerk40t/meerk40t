@@ -50,7 +50,7 @@ class ElementLightJob:
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
 
-        con.light_speed = travel_speed
+        con._light_speed = travel_speed
 
         def mx_rotate(pt):
             if pt is None:
@@ -123,7 +123,7 @@ class LiveSelectionLightJob:
         )
         rotate.post_translate(x_offset, y_offset)
 
-        con.light_speed = self.service.default_rapid_speed
+        con._light_speed = self.service.default_rapid_speed
 
         def mx_rotate(pt):
             if pt is None:
