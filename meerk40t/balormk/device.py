@@ -181,10 +181,11 @@ class LiveSelectionLightJob:
         con._light_speed = self.service.redlight_speed
 
         bounds = self.service.elements.selected_area()
-        if bounds is None:
-            points = self.default_crosshair
-        else:
-            points = self.update_points(bounds)
+        first_run = self._current_points is None
+        points, update = self.update_points(bounds)
+        if update and not first_run:
+            con.abort()
+            con.light_mode()
 
         if self.stopped:
             return False
