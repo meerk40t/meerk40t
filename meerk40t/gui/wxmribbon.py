@@ -329,7 +329,6 @@ class RibbonPanel(wx.Panel):
         buttons.sort(key=sort_priority)
         for button in buttons:
             new_id = wx.NewId()
-            identifier = button.get("identifier")
             group = ""
             resize_param = button.get("size")
             if "alt-action" in button:
@@ -375,7 +374,7 @@ class RibbonPanel(wx.Panel):
                     kind=bkind,
                 )
                
-            b.identifier = identifier
+            b.identifier = button.get("identifier")
             b.button_dict = button
 
             b.bitmap_large_original = b.bitmap_large
@@ -465,25 +464,25 @@ class RibbonPanel(wx.Panel):
         if newtool is None:
             return
         if isinstance(newtool, (list, tuple)):
-            if newtool[0] is None:
-                group =""
-            else:
-                group = newtool[0].lower()
-            if newtool[1] is None:
-                identifier = ""
-            else:
-                identifier = newtool[1].lower()
+            group = newtool[0].lower() if newtool[0] is not None else ""
+            identifier = newtool[1].lower() if newtool[1] is not None else ""
         else:
             group = newtool
             identifier = ""
+
         for button in self.button_actions:
-            if button[2] == group:
+            button_base = button[BUTTONBASE]
+            parent_obj = button[PARENT]
+            button_id = button[ID]
+            bgroup = button[GROUP]
+
+            if bgroup == group:
                 # Reset toggle state
-                if button[6] == identifier:
+                if button_base.identifier == identifier:
                     # Set toggle state
-                    button[0].ToggleButton(button[1], True)
+                    parent_obj.ToggleButton(button_id, True)
                 else:
-                    button[0].ToggleButton(button[1], False)
+                    parent_obj.ToggleButton(button_id, False)
 
 
     @property
