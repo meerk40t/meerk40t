@@ -329,6 +329,7 @@ class RibbonPanel(wx.Panel):
         buttons.sort(key=sort_priority)
         for button in buttons:
             new_id = wx.NewId()
+            identifier = button.get("identifier")
             group = ""
             resize_param = button.get("size")
             if "alt-action" in button:
@@ -373,6 +374,8 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                     kind=bkind,
                 )
+               
+            b.identifier = identifier
             b.button_dict = button
 
             b.bitmap_large_original = b.bitmap_large
@@ -455,6 +458,33 @@ class RibbonPanel(wx.Panel):
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
     #     self._ribbon.ShowPanels(True)
+
+    @signal_listener("tool_changed")
+    def on_tool_changed(self, origin, newtool=None, *args):
+        # Signal provides a tuple with (togglegroup, id)
+        if newtool is None:
+            return
+        if isinstance(newtool, (list, tuple)):
+            if newtool[0] is None:
+                group =""
+            else:
+                group = newtool[0].lower()
+            if newtool[1] is None:
+                identifier = ""
+            else:
+                identifier = newtool[1].lower()
+        else:
+            group = newtool
+            identifier = ""
+        for button in self.button_actions:
+            if button[2] == group:
+                # Reset toggle state
+                if button[6] == identifier:
+                    # Set toggle state
+                    button[0].ToggleButton(button[1], True)
+                else:
+                    button[0].ToggleButton(button[1], False)
+
 
     @property
     def is_dark(self):
@@ -589,9 +619,10 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_change)
+        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_changing)
         # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, "Click me")
         # self.ribbon_pages.append(minmaxpage)
+        self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGED, self.on_page_changed)
 
         self.ensure_realize()
 
@@ -601,7 +632,7 @@ class RibbonPanel(wx.Panel):
     def pane_hide(self):
         pass
 
-    # def on_page_change(self, event):
+    # def on_page_changing(self, event):
     #     page = event.GetPage()
     #     p_id = page.GetId()
     #     # print ("Page Changing to ", p_id)
@@ -613,6 +644,12 @@ class RibbonPanel(wx.Panel):
     #         wx.MessageBox(msg, "Info", wx.OK | wx.ICON_INFORMATION)
     #         event.Veto()
 
+    def on_page_changed(self, event):
+        page = event.GetPage()
+        p_id = page.GetId()
+        if p_id  != ID_PAGE_TOOL:
+            self.context("tool none\n")
+        event.Skip()
 
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
 # RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17

@@ -691,12 +691,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/tools/Scene",
             {
-                "label": _("Move"),
+                "label": _("Select"),
                 "icon": icons8_cursor_50,
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "none",
             },
         )
 
@@ -709,6 +710,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool relocate\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "relocate",
             },
         )
 
@@ -721,6 +723,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "draw",
             },
         )
 
@@ -733,6 +736,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "ellipse",
             },
         )
 
@@ -745,6 +749,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "circle",
             },
         )
 
@@ -759,6 +764,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "polygon",
             },
         )
 
@@ -773,6 +779,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "polyline",
             },
         )
 
@@ -785,6 +792,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "rect",
             },
         )
 
@@ -797,6 +805,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool point\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "point",
             },
         )
 
@@ -811,6 +820,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "vector",
             },
         )
 
@@ -823,6 +833,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool text\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "text",
             },
         )
 
@@ -837,6 +848,7 @@ class MeerK40t(MWindow):
                 "action": lambda v: kernel.elements("tool measure\n"),
                 "group": "tool",
                 "size": buttonsize,
+                "identifier": "measure",
             },
         )
         # Default Size for smaller buttons
@@ -2547,6 +2559,8 @@ class MeerK40t(MWindow):
     def load(self, pathname):
         try:
             try:
+                # Reset to standard tool
+                self.context("tool none\n")
                 self.context.signal("freeze_tree", True)
                 # wxPython 4.1.+
                 with wx.BusyInfo(
