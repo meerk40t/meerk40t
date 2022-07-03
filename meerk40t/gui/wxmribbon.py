@@ -437,18 +437,29 @@ class RibbonPanel(wx.Panel):
                     key = v.get("identifier", i)
                     self._store_button_state(b, key)
                     self._update_button_state(b, key, **v)
+                    if "icon" in v:
+                        v_icon = button.get("icon")
+                        self._update_button_state(
+                            b,
+                            key,
+                            bitmap_large=v_icon.GetBitmap(resize=resize_param),
+                            bitmap_large_disabled=v_icon.GetBitmap(
+                                resize=resize_param, color=Color("grey")
+                            ),
+                        )
             if "toggle" in button:
+                toggle_action = button["toggle"]
+                key = toggle_action.get("identifier", "toggle")
                 self._store_button_state(
                     b,
-                    "toggle",
-                    label=button.get("toggle_label"),
-                    action=button.get("toggle_action"),
+                    key,
+                    **toggle_action
                 )
-                if "toggle_icon" in button:
-                    toggle_icon = button.get("toggle_icon")
+                if "icon" in toggle_action:
+                    toggle_icon = toggle_action.get("icon")
                     self._update_button_state(
                         b,
-                        "toggle",
+                        key,
                         bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
                         bitmap_large_disabled=toggle_icon.GetBitmap(
                             resize=resize_param, color=Color("grey")

@@ -87,15 +87,12 @@ def plugin(service, lifecycle):
                         "action": lambda e: service("element* path light\n")
                     },
                 ],
-            },
-        )
-        service.register(
-            "button/control/Light_Off",
-            {
-                "label": _("No Galvo Light"),
-                "icon": icons8_light_off_50,
-                "tip": _("Turn light off"),
-                "action": lambda v: service("stop\n"),
+                "toggle": {
+                        "label": _("No Galvo Light"),
+                        "icon": icons8_light_off_50,
+                        "tip": _("Turn light off"),
+                        "action": lambda v: service("stop\n"),
+                    },
             },
         )
         service.register(
@@ -105,11 +102,11 @@ def plugin(service, lifecycle):
                 "icon": icons8_quick_mode_on_50,
                 "tip": _("Turn Redlight On"),
                 "action": lambda v: service("red on\n"),
-                "toggle": True,
-                "toggle_label": _("Redlight off"),
-                "toggle_action": lambda v: service("red off\n"),
-                "toggle_icon": icons8_flash_off_50,
-
+                "toggle": {
+                    "label": _("Redlight off"),
+                    "action": lambda v: service("red off\n"),
+                    "icon": icons8_flash_off_50,
+                }
             },
         )
         service.add_service_delegate(BalorGui(service))
