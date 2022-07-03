@@ -41,6 +41,7 @@ class BalorDriver:
         self.value_penbox = None
         self.plot_planner.settings_then_jog = True
         self._aborting = False
+        self._list_bits = None
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
@@ -120,6 +121,7 @@ class BalorDriver:
         """
         con = self.connection
         con.program_mode()
+        self._list_bits = con._port_bits
         last_on = None
         con.set_wobble(None)
         queue = self.queue
@@ -134,10 +136,14 @@ class BalorDriver:
                     self.value_penbox = None
             con.set_settings(settings)
             con.set_wobble(settings)
+            # LOOP CHECKS
             if self._aborting:
                 con.abort()
                 self._aborting = False
                 return
+            if con._port_bits != self._list_bits:
+                con.list_write_port()
+                self._list_bits = con._port_bits
             if isinstance(q, LineCut):
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
@@ -153,12 +159,17 @@ class BalorDriver:
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
+                    # LOOP CHECKS
                     if self._aborting:
                         con.abort()
                         self._aborting = False
                         return
+                    if con._port_bits != self._list_bits:
+                        con.list_write_port()
+                        self._list_bits = con._port_bits
                     while self.hold_work():
                         time.sleep(0.05)
+
                     p = q.point(t)
                     con.mark(*p)
                     t += step_size
@@ -168,12 +179,17 @@ class BalorDriver:
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 for x, y, on in q.plot[1:]:
+                    # LOOP CHECKS
                     if self._aborting:
                         con.abort()
                         self._aborting = False
                         return
+                    if con._port_bits != self._list_bits:
+                        con.list_write_port()
+                        self._list_bits = con._port_bits
                     while self.hold_work():
                         time.sleep(0.05)
+
                     # q.plot can have different on values, these are parsed
                     if last_on is None or on != last_on:
                         last_on = on
@@ -222,12 +238,17 @@ class BalorDriver:
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
+                    # LOOP CHECKS
                     if self._aborting:
                         con.abort()
                         self._aborting = False
                         return
+                    if con._port_bits != self._list_bits:
+                        self._list_bits = con._port_bits
+                        con.list_write_port()
                     while self.hold_work():
                         time.sleep(0.05)
+
                     if on > 1:
                         # Special Command.
                         if on & PLOT_FINISH:  # Plot planner is ending.
@@ -284,6 +305,7 @@ class BalorDriver:
                                 con.power(current_power * on)
                         con.mark(x, y)
         con.list_delay_time(self.service.delay_end)
+        self._list_bits = None
         con.rapid_mode()
 
         if self.service.redlight_preferred:
