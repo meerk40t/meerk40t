@@ -373,8 +373,8 @@ class GalvoController:
         self.write_port()
         self.mode = DRIVER_STATE_RAPID
 
-    def program_mode(self):
-        if self.mode == DRIVER_STATE_PROGRAM:
+    def program_mode(self, forced=False):
+        if self.mode == DRIVER_STATE_PROGRAM and not forced:
             return
         if self.mode == DRIVER_STATE_LIGHT:
             self.mode = DRIVER_STATE_PROGRAM
@@ -406,8 +406,8 @@ class GalvoController:
             self.list_write_port()
             self.list_jump_speed(self.service.default_rapid_speed)
 
-    def light_mode(self):
-        if self.mode == DRIVER_STATE_LIGHT:
+    def light_mode(self, forced=False):
+        if self.mode == DRIVER_STATE_LIGHT and not forced:
             return
         if self.mode == DRIVER_STATE_PROGRAM:
             self.set_fiber_mo(0)
