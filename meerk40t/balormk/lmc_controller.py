@@ -358,8 +358,8 @@ class GalvoController:
     # MODE SHIFTS
     #######################
 
-    def rapid_mode(self, forced=False):
-        if self.mode == DRIVER_STATE_RAPID and not forced:
+    def rapid_mode(self):
+        if self.mode == DRIVER_STATE_RAPID:
             return
 
         self._list_end()
@@ -373,8 +373,8 @@ class GalvoController:
         self.write_port()
         self.mode = DRIVER_STATE_RAPID
 
-    def program_mode(self, forced=False):
-        if self.mode == DRIVER_STATE_PROGRAM and not forced:
+    def program_mode(self):
+        if self.mode == DRIVER_STATE_PROGRAM:
             return
         if self.mode == DRIVER_STATE_LIGHT:
             self.mode = DRIVER_STATE_PROGRAM
@@ -406,8 +406,8 @@ class GalvoController:
             self.list_write_port()
             self.list_jump_speed(self.service.default_rapid_speed)
 
-    def light_mode(self, forced=False):
-        if self.mode == DRIVER_STATE_LIGHT and not forced:
+    def light_mode(self):
+        if self.mode == DRIVER_STATE_LIGHT:
             return
         if self.mode == DRIVER_STATE_PROGRAM:
             self.set_fiber_mo(0)
@@ -645,9 +645,15 @@ class GalvoController:
         self.set_fiber_mo(0)
         self.reset_list()
         self._list_new()
-        # self.send(empty)
-        # self.set_end_of_list(1)
-        self.rapid_mode(True)
+        self._list_end()
+        if not self._list_executing:
+            self.execute_list()
+        self._list_executing = False
+        self._number_of_list_packets = 0
+        self.set_fiber_mo(0)
+        self.port_off(bit=0)
+        self.write_port()
+        self.mode = DRIVER_STATE_RAPID
 
     def pause(self):
         self.paused = True
