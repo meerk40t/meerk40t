@@ -2559,6 +2559,8 @@ class MeerK40t(MWindow):
     def load(self, pathname):
         try:
             try:
+                # Reset to standard tool
+                self.context("tool none\n")
                 self.context.signal("freeze_tree", True)
                 # wxPython 4.1.+
                 with wx.BusyInfo(
