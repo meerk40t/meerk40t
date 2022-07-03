@@ -976,7 +976,10 @@ class GalvoController:
         if self._speed == speed:
             return
         self._speed = speed
-        self._list_write(listMarkSpeed, self._convert_speed(speed))
+        c_speed = self._convert_speed(speed)
+        if c_speed > 0xFFFF:
+            c_speed = 0xFFFF
+        self._list_write(listMarkSpeed, c_speed)
 
     def list_jump_delay(self, delay):
         """
