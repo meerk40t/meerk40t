@@ -614,7 +614,10 @@ class GalvoController:
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def set_xy(self, x, y):
-        self.goto_xy(x, y)
+        distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
+        if distance > 0xFFFF:
+            distance = 0xFFFF
+        self.goto_xy(x, y, distance=distance)
 
     def get_last_xy(self):
         return self._last_x, self._last_y
