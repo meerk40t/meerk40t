@@ -614,7 +614,10 @@ class GalvoController:
         self.list_jump(x, y, long=long, short=short, distance_limit=distance_limit)
 
     def set_xy(self, x, y):
-        self.goto_xy(x, y)
+        distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
+        if distance > 0xFFFF:
+            distance = 0xFFFF
+        self.goto_xy(x, y, distance=distance)
 
     def get_last_xy(self):
         return self._last_x, self._last_y
@@ -912,7 +915,10 @@ class GalvoController:
         if self._travel_speed == speed:
             return
         self._travel_speed = speed
-        self._list_write(listJumpSpeed, self._convert_speed(speed))
+        c_speed = self._convert_speed(speed)
+        if c_speed > 0xFFFF:
+            c_speed = 0xFFFF
+        self._list_write(listJumpSpeed, c_speed)
 
     def list_laser_on_delay(self, delay):
         """
@@ -973,7 +979,10 @@ class GalvoController:
         if self._speed == speed:
             return
         self._speed = speed
-        self._list_write(listMarkSpeed, self._convert_speed(speed))
+        c_speed = self._convert_speed(speed)
+        if c_speed > 0xFFFF:
+            c_speed = 0xFFFF
+        self._list_write(listMarkSpeed, c_speed)
 
     def list_jump_delay(self, delay):
         """
@@ -1199,8 +1208,10 @@ class GalvoController:
     def get_position_xy(self):
         return self._command(GetPositionXY)
 
-    def goto_xy(self, x, y):
-        return self._command(GotoXY, int(x), int(y))
+    def goto_xy(self, x, y, angle=0, distance=0):
+        self._last_x = x
+        self._last_y = y
+        return self._command(GotoXY, int(x), int(y), int(angle), int(distance))
 
     def laser_signal_off(self):
         return self._command(LaserSignalOff)

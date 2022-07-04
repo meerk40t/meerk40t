@@ -33,6 +33,8 @@ class ElementLightJob:
     def process(self, con):
         if self.stopped:
             return False
+        if not self.elements:
+            return False
         con.light_mode()
 
         x_offset = self.service.length(
@@ -58,7 +60,6 @@ class ElementLightJob:
                 pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
-
         for e in self.elements:
             if self.stopped:
                 return False
@@ -194,6 +195,11 @@ class LiveSelectionLightJob:
         points, update = self.update_points(bounds)
         if update and not first_run:
             con.abort()
+            first_x = 0x8000
+            first_y = 0x8000
+            if len(points):
+                first_x, first_y = points[0]
+            con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
 
         if self.stopped:
@@ -205,6 +211,153 @@ class LiveSelectionLightJob:
             if self.stopped:
                 return False
             con.light(*pt, long=jump_delay, short=jump_delay)
+        return True
+
+
+class LiveFullLightJob:
+    def __init__(
+        self,
+        service,
+    ):
+        self.service = service
+        self.stopped = False
+        self.changed = False
+        service.listen("emphasized", self.on_emphasis_changed)
+
+    def stop(self):
+        self.stopped = True
+        self.service.unlisten("emphasized", self.on_emphasis_changed)
+
+    def on_emphasis_changed(self, *args):
+        self.changed = True
+
+    def crosshairs(self, con):
+        # Calculate rotate matrix.
+        rotate = Matrix()
+        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        x_offset = self.service.length(
+            self.service.redlight_offset_x, axis=0, as_float=True
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y, axis=1, as_float=True
+        )
+        rotate.post_translate(x_offset, y_offset)
+
+        # Function for using rotate
+        def mx_rotate(pt):
+            if pt is None:
+                return None
+            return (
+                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            )
+
+        margin = 5000
+        points = [
+            (0x8000, 0x8000),
+            (0x8000 - margin, 0x8000),
+            (0x8000, 0x8000),
+            (0x8000, 0x8000 - margin),
+            (0x8000, 0x8000),
+            (0x8000 + margin, 0x8000),
+            (0x8000, 0x8000),
+            (0x8000, 0x8000 + margin),
+            (0x8000, 0x8000),
+        ]
+        for i in range(len(points)):
+            pt = points[i]
+            x, y = mx_rotate(pt)
+            x = int(x)
+            y = int(y)
+            points[i] = x, y
+
+        jump_delay = self.service.delay_jump_long
+        dark_delay = self.service.delay_jump_short
+        for pt in points:
+            if self.stopped:
+                return False
+            con.light(*pt, long=jump_delay, short=dark_delay)
+        return True
+
+    def process(self, con):
+        if self.stopped:
+            return False
+        if self.changed:
+            self.changed = False
+            con.abort()
+            con.light_mode()
+            con.goto_xy(0x8000, 0x8000)
+
+        jump_delay = self.service.delay_jump_long
+        dark_delay = self.service.delay_jump_short
+        con._light_speed = self.service.redlight_speed
+
+        con.light_mode()
+        elements = list(self.service.elements.elems(emphasized=True))
+
+        if not elements:
+            return self.crosshairs(con)
+
+        x_offset = self.service.length(
+            self.service.redlight_offset_x, axis=0, as_float=True
+        )
+        y_offset = self.service.length(
+            self.service.redlight_offset_y, axis=1, as_float=True
+        )
+        quantization = 50
+        rotate = Matrix()
+        rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
+        rotate.post_translate(x_offset, y_offset)
+
+        con._light_speed = self.service.redlight_speed
+
+        def mx_rotate(pt):
+            if pt is None:
+                return None
+            return (
+                pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
+                pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
+            )
+        for node in elements:
+            if self.stopped:
+                return False
+            if self.changed:
+                return True
+            e = node.as_path()
+            if not e:
+                continue
+            x, y = e.point(0)
+            x, y = self.service.scene_to_device_position(x, y)
+            x, y = mx_rotate((x, y))
+            x = int(x) & 0xFFFF
+            y = int(y) & 0xFFFF
+            if isinstance(e, (Polygon, Polyline)):
+                con.dark(x, y, long=dark_delay, short=dark_delay)
+                for pt in e:
+                    if self.stopped:
+                        return False
+                    if self.changed:
+                        return True
+                    x, y = self.service.scene_to_device_position(*pt)
+                    x, y = mx_rotate((x, y))
+                    x = int(x) & 0xFFFF
+                    y = int(y) & 0xFFFF
+                    con.light(x, y, long=jump_delay, short=jump_delay)
+                continue
+
+            con.dark(x, y, long=dark_delay, short=dark_delay)
+            for i in range(1, quantization + 1):
+                if self.stopped:
+                    return False
+                if self.changed:
+                    return True
+                x, y = e.point(i / float(quantization))
+                x, y = self.service.scene_to_device_position(x, y)
+                x, y = mx_rotate((x, y))
+                x = int(x) & 0xFFFF
+                y = int(y) & 0xFFFF
+                con.light(x, y, long=jump_delay, short=jump_delay)
+        con.light_off()
         return True
 
 
@@ -391,7 +544,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "redlight_speed",
                 "object": self,
-                "default": "8000",
+                "default": "3000",
                 "type": int,
                 "label": _("Redlight travel speed"),
                 "tip": _("Speed of the galvo when using the red laser."),
@@ -854,6 +1007,16 @@ class BalorDevice(Service, ViewPort):
             self.spooler.job(("light_loop", self.job.process))
 
         @self.console_command(
+            "full-light",
+            help=_("Execute full light idle job")
+        )
+        def select_light(**kwargs):
+            if self.job is not None:
+                self.job.stop()
+            self.job = LiveFullLightJob(self)
+            self.spooler.job(("light_loop", self.job.process))
+
+        @self.console_command(
             "stop",
             help=_("stops the idle running job"),
         )
@@ -969,6 +1132,36 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
+        @self.console_argument("filename", type=str, default=None, help="filename or none")
+        @self.console_option("default", "d", type=bool, action="store_true", help="restore to default")
+        @self.console_command(
+            "force_correction",
+            help=_("Resets the galvo laser"),
+        )
+        def force_correction(command, channel, _, filename=None, default=False, remainder=None, **kwgs):
+            if default:
+                filename = self.corfile
+                channel(f"Using default corfile: {filename}")
+            if filename is None:
+                self.driver.connection.write_correction_file(None)
+                channel(f"Force set corrections to blank.")
+            else:
+                from os.path import exists
+
+                if exists(filename):
+                    channel(f"Force set corrections: {filename}")
+                    self.driver.connection.write_correction_file(filename)
+                else:
+                    channel(f"The file at {os.path.realpath(filename)} does not exist.")
+
+        @self.console_command(
+            "softreboot",
+            help=_("Resets the galvo laser"),
+        )
+        def galvo_reset(command, channel, _, remainder=None, **kwgs):
+            reply = self.driver.connection.init_laser()
+            channel(f"Soft reboot: {self.label}")
+
         @self.console_option(
             "duration", "d", type=float, help=_("time to set/unset the port")
         )
@@ -984,11 +1177,11 @@ class BalorDevice(Service, ViewPort):
             if off:
                 self.driver.connection.port_off(bit)
                 self.driver.connection.write_port()
-                channel(f"Turning on bit {bit}")
+                channel(f"Turning off bit {bit}")
             else:
                 self.driver.connection.port_on(bit)
                 self.driver.connection.write_port()
-                channel(f"Turning off bit {bit}")
+                channel(f"Turning on bit {bit}")
             if duration is not None:
                 if off:
                     self(f".timer 1 {duration} port on {bit}")

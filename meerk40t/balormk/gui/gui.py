@@ -67,6 +67,12 @@ def plugin(service, lifecycle):
                         "action": lambda e: service("select-light\n")
                     },
                     {
+                        "identifier": "live-full",
+                        "label": _("Full Live Mode"),
+                        "icon": icons8_computer_support_50,
+                        "action": lambda e: service("full-light\n")
+                    },
+                    {
                         "identifier": "hull",
                         "label": _("Hull"),
                         "action": lambda e: service("element* hull light\n")
