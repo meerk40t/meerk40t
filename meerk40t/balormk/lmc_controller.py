@@ -617,7 +617,7 @@ class GalvoController:
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
         if distance > 0xFFFF:
             distance = 0xFFFF
-        self.goto_xy(x, y, distance=distance)
+        self.goto_xy(x, y, distance=distance, angle=distance)
 
     def get_last_xy(self):
         return self._last_x, self._last_y
