@@ -334,6 +334,8 @@ class LiveFullLightJob:
                 for pt in e:
                     if self.stopped:
                         return False
+                    if self.changed:
+                        return True
                     x, y = self.service.scene_to_device_position(*pt)
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
@@ -345,6 +347,8 @@ class LiveFullLightJob:
             for i in range(1, quantization + 1):
                 if self.stopped:
                     return False
+                if self.changed:
+                    return True
                 x, y = e.point(i / float(quantization))
                 x, y = self.service.scene_to_device_position(x, y)
                 x, y = mx_rotate((x, y))
