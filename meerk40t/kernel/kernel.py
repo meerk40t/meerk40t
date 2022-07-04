@@ -1723,7 +1723,7 @@ class Kernel(Settings):
             job.reset()
             # Could be recurring job. Reset on reschedule.
         except AttributeError:
-            return
+            pass
         self.jobs[job.job_name] = job
         return job
 
