@@ -195,8 +195,12 @@ class LiveSelectionLightJob:
         points, update = self.update_points(bounds)
         if update and not first_run:
             con.abort()
+            first_x = 0x8000
+            first_y = 0x8000
+            if len(points):
+                first_x, first_y = points[0]
+            con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
-            con.goto_xy(0x8000, 0x8000)
 
         if self.stopped:
             return False
