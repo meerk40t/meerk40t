@@ -279,8 +279,9 @@ class RibbonPanel(wx.Panel):
         if button is None:
             return
 
-        button.toggle = not button.toggle
         if button.group:
+            # Toggle radio buttons
+            button.toggle = not button.toggle
             if button.toggle:  # got toggled
                 button_group = self.group_lookup.get(button.group, [])
 
@@ -307,10 +308,11 @@ class RibbonPanel(wx.Panel):
         if button.state_pressed is None:
             # If there's a pressed state we should change the button state
             return
+        button.toggle = not button.toggle
         if button.toggle:
-            self._restore_button_state(button, button.state_pressed)
+            self._restore_button_aspect(button, button.state_pressed)
         else:
-            self._restore_button_state(button, button.state_unpressed)
+            self._restore_button_aspect(button, button.state_unpressed)
         self.ensure_realize()
 
     def drop_click(self, event):
@@ -326,11 +328,13 @@ class RibbonPanel(wx.Panel):
         button = self.button_lookup.get(evt_id)
         if button is None:
             return
+        if button.toggle:
+            return
         menu = wx.Menu()
         for v in button.button_dict["multi"]:
-            hybrid_id = wx.NewId()
-            menu.Append(hybrid_id, v.get("label"))
-            self.Bind(wx.EVT_MENU, self.drop_menu_click(button, v), id=hybrid_id)
+            menu_id = wx.NewId()
+            menu.Append(menu_id, v.get("label"))
+            self.Bind(wx.EVT_MENU, self.drop_menu_click(button, v), id=menu_id)
         event.PopupMenu(menu)
 
     def drop_menu_click(self, button, v):
@@ -351,12 +355,12 @@ class RibbonPanel(wx.Panel):
             key_id = v.get("identifier")
             setattr(self.context, button.save_id, key_id)
             button.state_unpressed = key_id
-            self._restore_button_state(button, key_id)
+            self._restore_button_aspect(button, key_id)
             self.ensure_realize()
 
         return menu_item_click
 
-    def _restore_button_state(self, base_button, key):
+    def _restore_button_aspect(self, base_button, key):
         if not hasattr(base_button, "alternatives"):
             return
         alt = base_button.alternatives[key]
@@ -377,7 +381,7 @@ class RibbonPanel(wx.Panel):
         # base_button.state = alt.get("state", base_button.state)
         base_button.key = key
 
-    def _store_button_state(self, base_button, key, **kwargs):
+    def _store_button_aspect(self, base_button, key, **kwargs):
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         base_button.alternatives[key] = {
@@ -398,7 +402,7 @@ class RibbonPanel(wx.Panel):
             if kwargs[k] is not None:
                 key_dict[k] = kwargs[k]
 
-    def _update_button_state(self, base_button, key, **kwargs):
+    def _update_button_aspect(self, base_button, key, **kwargs):
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         key_dict = base_button.alternatives[key]
@@ -455,6 +459,8 @@ class RibbonPanel(wx.Panel):
                     help_string=button["tip"] if show_tip else "",
                     kind=bkind,
                 )
+
+            # Store all relevant aspects for newly registered button.
             b.button_dict = button
             b.state_pressed = None
             b.state_unpressed = None
@@ -465,6 +471,8 @@ class RibbonPanel(wx.Panel):
             b.action = button.get("action")
             b.action_right = button.get("right")
             if "multi" in button:
+                # Store alternative aspects for multi-buttons, load stored previous state.
+
                 multi_action = button["multi"]
                 multi_ident = button.get("identifier")
                 b.save_id = multi_ident
@@ -472,11 +480,11 @@ class RibbonPanel(wx.Panel):
 
                 for i, v in enumerate(multi_action):
                     key = v.get("identifier", i)
-                    self._store_button_state(b, key)
-                    self._update_button_state(b, key, **v)
+                    self._store_button_aspect(b, key)
+                    self._update_button_aspect(b, key, **v)
                     if "icon" in v:
                         v_icon = button.get("icon")
-                        self._update_button_state(
+                        self._update_button_aspect(
                             b,
                             key,
                             bitmap_large=v_icon.GetBitmap(resize=resize_param),
@@ -485,23 +493,25 @@ class RibbonPanel(wx.Panel):
                             ),
                         )
                     if key == initial_id:
-                        self._restore_button_state(b, key)
+                        self._restore_button_aspect(b, key)
             if "toggle" in button:
+                # Store toggle and original aspects for toggle-buttons
+
                 b.state_pressed = "toggle"
                 b.state_unpressed = "original"
 
-                self._store_button_state(b, "original")
+                self._store_button_aspect(b, "original")
 
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
-                self._store_button_state(
+                self._store_button_aspect(
                     b,
                     key,
                     **toggle_action
                 )
                 if "icon" in toggle_action:
                     toggle_icon = toggle_action.get("icon")
-                    self._update_button_state(
+                    self._update_button_aspect(
                         b,
                         key,
                         bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
@@ -509,6 +519,8 @@ class RibbonPanel(wx.Panel):
                             resize=resize_param, color=Color("grey")
                         ),
                     )
+
+            # Store newly created button in the various lookups
             self.button_lookup[new_id] = b
             if group is not None:
                 c_group = self.group_lookup.get(group)
