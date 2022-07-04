@@ -265,11 +265,12 @@ class RibbonPanel(wx.Panel):
             # Nothing found
             return
 
+        # We know the active button. Lookup and execute action_right
         button = self.button_lookup.get(active_button)
         if button is not None:
             action = button.action_right
             if action:
-                action(0)
+                action(event)
 
     def button_click(self, event):
         # Let's figure out what kind of action we need to perform
@@ -300,10 +301,11 @@ class RibbonPanel(wx.Panel):
                     self.button_click(mevent)
                     return
         if button.action is not None:
-            button.action(0)
+            # We have an action to call.
+            button.action(event)
 
         if button.state_pressed is None:
-            # If there's a pressed state we should change the button state.
+            # If there's a pressed state we should change the button state
             return
         if button.toggle:
             self._restore_button_state(button, button.state_pressed)
@@ -311,6 +313,48 @@ class RibbonPanel(wx.Panel):
             self._restore_button_state(button, button.state_unpressed)
         self.ensure_realize()
 
+    def drop_click(self, event):
+        """
+        Drop down of a hybrid button was clicked.
+
+        We make a menu popup and fill it with the data about the multi-button
+
+        @param event:
+        @return:
+        """
+        evt_id = event.GetId()
+        button = self.button_lookup.get(evt_id)
+        if button is None:
+            return
+        menu = wx.Menu()
+        for v in button.button_dict["multi"]:
+            hybrid_id = wx.NewId()
+            menu.Append(hybrid_id, v.get("label"))
+            self.Bind(wx.EVT_MENU, self.drop_menu_click(button, v), id=hybrid_id)
+        event.PopupMenu(menu)
+
+    def drop_menu_click(self, button, v):
+        """
+        Creates menu_item_click processors for the various menus created for a drop-click
+
+        @param button:
+        @param v:
+        @return:
+        """
+        def menu_item_click(event):
+            """
+            Process menu item click.
+
+            @param event:
+            @return:
+            """
+            key_id = v.get("identifier")
+            setattr(self.context, button.save_id, key_id)
+            button.state_unpressed = key_id
+            self._restore_button_state(button, key_id)
+            self.ensure_realize()
+
+        return menu_item_click
 
     def _restore_button_state(self, base_button, key):
         if not hasattr(base_button, "alternatives"):
@@ -328,8 +372,8 @@ class RibbonPanel(wx.Panel):
             "bitmap_small_disabled", base_button.bitmap_small_disabled
         )
         base_button.client_data = alt.get("client_data", base_button.client_data)
-        base_button.id = alt.get("id", base_button.id)
-        base_button.kind = alt.get("kind", base_button.kind)
+        # base_button.id = alt.get("id", base_button.id)
+        # base_button.kind = alt.get("kind", base_button.kind)
         # base_button.state = alt.get("state", base_button.state)
         base_button.key = key
 
@@ -345,8 +389,8 @@ class RibbonPanel(wx.Panel):
             "bitmap_small": base_button.bitmap_small,
             "bitmap_small_disabled": base_button.bitmap_small_disabled,
             "client_data": base_button.client_data,
-            "id": base_button.id,
-            "kind": base_button.kind,
+            # "id": base_button.id,
+            # "kind": base_button.kind,
             # "state": base_button.state,
         }
         key_dict = base_button.alternatives[key]
@@ -373,44 +417,25 @@ class RibbonPanel(wx.Panel):
             buttons.append(button)
 
         def sort_priority(elem):
-            return elem["priority"] if "priority" in elem else 0
+            return elem.get("priority", 0)
+        buttons.sort(key=sort_priority)  # Sort buttons by priority
 
-        buttons.sort(key=sort_priority)
         for button in buttons:
+            # Every registered button in the updated lookup gets created.
             new_id = wx.NewId()
             group = button.get("group")
             resize_param = button.get("size")
             if "multi" in button:
+                # Button is a multi-type button
                 b = button_bar.AddHybridButton(
                     button_id=new_id,
                     label=button["label"],
                     bitmap=button["icon"].GetBitmap(resize=resize_param),
                     help_string=button["tip"] if show_tip else "",
                 )
-
-                def drop_bind(multi_action, button_obj):
-                    def on_dropdown(event):
-                        def drop_and_act(multi_opt):
-                            def on_dropdown_click(event):
-                                key_id = multi_opt.get("identifier")
-                                setattr(self.context, button_obj.save_id, key_id)
-                                button_obj.state_unpressed = key_id
-                                self._restore_button_state(button_obj, key_id)
-                                self.ensure_realize()
-
-                            return on_dropdown_click
-                        menu = wx.Menu()
-                        for v in multi_action:
-                            hybrid_id = wx.NewId()
-                            menu.Append(hybrid_id, v.get("label"))
-                            button_bar.Bind(wx.EVT_MENU, drop_and_act(v), id=hybrid_id)
-                        event.PopupMenu(menu)
-
-                    return on_dropdown
-
                 button_bar.Bind(
                     RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-                    drop_bind(button["multi"], b),
+                    self.drop_click,
                     id=new_id,
                 )
             else:
