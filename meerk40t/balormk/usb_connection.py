@@ -236,12 +236,13 @@ class USBConnection:
         """Closes device."""
         _ = self.channel._
         device = self.devices[index]
-        interface = self.interface[index]
+        interface = self.interface.get(index)
         self.channel(_("Attempting disconnection from USB."))
         if device is not None:
             try:
-                self.disconnect_detach(device, interface)
-                self.unclaim_interface(device, interface)
+                if interface is not None:
+                    self.disconnect_detach(device, interface)
+                    self.unclaim_interface(device, interface)
                 self.disconnect_dispose(device)
                 self.disconnect_reset(device)
                 self.channel(_("USB Disconnection Successful.\n"))
