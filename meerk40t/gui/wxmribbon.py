@@ -224,7 +224,8 @@ class RibbonPanel(wx.Panel):
         self.stored_height = 0
         self.art_provider_count = 0
 
-        self.button_actions = []
+        self.button_lookup = {}
+        self.group_lookup = {}
 
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
@@ -264,51 +265,52 @@ class RibbonPanel(wx.Panel):
             # Nothing found
             return
 
-        for button in self.button_actions:
-            button_base = button[BUTTONBASE]
-            button_id = button[ID]
-            action = button_base.action_right
-            if action is not None and button_id == active_button:
-                # Found one...
-                action(0)  # Needs a parameter....
-                break
+        button = self.button_lookup.get(active_button)
+        if button is not None:
+            action = button.action_right
+            if action:
+                action(0)
 
     def button_click(self, event):
         # Let's figure out what kind of action we need to perform
         evt_id = event.GetId()
-        for button in self.button_actions:
-            # ButtonBase, Parent, ID, Toggle, group
-            button_base = button[BUTTONBASE]
-            parent_obj = button[PARENT]
-            button_id = button[ID]
-            group = button[GROUP]
-            if button_id == evt_id:
-                button[TOGGLE] = not button[TOGGLE]
-                if group != "":
-                    if button[TOGGLE]:  # got toggled
-                        for obutton in self.button_actions:
-                            # Untoggle all other buttons in this group.
-                            if obutton[GROUP] == group and obutton[ID] != button_id:
-                                obutton[PARENT].ToggleButton(obutton[ID], False)
-                    else:  # got untoggled...
-                        # so let' activate the first button of the group (implicitly defined as default...)
-                        for obutton in self.button_actions:
-                            if obutton[GROUP] == group:
-                                obutton[PARENT].ToggleButton(obutton[ID], True)
+        button = self.button_lookup.get(evt_id)
+        if button is None:
+            return
 
-                                mevent = event.Clone()
-                                mevent.SetId(obutton[ID])
-                                self.button_click(mevent)
-                                return
-                if button_base.action is not None:
-                    button_base.action(0)
-                if button_base.state_pressed is not None:
-                    if button[TOGGLE]:
-                        self._restore_button_state(button_base, button_base.state_pressed)
-                    else:
-                        self._restore_button_state(button_base, button_base.state_unpressed)
-                    self.ensure_realize()
-                break
+        button.toggle = not button.toggle
+        if button.group:
+            if button.toggle:  # got toggled
+                button_group = self.group_lookup.get(button.group, [])
+
+                for obutton in button_group:
+                    # Untoggle all other buttons in this group.
+                    if obutton.group == button.group and obutton.id != button.id:
+                        obutton.parent.ToggleButton(obutton.id, False)
+            else:  # got untoggled...
+                # so let' activate the first button of the group (implicitly defined as default...)
+                button_group = self.group_lookup.get(button.group)
+                if button_group:
+                    first_button = button_group[0]
+                    first_button.parent.ToggleButton(first_button.id, True)
+
+                    # Clone event and recurse.
+                    mevent = event.Clone()
+                    mevent.SetId(first_button.id)
+                    self.button_click(mevent)
+                    return
+        if button.action is not None:
+            button.action(0)
+
+        if button.state_pressed is None:
+            # If there's a pressed state we should change the button state.
+            return
+        if button.toggle:
+            self._restore_button_state(button, button.state_pressed)
+        else:
+            self._restore_button_state(button, button.state_unpressed)
+        self.ensure_realize()
+
 
     def _restore_button_state(self, base_button, key):
         if not hasattr(base_button, "alternatives"):
@@ -329,6 +331,7 @@ class RibbonPanel(wx.Panel):
         base_button.id = alt.get("id", base_button.id)
         base_button.kind = alt.get("kind", base_button.kind)
         # base_button.state = alt.get("state", base_button.state)
+        base_button.key = key
 
     def _store_button_state(self, base_button, key, **kwargs):
         if not hasattr(base_button, "alternatives"):
@@ -375,7 +378,7 @@ class RibbonPanel(wx.Panel):
         buttons.sort(key=sort_priority)
         for button in buttons:
             new_id = wx.NewId()
-            group = ""
+            group = button.get("group")
             resize_param = button.get("size")
             if "multi" in button:
                 b = button_bar.AddHybridButton(
@@ -412,7 +415,6 @@ class RibbonPanel(wx.Panel):
                 )
             else:
                 if "group" in button:
-                    group = button["group"]
                     bkind = RB.RIBBON_BUTTON_TOGGLE
                 else:
                     bkind = RB.RIBBON_BUTTON_NORMAL
@@ -431,6 +433,9 @@ class RibbonPanel(wx.Panel):
             b.button_dict = button
             b.state_pressed = None
             b.state_unpressed = None
+            b.toggle = False
+            b.parent = button_bar
+            b.group = group
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
@@ -479,15 +484,13 @@ class RibbonPanel(wx.Panel):
                             resize=resize_param, color=Color("grey")
                         ),
                     )
-            self.button_actions.append(
-                [
-                    b,
-                    button_bar,
-                    new_id,
-                    False,
-                    group,
-                ]  # ButtonBase, Parent, ID, Toggle, group
-            )
+            self.button_lookup[new_id] = b
+            if group is not None:
+                c_group = self.group_lookup.get(group)
+                if c_group is None:
+                    c_group = []
+                    self.group_lookup[group] = c_group
+                c_group.append(b)
 
             button_bar.Bind(
                 RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
@@ -527,10 +530,10 @@ class RibbonPanel(wx.Panel):
         self.set_buttons(new_values, self.align_button_bar)
 
     def enable_all_buttons_on_bar(self, button_bar, active):
-        for button in self.button_actions:
-            if button[PARENT] is button_bar:
-                b_id = button[ID]
-                button_bar.EnableButton(b_id, active)
+        for k in self.button_lookup:
+            v = self.button_lookup[k]
+            if v.parent is button_bar:
+                button_bar.EnableButton(v.id, active)
 
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
@@ -555,19 +558,16 @@ class RibbonPanel(wx.Panel):
             group = newtool
             identifier = ""
 
-        for button in self.button_actions:
-            button_base = button[BUTTONBASE]
-            parent_obj = button[PARENT]
-            button_id = button[ID]
-            bgroup = button[GROUP]
-
-            if bgroup == group:
-                # Reset toggle state
-                if button_base.identifier == identifier:
-                    # Set toggle state
-                    parent_obj.ToggleButton(button_id, True)
-                else:
-                    parent_obj.ToggleButton(button_id, False)
+        button_group = self.group_lookup.get(group, [])
+        for button in button_group:
+            # Reset toggle state
+            if button.identifier == identifier:
+                # Set toggle state
+                button.parent.ToggleButton(button.id, True)
+                button.toggle = True
+            else:
+                button.parent.ToggleButton(button.id, False)
+                button.toggle = False
 
     @property
     def is_dark(self):
