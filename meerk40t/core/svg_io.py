@@ -78,6 +78,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Do not treat overwriting SVG differently if they are MeerK40t files"
                 ),
+                "page": _("Input/Output"),
+                "section": _("Input"),
             },
         ]
         kernel.register_choices("preferences", choices)

@@ -599,6 +599,8 @@ class MeerK40t(MWindow):
                 "type": bool,
                 "label": _("Don't autoadjust zoom level"),
                 "tip": _("Don't autoadjust zoom level when resizing the main window"),
+                "page": _("Gui"),
+                "section": _("Scene"),
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -613,6 +615,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
                 ),
+                "page": _("Gui"),
+                "section": _("Scene"),
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -627,6 +631,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Enable the display of a colorbar at the bottom of the screen."
                 ),
+                "page": _("Gui"),
+                "section": _("General"),
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -641,6 +647,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Active: draw handles outside of / Inactive: Draw them on the bounding box of the selection."
                 ),
+                "page": _("Gui"),
+                "section": _("Scene"),
             },
         ]
         context.kernel.register_choices("preferences", choices)

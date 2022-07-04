@@ -56,6 +56,8 @@ def register_panel_laser(window, context):
             "type": bool,
             "label": _("Enable Laser Arm"),
             "tip": _("Enable Laser Panel Arm/Disarm feature."),
+            "page": _("Laser"),
+            "section": _("General"),
         },
     ]
     context.kernel.register_choices("preferences", choices)
