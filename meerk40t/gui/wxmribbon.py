@@ -18,13 +18,6 @@ ID_PAGE_TOOL = 20
 ID_PAGE_TOGGLE = 30
 
 
-BUTTONBASE = 0
-PARENT = 1
-ID = 2
-TOGGLE = 3
-GROUP = 4
-
-
 class RibbonButtonBar(RB.RibbonButtonBar):
     def __init__(
         self,
