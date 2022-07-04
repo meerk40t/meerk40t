@@ -2703,6 +2703,23 @@ class Kernel(Settings):
                     "Index out of bounds (1-{length})".format(length=len(data))
                 )
 
+        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_command(
+            ("disable", "enable"),
+            input_type="batch",
+            help=_("disable/enable the command at the particular index"),
+        )
+        def batch_disable_enable(command, channel, _, data=None, index=None, **kwargs):
+            if index is None:
+                raise CommandSyntaxError
+            try:
+                self.batch_set_origin(index - 1, "disable" if command == "disable" else "cmd")
+            except IndexError:
+                raise CommandSyntaxError(
+                    "Index out of bounds (1-{length})".format(length=len(data))
+                )
+
+
         # ==========
         # CHANNEL COMMANDS
         # ==========
@@ -2952,7 +2969,7 @@ class Kernel(Settings):
     def batch_add(self, command, origin="default", index=None):
         root = self.root
         batch = [b for b in root.setting(str, "batch", "").split(";") if b]
-        batch_command = "{origin} {command}".format(origin=origin, command=command)
+        batch_command = f"{origin} {command}"
         if index is not None:
             batch.insert(index, batch_command)
         else:
@@ -2965,6 +2982,16 @@ class Kernel(Settings):
         del batch[index]
         self.root.batch = ";".join(batch)
 
+    def batch_set_origin(self, index, new_origin):
+        root = self.root
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
+        b = batch[index]
+        find = b.find(" ")
+        command = b[find + 1:]
+        batch[index] = f"{new_origin} {command}"
+        self.root.batch = ";".join(batch)
+
+
     def batch_boot(self):
         root = self.root
         if root.setting(str, "batch", None) is None:
@@ -2972,8 +2999,11 @@ class Kernel(Settings):
         for b in root.batch.split(";"):
             if b:
                 find = b.find(" ")
-                text = b[find + 1 :]
-                root("{batch}\n".format(batch=text))
+                origin = b[:find]
+                if origin == "disable":
+                    continue
+                command = b[find + 1 :]
+                root(f"{command}\n")
 
     # ==========
     # KERNEL REPLACEABLE
