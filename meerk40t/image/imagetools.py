@@ -326,6 +326,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = black
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
         return "image", data
 
     @context.console_command("rgba", help="", input_type="image", output_type="image")
@@ -382,6 +383,7 @@ def plugin(kernel, lifecycle=None):
                 inode.image = enhancer.enhance(factor)
                 if hasattr(inode, "node"):
                     inode.node.altered()
+                inode.altered()
                 channel(_("Image Contrast Factor: %f") % factor)
             except (IndexError, ValueError):
                 channel(_("image contrast <factor>"))
@@ -424,6 +426,7 @@ def plugin(kernel, lifecycle=None):
                 inode.image = enhancer.enhance(factor)
                 if hasattr(inode, "node"):
                     inode.node.altered()
+                inode.altered()
                 channel(_("Image Color Factor: %f") % factor)
             except (IndexError, ValueError):
                 channel(_("image color <factor>"))
@@ -462,6 +465,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = img.filter(filter=ImageFilter.BLUR)
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
             channel(_("Image Blurred."))
         return "image", data
 
@@ -493,6 +497,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = img.filter(filter=ImageFilter.EDGE_ENHANCE)
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
             channel(_("Image Edges Enhanced."))
         return "image", data
 
@@ -524,6 +529,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = img.filter(filter=ImageFilter.EMBOSS)
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
             channel(_("Image Embossed."))
         return "image", data
 
@@ -555,6 +561,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = img.filter(filter=ImageFilter.CONTOUR)
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
             channel(_("Image Contoured."))
         return "image", data
 
@@ -618,7 +625,6 @@ def plugin(kernel, lifecycle=None):
     )
     def image_invert(command, channel, _, data, **kwargs):
         from PIL import ImageOps
-
         for inode in data:
             img = inode.image
             original_mode = img.mode
@@ -630,6 +636,7 @@ def plugin(kernel, lifecycle=None):
                     inode.image = inode.image.convert("1")
                 if hasattr(inode, "node"):
                     inode.node.altered()
+                inode.altered()
                 channel(_("Image Inverted."))
             except OSError:
                 channel(_("Image type cannot be converted. %s") % img.mode)
@@ -659,6 +666,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = ImageOps.mirror(img)
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
             channel(_("Image Mirrored."))
         return "image", data
 
@@ -686,6 +694,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = img.transpose(Image.ROTATE_270)
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
             channel(_("Rotated image clockwise."))
         return "image", data
 
@@ -751,6 +760,7 @@ def plugin(kernel, lifecycle=None):
                 inode.image = ImageOps.grayscale(img)
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
             channel(_("Image Grayscale."))
         return "image", data
 
@@ -1013,6 +1023,7 @@ def plugin(kernel, lifecycle=None):
             inode.image = half_tone
             if hasattr(inode, "node"):
                 inode.node.altered()
+            inode.altered()
         return "image", data
 
 
