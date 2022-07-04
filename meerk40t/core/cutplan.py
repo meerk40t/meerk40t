@@ -20,8 +20,6 @@ from os import times
 from time import time
 from typing import Any, List
 
-from PIL import Image
-
 from ..device.lhystudios.laserspeed import LaserSpeed
 from ..device.lhystudios.lhystudiosdevice import LhystudiosDriver
 from ..image.actualize import actualize
@@ -30,6 +28,12 @@ from ..tools.pathtools import VectorMontonizer
 from ..tools.rastergrouping import group_elements_overlap, group_overlapped_rasters
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 from .elements import LaserOperation
+
+try:
+    from PIL import Image
+    PILLOW_LOADED = True
+except ImportError:
+    PILLOW_LOADED = False
 
 
 class CutPlan:
@@ -328,7 +332,7 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     c = self.plan[i] = self.inner_first_ident(c)
-                if self.grouped_inner():
+                if self.grouped_inner() and PILLOW_LOADED:
                     c = self.plan[i] = self.inner_first_image_optimize(c)
                 self.plan[i] = self.inner_selection_cutcode(c)
 
@@ -338,7 +342,7 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     c = self.plan[i] = self.inner_first_ident(c)
-                if self.grouped_inner():
+                if self.grouped_inner() and PILLOW_LOADED:
                     c = self.plan[i] = self.inner_first_image_optimize(c)
                 if last is not None:
                     self.plan[i].start = last
