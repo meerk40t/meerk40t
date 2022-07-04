@@ -321,6 +321,8 @@ class LiveFullLightJob:
         for node in elements:
             if self.stopped:
                 return False
+            if self.changed:
+                return True
             e = node.as_path()
             if not e:
                 continue
