@@ -8,6 +8,7 @@ def plugin(service, lifecycle):
             return True
         return not service.has_feature("wx")
     if lifecycle == "added":
+        # Needed to test wx import.
         import wx
 
         from meerk40t.gui.icons import (
