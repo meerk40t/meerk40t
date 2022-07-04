@@ -2732,7 +2732,6 @@ class Kernel(Settings):
                     "Index out of bounds (1-{length})".format(length=len(data))
                 )
 
-
         # ==========
         # CHANNEL COMMANDS
         # ==========
