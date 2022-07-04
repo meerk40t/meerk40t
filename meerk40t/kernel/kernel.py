@@ -2691,13 +2691,27 @@ class Kernel(Settings):
         @self.console_command(
             "remove",
             input_type="batch",
-            help=_("delete line located at specific index'"),
+            help=_("delete line located at specific index"),
+            all_arguments_required=True,
         )
         def batch_remove(channel, _, data=None, index=None, **kwargs):
-            if index is None:
-                raise CommandSyntaxError
             try:
                 self.batch_remove(index - 1)
+            except IndexError:
+                raise CommandSyntaxError(
+                    "Index out of bounds (1-{length})".format(length=len(data))
+                )
+
+        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_command(
+            "run",
+            input_type="batch",
+            help=_("execute line located at specific index"),
+            all_arguments_required=True,
+        )
+        def batch_remove(channel, _, data=None, index=None, **kwargs):
+            try:
+                self.batch_execute(index - 1)
             except IndexError:
                 raise CommandSyntaxError(
                     "Index out of bounds (1-{length})".format(length=len(data))
@@ -2708,10 +2722,9 @@ class Kernel(Settings):
             ("disable", "enable"),
             input_type="batch",
             help=_("disable/enable the command at the particular index"),
+            all_arguments_required=True,
         )
         def batch_disable_enable(command, channel, _, data=None, index=None, **kwargs):
-            if index is None:
-                raise CommandSyntaxError
             try:
                 self.batch_set_origin(index - 1, "disable" if command == "disable" else "cmd")
             except IndexError:
@@ -2991,6 +3004,13 @@ class Kernel(Settings):
         batch[index] = f"{new_origin} {command}"
         self.root.batch = ";".join(batch)
 
+    def batch_execute(self, index):
+        root = self.root
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
+        b = batch[index]
+        find = b.find(" ")
+        command = b[find + 1:]
+        root(f"{command}\n")
 
     def batch_boot(self):
         root = self.root
