@@ -199,12 +199,14 @@ class TreePanel(wx.Panel):
                     else:
                         if not node.type.startswith("elem "):
                             self.shadow_tree.set_icon(node, force=True)
+                # Show the first node, but if that's the root node then ignore stuff
                 node = nodes[0]
             else:
                 node = nodes
                 self.shadow_tree.set_icon(node, force=True)
-
-            self.shadow_tree.wxtree.EnsureVisible(node.item)
+            rootitem = self.shadow_tree.wxtree.GetRootItem()
+            if not node is None and node.item != rootitem:
+                self.shadow_tree.wxtree.EnsureVisible(node.item)
 
     @signal_listener("freeze_tree")
     def on_freeze_tree_signal(self, origin, status=None, *args):
@@ -812,14 +814,14 @@ class ShadowTree:
                 image_id = self.set_icon(node, icons8_scatter_plot_20.GetBitmap(color=c))
                 return image_id
             elif node.type == "reference":
-                image_id = tree.GetItemImage(node.node.item)
-                if image_id >= self.tree_images.ImageCount or not node.node.type.startswith("elem "):
-                    image_id = -1
-                    # Reset Image Node in List
-                if image_id < 0:
-                    image_id = self.set_icon(node.node)
-                tree.SetItemImage(item, image=image_id)
-
+                if hasattr(node, "node"):
+                    image_id = tree.GetItemImage(node.node.item)
+                    if image_id >= self.tree_images.ImageCount or not node.node.type.startswith("elem "):
+                        image_id = -1
+                        # Reset Image Node in List
+                    if image_id < 0:
+                        image_id = self.set_icon(node.node)
+                    tree.SetItemImage(item, image=image_id)
             elif node.type.startswith("elem "):
                 image = self.renderer.make_raster(
                     node, node.bounds, width=20, height=20, bitmap=True, keep_ratio=True
