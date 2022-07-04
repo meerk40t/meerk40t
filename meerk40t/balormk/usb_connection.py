@@ -210,16 +210,18 @@ class USBConnection:
                 self.channel(_("Device Reset"))
             except usb.core.USBError:
                 self.channel(_("Device did not reset."))
-            # interface = self.get_active_config(device)
-            # self.interface[index] = interface
-            #
-            # self.detach_kernel(device, interface)
-            # try:
-            #     self.claim_interface(device, interface)
-            # except ConnectionRefusedError:
-            #     # Attempting interface cycle.
-            #     self.unclaim_interface(device, interface)
-            #     self.claim_interface(device, interface)
+            try:
+                interface = self.get_active_config(device)
+                self.interface[index] = interface
+                self.detach_kernel(device, interface)
+                try:
+                    self.claim_interface(device, interface)
+                except ConnectionRefusedError:
+                    # Attempting interface cycle.
+                    self.unclaim_interface(device, interface)
+                    self.claim_interface(device, interface)
+            except usb.core.USBError:
+                self.channel(_("Device failed during detach and claim"))
             self.channel(_("USB Connected."))
             return index
         except usb.core.NoBackendError as e:
