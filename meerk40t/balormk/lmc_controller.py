@@ -500,10 +500,14 @@ class GalvoController:
 
     def raw_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
         """
-        Write this raw command to value.
+        Write this raw command to value. Sends the correct way based on command value.
+
         @return:
         """
-        self._list_write(command, v1, v2, v3, v4, v5)
+        if command >= 0x8000:
+            self._list_write(command, v1, v2, v3, v4, v5)
+        else:
+            self._command(command, v1, v2, v3, v4, v5)
 
     def raw_clear(self):
         self._list_new()

@@ -1169,7 +1169,7 @@ class BalorDevice(Service, ViewPort):
             There are methods for reading and writing raw info from files in order to send that
             data. You can also use shorthand commands.
             """
-            from meerk40t.balormk.lmc_controller import list_command_lookup
+            from meerk40t.balormk.lmc_controller import list_command_lookup, single_command_lookup
 
             reverse_lookup = {}
             for k in list_command_lookup:
@@ -1177,12 +1177,23 @@ class BalorDevice(Service, ViewPort):
                 reverse_lookup[command_string] = k
                 reverse_lookup[command_string.lower()[4:]] = k
 
+            for k in single_command_lookup:
+                command_string = single_command_lookup[k]
+                reverse_lookup[command_string] = k
+                reverse_lookup[command_string.lower()] = k
+
             if remainder is None and input is None:
                 # List permitted commands.
-                channel("Permitted Commands:")
+                channel("Permitted List Commands:")
                 for k in list_command_lookup:
                     command_string = list_command_lookup[k]
                     channel(f"{command_string.lower()[4:]} aka {k:04x}")
+                channel("----------------------------")
+                channel("Permitted Short Commands:")
+
+                for k in single_command_lookup:
+                    command_string = single_command_lookup[k]
+                    channel(f"{command_string.lower()} aka {k:04x}")
                 return
 
             if input is not None:
@@ -1221,7 +1232,7 @@ class BalorDevice(Service, ViewPort):
                     channel(f"Data was declared raw but could not parse because '{e}'")
 
             if cmds is None:
-                cmds = list(re.split("[,\n\r]", remainder))
+                cmds = list(re.split(r"[,\n\r]", remainder))
 
             raw_commands = list()
 
@@ -1264,6 +1275,7 @@ class BalorDevice(Service, ViewPort):
                     self.driver.connection.raw_write(*v)
                 self.driver.connection.rapid_mode()
             else:
+                # output to file
                 if output is not None:
                     channel(f"Writing data to: {output}")
                     try:
