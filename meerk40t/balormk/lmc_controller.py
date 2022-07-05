@@ -811,14 +811,14 @@ class GalvoController:
 
     def _convert_speed(self, speed):
         """
-        mm/s speed implies a distance but the galvo head doesn't move mm and doesn't know what lens you are currently
-        using which changes the definition of what a mm is, this calculation is likely naive for a particular lens size
-        and needs to be scaled according the other relevant factors.
+        Speed in the galvo is given in galvos/ms this means mm/s needs to multiply by galvos_per_mm
+        and divide by 1000 (s/ms)
 
         @param speed:
         @return:
         """
-        return int(speed / 2.0)
+        galvos_per_mm = self.service.physical_to_device_length("1mm", "1mm")[0]
+        return int(speed * galvos_per_mm / 1000.0)
 
     def _convert_frequency(self, frequency_khz):
         """
