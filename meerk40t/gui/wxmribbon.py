@@ -302,6 +302,8 @@ class RibbonPanel(wx.Panel):
                         bitmap_small_disabled=bitmap.GetBitmap(resize=resize_param*0.5, color=Color("grey")),
                     )
             self.ensure_realize()
+            self.Refresh()
+
 
         return menu_item_click
 
