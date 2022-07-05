@@ -1,4 +1,5 @@
 import os
+import re
 import struct
 
 from meerk40t.balormk.driver import BalorDriver
@@ -1113,11 +1114,17 @@ class BalorDevice(Service, ViewPort):
             type=bool,
             action="store_true",
         )
+        @self.console_option(
+            "input", "i", type=str, default=None, help="input data for given file"
+        )
+        @self.console_option(
+            "output", "o", type=str, default=None, help="output data to given file"
+        )
         @self.console_command(
             "raw",
             help=_("sends raw galvo list command exactly as composed"),
         )
-        def galvo_raw(channel, _, default=False, remainder=None, **kwgs):
+        def galvo_raw(channel, _, default=False, input=None, output=None, remainder=None, **kwgs):
             from meerk40t.balormk.lmc_controller import list_command_lookup
 
             reverse_lookup = {}
@@ -1126,15 +1133,37 @@ class BalorDevice(Service, ViewPort):
                 reverse_lookup[command_string] = k
                 reverse_lookup[command_string.lower()[4:]] = k
 
-            if remainder is None:
+            if remainder is None and input is None:
+                # List permitted commands.
                 channel("Permitted Commands:")
                 for k in list_command_lookup:
                     command_string = list_command_lookup[k]
                     channel(f"{command_string.lower()[4:]} aka {k:04x}")
                 return
+
+            if input is not None:
+                from os.path import exists
+
+                if exists(input):
+                    channel(f"Loading data from: {input}")
+                    try:
+                        with open(input, "r") as f:
+                            remainder = f.read()
+                    except IOError:
+                        pass
+                else:
+                    channel(f"The file at {os.path.realpath(input)} does not exist.")
+                    return
+
+            cmds = list(re.split("[,\n\r]", remainder))
+
             raw_commands = list()
-            cmds = list(remainder.split(","))
+
+            # Compile commands.
             for cmd_i, cmd in enumerate(cmds):
+                cmd = cmd.strip()
+                if not cmd:
+                    continue
                 values = [0] * 6
                 for i, b in enumerate(cmd.strip().split(" ")):
                     v = None
@@ -1152,13 +1181,24 @@ class BalorDevice(Service, ViewPort):
                         return
                     values[i] = v
                 raw_commands.append(values)
-            self.driver.connection.rapid_mode()
-            self.driver.connection.program_mode()
-            if not default:
-                self.driver.connection.raw_clear()
-            for v in raw_commands:
-                self.driver.connection.raw_write(*v)
-            self.driver.connection.rapid_mode()
+
+            if output is None:
+                # output to device.
+                self.driver.connection.rapid_mode()
+                self.driver.connection.program_mode()
+                if not default:
+                    self.driver.connection.raw_clear()
+                for v in raw_commands:
+                    self.driver.connection.raw_write(*v)
+                self.driver.connection.rapid_mode()
+            else:
+                if output is not None:
+                    channel(f"Writing data to: {output}")
+                    try:
+                        with open(output, "w") as f:
+                            f.write(remainder)
+                    except IOError:
+                        channel("File could not be written.")
 
         @self.console_argument("x", type=float, default=0.0)
         @self.console_argument("y", type=float, default=0.0)
