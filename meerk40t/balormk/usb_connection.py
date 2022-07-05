@@ -207,12 +207,6 @@ class USBConnection:
             device = self.find_device(index)
             self.devices[index] = device
             self.set_config(device)
-            # try:
-            #     self.channel(_("Resetting Device"))
-            #     device.reset()
-            #     self.channel(_("Device Reset"))
-            # except usb.core.USBError:
-            #     self.channel(_("Device did not reset."))
             try:
                 interface = self.get_active_config(device)
                 self.interface[index] = interface
