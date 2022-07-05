@@ -266,6 +266,47 @@ def plugin(kernel, lifecycle):
             return "spooler", spooler
 
 
+class LaserJob:
+    def __init__(self):
+        self.label = "Job"
+        self._time_total = 0
+        self._time_started = None
+
+    def suspend(self):
+        """
+        Suspend the job currently being run.
+        @return:
+        """
+        time_ended = time.time()
+        duration = time_ended - self._time_started
+        self._time_total += duration
+
+    def resume(self):
+        """
+        Resume the currently run job.
+        @return:
+        """
+        time_ended = time.time()
+        duration = time_ended - self._time_started
+        self._time_total += duration
+
+    def estimate_time(self):
+        """
+        Give laser job time estimate.
+        @return:
+        """
+        return 0
+
+    def running_time(self):
+        return self._time_total
+
+    def stop(self):
+        """
+        Stop this current laser-job
+        @return:
+        """
+
+
 class Spooler:
     """
     Spoolers store spoolable events in a two synchronous queue, and a single idle job that
