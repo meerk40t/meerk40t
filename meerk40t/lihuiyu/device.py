@@ -748,8 +748,7 @@ class LihuiyuDevice(Service, ViewPort):
 
     @property
     def viewbuffer(self):
-        buffer = self.driver.out_pipe._realtime_buffer + self.driver.out_pipe._buffer
-        return buffer.decode("utf8")
+        return self.driver.out_pipe.viewbuffer
 
     @property
     def current(self):
@@ -848,6 +847,9 @@ class LhystudiosDriver(Parameters):
 
     def __repr__(self):
         return "LhystudiosDriver(%s)" % self.name
+
+    def __call__(self, e):
+        self.out_pipe.write(e)
 
     def hold_work(self):
         """
@@ -1903,6 +1905,7 @@ class LhystudiosController:
         self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
 
+    @property
     def viewbuffer(self):
         buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
         try:
@@ -2462,10 +2465,6 @@ class LhystudiosController:
                 return  # Wait abort was requested.
         self.update_state(original_state)
 
-    @property
-    def type(self):
-        return "lhystudios"
-
 
 class TCPOutput:
     def __init__(self, context, name=None):
@@ -2509,6 +2508,10 @@ class TCPOutput:
         self._start()
 
     realtime_write = write
+
+    @property
+    def viewbuffer(self):
+        return self.buffer.decode("utf8")
 
     def _start(self):
         if self.thread is None:
