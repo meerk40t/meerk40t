@@ -348,11 +348,7 @@ class GalvoController:
         if read:
             try:
                 r = self.connection.read(self._machine_index)
-                b0 = r[1] << 8 | r[0]
-                b1 = r[3] << 8 | r[2]
-                b2 = r[5] << 8 | r[4]
-                b3 = r[7] << 8 | r[6]
-                return b0, b1, b2, b3
+                return struct.unpack("<4H", r)
             except ConnectionError:
                 return -1, -1, -1, -1
 
