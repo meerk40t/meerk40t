@@ -1167,7 +1167,7 @@ class BalorDevice(Service, ViewPort):
             """
             Raw for galvo performs raw actions and sends these commands directly to the laser.
             There are methods for reading and writing raw info from files in order to send that
-            data. You can also use short hand commands.
+            data. You can also use shorthand commands.
             """
             from meerk40t.balormk.lmc_controller import list_command_lookup
 
