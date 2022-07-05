@@ -1124,6 +1124,8 @@ class BalorDevice(Service, ViewPort):
             for k in list_command_lookup:
                 command_string = list_command_lookup[k]
                 reverse_lookup[command_string] = k
+                reverse_lookup[command_string.lower()[4:]] = k
+
             if remainder is None:
                 channel("Permitted Commands:")
                 for k in list_command_lookup:
