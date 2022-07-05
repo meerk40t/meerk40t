@@ -748,8 +748,7 @@ class LihuiyuDevice(Service, ViewPort):
 
     @property
     def viewbuffer(self):
-        buffer = self.driver.out_pipe._realtime_buffer + self.driver.out_pipe._buffer
-        return buffer.decode("utf8")
+        return self.driver.out_pipe.viewbuffer
 
     @property
     def current(self):
@@ -849,6 +848,9 @@ class LhystudiosDriver(Parameters):
     def __repr__(self):
         return "LhystudiosDriver(%s)" % self.name
 
+    def __call__(self, e):
+        self.out_pipe.write(e)
+
     def hold_work(self):
         """
         Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
@@ -876,9 +878,6 @@ class LhystudiosDriver(Parameters):
 
     def hold_idle(self):
         return False
-
-    def data_output(self, e):
-        self.out_pipe.write(e)
 
     def plotplanner_process(self):
         """
@@ -979,11 +978,11 @@ class LhystudiosDriver(Parameters):
         return False
 
     def pause(self, *values):
-        self.data_output(b"~PN!\n~")
+        self(b"~PN!\n~")
         self.is_paused = True
 
     def resume(self, *values):
-        self.data_output(b"~PN&\n~")
+        self(b"~PN&\n~")
         self.is_paused = False
 
     def reset(self):
@@ -993,7 +992,7 @@ class LhystudiosDriver(Parameters):
         self.temp_holds.clear()
 
         self.service.signal("pipe;buffer", 0)
-        self.data_output(b"~I*\n~")
+        self(b"~I*\n~")
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
@@ -1001,7 +1000,7 @@ class LhystudiosDriver(Parameters):
 
     def blob(self, blob_type, data):
         if blob_type == "egv":
-            self.data_output(data)
+            self(data)
 
     def cut(self, x, y):
         self.goto(x, y, True)
@@ -1045,18 +1044,18 @@ class LhystudiosDriver(Parameters):
         self.laser = False
         if self._horizontal_major:
             if not self.is_left and dx >= 0:
-                self.data_output(self.CODE_LEFT)
+                self(self.CODE_LEFT)
             if not self.is_right and dx <= 0:
-                self.data_output(self.CODE_RIGHT)
+                self(self.CODE_RIGHT)
         else:
             if not self.is_top and dy >= 0:
-                self.data_output(self.CODE_TOP)
+                self(self.CODE_TOP)
             if not self.is_bottom and dy <= 0:
-                self.data_output(self.CODE_BOTTOM)
-        self.data_output(b"N")
+                self(self.CODE_BOTTOM)
+        self(b"N")
         self.goto_xy(dx, dy)
-        self.data_output(b"SE")
-        self.data_output(self.code_declare_directions())
+        self(b"SE")
+        self(self.code_declare_directions())
         self.state = original_state
 
     def move_abs(self, x, y):
@@ -1134,15 +1133,15 @@ class LhystudiosDriver(Parameters):
                 self.goto_octent(0, dy, cut)
             self.rapid_mode()
         else:
-            self.data_output(b"I")
+            self(b"I")
             self.goto_xy(dx, dy)
-            self.data_output(b"S1P\n")
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
 
     def _commit_mode(self):
         # Unknown utility ported from deleted branch
-        self.data_output(b"N")
+        self(b"N")
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -1155,8 +1154,8 @@ class LhystudiosDriver(Parameters):
             raster_horizontal=True,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
-        self.data_output(b"SE")
+        self(speed_code)
+        self(b"SE")
         self.laser = False
 
     def goto_relative(self, dx, dy, cut):
@@ -1190,7 +1189,7 @@ class LhystudiosDriver(Parameters):
                 my = y
         elif self.state == DRIVER_STATE_FINISH:
             self.goto_xy(dx, dy)
-            self.data_output(b"N")
+            self(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.mode_shift_on_the_fly(dx, dy)
 
@@ -1229,16 +1228,16 @@ class LhystudiosDriver(Parameters):
         if not self.laser:
             return False
         if self.state == DRIVER_STATE_RAPID:
-            self.data_output(b"I")
-            self.data_output(self.CODE_LASER_OFF)
-            self.data_output(b"S1P\n")
+            self(b"I")
+            self(self.CODE_LASER_OFF)
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-            self.data_output(self.CODE_LASER_OFF)
+            self(self.CODE_LASER_OFF)
         elif self.state == DRIVER_STATE_FINISH:
-            self.data_output(self.CODE_LASER_OFF)
-            self.data_output(b"N")
+            self(self.CODE_LASER_OFF)
+            self(b"N")
         self.laser = False
         return True
 
@@ -1246,16 +1245,16 @@ class LhystudiosDriver(Parameters):
         if self.laser:
             return False
         if self.state == DRIVER_STATE_RAPID:
-            self.data_output(b"I")
-            self.data_output(self.CODE_LASER_ON)
-            self.data_output(b"S1P\n")
+            self(b"I")
+            self(self.CODE_LASER_ON)
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-            self.data_output(self.CODE_LASER_ON)
+            self(self.CODE_LASER_ON)
         elif self.state == DRIVER_STATE_FINISH:
-            self.data_output(self.CODE_LASER_ON)
-            self.data_output(b"N")
+            self(self.CODE_LASER_ON)
+            self(b"N")
         self.laser = True
         return True
 
@@ -1263,15 +1262,15 @@ class LhystudiosDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
-            self.data_output(b"S1P\n")
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
         elif self.state in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
             DRIVER_STATE_MODECHANGE,
         ):
-            self.data_output(b"FNSE-\n")
+            self(b"FNSE-\n")
             self.laser = False
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
@@ -1289,7 +1288,7 @@ class LhystudiosDriver(Parameters):
         """
         dx = int(round(dx))
         dy = int(round(dy))
-        self.data_output(b"@NSE")
+        self(b"@NSE")
         self.laser = False
         self.state = DRIVER_STATE_RAPID
         self.program_mode(dx, dy)
@@ -1302,10 +1301,10 @@ class LhystudiosDriver(Parameters):
             DRIVER_STATE_RASTER,
             DRIVER_STATE_MODECHANGE,
         ):
-            self.data_output(b"@NSE")
+            self(b"@NSE")
             self.laser = False
         elif self.state == DRIVER_STATE_RAPID:
-            self.data_output(b"I")
+            self(b"I")
         self.state = DRIVER_STATE_FINISH
         self.service.signal("driver;mode", self.state)
 
@@ -1378,11 +1377,11 @@ class LhystudiosDriver(Parameters):
             raster_horizontal=self._horizontal_major,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
+        self(speed_code)
         self.goto_xy(dx, dy)
-        self.data_output(b"N")
-        self.data_output(self.code_declare_directions())
-        self.data_output(b"S1E")
+        self(b"N")
+        self(self.code_declare_directions())
+        self(b"S1E")
         if self.step:
             self.state = DRIVER_STATE_RASTER
         else:
@@ -1414,20 +1413,20 @@ class LhystudiosDriver(Parameters):
 
         # We force reenforce directional move.
         if self._leftward:
-            self.data_output(self.CODE_LEFT)
+            self(self.CODE_LEFT)
         else:
-            self.data_output(self.CODE_RIGHT)
-        self.data_output(b"N")
+            self(self.CODE_RIGHT)
+        self(b"N")
         if delta != 0:
             if delta < 0:
-                self.data_output(self.CODE_TOP)
+                self(self.CODE_TOP)
                 self._topward = True
             else:
-                self.data_output(self.CODE_BOTTOM)
+                self(self.CODE_BOTTOM)
                 self._topward = False
-            self.data_output(lhymicro_distance(abs(delta)))
+            self(lhymicro_distance(abs(delta)))
             self.native_y += delta
-        self.data_output(b"SE")
+        self(b"SE")
         self.native_y += step_amount
 
         self._leftward = not self._leftward
@@ -1458,20 +1457,20 @@ class LhystudiosDriver(Parameters):
 
         # We force reenforce directional move.
         if self._topward:
-            self.data_output(self.CODE_TOP)
+            self(self.CODE_TOP)
         else:
-            self.data_output(self.CODE_BOTTOM)
-        self.data_output(b"N")
+            self(self.CODE_BOTTOM)
+        self(b"N")
         if delta != 0:
             if delta < 0:
-                self.data_output(self.CODE_LEFT)
+                self(self.CODE_LEFT)
                 self._leftward = True
             else:
-                self.data_output(self.CODE_RIGHT)
+                self(self.CODE_RIGHT)
                 self._leftward = False
-            self.data_output(lhymicro_distance(abs(delta)))
+            self(lhymicro_distance(abs(delta)))
             self.native_x += delta
-        self.data_output(b"SE")
+        self(b"SE")
         self.native_x += step_amount
         self._topward = not self._topward
         self._x_engaged = False
@@ -1506,10 +1505,10 @@ class LhystudiosDriver(Parameters):
 
         # We reverse direction and step.
         if self._leftward:
-            self.data_output(self.CODE_RIGHT)
+            self(self.CODE_RIGHT)
             self._leftward = False
         else:
-            self.data_output(self.CODE_LEFT)
+            self(self.CODE_LEFT)
             self._leftward = True
         self.native_y += step_amount
         self.laser = False
@@ -1542,10 +1541,10 @@ class LhystudiosDriver(Parameters):
 
         # We reverse direction and step.
         if self._topward:
-            self.data_output(self.CODE_BOTTOM)
+            self(self.CODE_BOTTOM)
             self._topward = False
         else:
-            self.data_output(self.CODE_TOP)
+            self(self.CODE_TOP)
             self._topward = True
         self.native_x += step_amount
         self.laser = False
@@ -1553,7 +1552,7 @@ class LhystudiosDriver(Parameters):
 
     def home(self, *values):
         self.rapid_mode()
-        self.data_output(b"IPP\n")
+        self(b"IPP\n")
         old_current = self.service.current
         self.native_x = 0
         self.native_y = 0
@@ -1586,14 +1585,14 @@ class LhystudiosDriver(Parameters):
 
     def lock_rail(self):
         self.rapid_mode()
-        self.data_output(b"IS1P\n")
+        self(b"IS1P\n")
 
     def unlock_rail(self, abort=False):
         self.rapid_mode()
-        self.data_output(b"IS2P\n")
+        self(b"IS2P\n")
 
     def abort(self):
-        self.data_output(b"I\n")
+        self(b"I\n")
 
     def reset_modes(self):
         self.laser = False
@@ -1612,28 +1611,28 @@ class LhystudiosDriver(Parameters):
             self.native_x += dx
             if dx > 0:  # Moving right
                 if not self.is_right or rapid:
-                    self.data_output(self.CODE_RIGHT)
+                    self(self.CODE_RIGHT)
                     self._leftward = False
             else:  # Moving left
                 if not self.is_left or rapid:
-                    self.data_output(self.CODE_LEFT)
+                    self(self.CODE_LEFT)
                     self._leftward = True
             self._x_engaged = True
             self._y_engaged = False
-            self.data_output(lhymicro_distance(abs(dx)))
+            self(lhymicro_distance(abs(dx)))
         if dy != 0:
             self.native_y += dy
             if dy > 0:  # Moving bottom
                 if not self.is_bottom or rapid:
-                    self.data_output(self.CODE_BOTTOM)
+                    self(self.CODE_BOTTOM)
                     self._topward = False
             else:  # Moving top
                 if not self.is_top or rapid:
-                    self.data_output(self.CODE_TOP)
+                    self(self.CODE_TOP)
                     self._topward = True
             self._x_engaged = False
             self._y_engaged = True
-            self.data_output(lhymicro_distance(abs(dy)))
+            self(lhymicro_distance(abs(dy)))
 
     def goto_octent(self, dx, dy, on):
         old_current = self.service.current
@@ -1648,24 +1647,24 @@ class LhystudiosDriver(Parameters):
             self._y_engaged = True
             if dx > 0:  # Moving right
                 if self._leftward:
-                    self.data_output(self.CODE_RIGHT)
+                    self(self.CODE_RIGHT)
                     self._leftward = False
             else:  # Moving left
                 if not self._leftward:
-                    self.data_output(self.CODE_LEFT)
+                    self(self.CODE_LEFT)
                     self._leftward = True
             if dy > 0:  # Moving bottom
                 if self._topward:
-                    self.data_output(self.CODE_BOTTOM)
+                    self(self.CODE_BOTTOM)
                     self._topward = False
             else:  # Moving top
                 if not self._topward:
-                    self.data_output(self.CODE_TOP)
+                    self(self.CODE_TOP)
                     self._topward = True
             self.native_x += dx
             self.native_y += dy
-            self.data_output(self.CODE_ANGLE)
-            self.data_output(lhymicro_distance(abs(dy)))
+            self(self.CODE_ANGLE)
+            self(lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
 
@@ -1903,6 +1902,7 @@ class LhystudiosController:
         self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
 
+    @property
     def viewbuffer(self):
         buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
         try:
@@ -2462,10 +2462,6 @@ class LhystudiosController:
                 return  # Wait abort was requested.
         self.update_state(original_state)
 
-    @property
-    def type(self):
-        return "lhystudios"
-
 
 class TCPOutput:
     def __init__(self, context, name=None):
@@ -2509,6 +2505,10 @@ class TCPOutput:
         self._start()
 
     realtime_write = write
+
+    @property
+    def viewbuffer(self):
+        return self.buffer.decode("utf8")
 
     def _start(self):
         if self.thread is None:
