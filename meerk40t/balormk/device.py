@@ -1155,7 +1155,16 @@ class BalorDevice(Service, ViewPort):
                     channel(f"The file at {os.path.realpath(input)} does not exist.")
                     return
 
-            cmds = list(re.split("[,\n\r]", remainder))
+            cmds = None
+            if len(remainder) == 0x1800:
+                try:
+                    cmds = [struct.unpack("<6H", bytearray.fromhex(remainder[i:i+24])) for i in range(0, len(remainder), 24)]
+                    cmds = [f'{v[0]:04x} {v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}' for v in cmds]
+                except (struct.error, ValueError):
+                    pass
+
+            if cmds is None:
+                cmds = list(re.split("[,\n\r]", remainder))
 
             raw_commands = list()
 
