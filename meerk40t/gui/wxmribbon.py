@@ -264,7 +264,10 @@ class RibbonPanel(wx.Panel):
         menu = wx.Menu()
         for v in button.button_dict["multi"]:
             menu_id = wx.NewId()
-            menu.Append(menu_id, v.get("label"))
+            item = menu.Append(menu_id, v.get("label"))
+            bitmap = v.get("icon", None)
+            if bitmap is not None:
+                item.SetBitmap(bitmap.GetBitmap(resize=16))
             self.Bind(wx.EVT_MENU, self.drop_menu_click(button, v), id=menu_id)
         event.PopupMenu(menu)
 
@@ -287,6 +290,17 @@ class RibbonPanel(wx.Panel):
             setattr(self.context, button.save_id, key_id)
             button.state_unpressed = key_id
             self._restore_button_aspect(button, key_id)
+            bitmap = v.get("icon", None)
+            if bitmap is not None:
+                resize_param = button.resize
+                self._update_button_aspect(
+                        button,
+                        key_id,
+                        bitmap_large=bitmap.GetBitmap(resize=resize_param),
+                        bitmap_large_disabled=bitmap.GetBitmap(resize=resize_param, color=Color("grey")),
+                        bitmap_small=bitmap.GetBitmap(resize=resize_param*0.5),
+                        bitmap_small_disabled=bitmap.GetBitmap(resize=resize_param*0.5, color=Color("grey")),
+                    )
             self.ensure_realize()
 
         return menu_item_click
@@ -296,8 +310,13 @@ class RibbonPanel(wx.Panel):
             return
         alt = base_button.alternatives[key]
         base_button.action = alt.get("action", base_button.action)
+        base_button.action_right = alt.get("action_right", base_button.action_right)
         base_button.label = alt.get("label", base_button.label)
-        base_button.help_string = alt.get("help_string", base_button.help_string)
+        s = alt.get("tip", "")
+        if s == "":
+            s = alt.get("help_string", base_button.help_string)
+        base_button.help_string = s
+        base_button.resize = alt.get("resize", base_button.resize)
         base_button.bitmap_large = alt.get("bitmap_large", base_button.bitmap_large)
         base_button.bitmap_large_disabled = alt.get(
             "bitmap_large_disabled", base_button.bitmap_large_disabled
@@ -312,11 +331,13 @@ class RibbonPanel(wx.Panel):
         # base_button.state = alt.get("state", base_button.state)
         base_button.key = key
 
+
     def _store_button_aspect(self, base_button, key, **kwargs):
         if not hasattr(base_button, "alternatives"):
             base_button.alternatives = {}
         base_button.alternatives[key] = {
             "action": base_button.action,
+            "action_right": base_button.action_right,
             "label": base_button.label,
             "help_string": base_button.help_string,
             "bitmap_large": base_button.bitmap_large,
@@ -324,6 +345,8 @@ class RibbonPanel(wx.Panel):
             "bitmap_small": base_button.bitmap_small,
             "bitmap_small_disabled": base_button.bitmap_small_disabled,
             "client_data": base_button.client_data,
+            "resize": base_button.resize,
+
             # "id": base_button.id,
             # "kind": base_button.kind,
             # "state": base_button.state,
@@ -400,7 +423,13 @@ class RibbonPanel(wx.Panel):
             b.group = group
             b.identifier = button.get("identifier")
             b.action = button.get("action")
-            b.action_right = button.get("right")
+            b.resize = resize_param
+            if "action_right" in button:
+                b.action_right = button.get("action_right")
+            elif "right" in button:
+                b.action_right = button.get("right")
+            else:
+                b.action_right = None
             if "rule_enabled" in button:
                 b.enable_rule = button.get("rule_enabled")
             else:
@@ -420,6 +449,13 @@ class RibbonPanel(wx.Panel):
                     self._update_button_aspect(b, key, **v)
                     if "icon" in v:
                         v_icon = button.get("icon")
+                        if resize_param is None:
+                            siz = v_icon.GetBitmap().GetSize()
+                            small_resize = 0.5 * siz[0]
+                            resize = siz[0]
+                        else:
+                            resize = resize_param
+                            small_resize = 0.5 * resize_param
                         self._update_button_aspect(
                             b,
                             key,
@@ -427,12 +463,8 @@ class RibbonPanel(wx.Panel):
                             bitmap_large_disabled=v_icon.GetBitmap(
                                 resize=resize_param, color=Color("grey")
                             ),
+                            resize=resize,
                         )
-                        if resize_param is None:
-                            siz = v_icon.GetBitmap().GetSize()
-                            small_resize = 0.5 * siz[0]
-                        else:
-                            small_resize = 0.5 * resize_param
                         self._update_button_aspect(
                             b,
                             key,

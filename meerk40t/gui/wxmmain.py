@@ -1045,71 +1045,94 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignLeft",
             {
+                "identifier": "alignhoriz",
                 "label": _("Align Left"),
                 "icon": icons8_align_left_50,
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align left\n"),
-                "right": lambda v: kernel.elements("align bedleft\n"),
+                "action_right": lambda v: kernel.elements("align bedleft\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                "multi": [
+                    {
+                        "identifier": "alignleft",
+                        "label": _("Align Left"),
+                        "action": lambda v: kernel.elements("align left\n"),
+                        "action_right": lambda v: kernel.elements("align bedleft\n"),
+                        "icon": icons8_align_left_50,
+                        "tip": _("Align selected elements at the leftmost position (right click: of the bed)"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                    {
+                        "identifier": "alignhcenter",
+                        "label": _("Align Center"),
+                        "action": lambda v: kernel.elements("align centerh\n"),
+                        "action_right": lambda v: kernel.elements("align bedcenterh\n"),
+                        "icon": icons_centerize,
+                        "tip": _("Align selected elements at the horizontal center (right click: of the bed)"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                    {
+                        "identifier": "alignright",
+                        "label": _("Align Right"),
+                        "action": lambda v: kernel.elements("align right\n"),
+                        "action_right": lambda v: kernel.elements("align bedright\n"),
+                        "icon": icons8_align_right_50,
+                        "tip": _("Align selected elements at the rightmost position (right click: of the bed)"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                ]
             },
         )
-        kernel.register(
-            "button/align/AlignRight",
-            {
-                "label": _("Align Right"),
-                "icon": icons8_align_right_50,
-                "tip": _(
-                    "Align selected elements at the rightmost position (right click: of the bed)"
-                ),
-                "action": lambda v: kernel.elements("align right\n"),
-                "right": lambda v: kernel.elements("align bedright\n"),
-                "size": buttonsize,
-                "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
-            },
-        )
+
         kernel.register(
             "button/align/AlignTop",
             {
+                "identifier": "alignvertical",
                 "label": _("Align Top"),
                 "icon": icons8_align_top_50,
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
                 "action": lambda v: kernel.elements("align top\n"),
-                "right": lambda v: kernel.elements("align bedtop\n"),
+                "action_right": lambda v: kernel.elements("align bedtop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
-            },
-        )
-        kernel.register(
-            "button/align/AlignBottom",
-            {
-                "label": _("Align Bottom"),
-                "icon": icons8_align_bottom_50,
-                "tip": _(
-                    "Align selected elements at the lowest position (right click: of the bed)"
-                ),
-                "action": lambda v: kernel.elements("align bottom\n"),
-                "right": lambda v: kernel.elements("align bedbottom\n"),
-                "size": buttonsize,
-                "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
-            },
-        )
-        kernel.register(
-            "button/align/AlignCenter",
-            {
-                "label": _("Align Center"),
-                "icon": icons_centerize,
-                "tip": _(
-                    "Align selected elements at their center (right click: of the bed)"
-                ),
-                "action": lambda v: kernel.elements("align center\n"),
-                "right": lambda v: kernel.elements("align bedcenter\n"),
-                "size": buttonsize,
-                "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                "multi": [
+                    {
+                        "identifier": "aligntop",
+                        "label": _("Align Top"),
+                        "icon": icons8_align_top_50,
+                        "tip": _(
+                            "Align selected elements at the topmost position (right click: of the bed)"
+                        ),
+                        "action": lambda v: kernel.elements("align top\n"),
+                        "action_right": lambda v: kernel.elements("align bedtop\n"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                    {
+                        "identifier": "alignvcenter",
+                        "label": _("Align Center"),
+                        "action": lambda v: kernel.elements("align centerv\n"),
+                        "action_right": lambda v: kernel.elements("align bedcenterv\n"),
+                        "icon": icons_centerize,
+                        "tip": _("Align selected elements at the vertical center (right click: of the bed)"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                    {
+                        "identifier": "alignbottom",
+                        "label": _("Align Bottom"),
+                        "icon": icons8_align_bottom_50,
+                        "tip": _(
+                            "Align selected elements at the lowest position (right click: of the bed)"
+                        ),
+                        "action": lambda v: kernel.elements("align bottom\n"),
+                        "action_right": lambda v: kernel.elements("align bedbottom\n"),
+                        "rule_enabled": lambda cond: len(list(kernel.elements.elems(emphasized=True))) > 0,
+                    },
+                ]
             },
         )
         kernel.register(
