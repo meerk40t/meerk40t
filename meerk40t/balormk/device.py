@@ -226,6 +226,7 @@ class LiveFullLightJob:
         self.stopped = False
         self.changed = False
         service.listen("emphasized", self.on_emphasis_changed)
+        self._last_bounds = None
 
     def stop(self):
         self.stopped = True
@@ -285,6 +286,12 @@ class LiveFullLightJob:
     def process(self, con):
         if self.stopped:
             return False
+        bounds = self.service.elements.selected_area()
+        if self._last_bounds is not None and bounds != self._last_bounds:
+            # Emphasis did not change but the bounds did. We dragged something.
+            self.changed = True
+        self._last_bounds = bounds
+
         if self.changed:
             self.changed = False
             con.abort()
