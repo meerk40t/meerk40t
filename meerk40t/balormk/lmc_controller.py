@@ -299,6 +299,12 @@ class GalvoController:
     def shutdown(self, *args, **kwargs):
         self.is_shutdown = True
 
+    @property
+    def connected(self):
+        if self.connection is None:
+            return False
+        return self.connection.is_open(self._machine_index)
+
     def disconnect(self):
         try:
             self.connection.close(self._machine_index)

@@ -27,8 +27,6 @@ class BalorDriver:
         self.service.add_service_delegate(self.connection)
         self.paused = False
 
-        self.connected = False
-
         self.is_relative = False
         self.laser = False
 
@@ -45,6 +43,12 @@ class BalorDriver:
 
     def __repr__(self):
         return "BalorDriver(%s)" % self.name
+
+    @property
+    def connected(self):
+        if self.connection is None:
+            return False
+        return self.connection.connected
 
     def service_attach(self):
         self._shutdown = False
