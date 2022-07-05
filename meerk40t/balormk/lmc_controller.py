@@ -255,6 +255,8 @@ class GalvoController:
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
 
         self.connection = None
+        self._is_opening = False
+        self._abort_open = False
 
         self._light_bit = service.setting(int, "light_pin", 8)
         self._foot_bit = service.setting(int, "footpedal_pin", 15)
@@ -305,6 +307,15 @@ class GalvoController:
             return False
         return self.connection.is_open(self._machine_index)
 
+    @property
+    def is_connecting(self):
+        if self.connection is None:
+            return False
+        return self._is_opening
+
+    def abort_connect(self):
+        self._abort_open = True
+
     def disconnect(self):
         try:
             self.connection.close(self._machine_index)
@@ -321,13 +332,17 @@ class GalvoController:
                 self.connection.recv = self.service.channel(f"{name}/recv")
             else:
                 self.connection = USBConnection(self.usb_log)
+        self._is_opening = True
+        self._abort_open = False
         while not self.connection.is_open(self._machine_index):
             try:
                 v = self.connection.open(self._machine_index)
                 if v < 0:
                     self.count += 1
                     time.sleep(0.3)
-                    if self.is_shutdown:
+                    if self.is_shutdown or self._abort_open:
+                        self._is_opening = False
+                        self._abort_open = False
                         return
                     continue
                 self.init_laser()
@@ -336,6 +351,8 @@ class GalvoController:
                 self.refused_count += 1
                 time.sleep(0.5)
                 continue
+        self._is_opening = False
+        self._abort_open = False
 
     def send(self, data, read=True):
         if self.is_shutdown:
