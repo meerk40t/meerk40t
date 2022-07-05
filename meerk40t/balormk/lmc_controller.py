@@ -466,7 +466,7 @@ class GalvoController:
     def _list_end(self):
         if self._active_list is None:
             return
-        if self._active_list:
+        if self._active_list and self._active_index:
             self.wait_ready()
             while self.paused:
                 time.sleep(0.3)
