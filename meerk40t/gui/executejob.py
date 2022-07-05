@@ -42,7 +42,7 @@ class PlannerPanel(wx.Panel):
         self.panel_operation = wx.Panel(self, wx.ID_ANY)
         choices = self.context.lookup("choices/optimize")[:7]
         self.panel_optimize = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling = False
         )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
