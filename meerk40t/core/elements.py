@@ -2256,6 +2256,68 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
+            "bedcenterv",
+            help=_("align elements at bedcenter"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = 0
+            dy = (device_height - top_edge - bottom_edge) / 2.0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedcenterh",
+            help=_("align elements at bedcenter"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = (device_width - left_edge - right_edge) / 2.0
+            dy = 0
+            matrix = "translate(%f, %f)" % (dx, dy)
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
             "centerh",
             help=_("align elements at center horizontally"),
             input_type="align",
