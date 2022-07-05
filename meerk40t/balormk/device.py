@@ -1164,8 +1164,13 @@ class BalorDevice(Service, ViewPort):
                 cmd = cmd.strip()
                 if not cmd:
                     continue
+
                 values = [0] * 6
-                for i, b in enumerate(cmd.strip().split(" ")):
+                byte_i = 0
+                for b in cmd.split(" "):
+                    if b == "":
+                        # Double-Space
+                        continue
                     v = None
                     convert = reverse_lookup.get(b)
                     if convert is not None:
@@ -1179,7 +1184,8 @@ class BalorDevice(Service, ViewPort):
                     if not isinstance(v, int):
                         channel(f'Compile error. Line #{cmd_i+1} value "{b}"')
                         return
-                    values[i] = v
+                    values[byte_i] = v
+                    byte_i += 1
                 raw_commands.append(values)
 
             if output is None:
@@ -1195,8 +1201,13 @@ class BalorDevice(Service, ViewPort):
                 if output is not None:
                     channel(f"Writing data to: {output}")
                     try:
+                        lines = []
+                        for v in raw_commands:
+                            lines.append(f"{list_command_lookup.get(v[0],f'{v[0]:04x}').ljust(20)} "
+                                         f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n")
                         with open(output, "w") as f:
-                            f.write(remainder)
+                            f.writelines(lines)
+                            # f.write(remainder)
                     except IOError:
                         channel("File could not be written.")
 
