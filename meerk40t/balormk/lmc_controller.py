@@ -302,7 +302,7 @@ class GalvoController:
     def disconnect(self):
         try:
             self.connection.close(self._machine_index)
-        except (ConnectionError, ConnectionRefusedError):
+        except (ConnectionError, ConnectionRefusedError, AttributeError):
             pass
         self.connection = None
 
