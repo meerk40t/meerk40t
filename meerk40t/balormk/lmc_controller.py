@@ -817,9 +817,9 @@ class GalvoController:
         @param speed:
         @return:
         """
-        return int(speed / 2)
-        # galvos_per_mm = self.service.physical_to_device_length("1mm", "1mm")[0]
-        # return int(speed * galvos_per_mm / 1000.0)
+        # return int(speed / 2)
+        galvos_per_mm = abs(self.service.physical_to_device_length("1mm", "1mm")[0])
+        return int(speed * galvos_per_mm / 1000.0)
 
     def _convert_frequency(self, frequency_khz):
         """
