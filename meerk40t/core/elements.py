@@ -99,6 +99,8 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Default Operation Empty"),
                 "tip": _("Leave empty operations or default Other/Red/Blue"),
+                "page": "Laser",
+                "section": "Classification",
             },
             {
                 "attr": "classify_reverse",
@@ -109,6 +111,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
+                "page": "Laser",
+                "section": "Classification",
             },
             {
                 "attr": "legacy_classification",
@@ -119,6 +123,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Use the legacy classification algorithm rather than the modern classification algorithm."
                 ),
+                "page": "Laser",
+                "section": "Classification",
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -5763,7 +5769,7 @@ class Elemental(Service):
         )
         def reverse_layer_order(node, **kwargs):
             node.reverse()
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree", list(self.flat(types=("reference"))))
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -5772,7 +5778,7 @@ class Elemental(Service):
         def refresh_clasifications(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree", list(self.flat(types=("reference"))))
 
         materials = [
             _("Wood"),
@@ -5978,7 +5984,7 @@ class Elemental(Service):
             elems = list(self.elems())
             self.remove_elements_from_operations(elems)
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree")
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
