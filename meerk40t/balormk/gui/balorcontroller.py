@@ -82,6 +82,20 @@ class BalorControllerPanel(wx.ScrolledWindow):
         except RuntimeError:
             pass
 
+    def set_button_connected(self):
+        self.button_device_connect.SetBackgroundColour("#00ff00")
+        self.button_device_connect.SetBitmap(
+            icons8_connected_50.GetBitmap(use_theme=False)
+        )
+        self.button_device_connect.Enable()
+
+    def set_button_disconnected(self):
+        self.button_device_connect.SetBackgroundColour("#dfdf00")
+        self.button_device_connect.SetBitmap(
+            icons8_disconnected_50.GetBitmap(use_theme=False)
+        )
+        self.button_device_connect.Enable()
+
     @signal_listener("pipe;usb_status")
     def on_usb_update(self, origin=None, status=None):
         if status is None:
@@ -90,25 +104,27 @@ class BalorControllerPanel(wx.ScrolledWindow):
             connected = self.context.device.driver.connected
         except AttributeError:
             return
-        self.button_device_connect.SetLabel(status)
-        if connected:
-            self.button_device_connect.SetBackgroundColour("#00ff00")
-            self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
-            )
-            self.button_device_connect.Enable()
-        else:
-            self.button_device_connect.SetBackgroundColour("#dfdf00")
-            self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
-            )
-            self.button_device_connect.Enable()
+        try:
+            self.button_device_connect.SetLabel(status)
+            if connected:
+                self.set_button_connected()
+            else:
+                self.set_button_disconnected()
+        except RuntimeError:
+            pass
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         try:
             connected = self.context.device.driver.connected
         except AttributeError:
             return
+        try:
+            if self.context.device.driver.connection.is_connecting:
+                self.context.device.driver.connection.abort_connect()
+                return
+        except AttributeError:
+            pass
+
         if connected:
             self.context("usb_disconnect\n")
         else:

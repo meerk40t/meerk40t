@@ -11,6 +11,12 @@ USB_LOCK_PRODUCT = 0x9899
 WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
 READ_ENDPOINT = 0x88
 
+# DEBUG CODE FOR POINTING TO CH341A chip.
+# USB_LOCK_VENDOR = 0x1A86  # Dev : (1a86) QinHeng Electronics
+# USB_LOCK_PRODUCT = 0x5512  # (5512) CH341A
+# WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
+# READ_ENDPOINT = 0x82
+
 
 class USBConnection:
     def __init__(self, channel):
@@ -205,21 +211,17 @@ class USBConnection:
             self.devices[index] = device
             self.set_config(device)
             try:
-                self.channel(_("Resetting Device"))
-                device.reset()
-                self.channel(_("Device Reset"))
+                interface = self.get_active_config(device)
+                self.interface[index] = interface
+                self.detach_kernel(device, interface)
+                try:
+                    self.claim_interface(device, interface)
+                except ConnectionRefusedError:
+                    # Attempting interface cycle.
+                    self.unclaim_interface(device, interface)
+                    self.claim_interface(device, interface)
             except usb.core.USBError:
-                self.channel(_("Device did not reset."))
-            # interface = self.get_active_config(device)
-            # self.interface[index] = interface
-            #
-            # self.detach_kernel(device, interface)
-            # try:
-            #     self.claim_interface(device, interface)
-            # except ConnectionRefusedError:
-            #     # Attempting interface cycle.
-            #     self.unclaim_interface(device, interface)
-            #     self.claim_interface(device, interface)
+                self.channel(_("Device failed during detach and claim"))
             self.channel(_("USB Connected."))
             return index
         except usb.core.NoBackendError as e:
@@ -233,13 +235,14 @@ class USBConnection:
     def close(self, index=0):
         """Closes device."""
         _ = self.channel._
-        device = self.devices[index]
-        interface = self.interface[index]
+        device = self.devices.get(index)
         self.channel(_("Attempting disconnection from USB."))
         if device is not None:
+            interface = self.interface.get(index)
             try:
-                self.disconnect_detach(device, interface)
-                self.unclaim_interface(device, interface)
+                if interface is not None:
+                    self.disconnect_detach(device, interface)
+                    self.unclaim_interface(device, interface)
                 self.disconnect_dispose(device)
                 self.disconnect_reset(device)
                 self.channel(_("USB Disconnection Successful.\n"))

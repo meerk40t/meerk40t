@@ -1103,6 +1103,10 @@ class BalorDevice(Service, ViewPort):
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
             self.spooler.job("disconnect")
 
+        @self.console_command("usb_abort", help=_("Stops USB retries"))
+        def usb_abort(command, channel, _, **kwargs):
+            self.spooler.job("abort_retry")
+
         @self.console_argument("x", type=float, default=0.0)
         @self.console_argument("y", type=float, default=0.0)
         @self.console_command(

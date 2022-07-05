@@ -8,6 +8,7 @@ def plugin(service, lifecycle):
             return True
         return not service.has_feature("wx")
     if lifecycle == "added":
+        # Needed to test wx import.
         import wx
 
         from meerk40t.gui.icons import (
@@ -63,38 +64,38 @@ def plugin(service, lifecycle):
                 "multi": [
                     {
                         "identifier": "live",
-                        "label": _("Live"),
+                        "label": _("Live Bounds"),
                         "action": lambda e: service("select-light\n")
                     },
                     {
                         "identifier": "live-full",
-                        "label": _("Full Live Mode"),
+                        "label": _("Live Full"),
                         "icon": icons8_computer_support_50,
                         "action": lambda e: service("full-light\n")
                     },
                     {
                         "identifier": "hull",
-                        "label": _("Hull"),
+                        "label": _("Trace Hull"),
                         "action": lambda e: service("element* hull light\n")
                     },
                     {
                         "identifier": "box",
-                        "label": _("Box"),
+                        "label": _("Trace Bounds"),
                         "action": lambda e: service("box light\n")
                     },
                     {
                         "identifier": "ants",
-                        "label": _("Ants"),
+                        "label": _("Trace Ants"),
                         "action": lambda e: service("element* ants light\n")
                     },
                     {
                         "identifier": "full",
-                        "label": _("Full"),
+                        "label": _("Trace Full"),
                         "action": lambda e: service("element* path light\n")
                     },
                 ],
                 "toggle": {
-                        "label": _("No Galvo Light"),
+                        "label": _("Stop Tracing..."),
                         "icon": icons8_light_off_50,
                         "tip": _("Turn light off"),
                         "action": lambda v: service("stop\n"),
@@ -104,12 +105,12 @@ def plugin(service, lifecycle):
         service.register(
             "button/control/Redlight",
             {
-                "label": _("Redlight on"),
+                "label": _("Red Dot On"),
                 "icon": icons8_quick_mode_on_50,
                 "tip": _("Turn Redlight On"),
                 "action": lambda v: service("red on\n"),
                 "toggle": {
-                    "label": _("Redlight off"),
+                    "label": _("Red Dot Off"),
                     "action": lambda v: service("red off\n"),
                     "icon": icons8_flash_off_50,
                 }
