@@ -1,3 +1,4 @@
+import struct
 import time
 from copy import copy
 
@@ -202,25 +203,6 @@ def _bytes_to_words(r):
     b2 = r[5] << 8 | r[4]
     b3 = r[7] << 8 | r[6]
     return b0, b1, b2, b3
-
-
-def _command_to_bytes(command, v1=0, v2=0, v3=0, v4=0, v5=0):
-    return bytes(
-        [
-            command & 0xFF,
-            command >> 8 & 0xFF,
-            v1 & 0xFF,
-            v1 >> 8 & 0xFF,
-            v2 & 0xFF,
-            v2 >> 8 & 0xFF,
-            v3 & 0xFF,
-            v3 >> 8 & 0xFF,
-            v4 & 0xFF,
-            v4 >> 8 & 0xFF,
-            v5 & 0xFF,
-            v5 >> 8 & 0xFF,
-        ]
-    )
 
 
 class GalvoController:
@@ -489,13 +471,15 @@ class GalvoController:
         if self._active_list is None:
             self._list_new()
         index = self._active_index
-        self._active_list[index : index + 12] = _command_to_bytes(
-            command, int(v1), int(v2), int(v3), int(v4), int(v5)
+        self._active_list[index : index + 12] = struct.pack(
+            "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
         )
         self._active_index += 12
 
     def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
-        cmd = _command_to_bytes(command, v1, v2, v3, v4, v5)
+        cmd = struct.pack(
+            "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+        )
         return self.send(cmd, read=read)
 
     def raw_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
@@ -823,7 +807,6 @@ class GalvoController:
     def port_set(self, mask, values):
         self._port_bits &= ~mask  # Unset mask.
         self._port_bits |= values & mask  # Set masked bits.
-
 
     #######################
     # UNIT CONVERSIONS
