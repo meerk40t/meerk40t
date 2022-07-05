@@ -1182,8 +1182,8 @@ class BalorDevice(Service, ViewPort):
                         f"{v[0]:04x} {v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}"
                         for v in cmds
                     ]
-                except (struct.error, ValueError):
-                    pass
+                except (struct.error, ValueError) as e:
+                    channel(f"Data was declared raw but could not parse because '{e}'")
 
             if cmds is None:
                 cmds = list(re.split("[,\n\r]", remainder))
