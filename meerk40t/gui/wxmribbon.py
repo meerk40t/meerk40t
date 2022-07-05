@@ -408,6 +408,11 @@ class RibbonPanel(wx.Panel):
             b.identifier = button.get("identifier")
             b.action = button.get("action")
             b.action_right = button.get("right")
+            if "rule_enabled" in button:
+                b.enable_rule = button.get("rule_enabled")
+            else:
+                b.enable_rule = lambda cond: True
+
             if "multi" in button:
                 # Store alternative aspects for multi-buttons, load stored previous state.
 
@@ -428,6 +433,19 @@ class RibbonPanel(wx.Panel):
                             bitmap_large=v_icon.GetBitmap(resize=resize_param),
                             bitmap_large_disabled=v_icon.GetBitmap(
                                 resize=resize_param, color=Color("grey")
+                            ),
+                        )
+                        if resize_param is None:
+                            siz = v_icon.GetBitmap().GetSize()
+                            small_resize = 0.5 * siz[0]
+                        else:
+                            small_resize = 0.5 * resize_param
+                        self._update_button_aspect(
+                            b,
+                            key,
+                            bitmap_small=v_icon.GetBitmap(resize=small_resize),
+                            bitmap_small_disabled=v_icon.GetBitmap(
+                                resize=small_resize, color=Color("grey")
                             ),
                         )
                     if key == initial_id:
@@ -457,7 +475,19 @@ class RibbonPanel(wx.Panel):
                             resize=resize_param, color=Color("grey")
                         ),
                     )
-
+                    if resize_param is None:
+                        siz = v_icon.GetBitmap().GetSize()
+                        small_resize = 0.5 * siz[0]
+                    else:
+                        small_resize = 0.5 * resize_param
+                    self._update_button_aspect(
+                        b,
+                        key,
+                        bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
+                        bitmap_small_disabled=toggle_icon.GetBitmap(
+                            resize=small_resize, color=Color("grey")
+                        ),
+                    )
             # Store newly created button in the various lookups
             self.button_lookup[new_id] = b
             if group is not None:
@@ -473,8 +503,19 @@ class RibbonPanel(wx.Panel):
             button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
 
         self.ensure_realize()
-        # Disable buttons by default
-        self.on_emphasis_change(None)
+
+    def apply_enable_rules(self):
+        for k in self.button_lookup:
+            v = self.button_lookup[k]
+            try:
+                enable_it = v.enable_rule(0)
+            except:
+                enable_it = True
+            # The button might no longer around, so catch the error...
+            try:
+                v.parent.EnableButton(v.id, enable_it)
+            except:
+                pass
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
@@ -504,18 +545,13 @@ class RibbonPanel(wx.Panel):
     def set_align_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.align_button_bar)
 
-    def enable_all_buttons_on_bar(self, button_bar, active):
-        for k in self.button_lookup:
-            v = self.button_lookup[k]
-            if v.parent is button_bar:
-                button_bar.EnableButton(v.id, active)
-
     @signal_listener("emphasized")
     def on_emphasis_change(self, origin, *args):
-        active = self.context.elements.has_emphasis()
-        self.enable_all_buttons_on_bar(self.geometry_button_bar, active)
-        self.enable_all_buttons_on_bar(self.align_button_bar, active)
-        self.enable_all_buttons_on_bar(self.modify_button_bar, active)
+        self.apply_enable_rules()
+
+    @signal_listener("selected")
+    def on_selected_change(self, origin, node=None, *args):
+        self.apply_enable_rules()
 
     # @signal_listener("ribbonbar")
     # def on_rb_toggle(self, origin, showit, *args):
@@ -543,6 +579,7 @@ class RibbonPanel(wx.Panel):
             else:
                 button.parent.ToggleButton(button.id, False)
                 button.toggle = False
+        self.apply_enable_rules()
 
     @property
     def is_dark(self):
@@ -555,6 +592,7 @@ class RibbonPanel(wx.Panel):
     def ensure_realize(self):
         self._ribbon_dirty = True
         self.context.schedule(self._job)
+        self.apply_enable_rules()
 
     def _perform_realization(self, *args):
         self._ribbon_dirty = False
