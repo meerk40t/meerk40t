@@ -61,6 +61,7 @@ class ElementLightJob:
                 pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
+
         for e in self.elements:
             if self.stopped:
                 return False
@@ -319,6 +320,7 @@ class LiveFullLightJob:
                 pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
+
         for node in elements:
             if self.stopped:
                 return False
@@ -998,8 +1000,7 @@ class BalorDevice(Service, ViewPort):
             self.spooler.job(("light_loop", self.job.process))
 
         @self.console_command(
-            "select-light",
-            help=_("Execute selection light idle job")
+            "select-light", help=_("Execute selection light idle job")
         )
         def select_light(**kwargs):
             if self.job is not None:
@@ -1007,10 +1008,7 @@ class BalorDevice(Service, ViewPort):
             self.job = LiveSelectionLightJob(self)
             self.spooler.job(("light_loop", self.job.process))
 
-        @self.console_command(
-            "full-light",
-            help=_("Execute full light idle job")
-        )
+        @self.console_command("full-light", help=_("Execute full light idle job"))
         def select_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
@@ -1108,12 +1106,20 @@ class BalorDevice(Service, ViewPort):
         def usb_abort(command, channel, _, **kwargs):
             self.spooler.job("abort_retry")
 
+        @self.console_option(
+            "default",
+            "d",
+            help=_("Allow default list commands to persist within the raw command"),
+            type=bool,
+            action="store_true",
+        )
         @self.console_command(
             "raw",
             help=_("sends raw galvo list command exactly as composed"),
         )
-        def galvo_raw(channel, _, remainder=None, **kwgs):
+        def galvo_raw(channel, _, default=False, remainder=None, **kwgs):
             from meerk40t.balormk.lmc_controller import list_command_lookup
+
             reverse_lookup = {}
             for k in list_command_lookup:
                 command_string = list_command_lookup[k]
@@ -1146,6 +1152,8 @@ class BalorDevice(Service, ViewPort):
                 raw_commands.append(values)
             self.driver.connection.rapid_mode()
             self.driver.connection.program_mode()
+            if not default:
+                self.driver.connection.raw_clear()
             for v in raw_commands:
                 self.driver.connection.raw_write(*v)
             self.driver.connection.rapid_mode()
@@ -1179,13 +1187,19 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
-        @self.console_argument("filename", type=str, default=None, help="filename or none")
-        @self.console_option("default", "d", type=bool, action="store_true", help="restore to default")
+        @self.console_argument(
+            "filename", type=str, default=None, help="filename or none"
+        )
+        @self.console_option(
+            "default", "d", type=bool, action="store_true", help="restore to default"
+        )
         @self.console_command(
             "force_correction",
             help=_("Resets the galvo laser"),
         )
-        def force_correction(command, channel, _, filename=None, default=False, remainder=None, **kwgs):
+        def force_correction(
+            command, channel, _, filename=None, default=False, remainder=None, **kwgs
+        ):
             if default:
                 filename = self.corfile
                 channel(f"Using default corfile: {filename}")
@@ -1453,7 +1467,9 @@ class BalorDevice(Service, ViewPort):
                 return
             x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
             x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
-            channel(f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})")
+            channel(
+                f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})"
+            )
 
         @self.console_argument("lens_size", type=str, default=None)
         @self.console_command(
