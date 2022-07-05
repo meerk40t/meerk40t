@@ -1136,6 +1136,13 @@ class BalorDevice(Service, ViewPort):
             action="store_true",
         )
         @self.console_option(
+            "short",
+            "s",
+            help=_("Export data is assumed short command only"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
             "trim",
             "t",
             help=_("Trim the first number of characters"),
@@ -1158,6 +1165,7 @@ class BalorDevice(Service, ViewPort):
             raw=False,
             binary_in=False,
             binary_out=False,
+            short=False,
             trim=0,
             input=None,
             output=None,
@@ -1267,13 +1275,17 @@ class BalorDevice(Service, ViewPort):
 
             if output is None:
                 # output to device.
-                self.driver.connection.rapid_mode()
-                self.driver.connection.program_mode()
-                if not default:
-                    self.driver.connection.raw_clear()
-                for v in raw_commands:
-                    self.driver.connection.raw_write(*v)
-                self.driver.connection.rapid_mode()
+                if short:
+                    for v in raw_commands:
+                        self.driver.connection.raw_write(*v)
+                else:
+                    self.driver.connection.rapid_mode()
+                    self.driver.connection.program_mode()
+                    if not default:
+                        self.driver.connection.raw_clear()
+                    for v in raw_commands:
+                        self.driver.connection.raw_write(*v)
+                    self.driver.connection.rapid_mode()
             else:
                 # output to file
                 if output is not None:
