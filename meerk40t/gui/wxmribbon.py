@@ -417,8 +417,6 @@ class RibbonPanel(wx.Panel):
         button_bar._active_button = None
         button_bar.ClearButtons()
         buttons = []
-        self.button_lookup = {}
-        self.group_lookup = {}
         for button, name, sname in new_values:
             buttons.append(button)
 
@@ -499,6 +497,19 @@ class RibbonPanel(wx.Panel):
                                 resize=resize_param, color=Color("grey")
                             ),
                         )
+                        if resize_param is None:
+                            siz = v_icon.GetBitmap().GetSize()
+                            small_resize = 0.5 * siz[0]
+                        else:
+                            small_resize = 0.5 * resize_param
+                        self._update_button_aspect(
+                            b,
+                            key,
+                            bitmap_small=v_icon.GetBitmap(resize=small_resize),
+                            bitmap_small_disabled=v_icon.GetBitmap(
+                                resize=small_resize, color=Color("grey")
+                            ),
+                        )
                     if key == initial_id:
                         self._restore_button_aspect(b, key)
             if "toggle" in button:
@@ -526,7 +537,19 @@ class RibbonPanel(wx.Panel):
                             resize=resize_param, color=Color("grey")
                         ),
                     )
-
+                    if resize_param is None:
+                        siz = v_icon.GetBitmap().GetSize()
+                        small_resize = 0.5 * siz[0]
+                    else:
+                        small_resize = 0.5 * resize_param
+                    self._update_button_aspect(
+                        b,
+                        key,
+                        bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
+                        bitmap_small_disabled=toggle_icon.GetBitmap(
+                            resize=small_resize, color=Color("grey")
+                        ),
+                    )
             # Store newly created button in the various lookups
             self.button_lookup[new_id] = b
             if group is not None:
@@ -552,7 +575,11 @@ class RibbonPanel(wx.Panel):
                 enable_it = v.enable_rule(0)
             except:
                 enable_it = True
-            v.parent.EnableButton(v.id, enable_it)
+            # The button might no longer around, so catch the error...
+            try:
+                v.parent.EnableButton(v.id, enable_it)
+            except:
+                pass
 
     @lookup_listener("button/project")
     def set_project_buttons(self, new_values, old_values):
