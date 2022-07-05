@@ -39,10 +39,9 @@ class PlannerPanel(wx.Panel):
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
-        self.panel_operation = wx.Panel(self, wx.ID_ANY)
         choices = self.context.lookup("choices/optimize")[:7]
         self.panel_optimize = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling = False
         )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
@@ -91,22 +90,21 @@ class PlannerPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: Preview.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
-        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_optimizations = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
-        )
+        # sizer_optimizations = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
+        # )
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 2, wx.EXPAND, 0)
         sizer_main.Add(self.list_command, 2, wx.EXPAND, 0)
+
+        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(self.panel_optimize, 1, 2, wx.EXPAND, 0)
+        sizer_options.Add(self.button_start, 1, wx.EXPAND, 0)
+
+        sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_frame.Add(sizer_main, 1, wx.EXPAND, 0)
+        sizer_frame.Add(sizer_options, 1, wx.EXPAND, 0)
 
-        sizer_frame.Add(self.panel_operation, 0, wx.EXPAND, 0)
-
-        sizer_optimizations.Add(self.panel_optimize)
-        sizer_options.Add(sizer_optimizations, 2, wx.EXPAND, 0)
-        sizer_options.Add(self.button_start, 3, wx.EXPAND, 0)
-        sizer_frame.Add(sizer_options, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_frame)
         self.Layout()
         # end wxGlade

@@ -16,7 +16,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     and display the given properties, automatically generating an appropriate changer for that property.
     """
 
-    def __init__(self, *args, context: Context = None, choices=None, **kwds):
+    def __init__(self, *args, context: Context = None, choices=None, scrolling = True, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
@@ -421,7 +421,8 @@ class ChoicePropertyPanel(ScrolledPanel):
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         # Make sure stuff gets scrolled if necessary by default
-        self.SetupScrolling()
+        if scrolling:
+            self.SetupScrolling()
 
     def pane_hide(self):
         for attr, listener in self.listeners:
