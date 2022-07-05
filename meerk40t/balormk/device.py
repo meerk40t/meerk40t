@@ -1138,15 +1138,15 @@ class BalorDevice(Service, ViewPort):
                 values = [0] * 6
                 for i, b in enumerate(cmd.strip().split(" ")):
                     v = None
-                    if b.startswith("list"):
-                        convert = reverse_lookup.get(b)
-                        if convert is not None:
-                            v = int(convert)
-                    try:
-                        p = struct.unpack(">H", bytearray.fromhex(b))
-                        v = p[0]
-                    except (ValueError, struct.error):
-                        pass
+                    convert = reverse_lookup.get(b)
+                    if convert is not None:
+                        v = int(convert)
+                    else:
+                        try:
+                            p = struct.unpack(">H", bytearray.fromhex(b))
+                            v = p[0]
+                        except (ValueError, struct.error):
+                            pass
                     if not isinstance(v, int):
                         channel(f'Compile error. Line #{cmd_i+1} value "{b}"')
                         return
