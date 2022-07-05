@@ -1164,6 +1164,11 @@ class BalorDevice(Service, ViewPort):
             remainder=None,
             **kwgs,
         ):
+            """
+            Raw for galvo performs raw actions and sends these commands directly to the laser.
+            There are methods for reading and writing raw info from files in order to send that
+            data. You can also use short hand commands.
+            """
             from meerk40t.balormk.lmc_controller import list_command_lookup
 
             reverse_lookup = {}
@@ -1192,9 +1197,6 @@ class BalorDevice(Service, ViewPort):
                         else:
                             with open(input, "r") as f:
                                 remainder = f.read()
-                        if trim:
-                            # Used to cut off raw header data
-                            remainder = remainder[trim:]
                     except IOError:
                         channel("File could not be read.")
                 else:
@@ -1203,6 +1205,9 @@ class BalorDevice(Service, ViewPort):
 
             cmds = None
             if len(remainder) == 0x1800 or raw or binary_in:
+                if trim:
+                    # Used to cut off raw header data
+                    remainder = remainder[trim:]
                 try:
                     cmds = [
                         struct.unpack("<6H", bytearray.fromhex(remainder[i : i + 24]))
