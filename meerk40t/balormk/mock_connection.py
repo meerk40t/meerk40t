@@ -1,4 +1,5 @@
 import random
+import struct
 
 
 class MockConnection:
@@ -56,14 +57,9 @@ class MockConnection:
         last_cmd = None
         repeats = 0
         for i in range(0, len(packet), 12):
-            b0 = packet[i + 1] << 8 | packet[i + 0]
-            b1 = packet[i + 3] << 8 | packet[i + 2]
-            b2 = packet[i + 5] << 8 | packet[i + 4]
-            b3 = packet[i + 7] << 8 | packet[i + 6]
-            b4 = packet[i + 9] << 8 | packet[i + 8]
-            b5 = packet[i + 11] << 8 | packet[i + 10]
-            string_value = list_command_lookup.get(b0, "Unknown")
-            cmd = f"{b0:04x}:{b1:04x}:{b2:04x}:{b3:04x}:{b4:04x}:{b5:04x} {string_value}"
+            b = struct.unpack("<6H", packet[i:i+12])
+            string_value = list_command_lookup.get(b[0], "Unknown")
+            cmd = f"{b[0]:04x}:{b[1]:04x}:{b[2]:04x}:{b[3]:04x}:{b[4]:04x}:{b[5]:04x} {string_value}"
             if cmd == last_cmd:
                 repeats += 1
                 continue
@@ -92,6 +88,7 @@ class MockConnection:
         read = bytearray(8)
         for r in range(len(read)):
             read[r] = random.randint(0, 255)
+        read = struct.pack("8B", *read)
         device = self.devices[index]
         if not device:
             raise ConnectionError
