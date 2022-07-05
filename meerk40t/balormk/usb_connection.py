@@ -8,6 +8,9 @@ from usb.backend.libusb1 import LIBUSB_ERROR_ACCESS, LIBUSB_ERROR_NOT_FOUND
 USB_LOCK_VENDOR = 0x9588
 USB_LOCK_PRODUCT = 0x9899
 
+# USB_LOCK_VENDOR = 0x1A86  # Dev : (1a86) QinHeng Electronics
+# USB_LOCK_PRODUCT = 0x5512  # (5512) CH341A
+
 WRITE_ENDPOINT = 0x02  # usb.util.ENDPOINT_OUT|usb.util.ENDPOINT_TYPE_BULK
 READ_ENDPOINT = 0x88
 
@@ -204,12 +207,12 @@ class USBConnection:
             device = self.find_device(index)
             self.devices[index] = device
             self.set_config(device)
-            try:
-                self.channel(_("Resetting Device"))
-                device.reset()
-                self.channel(_("Device Reset"))
-            except usb.core.USBError:
-                self.channel(_("Device did not reset."))
+            # try:
+            #     self.channel(_("Resetting Device"))
+            #     device.reset()
+            #     self.channel(_("Device Reset"))
+            # except usb.core.USBError:
+            #     self.channel(_("Device did not reset."))
             try:
                 interface = self.get_active_config(device)
                 self.interface[index] = interface
