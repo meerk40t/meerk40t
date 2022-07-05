@@ -20,6 +20,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Fit (scale down if necessary) and center a DXF file within the bed"
                 ),
+                "page": "Input/Output",
+                "section": "Input",
             },
         ]
         kernel.register_choices("preferences", choices)

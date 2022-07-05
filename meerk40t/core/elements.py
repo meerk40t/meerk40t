@@ -99,6 +99,8 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Default Operation Empty"),
                 "tip": _("Leave empty operations or default Other/Red/Blue"),
+                "page": "Laser",
+                "section": "Classification",
             },
             {
                 "attr": "classify_reverse",
@@ -109,6 +111,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
+                "page": "Laser",
+                "section": "Classification",
             },
             {
                 "attr": "legacy_classification",
@@ -119,6 +123,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Use the legacy classification algorithm rather than the modern classification algorithm."
                 ),
+                "page": "Laser",
+                "section": "Classification",
             },
         ]
         kernel.register_choices("preferences", choices)
