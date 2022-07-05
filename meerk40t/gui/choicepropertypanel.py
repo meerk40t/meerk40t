@@ -96,12 +96,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 label = attr
             if last_page != this_page:
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
-                last_box = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, this_page), wx.VERTICAL)
+                last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_page)), wx.VERTICAL)
                 sizer_main.Add(last_box, 0, wx.EXPAND, 0 )
                 current_main_sizer = last_box
 
             if last_section != this_section:
-                last_box = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, this_section), wx.VERTICAL)
+                last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_section)), wx.VERTICAL)
                 current_main_sizer.Add(last_box, 0, wx.EXPAND, 0 )
                 current_sizer = last_box
 

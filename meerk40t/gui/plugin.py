@@ -82,8 +82,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
                 ),
-                "page": _("Gui"),
-                "section": _("Scene"),
+                "page": "Gui",
+                "section": "Scene",
             },
             {
                 "attr": "windows_save",
@@ -92,8 +92,8 @@ def plugin(kernel, lifecycle):
                 "type": bool,
                 "label": _("Save Window Positions"),
                 "tip": _("Open Windows at the same place they were last closed"),
-                "page": _("Gui"),
-                "section": _("General"),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "auto_spooler",
@@ -104,8 +104,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Open the Spooler window automatically when you Execute a Job"
                 ),
-                "page": _("Laser"),
-                "section": _("General"),
+                "page": "Laser",
+                "section": "General",
             },
             {
                 "attr": "mouse_wheel_pan",
@@ -121,8 +121,8 @@ def plugin(kernel, lifecycle):
                         ),
                     )
                 ),
-                "page": _("Gui"),
-                "section": _("General"),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "mouse_pan_invert",
@@ -133,8 +133,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Reverses the direction of the MouseWheel for horizontal & vertical pan"
                 ),
-                "page": _("Gui"),
-                "section": _("General"),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "mouse_zoom_invert",
@@ -143,8 +143,8 @@ def plugin(kernel, lifecycle):
                 "type": bool,
                 "label": _("Invert MouseWheel Zoom"),
                 "tip": _("Reverses the direction of the MouseWheel for zoom"),
-                "page": _("Gui"),
-                "section": _("General"),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "disable_tool_tips",
@@ -163,8 +163,8 @@ def plugin(kernel, lifecycle):
                         ),
                     )
                 ),
-                "page": _("Gui"),
-                "section": _("General"),
+                "page": "Gui",
+                "section": "General",
             },
         ]
         kernel.register_choices("preferences", choices)
