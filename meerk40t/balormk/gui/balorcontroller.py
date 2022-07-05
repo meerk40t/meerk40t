@@ -104,17 +104,27 @@ class BalorControllerPanel(wx.ScrolledWindow):
             connected = self.context.device.driver.connected
         except AttributeError:
             return
-        self.button_device_connect.SetLabel(status)
-        if connected:
-            self.set_button_connected()
-        else:
-            self.set_button_disconnected()
+        try:
+            self.button_device_connect.SetLabel(status)
+            if connected:
+                self.set_button_connected()
+            else:
+                self.set_button_disconnected()
+        except RuntimeError:
+            pass
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         try:
             connected = self.context.device.driver.connected
         except AttributeError:
             return
+        try:
+            if self.context.device.driver.connection.is_connecting:
+                self.context.device.driver.connection.abort_connect()
+                return
+        except AttributeError:
+            pass
+
         if connected:
             self.context("usb_disconnect\n")
         else:

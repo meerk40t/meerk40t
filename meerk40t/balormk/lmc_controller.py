@@ -315,6 +315,7 @@ class GalvoController:
 
     def abort_connect(self):
         self._abort_open = True
+        self.usb_log("Connect Attempts Aborted")
 
     def disconnect(self):
         try:
