@@ -2256,8 +2256,8 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
-            "centerv",
-            help=_("align elements at center vertical"),
+            "centerh",
+            help=_("align elements at center horizontally"),
             input_type="align",
             output_type="align",
         )
@@ -2282,8 +2282,8 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
-            "centerh",
-            help=_("align elements at center horizontal"),
+            "centerv",
+            help=_("align elements at center vertically"),
             input_type="align",
             output_type="align",
         )
