@@ -189,11 +189,14 @@ class LiveSelectionLightJob:
     def process(self, con):
         if self.stopped:
             return False
+        con._light_speed = self.service.redlight_speed
+        con._dark_speed = self.service.redlight_speed
+        con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
         jump_delay = self.service.delay_jump_long
         dark_delay = self.service.delay_jump_short
-        con._light_speed = self.service.redlight_speed
+
 
         bounds = self.service.elements.selected_area()
         first_run = self._current_points is None
@@ -303,9 +306,12 @@ class LiveFullLightJob:
             con.light_mode()
         jump_delay = self.service.delay_jump_long
         dark_delay = self.service.delay_jump_short
-        con._light_speed = self.service.redlight_speed
 
+        con._light_speed = self.service.redlight_speed
+        con._dark_speed = self.service.redlight_speed
+        con._goto_speed = self.service.redlight_speed
         con.light_mode()
+
         elements = list(self.service.elements.elems(emphasized=True))
 
         if not elements:
