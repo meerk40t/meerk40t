@@ -2783,6 +2783,14 @@ class Kernel(Settings):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
 
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
             else:
@@ -2800,7 +2808,14 @@ class Kernel(Settings):
         def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             try:
                 self.channel(channel_name).unwatch(self._console_channel)
                 channel(_("No Longer Watching Channel: %s") % channel_name)
@@ -2818,7 +2833,14 @@ class Kernel(Settings):
         def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             channel(_("Printing Channel: %s") % channel_name)
             self.channel(channel_name).watch(print)
             return "channel", channel_name
@@ -2841,7 +2863,14 @@ class Kernel(Settings):
             """
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             if filename is None:
                 filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
                     date=datetime.now()
