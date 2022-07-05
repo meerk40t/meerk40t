@@ -288,9 +288,10 @@ class LiveFullLightJob:
         if self.changed:
             self.changed = False
             con.abort()
+            first_x = 0x8000
+            first_y = 0x8000
+            con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
-            con.goto_xy(0x8000, 0x8000)
-
         jump_delay = self.service.delay_jump_long
         dark_delay = self.service.delay_jump_short
         con._light_speed = self.service.redlight_speed
