@@ -417,6 +417,8 @@ class RibbonPanel(wx.Panel):
         button_bar._active_button = None
         button_bar.ClearButtons()
         buttons = []
+        self.button_lookup = {}
+        self.group_lookup = {}
         for button, name, sname in new_values:
             buttons.append(button)
 
