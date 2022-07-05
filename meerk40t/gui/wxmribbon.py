@@ -565,8 +565,6 @@ class RibbonPanel(wx.Panel):
             button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
 
         self.ensure_realize()
-        # Disable buttons by default
-        self.apply_enable_rules()
 
     def apply_enable_rules(self):
         for k in self.button_lookup:
@@ -643,6 +641,7 @@ class RibbonPanel(wx.Panel):
             else:
                 button.parent.ToggleButton(button.id, False)
                 button.toggle = False
+        self.apply_enable_rules()
 
     @property
     def is_dark(self):
@@ -655,6 +654,7 @@ class RibbonPanel(wx.Panel):
     def ensure_realize(self):
         self._ribbon_dirty = True
         self.context.schedule(self._job)
+        self.apply_enable_rules()
 
     def _perform_realization(self, *args):
         self._ribbon_dirty = False
