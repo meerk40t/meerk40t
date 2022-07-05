@@ -587,7 +587,7 @@ class GalvoController:
     def mark(self, x, y):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self._mark_speed is not None:
@@ -601,7 +601,7 @@ class GalvoController:
     def goto(self, x, y, long=None, short=None, distance_limit=None):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self._goto_speed is not None:
@@ -611,7 +611,7 @@ class GalvoController:
     def light(self, x, y, long=None, short=None, distance_limit=None):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self.light_on():
@@ -623,7 +623,7 @@ class GalvoController:
     def dark(self, x, y, long=None, short=None, distance_limit=None):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self.light_off():
