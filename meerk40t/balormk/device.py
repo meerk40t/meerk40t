@@ -1,4 +1,5 @@
 import os
+import struct
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
@@ -1106,6 +1107,48 @@ class BalorDevice(Service, ViewPort):
         @self.console_command("usb_abort", help=_("Stops USB retries"))
         def usb_abort(command, channel, _, **kwargs):
             self.spooler.job("abort_retry")
+
+        @self.console_command(
+            "raw",
+            help=_("sends raw galvo list command exactly as composed"),
+        )
+        def galvo_raw(channel, _, remainder=None, **kwgs):
+            from meerk40t.balormk.lmc_controller import list_command_lookup
+            reverse_lookup = {}
+            for k in list_command_lookup:
+                command_string = list_command_lookup[k]
+                reverse_lookup[command_string] = k
+            if remainder is None:
+                channel("Permitted Commands:")
+                for k in list_command_lookup:
+                    command_string = list_command_lookup[k]
+                    channel(f"{command_string.lower()[4:]} aka {k:04x}")
+                return
+            raw_commands = list()
+            cmds = list(remainder.split(","))
+            for cmd_i, cmd in enumerate(cmds):
+                values = [0] * 6
+                for i, b in enumerate(cmd.strip().split(" ")):
+                    v = None
+                    if b.startswith("list"):
+                        convert = reverse_lookup.get(b)
+                        if convert is not None:
+                            v = int(convert)
+                    try:
+                        p = struct.unpack(">H", bytearray.fromhex(b))
+                        v = p[0]
+                    except (ValueError, struct.error):
+                        pass
+                    if not isinstance(v, int):
+                        channel(f'Compile error. Line #{cmd_i+1} value "{b}"')
+                        return
+                    values[i] = v
+                raw_commands.append(values)
+            self.driver.connection.rapid_mode()
+            self.driver.connection.program_mode()
+            for v in raw_commands:
+                self.driver.connection.raw_write(*v)
+            self.driver.connection.rapid_mode()
 
         @self.console_argument("x", type=float, default=0.0)
         @self.console_argument("y", type=float, default=0.0)
