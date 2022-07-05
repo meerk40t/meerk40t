@@ -37,6 +37,10 @@ class ElementLightJob:
             return False
         if not self.elements:
             return False
+
+        con._light_speed = self.service.redlight_speed
+        con._dark_speed = self.service.redlight_speed
+        con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
         x_offset = self.service.length(
@@ -52,8 +56,6 @@ class ElementLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
-
-        con._light_speed = self.service.redlight_speed
 
         def mx_rotate(pt):
             if pt is None:
