@@ -352,7 +352,7 @@ class LiveFullLightJob:
             x = int(x) & 0xFFFF
             y = int(y) & 0xFFFF
             if isinstance(e, (Polygon, Polyline)):
-                con.dark(x, y, long=dark_delay, short=dark_delay)
+                con.dark(x, y, long=jump_delay, short=jump_delay)
                 for pt in e:
                     if self.stopped:
                         return False
@@ -362,10 +362,10 @@ class LiveFullLightJob:
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
                     y = int(y) & 0xFFFF
-                    con.light(x, y, long=jump_delay, short=jump_delay)
+                    con.light(x, y, long=dark_delay, short=dark_delay)
                 continue
 
-            con.dark(x, y, long=dark_delay, short=dark_delay)
+            con.dark(x, y, long=jump_delay, short=jump_delay)
             for i in range(1, quantization + 1):
                 if self.stopped:
                     return False
@@ -376,7 +376,7 @@ class LiveFullLightJob:
                 x, y = mx_rotate((x, y))
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
-                con.light(x, y, long=jump_delay, short=jump_delay)
+                con.light(x, y, long=dark_delay, short=dark_delay)
         con.light_off()
         return True
 
