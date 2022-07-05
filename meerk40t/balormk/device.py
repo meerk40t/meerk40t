@@ -197,7 +197,6 @@ class LiveSelectionLightJob:
         jump_delay = self.service.delay_jump_long
         dark_delay = self.service.delay_jump_short
 
-
         bounds = self.service.elements.selected_area()
         first_run = self._current_points is None
         points, update = self.update_points(bounds)
@@ -218,7 +217,7 @@ class LiveSelectionLightJob:
         for pt in points:
             if self.stopped:
                 return False
-            con.light(*pt, long=jump_delay, short=jump_delay)
+            con.light(*pt, long=dark_delay, short=dark_delay)
         return True
 
 
@@ -327,8 +326,6 @@ class LiveFullLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
-
-        con._light_speed = self.service.redlight_speed
 
         def mx_rotate(pt):
             if pt is None:
