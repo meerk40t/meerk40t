@@ -1,4 +1,6 @@
 import os
+import re
+import struct
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
@@ -60,6 +62,7 @@ class ElementLightJob:
                 pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
+
         for e in self.elements:
             if self.stopped:
                 return False
@@ -318,6 +321,7 @@ class LiveFullLightJob:
                 pt[0] * rotate.a + pt[1] * rotate.c + 1 * rotate.e,
                 pt[0] * rotate.b + pt[1] * rotate.d + 1 * rotate.f,
             )
+
         for node in elements:
             if self.stopped:
                 return False
@@ -997,8 +1001,7 @@ class BalorDevice(Service, ViewPort):
             self.spooler.job(("light_loop", self.job.process))
 
         @self.console_command(
-            "select-light",
-            help=_("Execute selection light idle job")
+            "select-light", help=_("Execute selection light idle job")
         )
         def select_light(**kwargs):
             if self.job is not None:
@@ -1006,10 +1009,7 @@ class BalorDevice(Service, ViewPort):
             self.job = LiveSelectionLightJob(self)
             self.spooler.job(("light_loop", self.job.process))
 
-        @self.console_command(
-            "full-light",
-            help=_("Execute full light idle job")
-        )
+        @self.console_command("full-light", help=_("Execute full light idle job"))
         def select_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
@@ -1107,6 +1107,207 @@ class BalorDevice(Service, ViewPort):
         def usb_abort(command, channel, _, **kwargs):
             self.spooler.job("abort_retry")
 
+        @self.console_option(
+            "default",
+            "d",
+            help=_("Allow default list commands to persist within the raw command"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
+            "raw",
+            "r",
+            help=_("Data is explicitly little-ended hex from a data capture"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
+            "binary_in",
+            "b",
+            help=_("Read data is explicitly in binary"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
+            "binary_out",
+            "B",
+            help=_("Write data should be explicitly in binary"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
+            "short",
+            "s",
+            help=_("Export data is assumed short command only"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
+            "trim",
+            "t",
+            help=_("Trim the first number of characters"),
+            type=int,
+        )
+        @self.console_option(
+            "input", "i", type=str, default=None, help="input data for given file"
+        )
+        @self.console_option(
+            "output", "o", type=str, default=None, help="output data to given file"
+        )
+        @self.console_command(
+            "raw",
+            help=_("sends raw galvo list command exactly as composed"),
+        )
+        def galvo_raw(
+            channel,
+            _,
+            default=False,
+            raw=False,
+            binary_in=False,
+            binary_out=False,
+            short=False,
+            trim=0,
+            input=None,
+            output=None,
+            remainder=None,
+            **kwgs,
+        ):
+            """
+            Raw for galvo performs raw actions and sends these commands directly to the laser.
+            There are methods for reading and writing raw info from files in order to send that
+            data. You can also use shorthand commands.
+            """
+            from meerk40t.balormk.lmc_controller import list_command_lookup, single_command_lookup
+
+            reverse_lookup = {}
+            for k in list_command_lookup:
+                command_string = list_command_lookup[k]
+                reverse_lookup[command_string] = k
+                reverse_lookup[command_string.lower()[4:]] = k
+
+            for k in single_command_lookup:
+                command_string = single_command_lookup[k]
+                reverse_lookup[command_string] = k
+                reverse_lookup[command_string.lower()] = k
+
+            if remainder is None and input is None:
+                # List permitted commands.
+                channel("Permitted List Commands:")
+                for k in list_command_lookup:
+                    command_string = list_command_lookup[k]
+                    channel(f"{command_string.lower()[4:]} aka {k:04x}")
+                channel("----------------------------")
+                channel("Permitted Short Commands:")
+
+                for k in single_command_lookup:
+                    command_string = single_command_lookup[k]
+                    channel(f"{command_string.lower()} aka {k:04x}")
+                return
+
+            if input is not None:
+                from os.path import exists
+
+                if exists(input):
+                    channel(f"Loading data from: {input}")
+                    try:
+                        if binary_in:
+                            with open(input, "br") as f:
+                                remainder = f.read().hex()
+                        else:
+                            with open(input, "r") as f:
+                                remainder = f.read()
+                    except IOError:
+                        channel("File could not be read.")
+                else:
+                    channel(f"The file at {os.path.realpath(input)} does not exist.")
+                    return
+
+            cmds = None
+            if len(remainder) == 0x1800 or raw or binary_in:
+                if trim:
+                    # Used to cut off raw header data
+                    remainder = remainder[trim:]
+                try:
+                    cmds = [
+                        struct.unpack("<6H", bytearray.fromhex(remainder[i : i + 24]))
+                        for i in range(0, len(remainder), 24)
+                    ]
+                    cmds = [
+                        f"{v[0]:04x} {v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}"
+                        for v in cmds
+                    ]
+                except (struct.error, ValueError) as e:
+                    channel(f"Data was declared raw but could not parse because '{e}'")
+
+            if cmds is None:
+                cmds = list(re.split(r"[,\n\r]", remainder))
+
+            raw_commands = list()
+
+            # Compile commands.
+            for cmd_i, cmd in enumerate(cmds):
+                cmd = cmd.strip()
+                if not cmd:
+                    continue
+
+                values = [0] * 6
+                byte_i = 0
+                for b in cmd.split(" "):
+                    if b == "":
+                        # Double-Space
+                        continue
+                    v = None
+                    convert = reverse_lookup.get(b)
+                    if convert is not None:
+                        v = int(convert)
+                    else:
+                        try:
+                            p = struct.unpack(">H", bytearray.fromhex(b))
+                            v = p[0]
+                        except (ValueError, struct.error):
+                            pass
+                    if not isinstance(v, int):
+                        channel(f'Compile error. Line #{cmd_i+1} value "{b}"')
+                        return
+                    values[byte_i] = v
+                    byte_i += 1
+                raw_commands.append(values)
+
+            if output is None:
+                # output to device.
+                if short:
+                    for v in raw_commands:
+                        self.driver.connection.raw_write(*v)
+                else:
+                    self.driver.connection.rapid_mode()
+                    self.driver.connection.program_mode()
+                    if not default:
+                        self.driver.connection.raw_clear()
+                    for v in raw_commands:
+                        self.driver.connection.raw_write(*v)
+                    self.driver.connection.rapid_mode()
+            else:
+                # output to file
+                if output is not None:
+                    channel(f"Writing data to: {output}")
+                    try:
+                        if binary_out:
+                            with open(output, "wb") as f:
+                                for v in raw_commands:
+                                    b_data = struct.pack("<6H", *v)
+                                    f.write(b_data)
+                        else:
+                            lines = []
+                            for v in raw_commands:
+                                lines.append(
+                                    f"{list_command_lookup.get(v[0], f'{v[0]:04x}').ljust(20)} "
+                                    f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
+                                )
+                            with open(output, "w") as f:
+                                f.writelines(lines)
+                    except IOError:
+                        channel("File could not be written.")
+
         @self.console_argument("x", type=float, default=0.0)
         @self.console_argument("y", type=float, default=0.0)
         @self.console_command(
@@ -1136,13 +1337,19 @@ class BalorDevice(Service, ViewPort):
                 channel("Turning on redlight.")
                 self.redlight_preferred = True
 
-        @self.console_argument("filename", type=str, default=None, help="filename or none")
-        @self.console_option("default", "d", type=bool, action="store_true", help="restore to default")
+        @self.console_argument(
+            "filename", type=str, default=None, help="filename or none"
+        )
+        @self.console_option(
+            "default", "d", type=bool, action="store_true", help="restore to default"
+        )
         @self.console_command(
             "force_correction",
             help=_("Resets the galvo laser"),
         )
-        def force_correction(command, channel, _, filename=None, default=False, remainder=None, **kwgs):
+        def force_correction(
+            command, channel, _, filename=None, default=False, remainder=None, **kwgs
+        ):
             if default:
                 filename = self.corfile
                 channel(f"Using default corfile: {filename}")
@@ -1410,7 +1617,9 @@ class BalorDevice(Service, ViewPort):
                 return
             x0, y0 = self.scene_to_device_position(bounds[0], bounds[1])
             x1, y1 = self.scene_to_device_position(bounds[2], bounds[3])
-            channel(f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})")
+            channel(
+                f"Top,Right: ({x0:.02f}, {y0:.02f}). Lower, Left: ({x1:.02f},{y1:.02f})"
+            )
 
         @self.console_argument("lens_size", type=str, default=None)
         @self.console_command(

@@ -1,5 +1,3 @@
-import time
-
 import usb.core
 import usb.util
 from usb.backend.libusb1 import LIBUSB_ERROR_ACCESS, LIBUSB_ERROR_NOT_FOUND

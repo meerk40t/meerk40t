@@ -1,3 +1,4 @@
+import struct
 import time
 from copy import copy
 
@@ -204,25 +205,6 @@ def _bytes_to_words(r):
     return b0, b1, b2, b3
 
 
-def _command_to_bytes(command, v1=0, v2=0, v3=0, v4=0, v5=0):
-    return bytes(
-        [
-            command & 0xFF,
-            command >> 8 & 0xFF,
-            v1 & 0xFF,
-            v1 >> 8 & 0xFF,
-            v2 & 0xFF,
-            v2 >> 8 & 0xFF,
-            v3 & 0xFF,
-            v3 >> 8 & 0xFF,
-            v4 & 0xFF,
-            v4 >> 8 & 0xFF,
-            v5 & 0xFF,
-            v5 >> 8 & 0xFF,
-        ]
-    )
-
-
 class GalvoController:
     """
     Galvo controller is tasked with sending queued data to the controller board and ensuring that the connection to the
@@ -366,11 +348,7 @@ class GalvoController:
         if read:
             try:
                 r = self.connection.read(self._machine_index)
-                b0 = r[1] << 8 | r[0]
-                b1 = r[3] << 8 | r[2]
-                b2 = r[5] << 8 | r[4]
-                b3 = r[7] << 8 | r[6]
-                return b0, b1, b2, b3
+                return struct.unpack("<4H", r)
             except ConnectionError:
                 return -1, -1, -1, -1
 
@@ -387,7 +365,8 @@ class GalvoController:
             return
 
         self._list_end()
-        if not self._list_executing:
+        if not self._list_executing and self._number_of_list_packets:
+            # If we never ran the list and we sent some lists.
             self.execute_list()
         self._list_executing = False
         self._number_of_list_packets = 0
@@ -466,7 +445,7 @@ class GalvoController:
     def _list_end(self):
         if self._active_list is None:
             return
-        if self._active_list:
+        if self._active_list and self._active_index:
             self.wait_ready()
             while self.paused:
                 time.sleep(0.3)
@@ -489,14 +468,30 @@ class GalvoController:
         if self._active_list is None:
             self._list_new()
         index = self._active_index
-        self._active_list[index : index + 12] = _command_to_bytes(
-            command, int(v1), int(v2), int(v3), int(v4), int(v5)
+        self._active_list[index : index + 12] = struct.pack(
+            "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
         )
         self._active_index += 12
 
     def _command(self, command, v1=0, v2=0, v3=0, v4=0, v5=0, read=True):
-        cmd = _command_to_bytes(command, v1, v2, v3, v4, v5)
+        cmd = struct.pack(
+            "<6H", int(command), int(v1), int(v2), int(v3), int(v4), int(v5)
+        )
         return self.send(cmd, read=read)
+
+    def raw_write(self, command, v1=0, v2=0, v3=0, v4=0, v5=0):
+        """
+        Write this raw command to value. Sends the correct way based on command value.
+
+        @return:
+        """
+        if command >= 0x8000:
+            self._list_write(command, v1, v2, v3, v4, v5)
+        else:
+            self._command(command, v1, v2, v3, v4, v5)
+
+    def raw_clear(self):
+        self._list_new()
 
     #######################
     # SETS FOR PLOTLIKES
@@ -810,21 +805,20 @@ class GalvoController:
         self._port_bits &= ~mask  # Unset mask.
         self._port_bits |= values & mask  # Set masked bits.
 
-
     #######################
     # UNIT CONVERSIONS
     #######################
 
     def _convert_speed(self, speed):
         """
-        mm/s speed implies a distance but the galvo head doesn't move mm and doesn't know what lens you are currently
-        using which changes the definition of what a mm is, this calculation is likely naive for a particular lens size
-        and needs to be scaled according the other relevant factors.
+        Speed in the galvo is given in galvos/ms this means mm/s needs to multiply by galvos_per_mm
+        and divide by 1000 (s/ms)
 
         @param speed:
         @return:
         """
-        return int(speed / 2.0)
+        galvos_per_mm = self.service.physical_to_device_length("1mm", "1mm")[0]
+        return int(speed * galvos_per_mm / 1000.0)
 
     def _convert_frequency(self, frequency_khz):
         """
