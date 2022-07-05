@@ -1122,6 +1122,26 @@ class BalorDevice(Service, ViewPort):
             action="store_true",
         )
         @self.console_option(
+            "binary_in",
+            "b",
+            help=_("Read data is explicitly in binary"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
+            "binary_out",
+            "B",
+            help=_("Write data should be explicitly in binary"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
+            "trim",
+            "t",
+            help=_("Trim the first number of characters"),
+            type=int,
+        )
+        @self.console_option(
             "input", "i", type=str, default=None, help="input data for given file"
         )
         @self.console_option(
@@ -1136,6 +1156,9 @@ class BalorDevice(Service, ViewPort):
             _,
             default=False,
             raw=False,
+            binary_in=False,
+            binary_out=False,
+            trim=0,
             input=None,
             output=None,
             remainder=None,
@@ -1163,16 +1186,23 @@ class BalorDevice(Service, ViewPort):
                 if exists(input):
                     channel(f"Loading data from: {input}")
                     try:
-                        with open(input, "r") as f:
-                            remainder = f.read()
+                        if binary_in:
+                            with open(input, "br") as f:
+                                remainder = f.read().hex()
+                        else:
+                            with open(input, "r") as f:
+                                remainder = f.read()
+                        if trim:
+                            # Used to cut off raw header data
+                            remainder = remainder[trim:]
                     except IOError:
-                        pass
+                        channel("File could not be read.")
                 else:
                     channel(f"The file at {os.path.realpath(input)} does not exist.")
                     return
 
             cmds = None
-            if len(remainder) == 0x1800 or raw:
+            if len(remainder) == 0x1800 or raw or binary_in:
                 try:
                     cmds = [
                         struct.unpack("<6H", bytearray.fromhex(remainder[i : i + 24]))
@@ -1232,15 +1262,20 @@ class BalorDevice(Service, ViewPort):
                 if output is not None:
                     channel(f"Writing data to: {output}")
                     try:
-                        lines = []
-                        for v in raw_commands:
-                            lines.append(
-                                f"{list_command_lookup.get(v[0],f'{v[0]:04x}').ljust(20)} "
-                                f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
-                            )
-                        with open(output, "w") as f:
-                            f.writelines(lines)
-                            # f.write(remainder)
+                        if binary_out:
+                            with open(output, "wb") as f:
+                                for v in raw_commands:
+                                    b_data = struct.pack("<6H", *v)
+                                    f.write(b_data)
+                        else:
+                            lines = []
+                            for v in raw_commands:
+                                lines.append(
+                                    f"{list_command_lookup.get(v[0], f'{v[0]:04x}').ljust(20)} "
+                                    f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
+                                )
+                            with open(output, "w") as f:
+                                f.writelines(lines)
                     except IOError:
                         channel("File could not be written.")
 
