@@ -369,7 +369,8 @@ class GalvoController:
             return
 
         self._list_end()
-        if not self._list_executing:
+        if not self._list_executing and self._number_of_list_packets:
+            # If we never ran the list and we sent some lists.
             self.execute_list()
         self._list_executing = False
         self._number_of_list_packets = 0
