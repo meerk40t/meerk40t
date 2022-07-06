@@ -267,28 +267,86 @@ def plugin(kernel, lifecycle):
 
 
 class LaserJob:
-    def __init__(self):
-        self.label = "Job"
-        self._time_total = 0
-        self._time_started = None
+    def __init__(self, label, items, driver=None):
+        self.items = items
+        self.label = label
+        self.priority = 0
+        self.time_submitted = 0
+        self.time_started = None
+        self.time_running = 0
 
-    def suspend(self):
+        self.loops = 1
+        self.loops_executed = 0
+
+        self._driver = driver
+        self.item_index = 0
+
+        self._stopped = False
+
+    def execute(self):
         """
-        Suspend the job currently being run.
+        Execute calls each item in the list of items in order. This is intended to be called by the spooler thread. And
+        hold the spooler while these items are executing.
+
+        @param item:
         @return:
         """
-        time_ended = time.time()
-        duration = time_ended - self._time_started
-        self._time_total += duration
+        self._stopped = False
+        self.time_started = time.time()
+        try:
+            while self.loops_executed < self.loops:
+                if self._stopped:
+                    return False
+                while self.item_index < len(self.items):
+                    if self._stopped:
+                        return False
+                    item = self.items[self.item_index]
+                    self.execute_item(item)
+                    self.item_index += 1
+                self.item_index = 0
+                self.loops_executed += 1
+        finally:
+            self.time_running += time.time() - self.time_started
+        return True
 
-    def resume(self):
+    def execute_item(self, item):
         """
-        Resume the currently run job.
+        Executes a single item of the job.
+        @param item:
         @return:
         """
-        time_ended = time.time()
-        duration = time_ended - self._time_started
-        self._time_total += duration
+        if isinstance(item, tuple):
+            attr = item[0]
+            if hasattr(self._driver, attr):
+                function = getattr(self._driver, attr)
+                function(*item[1:])
+            return
+
+        # STRING
+        if isinstance(item, str):
+            attr = item
+
+            if hasattr(self._driver, attr):
+                function = getattr(self._driver, attr)
+                function()
+            return
+
+        # .generator is a Generator
+        if hasattr(item, "generate"):
+            item = getattr(item, "generate")
+
+        # Generator item
+        for p in item():
+            if self._stopped:
+                return
+            self.execute_item(p)
+
+    def stop(self):
+        """
+        Stop this current laser-job, cannot be called from the spooler thread.
+        @return:
+        """
+        self._stopped = True
 
     def estimate_time(self):
         """
@@ -298,13 +356,7 @@ class LaserJob:
         return 0
 
     def running_time(self):
-        return self._time_total
-
-    def stop(self):
-        """
-        Stop this current laser-job
-        @return:
-        """
+        return self.time_running
 
 
 class Spooler:
@@ -440,34 +492,6 @@ class Spooler:
         """
         if self._shutdown:
             return
-        # TUPLE[str, Any,...]
-        if isinstance(program, tuple):
-            attr = program[0]
-
-            if hasattr(self.driver, attr):
-                function = getattr(self.driver, attr)
-                function(*program[1:])
-            return
-
-        # STRING
-        if isinstance(program, str):
-            attr = program
-
-            if hasattr(self.driver, attr):
-                function = getattr(self.driver, attr)
-                function()
-            return
-
-        # .generator is a Generator
-        if hasattr(program, "generate"):
-            program = getattr(program, "generate")
-
-        # GENERATOR
-        for p in program():
-            if self._shutdown:
-                return
-            self._execute_program(p)
-        # print("Unspoolable object: {s}".format(s=str(program)))
 
     def run(self):
         """
