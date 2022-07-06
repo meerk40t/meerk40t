@@ -1091,6 +1091,8 @@ class ShadowTree:
         @return:
         """
         self.do_not_select = True
+        self.wxtree.UnselectAll()
+
         for e in self.elements.elems_nodes(emphasized=True):
             self.wxtree.SelectItem(e.item, True)
         self.do_not_select = False

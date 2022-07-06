@@ -7117,6 +7117,8 @@ class Elemental(Service):
                 s.highlighted = False
             if s.targeted:
                 s.targeted = False
+            if s.selected:
+                s.selected = False
 
             in_list = emphasize is not None and s in emphasize
             if s.emphasized:
@@ -7125,6 +7127,7 @@ class Elemental(Service):
             else:
                 if in_list:
                     s.emphasized = True
+                    s.selected = True
         if emphasize is not None:
             for e in emphasize:
                 if e.type == "reference":
@@ -7132,6 +7135,7 @@ class Elemental(Service):
                     e.highlighted = True
                 else:
                     e.emphasized = True
+                    e.selected = True
                 # if hasattr(e, "object"):
                 #     self.target_clones(self._tree, e, e.object)
                 self.highlight_children(e)

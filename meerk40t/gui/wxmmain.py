@@ -2519,11 +2519,20 @@ class MeerK40t(MWindow):
         elements = self.context.elements
         valu = elements.has_emphasis()
         self.main_statusbar.cb_enabled = valu
-        # Then sync the selected status to the emphasized status
-        if valu:
-            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                if not e.selected:
-                    e.selected = True
+        # # Then sync the selected status to the emphasized status
+        # if valu:
+        #     anychanges = False
+        #     selected_list = list(self.context.elements.flat(types=elem_nodes, selected=True))
+        #     emphasized_list = list(self.context.elements.flat(types=elem_nodes, emphasized=True))
+        #     print ("Main tries to sync, selcount=%d, emphcount=%d" % (len(selected_list), len(emphasized_list)))
+        #     for e in emphasized_list:
+        #         if not e.selected:
+        #             e.selected = True
+        #             anychanges = True
+        #     for e in selected_list:
+        #         if e not in emphasized_list:
+        #             e.selected = False
+        #             anychanges = True
 
     def __set_titlebar(self):
         device_name = ""
