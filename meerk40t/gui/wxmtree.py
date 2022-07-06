@@ -530,6 +530,8 @@ class ShadowTree:
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
             child_node = self.wxtree.GetItemData(child)
+            if child_node.type == "group":
+                self.update_decorations(child_node, force=True)
             self.refresh_tree(child, level + 1)
             # An empty node needs to be expanded at least once is it has children...
             # ct = self.wxtree.GetChildrenCount(child, recursively=False)
@@ -667,6 +669,8 @@ class ShadowTree:
         for child in node.children:
             self.node_register(child)
             self.register_children(child)
+        if node.type == "group":
+            self.update_decorations(node, force=True)
 
     def unregister_children(self, node):
         """
@@ -993,7 +997,6 @@ class ShadowTree:
         if drop_node is None:
             event.Skip()
             return
-
         skip = True
         for drag_node in self.dragging_nodes:
             if drop_node is drag_node:

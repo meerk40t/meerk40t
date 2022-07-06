@@ -989,6 +989,7 @@ class MeerK40t(MWindow):
                     if group_node is None:
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
+                kernel.signal("element_property_reload", "Scene", group_node)
 
         kernel.register(
             "button/geometry/Group",
