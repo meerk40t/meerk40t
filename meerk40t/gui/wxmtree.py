@@ -1067,6 +1067,18 @@ class ShadowTree:
             # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
             # cause them to appear to drop invalid nodes.
             return
+
+        # Just out of curiosity, is there no image set? Then just do it again.
+        item = event.GetItem()
+        if item:
+            image_id = self.wxtree.GetItemImage(item)
+            if image_id >= self.tree_images.ImageCount:
+                image_id = -1
+            if image_id<0:
+                node = self.wxtree.GetItemData(item)
+                if not node is None:
+                    self.set_icon(node, force=True)
+
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
