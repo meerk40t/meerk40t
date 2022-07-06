@@ -49,9 +49,9 @@ class ElementLightJob:
         y_offset = self.service.length(
             self.service.redlight_offset_y, axis=1, as_float=True
         )
-        jump_delay = self.jump_delay
+        delay_dark = self.jump_delay
 
-        dark_delay = 8
+        delay_between = 8
         quantization = self.quantization
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
@@ -74,7 +74,7 @@ class ElementLightJob:
             x = int(x) & 0xFFFF
             y = int(y) & 0xFFFF
             if isinstance(e, (Polygon, Polyline)):
-                con.dark(x, y, long=jump_delay, short=jump_delay)
+                con.dark(x, y, long=delay_dark, short=delay_dark)
                 for pt in e:
                     if self.stopped:
                         return False
@@ -82,10 +82,10 @@ class ElementLightJob:
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
                     y = int(y) & 0xFFFF
-                    con.light(x, y, long=dark_delay, short=dark_delay)
+                    con.light(x, y, long=delay_between, short=delay_between)
                 continue
 
-            con.dark(x, y, long=jump_delay, short=jump_delay)
+            con.dark(x, y, long=delay_dark, short=delay_dark)
             for i in range(1, quantization + 1):
                 if self.stopped:
                     return False
@@ -94,8 +94,9 @@ class ElementLightJob:
                 x, y = mx_rotate((x, y))
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
-                con.light(x, y, long=dark_delay, short=dark_delay)
-        con.light_off()
+                con.light(x, y, long=delay_between, short=delay_between)
+        if con.light_off():
+            con.list_write_port()
         return True
 
 
@@ -211,9 +212,6 @@ class LiveSelectionLightJob:
 
         if self.stopped:
             return False
-        #
-        # x, y = points[0]
-        # con.light(x, y, long=dark_delay, short=dark_delay)
         for pt in points:
             if self.stopped:
                 return False
@@ -374,7 +372,8 @@ class LiveFullLightJob:
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
                 con.light(x, y, long=dark_delay, short=dark_delay)
-        con.light_off()
+        if con.light_off():
+            con.list_write_port()
         return True
 
 

@@ -891,14 +891,14 @@ class GalvoController:
     def list_jump(self, x, y, short=None, long=None, distance_limit=None):
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
         if distance_limit and distance > distance_limit:
-            time = long
+            delay = long
         else:
-            time = short
+            delay = short
         if distance > 0xFFFF:
             distance = 0xFFFF
         angle = 0
-        if time:
-            self.list_jump_delay(time)
+        if delay:
+            self.list_jump_delay(delay)
         x = int(x)
         y = int(y)
         self._list_write(listJumpTo, x, y, angle, distance)
