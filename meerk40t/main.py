@@ -12,7 +12,7 @@ import sys
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.0009 Beta1"
+APPLICATION_VERSION = "0.8.0011 Beta3"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi

@@ -1723,7 +1723,7 @@ class Kernel(Settings):
             job.reset()
             # Could be recurring job. Reset on reschedule.
         except AttributeError:
-            return
+            pass
         self.jobs[job.job_name] = job
         return job
 
@@ -2691,13 +2691,42 @@ class Kernel(Settings):
         @self.console_command(
             "remove",
             input_type="batch",
-            help=_("delete line located at specific index'"),
+            help=_("delete line located at specific index"),
+            all_arguments_required=True,
         )
         def batch_remove(channel, _, data=None, index=None, **kwargs):
-            if index is None:
-                raise CommandSyntaxError
             try:
                 self.batch_remove(index - 1)
+            except IndexError:
+                raise CommandSyntaxError(
+                    "Index out of bounds (1-{length})".format(length=len(data))
+                )
+
+        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_command(
+            "run",
+            input_type="batch",
+            help=_("execute line located at specific index"),
+            all_arguments_required=True,
+        )
+        def batch_remove(channel, _, data=None, index=None, **kwargs):
+            try:
+                self.batch_execute(index - 1)
+            except IndexError:
+                raise CommandSyntaxError(
+                    "Index out of bounds (1-{length})".format(length=len(data))
+                )
+
+        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_command(
+            ("disable", "enable"),
+            input_type="batch",
+            help=_("disable/enable the command at the particular index"),
+            all_arguments_required=True,
+        )
+        def batch_disable_enable(command, channel, _, data=None, index=None, **kwargs):
+            try:
+                self.batch_set_origin(index - 1, "disable" if command == "disable" else "cmd")
             except IndexError:
                 raise CommandSyntaxError(
                     "Index out of bounds (1-{length})".format(length=len(data))
@@ -2754,6 +2783,14 @@ class Kernel(Settings):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
 
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
             else:
@@ -2771,7 +2808,14 @@ class Kernel(Settings):
         def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             try:
                 self.channel(channel_name).unwatch(self._console_channel)
                 channel(_("No Longer Watching Channel: %s") % channel_name)
@@ -2789,7 +2833,14 @@ class Kernel(Settings):
         def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             channel(_("Printing Channel: %s") % channel_name)
             self.channel(channel_name).watch(print)
             return "channel", channel_name
@@ -2812,7 +2863,14 @@ class Kernel(Settings):
             """
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             if filename is None:
                 filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
                     date=datetime.now()
@@ -2952,7 +3010,7 @@ class Kernel(Settings):
     def batch_add(self, command, origin="default", index=None):
         root = self.root
         batch = [b for b in root.setting(str, "batch", "").split(";") if b]
-        batch_command = "{origin} {command}".format(origin=origin, command=command)
+        batch_command = f"{origin} {command}"
         if index is not None:
             batch.insert(index, batch_command)
         else:
@@ -2965,6 +3023,23 @@ class Kernel(Settings):
         del batch[index]
         self.root.batch = ";".join(batch)
 
+    def batch_set_origin(self, index, new_origin):
+        root = self.root
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
+        b = batch[index]
+        find = b.find(" ")
+        command = b[find + 1:]
+        batch[index] = f"{new_origin} {command}"
+        self.root.batch = ";".join(batch)
+
+    def batch_execute(self, index):
+        root = self.root
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
+        b = batch[index]
+        find = b.find(" ")
+        command = b[find + 1:]
+        root(f"{command}\n")
+
     def batch_boot(self):
         root = self.root
         if root.setting(str, "batch", None) is None:
@@ -2972,8 +3047,11 @@ class Kernel(Settings):
         for b in root.batch.split(";"):
             if b:
                 find = b.find(" ")
-                text = b[find + 1 :]
-                root("{batch}\n".format(batch=text))
+                origin = b[:find]
+                if origin == "disable":
+                    continue
+                command = b[find + 1 :]
+                root(f"{command}\n")
 
     # ==========
     # KERNEL REPLACEABLE

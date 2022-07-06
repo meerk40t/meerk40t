@@ -5,6 +5,7 @@
 #
 
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.gui.icons import icons8_roll_50
 from meerk40t.gui.mwindow import MWindow
@@ -12,7 +13,7 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class RotarySettingsPanel(wx.Panel):
+class RotarySettingsPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -49,6 +50,7 @@ class RotarySettingsPanel(wx.Panel):
         #     self.on_text_rotary_object_circumference,
         #     self.text_rotary_object_circumference,
         # )
+        self.SetupScrolling()
 
     def pane_show(self):
         self.text_rotary_scalex.SetValue(str(self.rotary.scale_x))

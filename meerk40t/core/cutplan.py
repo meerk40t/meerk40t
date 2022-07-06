@@ -303,6 +303,7 @@ class CutPlan:
 
         elif context.opt_inner_first:
             self.commands.append(self.optimize_cuts)
+        self.commands.append(self.merge_cutcode)
         if context.opt_reduce_directions:
             pass
         if context.opt_remove_overlap:
@@ -359,6 +360,18 @@ class CutPlan:
                     grouped_inner=grouped_inner,
                 )
                 last = self.plan[i].end
+
+    def merge_cutcode(self):
+        """
+        Merge all adjacent optimized cutcode into single cutcode objects.
+        @return:
+        """
+        for i in range(len(self.plan)-1, 0, -1):
+            cur = self.plan[i]
+            prev = self.plan[i-1]
+            if isinstance(cur, CutCode) and isinstance(prev, CutCode):
+                prev.extend(cur)
+                del self.plan[i]
 
     def clear(self):
         self.plan.clear()

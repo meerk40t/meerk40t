@@ -395,9 +395,9 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
 
-        from meerk40t.gui.auitoolbars import register_toolbars
+        # from meerk40t.gui.auitoolbars import register_toolbars
 
-        kernel.register("wxpane/Toolbars", register_toolbars)
+        # kernel.register("wxpane/Toolbars", register_toolbars)
 
         kernel.register("wxpane/Go", register_panel_go)
         kernel.register("wxpane/Stop", register_panel_stop)

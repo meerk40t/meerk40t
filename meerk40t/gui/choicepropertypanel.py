@@ -16,7 +16,7 @@ class ChoicePropertyPanel(ScrolledPanel):
     and display the given properties, automatically generating an appropriate changer for that property.
     """
 
-    def __init__(self, *args, context: Context = None, choices=None, **kwds):
+    def __init__(self, *args, context: Context = None, choices=None, scrolling = True, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
@@ -27,8 +27,27 @@ class ChoicePropertyPanel(ScrolledPanel):
             choices = self.context.lookup("choices", choices)
             if choices is None:
                 return
-        self.choices = choices
+        # Let's see whether we have a section and a page property...
+        for c in choices:
+            try:
+                dummy = c["section"]
+            except KeyError:
+                c["section"] = ""
+            try:
+                dummy = c["page"]
+            except KeyError:
+                c["page"] = ""
+        # print ("Choices: " , choices)
+        self.choices = sorted(sorted(choices, key=lambda d: d["section"]), key=lambda d: d["page"])
+        # print ("Sorted choices: " , self.choices)
+
+
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        last_page = ""
+        last_section = ""
+        last_box = None
+        current_main_sizer = sizer_main
+        current_sizer = sizer_main
         for i, c in enumerate(self.choices):
             if isinstance(c, tuple):
                 # If c is tuple
@@ -48,6 +67,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 obj = c["object"]
             except KeyError:
                 continue
+            try:
+                this_section = c["section"]
+            except KeyError:
+                this_section = ""
+            try:
+                this_page = c["page"]
+            except KeyError:
+                this_page = ""
 
             # get default value
             if hasattr(obj, attr):
@@ -67,6 +94,16 @@ class ChoicePropertyPanel(ScrolledPanel):
             except KeyError:
                 # Undefined label is the attr
                 label = attr
+            if last_page != this_page:
+                # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
+                last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_page)), wx.VERTICAL)
+                sizer_main.Add(last_box, 0, wx.EXPAND, 0 )
+                current_main_sizer = last_box
+
+            if last_section != this_section:
+                last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_section)), wx.VERTICAL)
+                current_main_sizer.Add(last_box, 0, wx.EXPAND, 0 )
+                current_sizer = last_box
 
             if data_type == bool:
                 # Bool type objects get a checkbox.
@@ -82,7 +119,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
-                sizer_main.Add(control, 0, wx.EXPAND, 0)
+                current_sizer.Add(control, 0, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
@@ -122,7 +159,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_BUTTON,
                     on_button_filename(attr, control, obj, c.get("wildcard", "*")),
                 )
-                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combo":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
@@ -149,7 +186,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_COMBOBOX,
                     on_combo_text(attr, control, obj),
                 )
-                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == int and data_style == "binary":
                 mask = c.get("mask")
 
@@ -177,6 +214,16 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return check
 
+                bit_sizer = wx.BoxSizer(wx.VERTICAL)
+                label_text = wx.StaticText(self, wx.ID_ANY, "", style=wx.ALIGN_CENTRE_HORIZONTAL)
+                bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+                if mask is not None:
+                    label_text = wx.StaticText(self, wx.ID_ANY, _("mask") + " ", style=wx.ALIGN_CENTRE_HORIZONTAL)
+                    bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+                label_text = wx.StaticText(self, wx.ID_ANY, _("value") + " ", style=wx.ALIGN_CENTRE_HORIZONTAL)
+                bit_sizer.Add(label_text, 0, wx.EXPAND, 0)
+                control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
+
                 bits = c.get("bits", 8)
                 for b in range(bits):
                     # Label
@@ -201,7 +248,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     bit_sizer.Add(control, 0, wx.EXPAND, 0)
                     control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
 
-                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(
@@ -227,7 +274,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
                 )
-                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
                 control_sizer = wx.StaticBoxSizer(
@@ -260,7 +307,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
                 )
-                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
                 control_sizer = wx.StaticBoxSizer(
@@ -293,7 +340,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
                 )
-                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
                 control_sizer = wx.StaticBoxSizer(
@@ -331,7 +378,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control)
 
                 control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
-                sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             else:
                 # Requires a registered data_type
                 continue
@@ -368,9 +415,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetToolTip(c["tip"])
             except KeyError:
                 pass
+            last_page = this_page
+            last_section = this_section
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
+        # Make sure stuff gets scrolled if necessary by default
+        if scrolling:
+            self.SetupScrolling()
 
     def pane_hide(self):
         for attr, listener in self.listeners:
