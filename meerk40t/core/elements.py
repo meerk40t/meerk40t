@@ -4707,6 +4707,73 @@ class Elemental(Service):
             Delete nodes.
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
+            typecount = [0,0,0,0]
+            todelete = [[],[],[]]
+            nodetypes = ("Operations", "Elements", "Regmarks")
+            regmk = list(self.regmarks())
+            for node in data:
+                if node.type in op_nodes:
+                    typecount[0] += 1
+                    todelete[0].append(node)
+                elif node.type == "reference":
+                    typecount[0] += 1
+                    todelete[0].append(node)
+                elif node.type in elem_group_nodes:
+                    if node in regmk:
+                        typecount[2] += 1
+                        todelete[2].append(node)
+                    else:
+                        typecount[1] += 1
+                        todelete[1].append(node)
+                else: # branches etc...
+                    typecount[3] += 1
+
+            single = False
+            if typecount[0]>0 and typecount[1]==0 and typecount[2]==0:
+                single = True
+                entry = 0
+            elif typecount[1]>0 and typecount[0]==0 and typecount[2]==0:
+                single = True
+                entry = 1
+            elif typecount[2]>0 and typecount[0]==0 and typecount[1]==0:
+                single = True
+                entry = 2
+            if not single:
+                if typecount[2]>0:
+                    # regmarks take precedence, the least dangereous delete
+                    entry = 2
+                elif typecount[0]>0:
+                    # ops next
+                    entry = 0
+                else:
+                    # Not sure why and when this suposed to happen?
+                    entry = 1
+                channel(
+                    _("There were nodes across operations ({c1}), elements ({c2}) and regmarks ({c3}).").format(c1=typecount[0], c2=typecount[1], c3=typecount[2]) + "\n" +
+                    _("Only nodes of type {nodetype} were deleted.").format(nodetype=nodetypes[entry]) + "\n" +
+                    _("If you want to remove all nodes regardless of their type consider: 'tree selected remove'")
+                )
+
+            self.remove_nodes(todelete[entry])
+            self.signal("tree_changed")
+            self.signal("refresh_scene", 0)
+            return "tree", [self._tree]
+
+        @self.console_command(
+            "remove",
+            help=_("forcefully deletes all given nodes"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def remove(channel, _, data=None, **kwargs):
+            """
+            Delete nodes.
+            Structural nodes such as root, elements branch, and operations branch are not able to be deleted
+            """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
             self.remove_nodes(data)
             self.signal("tree_changed")
             self.signal("refresh_scene", 0)
