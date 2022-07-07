@@ -9,6 +9,35 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
 
+        @kernel.console_command(
+            "spool",
+            help=_("spool <command>"),
+            regex=True,
+            input_type=(None, "plan"),
+            output_type="spooler",
+        )
+        def spool(command, channel, _, data=None, remainder=None, **kwgs):
+            device = kernel.device
+            spooler = device.spooler
+
+            if data is not None:
+                # If plan data is in data, then we copy that and move on to next step.
+                spooler.laserjob(data.plan)
+                channel(_("Spooled Plan."))
+                kernel.signal("plan", data.name, 6)
+
+            if remainder is None:
+                channel(_("----------"))
+                channel(_("Spoolers:"))
+                for d, d_name in enumerate(device.match("device", suffix=True)):
+                    channel("%d: %s" % (d, d_name))
+                channel(_("----------"))
+                channel(_("Spooler on device %s:" % str(device.label)))
+                for s, op_name in enumerate(spooler.queue):
+                    channel("%d: %s" % (s, op_name))
+                channel(_("----------"))
+            return "spooler", spooler
+
         @kernel.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @kernel.console_command(
             "send",
