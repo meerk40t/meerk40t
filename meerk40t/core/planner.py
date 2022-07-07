@@ -289,13 +289,14 @@ def plugin(kernel, lifecycle=None):
 
     elif lifecycle == "poststart":
         planner = kernel.planner
-        if hasattr(kernel.args, "auto") and kernel.args.auto:
+        auto = hasattr(kernel.args, "auto") and kernel.args.auto
+        if auto:
             planner("plan copy preprocess validate blob preopt optimize\n")
-        if hasattr(kernel.args, "origin") and kernel.args.origin:
-            planner("plan append origin\n")
-        if hasattr(kernel.args, "quit") and kernel.args.quit:
-            planner("plan append shutdown\n")
-        planner("plan spool\n")
+            if hasattr(kernel.args, "origin") and kernel.args.origin:
+                planner("plan append origin\n")
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                planner("plan append shutdown\n")
+            planner("plan spool\n")
 
 
 class Planner(Service):

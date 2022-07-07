@@ -53,7 +53,7 @@ def plugin(kernel, lifecycle):
                 raise CommandSyntaxError
             try:
                 for plan_command, command_name, suffix in kernel.find("plan", op):
-                    spooler.command(plan_command)
+                    spooler.laserjob(plan_command)
                     return data_type, spooler
             except (KeyError, IndexError):
                 pass
