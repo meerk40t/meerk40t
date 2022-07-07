@@ -1847,7 +1847,7 @@ class MeerK40t(MWindow):
         # If the Main-window has disappeared out of sight (i.e. on a multi-monitor environment)
         # then resetting windows becomes difficult, so a shortcut is in order...
         self.window_menu.windowreset = self.window_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Windows\tCtrl-R"), ""
+            ID_MENU_WINDOW_RESET, _("Reset Windows\tCtrl-W"), ""
         )
         self.Bind(
             wx.EVT_MENU,
