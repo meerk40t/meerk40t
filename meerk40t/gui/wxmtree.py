@@ -530,6 +530,8 @@ class ShadowTree:
         child, cookie = tree.GetFirstChild(node)
         while child.IsOk():
             child_node = self.wxtree.GetItemData(child)
+            if child_node.type in ("group", "file"):
+                self.update_decorations(child_node, force=True)
             self.refresh_tree(child, level + 1)
             # An empty node needs to be expanded at least once is it has children...
             # ct = self.wxtree.GetChildrenCount(child, recursively=False)
@@ -667,6 +669,8 @@ class ShadowTree:
         for child in node.children:
             self.node_register(child)
             self.register_children(child)
+        if node.type in ("group", "file"):
+            self.update_decorations(node, force=True)
 
     def unregister_children(self, node):
         """
@@ -993,7 +997,6 @@ class ShadowTree:
         if drop_node is None:
             event.Skip()
             return
-
         skip = True
         for drag_node in self.dragging_nodes:
             if drop_node is drag_node:
@@ -1064,6 +1067,18 @@ class ShadowTree:
             # Do not select is part of a linux correction where moving nodes around in a drag and drop fashion could
             # cause them to appear to drop invalid nodes.
             return
+
+        # Just out of curiosity, is there no image set? Then just do it again.
+        item = event.GetItem()
+        if item:
+            image_id = self.wxtree.GetItemImage(item)
+            if image_id >= self.tree_images.ImageCount:
+                image_id = -1
+            if image_id<0:
+                node = self.wxtree.GetItemData(item)
+                if not node is None:
+                    self.set_icon(node, force=True)
+
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
@@ -1091,6 +1106,8 @@ class ShadowTree:
         @return:
         """
         self.do_not_select = True
+        self.wxtree.UnselectAll()
+
         for e in self.elements.elems_nodes(emphasized=True):
             self.wxtree.SelectItem(e.item, True)
         self.do_not_select = False

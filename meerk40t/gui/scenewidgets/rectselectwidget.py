@@ -262,6 +262,8 @@ class RectSelectWidget(Widget):
                         node.emphasized = False
 
             self.scene.request_refresh()
+            self.scene.context.signal("select_emphasized_tree", 0)
+
             self.start_location = None
             self.end_location = None
 

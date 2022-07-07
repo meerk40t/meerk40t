@@ -161,7 +161,14 @@ class Node:
     def create_label(self, text=None):
         if text is None:
             text = "{element_type}:{id}"
-        return text.format_map(self.default_map())
+        # Just for the optical impression (who understands what a "Rect: None" means),
+        # lets replace some of the more obvious ones...
+        mymap = self.default_map()
+        for key in mymap:
+            if hasattr(self, key) and mymap[key]=="None":
+                if getattr(self, key) is None:
+                    mymap[key] = "-"
+        return text.format_map(mymap)
 
     def default_map(self, default_map=None):
         if default_map is None:
