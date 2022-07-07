@@ -214,10 +214,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if label != "":
                     # Try to center it vertically to the controls extent
                     wd, ht = control.GetSize()
-                    label_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + label, style= wx.ST_NO_AUTORESIZE)
-                    label_text.SetMinSize((-1, ht))
-                    control_sizer.Add(label_text)
-                control_sizer.Add(control)
+                    label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
+                    # label_text.SetMinSize((-1, ht))
+                    control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                control_sizer.Add(control, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
                     on_combosmall_text(attr, control, obj, data_type),
@@ -421,9 +421,10 @@ class ChoicePropertyPanel(ScrolledPanel):
             if trailer != "":
                 # Try to center it vertically to the controls extent
                 wd, ht = control.GetSize()
-                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + trailer, style= wx.ST_NO_AUTORESIZE)
-                trailer_text.SetMinSize((-1, ht))
-                control_sizer.Add(trailer_text)
+                trailerflag = wx.ALIGN_CENTER_VERTICAL
+                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + trailer)
+                # trailer_text.SetMinSize((-1, ht))
+                control_sizer.Add(trailer_text, 0, trailerflag, 0)
 
             # Get enabled value
             try:
