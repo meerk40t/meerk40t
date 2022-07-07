@@ -5137,7 +5137,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                spooler.laserjob(trace_hull)
+                spooler.laserjob([trace_hull])
 
             run_shape(spooler, hull)
 
