@@ -37,6 +37,10 @@ class ElementLightJob:
             return False
         if not self.elements:
             return False
+
+        con._light_speed = self.service.redlight_speed
+        con._dark_speed = self.service.redlight_speed
+        con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
         x_offset = self.service.length(
@@ -45,15 +49,13 @@ class ElementLightJob:
         y_offset = self.service.length(
             self.service.redlight_offset_y, axis=1, as_float=True
         )
-        jump_delay = self.jump_delay
+        delay_dark = self.jump_delay
 
-        dark_delay = 8
+        delay_between = 8
         quantization = self.quantization
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
-
-        con._light_speed = self.service.redlight_speed
 
         def mx_rotate(pt):
             if pt is None:
@@ -72,7 +74,7 @@ class ElementLightJob:
             x = int(x) & 0xFFFF
             y = int(y) & 0xFFFF
             if isinstance(e, (Polygon, Polyline)):
-                con.dark(x, y, long=dark_delay, short=dark_delay)
+                con.dark(x, y, long=delay_dark, short=delay_dark)
                 for pt in e:
                     if self.stopped:
                         return False
@@ -80,10 +82,10 @@ class ElementLightJob:
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
                     y = int(y) & 0xFFFF
-                    con.light(x, y, long=jump_delay, short=jump_delay)
+                    con.light(x, y, long=delay_between, short=delay_between)
                 continue
 
-            con.dark(x, y, long=dark_delay, short=dark_delay)
+            con.dark(x, y, long=delay_dark, short=delay_dark)
             for i in range(1, quantization + 1):
                 if self.stopped:
                     return False
@@ -92,8 +94,9 @@ class ElementLightJob:
                 x, y = mx_rotate((x, y))
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
-                con.light(x, y, long=jump_delay, short=jump_delay)
-        con.light_off()
+                con.light(x, y, long=delay_between, short=delay_between)
+        if con.light_off():
+            con.list_write_port()
         return True
 
 
@@ -187,11 +190,13 @@ class LiveSelectionLightJob:
     def process(self, con):
         if self.stopped:
             return False
+        con._light_speed = self.service.redlight_speed
+        con._dark_speed = self.service.redlight_speed
+        con._goto_speed = self.service.redlight_speed
         con.light_mode()
 
         jump_delay = self.service.delay_jump_long
         dark_delay = self.service.delay_jump_short
-        con._light_speed = self.service.redlight_speed
 
         bounds = self.service.elements.selected_area()
         first_run = self._current_points is None
@@ -207,13 +212,10 @@ class LiveSelectionLightJob:
 
         if self.stopped:
             return False
-        #
-        # x, y = points[0]
-        # con.light(x, y, long=dark_delay, short=dark_delay)
         for pt in points:
             if self.stopped:
                 return False
-            con.light(*pt, long=jump_delay, short=jump_delay)
+            con.light(*pt, long=dark_delay, short=dark_delay)
         return True
 
 
@@ -226,6 +228,7 @@ class LiveFullLightJob:
         self.stopped = False
         self.changed = False
         service.listen("emphasized", self.on_emphasis_changed)
+        self._last_bounds = None
 
     def stop(self):
         self.stopped = True
@@ -285,17 +288,27 @@ class LiveFullLightJob:
     def process(self, con):
         if self.stopped:
             return False
+        bounds = self.service.elements.selected_area()
+        if self._last_bounds is not None and bounds != self._last_bounds:
+            # Emphasis did not change but the bounds did. We dragged something.
+            self.changed = True
+        self._last_bounds = bounds
+
         if self.changed:
             self.changed = False
             con.abort()
+            first_x = 0x8000
+            first_y = 0x8000
+            con.goto_xy(first_x, first_y, distance=0xFFFF)
             con.light_mode()
-            con.goto_xy(0x8000, 0x8000)
-
         jump_delay = self.service.delay_jump_long
         dark_delay = self.service.delay_jump_short
-        con._light_speed = self.service.redlight_speed
 
+        con._light_speed = self.service.redlight_speed
+        con._dark_speed = self.service.redlight_speed
+        con._goto_speed = self.service.redlight_speed
         con.light_mode()
+
         elements = list(self.service.elements.elems(emphasized=True))
 
         if not elements:
@@ -311,8 +324,6 @@ class LiveFullLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         rotate.post_translate(x_offset, y_offset)
-
-        con._light_speed = self.service.redlight_speed
 
         def mx_rotate(pt):
             if pt is None:
@@ -336,7 +347,7 @@ class LiveFullLightJob:
             x = int(x) & 0xFFFF
             y = int(y) & 0xFFFF
             if isinstance(e, (Polygon, Polyline)):
-                con.dark(x, y, long=dark_delay, short=dark_delay)
+                con.dark(x, y, long=jump_delay, short=jump_delay)
                 for pt in e:
                     if self.stopped:
                         return False
@@ -346,10 +357,10 @@ class LiveFullLightJob:
                     x, y = mx_rotate((x, y))
                     x = int(x) & 0xFFFF
                     y = int(y) & 0xFFFF
-                    con.light(x, y, long=jump_delay, short=jump_delay)
+                    con.light(x, y, long=dark_delay, short=dark_delay)
                 continue
 
-            con.dark(x, y, long=dark_delay, short=dark_delay)
+            con.dark(x, y, long=jump_delay, short=jump_delay)
             for i in range(1, quantization + 1):
                 if self.stopped:
                     return False
@@ -360,8 +371,9 @@ class LiveFullLightJob:
                 x, y = mx_rotate((x, y))
                 x = int(x) & 0xFFFF
                 y = int(y) & 0xFFFF
-                con.light(x, y, long=jump_delay, short=jump_delay)
-        con.light_off()
+                con.light(x, y, long=dark_delay, short=dark_delay)
+        if con.light_off():
+            con.list_write_port()
         return True
 
 

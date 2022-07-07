@@ -302,7 +302,7 @@ class GalvoController:
     def disconnect(self):
         try:
             self.connection.close(self._machine_index)
-        except (ConnectionError, ConnectionRefusedError):
+        except (ConnectionError, ConnectionRefusedError, AttributeError):
             pass
         self.connection = None
 
@@ -587,7 +587,7 @@ class GalvoController:
     def mark(self, x, y):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self._mark_speed is not None:
@@ -601,7 +601,7 @@ class GalvoController:
     def goto(self, x, y, long=None, short=None, distance_limit=None):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self._goto_speed is not None:
@@ -611,7 +611,7 @@ class GalvoController:
     def light(self, x, y, long=None, short=None, distance_limit=None):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self.light_on():
@@ -623,7 +623,7 @@ class GalvoController:
     def dark(self, x, y, long=None, short=None, distance_limit=None):
         if x == self._last_x and y == self._last_y:
             return
-        if x > 0xFFFF or x < 0:
+        if x > 0xFFFF or x < 0 or y > 0xFFFF or y < 0:
             # Moves to out of range are not performed.
             return
         if self.light_off():
@@ -817,7 +817,8 @@ class GalvoController:
         @param speed:
         @return:
         """
-        galvos_per_mm = self.service.physical_to_device_length("1mm", "1mm")[0]
+        # return int(speed / 2)
+        galvos_per_mm = abs(self.service.physical_to_device_length("1mm", "1mm")[0])
         return int(speed * galvos_per_mm / 1000.0)
 
     def _convert_frequency(self, frequency_khz):
@@ -890,14 +891,14 @@ class GalvoController:
     def list_jump(self, x, y, short=None, long=None, distance_limit=None):
         distance = int(abs(complex(x, y) - complex(self._last_x, self._last_y)))
         if distance_limit and distance > distance_limit:
-            time = long
+            delay = long
         else:
-            time = short
+            delay = short
         if distance > 0xFFFF:
             distance = 0xFFFF
         angle = 0
-        if time:
-            self.list_jump_delay(time)
+        if delay:
+            self.list_jump_delay(delay)
         x = int(x)
         y = int(y)
         self._list_write(listJumpTo, x, y, angle, distance)

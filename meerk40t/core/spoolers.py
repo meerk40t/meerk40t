@@ -592,8 +592,15 @@ class Spooler:
 
     def clear_queue(self):
         with self._lock:
+            if self._current is not None:
+                try:
+                    self._current.stop()
+                except AttributeError:
+                    pass
+                self._current = None
+
             self._queue.clear()
-        self.context.signal("spooler;queue", len(self._queue))
+            self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element, index=None):
         with self._lock:
