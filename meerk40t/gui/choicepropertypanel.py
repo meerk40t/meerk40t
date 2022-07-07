@@ -75,6 +75,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 this_page = c["page"]
             except KeyError:
                 this_page = ""
+            try:
+                trailer = c["trailer"]
+            except KeyError:
+                trailer = ""
 
             # get default value
             if hasattr(obj, attr):
@@ -85,9 +89,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     data = c["default"]
                 except KeyError:
                     continue
+            data_style = c.get("style", None)
             data_type = type(data)
             data_type = c.get("type", data_type)
-            data_style = c.get("style", None)
             try:
                 # Get label
                 label = c["label"]
@@ -173,9 +177,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 control.SetValue(str(data))
 
-                def on_combo_text(param, ctrl, obj):
+                def on_combo_text(param, ctrl, obj, dtype):
                     def select(event=None):
-                        v = data_type(ctrl.GetValue())
+                        v = dtype(ctrl.GetValue())
                         setattr(obj, param, v)
                         self.context.signal(param, v)
 
@@ -184,7 +188,39 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control)
                 control.Bind(
                     wx.EVT_COMBOBOX,
-                    on_combo_text(attr, control, obj),
+                    on_combo_text(attr, control, obj, data_type),
+                )
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
+            elif data_type in (str, int, float) and data_style == "combosmall":
+                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+                choice_list = list(map(str, c.get("choices", [c.get("default")])))
+                control = wx.ComboBox(
+                    self,
+                    wx.ID_ANY,
+                    choices=choice_list,
+                    style=wx.CB_DROPDOWN | wx.CB_READONLY,
+                )
+                control.SetValue(str(data))
+
+                def on_combosmall_text(param, ctrl, obj, dtype):
+                    def select(event=None):
+                        v = dtype(ctrl.GetValue())
+                        setattr(obj, param, v)
+                        self.context.signal(param, v)
+
+                    return select
+
+                if label != "":
+                    # Try to center it vertically to the controls extent
+                    wd, ht = control.GetSize()
+                    label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
+                    # label_text.SetMinSize((-1, ht))
+                    control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                control_sizer.Add(control, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                control.Bind(
+                    wx.EVT_COMBOBOX,
+                    on_combosmall_text(attr, control, obj, data_type),
                 )
                 current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == int and data_style == "binary":
@@ -382,6 +418,13 @@ class ChoicePropertyPanel(ScrolledPanel):
             else:
                 # Requires a registered data_type
                 continue
+            if trailer != "":
+                # Try to center it vertically to the controls extent
+                wd, ht = control.GetSize()
+                trailerflag = wx.ALIGN_CENTER_VERTICAL
+                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + trailer)
+                # trailer_text.SetMinSize((-1, ht))
+                control_sizer.Add(trailer_text, 0, trailerflag, 0)
 
             # Get enabled value
             try:

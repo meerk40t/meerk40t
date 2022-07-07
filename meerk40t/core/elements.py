@@ -305,6 +305,17 @@ class Elemental(Service):
         ly = float(lly)
         return lx * ly
 
+    def has_clipboard(self):
+        """
+        Returns the amount of elements in the clipboard
+        """
+        destination = self._clipboard_default
+        try:
+            num = len(self._clipboard[destination])
+        except (TypeError, KeyError):
+            num = 0
+        return num
+
     def _init_commands(self, kernel):
 
         _ = kernel.translation
@@ -1621,11 +1632,16 @@ class Elemental(Service):
             output_type=("elements", "ops"),
         )
         def e_copy(data=None, data_type=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
             add_elem = list(map(copy, data))
-            if data_type == "ops":
-                self.add_ops(add_elem)
-            else:
-                self.add_elems(add_elem)
+            if len(add_elem)>0:
+                # print ("Elements to copy: %d" % len(add_elem))
+                if data_type == "ops":
+                    self.add_ops(add_elem)
+                else:
+                    self.add_elems(add_elem)
+                self.signal("rebuild_tree")
             return data_type, add_elem
 
         @self.console_command(
@@ -4847,7 +4863,7 @@ class Elemental(Service):
             destination = self._clipboard_default
             try:
                 pasted = [copy(e) for e in self._clipboard[destination]]
-            except KeyError:
+            except (TypeError, KeyError):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
@@ -4856,10 +4872,11 @@ class Elemental(Service):
                 )
                 for node in pasted:
                     node.matrix *= matrix
-            group = self.elem_branch.add(type="group", label="Group")
+            group = self.elem_branch.add(type="group", label="Group", id="Copy")
             for p in pasted:
                 group.add_node(copy(p))
             self.set_emphasis([group])
+            self.signal("refresh_tree", group)
             return "elements", pasted
 
         @self.console_command(
@@ -4882,7 +4899,10 @@ class Elemental(Service):
         )
         def clipboard_clear(data=None, **kwargs):
             destination = self._clipboard_default
-            old = self._clipboard[destination]
+            try:
+                old = self._clipboard[destination]
+            except KeyError:
+                old = None
             self._clipboard[destination] = None
             return "elements", old
 
@@ -4905,6 +4925,8 @@ class Elemental(Service):
             for v in self._clipboard:
                 k = self._clipboard[v]
                 channel("%s: %s" % (str(v).ljust(5), str(k)))
+            num = self.has_clipboard()
+            channel (_("Clipboard-Entries: %d") % num)
 
         # ==========
         # NOTES COMMANDS
@@ -7022,7 +7044,9 @@ class Elemental(Service):
         """
         branch = self._tree.get(type=branch_type)
         items = []
+        ct = 0
         for element in adding_elements:
+            ct += 1
             node_type = get_type_from_element(element)
             if node_type:
                 items.append(branch.add(element, type=node_type))

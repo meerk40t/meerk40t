@@ -200,12 +200,15 @@ class TreePanel(wx.Panel):
                         if not node.type.startswith("elem "):
                             self.shadow_tree.set_icon(node, force=True)
                 # Show the first node, but if that's the root node then ignore stuff
-                node = nodes[0]
+                if len(nodes)>0:
+                    node = nodes[0]
+                else:
+                    node = None
             else:
                 node = nodes
                 self.shadow_tree.set_icon(node, force=True)
             rootitem = self.shadow_tree.wxtree.GetRootItem()
-            if not node is None and node.item != rootitem:
+            if not node is None and not node.item is None and node.item != rootitem :
                 self.shadow_tree.wxtree.EnsureVisible(node.item)
 
     @signal_listener("freeze_tree")
