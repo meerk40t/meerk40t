@@ -78,7 +78,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/elem rect", "{element_type} {id}")
         kernel.register("format/elem text", "{element_type} {id}: {text}")
         kernel.register("format/reference", "*{reference}")
-        kernel.register("format/group", "{element_type} {id}")
+        kernel.register("format/group", "{element_type} {id} ({children} elems)")
         kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
         kernel.register("format/file", "{element_type}: {filename}")
         kernel.register("format/lasercode", "{element_type}")
@@ -304,6 +304,17 @@ class Elemental(Service):
             lly = Length("1{unit}".format(unit=llx._preferred_units))
         ly = float(lly)
         return lx * ly
+
+    def has_clipboard(self):
+        """
+        Returns the amount of elements in the clipboard
+        """
+        destination = self._clipboard_default
+        try:
+            num = len(self._clipboard[destination])
+        except (TypeError, KeyError):
+            num = 0
+        return num
 
     def _init_commands(self, kernel):
 
@@ -1621,11 +1632,16 @@ class Elemental(Service):
             output_type=("elements", "ops"),
         )
         def e_copy(data=None, data_type=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
             add_elem = list(map(copy, data))
-            if data_type == "ops":
-                self.add_ops(add_elem)
-            else:
-                self.add_elems(add_elem)
+            if len(add_elem)>0:
+                # print ("Elements to copy: %d" % len(add_elem))
+                if data_type == "ops":
+                    self.add_ops(add_elem)
+                else:
+                    self.add_elems(add_elem)
+                self.signal("rebuild_tree")
             return data_type, add_elem
 
         @self.console_command(
@@ -4707,6 +4723,73 @@ class Elemental(Service):
             Delete nodes.
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
+            typecount = [0,0,0,0]
+            todelete = [[],[],[]]
+            nodetypes = ("Operations", "Elements", "Regmarks")
+            regmk = list(self.regmarks())
+            for node in data:
+                if node.type in op_nodes:
+                    typecount[0] += 1
+                    todelete[0].append(node)
+                elif node.type == "reference":
+                    typecount[0] += 1
+                    todelete[0].append(node)
+                elif node.type in elem_group_nodes:
+                    if node in regmk:
+                        typecount[2] += 1
+                        todelete[2].append(node)
+                    else:
+                        typecount[1] += 1
+                        todelete[1].append(node)
+                else: # branches etc...
+                    typecount[3] += 1
+
+            single = False
+            if typecount[0]>0 and typecount[1]==0 and typecount[2]==0:
+                single = True
+                entry = 0
+            elif typecount[1]>0 and typecount[0]==0 and typecount[2]==0:
+                single = True
+                entry = 1
+            elif typecount[2]>0 and typecount[0]==0 and typecount[1]==0:
+                single = True
+                entry = 2
+            if not single:
+                if typecount[2]>0:
+                    # regmarks take precedence, the least dangereous delete
+                    entry = 2
+                elif typecount[0]>0:
+                    # ops next
+                    entry = 0
+                else:
+                    # Not sure why and when this suposed to happen?
+                    entry = 1
+                channel(
+                    _("There were nodes across operations ({c1}), elements ({c2}) and regmarks ({c3}).").format(c1=typecount[0], c2=typecount[1], c3=typecount[2]) + "\n" +
+                    _("Only nodes of type {nodetype} were deleted.").format(nodetype=nodetypes[entry]) + "\n" +
+                    _("If you want to remove all nodes regardless of their type consider: 'tree selected remove'")
+                )
+
+            self.remove_nodes(todelete[entry])
+            self.signal("tree_changed")
+            self.signal("refresh_scene", 0)
+            return "tree", [self._tree]
+
+        @self.console_command(
+            "remove",
+            help=_("forcefully deletes all given nodes"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def remove(channel, _, data=None, **kwargs):
+            """
+            Delete nodes.
+            Structural nodes such as root, elements branch, and operations branch are not able to be deleted
+            """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
             self.remove_nodes(data)
             self.signal("tree_changed")
             self.signal("refresh_scene", 0)
@@ -4780,7 +4863,7 @@ class Elemental(Service):
             destination = self._clipboard_default
             try:
                 pasted = [copy(e) for e in self._clipboard[destination]]
-            except KeyError:
+            except (TypeError, KeyError):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
@@ -4789,10 +4872,11 @@ class Elemental(Service):
                 )
                 for node in pasted:
                     node.matrix *= matrix
-            group = self.elem_branch.add(type="group", label="Group")
+            group = self.elem_branch.add(type="group", label="Group", id="Copy")
             for p in pasted:
                 group.add_node(copy(p))
             self.set_emphasis([group])
+            self.signal("refresh_tree", group)
             return "elements", pasted
 
         @self.console_command(
@@ -4815,7 +4899,10 @@ class Elemental(Service):
         )
         def clipboard_clear(data=None, **kwargs):
             destination = self._clipboard_default
-            old = self._clipboard[destination]
+            try:
+                old = self._clipboard[destination]
+            except KeyError:
+                old = None
             self._clipboard[destination] = None
             return "elements", old
 
@@ -4838,6 +4925,8 @@ class Elemental(Service):
             for v in self._clipboard:
                 k = self._clipboard[v]
                 channel("%s: %s" % (str(v).ljust(5), str(k)))
+            num = self.has_clipboard()
+            channel (_("Clipboard-Entries: %d") % num)
 
         # ==========
         # NOTES COMMANDS
@@ -6954,7 +7043,9 @@ class Elemental(Service):
         """
         branch = self._tree.get(type=branch_type)
         items = []
+        ct = 0
         for element in adding_elements:
+            ct += 1
             node_type = get_type_from_element(element)
             if node_type:
                 items.append(branch.add(element, type=node_type))
@@ -7116,6 +7207,8 @@ class Elemental(Service):
                 s.highlighted = False
             if s.targeted:
                 s.targeted = False
+            if s.selected:
+                s.selected = False
 
             in_list = emphasize is not None and s in emphasize
             if s.emphasized:
@@ -7124,6 +7217,7 @@ class Elemental(Service):
             else:
                 if in_list:
                     s.emphasized = True
+                    s.selected = True
         if emphasize is not None:
             for e in emphasize:
                 if e.type == "reference":
@@ -7131,6 +7225,7 @@ class Elemental(Service):
                     e.highlighted = True
                 else:
                     e.emphasized = True
+                    e.selected = True
                 # if hasattr(e, "object"):
                 #     self.target_clones(self._tree, e, e.object)
                 self.highlight_children(e)

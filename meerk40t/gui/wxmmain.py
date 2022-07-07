@@ -594,6 +594,37 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
+        context.setting(int, "zoom_level", 4) # 4%
+        choices = [
+            {
+                "attr": "zoom_level",
+                "object": self.context.root,
+                "default": 4,
+                "trailer": "%",
+                "type": int,
+                "style": "combosmall",
+                "choices": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    15,
+                    20,
+                    25,
+                ],
+                "label": _("Default zoom level:"),
+                "tip": _("Default zoom level when changing zoom (automatically or via Ctrl-B)"),
+                "page": "Gui",
+                "section": "Zoom",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
         choices = [
             {
                 "attr": "disable_auto_zoom",
@@ -603,7 +634,7 @@ class MeerK40t(MWindow):
                 "label": _("Don't autoadjust zoom level"),
                 "tip": _("Don't autoadjust zoom level when resizing the main window"),
                 "page": "Gui",
-                "section": "Scene",
+                "section": "Zoom",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -989,6 +1020,7 @@ class MeerK40t(MWindow):
                     if group_node is None:
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
+                kernel.signal("element_property_reload", "Scene", group_node)
 
         kernel.register(
             "button/geometry/Group",
@@ -1815,7 +1847,7 @@ class MeerK40t(MWindow):
         # If the Main-window has disappeared out of sight (i.e. on a multi-monitor environment)
         # then resetting windows becomes difficult, so a shortcut is in order...
         self.window_menu.windowreset = self.window_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Windows\tCtrl-R"), ""
+            ID_MENU_WINDOW_RESET, _("Reset Windows\tCtrl-W"), ""
         )
         self.Bind(
             wx.EVT_MENU,
@@ -2519,11 +2551,20 @@ class MeerK40t(MWindow):
         elements = self.context.elements
         valu = elements.has_emphasis()
         self.main_statusbar.cb_enabled = valu
-        # Then sync the selected status to the emphasized status
-        if valu:
-            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                if not e.selected:
-                    e.selected = True
+        # # Then sync the selected status to the emphasized status
+        # if valu:
+        #     anychanges = False
+        #     selected_list = list(self.context.elements.flat(types=elem_nodes, selected=True))
+        #     emphasized_list = list(self.context.elements.flat(types=elem_nodes, emphasized=True))
+        #     print ("Main tries to sync, selcount=%d, emphcount=%d" % (len(selected_list), len(emphasized_list)))
+        #     for e in emphasized_list:
+        #         if not e.selected:
+        #             e.selected = True
+        #             anychanges = True
+        #     for e in selected_list:
+        #         if e not in emphasized_list:
+        #             e.selected = False
+        #             anychanges = True
 
     def __set_titlebar(self):
         device_name = ""
@@ -2711,7 +2752,8 @@ class MeerK40t(MWindow):
             return False
         else:
             if results:
-                self.context("scene focus -4% -4% 104% 104%\n")
+                self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
+
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
@@ -2747,7 +2789,7 @@ class MeerK40t(MWindow):
             return
         self.Layout()
         if not self.context.disable_auto_zoom:
-            self.context("scene focus -4% -4% 104% 104%\n")
+            self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
 
     def on_focus_lost(self, event):
         self.context("-laser\nend\n")
@@ -2809,8 +2851,10 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.on_click_zoom_bed(event=event)
         else:
-            x_delta = (bbox[2] - bbox[0]) * 0.04
-            y_delta = (bbox[3] - bbox[1]) * 0.04
+            zfact = self.context.zoom_level / 100.0
+
+            x_delta = (bbox[2] - bbox[0]) * zfact
+            y_delta = (bbox[3] - bbox[1]) * zfact
             x0 = Length(
                 amount=bbox[0] - x_delta, relative_length=self.context.device.width
             ).length_mm
@@ -2827,13 +2871,13 @@ class MeerK40t(MWindow):
 
     def on_click_toggle_ui(self, event=None):
         self.context("pane toggleui\n")
-        self.context("scene focus -4% -4% 104% 104%\n")
+        self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom scene to bed size.
         """
-        self.context("scene focus -4% -4% 104% 104%\n")
+        self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
 
     def toggle_draw_mode(self, bits):
         """

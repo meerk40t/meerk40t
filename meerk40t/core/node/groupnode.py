@@ -35,6 +35,9 @@ class GroupNode(Node):
     def default_map(self, default_map=None):
         default_map = super(GroupNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Group"
+        default_map["children"] = str(len(self.children))
+        default_map["id"] = str(self.id)
+        default_map["label"] = self.label
         return default_map
 
     def drop(self, drag_node):

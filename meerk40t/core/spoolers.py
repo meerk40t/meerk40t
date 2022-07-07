@@ -593,7 +593,7 @@ class Spooler:
             for e in self._queue:
                 e.stop()
             self._queue.clear()
-        self.context.signal("spooler;queue", len(self._queue))
+            self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element, index=None):
         with self._lock:
