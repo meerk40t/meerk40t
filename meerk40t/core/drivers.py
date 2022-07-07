@@ -32,7 +32,7 @@ class Driver:
         self.hold = False
         self.paused = False
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Required.
 
@@ -41,15 +41,6 @@ class Driver:
         @return: hold?
         """
         return self.hold or self.paused
-
-    def hold_idle(self):
-        """
-        Required.
-
-        Spooler check. Should the idle job be processed or held.
-        @return:
-        """
-        return False
 
     def move_abs(self, x, y):
         """

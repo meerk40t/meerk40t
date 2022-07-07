@@ -196,22 +196,11 @@ class SpoolerPanel(wx.Panel):
             self.set_spool_item(m, spooler.current, status=_("running"))
             idx += 1
 
-        if len(spooler.realtime_queue) > 0:
-            for e in spooler.queue:
-                m = self.list_job_spool.InsertItem(idx, f"#{idx}")
-                self.set_spool_item(m, e, status=_("realtime"))
-                idx += 1
-
         if len(spooler.queue) > 0:
             for e in spooler.queue:
                 m = self.list_job_spool.InsertItem(idx, f"#{idx}")
                 self.set_spool_item(m, e, status=_("queued"))
                 idx += 1
-
-        if spooler.idle is not None:
-            m = self.list_job_spool.InsertItem(idx, _("Idle"))
-            self.set_spool_item(m, spooler.idle, status=_("idle"))
-            idx += 1
 
     def on_tree_popup_clear(self, element=None):
         def delete(event=None):

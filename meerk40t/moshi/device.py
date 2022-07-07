@@ -227,7 +227,7 @@ class MoshiDevice(Service, ViewPort):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
+                spooler.laserjob(data.plan)
                 channel(_("Spooled Plan."))
                 self.signal("plan", data.name, 6)
 
@@ -375,7 +375,7 @@ class MoshiDriver(Parameters):
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Required.
 
@@ -383,16 +383,7 @@ class MoshiDriver(Parameters):
 
         @return: hold?
         """
-        return self.hold or self.paused
-
-    def hold_idle(self):
-        """
-        Required.
-
-        Spooler check. Should the idle job be processed or held.
-        @return:
-        """
-        return False
+        return priority <= 0 and (self.paused or self.hold)
 
     def laser_off(self, *values):
         """
@@ -440,7 +431,7 @@ class MoshiDriver(Parameters):
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
-                    while self.hold_work():
+                    while self.hold_work(0):
                         time.sleep(0.05)
                     self._goto_absolute(*q.point(t), 1)
                     t += step_size
@@ -459,7 +450,7 @@ class MoshiDriver(Parameters):
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_data:
-                    if self.hold_work():
+                    if self.hold_work(0):
                         time.sleep(0.05)
                         continue
                     on = int(on)

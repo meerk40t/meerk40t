@@ -246,7 +246,7 @@ class GRBLDevice(Service, ViewPort):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
+                spooler.laserjob(data.plan)
                 channel(_("Spooled Plan."))
                 self.signal("plan", data.name, 6)
 
@@ -260,6 +260,7 @@ class GRBLDevice(Service, ViewPort):
                 for s, op_name in enumerate(spooler.queue):
                     channel("%d: %s" % (s, op_name))
                 channel(_("----------"))
+
             return "spooler", spooler
 
         @self.console_argument("com")
@@ -395,7 +396,7 @@ class GRBLDriver(Parameters):
     def __repr__(self):
         return "GRBLDriver(%s)" % self.name
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Required.
 
@@ -403,16 +404,7 @@ class GRBLDriver(Parameters):
 
         @return: hold?
         """
-        return self.hold or self.paused
-
-    def hold_idle(self):
-        """
-        Required.
-
-        Spooler check. Should the idle job be processed or held.
-        @return:
-        """
-        return False
+        return priority <= 0 and (self.paused or self.hold)
 
     def move(self, x, y, absolute=False):
         if self._absolute:
@@ -613,7 +605,7 @@ class GRBLDriver(Parameters):
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
                     self.move(*q.point(t))
                     t += step_size
@@ -629,7 +621,7 @@ class GRBLDriver(Parameters):
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
                     if on > 1:
                         # Special Command.
@@ -669,67 +661,6 @@ class GRBLDriver(Parameters):
         self.feedrate_dirty = True
         self.units_dirty = True
         return False
-
-    # def plot_start2(self):
-    #     """
-    #     Called at the end of plot commands to ensure the driver can deal with them all as a group.
-    #
-    #     @return:
-    #     """
-    #     for q in self.queue:
-    #         self.plot_planner.push(q)
-    #     self.queue.clear()
-    #     if self.plot_data is None:
-    #         self.plot_data = self.plot_planner.gen()
-    #     self.g91_absolute()
-    #     self.g94_feedrate()
-    #     self.clean()
-    #     if self.service.use_m3:
-    #         self.grbl("M3\r")
-    #     else:
-    #         self.grbl("M4\r")
-    #
-    #     for x, y, on in self.plot_data:
-    #         while self.hold_work():
-    #             time.sleep(0.05)
-    #         if on > 1:
-    #             # Special Command.
-    #             if on & PLOT_FINISH:  # Plot planner is ending.
-    #                 break
-    #             elif on & PLOT_SETTING:  # Plot planner settings have changed.
-    #                 p_set = Parameters(self.plot_planner.settings)
-    #                 if p_set.power != self.power:
-    #                     self.set("power", p_set.power)
-    #                 if (
-    #                     p_set.speed != self.speed
-    #                     or p_set.raster_step != self.raster_step
-    #                 ):
-    #                     self.set("speed", p_set.speed)
-    #                 self.settings.update(p_set.settings)
-    #             elif on & (
-    #                 PLOT_RAPID | PLOT_JOG
-    #             ):  # Plot planner requests position change.
-    #                 self.move_mode = 0
-    #                 self.move(x, y)
-    #             continue
-    #         if on == 0:
-    #             self.move_mode = 0
-    #         else:
-    #             self.move_mode = 1
-    #         if self.on_value != on:
-    #             self.power_dirty = True
-    #         self.on_value = on
-    #         self.move(x, y)
-    #
-    #     self.plot_data = None
-    #     self.grbl("G1 S0\r")
-    #     self.grbl("M5\r")
-    #     self.power_dirty = True
-    #     self.speed_dirty = True
-    #     self.absolute_dirty = True
-    #     self.feedrate_dirty = True
-    #     self.units_dirty = True
-    #     return False
 
     def blob(self, data_type, data):
         """

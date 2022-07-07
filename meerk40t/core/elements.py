@@ -5137,7 +5137,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                spooler.job(trace_hull)
+                spooler.laserjob(trace_hull)
 
             run_shape(spooler, hull)
 
@@ -5168,7 +5168,6 @@ class Elemental(Service):
                 )
                 return
 
-            spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
             hull = generate_hull_shape(method, data, resolution=resolution)

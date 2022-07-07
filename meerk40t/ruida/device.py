@@ -269,7 +269,7 @@ class RuidaDevice(Service, ViewPort):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
+                spooler.laserjob(data.plan)
                 channel(_("Spooled Plan."))
                 self.signal("plan", data.name, 6)
 

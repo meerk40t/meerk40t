@@ -234,7 +234,7 @@ class LihuiyuDevice(Service, ViewPort):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
+                spooler.laserjob(data.plan)
                 channel(_("Spooled Plan."))
                 self.signal("plan", data.name, 6)
 
@@ -282,7 +282,8 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "wait", time
                 yield "laser_off"
 
-            if self.spooler.job_if_idle(timed_fire):
+            if self.spooler.is_idle:
+                self.spooler.laserjob(timed_fire)
                 channel(_("Pulse laser for %f milliseconds") % time)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -301,8 +302,9 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "program_mode"
                 yield "move_relative", dx.mil, dy.mil
                 yield "rapid_mode"
-
-            if not self.spooler.job_if_idle(move_at_speed):
+            if self.spooler.is_idle:
+                self.spooler.laserjob(move_at_speed)
+            else:
                 channel(_("Busy"))
             return
 
@@ -744,7 +746,7 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "laser_off"
                     yield "wait_finish"
 
-            spooler.job(jog_transition_test)
+            spooler.laserjob(jog_transition_test)
 
     @property
     def viewbuffer(self):
@@ -851,7 +853,7 @@ class LhystudiosDriver(Parameters):
     def __call__(self, e):
         self.out_pipe.write(e)
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
         criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
@@ -859,6 +861,10 @@ class LhystudiosDriver(Parameters):
 
         @return: Whether data interpretation should hold.
         """
+        if priority > 0:
+            # Don't hold realtime work.
+            return False
+
         temp_hold = False
         fail_hold = False
         for i, hold in enumerate(self.temp_holds):
@@ -876,9 +882,6 @@ class LhystudiosDriver(Parameters):
                 return True
         return False
 
-    def hold_idle(self):
-        return False
-
     def plotplanner_process(self):
         """
         Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
@@ -889,7 +892,7 @@ class LhystudiosDriver(Parameters):
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
-            while self.hold_work():
+            while self.hold_work(0):
                 time.sleep(0.05)
             sx = self.native_x
             sy = self.native_y

@@ -24,7 +24,7 @@ def plugin(kernel, lifecycle):
                 raise CommandSyntaxError
             try:
                 for plan_command, command_name, suffix in kernel.find("plan", op):
-                    spooler.job(plan_command)
+                    spooler.command(plan_command)
                     return data_type, spooler
             except (KeyError, IndexError):
                 pass
@@ -72,7 +72,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("laser_on")
+            spooler.command("laser_on")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -86,7 +86,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("laser_off")
+            spooler.command("laser_off")
             return "spooler", spooler
 
         @kernel.console_argument(
@@ -137,11 +137,12 @@ def plugin(kernel, lifecycle):
             except AttributeError:
                 return
             if force:
-                spooler.job("move_rel", idx, idy)
+                spooler.command("move_rel", idx, idy)
                 spooler._dx = Length(0)
                 spooler._dy = Length(0)
             else:
-                if spooler.job_if_idle("move_rel", float(idx), float(idy)):
+                if spooler.is_idle:
+                    spooler.command("move_rel", float(idx), float(idy))
                     channel(_("Position moved: {x} {y}").format(x=idx, y=idy))
                     spooler._dx = Length(0)
                     spooler._dy = Length(0)
@@ -165,9 +166,11 @@ def plugin(kernel, lifecycle):
             if y is None:
                 raise CommandSyntaxError
             if force:
-                spooler.job("move_abs", x, y)
+                spooler.command("move_abs", x, y)
             else:
-                if not spooler.job_if_idle("move_abs", x, y):
+                if spooler.is_idle:
+                    spooler.command("move_abs", x, y)
+                else:
                     channel(_("Busy Error"))
             return "spooler", spooler
 
@@ -187,9 +190,11 @@ def plugin(kernel, lifecycle):
             if dy is None:
                 raise CommandSyntaxError
             if force:
-                spooler.job("move_rel", dx, dy)
+                spooler.command("move_rel", dx, dy)
             else:
-                if not spooler.job_if_idle("move_rel", dx, dy):
+                if spooler.is_idle:
+                    spooler.command("move_rel", dx, dy)
+                else:
                     channel(_("Busy Error"))
             return "spooler", spooler
 
@@ -206,9 +211,9 @@ def plugin(kernel, lifecycle):
                 data = kernel.device.spooler
             spooler = data
             if x is not None and y is not None:
-                spooler.job("home", x, y)
+                spooler.command("home", x, y)
                 return "spooler", spooler
-            spooler.job("home")
+            spooler.command("home")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -221,7 +226,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("unlock_rail")
+            spooler.command("unlock_rail")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -234,7 +239,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("lock_rail")
+            spooler.command("lock_rail")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -262,7 +267,7 @@ def plugin(kernel, lifecycle):
                 yield "home"
                 yield "wait_finish"
 
-            spooler.job(home_dot_test)
+            spooler.laserjob(home_dot_test)
             return "spooler", spooler
 
 
@@ -389,13 +394,6 @@ class Spooler:
     When the queues are empty the idle job is repeatedly executed in a loop. If there is no idle job
     then the spooler is inactive.
 
-    * peek()
-    * pop()
-    * job(job)
-    * jobs(iterable<job>)
-    * job_if_idle(job) -- Will enqueue the job if the device is currently idle.
-    * clear_queue()
-    * remove(job)
     """
 
     def __init__(self, context, driver=None, **kwargs):
@@ -497,6 +495,7 @@ class Spooler:
             if not len(self._queue):
                 # There is no work to do.
                 time.sleep(0.1)
+                continue
 
             with self._lock:
                 # threadsafe
@@ -512,7 +511,12 @@ class Spooler:
 
             fully_executed = program.execute()
             if fully_executed:
+                # all work finished
                 self.remove(program, 0)
+
+    @property
+    def is_idle(self):
+        return len(self._queue) == 0 or self._queue[0].priority < 0
 
     @property
     def current(self):
@@ -522,30 +526,24 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def append(self, item):
-        self.job(item)
-
-    def realtime(self, job):
+    def laserjob(self, job, priority=0):
         """
-        Enqueues a job into the realtime buffer. This preempts the regular work and is checked before hold_work.
-
-        @param job:
-        @return:
+        send a wrapped laser job to the spooler.
         """
-        self.job(job, priority=1)
+        laserjob = LaserJob(str(job), job, driver=self.driver, priority=priority)
+        with self._lock:
+            self._queue.append(laserjob)
+            self._queue.sort(key=lambda e: e.priority)
+        self.context.signal("spooler;queue", len(self._queue))
 
-    def jobs(self, jobs, priority=0):
-        """
-        Send several jobs be appended to the end of the queue.
+    def command(self, *job, priority=0):
+        laserjob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+        with self._lock:
+            self._queue.append(laserjob)
+            self._queue.sort(key=lambda e: e.priority)
+        self.context.signal("spooler;queue", len(self._queue))
 
-        The 'jobs' parameter must be suitable to be .extended to the end of the queue list.
-
-        @param jobs: jobs to extend
-        @return:
-        """
-        self.job(jobs, priority=priority)
-
-    def job(self, job, priority=0):
+    def send(self, *job, priority=0):
         """
         Send a single job event with parameters as needed.
 
@@ -560,30 +558,6 @@ class Spooler:
             self._queue.append(laserjob)
             self._queue.sort(key=lambda e: e.priority)
         self.context.signal("spooler;queue", len(self._queue))
-
-    def set_idle(self, job):
-        """
-        Sets the idle job.
-
-        @param job:
-        @return:
-        """
-        self.job(job, priority=-1)
-
-    def job_if_idle(self, *element, priority=0):
-        """
-        Deprecated.
-
-        This should be fed into various forms of idle job.
-        @param element:
-        @param priority: Priority at which to add this job
-        @return:
-        """
-        if len(self._queue) == 0 or self._queue[0].priority < 0:
-            self.job(element, priority=priority)
-            return True
-        else:
-            return False
 
     def clear_queue(self):
         with self._lock:

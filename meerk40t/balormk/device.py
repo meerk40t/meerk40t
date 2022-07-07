@@ -916,7 +916,7 @@ class BalorDevice(Service, ViewPort):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
+                spooler.laserjob(data.plan)
                 channel(_("Spooled Plan."))
                 self.signal("plan", data.name, 6)
 
@@ -998,7 +998,7 @@ class BalorDevice(Service, ViewPort):
                     quantization=quantization,
                     simulate=True,
                 )
-            self.spooler.job(("light_loop", self.job.process))
+            self.spooler.command(("light_loop", self.job.process), -1)
 
         @self.console_command(
             "select-light", help=_("Execute selection light idle job")
@@ -1007,14 +1007,14 @@ class BalorDevice(Service, ViewPort):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveSelectionLightJob(self)
-            self.spooler.job(("light_loop", self.job.process))
+            self.spooler.command(("light_loop", self.job.process), -1)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def select_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveFullLightJob(self)
-            self.spooler.job(("light_loop", self.job.process))
+            self.spooler.command(("light_loop", self.job.process), -1)
 
         @self.console_command(
             "stop",
@@ -1036,7 +1036,6 @@ class BalorDevice(Service, ViewPort):
             channel("Stopping Job")
             if self.job is not None:
                 self.job.stop()
-            self.spooler.set_idle(None)
             self.spooler.clear_queue()
             self.driver.set_abort()
 
@@ -1083,7 +1082,8 @@ class BalorDevice(Service, ViewPort):
                         return
                 except IndexError:
                     return
-            if self.spooler.job_if_idle(("pulse", time)):
+            if self.spooler.is_idle:
+                self.spooler.command(("pulse", time))
                 channel(_("Pulse laser for %f milliseconds") % time)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -1094,18 +1094,18 @@ class BalorDevice(Service, ViewPort):
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.spooler.job("connect")
+            self.spooler.command("connect")
 
         @self.console_command(
             "usb_disconnect",
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.spooler.job("disconnect")
+            self.spooler.command("disconnect")
 
         @self.console_command("usb_abort", help=_("Stops USB retries"))
         def usb_abort(command, channel, _, **kwargs):
-            self.spooler.job("abort_retry")
+            self.spooler.command("abort_retry")
 
         @self.console_option(
             "default",
