@@ -1,6 +1,6 @@
 import wx
 
-from ...svgelements import SVG_ATTR_ID
+# from ...svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects_50
 from ..mwindow import MWindow
 
@@ -62,8 +62,8 @@ class GroupPropertiesPanel(wx.Panel):
     def on_text_id_change(self, event=None):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.node.id = self.text_id.GetValue()
-            self.node.values[SVG_ATTR_ID] = self.node.id
-            # self.context.signal("element_property_update", self.element)
+            # self.node.values[SVG_ATTR_ID] = self.node.id
+            self.context.signal("element_property_update", self.node)
         except AttributeError:
             pass
 
