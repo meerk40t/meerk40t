@@ -91,11 +91,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     continue
             data_style = c.get("style", None)
             data_type = type(data)
-            if data_style in ("combo", "combosmall"):
-                print ("initial data_type=", data_type.__name__)
             data_type = c.get("type", data_type)
-            if data_style in ("combo", "combosmall"):
-                print ("after data_type=", data_type.__name__)
             try:
                 # Get label
                 label = c["label"]
@@ -197,9 +193,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combosmall":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
-                if label != "":
-                    label_text = wx.StaticText(self, wx.ID_ANY, " " + label)
-                    control_sizer.Add(label_text)
 
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
                 control = wx.ComboBox(
@@ -218,6 +211,12 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return select
 
+                if label != "":
+                    # Try to center it vertically to the controls extent
+                    wd, ht = control.GetSize()
+                    label_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + label, style= wx.ST_NO_AUTORESIZE)
+                    label_text.SetMinSize((-1, ht))
+                    control_sizer.Add(label_text)
                 control_sizer.Add(control)
                 control.Bind(
                     wx.EVT_COMBOBOX,
@@ -420,7 +419,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Requires a registered data_type
                 continue
             if trailer != "":
-                trailer_text = wx.StaticText(self, wx.ID_ANY, " " + trailer)
+                # Try to center it vertically to the controls extent
+                wd, ht = control.GetSize()
+                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + trailer, style= wx.ST_NO_AUTORESIZE)
+                trailer_text.SetMinSize((-1, ht))
                 control_sizer.Add(trailer_text)
 
             # Get enabled value
