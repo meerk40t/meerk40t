@@ -24,7 +24,7 @@ def plugin(kernel, lifecycle):
                 # If plan data is in data, then we copy that and move on to next step.
                 spooler.laserjob(data.plan)
                 channel(_("Spooled Plan."))
-                kernel.signal("plan", data.name, 6)
+                kernel.root.signal("plan", data.name, 6)
 
             if remainder is None:
                 channel(_("----------"))
