@@ -946,7 +946,7 @@ class MoshiController:
     according to established moshi protocols.
 
     The output device is concerned with sending the moshiblobs to the control board and control events and
-    to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lhystudios boards. Giving us
+    to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lihuiyu boards. Giving us
     access to both libusb drivers and windll drivers.
 
     The protocol for sending rasters is as follows:

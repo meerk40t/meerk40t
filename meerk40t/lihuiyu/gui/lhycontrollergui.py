@@ -34,7 +34,7 @@ _advanced_width = 952
 _default_height = 584
 
 
-class LhystudiosControllerPanel(ScrolledPanel):
+class LihuiyuControllerPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -132,7 +132,6 @@ class LhystudiosControllerPanel(ScrolledPanel):
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: LhystudiosController.__do_layout
         sizer_24 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
@@ -485,13 +484,13 @@ class LhystudiosControllerPanel(ScrolledPanel):
 
     def on_button_start_controller(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
 
     def on_check_show_usb_log(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         on = self.checkbox_show_usb_log.GetValue()
         self.text_usb_log.Show(on)
         self.context.show_usb_log = bool(on)
@@ -501,7 +500,7 @@ class LhystudiosControllerPanel(ScrolledPanel):
             self.GetParent().SetSize((_simple_width, _default_height))
 
 
-class LhystudiosControllerGui(MWindow):
+class LihuiyuControllerGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(_advanced_width, _default_height, *args, **kwds)
 
@@ -511,19 +510,19 @@ class LhystudiosControllerGui(MWindow):
         from platform import system as _sys
 
         if _sys() != "Darwin":
-            self.LhystudiosController_menubar = wx.MenuBar()
-            self.create_menu(self.LhystudiosController_menubar.Append)
-            self.SetMenuBar(self.LhystudiosController_menubar)
+            self.LihuiyuController_menubar = wx.MenuBar()
+            self.create_menu(self.LihuiyuController_menubar.Append)
+            self.SetMenuBar(self.LihuiyuController_menubar)
         # ==========
         # MENUBAR END
         # ==========
 
-        self.panel = LhystudiosControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = LihuiyuControllerPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Lhystudios-Controller"))
+        self.SetTitle(_("Lihuiyu-Controller"))
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
@@ -552,7 +551,7 @@ class LhystudiosControllerGui(MWindow):
     def window_preserve(self):
         return False
 
-    def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_usb_reset(self, event):
         try:
             self.context("usb_reset\n")
         except AttributeError:
@@ -560,7 +559,7 @@ class LhystudiosControllerGui(MWindow):
 
     def on_menu_usb_release(
         self, event
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         try:
             self.context("usb_release\n")
         except AttributeError:
@@ -568,13 +567,13 @@ class LhystudiosControllerGui(MWindow):
 
     def on_menu_pause(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         try:
             self.context("pause\n")
         except AttributeError:
             pass
 
-    def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_stop(self, event=None):
         try:
             self.context("estop\n")
         except AttributeError:
@@ -582,5 +581,5 @@ class LhystudiosControllerGui(MWindow):
 
     def on_menu_bufferview(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         self.context("window open BufferView\n")

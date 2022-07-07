@@ -382,13 +382,13 @@ class MoshiControllerPanel(wx.Panel):
 
     def on_button_start_controller(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
 
     def on_check_show_usb_log(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         on = self.checkbox_show_usb_log.GetValue()
         self.text_usb_log.Show(on)
         self.context.show_usb_log = bool(on)
@@ -461,7 +461,7 @@ class MoshiControllerGui(MWindow):
     def window_preserve(self):
         return False
 
-    def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_usb_reset(self, event):
         try:
             self.context("usb_reset\n")
         except AttributeError:
@@ -469,7 +469,7 @@ class MoshiControllerGui(MWindow):
 
     def on_menu_usb_release(
         self, event
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         try:
             self.context("usb_release\n")
         except AttributeError:
@@ -477,13 +477,13 @@ class MoshiControllerGui(MWindow):
 
     def on_menu_pause(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         try:
             self.context("pause\n")
         except AttributeError:
             pass
 
-    def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_stop(self, event=None):
         try:
             self.context("estop\n")
         except AttributeError:
@@ -491,7 +491,7 @@ class MoshiControllerGui(MWindow):
 
     def on_menu_bufferview(
         self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    ):
         self.context("window open BufferView\n")
 
     def on_menu_freemotor(self, event):  # wxGlade: MoshiControllerGui.<event_handler>

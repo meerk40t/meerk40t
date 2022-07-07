@@ -1021,7 +1021,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
     def on_check_pulse_shift(
         self, event=None
-    ):  # wxGlade: LhystudiosDriver.<event_handler>
+    ):
         self.context.plot_shift = self.check_plot_shift.GetValue()
         try:
             self.context.plot_planner.force_shift = self.context.plot_shift
@@ -1030,22 +1030,22 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
     def on_check_alt_raster(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         self.context.nse_raster = self.check_alternative_raster.GetValue()
 
     def on_check_twitches(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         self.context.twitches = self.check_twitches.GetValue()
 
     def on_check_rapid_between(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         self.context.opt_rapid_between = self.check_rapid_moves_between.GetValue()
 
     def on_text_min_jog_distance(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         try:
             self.context.opt_jog_minimum = int(
                 self.text_minimum_jog_distance.GetValue()
@@ -1055,17 +1055,17 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
     def on_jog_method_radio(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         self.context.opt_jog_mode = self.radio_box_jog_method.GetSelection()
 
     def on_check_override_rapid(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         self.check_override_rapid.SetValue(self.context.rapid_override)
 
     def on_text_rapid_x(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         try:
             self.context.rapid_override_speed_x = float(self.text_rapid_x.GetValue())
         except ValueError:
@@ -1073,7 +1073,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
     def on_text_rapid_y(
         self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    ):
         try:
             self.context.rapid_override_speed_y = float(self.text_rapid_y.GetValue())
         except ValueError:
@@ -1119,14 +1119,14 @@ class ConfigurationSetupPanel(ScrolledPanel):
             pass
 
 
-class LhystudiosDriverGui(MWindow):
+class LihuiyuDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(374, 734, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Lhystudios-Configuration"))
+        self.SetTitle(_("Lihuiyu-Configuration"))
 
         # self.notebook_main = wx.Notebook(self, wx.ID_ANY)
         self.notebook_main = wx.aui.AuiNotebook(
