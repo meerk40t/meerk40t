@@ -47,7 +47,7 @@ from .icons import (
     icons_evenspace_vert,
     icons8_group_objects_50,
     icons8_ungroup_objects_50,
-
+    set_icon_appearance,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -465,16 +465,19 @@ class CustomStatusBar(wx.StatusBar):
 
         if self.context.show_colorbar:
             rect = self.GetFieldRect(self.pos_stroke)
-            ct = 2
-            wd = int(round(rect.width / ct))
-            # print ("Width:", wd)
-            toosmall = wd <= 100
+            ct = 3
+            wd0 = int(round(rect.width / ct))
+            wd1 = wd0
+            wd2 = wd0
+            # print ("Width:", wd1, wd2)
+            toosmall = wd1 < 45
             rect.x += 1
             rect.y += 1
             old_y = rect.y
             old_ht = rect.height
-            rect.width = wd
+            rect.width = wd1
             if toosmall:
+                wd2 = ct/2 * wd0
                 if self.cb_enabled:
                     self.strokewidth_label.Hide()
             else:
@@ -488,12 +491,18 @@ class CustomStatusBar(wx.StatusBar):
                 # reset to previous values
                 rect.y = old_y
                 rect.height = old_ht
-                rect.x += wd
+                rect.x += wd1
                 # Make the next two elements smaller
-                wd = wd / 2
-            rect.width = wd
+            rect.width = wd2
+            # Linux has some issues with controls smaller than 32 pixels...
+            if platform.system() != "Linux":
+                minheight = ht
+            else:
+                minheight = 34
+            if rect.height<minheight:
+                rect.height = minheight
             self.spin_width.SetRect(rect)
-            rect.x += wd
+            rect.x += wd2
             self.combo_units.SetRect(rect)
 
             rect = self.GetFieldRect(self.pos_colorbar)
@@ -595,6 +604,57 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
         context.setting(int, "zoom_level", 4) # 4%
+        # Standard-Icon-Sizes
+        # default, factor 1 - leave as is
+        # small = factor 2/3, min_size = 32
+        # tiny  = factor 1/2, min_size = 25
+        context.setting(str, "icon_size", "default")  
+        # Ribbon-Size (NOT YET ACTIVE)
+        # default - std icon size + panel-labels, 
+        # small - std icon size / no labels
+        # tiny - reduced icon size / no labels        
+        context.setting(str, "ribbon_appearance", "default")  
+        choices = [
+            {
+                "attr": "ribbon_appearance",
+                "object": self.context.root,
+                "default": "default",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "default",
+                    "small",
+                    "tiny"
+                ],
+                "label": _("Ribbon-Size:"),
+                "tip": _("Appearance of ribbon at the top (requires a restart to take effect))"),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+        ]
+        # context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "icon_size",
+                "object": self.context.root,
+                "default": "default",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "large",
+                    "big",
+                    "default",
+                    "small",
+                    "tiny"
+                ],
+                "label": _("Make Icons smaller"),
+                "tip": _("Appearance of all icons in the GUI (requires a restart to take effect))"),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        
         choices = [
             {
                 "attr": "zoom_level",
@@ -689,6 +749,16 @@ class MeerK40t(MWindow):
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
         )
+        if context.icon_size == "tiny":
+            set_icon_appearance(0.5, int(0.5 * STD_ICON_SIZE))
+        elif context.icon_size == "small":
+            set_icon_appearance(2/3, int(2/3 * STD_ICON_SIZE))
+        elif context.icon_size == "big":
+            set_icon_appearance(1.5, 0)
+        elif context.icon_size == "large":
+            set_icon_appearance(2.0, 0)
+        else:
+            set_icon_appearance(1.0, 0)
 
     def open_property_window_for_node(self, node):
         """

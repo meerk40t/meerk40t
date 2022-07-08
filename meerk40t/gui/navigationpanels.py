@@ -37,6 +37,7 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
+    get_default_icon_size,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Angle
@@ -49,18 +50,19 @@ MILS_IN_MM = 39.3701
 
 def register_panel_navigation(window, context):
     panel = Drag(window, wx.ID_ANY, context=context)
+    iconsize = get_default_icon_size()
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(3 * iconsize + 24, 3 * iconsize + 30)
+        .FloatingSize(3 * iconsize + 24, 3 * iconsize + 30)
         .MaxSize(300, 300)
         .Caption(_("Drag"))
         .Name("drag")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = 3 * iconsize + 30
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -70,14 +72,14 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(3 * iconsize + 24, 3 * iconsize + 30)
+        .FloatingSize(3 * iconsize + 24, 3 * iconsize + 30)
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
         .CaptionVisible(not context.pane_lock)
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = 3 * iconsize + 30
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -88,14 +90,14 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(150, 75)
-        .FloatingSize(150, 75)
+        .MinSize(iconsize + 100, iconsize + 25)
+        .FloatingSize(iconsize + 100, iconsize + 25)
         .MaxSize(200, 100)
         .Caption(_("Move"))
         .CaptionVisible(not context.pane_lock)
         .Name("move")
     )
-    pane.dock_proportion = 150
+    pane.dock_proportion = iconsize + 100
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -106,14 +108,14 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(75, 50)
-        .FloatingSize(150, 75)
+        .MinSize(iconsize + 25, iconsize + 25)
+        .FloatingSize(iconsize + 100, iconsize + 25)
         .Hide()
         .Caption(_("Pulse"))
         .CaptionVisible(not context.pane_lock)
         .Name("pulse")
     )
-    pane.dock_proportion = 150
+    pane.dock_proportion = iconsize + 100
     pane.control = panel
     pane.submenu = _("Navigation")
 
