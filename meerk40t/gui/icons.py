@@ -18,7 +18,10 @@ def set_icon_appearance(factor, min_size):
     
 def get_default_icon_size():
     return _GLOBAL_FACTOR * STD_ICON_SIZE
-    
+
+def get_default_scale_factor():
+    return _GLOBAL_FACTOR
+     
 class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
         super().__init__(data)
@@ -44,25 +47,26 @@ class PyEmbeddedImage(py_embedded_image):
             wd, ht = image.GetSize()
             if resize is not None:
                 if isinstance(resize, int) or isinstance(resize, float):
-                    if _MIN_ICON_SIZE>0 and resize>_MIN_ICON_SIZE:
-                        resize *= _GLOBAL_FACTOR
+                    resize *= _GLOBAL_FACTOR
+                    if _MIN_ICON_SIZE>0 and oldresize>_MIN_ICON_SIZE:
                         if resize<_MIN_ICON_SIZE:
                             resize = _MIN_ICON_SIZE   
                 elif isinstance(resize, tuple): # (tuple wd ht)
                     resize = [oldresize[0], oldresize[1]] 
                     for i in range(2):                            
-                        if _MIN_ICON_SIZE > 0 and resize[i]>_MIN_ICON_SIZE:
-                            resize[i] *= _GLOBAL_FACTOR
+                        resize[i] *= _GLOBAL_FACTOR
+                        if _MIN_ICON_SIZE > 0 and oldresize[i]>_MIN_ICON_SIZE:
                             if resize[i]<_MIN_ICON_SIZE:
                                 resize[i]=_MIN_ICON_SIZE                                               
             else:
                 resize = [wd, ht]
-                for i in range(2):                            
-                    if _MIN_ICON_SIZE > 0 and resize[i]>_MIN_ICON_SIZE:
-                        resize[i] *= _GLOBAL_FACTOR
+                oldresize = (wd, ht)
+                for i in range(2):                 
+                    resize[i] *= _GLOBAL_FACTOR
+                    if _MIN_ICON_SIZE > 0 and oldresize[i]>_MIN_ICON_SIZE:
                         if resize[i]<_MIN_ICON_SIZE:
                             resize[i]=_MIN_ICON_SIZE                                               
-        #    print ("Will adjust from %s to %s (was: %s)" % ((wd, ht), resize, oldresize))
+            # print ("Will adjust from %s to %s (was: %s)" % ((wd, ht), resize, oldresize))
             
         if resize is not None:
             if isinstance(resize, int) or isinstance(resize, float):

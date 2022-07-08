@@ -632,6 +632,8 @@ class MeerK40t(MWindow):
                 "type": str,
                 "style": "combosmall",
                 "choices": [
+                    "large",
+                    "big",
                     "default",
                     "small",
                     "tiny"
@@ -742,6 +744,10 @@ class MeerK40t(MWindow):
             set_icon_appearance(0.5, int(0.5 * STD_ICON_SIZE))
         elif context.icon_size == "small":
             set_icon_appearance(2/3, int(2/3 * STD_ICON_SIZE))
+        elif context.icon_size == "big":
+            set_icon_appearance(1.5, 0)
+        elif context.icon_size == "large":
+            set_icon_appearance(2.0, 0)
         else:
             set_icon_appearance(1.0, 0)
 
