@@ -47,7 +47,7 @@ from .icons import (
     icons_evenspace_vert,
     icons8_group_objects_50,
     icons8_ungroup_objects_50,
-
+    set_icon_appearance,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -595,6 +595,55 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
         context.setting(int, "zoom_level", 4) # 4%
+        # Standard-Icon-Sizes
+        # default, factor 1 - leave as is
+        # small = factor 2/3, min_size = 32
+        # tiny  = factor 1/2, min_size = 25
+        context.setting(str, "icon_size", "default")  
+        # Ribbon-Size (NOT YET ACTIVE)
+        # default - std icon size + panel-labels, 
+        # small - std icon size / no labels
+        # tiny - reduced icon size / no labels        
+        context.setting(str, "ribbon_appearance", "default")  
+        choices = [
+            {
+                "attr": "ribbon_appearance",
+                "object": self.context.root,
+                "default": "default",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "default",
+                    "small",
+                    "tiny"
+                ],
+                "label": _("Ribbon-Size:"),
+                "tip": _("Appearance of ribbon at the top (requires a restart to take effect))"),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+        ]
+        # context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "icon_size",
+                "object": self.context.root,
+                "default": "default",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "default",
+                    "small",
+                    "tiny"
+                ],
+                "label": _("Make Icons smaller"),
+                "tip": _("Appearance of all icons in the GUI (requires a restart to take effect))"),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+        
         choices = [
             {
                 "attr": "zoom_level",
@@ -689,6 +738,12 @@ class MeerK40t(MWindow):
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
         )
+        if context.icon_size == "tiny":
+            set_icon_appearance(0.5, int(0.5 * STD_ICON_SIZE))
+        elif context.icon_size == "small":
+            set_icon_appearance(2/3, int(2/3 * STD_ICON_SIZE))
+        else:
+            set_icon_appearance(1.0, 0)
 
     def open_property_window_for_node(self, node):
         """
