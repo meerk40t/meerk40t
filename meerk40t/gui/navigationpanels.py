@@ -1,3 +1,4 @@
+import platform
 import wx
 from wx import aui
 
@@ -51,18 +52,25 @@ MILS_IN_MM = 39.3701
 def register_panel_navigation(window, context):
     panel = Drag(window, wx.ID_ANY, context=context)
     iconsize = get_default_icon_size()
+    if platform.system() == "Windows":
+        dx = 24
+        dy = 30
+    else:
+        dx = 12
+        dy = 12
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(3 * iconsize + 24, 3 * iconsize + 30)
-        .FloatingSize(3 * iconsize + 24, 3 * iconsize + 30)
+        .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Drag"))
         .Name("drag")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 3 * iconsize + 30
+    pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -72,14 +80,15 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(3 * iconsize + 24, 3 * iconsize + 30)
-        .FloatingSize(3 * iconsize + 24, 3 * iconsize + 30)
+        .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
         .CaptionVisible(not context.pane_lock)
     )
-    pane.dock_proportion = 3 * iconsize + 30
+    pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -91,6 +100,7 @@ def register_panel_navigation(window, context):
         aui.AuiPaneInfo()
         .Right()
         .MinSize(iconsize + 100, iconsize + 25)
+        .BestSize(iconsize + 100, iconsize + 25)
         .FloatingSize(iconsize + 100, iconsize + 25)
         .MaxSize(200, 100)
         .Caption(_("Move"))
@@ -140,19 +150,25 @@ def register_panel_navigation(window, context):
     window.on_pane_add(pane)
     context.register("pane/objsizer", pane)
 
+    if platform.system() == "Windows":
+        dx = 24
+        dy = 30
+    else:
+        dx = 12
+        dy = 12
     panel = Transform(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(max(3*iconsize, 3*57), 3*iconsize + dy)
+        .FloatingSize(max(3*iconsize, 3*57), 3*iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = max(3*iconsize, 3*57)
     pane.control = panel
     pane.submenu = _("Editing")
 
