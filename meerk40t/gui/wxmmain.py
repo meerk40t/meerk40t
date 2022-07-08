@@ -465,16 +465,19 @@ class CustomStatusBar(wx.StatusBar):
 
         if self.context.show_colorbar:
             rect = self.GetFieldRect(self.pos_stroke)
-            ct = 2
-            wd = int(round(rect.width / ct))
-            # print ("Width:", wd)
-            toosmall = wd <= 100
+            ct = 3
+            wd0 = int(round(rect.width / ct))
+            wd1 = wd0
+            wd2 = wd0
+            # print ("Width:", wd1, wd2)
+            toosmall = wd1 < 45
             rect.x += 1
             rect.y += 1
             old_y = rect.y
             old_ht = rect.height
-            rect.width = wd
+            rect.width = wd1
             if toosmall:
+                wd2 = ct/2 * wd0
                 if self.cb_enabled:
                     self.strokewidth_label.Hide()
             else:
@@ -488,12 +491,18 @@ class CustomStatusBar(wx.StatusBar):
                 # reset to previous values
                 rect.y = old_y
                 rect.height = old_ht
-                rect.x += wd
+                rect.x += wd1
                 # Make the next two elements smaller
-                wd = wd / 2
-            rect.width = wd
+            rect.width = wd2
+            # Linux has some issues with controls smaller than 32 pixels...
+            if platform.system() != "Linux":
+                minheight = ht
+            else:
+                minheight = 34
+            if rect.height<minheight:
+                rect.height = minheight
             self.spin_width.SetRect(rect)
-            rect.x += wd
+            rect.x += wd2
             self.combo_units.SetRect(rect)
 
             rect = self.GetFieldRect(self.pos_colorbar)
