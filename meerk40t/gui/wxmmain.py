@@ -449,6 +449,7 @@ class CustomStatusBar(wx.StatusBar):
 
     # reposition the checkboxes
     def Reposition(self):
+        return
         rect = self.GetFieldRect(self.pos_handle_options)
         ct = 4
         wd = int(round(rect.width / ct))
@@ -461,8 +462,7 @@ class CustomStatusBar(wx.StatusBar):
         rect.x += int(wd)
         self.cb_rotate.SetRect(rect)
         rect.x += int(wd)
-        self.cb_skew.SetRect(rect)
-
+        self.cb_skew.SetRect(rect)        
         if self.context.show_colorbar:
             rect = self.GetFieldRect(self.pos_stroke)
             ct = 3
