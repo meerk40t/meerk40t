@@ -1625,24 +1625,50 @@ class Elemental(Service):
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
+        @self.console_option(
+            "dx", "x", help=_("copy offset x (for elems)"), type=Length, default=0
+        )
+        @self.console_option(
+            "dy", "y", help=_("copy offset y (for elems)"), type=Length, default=0
+        )
         @self.console_command(
             "copy",
             help=_("Duplicate elements"),
             input_type=("elements", "ops"),
             output_type=("elements", "ops"),
         )
-        def e_copy(data=None, data_type=None, **kwargs):
+        def e_copy(data=None, data_type=None, dx=None, dy=None, **kwargs):
             if data is None:
-                data = list(self.elems(emphasized=True))
-            add_elem = list(map(copy, data))
-            if len(add_elem)>0:
-                # print ("Elements to copy: %d" % len(add_elem))
-                if data_type == "ops":
-                    self.add_ops(add_elem)
+                # Take tree selection for ops, scene selection for elements
+                if data_type=="ops":
+                    data = list(self.ops(selected=True))
                 else:
-                    self.add_elems(add_elem)
-                self.signal("rebuild_tree")
-            return data_type, add_elem
+                    data = list(self.elems(emphasized=True))
+
+            if data_type=="ops":
+                add_elem = list(map(copy, data))
+                self.add_ops(add_elem)
+                return "ops", add_elem
+            else:
+                if dx is None:
+                    x_pos = 0
+                else:
+                    x_pos = dx
+                if dy is None:
+                    y_pos = 0
+                else:
+                    y_pos = dy
+                add_elem = list(map(copy, data))
+                if x_pos!=0 or y_pos!=0:
+                    matrix = Matrix(
+                        "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
+                    )
+                for e in add_elem:
+                    if x_pos!=0 or y_pos!=0:
+                        e.matrix *= matrix
+                    self.elem_branch.add_node(e)
+                self.signal("refresh_scene", "Scene")
+                return "elements", add_elem
 
         @self.console_command(
             "delete", help=_("Delete elements"), input_type=("elements", "ops")
