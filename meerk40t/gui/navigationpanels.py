@@ -1842,6 +1842,8 @@ class NavigationPanel(wx.Panel):
         self.context = context
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+
         pulse_and_move_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_panels_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -1903,6 +1905,10 @@ class Navigation(MWindow):
 
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
+        iconsize = get_default_icon_size()
+        minw = (3 + 3 + 3) * iconsize + 150
+        minh = (4 + 1) * iconsize + 170
+        super().SetSizeHints(minW=minw, minH=minh)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
