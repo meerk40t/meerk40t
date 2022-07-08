@@ -2261,6 +2261,59 @@ class Kernel(Settings):
                 else:
                     channel(command_name.split("/")[-1])
 
+        @self.console_argument("substr", type=str)
+        @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
+        def help_command(channel, _, substr, **kwargs):
+            """
+            'find' will display the list of accepted commands that contain a given substr.
+            """
+            allcommands = []
+            allparams = []
+            if substr is not None:
+                found = False
+
+                matches = list(self.match("command/.*/.*"))
+                matches.sort()
+                for command_name in matches:
+                    parts = command_name.split("/")
+                    input_type = parts[1]
+                    command_item = parts[2]
+                    if input_type == "None":
+                        s = command_item
+                    else:
+                        s = input_type + " " + command_item
+                    if substr in command_item:
+                        allcommands.append(s)
+                        found = True
+                    func = self.lookup(command_name)
+                    subfound = False
+                    for a in func.arguments:
+                        arg_name = a.get("name", "")
+                        s += " " + arg_name
+                        if substr in arg_name:
+                            subfound = True
+                    if subfound:
+                        allparams.append(s)
+                        found = True
+                if found:
+                    if len(allcommands)>0:
+                        s = "Commands:\n"
+                        for entry in allcommands:
+                            s = s + entry.replace(substr, "[red]" + substr + "[normal]") + "\n"
+                        channel(s, ansi=True)
+                    if len(allparams)>0:
+                        s = "Params:\n"
+                        for entry in allparams:
+                            s = s + entry.replace(substr, "[red]" + substr + "[normal]") + "\n"
+                        channel(s, ansi=True)
+
+                else:
+                    channel(_("No commands found that contained: [red]%s[normal]") % substr, ansi=True)
+                return
+            else:
+                channel(_("If you want to have a list of all available commands, just type 'help'"))
+
+
         # ==========
         # THREADS SCHEDULER
         # ==========
