@@ -2261,6 +2261,89 @@ class Kernel(Settings):
                 else:
                     channel(command_name.split("/")[-1])
 
+        @self.console_option("long", "l", help=_("Show long command description"), type=bool)
+        @self.console_option("everywhere", "e", help=_("Look everywhere, not just in command name"), type=bool)
+        @self.console_argument("substr", type=str)
+        @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
+        def help_command(channel, _, substr, long = False, everywhere = False, **kwargs):
+            """
+            'find' will display the list of accepted commands that contain a given substr.
+            """
+            allcommands = []
+            if substr is not None:
+                found = False
+                for func, command_name, sname in self.find(
+                    "command", ".*", substr
+                ):
+                    parts = command_name.split("/")
+                    input_type = parts[1]
+                    command_item = parts[2]
+                    if not substr in command_item and not func.regex:
+                        continue
+                    if input_type == "None":
+                        s = command_item
+                    else:
+                        s = input_type + " " + command_item
+                    allcommands.append(s)
+                    func = self.lookup(command_name)
+                    help_args = []
+                    for a in func.arguments:
+                        arg_name = a.get("name", "")
+                        arg_type = a.get("type", type(None)).__name__
+                        help_args.append("<%s:%s>" % (arg_name, arg_type))
+                    if found:
+                        channel("\n")
+                    if func.long_help is not None:
+                        channel(
+                            "\t" + inspect.cleandoc(func.long_help).replace("\n", " ")
+                        )
+                        channel("\n")
+
+                    channel("\t%s %s" % (command_item, " ".join(help_args)))
+                    channel(
+                        "\t(%s) -> %s -> (%s)"
+                        % (input_type, command_item, func.output_type)
+                    )
+                    if long:
+                        for a in func.arguments:
+                            arg_name = a.get("name", "")
+                            arg_type = a.get("type", type(None)).__name__
+                            arg_help = a.get("help")
+                            arg_help = (
+                                ":\n\t\t%s" % arg_help if arg_help is not None else ""
+                            )
+                            channel(
+                                _("\tArgument: %s '%s'%s") % (arg_type, arg_name, arg_help)
+                            )
+                        for b in func.options:
+                            opt_name = b.get("name", "")
+                            opt_short = b.get("short", "")
+                            opt_type = b.get("type", type(None)).__name__
+                            opt_help = b.get("help")
+                            opt_help = (
+                                ":\n\t\t%s" % opt_help if opt_help is not None else ""
+                            )
+                            channel(
+                                _("\tOption: %s ('--%s', '-%s')%s")
+                                % (opt_type, opt_name, opt_short, opt_help)
+                            )
+                    found = True
+                if found:
+                    s = "Found: "
+                    idx = 0
+                    for entry in allcommands:
+                        if idx>0:
+                            s = s + ", "
+                        s = s + entry.replace(substr, "[red]" + substr + "[normal]")
+                        idx += 1
+                    channel(s, ansi=True)
+                    return
+                channel(_("No commands found that contained: [red]%s[normal]") % substr, ansi=True)
+                return
+            else:
+                channel(_("If you want to have a list of all available commands, just type 'help'"))
+
+
         # ==========
         # THREADS SCHEDULER
         # ==========
