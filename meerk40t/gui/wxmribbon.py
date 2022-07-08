@@ -1,4 +1,5 @@
 import copy
+import platform
 import threading
 
 import wx
@@ -115,24 +116,25 @@ class MyRibbonPanel(RB.RibbonPanel):
         else:
             wd = size[0]
             ht = size[1]
-        ht = max(ht, 120)
-        maxw = 0
-        for bar in self.GetChildren():
-            ct = 0
-            
-            if isinstance(bar, RB.RibbonButtonBar):
-                for button in bar._buttons:
-                    w, h = button.bitmap_large.GetSize()
-                    maxw = max(maxw, w + 10)
-                    ct += 1
-                maxw = max(maxw, 25 + 10)
-        # print ("Ct=%d, widest=%d, wd=%.1f, wd2=%.1f, ht=%.1f, oldh=%.1f" % (ct, maxw, wd, 1.5*ct*maxw, ht, oldh)) 
-        wd = max(wd, 1.5 * ct * maxw)
+        if platform.system != "Windows":
+            ht = max(ht, 120)
+            maxw = 0
+            for bar in self.GetChildren():
+                ct = 0
+
+                if isinstance(bar, RB.RibbonButtonBar):
+                    for button in bar._buttons:
+                        w, h = button.bitmap_large.GetSize()
+                        maxw = max(maxw, w + 10)
+                        ct += 1
+                    maxw = max(maxw, 25 + 10)
+            # print ("Ct=%d, widest=%d, wd=%.1f, wd2=%.1f, ht=%.1f, oldh=%.1f" % (ct, maxw, wd, 1.5*ct*maxw, ht, oldh))
+            wd = max(wd, 1.5 * ct * maxw)
         size = wx.Size(wd, ht)
         # print (size, size2)
         # size = size2
         return size
-    
+
 
     def IsMinimised(self, at_size=None):
         # Very much simplified version..
@@ -141,7 +143,7 @@ class MyRibbonPanel(RB.RibbonPanel):
         else:
             res = super().IsMinimised(at_size)
         return res
-    
+
     def ShowExpanded(self):
         """
         Show the panel externally expanded.
@@ -172,13 +174,13 @@ class MyRibbonPanel(RB.RibbonPanel):
         # Need a top-level frame to contain the expanded panel
         container = wx.Frame(None, wx.ID_ANY, self.GetLabel(), pos, size, wx.FRAME_NO_TASKBAR | wx.BORDER_NONE)
 
-        self._expanded_panel = MyRibbonPanel(parent = container, 
-                                             id = wx.ID_ANY, 
-                                             label = self.GetLabel(), 
-                                             minimised_icon=self._minimised_icon, 
-                                             pos=wx.Point(0, 0), 
-                                             size=size, 
-                                             agwStyle=self._flags, 
+        self._expanded_panel = MyRibbonPanel(parent = container,
+                                             id = wx.ID_ANY,
+                                             label = self.GetLabel(),
+                                             minimised_icon=self._minimised_icon,
+                                             pos=wx.Point(0, 0),
+                                             size=size,
+                                             agwStyle=self._flags,
                                              recurse=True)
         self._expanded_panel.SetArtProvider(self._art)
         self._expanded_panel._expanded_dummy = self
@@ -211,7 +213,7 @@ class MyRibbonPanel(RB.RibbonPanel):
         self._expanded_panel.SetFocus()
 
         return True
-    
+
 def register_panel_ribbon(window, context):
     iconsize = get_default_icon_size()
     minh = 3 * iconsize
