@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 from functools import partial
+from tkinter import E
 
 import wx
 from PIL import Image
@@ -270,8 +271,7 @@ class CustomStatusBar(wx.StatusBar):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        self.spin_width = wx.SpinCtrlDouble(self, value="0.10", min=0, max=25, inc=0.10)
-        self.spin_width.SetDigits(2)
+        self.spin_width = wx.TextCtrl(self, id=wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER)
         self.spin_width.SetFont(
             wx.Font(
                 FONT_SIZE,
@@ -298,7 +298,7 @@ class CustomStatusBar(wx.StatusBar):
         )
         self.combo_units.SetSelection(0)
         self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_stroke_width, self.spin_width)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
 
         # set the initial position of the checkboxes
@@ -348,7 +348,7 @@ class CustomStatusBar(wx.StatusBar):
                     # Set Values
                     self.startup = True
                     stdlen = float(Length("1mm"))
-                    value = sw_default / stdlen
+                    value = "%.2f" % (sw_default / stdlen)
                     self.spin_width.SetValue(value)
                     self.combo_units.SetSelection(self.choices.index("mm"))
                     self.startup = False
@@ -431,8 +431,11 @@ class CustomStatusBar(wx.StatusBar):
             chg = False
             if self.combo_units.GetSelection() >= 0:
                 newunit = self.choices[self.combo_units.GetSelection()]
-                newval = self.spin_width.GetValue()
-                chg = True
+                try:
+                    newval = float(self.spin_width.GetValue())
+                    chg = True
+                except ValueError:                    
+                    chg = False
             if chg:
                 value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
                 mysignal = "selstrokewidth"
@@ -449,8 +452,9 @@ class CustomStatusBar(wx.StatusBar):
 
     # reposition the checkboxes
     def Reposition(self):
-        return
         rect = self.GetFieldRect(self.pos_handle_options)
+        if rect[3]<20 or rect[2]<20:
+            return
         ct = 4
         wd = int(round(rect.width / ct))
         rect.x += 1
@@ -495,12 +499,9 @@ class CustomStatusBar(wx.StatusBar):
                 # Make the next two elements smaller
             rect.width = wd2
             # Linux has some issues with controls smaller than 32 pixels...
-            if platform.system() != "Linux":
-                minheight = old_ht
-            else:
-                minheight = 34
-            if rect.height<minheight:
-                rect.height = minheight
+            #old_rect = self.spin_width.GetRect()
+            #rect.height = old_rect.height
+            #print (rect, old_rect)
             self.spin_width.SetRect(rect)
             rect.x += wd2
             self.combo_units.SetRect(rect)
