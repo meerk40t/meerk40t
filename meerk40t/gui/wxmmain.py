@@ -496,7 +496,7 @@ class CustomStatusBar(wx.StatusBar):
             rect.width = wd2
             # Linux has some issues with controls smaller than 32 pixels...
             if platform.system() != "Linux":
-                minheight = ht
+                minheight = old_ht
             else:
                 minheight = 34
             if rect.height<minheight:
@@ -608,12 +608,12 @@ class MeerK40t(MWindow):
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
         # tiny  = factor 1/2, min_size = 25
-        context.setting(str, "icon_size", "default")  
+        context.setting(str, "icon_size", "default")
         # Ribbon-Size (NOT YET ACTIVE)
-        # default - std icon size + panel-labels, 
+        # default - std icon size + panel-labels,
         # small - std icon size / no labels
-        # tiny - reduced icon size / no labels        
-        context.setting(str, "ribbon_appearance", "default")  
+        # tiny - reduced icon size / no labels
+        context.setting(str, "ribbon_appearance", "default")
         choices = [
             {
                 "attr": "ribbon_appearance",
@@ -647,14 +647,14 @@ class MeerK40t(MWindow):
                     "small",
                     "tiny"
                 ],
-                "label": _("Make Icons smaller"),
+                "label": _("Icon size:"),
                 "tip": _("Appearance of all icons in the GUI (requires a restart to take effect))"),
                 "page": "Gui",
                 "section": "Appearance",
             },
         ]
         context.kernel.register_choices("preferences", choices)
-        
+
         choices = [
             {
                 "attr": "zoom_level",
