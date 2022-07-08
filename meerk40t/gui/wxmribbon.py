@@ -9,7 +9,7 @@ from wx import aui
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import icons8_opened_folder_50
+from .icons import icons8_opened_folder_50, get_default_scale_factor, get_default_icon_size
 
 _ = wx.GetTranslation
 
@@ -110,7 +110,8 @@ class MyRibbonPanel(RB.RibbonPanel):
 
 
 def register_panel_ribbon(window, context):
-    minh = 150
+    iconsize = get_default_icon_size()
+    minh = 3 * iconsize
     pane = (
         aui.AuiPaneInfo()
         .Name("ribbon")
