@@ -2,7 +2,6 @@ import os
 import platform
 import sys
 from functools import partial
-from tkinter import E
 
 import wx
 from PIL import Image
