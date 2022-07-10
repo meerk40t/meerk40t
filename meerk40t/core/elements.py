@@ -128,6 +128,35 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "loop_continuous",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Loop Continuously"),
+                "tip": _("Operation job will run forever in a loop"),
+            },
+            {
+                "attr": "loop_enabled",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Loop Parameter"),
+                "tip": _("Operation job should run set number of times"),
+            },
+            {
+                "attr": "loop_n",
+                "object": elements,
+                "default": 1,
+                "type": int,
+                "conditional": (elements, "loop_enabled"),
+                "label": _("Loop"),
+                "trailing": _("times"),
+                "tip": _("How many times should the operation job loop"),
+            },
+        ]
+        kernel.register_choices("loop_choice", choices)
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file

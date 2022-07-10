@@ -18,11 +18,18 @@ def plugin(kernel, lifecycle):
         )
         def spool(command, channel, _, data=None, remainder=None, **kwgs):
             device = kernel.device
+            elements = kernel.elements
             spooler = device.spooler
 
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.laserjob(data.plan)
+                loops = 1
+
+                if elements.loop_continuous:
+                    loops = float('inf')
+                if elements.loop_enabled:
+                    loops = elements.loop_n
+                spooler.laserjob(data.plan, loops=loops)
                 channel(_("Spooled Plan."))
                 kernel.root.signal("plan", data.name, 6)
 
@@ -301,7 +308,7 @@ def plugin(kernel, lifecycle):
 
 
 class LaserJob:
-    def __init__(self, label, items, driver=None, priority=0):
+    def __init__(self, label, items, driver=None, priority=0, loops=1):
         self.items = items
         self.label = label
         self.priority = priority
@@ -309,7 +316,7 @@ class LaserJob:
         self.time_started = None
         self.time_running = 0
 
-        self.loops = 1
+        self.loops = loops
         self.loops_executed = 0
 
         self._driver = driver
@@ -555,11 +562,11 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def laserjob(self, job, priority=0):
+    def laserjob(self, job, priority=0, loops=1):
         """
         send a wrapped laser job to the spooler.
         """
-        laserjob = LaserJob(str(job), job, driver=self.driver, priority=priority)
+        laserjob = LaserJob(str(job), job, driver=self.driver, priority=priority, loops=loops)
         with self._lock:
             self._queue.append(laserjob)
             self._queue.sort(key=lambda e: e.priority)

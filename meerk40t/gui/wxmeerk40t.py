@@ -8,6 +8,7 @@ import wx
 from wx import aui
 
 from .propertypanels.inputproperty import InputPropertyPanel
+from .propertypanels.opbranchproperties import OpBranchPanel
 from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
 
@@ -342,6 +343,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
+        kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
         kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
