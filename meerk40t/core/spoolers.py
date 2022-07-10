@@ -18,17 +18,20 @@ def plugin(kernel, lifecycle):
         )
         def spool(command, channel, _, data=None, remainder=None, **kwgs):
             device = kernel.device
-            elements = kernel.elements
+
             spooler = device.spooler
 
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
                 loops = 1
+                elements = kernel.elements
+                e = elements.op_branch
 
-                if elements.loop_continuous:
+                if e.loop_continuous:
                     loops = float('inf')
-                if elements.loop_enabled:
-                    loops = elements.loop_n
+                else:
+                    if e.loop_enabled:
+                        loops = e.loop_n
                 spooler.laserjob(data.plan, loops=loops)
                 channel(_("Spooled Plan."))
                 kernel.root.signal("plan", data.name, 6)
