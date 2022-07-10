@@ -306,7 +306,7 @@ def plugin(kernel, lifecycle):
                 yield "home"
                 yield "wait_finish"
 
-            spooler.laserjob([list(home_dot_test)])
+            spooler.laserjob([list(home_dot_test())])
             return "spooler", spooler
 
 
@@ -317,7 +317,7 @@ class LaserJob:
         self.priority = priority
         self.time_submitted = time.time()
         self.time_started = None
-        self.time_running = 0
+        self.runtime = 0
 
         self.loops = loops
         self.loops_executed = 0
@@ -353,7 +353,7 @@ class LaserJob:
                 self.item_index = 0
                 self.loops_executed += 1
         finally:
-            self.time_running += time.time() - self.time_started
+            self.runtime += time.time() - self.time_started
         return True
 
     def execute_item(self, item):
@@ -407,9 +407,6 @@ class LaserJob:
         @return:
         """
         return 0
-
-    def running_time(self):
-        return self.time_running
 
 
 class Spooler:
