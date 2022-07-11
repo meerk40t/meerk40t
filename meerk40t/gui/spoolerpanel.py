@@ -175,7 +175,6 @@ class SpoolerPanel(wx.Panel):
         except AttributeError:
             return str(named_obj)
 
-
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return

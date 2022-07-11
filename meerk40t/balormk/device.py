@@ -22,12 +22,31 @@ class ElementLightJob:
     ):
         self.service = service
         self.elements = elements
+        self.started = False
         self.stopped = False
         self.travel_speed = travel_speed
         self.jump_delay = jump_delay
         self.simulation_speed = simulation_speed
         self.quantization = quantization
         self.simulate = simulate
+        self.priority = -1
+
+    def is_running(self):
+        return not self.stopped and self.started
+
+    def execute(self, driver):
+        if self.stopped:
+            return True
+        self.started = True
+        connection = driver.connection
+        connection.rapid_mode()
+        connection.light_mode()
+        while self.process(connection):
+            if self.stopped:
+                break
+        connection.abort()
+        self.stopped = True
+        return True
 
     def stop(self):
         self.stopped = True
@@ -107,8 +126,27 @@ class LiveSelectionLightJob:
     ):
         self.service = service
         self.stopped = False
+        self.started = False
         self._current_points = None
         self._last_bounds = None
+        self.priority = -1
+
+    def is_running(self):
+        return not self.stopped
+
+    def execute(self, driver):
+        if self.stopped:
+            return True
+        self.started = True
+        connection = driver.connection
+        connection.rapid_mode()
+        connection.light_mode()
+        while self.process(connection):
+            if self.stopped:
+                break
+        connection.abort()
+        self.stopped = True
+        return True
 
     def update_points(self, bounds):
         if bounds == self._last_bounds and self._current_points is not None:
@@ -226,9 +264,28 @@ class LiveFullLightJob:
     ):
         self.service = service
         self.stopped = False
+        self.started = False
         self.changed = False
         service.listen("emphasized", self.on_emphasis_changed)
         self._last_bounds = None
+        self.priority = -1
+
+    def is_running(self):
+        return not self.stopped
+
+    def execute(self, driver):
+        if self.stopped:
+            return True
+        self.started = True
+        connection = driver.connection
+        connection.rapid_mode()
+        connection.light_mode()
+        while self.process(connection):
+            if self.stopped:
+                break
+        connection.abort()
+        self.stopped = True
+        return True
 
     def stop(self):
         self.stopped = True
@@ -993,7 +1050,7 @@ class BalorDevice(Service, ViewPort):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveFullLightJob(self)
-            self.spooler.command("light_loop", self.job.process)
+            self.spooler.send(self.job)
 
         @self.console_command(
             "stop",

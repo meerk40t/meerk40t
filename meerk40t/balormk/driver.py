@@ -94,13 +94,6 @@ class BalorDriver:
         """
         self.laser = True
 
-    def light_loop(self, job):
-        self.connection.rapid_mode()
-        self.connection.light_mode()
-        while job(self.connection):
-            if self._shutdown:
-                break
-        self.connection.abort()
 
     def plot(self, plot):
         """

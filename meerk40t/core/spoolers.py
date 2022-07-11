@@ -325,12 +325,15 @@ class LaserJob:
         self._driver = driver
         self.item_index = 0
 
-        self._stopped = False
+        self._stopped = True
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
 
-    def execute(self):
+    def is_running(self):
+        return not self._stopped
+
+    def execute(self, driver):
         """
         Execute calls each item in the list of items in order. This is intended to be called by the spooler thread. And
         hold the spooler while these items are executing.
@@ -354,6 +357,7 @@ class LaserJob:
                 self.loops_executed += 1
         finally:
             self.runtime += time.time() - self.time_started
+            self._stopped = True
         return True
 
     def execute_item(self, item):
@@ -545,7 +549,7 @@ class Spooler:
                 continue
             self._current = program
 
-            fully_executed = program.execute()
+            fully_executed = program.execute(self.driver)
             if fully_executed:
                 # all work finished
                 self.remove(program, 0)
@@ -568,32 +572,36 @@ class Spooler:
         """
         laserjob = LaserJob(str(job), job, driver=self.driver, priority=priority, loops=loops)
         with self._lock:
+            self._stop_lower_priority_running_jobs(priority)
             self._queue.append(laserjob)
-            self._queue.sort(key=lambda e: e.priority)
+            self._queue.sort(key=lambda e: e.priority, reverse=True)
         self.context.signal("spooler;queue", len(self._queue))
 
     def command(self, *job, priority=0):
         laserjob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
         with self._lock:
+            self._stop_lower_priority_running_jobs(priority)
             self._queue.append(laserjob)
-            self._queue.sort(key=lambda e: e.priority)
+            self._queue.sort(key=lambda e: e.priority, reverse=True)
         self.context.signal("spooler;queue", len(self._queue))
 
-    def send(self, *job, priority=0):
+    def send(self, job):
         """
-        Send a single job event with parameters as needed.
-
-        The job can be a single command with ("move" 20 20) or without parameters ("home"), or a generator
-        which can yield many lasercode commands.
+        Send a job to the spooler queue
 
         @param job: job to send to the spooler.
         @return:
         """
-        laserjob = LaserJob(str(job), job, driver=self.driver, priority=priority)
         with self._lock:
-            self._queue.append(laserjob)
-            self._queue.sort(key=lambda e: e.priority)
+            self._stop_lower_priority_running_jobs(job.priority)
+            self._queue.append(job)
+            self._queue.sort(key=lambda e: e.priority, reverse=True)
         self.context.signal("spooler;queue", len(self._queue))
+
+    def _stop_lower_priority_running_jobs(self, priority):
+        for e in self._queue:
+            if e.is_running() and e.priority < priority:
+                e.stop()
 
     def clear_queue(self):
         with self._lock:
