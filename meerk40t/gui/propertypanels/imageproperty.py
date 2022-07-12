@@ -2,7 +2,7 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
-
+from ...core.units import Length
 _ = wx.GetTranslation
 
 
@@ -131,10 +131,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi.SetValue(str(node.dpi))
         try:
             bounds = node.bounds
-            self.text_x.SetValue(str(bounds[0]))
-            self.text_y.SetValue(str(bounds[1]))
-            self.text_width.SetValue(str((bounds[2] - bounds[0])))
-            self.text_height.SetValue(str((bounds[3] - bounds[1])))
+            self.text_x.SetValue("%.2fmm" % Length(amount=bounds[0], unitless=1).mm)
+            self.text_y.SetValue("%.2fmm" % Length(amount=bounds[1], unitless=1).mm)
+            self.text_width.SetValue("%.2fmm" % Length(amount=bounds[2]-bounds[0], unitless=1).mm)
+            self.text_height.SetValue("%.2fmm" % Length(amount=bounds[3]-bounds[1], unitless=1).mm)
         except AttributeError:
             pass
         self.check_enable_dither.SetValue(node.dither)
