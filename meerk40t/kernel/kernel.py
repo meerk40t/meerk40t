@@ -1876,7 +1876,9 @@ class Kernel(Settings):
                             removed = True
                             break
                     if not removed and ct>0:
-                        print("Value error removing: %s  %s" % (str(listeners), signal))
+                        # print ("Was trying to remove: %s, %s for signal %s" % (str(remove_funct), str(remove_lso), signal))
+                        # print ("But wasn't present in : %s" % str(listeners))
+                        pass
 
         # Process signals.
         signal_channel = self.channel("signals")
