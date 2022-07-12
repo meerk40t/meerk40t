@@ -304,6 +304,12 @@ def create_menu(gui, node, elements):
         gui.PopupMenu(menu)
         menu.Destroy()
 
+class TextCtrl(wx.TextCtrl):
+# Just to add someof the more common things we need, i.e. smaller default size...
+#
+    def __init__(self, parent, id=wx.ID_ANY, value="", pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, validator=wx.DefaultValidator, name=""):
+        super().__init__(parent, id=id, value=value, pos=pos, size=size, style=style, validator=validator, name=name)
+        self.SetMinSize(wx.Size(35, -1))
 
 WX_METAKEYS = [
     wx.WXK_START,
