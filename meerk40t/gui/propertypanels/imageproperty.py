@@ -1,12 +1,12 @@
 import wx
-
+from wx.lib.scrolledpanel import ScrolledPanel
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
 
-class ImagePropertyPanel(wx.Panel):
+class ImagePropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
@@ -174,33 +174,33 @@ class ImagePropertyPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.VERTICAL
         )
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
-        sizer_dpi.Add(self.text_dpi, 5, 0, 0)
+        sizer_dpi.Add(self.text_dpi, 0, 0, 0)
 
-        sizer_main.Add(sizer_dpi, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dpi, 0, wx.EXPAND, 0)
         label_x = wx.StaticText(self, wx.ID_ANY, _("X:"))
         label_y = wx.StaticText(self, wx.ID_ANY, _("Y:"))
 
-        sizer_xy.Add(label_x, 1, 0, 0)
-        sizer_xy.Add(self.text_x, 5, 0, 0)
-        sizer_xy.Add(label_y, 1, 0, 0)
-        sizer_xy.Add(self.text_y, 5, 0, 0)
-        sizer_main.Add(sizer_xy, 1, wx.EXPAND, 0)
+        sizer_xy.Add(label_x, 1, wx.EXPAND, 0)
+        sizer_xy.Add(self.text_x, 3, wx.EXPAND, 0)
+        sizer_xy.Add(label_y, 1, wx.EXPAND, 0)
+        sizer_xy.Add(self.text_y, 3, wx.EXPAND, 0)
+        sizer_main.Add(sizer_xy, 0, wx.EXPAND, 0)
 
         label_w = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         label_h = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        sizer_dim.Add(label_w, 1, 0, 0)
-        sizer_dim.Add(self.text_width, 5, 0, 0)
-        sizer_dim.Add(label_h, 1, 0, 0)
-        sizer_dim.Add(self.text_height, 5, 0, 0)
-        sizer_main.Add(sizer_dim, 1, wx.EXPAND, 0)
+        sizer_dim.Add(label_w, 1, wx.EXPAND, 0)
+        sizer_dim.Add(self.text_width, 3, wx.EXPAND, 0)
+        sizer_dim.Add(label_h, 1, wx.EXPAND, 0)
+        sizer_dim.Add(self.text_height, 3, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dim, 0, wx.EXPAND, 0)
 
         sizer_dither = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
         )
         sizer_dither.Add(self.check_enable_dither, 0, 0, 0)
-        sizer_dither.Add(self.combo_dither, 0, 0, 0)
+        sizer_dither.Add(self.combo_dither, 0, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_dither, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dither, 0, wx.EXPAND, 0)
 
         # -----
 
@@ -237,7 +237,7 @@ class ImagePropertyPanel(wx.Panel):
         sizer_grayscale.Add(sizer_rg, 5, wx.EXPAND, 0)
         sizer_grayscale.Add(sizer_bl, 5, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_grayscale, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()

@@ -26,12 +26,12 @@ _ = wx.GetTranslation
 
 def register_panel_tree(window, context):
     wxtree = TreePanel(window, wx.ID_ANY, context=context)
-
+    minwd = 75
     pane = (
         aui.AuiPaneInfo()
         .Name("tree")
         .Left()
-        .MinSize(200, -1)
+        .MinSize(minwd, -1)
         .LeftDockable()
         .RightDockable()
         .BottomDockable(False)
@@ -39,7 +39,7 @@ def register_panel_tree(window, context):
         .CaptionVisible(not context.pane_lock)
         .TopDockable(False)
     )
-    pane.dock_proportion = 275
+    pane.dock_proportion = minwd
     pane.control = wxtree
     window.on_pane_add(pane)
     context.register("pane/tree", pane)

@@ -1,4 +1,5 @@
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.gui.fonts import wxfont_to_svg
 
@@ -54,7 +55,7 @@ class PromptingComboBox(wx.ComboBox):
         event.Skip()
 
 
-class TextPropertyPanel(wx.Panel):
+class TextPropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)

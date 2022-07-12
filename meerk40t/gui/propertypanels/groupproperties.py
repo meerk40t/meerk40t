@@ -1,5 +1,5 @@
 import wx
-
+from wx.lib.scrolledpanel import ScrolledPanel
 # from ...svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects_50
 from ..mwindow import MWindow
@@ -7,7 +7,7 @@ from ..mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class GroupPropertiesPanel(wx.Panel):
+class GroupPropertiesPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -50,9 +50,9 @@ class GroupPropertiesPanel(wx.Panel):
         )
         sizer_1 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL)
         sizer_1.Add(self.text_id, 0, wx.EXPAND, 0)
-        sizer_8.Add(sizer_1, 1, wx.EXPAND, 0)
+        sizer_8.Add(sizer_1, 0, wx.EXPAND, 0)
         sizer_2.Add(self.text_label, 0, wx.EXPAND, 0)
-        sizer_8.Add(sizer_2, 1, wx.EXPAND, 0)
+        sizer_8.Add(sizer_2, 0, wx.EXPAND, 0)
         sizer_8.Add((0, 0), 0, 0, 0)
         self.SetSizer(sizer_8)
         self.Layout()
