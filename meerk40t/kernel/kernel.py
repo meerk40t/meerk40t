@@ -2159,6 +2159,7 @@ class Kernel(Settings):
                 "type": bool,
                 "label": _("Print Shutdown"),
                 "tip": _("Print shutdown log when closed."),
+                "page": "Options"
             },
         ]
         self.register_choices("preferences", choices)
