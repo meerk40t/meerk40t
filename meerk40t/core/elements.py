@@ -1604,9 +1604,17 @@ class Elemental(Service):
         )
         def op_disable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.output = False
-                channel(_("Operation '%s' disabled.") % str(op))
-                op.notify_update()
+                no_op = True
+                if hasattr(op, "output"):
+                    try:
+                        op.output = False
+                        channel(_("Operation '%s' disabled.") % str(op))
+                        op.notify_update()
+                        no_op = False
+                    except AttributeError:
+                        pass
+                if no_op:
+                    channel(_("Operation '%s' can't be disabled.") % str(op))
             return "ops", data
 
         @self.console_command(
@@ -1617,9 +1625,17 @@ class Elemental(Service):
         )
         def op_enable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.output = True
-                channel(_("Operation '%s' enabled.") % str(op))
-                op.notify_update()
+                no_op = True
+                if hasattr(op, "output"):
+                    try:
+                        op.output = True
+                        channel(_("Operation '%s' enabled.") % str(op))
+                        op.notify_update()
+                        no_op = False
+                    except AttributeError:
+                        pass
+                if no_op:
+                    channel(_("Operation '%s' can't be enabled.") % str(op))
             return "ops", data
 
         # ==========
@@ -5424,11 +5440,27 @@ class Elemental(Service):
             if removed:
                 self.signal("tree_changed")
 
+        def has_output(node):
+            res = False
+            if hasattr(node, "output"):
+                try:
+                    node.output = node.output
+                    res = True
+                except AttributeError:
+                    pass
+            return res
+        @self.tree_conditional(
+            lambda node: has_output(node)
+        )
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
-                n.output = not n.output
-                n.notify_update()
+                if hasattr(n, "output"):
+                    try:
+                        n.output = not n.output
+                        n.notify_update()
+                    except AttributeError:
+                        pass
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")

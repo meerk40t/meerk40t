@@ -1,10 +1,11 @@
 import wx
-
+from wx.lib.scrolledpanel import ScrolledPanel
 from meerk40t.kernel import signal_listener
 
 from ...core.units import Length
 from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
+from ..wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
@@ -229,7 +230,7 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
 
-        self.text_speed = wx.TextCtrl(self, wx.ID_ANY, "20.0")
+        self.text_speed = TextCtrl(self, wx.ID_ANY, "20.0")
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, 0, 0)
 
@@ -238,7 +239,7 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
 
-        self.text_power = wx.TextCtrl(self, wx.ID_ANY, "1000.0")
+        self.text_power = TextCtrl(self, wx.ID_ANY, "1000.0")
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, 0, 0)
 
@@ -247,7 +248,7 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
 
-        self.text_frequency = wx.TextCtrl(self, wx.ID_ANY, "20.0")
+        self.text_frequency = TextCtrl(self, wx.ID_ANY, "20.0")
         # self.text_frequency.SetToolTip(OPERATION_SPEED_TOOLTIP)
         frequency_sizer.Add(self.text_frequency, 1, 0, 0)
 
@@ -330,11 +331,11 @@ class PassesPanel(wx.Panel):
 
         self.check_passes = wx.CheckBox(self, wx.ID_ANY, "Passes")
         self.check_passes.SetToolTip("Enable Operation Passes")
-        sizer_passes.Add(self.check_passes, 1, 0, 0)
+        sizer_passes.Add(self.check_passes, 1, wx.EXPAND, 0)
 
-        self.text_passes = wx.TextCtrl(self, wx.ID_ANY, "1")
+        self.text_passes = TextCtrl(self, wx.ID_ANY, "1")
         self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
-        sizer_passes.Add(self.text_passes, 1, 0, 0)
+        sizer_passes.Add(self.text_passes, 2, wx.EXPAND, 0)
 
         self.SetSizer(sizer_passes)
 
@@ -702,7 +703,7 @@ class RasterSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_3, 0, wx.EXPAND, 0)
 
-        self.text_dpi = wx.TextCtrl(self, wx.ID_ANY, "500")
+        self.text_dpi = TextCtrl(self, wx.ID_ANY, "500")
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
         sizer_3.Add(self.text_dpi, 0, 0, 0)
 
@@ -711,7 +712,7 @@ class RasterSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_6, 0, wx.EXPAND, 0)
 
-        self.text_overscan = wx.TextCtrl(self, wx.ID_ANY, "1mm")
+        self.text_overscan = TextCtrl(self, wx.ID_ANY, "1mm")
         self.text_overscan.SetToolTip("Overscan amount")
         sizer_6.Add(self.text_overscan, 1, 0, 0)
 
@@ -842,7 +843,7 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
 
-        self.text_distance = wx.TextCtrl(self, wx.ID_ANY, "1mm")
+        self.text_distance = TextCtrl(self, wx.ID_ANY, "1mm")
         sizer_distance.Add(self.text_distance, 0, 0, 0)
 
         sizer_angle = wx.StaticBoxSizer(
@@ -850,7 +851,7 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
-        self.text_angle = wx.TextCtrl(self, wx.ID_ANY, "0deg")
+        self.text_angle = TextCtrl(self, wx.ID_ANY, "0deg")
         sizer_angle.Add(self.text_angle, 1, 0, 0)
 
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
@@ -1114,7 +1115,7 @@ class DwellSettingsPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, "Dwell Time: (ms)"), wx.HORIZONTAL
         )
 
-        self.text_dwelltime = wx.TextCtrl(self, wx.ID_ANY, "1.0")
+        self.text_dwelltime = TextCtrl(self, wx.ID_ANY, "1.0")
         self.text_dwelltime.SetToolTip(
             _("Dwell time (ms) at each location in the sequence")
         )
@@ -1152,7 +1153,7 @@ class DwellSettingsPanel(wx.Panel):
 # end of class PassesPanel
 
 
-class ParameterPanel(wx.Panel):
+class ParameterPanel(ScrolledPanel):
     name = _("Properties")
     priority = -1
 

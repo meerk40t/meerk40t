@@ -1,4 +1,5 @@
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from ...svgelements import Color
 from ..icons import icons8_vector_50
@@ -8,7 +9,7 @@ from ..mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class PathPropertyPanel(wx.Panel):
+class PathPropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
