@@ -103,7 +103,7 @@ class PreferencesLanguagePanel(wx.Panel):
         self.combo_language = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
-        self.combo_language.SetToolTip(_("Select the desired language to use."))
+        self.combo_language.SetToolTip(_("Select the desired language to use (requires a restart to take effect)."))
         sizer_2.Add(self.combo_language, 0, 0, 0)
 
         self.SetSizer(sizer_2)
