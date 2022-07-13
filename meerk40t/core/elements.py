@@ -5815,10 +5815,26 @@ class Elemental(Service):
         )
         @self.tree_operation(
             _("Delete group '%s' and all its child-elements fully") % "{name}",
-            node_type=("file", "group"),
+            node_type=("group"),
             help="",
         )
         def remove_type_grp(node, **kwargs):
+            node.remove_node()
+            self.set_emphasis(None)
+        @self.tree_conditional(lambda cond: contains_no_locked_items())
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=("file", "group")))
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Delete file '%s' and all its child-elements fully") % "{name}",
+            node_type=("file"),
+            help="",
+        )
+        def remove_type_file(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
 
