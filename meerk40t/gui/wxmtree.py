@@ -946,6 +946,20 @@ class ShadowTree:
         self.set_icon(node, force=force)
         formatter = self.elements.lookup(f"format/{node.type}")
         label = node.create_label(formatter)
+        # Look for special attributes and add those
+        # Default?
+        if node.type.startswith("op ") and hasattr(node, "default") and node.default:
+            label = "✓" + label
+        # Probably not working?
+        danger = False
+        # That needs to be reviewed as this might differ from device to device
+        # if (
+        #     (self._operation in ("Raster", "Image") and self.settings.speed > 500)
+        #     or (self._operation in ("Cut", "Engrave") and self.settings.speed > 50)
+        #     or self.settings.power <= 100
+        # ):
+        if danger:
+            label = "❌" + label
         self.wxtree.SetItemText(node.item, label)
         try:
             stroke = node.stroke
