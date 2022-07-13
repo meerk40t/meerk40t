@@ -5,6 +5,7 @@ from ..kernel import signal_listener
 from ..svgelements import Color
 from .icons import (
     icon_meerk40t,
+    icons8_lock_50,
     icons8_direction_20,
     icons8_file_20,
     icons8_group_objects_20,
@@ -269,12 +270,19 @@ class ShadowTree:
         self.do_not_select = False
         self.was_already_expanded = []
         service.add_service_delegate(self)
+        self.setup_state_images()
 
     def service_attach(self, *args):
         self.elements.listen_tree(self)
 
     def service_detach(self, *args):
         self.elements.unlisten_tree(self)
+
+    def setup_state_images(self):
+        self.state_images = wx.ImageList()
+        self.state_images.Create(width=20, height=20)
+        image_id = self.state_images.Add(bitmap=icons8_lock_50.GetBitmap(resize=(20,20)))
+        self.wxtree.SetStateImageList(self.state_images)
 
     def node_created(self, node, **kwargs):
         """
@@ -501,8 +509,12 @@ class ShadowTree:
         @return:
         """
         element = args[0]
-        if hasattr(element, "node"):
-            self.update_decorations(element.node, force=True)
+        if isinstance(element, (tuple, list)):
+            for node in element:
+                if hasattr(node, "node"):
+                    self.update_decorations(node.node, force=True)
+                else:
+                    self.update_decorations(node, force=True)
         else:
             self.update_decorations(element, force=True)
 
@@ -513,8 +525,12 @@ class ShadowTree:
         @return:
         """
         element = args[0]
-        if hasattr(element, "node"):
-            self.update_decorations(element.node, force=True)
+        if isinstance(element, (tuple, list)):
+            for node in element:
+                if hasattr(node, "node"):
+                    self.update_decorations(node.node, force=True)
+                else:
+                    self.update_decorations(node, force=True)
         else:
             self.update_decorations(element, force=True)
 
@@ -947,6 +963,15 @@ class ShadowTree:
                 self.wxtree.SetItemTextColour(node.item, c)
         except AttributeError:
             pass
+        # Has the node a lock attribute?
+        if hasattr(node, "lock"):
+            lockit = node.lock
+        else:
+            lockit = False
+        if lockit:
+            self.wxtree.SetItemState(node.item, 0)
+        else:
+            self.wxtree.SetItemState(node.item, wx.TREE_ITEMSTATE_NONE)
 
     def on_drag_begin_handler(self, event):
         """

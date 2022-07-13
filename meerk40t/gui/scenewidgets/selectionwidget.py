@@ -1347,8 +1347,8 @@ class MoveRotationOriginWidget(Widget):
 
 class ReferenceWidget(Widget):
     """
-    Lock Widget it tasked with drawing the skew box and managing the events
-    dealing with moving the selected object
+    Reference Widget is tasked with drawing the reference box and managing the events
+    dealing with assigning / revoking the reference status
     """
 
     def __init__(self, master, scene, size, is_reference_object):
@@ -1461,6 +1461,108 @@ class ReferenceWidget(Widget):
         )
         return response
 
+class LockWidget(Widget):
+    """
+    Lock Widget is tasked with drawing the lock box and managing the events
+    dealing with revoking the lock status by clicking it
+    """
+
+    def __init__(self, master, scene, size):
+        self.master = master
+        self.scene = scene
+        # Slightly bigger to be clearly seen
+        self.half = size / 2
+        self.key_shift_pressed = master.key_shift_pressed
+        self.key_control_pressed = master.key_control_pressed
+        self.key_alt_pressed = master.key_alt_pressed
+        self.was_lb_raised = False
+        self.hovering = False
+        self.save_width = 0
+        self.save_height = 0
+        self.uniform = False
+        Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
+        self.cursor = "arrow"
+        self.update()
+
+    def update(self):
+        if self.master.handle_outside:
+            offset_x = self.half
+            offset_y = self.half
+        else:
+            offset_x = 0
+            offset_y = 0
+        pos_x = self.master.right - offset_x
+        pos_y = self.master.top + 1 / 4 * (self.master.bottom - self.master.top)
+        self.set_position(pos_x - self.half, pos_y - self.half)
+
+    def process_draw(self, gc):
+        if self.master.tool_running:
+            # We don't need that overhead
+            return
+        self.update()  # make sure coords are valid
+        pen = wx.Pen()
+        bgcol = wx.YELLOW
+        fgcol = wx.RED
+        pen.SetColour(bgcol)
+        try:
+            pen.SetWidth(self.master.line_width)
+        except TypeError:
+            pen.SetWidth(int(self.master.line_width))
+        pen.SetStyle(wx.PENSTYLE_SOLID)
+        gc.SetPen(pen)
+        brush = wx.Brush(bgcol, wx.SOLID)
+        gc.SetBrush(brush)
+        gc.DrawEllipse(self.left, self.top, self.width, self.height)
+        # gc.DrawRectangle(self.left, self.top, self.width, self.height)
+        try:
+            font = wx.Font(0.75 * self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+        except TypeError:
+            font = wx.Font(
+                int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
+            )
+        gc.SetFont(font, fgcol)
+        symbol = "L"
+        (t_width, t_height) = gc.GetTextExtent(symbol)
+        gc.DrawText(
+            symbol,
+            (self.left + self.right) / 2 - t_width / 2,
+            (self.top + self.bottom) / 2 - t_height / 2,
+        )
+
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def tool(
+        self, position=None, dx=None, dy=None, event=0
+    ):  # Don't need all arguments, just for compatibility with pattern
+        """
+        Toggle the Reference Status of the selected elements
+        """
+        elements = self.scene.context.elements
+        if event == -1:  # leftdown
+            # Nothing to do...
+            pass
+        elif event == 1:  # leftup, leftclick
+            data = list(elements.flat(types=elem_nodes, emphasized=True))
+            for e in data:
+                e.lock = False
+            self.scene.context.signal("element_property_update", data)
+            self.scene.request_refresh()
+
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
+        s_me = "lock"
+        response = process_event(
+            widget=self,
+            widget_identifier=s_me,
+            window_pos=window_pos,
+            space_pos=space_pos,
+            event_type=event_type,
+            helptext="Remove the 'locked' status of the element",
+            optimize_drawing=False,
+        )
+        return response
 
 class RefAlign(wx.Dialog):
     """
@@ -1781,6 +1883,8 @@ class SelectionWidget(Widget):
             dx = cc[2] - cc[0]
             dy = cc[3] - cc[1]
             for e in elements.flat(types=elem_nodes, emphasized=True):
+                if e.lock:
+                    continue
                 e.matrix.post_rotate(angle, cx, cy)
             # Update bbox
             cc[0] = cx - dy / 2
@@ -1818,6 +1922,8 @@ class SelectionWidget(Widget):
         dy = (scaley - 1) * (cc[3] - cc[1])
 
         for e in elements.flat(types=elem_nodes, emphasized=True):
+            if e.lock:
+                continue
             if e is not refob:
                 e.matrix.post_scale(scalex, scaley, cc[0], cc[1])
 
@@ -2084,15 +2190,16 @@ class SelectionWidget(Widget):
             # Code for reference object - single object? And identical to reference?
             self.is_ref = False
             self.single_element = True
-            if self.scene.reference_object is not None:
-                for idx, e in enumerate(
-                    elements.flat(types=elem_nodes, emphasized=True)
-                ):
-                    if e is self.scene.reference_object:
-                        self.is_ref = True
-                    if idx > 0:
-                        self.single_element = False
-                        break
+            is_locked = True
+            for idx, e in enumerate(
+                elements.flat(types=elem_nodes, emphasized=True)
+            ):
+                if e is self.scene.reference_object:
+                    self.is_ref = True
+                # Is one of the elements locked?
+                is_locked = is_locked and e.lock
+                if idx > 0:
+                    self.single_element = False
 
             if not self.single_element:
                 self.is_ref = False
@@ -2127,21 +2234,21 @@ class SelectionWidget(Widget):
                         master=self, scene=self.scene, size=rotsize, drawsize=msize
                     ),
                 )
-            if show_skew_y:
+            if show_skew_y and not is_locked:
                 self.add_widget(
                     -1,
                     SkewWidget(
                         master=self, scene=self.scene, is_x=False, size=2 / 3 * msize
                     ),
                 )
-            if show_skew_x:
+            if show_skew_x and not is_locked:
                 self.add_widget(
                     -1,
                     SkewWidget(
                         master=self, scene=self.scene, is_x=True, size=2 / 3 * msize
                     ),
                 )
-            if self.use_handle_rotate:
+            if self.use_handle_rotate and not is_locked:
                 for i in range(4):
                     self.add_widget(
                         -1,
@@ -2157,7 +2264,7 @@ class SelectionWidget(Widget):
                     -1,
                     MoveRotationOriginWidget(master=self, scene=self.scene, size=msize),
                 )
-            if self.use_handle_size:
+            if self.use_handle_size and not is_locked:
                 for i in range(4):
                     self.add_widget(
                         -1,
@@ -2170,3 +2277,12 @@ class SelectionWidget(Widget):
                         -1,
                         SideWidget(master=self, scene=self.scene, index=i, size=msize),
                     )
+            if is_locked:
+                self.add_widget(
+                    -1,
+                    LockWidget(
+                        master=self,
+                        scene=self.scene,
+                        size=1.5*msize,
+                    ),
+                )

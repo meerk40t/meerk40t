@@ -1641,6 +1641,36 @@ class Elemental(Service):
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
+        @self.console_command(
+            "lock",
+            help=_("Lock element (protect from manipulation)"),
+            input_type=("elements"),
+            output_type=("elements"),
+        )
+        def e_lock(data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                e.lock = True
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+            return "elements", data
+
+        @self.console_command(
+            "unlock",
+            help=_("Unlock element (allow manipulation)"),
+            input_type=("elements"),
+            output_type=("elements"),
+        )
+        def e_unlock(data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                e.lock = False
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+            return "elements", data
+
         @self.console_option(
             "dx", "x", help=_("copy offset x (for elems)"), type=Length, default=0
         )
@@ -3507,6 +3537,9 @@ class Elemental(Service):
                 channel(_("No selected elements."))
                 return
             for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: %s") % str(e))
+                    continue
                 e.stroke_width = stroke_width
                 e.altered()
             return "elements", data
@@ -3573,6 +3606,9 @@ class Elemental(Service):
                 if not capvalue is None:
                     for e in apply:
                         if hasattr(e, "linecap"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(_("Can't modify a locked element: %s") % str(e))
+                                continue
                             e.linecap = capvalue
                             e.altered()
                 return "elements", data
@@ -3649,6 +3685,9 @@ class Elemental(Service):
                 if not joinvalue is None:
                     for e in apply:
                         if hasattr(e, "linejoin"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(_("Can't modify a locked element: %s") % str(e))
+                                continue
                             e.linejoin = joinvalue
                             e.altered()
                 return "elements", data
@@ -3712,6 +3751,9 @@ class Elemental(Service):
                 if not rulevalue is None:
                     for e in apply:
                         if hasattr(e, "fillrule"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(_("Can't modify a locked element: %s") % str(e))
+                                continue
                             e.fillrule = rulevalue
                             e.altered()
                 return "elements", data
@@ -3769,10 +3811,16 @@ class Elemental(Service):
                 return
             elif color == "none":
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.stroke = None
                     e.altered()
             else:
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.stroke = Color(color)
                     e.altered()
             if classify is None:
@@ -3838,10 +3886,16 @@ class Elemental(Service):
                 return "elements", data
             elif color == "none":
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.fill = None
                     e.altered()
             else:
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.fill = Color(color)
                     e.altered()
             if classify is None:
@@ -3973,11 +4027,8 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
+                        if hasattr(node, "lock") and node.lock:
+                            continue
 
                         node.matrix *= matrix
                         node.modified()
@@ -4066,22 +4117,14 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
+                        if hasattr(node, "lock") and node.lock:
+                            continue
                         node.matrix *= matrix
                         node.modified()
                 else:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
+                        if hasattr(node, "lock") and node.lock:
+                            continue
                         osx = node.matrix.value_scale_x()
                         osy = node.matrix.value_scale_y()
                         nsx = scale_x / osx
@@ -4351,13 +4394,9 @@ class Elemental(Service):
                 if data is None:
                     data = list(self.elems(emphasized=True))
                 for node in data:
-                    try:
-                        if node.lock:
-                            channel(_("resize: cannot resize a locked image"))
-                            return
-                    except AttributeError:
-                        pass
-                for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        channel(_("resize: cannot resize a locked element"))
+                        continue
                     node.matrix *= matrix
                     node.modified()
                 return "elements", data
@@ -4409,12 +4448,8 @@ class Elemental(Service):
                     ty,
                 )
                 for node in data:
-                    try:
-                        if node.lock:
-                            continue
-                    except AttributeError:
-                        pass
-
+                    if hasattr(node, "lock") and node.lock:
+                        continue
                     node.matrix = Matrix(m)
                     node.modified()
             except ValueError:
@@ -4431,12 +4466,8 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
             for e in data:
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-
+                if hasattr(e, "lock") and e.lock:
+                    continue
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "…"
@@ -4783,6 +4814,9 @@ class Elemental(Service):
                         typecount[2] += 1
                         todelete[2].append(node)
                     else:
+                        if hasattr(node, "lock") and node.lock:
+                            # Don't delete locked nodes
+                            continue
                         typecount[1] += 1
                         todelete[1].append(node)
                 else: # branches etc...
@@ -5729,6 +5763,7 @@ class Elemental(Service):
         # ==========
         # REMOVE SINGLE (Tree Selected - ELEMENT)
         # ==========
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_conditional(
             lambda cond: len(
                 list(self.flat(selected=True, cascade=False, types=elem_nodes))
@@ -5741,9 +5776,11 @@ class Elemental(Service):
             help="",
         )
         def remove_type_elem(node, **kwargs):
-
-            node.remove_node()
-            self.set_emphasis(None)
+            if hasattr(node, "lock") and node.lock:
+                pass
+            else:
+                node.remove_node()
+                self.set_emphasis(None)
 
         @self.tree_conditional(
             lambda cond: len(
@@ -5761,6 +5798,15 @@ class Elemental(Service):
             node.remove_node()
             self.set_emphasis(None)
 
+        def contains_no_locked_items():
+            nolock = True
+            for e in list(self.flat(selected=True, cascade=True)):
+                if hasattr(e, "lock") and e.lock:
+                    nolock = False
+                    break
+            return nolock
+
+        @self.tree_conditional(lambda cond: contains_no_locked_items())
         @self.tree_conditional(
             lambda cond: len(
                 list(self.flat(selected=True, cascade=False, types=("file", "group")))
@@ -5773,7 +5819,6 @@ class Elemental(Service):
             help="",
         )
         def remove_type_grp(node, **kwargs):
-
             node.remove_node()
             self.set_emphasis(None)
 
@@ -6538,6 +6583,18 @@ class Elemental(Service):
         def merge_elements(node, **kwargs):
             self("element merge\n")
 
+        @self.tree_conditional(lambda node: node.lock)
+        @self.tree_separator_before()
+        @self.tree_operation(_("Unlock Element"), node_type=elem_nodes, help="")
+        def element_unlock_manipulations(node, **kwargs):
+            self("element unlock\n")
+
+        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_separator_before()
+        @self.tree_operation(_("Lock manipulations"), node_type=elem_nodes, help="")
+        def element_lock_manipulations(node, **kwargs):
+            self("element lock\n")
+
         @self.tree_conditional(lambda node: is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(
@@ -6569,6 +6626,11 @@ class Elemental(Service):
                 if item.selected:
                     data.append(item)
             for item in data:
+                # No usecase for having a locked regmark element
+                try:
+                    item.lock = False
+                except AttributeError:
+                    pass
                 drop_node.drop(item)
                 signal_needed = True
             if signal_needed:
@@ -6576,11 +6638,13 @@ class Elemental(Service):
             drop_node.drop(node)
             self.signal("tree_changed")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem image", help="")
         def image_actualize_pixels(node, **kwargs):
             self("image resample\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Z-depth divide"))
         @self.tree_iterate("divide", 2, 10)
         @self.tree_operation(
@@ -6595,37 +6659,49 @@ class Elemental(Service):
                 threshold_max = threshold_min + band
                 self("image threshold %f %f\n" % (threshold_min, threshold_max))
 
-        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_conditional(lambda node: node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock manipulations"), node_type="elem image", help="")
         def image_unlock_manipulations(node, **kwargs):
             self("image unlock\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Lock manipulations"), node_type="elem image", help="")
+        def image_lock_manipulations(node, **kwargs):
+            self("image lock\n")
+
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem image", help="")
         def image_dither(node, **kwargs):
             self("image dither\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert image"), node_type="elem image", help="")
         def image_invert(node, **kwargs):
             self("image invert\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror horizontal"), node_type="elem image", help="")
         def image_mirror(node, **kwargs):
             self("image mirror\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip vertical"), node_type="elem image", help="")
         def image_flip(node, **kwargs):
             self("image flip\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CW"), node_type="elem image", help="")
         def image_cw(node, **kwargs):
             self("image cw\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CCW"), node_type="elem image", help="")
         def image_ccw(node, **kwargs):
@@ -7159,6 +7235,11 @@ class Elemental(Service):
 
     def remove_elements(self, element_node_list):
         for elem in element_node_list:
+            try:
+                if hasattr(elem, "lock") and elem.lock:
+                    continue
+            except AttributeError:
+                pass
             elem.remove_node(references=True)
         self.validate_selected_area()
 
