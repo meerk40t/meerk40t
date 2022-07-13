@@ -944,8 +944,12 @@ class ShadowTree:
             return
 
         self.set_icon(node, force=force)
-        formatter = self.elements.lookup(f"format/{node.type}")
-        label = node.create_label(formatter)
+        if hasattr(node, "node") and node.node is not None:
+            formatter = self.elements.lookup(f"format/{node.node.type}")
+            label = "*" + node.node.create_label(formatter)
+        else:
+            formatter = self.elements.lookup(f"format/{node.type}")
+            label = node.create_label(formatter)
         # Look for special attributes and add those
         # Default?
         if node.type.startswith("op ") and hasattr(node, "default") and node.default:
