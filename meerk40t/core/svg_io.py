@@ -517,10 +517,6 @@ class SVGProcessor:
             context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
-        # Just one of many 3rd party tags, but this might actually be useful
-        # unfortunately there's no place to store it?!
-        node_label = element.values.get("inkscape:label")
-
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
