@@ -401,7 +401,7 @@ class SVGWriter:
         @param node:
         @return:
         """
-        subelement = SubElement(xml_tree, "operation")
+        subelement = SubElement(xml_tree, "meerk40t:operation")
         SVGWriter._write_custom(subelement, node)
 
     @staticmethod
@@ -517,6 +517,10 @@ class SVGProcessor:
             context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
+        # Just one of many 3rd party tags, but this might actually be useful
+        # unfortunately there's no place to store it?!
+        node_label = element.values.get("inkscape:label")
+
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
@@ -655,15 +659,17 @@ class SVGProcessor:
             node_type = element.values.get("type")
             if node_type is None or node_type == "op":
                 # Meerk40t 0.7.x fallback node types.
-                op_type = element.values.get("operation")
+                op_type = element.values.get("meerk40t:operation")
                 if op_type is None:
-                    return
+                    op_type = element.values.get("operation")
+                    if op_type is None:
+                        return
                 node_type = f"op {op_type.lower()}"
 
             if node_type is not None:
                 node_id = element.values.get("id")
                 # Check if SVGElement: operation
-                if tag == "operation":
+                if tag == "meerk40t:operation" or tag == "operation":
                     if not self.operations_cleared:
                         self.elements.clear_operations()
                         self.operations_cleared = True
