@@ -1642,7 +1642,7 @@ class Elemental(Service):
 
         @self.console_command(
             "unlock",
-            help=_("Unock element (allow manipulation)"),
+            help=_("Unlock element (allow manipulation)"),
             input_type=("elements"),
             output_type=("elements"),
         )
