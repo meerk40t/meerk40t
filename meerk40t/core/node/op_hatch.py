@@ -186,6 +186,8 @@ class HatchOpNode(Node, Parameters):
     def time_estimate(self):
         estimate = 0
         # TODO: Implement time_estimate.
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

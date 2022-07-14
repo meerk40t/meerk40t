@@ -188,6 +188,8 @@ class CutOpNode(Node, Parameters):
                 estimate += length / (MILS_IN_MM * self.speed)
             except ZeroDivisionError:
                 estimate = float("inf")
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

@@ -7521,6 +7521,7 @@ class Elemental(Service):
             # NON-CLASSIFIED ELEMENTS
             ######################
             if not was_classified:
+                print ("Wasn't classified")
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
@@ -7537,9 +7538,39 @@ class Elemental(Service):
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
 
                 if op is not None:
-                    add_op_function(op)
+                    # Lets make sure we don't have something like that already
+                    already_found = False
+                    for testop in self.ops():
+                        if type(op) == type(testop):
+                            sameop = True
+                        else:
+                            sameop = False
+                        samecolor = False
+                        if hasattr(op, "color") and hasattr(testop, "color"):
+                            print ("Comparing color %s to %s" % ( op.color, testop.color ))
+                            if op.color == testop.color:
+                                samecolor = True
+                        elif hasattr(op, "color") != hasattr(testop, "color"):
+                            samecolor = False
+                        else:
+                            samecolor = True
+                        samespeed = False
+                        if hasattr(op, "speed") and hasattr(testop, "speed"):
+                            if op.speed == testop.speed:
+                                samespeed = True
+                        elif hasattr(op, "speed") != hasattr(testop, "speed"):
+                            samespeed = False
+                        else:
+                            samespeed = True
+                        print ("Compare: %s to %s - op=%s, col=%s, speed=%s" % (type(op).__name__, type(testop).__name__, sameop, samecolor, samespeed))
+                        if sameop and samecolor and samespeed:
+                            already_found = True
+                            op = testop
+                            break
+                    if not already_found:
+                        add_op_function(op)
+                        operations.append(op)
                     op.add_reference(node)
-                    operations.append(op)
 
                 if (
                     hasattr(node, "fill")

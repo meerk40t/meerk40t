@@ -221,6 +221,8 @@ class RasterOpNode(Node, Parameters):
                 node.image.width * node.image.height * step_x / MILS_IN_MM * self.speed
             )
             estimate += node.image.height * step_y / MILS_IN_MM * self.speed
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

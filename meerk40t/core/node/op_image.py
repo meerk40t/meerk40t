@@ -194,6 +194,8 @@ class ImageOpNode(Node, Parameters):
             estimate += (e.image_width * e.image_height * step) / (
                 MILS_IN_MM * self.speed
             )
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

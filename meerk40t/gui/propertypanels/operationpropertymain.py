@@ -232,7 +232,7 @@ class SpeedPpiPanel(wx.Panel):
 
         self.text_speed = TextCtrl(self, wx.ID_ANY, "20.0", limited=True)
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
-        speed_sizer.Add(self.text_speed, 1, 0, 0)
+        speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
         power_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Power (ppi)")), wx.HORIZONTAL
@@ -241,7 +241,7 @@ class SpeedPpiPanel(wx.Panel):
 
         self.text_power = TextCtrl(self, wx.ID_ANY, "1000.0", limited=True)
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
-        power_sizer.Add(self.text_power, 1, 0, 0)
+        power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
         frequency_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Frequency (kHz)")), wx.HORIZONTAL
@@ -250,7 +250,7 @@ class SpeedPpiPanel(wx.Panel):
 
         self.text_frequency = TextCtrl(self, wx.ID_ANY, "20.0", limited=True)
         # self.text_frequency.SetToolTip(OPERATION_SPEED_TOOLTIP)
-        frequency_sizer.Add(self.text_frequency, 1, 0, 0)
+        frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
 
         self.SetSizer(speed_power_sizer)
 
@@ -333,7 +333,7 @@ class PassesPanel(wx.Panel):
         self.check_passes.SetToolTip(_("Enable Operation Passes"))
         sizer_passes.Add(self.check_passes, 1, wx.EXPAND, 0)
 
-        self.text_passes = TextCtrl(self, wx.ID_ANY, "1")
+        self.text_passes = TextCtrl(self, wx.ID_ANY, "1", limited=True)
         self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
         sizer_passes.Add(self.text_passes, 2, wx.EXPAND, 0)
 
@@ -906,16 +906,16 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
 
-        self.text_distance = TextCtrl(self, wx.ID_ANY, "1mm")
-        sizer_distance.Add(self.text_distance, 0, 0, 0)
+        self.text_distance = TextCtrl(self, wx.ID_ANY, "1mm", limited=True)
+        sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
 
         sizer_angle = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Angle")), wx.HORIZONTAL
         )
         raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
-        self.text_angle = TextCtrl(self, wx.ID_ANY, "0deg")
-        sizer_angle.Add(self.text_angle, 1, 0, 0)
+        self.text_angle = TextCtrl(self, wx.ID_ANY, "0deg", limited=True)
+        sizer_angle.Add(self.text_angle, 1, wx.EXPAND, 0)
 
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
         sizer_angle.Add(self.slider_angle, 3, wx.EXPAND, 0)
@@ -1178,11 +1178,11 @@ class DwellSettingsPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Dwell Time: (ms)")), wx.HORIZONTAL
         )
 
-        self.text_dwelltime = TextCtrl(self, wx.ID_ANY, "1.0")
+        self.text_dwelltime = TextCtrl(self, wx.ID_ANY, "1.0", limited=True)
         self.text_dwelltime.SetToolTip(
             _("Dwell time (ms) at each location in the sequence")
         )
-        sizer_passes.Add(self.text_dwelltime, 1, 0, 0)
+        sizer_passes.Add(self.text_dwelltime, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_passes)
 

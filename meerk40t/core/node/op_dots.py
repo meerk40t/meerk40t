@@ -140,8 +140,11 @@ class DotsOpNode(Node, Parameters):
                 e = e.node
             if e.type == "elem point":
                 estimate += self.dwell_time
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
+
         return "%s:%s:%s" % (
             int(hours),
             str(int(minutes)).zfill(2),
