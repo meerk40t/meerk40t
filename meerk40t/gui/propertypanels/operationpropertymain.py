@@ -422,8 +422,7 @@ class InfoPanel(wx.Panel):
     def pane_show(self):
         pass
 
-    def set_widgets(self, node):
-        self.operation = node
+    def refresh_display(self):
         try:
             timestr = self.operation.time_estimate()
         except:
@@ -432,6 +431,10 @@ class InfoPanel(wx.Panel):
 
         self.text_time.SetValue(timestr)
         self.text_children.SetValue(str(childs))
+
+    def set_widgets(self, node):
+        self.operation = node
+        self.refresh_display()
 
 
 # end of class InfoPanel
@@ -1287,6 +1290,7 @@ class ParameterPanel(ScrolledPanel):
         else:
             if not self.dwell_panel.Shown:
                 self.dwell_panel.Show()
+        self.set_widgets(self.operation)
         self.Layout()
 
     def set_widgets(self, node):
