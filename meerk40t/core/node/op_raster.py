@@ -26,6 +26,8 @@ class RasterOpNode(Node, Parameters):
             if "type" in kwargs:
                 del kwargs["type"]
         Node.__init__(self, type="op raster", **kwargs)
+        # Is this op out of useful bounds?
+        self.dangerous = False
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
 
@@ -55,12 +57,17 @@ class RasterOpNode(Node, Parameters):
             "elem text",
             "elem image",
         )
+        # To which attributes does the classification color check respond
+        # Can be extended / reduced by add_color_attribute / remove_color_attribute
+        self.allowed_attributes = ["fill", ] # comma is relevant
 
     def __repr__(self):
         return "RasterOp()"
 
     def __str__(self):
         parts = list()
+        if self.dangerous:
+            parts.append("❌")
         if not self.output:
             parts.append("(Disabled)")
         if self.default:
@@ -106,9 +113,19 @@ class RasterOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    def is_dangerous(self, minpower, maxspeed):
+        result = False
+        if maxspeed is not None and self.speed > maxspeed:
+            result = True
+        if minpower is not None and self.power < minpower:
+            result = True
+        self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Raster"
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
@@ -170,21 +187,37 @@ class RasterOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def classify(self, node):
+    def add_color_attribute(self, attribute):
+        if not attribute in self.allowed_attributes:
+            self.allowed_attributes.append(attribute)
+
+    def remove_color_attribute(self, attribute):
+        if attribute in self.allowed_attributes:
+            self.allowed_attributes.remove(attribute)
+
+    def classify(self, node, usedefault=False):
         if node.type in (
-            "elem image",
             "elem text",
         ):
             self.add_reference(node)
-            return True, True
-        if (
-            hasattr(node, "fill")
-            and node.fill is not None
-            and node.fill.argb is not None
-        ):
-            if node.type in self.allowed_elements:
-                self.add_reference(node)
-                return True, True
+            return True, False
+
+        if node.type in self.allowed_elements:
+            if not self.default:
+                for attribute in self.allowed_attributes:
+                    if hasattr(node, attribute) and getattr(node, attribute) is not None:
+                        # Raster is currently color-blind, so anything goes
+                        # plain_color_op = abs(self.color)
+                        # plain_color_node = abs(getattr(node, attribute))
+                        # if plain_color_op != plain_color_node:
+                        #     continue
+                        # else:
+                        self.add_reference(node)
+                        # Have classified but more classification might be needed
+                        return True, False
+            elif self.default and usedefault:
+                # Have classified but more classification might be needed
+                return True, False
         return False, False
 
     def load(self, settings, section):

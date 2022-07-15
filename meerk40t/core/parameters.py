@@ -36,6 +36,7 @@ BOOL_PARAMETERS = (
     "acceleration_custom",
     "dratio_custom",
     "default",
+    "dangerous",
     "output",
     "laser_enabled",
     "job_enabled",

@@ -44,26 +44,34 @@ def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "preregister":
         kernel.register(
-            "format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op cut", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power}"
         )
         kernel.register(
-            "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op engrave", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power}"
         )
         kernel.register(
             "format/op hatch",
-            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}",
         )
         kernel.register(
             "format/op raster",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
         )
         kernel.register(
             "format/op image",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
         )
         kernel.register(
-            "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
+            "format/op dots", "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell"
         )
+        # Define maxspeed min
+        kernel.register("dangerlevel/op cut", (50, 100))
+        kernel.register("dangerlevel/op engrave", (50, 100))
+        kernel.register("dangerlevel/op hatch", (500, 100))
+        kernel.register("dangerlevel/op raster", (500, 100))
+        kernel.register("dangerlevel/op image", (500, 100))
+        kernel.register("dangerlevel/op dots", (500, 100))
+
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
@@ -7521,19 +7529,29 @@ class Elemental(Service):
             # NON-CLASSIFIED ELEMENTS
             ######################
             if not was_classified:
-                # print ("Wasn't classified")
+                # let's iterate through the default ops and add them
+                for op in operations:
+                    if hasattr(op, "classify"):
+                        classified, should_break = op.classify(node, usedefault=True)
+                    else:
+                        continue
+                    if classified:
+                        was_classified = True
+                    if should_break:
+                        break
+            if not was_classified:
+
+                # print ("Was still not classified")
+
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
-                elif hasattr(node, "stroke") and node.stroke is not None:
-                    if (
-                        node.stroke.red == 0xFF
-                        and node.stroke.blue == 0
-                        and node.stroke.green == 0
-                    ):
-                        op = CutOpNode(color=node.stroke, speed=5.0)
+                elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
+                    is_cut = Color.distance_sq("red", node.stroke) <= 18825
+                    if is_cut:
+                        op = CutOpNode(color=Color("red"), speed=5.0)
                     else:
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
 

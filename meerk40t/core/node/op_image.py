@@ -23,6 +23,8 @@ class ImageOpNode(Node, Parameters):
             if "type" in kwargs:
                 del kwargs["type"]
         Node.__init__(self, type="op image", **kwargs)
+        # Is this op out of useful bounds?
+        self.dangerous = False
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
 
@@ -42,6 +44,8 @@ class ImageOpNode(Node, Parameters):
 
     def __str__(self):
         parts = list()
+        if self.dangerous:
+            parts.append("❌")
         if not self.output:
             parts.append("(Disabled)")
         if self.default:
@@ -88,9 +92,19 @@ class ImageOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    def is_dangerous(self, minpower, maxspeed):
+        result = False
+        if maxspeed is not None and self.speed > maxspeed:
+            result = True
+        if minpower is not None and self.power < minpower:
+            result = True
+        self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Image"
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
@@ -151,7 +165,7 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def classify(self, node):
+    def classify(self, node, usedefault=False):
         if node.type in self.allowed_elements:
             self.add_reference(node)
             # Have classified and no more classification are needed

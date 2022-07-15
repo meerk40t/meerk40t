@@ -21,6 +21,8 @@ class HatchOpNode(Node, Parameters):
             if "type" in kwargs:
                 del kwargs["type"]
         Node.__init__(self, type="op hatch", **kwargs)
+        # Is this op out of useful bounds?
+        self.dangerous = False
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
         self._hatch_distance_native = None
@@ -45,12 +47,17 @@ class HatchOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
         )
+        # To which attributes does the classification color check respond
+        # Can be extended / reduced by add_color_attribute / remove_color_attribute
+        self.allowed_attributes = ["stroke", ] # comma is relevant
 
     def __repr__(self):
         return "HatchOpNode()"
 
     def __str__(self):
         parts = list()
+        if self.dangerous:
+            parts.append("❌")
         if not self.output:
             parts.append("(Disabled)")
         if self.default:
@@ -77,10 +84,20 @@ class HatchOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    def is_dangerous(self, minpower, maxspeed):
+        result = False
+        if maxspeed is not None and self.speed > maxspeed:
+            result = True
+        if minpower is not None and self.power < minpower:
+            result = True
+        self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(HatchOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
@@ -125,7 +142,15 @@ class HatchOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def classify(self, node):
+    def add_color_attribute(self, attribute):
+        if not attribute in self.allowed_attributes:
+            self.allowed_attributes.append(attribute)
+
+    def remove_color_attribute(self, attribute):
+        if attribute in self.allowed_attributes:
+            self.allowed_attributes.remove(attribute)
+
+    def classify(self, node, usedefault=False):
         def is_valid_closed_path(p):
             result = False
             if len(p) != 0:
@@ -133,31 +158,46 @@ class HatchOpNode(Node, Parameters):
                 if p[-1].d().lower() == "z":
                     result = True
             return result
-
-        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
-            plain_color_op = abs(self.color)
-            plain_color_node = abs(node.stroke)
-            if plain_color_op != plain_color_node:
-                return False, False
+        # Hatches are consuming a hit, so return true, true
         if node.type in self.allowed_elements:
-            if hasattr(node, "path"):
-                if is_valid_closed_path(node.path):
-                    self.add_reference(node)
-                    return True, True
+            if not self.default:
+                for attribute in self.allowed_attributes:
+                    if hasattr(node, attribute) and getattr(node, attribute) is not None:
+                        plain_color_op = abs(self.color)
+                        plain_color_node = abs(getattr(node, attribute))
+                        if plain_color_op != plain_color_node:
+                            continue
+                        else:
+                            if hasattr(node, "path"):
+                                if is_valid_closed_path(node.path):
+                                    self.add_reference(node)
+                                    return True, True
+
+                            elif node.type == "elem polyline":
+                                # Are they a closed path?
+                                obj = Path(node.shape)
+                                if is_valid_closed_path(obj):
+                                    self.add_reference(node)
+                                    return True, True
+                            else:
+                                # Ellipse, rect are closed by default
+                                self.add_reference(node)
+                                return True, True
+            elif self.default and usedefault:
+                if hasattr(node, "path"):
+                    if is_valid_closed_path(node.path):
+                        self.add_reference(node)
+                        return True, True
+                elif node.type == "elem polyline":
+                    # Are they a closed path?
+                    obj = Path(node.shape)
+                    if is_valid_closed_path(obj):
+                        self.add_reference(node)
+                        return True, True
                 else:
-                    return False, False
-
-            elif node.type == "elem polyline":
-                # Are they a closed path?
-                obj = Path(node.shape)
-                if is_valid_closed_path(obj):
+                    # Ellipse, rect are closed by default
                     self.add_reference(node)
                     return True, True
-            else:
-                # Ellipse, rect are closed by default
-                self.add_reference(node)
-                return True, True
-
         return False, False
 
     def load(self, settings, section):

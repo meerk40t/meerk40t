@@ -31,6 +31,8 @@ class EngraveOpNode(Node, Parameters):
             if "type" in kwargs:
                 del kwargs["type"]
         Node.__init__(self, type="op engrave", **kwargs)
+        # Is this op out of useful bounds?
+        self.dangerous = False
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
 
@@ -57,12 +59,17 @@ class EngraveOpNode(Node, Parameters):
             "elem rect",
             "elem line",
         )
+        # To which attributes does the classification color check respond
+        # Can be extended / reduced by add_color_attribute / remove_color_attribute
+        self.allowed_attributes = ["stroke", ] # comma is relevant
 
     def __repr__(self):
         return "EngraveOpNode()"
 
     def __str__(self):
         parts = list()
+        if self.dangerous:
+            parts.append("❌")
         if not self.output:
             parts.append("(Disabled)")
         if self.default:
@@ -94,10 +101,20 @@ class EngraveOpNode(Node, Parameters):
             self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
         return self._bounds
 
+    def is_dangerous(self, minpower, maxspeed):
+        result = False
+        if maxspeed is not None and self.speed > maxspeed:
+            result = True
+        if minpower is not None and self.power < minpower:
+            result = True
+        self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(EngraveOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Engrave"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
@@ -140,15 +157,30 @@ class EngraveOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def classify(self, node):
-        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
-            plain_color_op = abs(self.color)
-            plain_color_node = abs(node.stroke)
-            if plain_color_op != plain_color_node:
-                return False, False
+    def add_color_attribute(self, attribute):
+        if not attribute in self.allowed_attributes:
+            self.allowed_attributes.append(attribute)
+
+    def remove_color_attribute(self, attribute):
+        if attribute in self.allowed_attributes:
+            self.allowed_attributes.remove(attribute)
+
+    def classify(self, node, usedefault=False):
         if node.type in self.allowed_elements:
-            self.add_reference(node)
-            return True, True
+            if not self.default:
+                for attribute in self.allowed_attributes:
+                    if hasattr(node, attribute) and getattr(node, attribute) is not None:
+                        plain_color_op = abs(self.color)
+                        plain_color_node = abs(getattr(node, attribute))
+                        if plain_color_op != plain_color_node:
+                            continue
+                        else:
+                            self.add_reference(node)
+                            # Have classified but more classification might be needed
+                            return True, False
+            elif self.default and usedefault:
+                # Have classified but more classification might be needed
+                return True, False
         return False, False
 
     def load(self, settings, section):

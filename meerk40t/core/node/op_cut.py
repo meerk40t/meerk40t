@@ -27,6 +27,8 @@ class CutOpNode(Node, Parameters):
 
     def __init__(self, *args, **kwargs):
         Node.__init__(self, type="op cut", **kwargs)
+        # Is this op out of useful bounds?
+        self.dangerous = False
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
 
@@ -53,6 +55,8 @@ class CutOpNode(Node, Parameters):
             "elem rect",
             "elem line",
         )
+        # To which attributes responds the classification color check
+        self.allowed_attributes = ["stroke", ] # The empty element is relevant
 
     def __repr__(self):
         return "CutOpNode()"
@@ -91,12 +95,22 @@ class CutOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    def is_dangerous(self, minpower, maxspeed):
+        result = False
+        if maxspeed is not None and self.speed > maxspeed:
+            result = True
+        if minpower is not None and self.power < minpower:
+            result = True
+        self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(CutOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Cut"
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
@@ -137,16 +151,22 @@ class CutOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def classify(self, node):
-        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
-            plain_color_op = abs(self.color)
-            plain_color_node = abs(node.stroke)
-            if plain_color_op != plain_color_node:
-                return False, False
+    def classify(self, node, usedefault=False):
         if node.type in self.allowed_elements:
-            self.add_reference(node)
-            # Have classified but more classification might be needed
-            return True, False
+            if not self.default:
+                for attribute in self.allowed_attributes:
+                    if hasattr(node, attribute) and getattr(node, attribute) is not None:
+                        plain_color_op = abs(self.color)
+                        plain_color_node = abs(getattr(node, attribute))
+                        if plain_color_op != plain_color_node:
+                            continue
+                        else:
+                            self.add_reference(node)
+                            # Have classified but more classification might be needed
+                            return True, False
+            elif self.default and usedefault:
+                # Have classified but more classification might be needed
+                return True, False
         return False, False
 
     def load(self, settings, section):

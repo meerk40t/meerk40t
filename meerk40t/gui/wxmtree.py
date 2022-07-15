@@ -919,6 +919,18 @@ class ShadowTree:
                     invalid_nodes.append(child)
                 else:
                     formatter = self.elements.lookup(f"format/{node.type}")
+                    if node.type.startswith("op "):
+                        maxspeed_minpower = self.elements.lookup(f"dangerlevel/{node.type}")
+                        if not maxspeed_minpower is None:
+                            try:
+                                maxspeed = maxspeed_minpower[0]
+                            except AttributeError:
+                                maxspeed = None
+                            try:
+                                minpower = maxspeed_minpower[1]
+                            except AttributeError:
+                                minpower = None
+                        node.is_dangerous(maxspeed, minpower)
                     label = node.create_label(formatter)
                     self.wxtree.SetItemText(child, label)
             child, cookie = self.wxtree.GetNextChild(startnode, cookie)
@@ -946,24 +958,41 @@ class ShadowTree:
         self.set_icon(node, force=force)
         if hasattr(node, "node") and node.node is not None:
             formatter = self.elements.lookup(f"format/{node.node.type}")
+            if node.node.type.startswith("op "):
+                maxspeed_minpower = self.elements.lookup(f"dangerlevel/{node.node.type}")
+                if not maxspeed_minpower is None:
+                    try:
+                        maxspeed = maxspeed_minpower[0]
+                    except AttributeError:
+                        maxspeed = None
+                    try:
+                        minpower = maxspeed_minpower[1]
+                    except AttributeError:
+                        minpower = None
+                node.node.is_dangerous(maxspeed, minpower)
             label = "*" + node.node.create_label(formatter)
         else:
             formatter = self.elements.lookup(f"format/{node.type}")
+            if node.type.startswith("op "):
+                maxspeed_minpower = self.elements.lookup(f"dangerlevel/{node.type}")
+                if not maxspeed_minpower is None:
+                    try:
+                        maxspeed = maxspeed_minpower[0]
+                    except AttributeError:
+                        maxspeed = None
+                    try:
+                        minpower = maxspeed_minpower[1]
+                    except AttributeError:
+                        minpower = None
+                node.is_dangerous(maxspeed, minpower)
             label = node.create_label(formatter)
         # Look for special attributes and add those
-        # Default?
-        if node.type.startswith("op ") and hasattr(node, "default") and node.default:
-            label = "✓" + label
+        # Default? -- no longer needed
+        # if node.type.startswith("op ") and hasattr(node, "default") and node.default:
+        #     label = "✓" + label
         # Probably not working?
         danger = False
-        # That needs to be reviewed as this might differ from device to device
-        # if (
-        #     (self._operation in ("Raster", "Image") and self.settings.speed > 500)
-        #     or (self._operation in ("Cut", "Engrave") and self.settings.speed > 50)
-        #     or self.settings.power <= 100
-        # ):
-        if danger:
-            label = "❌" + label
+
         self.wxtree.SetItemText(node.item, label)
         try:
             stroke = node.stroke

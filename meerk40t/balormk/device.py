@@ -450,29 +450,36 @@ class BalorDevice(Service, ViewPort):
 
         self.register(
             "format/op cut",
-            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op engrave",
-            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op hatch",
-            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op raster",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op image",
-            "{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
         )
         self.register(
             "format/op dots",
-            "{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz",
         )
         self.register("format/util console", "{enabled}{command}")
+        # Define maxspeed min, need to be adjusted for balor
+        kernel.register("dangerlevel/op cut", (50, 100))
+        kernel.register("dangerlevel/op engrave", (50, 100))
+        kernel.register("dangerlevel/op hatch", (500, 100))
+        kernel.register("dangerlevel/op raster", (500, 100))
+        kernel.register("dangerlevel/op image", (500, 100))
+        kernel.register("dangerlevel/op dots", (500, 100))
 
         choices = [
             {
