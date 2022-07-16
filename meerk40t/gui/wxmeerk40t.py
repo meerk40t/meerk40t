@@ -474,13 +474,19 @@ class wxMeerK40t(wx.App, Module):
             "displays",
             input_type="window",
             output_type="window",
-            help=_("List available windows."),
+            help=_("Give display info for the current opened windows"),
         )
         def window_list(channel, _, data, **kwargs):
             for idx in range(wx.Display.GetCount()):
                 d = wx.Display(idx)
-                channel(f"Primary: {d.IsPrimary()} {d.GetGeometry()}")
+                channel(f"{idx} Primary: {d.IsPrimary()} {d.GetGeometry()}")
             channel(_("----------"))
+            path = data
+            for opened in path.opened:
+                if opened.startswith("window/"):
+                    window = path.opened[opened]
+                    display = wx.Display.GetFromWindow(window)
+                    channel(f"Window {opened} with bounds {window.GetRect()} is located on display {display})")
             return "window", data
 
 
@@ -533,7 +539,7 @@ class wxMeerK40t(wx.App, Module):
                 else:
                     channel(_("No such window as %s" % window))
                     raise CommandSyntaxError
-            else:
+            else:  # Toggle.
                 if window_class is not None:
                     if window_name in path.opened:
                         kernel.run_later(window_close, None)
@@ -555,7 +561,7 @@ class wxMeerK40t(wx.App, Module):
             try:
                 parent = context.gui if hasattr(context, "gui") else None
                 kernel.run_later(
-                    lambda e: path.close("window/%s" % window, parent, *args), None
+                    lambda e: path.close(f"window/{window}", parent, *args), None
                 )
                 channel(_("Window closed."))
             except (KeyError, ValueError):
