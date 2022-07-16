@@ -918,21 +918,7 @@ class ShadowTree:
                 if node.type == "op" and len(node.children)==0: # Invalid data
                     invalid_nodes.append(child)
                 else:
-                    formatter = self.elements.lookup(f"format/{node.type}")
-                    if node.type.startswith("op "):
-                        maxspeed_minpower = self.elements.lookup(f"dangerlevel/{node.type}")
-                        if not maxspeed_minpower is None:
-                            try:
-                                maxspeed = maxspeed_minpower[0]
-                            except AttributeError:
-                                maxspeed = None
-                            try:
-                                minpower = maxspeed_minpower[1]
-                            except AttributeError:
-                                minpower = None
-                        node.is_dangerous(maxspeed, minpower)
-                    label = node.create_label(formatter)
-                    self.wxtree.SetItemText(child, label)
+                    self.update_decorations(node=node, force=True)
             child, cookie = self.wxtree.GetNextChild(startnode, cookie)
         # Get rid of invalid nodes...
         for child in invalid_nodes:

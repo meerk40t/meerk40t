@@ -3914,7 +3914,7 @@ class Elemental(Service):
                     for e in apply:
                         e.emphasized = True
                 # self.signal("rebuild_tree")
-                self.signal("refresh_tree")
+                self.signal("refresh_tree", apply)
             return "elements", data
 
         @self.console_option(
@@ -3988,7 +3988,7 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("refresh_tree")
+                self.signal("refresh_tree", apply)
             #                self.signal("rebuild_tree")
             return "elements", data
 
