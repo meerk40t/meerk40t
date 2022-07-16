@@ -209,7 +209,6 @@ def plugin(kernel, lifecycle):
         kernel_root.planner.register("plan/interrupt", interrupt)
 
         if kernel._gui:
-
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             for window in kernel.derivable("window"):
