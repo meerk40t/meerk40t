@@ -9,6 +9,7 @@ class GroupNode(Node):
 
     def __init__(self, **kwargs):
         super(GroupNode, self).__init__(type="group", **kwargs)
+        self._formatter = "{element_type} {id} ({children} elems)"
 
     def __repr__(self):
         return "GroupNode('%s', %s)" % (

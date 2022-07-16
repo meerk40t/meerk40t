@@ -25,6 +25,7 @@ class ImageOpNode(Node, Parameters):
         Node.__init__(self, type="op image", **kwargs)
         # Is this op out of useful bounds?
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
         self.settings.update(kwargs)
         self.dangerous = False
         # self.settings["stopop"] = True
@@ -138,6 +139,8 @@ class ImageOpNode(Node, Parameters):
         default_map["frequency"] = "default"
         default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["overscan"] = f"±{self.overscan}"
         return default_map
 
     def drop(self, drag_node):

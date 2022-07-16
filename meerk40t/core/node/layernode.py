@@ -8,15 +8,14 @@ class LayerNode(Node):
 
     def __init__(self, layer_name=None, **kwargs):
         super(LayerNode, self).__init__(type="layer", **kwargs)
+        self._formatter = "{element_type} {id} ({children} elems)"
         self.layer_name = layer_name
-
-    def __str__(self):
-        return f"Layer-{self.layer_name}"
 
     def default_map(self, default_map=None):
         default_map = super(LayerNode, self).default_map(default_map=default_map)
         default_map["name"] = self.layer_name
         default_map["element_type"] = "Layer"
+        default_map["children"] = str(len(self.count_children()))
         return default_map
 
     def notify_selected(self, node=None, **kwargs):

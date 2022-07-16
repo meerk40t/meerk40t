@@ -10,6 +10,7 @@ class BlobNode(Node):
 
     def __init__(self, data_type=None, data=None, **kwargs):
         super().__init__(type="blob", **kwargs)
+        self._formatter = "{element_type}:{data_type}:{name} @{length}"
         if "name" in kwargs:
             self.name = kwargs["name"]
             del kwargs["name"]
@@ -19,9 +20,6 @@ class BlobNode(Node):
         self.data_type = data_type
         self.output = True
         self.settings = dict(**kwargs)
-
-    def __str__(self):
-        return f"Blob('{self.data_type}', '{self.name}', '{len(self.data)} bytes')"
 
     def __copy__(self):
         return BlobNode(

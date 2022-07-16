@@ -40,7 +40,8 @@ def plugin(kernel, lifecycle=None):
                     ),
                 )
             ),
-            "page": "Options",
+            "page": "Input/Output",
+            "section": "Input",
         },
     ]
     kernel.register_choices("preferences", choices)

@@ -12,6 +12,7 @@ class InputOperation(Node):
 
     def __init__(self, mask=0, value=0, message=None, **kwargs):
         super().__init__(type="util input", **kwargs)
+        self._formatter = "{enabled}{element_type} {bits}"
         self.settings = {
             "input_mask": mask,
             "input_value": value,
@@ -21,14 +22,6 @@ class InputOperation(Node):
 
     def __repr__(self):
         return f"InputOperation('{self.mask}')"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        parts.append("Input")
-        parts.append(self.bitstring())
-        return " ".join(parts)
 
     def __copy__(self):
         return InputOperation(self.mask, self.value, self.message)

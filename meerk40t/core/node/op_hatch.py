@@ -22,6 +22,7 @@ class HatchOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op hatch", **kwargs)
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}"
         self.settings.update(kwargs)
         self._hatch_distance_native = None
 
@@ -125,6 +126,7 @@ class HatchOpNode(Node, Parameters):
         default_map["colcode"] = s
         default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
 
     def drop(self, drag_node):

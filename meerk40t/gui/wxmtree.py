@@ -956,6 +956,7 @@ class ShadowTree:
             return
 
         self.set_icon(node, force=force)
+
         if hasattr(node, "node") and node.node is not None:
             formatter = self.elements.lookup(f"format/{node.node.type}")
             if node.node.type.startswith("op "):
@@ -986,12 +987,6 @@ class ShadowTree:
                         minpower = None
                 node.is_dangerous(maxspeed, minpower)
             label = node.create_label(formatter)
-        # Look for special attributes and add those
-        # Default? -- no longer needed
-        # if node.type.startswith("op ") and hasattr(node, "default") and node.default:
-        #     label = "✓" + label
-        # Probably not working?
-        danger = False
 
         self.wxtree.SetItemText(node.item, label)
         try:

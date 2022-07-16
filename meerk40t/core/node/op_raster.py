@@ -27,6 +27,7 @@ class RasterOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op raster", **kwargs)
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
         self.settings.update(kwargs)
 
         if len(args) == 1:
@@ -168,6 +169,8 @@ class RasterOpNode(Node, Parameters):
         default_map["colcode"] = s
         default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["overscan"] = f"±{self.overscan}"
         return default_map
 
     def drop(self, drag_node):
