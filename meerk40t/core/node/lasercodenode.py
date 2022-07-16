@@ -11,6 +11,7 @@ class LaserCodeNode(Node):
 
     def __init__(self, commands=None, **kwargs):
         super().__init__(type="lasercode", **kwargs)
+        self._formatter = "{element_type} {command_count}"
         if "name" in kwargs:
             self.name = kwargs["name"]
         else:
@@ -20,9 +21,6 @@ class LaserCodeNode(Node):
 
     def __repr__(self):
         return "LaserCode('%s', '%s')" % (self.name, str(self.commands))
-
-    def __str__(self):
-        return "LaserCode: %s, %s commands" % (self.name, str(len(self.commands)))
 
     def __copy__(self):
         return LaserCodeNode(self.commands, name=self.name)
@@ -40,6 +38,7 @@ class LaserCodeNode(Node):
     def default_map(self, default_map=None):
         default_map = super(LaserCodeNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "LaserCode"
+        default_map["command_count"] = str(len(self.commands))
         default_map["commands"] = " ".join(self._str_commands())
         return default_map
 

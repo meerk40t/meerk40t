@@ -21,6 +21,7 @@ class RectNode(Node):
         **kwargs,
     ):
         super(RectNode, self).__init__(type="elem rect", **kwargs)
+        self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
         if matrix is None:

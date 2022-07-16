@@ -22,6 +22,7 @@ class HatchOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op hatch", **kwargs)
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}"
         self.settings.update(kwargs)
         self._hatch_distance_native = None
 
@@ -49,24 +50,6 @@ class HatchOpNode(Node, Parameters):
     def __repr__(self):
         return "HatchOpNode()"
 
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        parts.append("Hatch")
-        if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        parts.append("%s" % self.color.hex)
-        return " ".join(parts)
-
     def __copy__(self):
         return HatchOpNode(self)
 
@@ -93,6 +76,7 @@ class HatchOpNode(Node, Parameters):
         default_map["frequency"] = "default"
         default_map["hatch_angle"] = "default"
         default_map["hatch_distance"] = "default"
+        default_map["color"] = ""
         default_map.update(self.settings)
         return default_map
 

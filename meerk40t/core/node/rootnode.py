@@ -15,6 +15,7 @@ from meerk40t.core.node.elem_text import TextNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
+from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
@@ -57,6 +58,7 @@ class RootNode(Node):
             "lasercode": LaserCodeNode,
             "blob": BlobNode,
             "group": GroupNode,
+            "layer": LayerNode,
             "elem ellipse": EllipseNode,
             "elem line": LineNode,
             "elem rect": RectNode,

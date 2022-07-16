@@ -12,6 +12,7 @@ class OutputOperation(Node):
 
     def __init__(self, mask=0, value=0, message=None, **kwargs):
         super().__init__(type="util output", **kwargs)
+        self._formatter = "{enabled}{element_type} {bits}"
         self.settings = {
             "output_mask": mask,
             "output_value": value,
@@ -21,14 +22,6 @@ class OutputOperation(Node):
 
     def __repr__(self):
         return f"OutputOperation('{self.mask}')"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        parts.append("Output")
-        parts.append(self.bitstring())
-        return " ".join(parts)
 
     def __copy__(self):
         return OutputOperation(self.mask, self.value, self.message)

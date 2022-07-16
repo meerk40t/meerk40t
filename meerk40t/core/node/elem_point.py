@@ -19,6 +19,7 @@ class PointNode(Node):
         **kwargs,
     ):
         super(PointNode, self).__init__(type="elem point", **kwargs)
+        self._formatter = "{element_type} {id} {stroke}"
         self.point = point
         self.matrix = matrix
         self.settings = kwargs

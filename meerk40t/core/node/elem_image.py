@@ -28,6 +28,7 @@ class ImageNode(Node):
         **kwargs,
     ):
         super(ImageNode, self).__init__(type="elem image", **kwargs)
+        self.__formatter = "{element_type} {width}x{height}"
         if "href" in kwargs:
             self.matrix = Matrix()
             try:

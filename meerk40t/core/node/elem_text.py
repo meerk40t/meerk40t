@@ -23,6 +23,7 @@ class TextNode(Node):
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
+        self._formatter = "{element_type} {id}: {text}"
         self.text = text
         self.settings = kwargs
         if matrix is None:

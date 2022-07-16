@@ -20,6 +20,7 @@ class EllipseNode(Node):
         **kwargs,
     ):
         super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
+        self.__formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
         if matrix is None:
