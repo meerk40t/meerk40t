@@ -206,8 +206,21 @@ class LayerSettingPanel(wx.Panel):
             self.checkbox_output.SetValue(self.operation.output)
         if self.operation.default is not None:
             self.checkbox_default.SetValue(self.operation.default)
-        if hasattr(self.operation, "stopop") and self.operation.stopop is not None:
-            self.checkbox_stop.SetValue(self.operation.stopop)
+        try:
+            if self.has_fill:
+                self.checkbox_fill.SetValue(1 if self.operation.has_color_attribute("fill") else 0)
+        except AttributeError:
+            pass
+        try:
+            if self.has_stroke:
+                self.checkbox_stroke.SetValue(1 if self.operation.has_color_attribute("stroke") else 0)
+        except AttributeError:
+            pass
+        try:
+            if self.has_stop:
+                self.checkbox_stop.SetValue(self.operation.stopop)
+        except AttributeError:
+            pass
         self.Layout()
 
     def on_button_layer(self, event=None):  # wxGlade: OperationProperty.<event_handler>
