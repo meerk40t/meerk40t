@@ -217,7 +217,7 @@ def plugin(kernel, lifecycle):
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
                 if kernel.read_persistent(
-                    bool, f"window/{window}/open_on_start", False
+                    bool, window, "open_on_start", False
                 ):
                     if window_index is not None:
                         kernel.console(
