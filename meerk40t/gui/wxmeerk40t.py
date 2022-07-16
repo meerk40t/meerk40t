@@ -491,7 +491,6 @@ class wxMeerK40t(wx.App, Module):
                     channel(f"Window {opened} with bounds {window.GetRect()} is located on display: {display})")
             return "window", data
 
-
         @kernel.console_option(
             "multi",
             "m",
