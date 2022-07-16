@@ -24,14 +24,10 @@ class MWindow(wx.Frame, Module):
                 style = (
                     wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
                 )
-        self.root_context = context.root
-        self.window_context = context.get_context(path)
-        self.window_context.setting(int, "x")
-        self.window_context.setting(int, "y")
-        self.window_context.setting(int, "width")
-        self.window_context.setting(int, "height")
         wx.Frame.__init__(self, parent, style=style)
         Module.__init__(self, context, path)
+        self.root_context = context.root
+        self.window_context = context.get_context(path)
         self.root_context.setting(bool, "windows_save", True)
         self.window_save = self.root_context.windows_save
         if self.window_save:
@@ -72,6 +68,7 @@ class MWindow(wx.Frame, Module):
                 self.window_context.x, self.window_context.y = self.GetPosition()
             except RuntimeError:
                 pass
+        event.Skip()
 
     def create_menu(self, append):
         pass
