@@ -168,6 +168,8 @@ class Node:
             if hasattr(self, key) and mymap[key]=="None":
                 if getattr(self, key) is None:
                     mymap[key] = "-"
+            if key.startswith("st"):
+                print ("Map: key[%s] = %s (%s)" %(key, mymap[key], type(mymap[key]).__name__))
         return text.format_map(mymap)
 
     def default_map(self, default_map=None):

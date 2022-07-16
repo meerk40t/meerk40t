@@ -99,7 +99,45 @@ class LayerSettingPanel(wx.Panel):
         self.button_layer_color = wx.Button(self, wx.ID_ANY, "")
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
-        layer_sizer.Add(self.button_layer_color, 0, 0, 0)
+        layer_sizer.Add(self.button_layer_color, 0, wx.EXPAND, 0)
+        h_classify_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Classification")), wx.HORIZONTAL)
+        h_property_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Properties")), wx.HORIZONTAL)
+
+        try:
+            self.has_stroke = self.operation.has_color_attribute("stroke")
+            self.checkbox_stroke = wx.CheckBox(self, wx.ID_ANY, _("Stroke"))
+            self.checkbox_stroke.SetToolTip(_("Look at the stroke color to classify."))
+            self.checkbox_stroke.SetValue(1 if self.has_stroke else 0)
+            h_classify_sizer.Add(self.checkbox_stroke, 1, 0, 0)
+            self.Bind(wx.EVT_CHECKBOX, self.on_check_stroke, self.checkbox_stroke)
+        except AttributeError:
+            self.has_stroke = None
+
+        try:
+            self.has_fill = self.operation.has_color_attribute("fill")
+            self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
+            self.checkbox_fill.SetToolTip(_("Look at the fill color to classify."))
+            self.checkbox_fill.SetValue(1 if self.has_fill else 0)
+            h_classify_sizer.Add(self.checkbox_fill, 1, 0, 0)
+            self.Bind(wx.EVT_CHECKBOX, self.on_check_fill, self.checkbox_fill)
+        except AttributeError:
+            self.has_fill = None
+
+        try:
+            self.has_stop = self.operation.has_color_attribute("stopop")
+            self.checkbox_stop = wx.CheckBox(self, wx.ID_ANY, _("Stop"))
+            self.checkbox_stop.SetToolTip(
+                _("If active, then this op will prevent further classification") + "\n" +
+                _("from other ops if it could classify an element by itself.")
+            )
+            self.checkbox_stop.SetValue(1 if self.has_stop else 0)
+            h_classify_sizer.Add(self.checkbox_stop, 1, 0, 0)
+            self.Bind(wx.EVT_CHECKBOX, self.on_check_stop, self.checkbox_stop)
+        except AttributeError:
+            self.has_stop = None
+
+        if self.has_fill is not None or self.has_stroke is not None or self.has_stop is not None:
+            layer_sizer.Add(h_classify_sizer, 1, wx.EXPAND, 0)
 
         # self.combo_type = wx.ComboBox(
         #     self,
@@ -116,12 +154,14 @@ class LayerSettingPanel(wx.Panel):
             "Enable this operation for inclusion in Execute Job."
         )
         self.checkbox_output.SetValue(1)
-        layer_sizer.Add(self.checkbox_output, 1, 0, 0)
+        h_property_sizer.Add(self.checkbox_output, 1, 0, 0)
 
         self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, _("Default"))
         self.checkbox_default.SetToolTip(OPERATION_DEFAULT_TOOLTIP)
         self.checkbox_default.SetValue(1)
-        layer_sizer.Add(self.checkbox_default, 1, 0, 0)
+        h_property_sizer.Add(self.checkbox_default, 1, 0, 0)
+
+        layer_sizer.Add(h_property_sizer, 1, wx.EXPAND, 0)
 
         self.SetSizer(layer_sizer)
 
@@ -166,6 +206,8 @@ class LayerSettingPanel(wx.Panel):
             self.checkbox_output.SetValue(self.operation.output)
         if self.operation.default is not None:
             self.checkbox_default.SetValue(self.operation.default)
+        if hasattr(self.operation, "stopop") and self.operation.stopop is not None:
+            self.checkbox_stop.SetValue(self.operation.stopop)
         self.Layout()
 
     def on_button_layer(self, event=None):  # wxGlade: OperationProperty.<event_handler>
@@ -211,6 +253,29 @@ class LayerSettingPanel(wx.Panel):
         self.operation.default = bool(self.checkbox_default.GetValue())
         self.context.elements.signal("element_property_reload", self.operation)
 
+    def on_check_fill(self, event=None):
+        if self.checkbox_fill.GetValue():
+            self.operation.add_color_attribute("fill")
+        else:
+            self.operation.remove_color_attribute("fill")
+        self.context.elements.signal("element_property_reload", self.operation)
+        event.Skip()
+
+    def on_check_stroke(self, event=None):
+        if self.checkbox_stroke.GetValue():
+            self.operation.add_color_attribute("stroke")
+        else:
+            self.operation.remove_color_attribute("stroke")
+        self.context.elements.signal("element_property_reload", self.operation)
+        event.Skip()
+
+    def on_check_stop(self, event=None):
+        if self.checkbox_stop.GetValue():
+            self.operation.stopop = True
+        else:
+            self.operation.stopop = False
+        self.context.elements.signal("element_property_reload", self.operation)
+        event.Skip()
 
 # end of class LayerSettingPanel
 
@@ -331,11 +396,11 @@ class PassesPanel(wx.Panel):
 
         self.check_passes = wx.CheckBox(self, wx.ID_ANY, _("Passes"))
         self.check_passes.SetToolTip(_("Enable Operation Passes"))
-        sizer_passes.Add(self.check_passes, 1, wx.EXPAND, 0)
+        sizer_passes.Add(self.check_passes, 0, wx.EXPAND, 0)
 
         self.text_passes = TextCtrl(self, wx.ID_ANY, "1", limited=True)
         self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
-        sizer_passes.Add(self.text_passes, 2, wx.EXPAND, 0)
+        sizer_passes.Add(self.text_passes, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_passes)
 

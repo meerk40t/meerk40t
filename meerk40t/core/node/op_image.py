@@ -24,9 +24,10 @@ class ImageOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op image", **kwargs)
         # Is this op out of useful bounds?
-        self.dangerous = False
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
+        self.dangerous = False
+        # self.settings["stopop"] = True
 
         if len(args) == 1:
             obj = args[0]
@@ -38,6 +39,8 @@ class ImageOpNode(Node, Parameters):
         self.allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self.allowed_elements = ("elem image",)
+        self.stopop = True
+        self.allowed_attributes = []
 
     def __repr__(self):
         return "ImageOpNode()"
@@ -133,6 +136,7 @@ class ImageOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
         return default_map
 
@@ -165,11 +169,11 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def classify(self, node, usedefault=False):
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         if node.type in self.allowed_elements:
             self.add_reference(node)
             # Have classified and no more classification are needed
-            return True, True
+            return True, self.stopop
         return False, False
 
     def load(self, settings, section):

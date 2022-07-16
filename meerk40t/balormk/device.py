@@ -450,27 +450,27 @@ class BalorDevice(Service, ViewPort):
 
         self.register(
             "format/op cut",
-            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op engrave",
-            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op hatch",
-            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op raster",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op image",
-            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op dots",
-            "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz {colcode} {opstop}",
         )
         self.register("format/util console", "{enabled}{command}")
         # Define maxspeed min, need to be adjusted for balor

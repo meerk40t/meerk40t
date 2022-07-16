@@ -168,10 +168,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Undefined label is the attr
                 label = attr
             if last_page != this_page:
+                last_section = ""
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
                 last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_page)), wx.VERTICAL)
                 sizer_main.Add(last_box, 0, wx.EXPAND, 0 )
                 current_main_sizer = last_box
+                current_sizer = last_box
 
             if last_section != this_section:
                 last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_section)), wx.VERTICAL)
@@ -270,6 +272,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     choices=choice_list,
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
+                # print ("Choices: %s" % choice_list)
+                # print ("To set: %s" % str(data))
                 control.SetValue(str(data))
 
                 def on_combosmall_text(param, ctrl, obj, dtype):

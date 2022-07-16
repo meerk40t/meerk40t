@@ -88,7 +88,7 @@ def plugin(kernel, lifecycle=None):
 
 
 MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
-
+MEERK40T_XMLS_ID = "meerk40t"
 
 class SVGWriter:
     @staticmethod
@@ -106,10 +106,7 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
         root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
-        root.set(
-            "xmlns:meerK40t",
-            MEERK40T_NAMESPACE,
-        )
+        root.set("xmlns:" + MEERK40T_XMLS_ID, MEERK40T_NAMESPACE,)
         scene_width = context.device.length_width
         scene_height = context.device.length_height
         root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
@@ -401,7 +398,7 @@ class SVGWriter:
         @param node:
         @return:
         """
-        subelement = SubElement(xml_tree, "meerk40t:operation")
+        subelement = SubElement(xml_tree, MEERK40T_XMLS_ID + ":operation")
         SVGWriter._write_custom(subelement, node)
 
     @staticmethod
@@ -517,9 +514,22 @@ class SVGProcessor:
             context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
+        # Let's see whether we can get the label from an inkscape save
+        # But don't get too excited yet, it needs a place to sit -> WIP
+        my_label = ""
+        try:
+            my_label = element.values.get("{http://www.inkscape.org/namespaces/inkscape}label")
+            if my_label is None:
+                my_label = ""
+
+            # print ("Found label: %s" % my_label)
+        except (AttributeError, KeyError):
+            pass
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
+                # if my_label != "" and hasattr(node, "desc"):
+                #     node.desc = my_label
                 # Maybe superseded by concrete values later, so do it first
                 font_style = element.values.get("font")
                 if font_style is not None:
@@ -569,6 +579,8 @@ class SVGProcessor:
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(path=element, type="elem path", id=ident)
+                # if my_label != "" and hasattr(node, "desc"):
+                #     node.desc = my_label
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -580,6 +592,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem polyline", id=ident)
+                # if my_label != "" and hasattr(node, "desc"):
+                #     node.desc = my_label
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -591,6 +605,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem ellipse", id=ident)
+                # if my_label != "" and hasattr(node, "desc"):
+                #     node.desc = my_label
                 e_list.append(node)
         elif isinstance(element, Ellipse):
             if not element.is_degenerate():
@@ -600,6 +616,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem ellipse", id=ident)
+                # if my_label != "" and hasattr(node, "desc"):
+                #     node.desc = my_label
                 e_list.append(node)
         elif isinstance(element, Rect):
             if not element.is_degenerate():
@@ -609,6 +627,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem rect", id=ident)
+                # if my_label != "" and hasattr(node, "desc"):
+                #     node.desc = my_label
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SimpleLine):
@@ -619,6 +639,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem line", id=ident)
+                # if my_label != "" and hasattr(node, "desc"):
+                #     node.desc = my_label
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
@@ -631,6 +653,8 @@ class SVGProcessor:
                         type="elem image",
                         id=ident,
                     )
+                    # if my_label != "" and hasattr(node, "desc"):
+                    #     node.desc = my_label
                     e_list.append(node)
             except OSError:
                 pass
@@ -646,8 +670,16 @@ class SVGProcessor:
         else:
             # Check if SVGElement:  Note.
             tag = element.values.get(SVG_ATTR_TAG)
+            # We need to reverse the meerk40t:... replacement that the routine had already applied:
             if tag is not None:
                 tag = tag.lower()
+                torepl = "{" + MEERK40T_NAMESPACE.lower() + "}"
+                if torepl in tag:
+                    oldval = element.values.get(tag)
+                    replacer = MEERK40T_XMLS_ID.lower() + ":"
+                    tag = tag.replace(torepl, replacer, )
+                    element.values[tag] = oldval
+                    element.values[SVG_ATTR_TAG] = tag
             if tag == "note":
                 self.elements.note = element.values.get(SVG_TAG_TEXT)
                 self.elements.signal("note", self.pathname)
@@ -655,7 +687,7 @@ class SVGProcessor:
             node_type = element.values.get("type")
             if node_type is None or node_type == "op":
                 # Meerk40t 0.7.x fallback node types.
-                op_type = element.values.get("meerk40t:operation")
+                op_type = element.values.get(MEERK40T_XMLS_ID + ":operation")
                 if op_type is None:
                     op_type = element.values.get("operation")
                     if op_type is None:
@@ -665,23 +697,26 @@ class SVGProcessor:
             if node_type is not None:
                 node_id = element.values.get("id")
                 # Check if SVGElement: operation
-                if tag == "meerk40t:operation" or tag == "operation":
+                op_s1 = MEERK40T_XMLS_ID + ":operation"
+                op_s2 = "operation"
+                if tag == op_s1.lower() or tag == op_s2.lower():
                     if not self.operations_cleared:
                         self.elements.clear_operations()
                         self.operations_cleared = True
 
                     op = self.elements.op_branch.add(type=node_type)
-
                     try:
                         op.settings.update(element.values["attributes"])
                     except AttributeError:
                         # This operation is invalid.
+                        # print ("Attribute Error #1 loading an op", element.values["attributes"])
                         op.remove_node()
                     except KeyError:
                         try:
                             op.settings.update(element.values)
                         except AttributeError:
                             # This operation is invalid.
+                            # print ("Attribute Error #2 loading an op", element.values)
                             op.remove_node()
                     try:
                         op.validate()

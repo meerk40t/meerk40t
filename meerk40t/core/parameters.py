@@ -44,6 +44,7 @@ BOOL_PARAMETERS = (
     "shift_enabled",
     "raster_swing",
     "advanced",
+    "stopop",
     "raster_alt",
     "force_twitchless",
 )
@@ -61,6 +62,7 @@ STRING_PARAMETERS = (
 
 COLOR_PARAMETERS = ("color", "line_color")
 
+LIST_PARAMETERS = ("allowed_attributes", )
 
 class Parameters:
     """
@@ -107,6 +109,14 @@ class Parameters:
         for v in COLOR_PARAMETERS:
             if v in settings:
                 settings[v] = Color(settings[v])
+        for v in LIST_PARAMETERS:
+            if v in settings:
+                if isinstance(settings[v], str):
+                    try:
+                        settings[v] = eval(settings[v])
+                    except:
+                        pass
+                # settings[v] = settings[v]
 
     @property
     def color(self):
@@ -149,12 +159,28 @@ class Parameters:
         self.settings["default"] = value
 
     @property
+    def allowed_attributes(self):
+        return self.settings.get("allowed_attributes", False)
+
+    @allowed_attributes.setter
+    def allowed_attributes(self, value):
+        self.settings["allowed_attributes"] = value
+
+    @property
     def output(self):
         return self.settings.get("output", True)
 
     @output.setter
     def output(self, value):
         self.settings["output"] = value
+
+    @property
+    def stopop(self):
+        return self.settings.get("stopop", False)
+
+    @stopop.setter
+    def stopop(self, value):
+        self.settings["stopop"] = value
 
     @property
     def raster_step_x(self):

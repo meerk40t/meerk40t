@@ -44,25 +44,25 @@ def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "preregister":
         kernel.register(
-            "format/op cut", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op cut", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}"
         )
         kernel.register(
-            "format/op engrave", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op engrave", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}"
         )
         kernel.register(
             "format/op hatch",
-            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op raster",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op image",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {opstop}",
         )
         kernel.register(
-            "format/op dots", "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell"
+            "format/op dots", "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {opstop}"
         )
         # Define maxspeed min
         kernel.register("dangerlevel/op cut", (50, 100))
@@ -86,7 +86,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/elem rect", "{element_type} {id}")
         kernel.register("format/elem text", "{element_type} {id}: {text}")
         kernel.register("format/reference", "*{reference}")
-        kernel.register("format/group", "{element_type} {id} ({children} elems)")
+        kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
         kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
         kernel.register("format/file", "{element_type}: {filename}")
         kernel.register("format/lasercode", "{element_type}")
@@ -107,8 +107,8 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Default Operation Empty"),
                 "tip": _("Leave empty operations or default Other/Red/Blue"),
-                "page": "Laser",
-                "section": "Classification",
+                "page": "Classification",
+                "section": "",
             },
             {
                 "attr": "classify_reverse",
@@ -119,8 +119,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
-                "page": "Laser",
-                "section": "Classification",
+                "page": "Classification",
+                "section": "",
             },
             {
                 "attr": "legacy_classification",
@@ -131,8 +131,78 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Use the legacy classification algorithm rather than the modern classification algorithm."
                 ),
-                "page": "Laser",
-                "section": "Classification",
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_fuzzy",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Fuzzy color-logic"),
+                "tip":
+                    _("Unticked: Classify elements into operations with an *exact* color match") +
+                    "\n" +
+                    _("Ticked: Allow a certain color-distance for classification")
+                ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_fuzzydistance",
+                "object": elements,
+                "default": 100,
+                "type": float,
+                "label": _("Color distance"),
+                "style": "combosmall",
+                "choices": [
+                    "0.0",
+                    "100.0",
+                    "200.0",
+                    "400.0",
+                ],
+                "conditional": (elements, "classify_fuzzy"),
+                "tip":
+                    _("The color distance of an element to an operations that will still allow classifiation") +
+                    "\n" +
+                    _("Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind")
+                    ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_default",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Assign to default operations"),
+                "tip":
+                    _("If classification did not find a match,") +
+                    "\n" +
+                    _("either with color matching (exact or fuzzy, see above)") +
+                    "\n" +
+                    _("then it will try to assign it to matching 'default' operation")
+                ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_autogenerate",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Autogenerate Operations"),
+                "tip":
+                    _("If classification did not find a match,") +
+                    "\n" +
+                    _("either with color matching (exact or fuzzy, see above)") +
+                    "\n" +
+                    _("or by assigning to a default operation (see above),") +
+                    "\n" +
+                    _("then MeerK40t can create a matching operation for you.")
+                ,
+                "page": "Classification",
+                "section": "",
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -215,6 +285,10 @@ class Elemental(Service):
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
+        self.setting(bool, "classify_fuzzy", False)
+        self.setting(float, "classify_fuzzydistance", 100.0)
+        self.setting(bool, "classify_autogenerate", True)
+        self.setting(bool, "classify_default", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
@@ -236,7 +310,7 @@ class Elemental(Service):
 
         ops = list(self.ops())
         if not len(ops) and not self.operation_default_empty:
-            self.load_default()
+            self.load_default(performclassify=False)
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -6033,13 +6107,13 @@ class Elemental(Service):
         @self.tree_submenu(_("Load"))
         @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwargs):
-            self.load_default()
+            self.load_default(performclassify=True)
 
         @self.tree_submenu(_("Load"))
         @self.tree_separator_after()
         @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwargs):
-            self.load_default2()
+            self.load_default2(performclassify=True)
 
         @self.tree_submenu(_("Save"))
         @self.tree_values("opname", values=self.op_data.section_set)
@@ -6843,7 +6917,7 @@ class Elemental(Service):
     def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
-    def load_default(self):
+    def load_default(self, performclassify = True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -6856,9 +6930,10 @@ class Elemental(Service):
         self.add_op(RasterOpNode())
         self.add_op(EngraveOpNode())
         self.add_op(CutOpNode())
-        self.classify(list(self.elems()))
+        if performclassify:
+            self.classify(list(self.elems()))
 
-    def load_default2(self):
+    def load_default2(self, performclassify = True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -6875,7 +6950,8 @@ class Elemental(Service):
         self.add_op(EngraveOpNode(color="cyan"))
         self.add_op(EngraveOpNode(color="yellow"))
         self.add_op(CutOpNode())
-        self.classify(list(self.elems()))
+        if performclassify:
+            self.classify(list(self.elems()))
 
     def tree_operations_for_node(self, node):
         for func, m, sname in self.find("tree", node.type, ".*"):
@@ -7494,14 +7570,20 @@ class Elemental(Service):
         """
         @param elements: list of elements to classify.
         @param operations: operations list to classify into.
-        @param add_op_function: function to add a new operation, because of a lack of classification options.
+        @param add_op_function: function to add a new operation,
+                because of a lack of classification options.
         @return:
         """
         if elements is None:
             return
+
         if not len(list(self.ops())) and not self.operation_default_empty:
-            self.load_default()
+            self.load_default(performclassify=False)
         reverse = self.classify_reverse
+        fuzzy = self.classify_fuzzy
+        fuzzydistance = self.classify_fuzzydistance
+        usedefault = self.classify_default
+        autogen = self.classify_autogenerate
         if reverse:
             elements = reversed(elements)
         if operations is None:
@@ -7517,7 +7599,7 @@ class Elemental(Service):
             was_classified = False
             for op in operations:
                 if hasattr(op, "classify"):
-                    classified, should_break = op.classify(node)
+                    classified, should_break = op.classify(node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=False)
                 else:
                     continue
                 if classified:
@@ -7528,77 +7610,73 @@ class Elemental(Service):
             ######################
             # NON-CLASSIFIED ELEMENTS
             ######################
-            if not was_classified:
+            if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
                 for op in operations:
                     if hasattr(op, "classify"):
-                        classified, should_break = op.classify(node, usedefault=True)
+                        classified, should_break = op.classify(node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=True)
                     else:
                         continue
                     if classified:
                         was_classified = True
                     if should_break:
                         break
-            if not was_classified:
-
-                # print ("Was still not classified")
-
+            if not was_classified and autogen:
+                # Despite all efforts we couldn't classify the element, so let's add an op
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
                 elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
-                    is_cut = Color.distance_sq("red", node.stroke) <= 18825
+                    is_cut = Color.distance("red", node.stroke) <= 100
                     if is_cut:
                         op = CutOpNode(color=Color("red"), speed=5.0)
                     else:
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
+                elif (hasattr(node, "fill")
+                    and node.fill is not None
+                    and node.fill.argb is not None
+                ):
+                    op = RasterOpNode(color=0, output=True)
 
                 if op is not None:
                     # Lets make sure we don't have something like that already
                     already_found = False
-                    # for testop in self.ops():
-                    #     if type(op) == type(testop):
-                    #         sameop = True
-                    #     else:
-                    #         sameop = False
-                    #     samecolor = False
-                    #     if hasattr(op, "color") and hasattr(testop, "color"):
-                    #         # print ("Comparing color %s to %s" % ( op.color, testop.color ))
-                    #         if op.color == testop.color:
-                    #             samecolor = True
-                    #     elif hasattr(op, "color") != hasattr(testop, "color"):
-                    #         samecolor = False
-                    #     else:
-                    #         samecolor = True
-                    #     samespeed = False
-                    #     if hasattr(op, "speed") and hasattr(testop, "speed"):
-                    #         if op.speed == testop.speed:
-                    #             samespeed = True
-                    #     elif hasattr(op, "speed") != hasattr(testop, "speed"):
-                    #         samespeed = False
-                    #     else:
-                    #         samespeed = True
-                    #     # print ("Compare: %s to %s - op=%s, col=%s, speed=%s" % (type(op).__name__, type(testop).__name__, sameop, samecolor, samespeed))
-                    #     if sameop and samecolor and samespeed:
-                    #         already_found = True
-                    #         op = testop
-                    #         break
+                    for testop in self.ops():
+                        if type(op) == type(testop):
+                            sameop = True
+                        else:
+                            sameop = False
+                        samecolor = False
+                        if hasattr(op, "color") and hasattr(testop, "color"):
+                            # print ("Comparing color %s to %s" % ( op.color, testop.color ))
+                            if op.color == testop.color:
+                                samecolor = True
+                        elif hasattr(op, "color") != hasattr(testop, "color"):
+                            samecolor = False
+                        else:
+                            samecolor = True
+                        samespeed = False
+                        if hasattr(op, "speed") and hasattr(testop, "speed"):
+                            if op.speed == testop.speed:
+                                samespeed = True
+                        elif hasattr(op, "speed") != hasattr(testop, "speed"):
+                            samespeed = False
+                        else:
+                            samespeed = True
+                        # print ("Compare: %s to %s - op=%s, col=%s, speed=%s" % (type(op).__name__, type(testop).__name__, sameop, samecolor, samespeed))
+                        if sameop and samecolor and samespeed:
+                            already_found = True
+                            op = testop
+                            break
                     if not already_found:
+                        if hasattr(op, "output"):
+                            op.output = True
                         add_op_function(op)
                         operations.append(op)
+                        already_found = True
                     op.add_reference(node)
-
-                if (
-                    hasattr(node, "fill")
-                    and node.fill is not None
-                    and node.fill.argb is not None
-                ):
-                    op = RasterOpNode(color=0, output=False)
-                    add_op_function(op)
-                    op.add_reference(node)
-                    operations.append(op)
 
     def add_classify_op(self, op):
         """

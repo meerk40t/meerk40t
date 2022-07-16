@@ -26,8 +26,6 @@ class RasterOpNode(Node, Parameters):
             if "type" in kwargs:
                 del kwargs["type"]
         Node.__init__(self, type="op raster", **kwargs)
-        # Is this op out of useful bounds?
-        self.dangerous = False
         Parameters.__init__(self, None, **kwargs)
         self.settings.update(kwargs)
 
@@ -60,6 +58,8 @@ class RasterOpNode(Node, Parameters):
         # To which attributes does the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
         self.allowed_attributes = ["fill", ] # comma is relevant
+        # Is this op out of useful bounds?
+        self.dangerous = False
 
     def __repr__(self):
         return "RasterOp()"
@@ -101,6 +101,8 @@ class RasterOpNode(Node, Parameters):
         parts.append(f"±{self.overscan}")
         if self.acceleration_custom:
             parts.append(f"a:{self.acceleration}")
+        if self.stopop:
+            parts.append("<")
         return " ".join(parts)
 
     def __copy__(self):
@@ -154,6 +156,17 @@ class RasterOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        ct = 0
+        t = ""
+        s = ""
+        for cc in self.allowed_attributes:
+            if len(cc)>0:
+                t += cc[0].upper()
+                ct += 1
+        if ct>0:
+            s = self.color.hex + "-" + t
+        default_map["colcode"] = s
+        default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
         return default_map
 
@@ -187,6 +200,9 @@ class RasterOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def has_color_attribute(self, attribute):
+        return attribute in self.allowed_attributes
+
     def add_color_attribute(self, attribute):
         if not attribute in self.allowed_attributes:
             self.allowed_attributes.append(attribute)
@@ -195,29 +211,44 @@ class RasterOpNode(Node, Parameters):
         if attribute in self.allowed_attributes:
             self.allowed_attributes.remove(attribute)
 
-    def classify(self, node, usedefault=False):
-        if node.type in (
-            "elem text",
-        ):
-            self.add_reference(node)
-            return True, False
+    def valid_node(self, node):
+        return True
+
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        def matching_color(col1, col2):
+            if (col1 is None) != (col2 is None):
+                result = False
+            elif col1 is None and col2 is None:
+                result = True
+            else:
+                if fuzzy:
+                    distance = Color.distance(plain_color_node, plain_color_op)
+                    result = distance < fuzzydistance
+                else:
+                    result = plain_color_op == plain_color_node
+            return result
 
         if node.type in self.allowed_elements:
             if not self.default:
-                for attribute in self.allowed_attributes:
-                    if hasattr(node, attribute) and getattr(node, attribute) is not None:
-                        # Raster is currently color-blind, so anything goes
-                        # plain_color_op = abs(self.color)
-                        # plain_color_node = abs(getattr(node, attribute))
-                        # if plain_color_op != plain_color_node:
-                        #     continue
-                        # else:
+                if len(self.allowed_attributes)>0:
+                    for attribute in self.allowed_attributes:
+                        if hasattr(node, attribute) and getattr(node, attribute) is not None:
+                            plain_color_op = abs(self.color)
+                            plain_color_node = abs(getattr(node, attribute))
+                            if matching_color(plain_color_op, plain_color_node):
+                                if self.valid_node(node):
+                                    self.add_reference(node)
+                                # Have classified but more classification might be needed
+                                return True, self.stopop
+                else: # empty ? Anything goes
+                    if self.valid_node(node):
                         self.add_reference(node)
-                        # Have classified but more classification might be needed
-                        return True, False
+                    # Have classified but more classification might be needed
+                    return True, self.stopop
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
-                return True, False
+                if self.valid_node(node):
+                    return True, self.stopop
         return False, False
 
     def load(self, settings, section):
