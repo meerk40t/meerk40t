@@ -219,16 +219,15 @@ class RasterOpNode(Node, Parameters):
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
-            if (col1 is None) != (col2 is None):
-                result = False
-            elif col1 is None and col2 is None:
+            result = False
+            if col1 is None and col2 is None:
                 result = True
-            else:
+            elif col1 is not None and col1.argb is not None and col2 is not None and col2.argb is not None:
                 if fuzzy:
-                    distance = Color.distance(plain_color_node, plain_color_op)
+                    distance = Color.distance(col1, col2)
                     result = distance < fuzzydistance
                 else:
-                    result = plain_color_op == plain_color_node
+                    result = col1 == col2
             return result
 
         if node.type in self.allowed_elements:
