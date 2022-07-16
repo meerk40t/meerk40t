@@ -486,7 +486,9 @@ class wxMeerK40t(wx.App, Module):
                 if opened.startswith("window/"):
                     window = path.opened[opened]
                     display = wx.Display.GetFromWindow(window)
-                    channel(f"Window {opened} with bounds {window.GetRect()} is located on display {display})")
+                    if display == wx.NOT_FOUND:
+                        display = "Display Not Found"
+                    channel(f"Window {opened} with bounds {window.GetRect()} is located on display: {display})")
             return "window", data
 
 
