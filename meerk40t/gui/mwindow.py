@@ -45,6 +45,8 @@ class MWindow(wx.Frame, Module):
         self.Bind(wx.EVT_CLOSE, self.on_close, self)
         self.Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down, self)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_request, self)
+        self.Bind(wx.EVT_MOVE, self.on_change_window, self)
+        self.Bind(wx.EVT_SIZE, self.on_change_window, self)
 
     def on_mouse_left_down(self, event):
         # Convert mac Control+left click into right click
@@ -61,6 +63,13 @@ class MWindow(wx.Frame, Module):
             self.PopupMenu(menu)
             menu.Destroy()
 
+    def on_change_window(self, event):
+        try:
+            self.window_context.width, self.window_context.height = self.Size
+            self.window_context.x, self.window_context.y = self.GetPosition()
+        except RuntimeError:
+            pass
+
     def create_menu(self, append):
         pass
 
@@ -71,8 +80,6 @@ class MWindow(wx.Frame, Module):
             if hasattr(self, "window_close_veto") and self.window_close_veto():
                 event.Veto()
                 return
-            self.window_context.width, self.window_context.height = self.Size
-            self.window_context.x, self.window_context.y = self.GetPosition()
             self.state = 5
             self.context.close(self.name)
             event.Skip()  # Call 'destroy' as regular.
@@ -95,9 +102,10 @@ class MWindow(wx.Frame, Module):
             x, y = self.GetPosition()
             self.window_context.setting(int, "x", x)
             self.window_context.setting(int, "y", y)
-            display = wx.Display.GetFromPoint((self.window_context.x, self.window_context.y))
+            self.SetPosition((self.window_context.x, self.window_context.y))
+            display = wx.Display.GetFromWindow(self)
             if display != wx.NOT_FOUND:
-                self.SetPosition((self.window_context.x, self.window_context.y))
+                self.SetPosition(0, 0)
         self.Show()
         self.window_open()
 
@@ -105,12 +113,7 @@ class MWindow(wx.Frame, Module):
         self.window_close()
         if self.window_save:
             self.window_context.setting(bool, "open_on_start", False)
-            try:
-                self.window_context.open_on_start = shutdown and self.window_preserve()
-                self.window_context.width, self.window_context.height = self.Size
-                self.window_context.x, self.window_context.y = self.GetPosition()
-            except RuntimeError:
-                pass
+            self.window_context.open_on_start = shutdown and self.window_preserve()
         try:
             self.Close()
         except RuntimeError:
