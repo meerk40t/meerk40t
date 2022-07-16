@@ -55,8 +55,8 @@ class Node:
     """
 
     def __init__(self, type=None, *args, **kwargs):
-        self._formatter = "{element_type}:{id}"
         super().__init__()
+        self._formatter = "{element_type}:{id}"
         self._children = list()
         self._root = None
         self._parent = None
@@ -87,11 +87,15 @@ class Node:
 
     def __str__(self):
         text = self._formatter
+        if text is None:
+            text = "{element_type}"
         default_map = self.default_map()
         try:
             return text.format_map(default_map)
         except KeyError as e:
-            raise KeyError(f"mapping '{text}' did not contain a required key in {default_map} for {self.__class__}")
+            raise KeyError(
+                f"mapping '{text}' did not contain a required key in {default_map} for {self.__class__}"
+            ) from e
 
     def __eq__(self, other):
         return other is self

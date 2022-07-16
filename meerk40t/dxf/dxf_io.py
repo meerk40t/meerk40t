@@ -1,9 +1,7 @@
-import os
 
 import ezdxf
 from ezdxf import units
 
-from ..core.node.elem_path import PathNode
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 
 try:

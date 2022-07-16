@@ -51,7 +51,6 @@ class DotsOpNode(Node, Parameters):
         default_map["element_type"] = "Dots"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
-        default_map["color"] = ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
@@ -62,6 +61,7 @@ class DotsOpNode(Node, Parameters):
         )
         default_map["dwell_time"] = "default"
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
 
     def drop(self, drag_node):

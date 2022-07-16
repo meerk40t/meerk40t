@@ -76,8 +76,8 @@ class HatchOpNode(Node, Parameters):
         default_map["frequency"] = "default"
         default_map["hatch_angle"] = "default"
         default_map["hatch_distance"] = "default"
-        default_map["color"] = ""
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
 
     def drop(self, drag_node):

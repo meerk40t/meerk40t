@@ -209,25 +209,18 @@ def plugin(kernel, lifecycle):
         kernel_root.planner.register("plan/interrupt", interrupt)
 
         if kernel._gui:
-
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             for window in kernel.derivable("window"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
-                if kernel.read_persistent(
-                    bool, "window/%s/open_on_start" % window, False
-                ):
+                if kernel.read_persistent(bool, window, "open_on_start", False):
                     if window_index is not None:
                         kernel.console(
-                            "window open -m {index} {window} {index}\n".format(
-                                index=window_index, window=window_name
-                            )
+                            f"window open -m {window_index} {window_name[7:]} {window_index}\n"
                         )
                     else:
-                        kernel.console(
-                            "window open {window}\n".format(window=window_name)
-                        )
+                        kernel.console(f"window open {window_name[7:]}\n")
 
             meerk40tgui.MainLoop()
