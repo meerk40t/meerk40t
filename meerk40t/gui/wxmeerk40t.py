@@ -408,6 +408,10 @@ class wxMeerK40t(wx.App, Module):
 
         context = kernel.root
 
+        #################
+        # WINDOW COMMANDS
+        #################
+
         @kernel.console_option(
             "path",
             "p",
@@ -465,6 +469,20 @@ class wxMeerK40t(wx.App, Module):
                 name = name[7:]
                 channel("%d: %s" % (i + 1, name))
             return "window", data
+
+        @kernel.console_command(
+            "displays",
+            input_type="window",
+            output_type="window",
+            help=_("List available windows."),
+        )
+        def window_list(channel, _, data, **kwargs):
+            for idx in range(wx.Display.GetCount()):
+                d = wx.Display(idx)
+                channel(f"Primary: {d.IsPrimary()} {d.GetGeometry()}")
+            channel(_("----------"))
+            return "window", data
+
 
         @kernel.console_option(
             "multi",
