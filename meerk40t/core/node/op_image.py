@@ -140,6 +140,7 @@ class ImageOpNode(Node, Parameters):
         default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
         return default_map
 

@@ -186,6 +186,18 @@ class Node:
             if hasattr(self, key) and mymap[key]=="None":
                 if getattr(self, key) is None:
                     mymap[key] = "-"
+        # slist = text.split("{")
+        # for item in slist:
+        #     idx = item.find("}")
+        #     if idx>0:
+        #         sitem = item[0:idx]
+        #     else:
+        #         sitem = item
+        #     try:
+        #         dummy = mymap[sitem]
+        #     except KeyError:
+        #         # Addit
+        #         mymap[sitem] = "??ERR??"
         return text.format_map(mymap)
 
     def default_map(self, default_map=None):

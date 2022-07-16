@@ -156,10 +156,10 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Color distance"),
                 "style": "combosmall",
                 "choices": [
-                    "0.0",
-                    "100.0",
-                    "200.0",
-                    "400.0",
+                    0,
+                    100,
+                    200,
+                    400,
                 ],
                 "conditional": (elements, "classify_fuzzy"),
                 "tip":

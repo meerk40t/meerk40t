@@ -246,7 +246,19 @@ class ChoicePropertyPanel(ScrolledPanel):
                     choices=choice_list,
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
-                control.SetValue(str(data))
+                if data is not None:
+                    if data_type == str:
+                        control.SetValue(str(data))
+                    else:
+                        least = None
+                        for entry in choice_list:
+                            if least is None:
+                                least = entry
+                            else:
+                                if abs(data_type(entry) - data) < abs(data_type(least) - data):
+                                    least = entry
+                        if least is not None:
+                            control.SetValue(least)
 
                 def on_combo_text(param, ctrl, obj, dtype):
                     def select(event=None):
@@ -274,7 +286,19 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 # print ("Choices: %s" % choice_list)
                 # print ("To set: %s" % str(data))
-                control.SetValue(str(data))
+                if data is not None:
+                    if data_type == str:
+                        control.SetValue(str(data))
+                    else:
+                        least = None
+                        for entry in choice_list:
+                            if least is None:
+                                least = entry
+                            else:
+                                if abs(data_type(entry) - data) < abs(data_type(least) - data):
+                                    least = entry
+                        if least is not None:
+                            control.SetValue(least)
 
                 def on_combosmall_text(param, ctrl, obj, dtype):
                     def select(event=None):
