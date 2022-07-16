@@ -105,7 +105,7 @@ class MWindow(wx.Frame, Module):
             self.SetPosition((self.window_context.x, self.window_context.y))
             display = wx.Display.GetFromWindow(self)
             if display != wx.NOT_FOUND:
-                self.SetPosition(0, 0)
+                self.Center()
         self.Show()
         self.window_open()
 
