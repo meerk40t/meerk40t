@@ -22,6 +22,7 @@ class LineNode(Node):
         **kwargs,
     ):
         super(LineNode, self).__init__(type="elem line", **kwargs)
+        self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
         if matrix is None:

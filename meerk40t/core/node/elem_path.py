@@ -21,6 +21,7 @@ class PathNode(Node):
         **kwargs,
     ):
         super(PathNode, self).__init__(type="elem path")
+        self._formatter = "{element_type} {id} {stroke}"
         self.path = path
         self.settings = kwargs
         if matrix is None:

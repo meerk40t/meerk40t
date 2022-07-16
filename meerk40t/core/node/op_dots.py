@@ -21,6 +21,7 @@ class DotsOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op dots", **kwargs)
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
         self.settings.update(kwargs)
 
         if len(args) == 1:
@@ -34,20 +35,6 @@ class DotsOpNode(Node, Parameters):
 
     def __repr__(self):
         return "DotsOpNode()"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        parts.append("Dots")
-        parts.append("%gms dwell" % self.dwell_time)
-        return " ".join(parts)
 
     def __copy__(self):
         return DotsOpNode(self)
@@ -64,6 +51,7 @@ class DotsOpNode(Node, Parameters):
         default_map["element_type"] = "Dots"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        default_map["color"] = ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""

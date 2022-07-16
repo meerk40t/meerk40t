@@ -44,44 +44,44 @@ def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "preregister":
         kernel.register(
-            "format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
         )
         kernel.register(
-            "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
         )
         kernel.register(
             "format/op hatch",
-            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}",
+            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}",
         )
         kernel.register(
             "format/op raster",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}",
         )
         kernel.register(
             "format/op image",
             "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
         )
         kernel.register(
-            "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
+            "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell {color}"
         )
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
-        kernel.register("format/elem ellipse", "{element_type} {id}")
+        kernel.register("format/elem ellipse", "{element_type} {id} {stroke}")
         kernel.register("format/elem image", "{element_type} {width}x{height}")
-        kernel.register("format/elem line", "{element_type} {id}")
-        kernel.register("format/elem path", "{element_type} {id}")
-        kernel.register("format/elem point", "{element_type} {id}")
-        kernel.register("format/elem polyline", "{element_type} {id}")
-        kernel.register("format/elem rect", "{element_type} {id}")
+        kernel.register("format/elem line", "{element_type} {id} {stroke}")
+        kernel.register("format/elem path", "{element_type} {id} {stroke}")
+        kernel.register("format/elem point", "{element_type} {id} {stroke}")
+        kernel.register("format/elem polyline", "{element_type} {id} {stroke}")
+        kernel.register("format/elem rect", "{element_type} {id} {stroke}")
         kernel.register("format/elem text", "{element_type} {id}: {text}")
         kernel.register("format/reference", "*{reference}")
         kernel.register("format/group", "{element_type} {id} ({children} elems)")
         kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
         kernel.register("format/file", "{element_type}: {filename}")
-        kernel.register("format/lasercode", "{element_type}")
+        kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
         kernel.register("format/branch ops", _("Operations {loops}"))
         kernel.register("format/branch elems", _("Elements"))

@@ -24,6 +24,7 @@ class NumpathNode(Node, Parameters):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        self._formatter = "{element_type} {id} {stroke}"
         self.settings.update(kwargs)
         self.path = path
         if matrix is None:

@@ -902,8 +902,8 @@ class ShadowTree:
                 if node.type == "op" and len(node.children)==0: # Invalid data
                     invalid_nodes.append(child)
                 else:
-                    formatter = self.elements.lookup(f"format/{node.type}")
-                    label = node.create_label(formatter)
+                    node.formatter = self.elements.lookup(f"format/{node.type}")
+                    label = str(node)
                     self.wxtree.SetItemText(child, label)
             child, cookie = self.wxtree.GetNextChild(startnode, cookie)
         # Get rid of invalid nodes...
@@ -928,8 +928,8 @@ class ShadowTree:
             return
 
         self.set_icon(node, force=force)
-        formatter = self.elements.lookup(f"format/{node.type}")
-        label = node.create_label(formatter)
+        node.formatter = self.elements.lookup(f"format/{node.type}")
+        label = str(node)
         self.wxtree.SetItemText(node.item, label)
         try:
             stroke = node.stroke

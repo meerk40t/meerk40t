@@ -22,6 +22,7 @@ class PolylineNode(Node):
         **kwargs,
     ):
         super(PolylineNode, self).__init__(type="elem polyline", **kwargs)
+        self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
         if matrix is None:

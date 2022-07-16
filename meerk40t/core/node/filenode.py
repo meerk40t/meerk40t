@@ -13,11 +13,7 @@ class FileNode(Node):
     def __init__(self, filepath=None, **kwargs):
         super(FileNode, self).__init__(type="file", **kwargs)
         self._filepath = filepath
-
-    def __str__(self):
-        if self.filepath is None:
-            return "File: None"
-        return os.path.basename(self._filepath)
+        self._formatter = "{element_type}: {filename}"
 
     def default_map(self, default_map=None):
         default_map = super(FileNode, self).default_map(default_map=default_map)

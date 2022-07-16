@@ -13,18 +13,10 @@ class WaitOperation(Node):
     def __init__(self, wait=1.0, **kwargs):
         super().__init__(type="util wait", **kwargs)
         self.settings = {"wait": wait, "output": True}
+        self._formatter = "{enabled}{element_type} {wait}"
 
     def __repr__(self):
         return f"WaitOperation('{self.wait}')"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        parts.append("Wait")
-        if self.wait is not None:
-            parts.append(str(self.wait))
-        return " ".join(parts)
 
     def __copy__(self):
         return WaitOperation(self.wait)

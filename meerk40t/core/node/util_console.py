@@ -13,6 +13,7 @@ class ConsoleOperation(Node):
 
     def __init__(self, command=None, **kwargs):
         super().__init__(type="util console", **kwargs)
+        self._formatter = "{enabled}{command}"
         self.settings = {}
         if command is not None:
             self.settings["command"] = command
@@ -31,14 +32,6 @@ class ConsoleOperation(Node):
 
     def __repr__(self):
         return f"ConsoleOperation('{self.command}')"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.command is not None:
-            parts.append(self.command)
-        return " ".join(parts)
 
     def __copy__(self):
         return ConsoleOperation(self.command)

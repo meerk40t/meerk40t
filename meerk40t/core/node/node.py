@@ -55,6 +55,7 @@ class Node:
     """
 
     def __init__(self, type=None, *args, **kwargs):
+        self._formatter = "{element_type}:{id}"
         super().__init__()
         self._children = list()
         self._root = None
@@ -85,7 +86,12 @@ class Node:
         return "Node('%s', %s)" % (self.type, str(self._parent))
 
     def __str__(self):
-        return self.create_label()
+        text = self._formatter
+        default_map = self.default_map()
+        try:
+            return text.format_map(default_map)
+        except KeyError as e:
+            raise KeyError(f"mapping '{text}' did not contain a required key in {default_map} for {self.__class__}")
 
     def __eq__(self, other):
         return other is self
@@ -147,6 +153,14 @@ class Node:
         return None
 
     @property
+    def formatter(self):
+        return self._formatter
+
+    @formatter.setter
+    def formatter(self, formatter):
+        self._formatter = formatter
+
+    @property
     def points(self):
         """
         Returns the node points values
@@ -158,25 +172,10 @@ class Node:
         self._points_dirty = False
         return self._points
 
-    def create_label(self, text=None):
-        if text is None:
-            text = "{element_type}:{id}"
-        # Just for the optical impression (who understands what a "Rect: None" means),
-        # lets replace some of the more obvious ones...
-        mymap = self.default_map()
-        for key in mymap:
-            if hasattr(self, key) and mymap[key]=="None":
-                if getattr(self, key) is None:
-                    mymap[key] = "-"
-        try:
-            return text.format_map(mymap)
-        except KeyError as e:
-            raise KeyError(f"mapping '{text}' did not contain a required key in {mymap} for {self.__class__}")
-
     def default_map(self, default_map=None):
         if default_map is None:
             default_map = dict()
-        default_map["id"] = str(self.id)
+        default_map["id"] = str(self.id) if self.id is not None else "-"
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map

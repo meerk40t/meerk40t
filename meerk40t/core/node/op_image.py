@@ -24,6 +24,7 @@ class ImageOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op image", **kwargs)
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
         self.settings.update(kwargs)
 
         if len(args) == 1:
@@ -39,44 +40,6 @@ class ImageOpNode(Node, Parameters):
 
     def __repr__(self):
         return "ImageOpNode()"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        parts.append("Image")
-        if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        if self.raster_swing:
-            raster_dir = "-"
-        else:
-            raster_dir = "="
-        if self.raster_direction == 0:
-            raster_dir += "T2B"
-        elif self.raster_direction == 1:
-            raster_dir += "B2T"
-        elif self.raster_direction == 2:
-            raster_dir += "R2L"
-        elif self.raster_direction == 3:
-            raster_dir += "L2R"
-        elif self.raster_direction == 4:
-            raster_dir += "X"
-        else:
-            raster_dir += "%d" % self.raster_direction
-        parts.append(raster_dir)
-        if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        parts.append("±{overscan}".format(overscan=self.overscan))
-        parts.append("%s" % self.color.hex)
-        if self.acceleration_custom:
-            parts.append("a:%d" % self.acceleration)
-        return " ".join(parts)
 
     def __copy__(self):
         return ImageOpNode(self)
@@ -119,7 +82,9 @@ class ImageOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        default_map["color"] = ""
         default_map.update(self.settings)
+        default_map["overscan"] = f"±{self.overscan}"
         return default_map
 
     def drop(self, drag_node):
