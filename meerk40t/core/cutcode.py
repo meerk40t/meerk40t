@@ -447,12 +447,12 @@ class CutCode(CutGroup):
             extra += curr.extra()
         return extra
 
-    def duration_cut(self, stop_at = -1):
+    def duration_cut(self, stop_at = None):
         cutcode = list(self.flat())
         distance = 0
-        if stop_at < 0:
+        if stop_at is None:
             stop_at = len(cutcode)
-        if stop_at>len(cutcode):
+        if stop_at > len(cutcode):
             stop_at = len(cutcode)
         for i in range(0, stop_at):
             curr = cutcode[i]

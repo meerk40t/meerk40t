@@ -131,10 +131,10 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi.SetValue(str(node.dpi))
         try:
             bounds = node.bounds
-            self.text_x.SetValue("%.2fmm" % Length(amount=bounds[0], unitless=1).mm)
-            self.text_y.SetValue("%.2fmm" % Length(amount=bounds[1], unitless=1).mm)
-            self.text_width.SetValue("%.2fmm" % Length(amount=bounds[2]-bounds[0], unitless=1).mm)
-            self.text_height.SetValue("%.2fmm" % Length(amount=bounds[3]-bounds[1], unitless=1).mm)
+            self.text_x.SetValue(Length(amount=bounds[0], unitless=1, digits=2).length_mm)
+            self.text_y.SetValue(Length(amount=bounds[1], unitless=1, digits=2).length_mm)
+            self.text_width.SetValue(Length(amount=bounds[2]-bounds[0], unitless=1, digits=2).length_mm)
+            self.text_height.SetValue(Length(amount=bounds[3]-bounds[1], unitless=1, digits=2).length_mm)
         except AttributeError:
             pass
         self.check_enable_dither.SetValue(node.dither)

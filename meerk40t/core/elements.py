@@ -5912,7 +5912,7 @@ class Elemental(Service):
             == 1
         )
         @self.tree_operation(
-            _("Delete file '%s' and all its child-elements fully") % "{name}",
+            _("Remove loaded file '%s' and all its child-elements fully") % "{name}",
             node_type=("file"),
             help="",
         )
@@ -6683,13 +6683,13 @@ class Elemental(Service):
 
         @self.tree_conditional(lambda node: node.lock)
         @self.tree_separator_before()
-        @self.tree_operation(_("Unlock Element"), node_type=elem_nodes, help="")
+        @self.tree_operation(_("Unlock element, allows manipulation"), node_type=elem_nodes, help="")
         def element_unlock_manipulations(node, **kwargs):
             self("element unlock\n")
 
         @self.tree_conditional(lambda node: not node.lock)
         @self.tree_separator_before()
-        @self.tree_operation(_("Lock manipulations"), node_type=elem_nodes, help="")
+        @self.tree_operation(_("Lock elements, prevents manipulations"), node_type=elem_nodes, help="")
         def element_lock_manipulations(node, **kwargs):
             self("element lock\n")
 
@@ -7629,7 +7629,10 @@ class Elemental(Service):
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
                 elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
-                    is_cut = Color.distance("red", node.stroke) <= 100
+                    if fuzzy:
+                        is_cut = Color.distance("red", node.stroke) <= fuzzydistance
+                    else:
+                        is_cut = Color("red") == node.stroke
                     if is_cut:
                         op = CutOpNode(color=Color("red"), speed=5.0)
                     else:

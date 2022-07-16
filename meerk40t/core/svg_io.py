@@ -680,7 +680,7 @@ class SVGProcessor:
                     tag = tag.replace(torepl, replacer, )
                     element.values[tag] = oldval
                     element.values[SVG_ATTR_TAG] = tag
-            if tag == "note":
+            if tag in (MEERK40T_XMLS_ID + ":note", "note"):
                 self.elements.note = element.values.get(SVG_TAG_TEXT)
                 self.elements.signal("note", self.pathname)
                 return
@@ -697,9 +697,7 @@ class SVGProcessor:
             if node_type is not None:
                 node_id = element.values.get("id")
                 # Check if SVGElement: operation
-                op_s1 = MEERK40T_XMLS_ID + ":operation"
-                op_s2 = "operation"
-                if tag == op_s1.lower() or tag == op_s2.lower():
+                if tag in (MEERK40T_XMLS_ID + ":operation", "operation"):
                     if not self.operations_cleared:
                         self.elements.clear_operations()
                         self.operations_cleared = True
