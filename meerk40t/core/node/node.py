@@ -168,7 +168,10 @@ class Node:
             if hasattr(self, key) and mymap[key]=="None":
                 if getattr(self, key) is None:
                     mymap[key] = "-"
-        return text.format_map(mymap)
+        try:
+            return text.format_map(mymap)
+        except KeyError as e:
+            raise KeyError(f"mapping '{text}' did not contain a required key in {mymap} for {self.__class__}")
 
     def default_map(self, default_map=None):
         if default_map is None:
