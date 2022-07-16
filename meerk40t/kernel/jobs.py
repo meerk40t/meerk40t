@@ -48,6 +48,9 @@ class Job:
                 return self.process.__name__
             except AttributeError:
                 return object.__str__(self)
+    @property
+    def remaining(self) -> int:
+        return self._remaining
 
     @property
     def scheduled(self) -> bool:

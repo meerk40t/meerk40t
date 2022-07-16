@@ -2415,7 +2415,7 @@ class Kernel(Settings):
                     if job.times is None:
                         parts.append(_("forever,"))
                     else:
-                        parts.append(_("%d times,") % job.times)
+                        parts.append(_("%d/%d times,") % (job.times - job.remaining, job.times))
                     if job.interval is None:
                         parts.append(_("never"))
                     else:
