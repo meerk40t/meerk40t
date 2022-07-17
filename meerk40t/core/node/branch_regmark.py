@@ -16,12 +16,14 @@ class BranchRegmarkNode(Node):
         default_map["element_type"] = "Regmark"
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         elif drag_node.type == "group":
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         return False
 

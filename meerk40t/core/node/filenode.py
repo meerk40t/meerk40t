@@ -26,9 +26,10 @@ class FileNode(Node):
         default_map["filename"] = s
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type == "group":
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
         return False
 
     @property

@@ -42,14 +42,16 @@ class LaserCodeNode(Node):
         default_map["commands"] = " ".join(self._str_commands())
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         drop_node = self
         if drag_node.type in op_nodes:
-            drop_node.insert_sibling(drag_node)
+            if modify:
+                drop_node.insert_sibling(drag_node)
             return True
         elif drop_node.type == "branch ops":
             # Dragging operation to op branch to effectively move to bottom.
-            drop_node.append_child(drag_node)
+            if modify:
+                drop_node.append_child(drag_node)
             return True
         return False
 

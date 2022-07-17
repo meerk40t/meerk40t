@@ -16,9 +16,10 @@ class BranchElementsNode(Node):
         default_map["element_type"] = "Elements"
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         return False
 
