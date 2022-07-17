@@ -6179,8 +6179,6 @@ class Elemental(Service):
                 node.add_reference(n.node)
             self.signal("refresh_tree")
 
-        #            self.signal("rebuild_tree")
-
         @self.tree_operation(
             _("Make raster image"),
             node_type=("op image", "op raster"),
@@ -6329,6 +6327,20 @@ class Elemental(Service):
                 from os import system as open_in_shell
 
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
+
+        def get_values():
+            return [o for o in self.ops() if o.type.startswith("op")]
+
+        @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_values("op_assign", values=get_values)
+        @self.tree_operation("{op_assign}", node_type=elem_nodes, help="")
+        def assign_operations(node, op_assign, **kwargs):
+            for n in list(self.elems(emphasized=True)):
+                if op_assign.drop(n, modify=False):
+                    for ref in list(n._references):
+                        ref.remove_node()
+                    op_assign.drop(n, modify=True)
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
