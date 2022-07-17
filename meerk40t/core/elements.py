@@ -6336,11 +6336,11 @@ class Elemental(Service):
         @self.tree_values("op_assign", values=get_values)
         @self.tree_operation("{op_assign}", node_type=elem_nodes, help="")
         def assign_operations(node, op_assign, **kwargs):
-            for n in self.elems(emphasized=True):
-                if n.type in elem_nodes:
+            for n in list(self.elems(emphasized=True)):
+                if op_assign.drop(n, modify=False):
                     for ref in list(n._references):
                         ref.remove_node()
-                    op_assign.add_reference(n)
+                    op_assign.drop(n, modify=True)
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
