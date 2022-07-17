@@ -56,28 +56,6 @@ class HatchOpNode(Node, Parameters):
     def __repr__(self):
         return "HatchOpNode()"
 
-    def __str__(self):
-        parts = list()
-        if self.dangerous:
-            parts.append("❌")
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        parts.append("Hatch")
-        if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        parts.append("%s" % self.color.hex)
-        if self.stopop:
-            parts.append("<")
-        return " ".join(parts)
-
     def __copy__(self):
         return HatchOpNode(self)
 

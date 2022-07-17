@@ -40,22 +40,6 @@ class DotsOpNode(Node, Parameters):
     def __repr__(self):
         return "DotsOpNode()"
 
-    def __str__(self):
-        parts = list()
-        if self.dangerous:
-            parts.append("❌")
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        parts.append("Dots")
-        parts.append("%gms dwell" % self.dwell_time)
-        return " ".join(parts)
-
     def __copy__(self):
         return DotsOpNode(self)
 

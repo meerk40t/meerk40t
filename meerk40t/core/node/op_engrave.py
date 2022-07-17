@@ -67,34 +67,6 @@ class EngraveOpNode(Node, Parameters):
     def __repr__(self):
         return "EngraveOpNode()"
 
-    def __str__(self):
-        parts = list()
-        if self.dangerous:
-            parts.append("❌")
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        parts.append("Engrave")
-        if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
-        if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        parts.append("%s" % self.color.hex)
-        if self.dratio_custom:
-            parts.append("d:%g" % self.dratio)
-        if self.acceleration_custom:
-            parts.append("a:%d" % self.acceleration)
-        if self.dot_length_custom:
-            parts.append("dot: %d" % self.dot_length)
-        if self.stopop:
-            parts.append("<")
-        return " ".join(parts)
-
     def __copy__(self):
         return EngraveOpNode(self)
 
