@@ -88,6 +88,12 @@ class TreePanel(wx.Panel):
             self.shadow_tree.on_item_right_click,
             self.wxtree,
         )
+        # try:
+        #     self.bind(wx.EVT_TREE_ITEM_GETTOOLTIP, self.shadow_tree.on_item_info, self.wxtree)
+        # except:
+        #     # may not be supported outsied windows...
+        #     pass
+        # self.Bind(wx.EVT_MOVE, self.shadow_tree.on_item_mouse_move, self.wxtree)
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
@@ -1112,6 +1118,31 @@ class ShadowTree:
         if activate is not None:
             activate(first_element)
 
+    def on_item_mouse_move(self, event):
+        print ("Event mousemove called")
+        pt = event.GetPosition()
+        item, flags = self.tree.HitTest(pt)
+        if not item is None:
+            # Build a tooltip....
+            node = self.wxtree.GetItemData(item)
+            if not node is None:
+                msg = str(node)
+        else:
+            msg = ""
+        self.wxtree.SetToolTip(msg)
+
+    def on_item_info(self, event):
+        print ("Event iteminfo called")
+        item = event.GetItem()
+        if not item is None:
+            # Build a tooltip....
+            node = self.wxtree.GetItemData(item)
+            if not node is None:
+                msg = str(node)
+        else:
+            msg = ""
+        self.wxtree.SetToolTip(msg)
+
     def on_item_selection_changed(self, event):
         """
         Tree menu item is changed. Modify the selection.
@@ -1138,7 +1169,6 @@ class ShadowTree:
         selected = [
             self.wxtree.GetItemData(item) for item in self.wxtree.GetSelections()
         ]
-        self.elements.set_selected(selected)
 
         emphasized = list(selected)
         for i in range(len(emphasized)):
@@ -1152,6 +1182,7 @@ class ShadowTree:
                     except Exception:
                         pass
         self.elements.set_emphasis(emphasized)
+        self.elements.set_selected(selected)
         # self.refresh_tree(source="on_item_selection")
         event.Allow()
 

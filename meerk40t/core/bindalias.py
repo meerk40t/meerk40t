@@ -68,8 +68,8 @@ DEFAULT_KEYMAP = {
         "window open Terminal",
     ),
     "delete": (
-        "tree emphasized delete",
         "tree selected delete",
+        "tree emphasized delete",
         "element delete",
     ),
     "escape": (
