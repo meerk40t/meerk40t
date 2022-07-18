@@ -51,6 +51,8 @@ class PathPropertyPanel(ScrolledPanel):
         self.button_fill_FF0.name = "fill #FF0"
         self.button_fill_000 = wx.Button(self, wx.ID_ANY, "")
         self.button_fill_000.name = "fill #000"
+        self.color_info_stroke = wx.StaticText(self, wx.ID_ANY, "")
+        self.color_info_fill = wx.StaticText(self, wx.ID_ANY, "")
 
         self.__set_properties()
         self.__do_layout()
@@ -96,6 +98,38 @@ class PathPropertyPanel(ScrolledPanel):
                 self.text_name.SetBackgroundColour(color)
         except AttributeError:
             pass
+        s_stroke = "None"
+        s_fill = "None"
+        if self.node is not None:
+            if self.node.stroke is not None and self.node.stroke.argb is not None:
+                scol = self.node.stroke
+                wcol = wx.Colour(swizzlecolor(scol))
+                s = ""
+                try:
+                    s = wcol.GetAsString(wx.C2S_NAME)
+                except AssertionError:
+                    s = ""
+                if s != "":
+                    s = s + " (" + scol.hexrgb + ")"
+                else:
+                    s = scol.hexrgb
+                s_stroke = s
+            if self.node.fill is not None and self.node.fill.argb is not None:
+                scol = self.node.fill
+                wcol = wx.Colour(swizzlecolor(scol))
+                s = ""
+                try:
+                    s = wcol.GetAsString(wx.C2S_NAME)
+                except AssertionError:
+                    s = ""
+                if s != "":
+                    s = s + " (" + scol.hexrgb + ")"
+                else:
+                    s = scol.hexrgb
+                s_fill = s
+        self.color_info_stroke.SetLabel(s_stroke)
+        self.color_info_fill.SetLabel(s_fill)
+
         self.Refresh()
 
     def __set_properties(self):
@@ -150,6 +184,7 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_7.Add(self.button_stroke_0FF, 0, wx.EXPAND, 0)
         sizer_7.Add(self.button_stroke_FF0, 0, wx.EXPAND, 0)
         sizer_7.Add(self.button_stroke_000, 0, wx.EXPAND, 0)
+        sizer_7.Add(self.color_info_stroke, 0, wx.EXPAND, 0)
         sizer_6.Add(sizer_7, 1, wx.EXPAND, 0)
         sizer_9.Add(self.button_fill_none, 0, wx.EXPAND, 0)
         sizer_9.Add(self.button_fill_F00, 0, wx.EXPAND, 0)
@@ -159,6 +194,8 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_9.Add(self.button_fill_0FF, 0, wx.EXPAND, 0)
         sizer_9.Add(self.button_fill_FF0, 0, wx.EXPAND, 0)
         sizer_9.Add(self.button_fill_000, 0, wx.EXPAND, 0)
+        sizer_9.Add(self.color_info_fill, 0, wx.EXPAND, 0)
+
         sizer_6.Add(sizer_9, 1, wx.EXPAND, 0)
         sizer_8.Add(sizer_6, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_8)
