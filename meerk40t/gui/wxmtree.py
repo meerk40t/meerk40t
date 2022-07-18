@@ -1060,11 +1060,8 @@ class ShadowTree:
             event.Skip()
             return
         skip = True
-        for drag_node in self.dragging_nodes:
-            if drop_node is drag_node:
-                continue
-            if drop_node.drop(drag_node):
-                skip = False
+        # We extend the logic by calling the appropriate elems routine
+        skip = not self.elements.drag_and_drop(self.dragging_nodes, drop_node)
         if skip:
             event.Skip()
         else:
