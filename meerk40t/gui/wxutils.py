@@ -197,9 +197,17 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                     item.Enable(False)
             else:
                 last_was_separator = False
+                if hasattr(func, "check_state") and func.check_state is not None:
+                    check = func.check_state
+                    kind = wx.ITEM_CHECK
+                else:
+                    kind = wx.ITEM_NORMAL
+                    check = None
                 item = menu_context.Append(
-                    wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
+                    wx.ID_ANY, func.real_name, func.help, kind
                 )
+                if check is not None:
+                    item.Check(check)
                 if func.enabled:
                     gui.Bind(
                         wx.EVT_MENU,
@@ -254,9 +262,17 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             else:
                 item.Enable(False)
         else:
+            if hasattr(func, "check_state") and func.check_state is not None:
+                check = func.check_state
+                kind = wx.ITEM_CHECK
+            else:
+                kind = wx.ITEM_NORMAL
+                check = None
             item = menu_context.Append(
-                wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
+                wx.ID_ANY, func.real_name, func.help, kind
             )
+            if check is not None:
+                item.Check(check)
             if func.enabled:
                 gui.Bind(
                     wx.EVT_MENU,

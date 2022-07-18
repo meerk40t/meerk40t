@@ -288,6 +288,8 @@ class Elemental(Service):
         self.setting(bool, "classify_fuzzy", False)
         self.setting(float, "classify_fuzzydistance", 100.0)
         self.setting(bool, "classify_autogenerate", True)
+        self.setting(bool, "classify_inherit_stroke", False)
+        self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
@@ -4745,7 +4747,7 @@ class Elemental(Service):
         ):
             """
             Create menu for a particular node.
-            Processes submenus, references, radio_state as needed.
+            Processes submenus, references, radio_state and check_state as needed.
             """
             try:
                 menu_node = self._tree
@@ -4788,8 +4790,11 @@ class Elemental(Service):
                 else:
                     if func.separate_before:
                         menu_context.append(("------", None))
+                    n = func.real_name
+                    if hasattr(func, "check_state") and func.check_state:
+                        n = "✓" + n
                     menu_context.append(
-                        (func.real_name, menu_functions(func, menu_node))
+                        (n, menu_functions(func, menu_node))
                     )
                 if func.separate_after:
                     menu_context.append(("------", None))
@@ -6528,11 +6533,105 @@ class Elemental(Service):
         @self.tree_values("op_assign", values=get_values)
         @self.tree_operation("{op_assign}", node_type=elem_nodes, help="")
         def assign_operations(node, op_assign, **kwargs):
-            for n in list(self.elems(emphasized=True)):
+            inh_stroke = self.classify_inherit_stroke
+            inh_fill = self.classify_inherit_fill
+            data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                return
+            if inh_stroke or inh_fill:
+                # Let's establish the colors first
+                first_color_stroke = None
+                first_color_fill = None
+                # Look for the first element that has stroke/fill
+                for n in data:
+                    if inh_stroke and first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+                        first_color_stroke = n.stroke
+                    if inh_fill and first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+                        first_color_fill = n.fill
+                    canbreak = True
+                    if inh_stroke and first_color_stroke is None:
+                        canbreak = False
+                    if inh_fill and first_color_fill is None:
+                        canbreak = False
+                    if canbreak:
+                        break
+
+                # print ("Colors found: stroke=%s, fill=%s" % ("None" if first_color_stroke is None else first_color_stroke.hexrgb, "None" if first_color_fill is None else first_color_fill.hexrgb))
+                if hasattr(op_assign, "color") and inh_stroke and inh_fill and (first_color_fill is not None or first_color_stroke is not None):
+                    # Well if you have both options, then you get that
+                    # color that is present, precedence for stroke
+                    if first_color_stroke is not None:
+                        col = first_color_stroke
+                    else:
+                        col = first_color_stroke
+                    op_assign.color = col
+                    if hasattr(op_assign, "add_color_attribute"): # not true for image
+                        op_assign.add_color_attribute("fill")
+                        op_assign.add_color_attribute("stroke")
+                elif inh_stroke and first_color_stroke is not None:
+                    op_assign.color = first_color_stroke
+                    if hasattr(op_assign, "add_color_attribute"): # not true for image
+                        op_assign.add_color_attribute("stroke")
+                elif inh_fill and first_color_fill is not None:
+                    op_assign.color = first_color_fill
+                    if hasattr(op_assign, "add_color_attribute"): # not true for image
+                        op_assign.add_color_attribute("fill")
+                # Now that we have the colors lets iterate through all elements
+                fuzzy = self.classify_fuzzy
+                fuzzydistance = self.classify_fuzzydistance
+                for n in self.flat(types=elem_nodes):
+                    addit = False
+                    if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+                        if fuzzy:
+                            if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
+                                addit = True
+                        else:
+                            if n.stroke == first_color_stroke:
+                                addit = True
+                    if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+                        if fuzzy:
+                            if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
+                                addit = True
+                        else:
+                            if n.fill == first_color_fill:
+                                addit = True
+                    # print ("Checked %s and will addit=%s" % (n.type, addit))
+                    if addit and n not in data:
+                        data.append(n)
+
+            for n in data:
                 if op_assign.drop(n, modify=False):
                     for ref in list(n._references):
                         ref.remove_node()
                     op_assign.drop(n, modify=True)
+            # Refresh the operation so any changes like color materialize...
+            self.signal("element_property_reload", op_assign)
+
+        def stroke_match(node, **kwargs):
+            return self.classify_inherit_stroke
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(stroke_match)
+        @self.tree_check(stroke_match)
+        @self.tree_operation(
+            _("Inherit stroke and classify similar"),
+            node_type=elem_nodes,
+            help=_("Operation will inherit element stroke color")
+        )
+        def set_assign_option_stroke(node, **kwargs):
+            self.classify_inherit_stroke = not self.classify_inherit_stroke
+
+        def fill_match(node, **kwargs):
+            return self.classify_inherit_fill
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(fill_match)
+        @self.tree_operation(
+            _("Inherit fill and classify similar"),
+            node_type=elem_nodes,
+            help=_("Operation will inherit element fill color")
+        )
+        def set_assign_option_fill(node, **kwargs):
+            self.classify_inherit_fill = not self.classify_inherit_fill
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
@@ -7032,6 +7131,13 @@ class Elemental(Service):
                         func.radio_state = False
                 else:
                     func.radio_state = None
+                if hasattr(func, "check") and func.check is not None:
+                    try:
+                        func.check_state = func.check(node, **func_dict)
+                    except:
+                        func.check_state = False
+                else:
+                    func.check_state = None
                 name = func.name.format_map(func_dict)
                 func.func_dict = func_dict
                 func.real_name = name
@@ -7070,6 +7176,14 @@ class Elemental(Service):
     def tree_radio(radio_function):
         def decor(func):
             func.radio = radio_function
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_check(check_function):
+        def decor(func):
+            func.check = check_function
             return func
 
         return decor
