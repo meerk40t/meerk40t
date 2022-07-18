@@ -112,11 +112,20 @@ class Parameters:
         for v in LIST_PARAMETERS:
             if v in settings:
                 if isinstance(settings[v], str):
-                    try:
-                        settings[v] = eval(settings[v])
-                    except:
-                        pass
-                # settings[v] = settings[v]
+                    myarr = []
+                    sett = settings[v]
+                    if sett != "":
+                        # First of all is it in he old format where we used eval?
+                        if sett.startswith("["):
+                            sett = sett[1:-1]
+                        if "'," in sett:
+                            slist = sett.split(",")
+                            for n in slist:
+                                n = n.strip().strip("'")
+                                myarr.append(n)
+                        else:
+                            myarr = [sett.strip().strip("'")]
+                    settings[v] = myarr
 
     @property
     def color(self):
@@ -160,7 +169,7 @@ class Parameters:
 
     @property
     def allowed_attributes(self):
-        return self.settings.get("allowed_attributes", False)
+        return self.settings.get("allowed_attributes", None)
 
     @allowed_attributes.setter
     def allowed_attributes(self, value):
