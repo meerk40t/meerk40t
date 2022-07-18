@@ -132,23 +132,26 @@ class RasterOpNode(Node, Parameters):
         default_map["overscan"] = f"±{self.overscan}"
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
             # if drag_node.type == "elem image":
             #     return False
             # Dragging element onto operation adds that element to the op.
-            self.add_reference(drag_node, pos=0)
+            if modify:
+                self.add_reference(drag_node, pos=0)
             return True
         elif drag_node.type == "reference":
             # # Disallow drop of image refelems onto a Dot op.
             # if drag_node.type == "elem image":
             #     return False
             # Move a refelem to end of op.
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
@@ -157,7 +160,8 @@ class RasterOpNode(Node, Parameters):
                 # if drag_node.type == "elem image":
                 #     continue
                 # Add element to operation
-                self.add_reference(e)
+                if modify:
+                    self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False

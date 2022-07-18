@@ -26,10 +26,11 @@ class BranchOperationsNode(Node):
                 default_map["loops"] = ""
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("op"):
             # Dragging operation to op branch to effectively move to bottom.
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         return False
 

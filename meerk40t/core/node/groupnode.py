@@ -41,14 +41,16 @@ class GroupNode(Node):
         default_map["label"] = self.label
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
             # Dragging element onto a group moves it to the group node.
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         elif drag_node.type == "group":
             # Move a group
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         return False
 

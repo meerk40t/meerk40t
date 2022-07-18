@@ -211,7 +211,7 @@ class Node:
     def is_movable(self):
         return True
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         return False
 
     def reverse(self):
