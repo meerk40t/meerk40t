@@ -17,7 +17,8 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.node = node
 
-        self.text_name = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
         self.button_stroke_none.name = "stroke none"
         self.button_stroke_F00 = wx.Button(self, wx.ID_ANY, "")
@@ -57,13 +58,10 @@ class PathPropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        try:
-            if node.id is not None:
-                self.text_name.SetValue(str(node.id))
-        except AttributeError:
-            pass
-        self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_name)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_name)
+        self.Bind(wx.EVT_TEXT, self.on_text_id_change, self.text_id)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change, self.text_id)
+        self.Bind(wx.EVT_TEXT, self.on_text_label_change, self.text_label)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change, self.text_label)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F00)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_0F0)
@@ -95,7 +93,17 @@ class PathPropertyPanel(ScrolledPanel):
         try:
             if self.node.stroke is not None and self.node.stroke != "none":
                 color = wx.Colour(swizzlecolor(self.node.stroke))
-                self.text_name.SetBackgroundColour(color)
+                self.text_id.SetBackgroundColour(color)
+        except AttributeError:
+            pass
+        try:
+            if node.id is not None:
+                self.text_id.SetValue(str(node.id))
+        except AttributeError:
+            pass
+        try:
+            if node.label is not None:
+                self.text_label.SetValue(str(node.label))
         except AttributeError:
             pass
         s_stroke = "None"
@@ -175,7 +183,18 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_7 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Stroke Color")), wx.VERTICAL
         )
-        sizer_8.Add(self.text_name, 0, wx.EXPAND, 0)
+        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_id = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
+        )
+        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
+        sizer_label = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
+        )
+        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
+        sizer_8.Add(sizer_id_label, 0, wx.EXPAND, 0)
         sizer_7.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
         sizer_7.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
         sizer_7.Add(self.button_stroke_0F0, 0, wx.EXPAND, 0)
@@ -203,11 +222,16 @@ class PathPropertyPanel(ScrolledPanel):
         self.Centre()
         # end wxGlade
 
-    def on_text_name_change(
-        self, event=None
-    ):  # wxGlade: ElementProperty.<event_handler>
+    def on_text_id_change(self, event=None):
         try:
-            self.node.id = self.text_name.GetValue()
+            self.node.id = self.text_id.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
+
+    def on_text_label_change(self, event=None):
+        try:
+            self.node.label = self.text_label.GetValue()
             self.context.elements.signal("element_property_update", self.node)
         except AttributeError:
             pass
@@ -225,11 +249,11 @@ class PathPropertyPanel(ScrolledPanel):
                 self.node.stroke = color
                 self.node.altered()
                 color = wx.Colour(swizzlecolor(self.node.stroke))
-                self.text_name.SetBackgroundColour(color)
+                self.text_id.SetBackgroundColour(color)
             else:
                 self.node.stroke = Color("none")
                 self.node.altered()
-                self.text_name.SetBackgroundColour(wx.WHITE)
+                self.text_id.SetBackgroundColour(wx.WHITE)
         elif "fill" in button.name:
             if color is not None:
                 self.node.fill = color

@@ -77,14 +77,14 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
-        kernel.register("format/elem ellipse", "{element_type} {id} {stroke}")
-        kernel.register("format/elem image", "{element_type} {width}x{height}")
-        kernel.register("format/elem line", "{element_type} {id} {stroke}")
-        kernel.register("format/elem path", "{element_type} {id} {stroke}")
-        kernel.register("format/elem point", "{element_type} {id} {stroke}")
-        kernel.register("format/elem polyline", "{element_type} {id} {stroke}")
-        kernel.register("format/elem rect", "{element_type} {id} {stroke}")
-        kernel.register("format/elem text", "{element_type} {id}: {text}")
+        kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem image", "{element_type} {label} {width}x{height}")
+        kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem polyline", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem rect", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem text", "{element_type} {id} {label}: {text}")
         kernel.register("format/reference", "*{reference}")
         kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
         kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
@@ -4655,7 +4655,7 @@ class Elemental(Service):
                             str(n._bounds),
                             str(n._bounds_dirty),
                             str(n.type),
-                            str(n.label[:16]),
+                            str(str(n)[:16]),
                         )
                     )
                     b_list(p, n)
@@ -4665,7 +4665,7 @@ class Elemental(Service):
                 if d.type == "root":
                     channel(_("Tree:"))
                 else:
-                    channel("%s:" % d.label)
+                    channel("%s:" % str(d))
                 b_list([], d)
                 channel("----------")
 

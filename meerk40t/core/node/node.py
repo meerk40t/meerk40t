@@ -81,6 +81,8 @@ class Node:
         self.icon = None
         self.cache = None
         self.id = None
+        # Label
+        self.label = None
 
     def __repr__(self):
         return "Node('%s', %s)" % (self.type, str(self._parent))
@@ -99,10 +101,6 @@ class Node:
 
     def __eq__(self, other):
         return other is self
-
-    @property
-    def label(self):
-        return str(self)
 
     @property
     def children(self):
@@ -204,6 +202,7 @@ class Node:
         if default_map is None:
             default_map = dict()
         default_map["id"] = str(self.id) if self.id is not None else "-"
+        default_map["label"] = self.label if self.label is not None else ""
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map

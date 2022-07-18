@@ -60,6 +60,8 @@ class TextPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.node = node
@@ -145,6 +147,10 @@ class TextPropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
+        self.Bind(wx.EVT_TEXT, self.on_text_id_change, self.text_id)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change, self.text_id)
+        self.Bind(wx.EVT_TEXT, self.on_text_label_change, self.text_label)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change, self.text_label)
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_text)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_text)
         self.Bind(wx.EVT_BUTTON, self.on_button_choose_font, self.button_choose_font)
@@ -197,6 +203,16 @@ class TextPropertyPanel(ScrolledPanel):
     def set_widgets(self, node):
         if node is not None:
             self.node = node
+        try:
+            if node.id is not None:
+                self.text_id.SetValue(str(node.id))
+        except AttributeError:
+            pass
+        try:
+            if node.label is not None:
+                self.text_label.SetValue(str(node.label))
+        except AttributeError:
+            pass
         try:
             if self.node.text is not None:
                 self.text_text.SetValue(self.node.text.text)
@@ -285,6 +301,18 @@ class TextPropertyPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: TextProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_id = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
+        )
+        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
+        sizer_label = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
+        )
+        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
         sizer_fill = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL
         )
@@ -353,6 +381,20 @@ class TextPropertyPanel(ScrolledPanel):
     def refresh(self):
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
+
+    def on_text_id_change(self, event=None):
+        try:
+            self.node.id = self.text_id.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
+
+    def on_text_label_change(self, event=None):
+        try:
+            self.node.label = self.text_label.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
 
     def on_button_smaller(self, event):
         try:

@@ -118,6 +118,19 @@ class SVGWriter:
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         elements.validate_ids()
+        # If we want to write labels then we need to establish the inkscape namespace
+        has_labels = False
+        for n in elements.elems_nodes():
+            if hasattr(n, "label") and n.label is not None and n.label != "":
+                has_labels = True
+                break
+        if not has_labels:
+            for n in elements.regmarks_nodes():
+                if hasattr(n, "label") and n.label is not None and n.label != "":
+                    has_labels = True
+                    break
+        if has_labels:
+            root.set("xmlns:inkscape", "http://www.inkscape.org/namespaces/inkscape",)
 
         # If there is a note set then we save the note with the project.
         if elements.note is not None:
@@ -194,6 +207,8 @@ class SVGWriter:
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem image":
                 element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
@@ -211,6 +226,8 @@ class SVGWriter:
                     "transform",
                     "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
                 )
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem line":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
@@ -219,6 +236,8 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem path":
                 element = abs(c.path * scale)
                 copy_attributes(c, element)
@@ -227,12 +246,16 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem point":
                 element = Point(c.point) * scale
                 c.settings["x"] = element.x
                 c.settings["y"] = element.y
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem polyline":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
@@ -241,6 +264,8 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
                 subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
@@ -249,6 +274,8 @@ class SVGWriter:
                 # Makes no sense here, as it's not used anyway in svg for a rect
                 # subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem text":
                 # The svg attributes should be up to date, but better safe than sorry
                 if hasattr(c, "wxfont_to_svg"):
@@ -305,9 +332,13 @@ class SVGWriter:
                 if len(text_dec) > 0:
                     text_dec.strip()
                     subelement.set("text-decoration", text_dec)
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    subelement.set("inkscape:label", c.label)
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
+                if hasattr(c, "label") and c.label is not None and c.label != "":
+                    group_element.set("inkscape:label", c.label)
                 SVGWriter._write_elements(group_element, c)
                 continue
             elif c.type == "file":
@@ -515,21 +546,24 @@ class SVGProcessor:
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
-        # But don't get too excited yet, it needs a place to sit -> WIP
         my_label = ""
         try:
-            my_label = element.values.get("{http://www.inkscape.org/namespaces/inkscape}label")
+            inkscape = element.values.get("inkscape")
+            ink_tag = "{" + inkscape + "}label"
+        except (AttributeError, KeyError):
+            ink_tag = "inkscape:label"
+        try:
+            my_label = element.values.get(ink_tag)
             if my_label is None:
                 my_label = ""
-
             # print ("Found label: %s" % my_label)
         except (AttributeError, KeyError):
             pass
         if isinstance(element, SVGText):
             if element.text is not None:
                 node = context_node.add(text=element, type="elem text", id=ident)
-                # if my_label != "" and hasattr(node, "desc"):
-                #     node.desc = my_label
+                if my_label != "" and hasattr(node, "label"):
+                    node.label = my_label
                 # Maybe superseded by concrete values later, so do it first
                 font_style = element.values.get("font")
                 if font_style is not None:
@@ -579,8 +613,8 @@ class SVGProcessor:
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(path=element, type="elem path", id=ident)
-                # if my_label != "" and hasattr(node, "desc"):
-                #     node.desc = my_label
+                if my_label != "" and hasattr(node, "label"):
+                    node.label = my_label
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -592,8 +626,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem polyline", id=ident)
-                # if my_label != "" and hasattr(node, "desc"):
-                #     node.desc = my_label
+                if my_label != "" and hasattr(node, "label"):
+                    node.label = my_label
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -605,8 +639,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem ellipse", id=ident)
-                # if my_label != "" and hasattr(node, "desc"):
-                #     node.desc = my_label
+                if my_label != "" and hasattr(node, "label"):
+                    node.label = my_label
                 e_list.append(node)
         elif isinstance(element, Ellipse):
             if not element.is_degenerate():
@@ -616,8 +650,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem ellipse", id=ident)
-                # if my_label != "" and hasattr(node, "desc"):
-                #     node.desc = my_label
+                if my_label != "" and hasattr(node, "label"):
+                    node.label = my_label
                 e_list.append(node)
         elif isinstance(element, Rect):
             if not element.is_degenerate():
@@ -627,8 +661,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem rect", id=ident)
-                # if my_label != "" and hasattr(node, "desc"):
-                #     node.desc = my_label
+                if my_label != "" and hasattr(node, "label"):
+                    node.label = my_label
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SimpleLine):
@@ -639,8 +673,8 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(shape=element, type="elem line", id=ident)
-                # if my_label != "" and hasattr(node, "desc"):
-                #     node.desc = my_label
+                if my_label != "" and hasattr(node, "label"):
+                    node.label = my_label
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
@@ -653,8 +687,8 @@ class SVGProcessor:
                         type="elem image",
                         id=ident,
                     )
-                    # if my_label != "" and hasattr(node, "desc"):
-                    #     node.desc = my_label
+                    if my_label != "" and hasattr(node, "label"):
+                        node.label = my_label
                     e_list.append(node)
             except OSError:
                 pass

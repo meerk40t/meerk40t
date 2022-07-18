@@ -208,6 +208,14 @@ class Parameters:
         self.settings["raster_step_y"] = value
 
     @property
+    def desc(self):
+        return self.settings.get("desc", "")
+
+    @desc.setter
+    def desc(self, value):
+        self.settings["desc"] = value
+
+    @property
     def dpi(self):
         return self.settings.get("dpi", 500)
 
