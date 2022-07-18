@@ -730,3 +730,7 @@ class Node:
             if box[3] > ymax:
                 ymax = box[3]
         return xmin, ymin, xmax, ymax
+
+    @property
+    def name(self):
+        return self.__str__()

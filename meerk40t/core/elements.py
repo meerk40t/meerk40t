@@ -7100,8 +7100,8 @@ class Elemental(Service):
             if reject:
                 continue
             func_dict = {
-                "name": str(node.label),
-                "label": str(node.label),
+                "name": str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label),
+                "label": str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label),
             }
 
             iterator = func.values
