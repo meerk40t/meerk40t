@@ -270,7 +270,6 @@ class SVGWriter:
                 for key, val in element.values.items():
                     if key in (
                         "font-family",
-                        "font-face",
                         "font-size",
                         "font-weight",
                         "anchor",
@@ -522,6 +521,7 @@ class SVGProcessor:
                 node = context_node.add(text=element, type="elem text", id=ident)
                 # Maybe superseded by concrete values later, so do it first
                 font_style = element.values.get("font")
+                # TODO: This is now generally duplicated parsing.
                 if font_style is not None:
                     # This comes inherited from a class so let's split it up...
                     subvalues = font_style.split()
