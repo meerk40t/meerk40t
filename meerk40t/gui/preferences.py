@@ -229,7 +229,7 @@ class PreferencesMain(wx.Panel):
 
         self.panel_pref1 = ChoicePropertyPanel(
             self, id=wx.ID_ANY, context=context,
-            choices="preferences", constraint=("Laser", "Input/Output", "Options"),
+            choices="preferences", constraint=("Classification", "Input/Output", "Options"),
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
@@ -256,7 +256,7 @@ class PreferencesPanel(wx.Panel):
 
         self.checklist_options = ChoicePropertyPanel(
             self, id=wx.ID_ANY, context=context,
-            choices="preferences", constraint=("-Laser", "-Input/Output", "-Options"),
+            choices="preferences", constraint=("-Classification", "-Input/Output", "-Options"),
         )
         self.checklist_options.SetupScrolling()
         sizer_settings.Add(self.checklist_options, 2, wx.EXPAND, 0)

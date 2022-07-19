@@ -222,6 +222,18 @@ def plugin(kernel, lifecycle=None):
                 "page": "Classification",
                 "section": "",
             },
+            {
+                "attr": "lock_allows_move",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Locked element may move"),
+                "tip":
+                    _("Locked elements cannot be modified, but can still be moved if this option is checked.")
+                ,
+                "page": "Gui",
+                "section": "Scene",
+            },
         ]
         kernel.register_choices("preferences", choices)
     elif lifecycle == "prestart":
@@ -311,6 +323,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_exclusive", True)
         self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
+        self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
@@ -4970,7 +4983,7 @@ class Elemental(Service):
                             c1=typecount[0], c2=typecount[1], c3=typecount[2], c4=typecount[3]
                     ) + "\n" +
                     _("Only nodes of type {nodetype} were deleted.").format(nodetype=nodetypes[entry]) + "\n" +
-                    _("If you want to remove all nodes regardless of their type consider: 'tree selected remove'")
+                    _("If you want to remove all nodes regardless of their type, consider: 'tree selected remove'")
                 )
             # print ("Want to delete %d" % entry)
             # for n in todelete[entry]:

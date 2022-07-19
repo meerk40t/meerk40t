@@ -1205,9 +1205,12 @@ class MoveWidget(Widget):
         ):  # if Shift-Key pressed then ignore Magnets...
             elements = self.scene.context.elements
             b = elements._emphasized_bounds
+            allowlockmove = elements.lock_allows_move
             dx, dy = self.scene.revised_magnet_bound(b)
             if dx != 0 or dy != 0:
                 for e in elements.flat(types=elem_nodes, emphasized=True):
+                    if hasattr(e, "lock") and e.lock and not allowlockmove:
+                        continue
                     e.matrix.post_translate(dx, dy)
 
                 self.translate(dx, dy)
@@ -1233,8 +1236,10 @@ class MoveWidget(Widget):
 
             # b = elements.selected_area()  # correct, but slow...
             b = elements._emphasized_bounds
+            allowlockmove = elements.lock_allows_move
             for e in elements.flat(types=elem_nodes, emphasized=True):
-                # Here we ignore the lock-status of an element
+                if hasattr(e, "lock") and e.lock and not allowlockmove:
+                    continue
                 e.matrix.post_translate(dx, dy)
 
             self.translate(dx, dy)
@@ -1856,7 +1861,11 @@ class SelectionWidget(Widget):
 
         for e in elements.flat(types=elem_nodes, emphasized=True):
             # Here we ignore the lock-status of an element, as this is just a move...
+            allowlockmove = elements.lock_allows_move
+            if hasattr(e, "lock") and e.lock and not allowlockmove:
+                continue
             if e is not refob:
+
                 e.matrix.post_translate(dx, dy)
                 try:
                     e.invalidated_node()
@@ -2227,7 +2236,12 @@ class SelectionWidget(Widget):
                         is_reference_object=self.is_ref,
                     ),
                 )
-            if self.use_handle_move:
+
+            allowlockmove = elements.lock_allows_move
+            maymove = True
+            if is_locked and not allowlockmove:
+                maymove = False
+            if self.use_handle_move and maymove:
                 self.add_widget(
                     -1,
                     MoveWidget(
