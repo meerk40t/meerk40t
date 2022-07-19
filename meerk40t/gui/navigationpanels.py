@@ -1,3 +1,4 @@
+import platform
 import wx
 from wx import aui
 
@@ -37,6 +38,7 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
+    get_default_icon_size,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Angle
@@ -49,18 +51,26 @@ MILS_IN_MM = 39.3701
 
 def register_panel_navigation(window, context):
     panel = Drag(window, wx.ID_ANY, context=context)
+    iconsize = get_default_icon_size()
+    if platform.system() == "Windows":
+        dx = 24
+        dy = 30
+    else:
+        dx = 12
+        dy = 12
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Drag"))
         .Name("drag")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -70,14 +80,15 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
         .CaptionVisible(not context.pane_lock)
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -88,14 +99,15 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(150, 75)
-        .FloatingSize(150, 75)
+        .MinSize(iconsize + 100, iconsize + 25)
+        .BestSize(iconsize + 100, iconsize + 25)
+        .FloatingSize(iconsize + 100, iconsize + 25)
         .MaxSize(200, 100)
         .Caption(_("Move"))
         .CaptionVisible(not context.pane_lock)
         .Name("move")
     )
-    pane.dock_proportion = 150
+    pane.dock_proportion = iconsize + 100
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -106,14 +118,14 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(75, 50)
-        .FloatingSize(150, 75)
+        .MinSize(iconsize + 25, iconsize + 25)
+        .FloatingSize(iconsize + 60, iconsize + 25)
         .Hide()
         .Caption(_("Pulse"))
         .CaptionVisible(not context.pane_lock)
         .Name("pulse")
     )
-    pane.dock_proportion = 150
+    pane.dock_proportion = iconsize + 60
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -138,19 +150,25 @@ def register_panel_navigation(window, context):
     window.on_pane_add(pane)
     context.register("pane/objsizer", pane)
 
+    if platform.system() == "Windows":
+        dx = 24
+        dy = 30
+    else:
+        dx = 12
+        dy = 12
     panel = Transform(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(max(3*iconsize, 3*57), 3*iconsize + dy)
+        .FloatingSize(max(3*iconsize, 3*57), 3*iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = max(3*iconsize, 3*57)
     pane.control = panel
     pane.submenu = _("Editing")
 
@@ -940,26 +958,28 @@ class MovePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
-        sizer_12 = wx.StaticBoxSizer(
+        main_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Move To:")), wx.HORIZONTAL
         )
-        sizer_13 = wx.BoxSizer(wx.VERTICAL)
-        sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12.Add(self.button_navigate_move_to, 0, 0, 0)
+        v_main_sizer = wx.BoxSizer(wx.VERTICAL)
+        h_x_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer.Add(self.button_navigate_move_to, 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
         label_9.SetMinSize((-1, 23))
-        sizer_14.Add(label_9, 0, 0, 0)
-        sizer_14.Add(self.text_position_x, 0, 0, 0)
-        sizer_13.Add(sizer_14, 0, wx.EXPAND, 0)
+        self.text_position_x.SetMinSize((45, 23))
+        self.text_position_y.SetMinSize((45, 23))
+        h_x_sizer.Add(label_9, 0, 0, 0)
+        h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
+        v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
         label_10 = wx.StaticText(self, wx.ID_ANY, "Y:")
         label_10.SetMinSize((-1, 23))
-        sizer_15.Add(label_10, 0, 0, 0)
-        sizer_15.Add(self.text_position_y, 0, 0, 0)
-        sizer_13.Add(sizer_15, 0, wx.EXPAND, 0)
-        sizer_12.Add(sizer_13, 0, wx.EXPAND, 0)
-        self.SetSizer(sizer_12)
-        sizer_12.Fit(self)
+        h_y_sizer.Add(label_10, 0, 0, 0)
+        h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
+        v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
+        main_sizer.Add(v_main_sizer, 1, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
 
@@ -1039,7 +1059,7 @@ class PulsePanel(wx.Panel):
         # begin wxGlade: PulsePanel.__set_properties
         self.button_navigate_pulse.SetToolTip(_("Fire a short laser pulse"))
         self.button_navigate_pulse.SetSize(self.button_navigate_pulse.GetBestSize())
-        self.spin_pulse_duration.SetMinSize((80, 23))
+        self.spin_pulse_duration.SetMinSize((40, 23))
         self.spin_pulse_duration.SetToolTip(_("Set the duration of the laser pulse"))
         # end wxGlade
 
@@ -1049,7 +1069,7 @@ class PulsePanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Short Pulse:")), wx.HORIZONTAL
         )
         sizer_5.Add(self.button_navigate_pulse, 0, 0, 0)
-        sizer_5.Add(self.spin_pulse_duration, 0, 0, 0)
+        sizer_5.Add(self.spin_pulse_duration, 1, 0, 0)
         label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
         sizer_5.Add(label_4, 0, 0, 0)
         self.SetSizer(sizer_5)
@@ -1838,6 +1858,8 @@ class NavigationPanel(wx.Panel):
         self.context = context
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+
         pulse_and_move_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_panels_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -1856,15 +1878,15 @@ class NavigationPanel(wx.Panel):
         main_sizer.Add(main_panels_sizer, 0, wx.EXPAND, 0)
 
         short_pulse = PulsePanel(self, wx.ID_ANY, context=self.context)
-        pulse_and_move_sizer.Add(short_pulse, 0, wx.EXPAND, 0)
+        pulse_and_move_sizer.Add(short_pulse, 1, wx.EXPAND, 0)
 
         move_panel = MovePanel(self, wx.ID_ANY, context=self.context)
-        pulse_and_move_sizer.Add(move_panel, 0, wx.EXPAND, 0)
+        pulse_and_move_sizer.Add(move_panel, 1, wx.EXPAND, 0)
 
         size_panel = SizePanel(self, wx.ID_ANY, context=self.context)
-        pulse_and_move_sizer.Add(size_panel, 0, wx.EXPAND, 0)
+        pulse_and_move_sizer.Add(size_panel, 1, wx.EXPAND, 0)
 
-        main_sizer.Add(pulse_and_move_sizer, 1, wx.EXPAND, 0)
+        main_sizer.Add(pulse_and_move_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
         self.panels = [
@@ -1899,6 +1921,10 @@ class Navigation(MWindow):
 
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
+        iconsize = get_default_icon_size()
+        minw = (3 + 3 + 3) * iconsize + 150
+        minh = (4 + 1) * iconsize + 170
+        super().SetSizeHints(minW=minw, minH=minh)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())
