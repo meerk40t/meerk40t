@@ -4967,7 +4967,7 @@ class Elemental(Service):
                     entry = 2
                 channel(
                     _("There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4}).").format(
-                            c1=typecount[0], c2=typecount[1], c3=typecount[3], c4=typecount[4]
+                            c1=typecount[0], c2=typecount[1], c3=typecount[2], c4=typecount[3]
                     ) + "\n" +
                     _("Only nodes of type {nodetype} were deleted.").format(nodetype=nodetypes[entry]) + "\n" +
                     _("If you want to remove all nodes regardless of their type consider: 'tree selected remove'")
