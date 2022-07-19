@@ -4908,6 +4908,9 @@ class Elemental(Service):
             """
             # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
             # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
+            if len(data) == 0:
+                channel(_("Nothing to delete"))
+                return
             # print ("Delete called with data:")
             # for n in data:
             #     print ("Node: %s, sel=%s, emp=%s" % (n.type, n.selected, n.emphasized))
@@ -4964,7 +4967,7 @@ class Elemental(Service):
                     entry = 2
                 channel(
                     _("There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4}).").format(
-                            c1=typecount[0], c2=typecount[1], c3=typecount[2], c4=typecount[3]
+                            c1=typecount[0], c2=typecount[1], c3=typecount[3], c4=typecount[4]
                     ) + "\n" +
                     _("Only nodes of type {nodetype} were deleted.").format(nodetype=nodetypes[entry]) + "\n" +
                     _("If you want to remove all nodes regardless of their type consider: 'tree selected remove'")
