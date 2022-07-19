@@ -308,6 +308,7 @@ class Elemental(Service):
         self.setting(bool, "classify_autogenerate", True)
         self.setting(bool, "classify_inherit_stroke", False)
         self.setting(bool, "classify_inherit_fill", False)
+        self.setting(bool, "classify_inherit_exclusive", True)
         self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "auto_note", True)
@@ -6554,6 +6555,7 @@ class Elemental(Service):
         def assign_operations(node, op_assign, **kwargs):
             inh_stroke = self.classify_inherit_stroke
             inh_fill = self.classify_inherit_fill
+            exclusive = self.classify_inherit_exclusive
             data = list(self.elems(emphasized=True))
             if len(data) == 0:
                 return
@@ -6620,17 +6622,30 @@ class Elemental(Service):
 
             for n in data:
                 if op_assign.drop(n, modify=False):
-                    for ref in list(n._references):
-                        ref.remove_node()
+                    if exclusive:
+                        for ref in list(n._references):
+                            ref.remove_node()
                     op_assign.drop(n, modify=True)
             # Refresh the operation so any changes like color materialize...
             self.signal("element_property_reload", op_assign)
+
+        def exclusive_match(node, **kwargs):
+            return self.classify_inherit_exclusive
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(exclusive_match)
+        @self.tree_operation(
+            _("Exclusive assignment"),
+            node_type=elem_nodes,
+            help=_("An assignment will remove all other classifications of this element if checked")
+        )
+        def set_assign_option_exclusive(node, **kwargs):
+            self.classify_inherit_exclusive = not self.classify_inherit_exclusive
 
         def stroke_match(node, **kwargs):
             return self.classify_inherit_stroke
         @self.tree_separator_before()
         @self.tree_submenu(_("Assign Operation"))
-        @self.tree_check(stroke_match)
         @self.tree_check(stroke_match)
         @self.tree_operation(
             _("Inherit stroke and classify similar"),
