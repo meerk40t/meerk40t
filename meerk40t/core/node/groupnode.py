@@ -53,8 +53,8 @@ class GroupNode(Node):
             return True
         return False
 
-    # @property
-    # def label(self):
-    #     if self.id is None:
-    #         return f"Group {len(self.children)}"
-    #     return f"Group {len(self.children)}: %s" % self.id
+    @property
+    def name(self):
+        if self.id is None:
+            return f"Group ({len(self.children)} elems)"
+        return f"Group ({len(self.children)} elems): %s" % self.id

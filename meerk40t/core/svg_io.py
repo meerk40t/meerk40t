@@ -547,11 +547,13 @@ class SVGProcessor:
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
         my_label = ""
+        ink_tag = "inkscape:label"
         try:
             inkscape = element.values.get("inkscape")
-            ink_tag = "{" + inkscape + "}label"
+            if not inkscape is None and inkscape != "":
+                ink_tag = "{" + inkscape + "}label"
         except (AttributeError, KeyError):
-            ink_tag = "inkscape:label"
+            pass
         try:
             my_label = element.values.get(ink_tag)
             if my_label is None:
