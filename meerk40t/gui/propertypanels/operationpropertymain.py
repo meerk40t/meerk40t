@@ -2,7 +2,7 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 from meerk40t.kernel import signal_listener
 
-from ...core.units import Length
+from ...core.units import Length, UNITS_PER_MM
 from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
 from ..wxutils import TextCtrl
@@ -237,7 +237,7 @@ class LayerSettingPanel(wx.Panel):
             self.button_layer_color.SetBackgroundColour(
                 wx.Colour(swizzlecolor(self.operation.color))
             )
-        self.context.elements.signal("element_property_reload", self.operation)
+        self.context.elements.signal("element_property_reload", self.operation, "button_layer")
 
     # def on_combo_operation(
     #     self, event=None
@@ -259,19 +259,21 @@ class LayerSettingPanel(wx.Panel):
     #     self.context.elements.signal("element_property_reload", self.operation)
 
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.output = bool(self.checkbox_output.GetValue())
-        self.context.elements.signal("element_property_reload", self.operation)
+        if self.operation.output != bool(self.checkbox_output.GetValue()):
+            self.operation.output = bool(self.checkbox_output.GetValue())
+            self.context.elements.signal("element_property_reload", self.operation, "check_output")
 
     def on_check_default(self, event=None):
-        self.operation.default = bool(self.checkbox_default.GetValue())
-        self.context.elements.signal("element_property_reload", self.operation)
+        if self.operation.default != bool(self.checkbox_default.GetValue()):
+            self.operation.default = bool(self.checkbox_default.GetValue())
+            self.context.elements.signal("element_property_reload", self.operation, "check_default")
 
     def on_check_fill(self, event=None):
         if self.checkbox_fill.GetValue():
             self.operation.add_color_attribute("fill")
         else:
             self.operation.remove_color_attribute("fill")
-        self.context.elements.signal("element_property_reload", self.operation)
+        self.context.elements.signal("element_property_reload", self.operation, "check_fill")
         event.Skip()
 
     def on_check_stroke(self, event=None):
@@ -279,7 +281,7 @@ class LayerSettingPanel(wx.Panel):
             self.operation.add_color_attribute("stroke")
         else:
             self.operation.remove_color_attribute("stroke")
-        self.context.elements.signal("element_property_reload", self.operation)
+        self.context.elements.signal("element_property_reload", self.operation, "check_stroke")
         event.Skip()
 
     def on_check_stop(self, event=None):
@@ -287,7 +289,7 @@ class LayerSettingPanel(wx.Panel):
             self.operation.stopop = True
         else:
             self.operation.stopop = False
-        self.context.elements.signal("element_property_reload", self.operation)
+        self.context.elements.signal("element_property_reload", self.operation, "check_stopop")
         event.Skip()
 
 # end of class LayerSettingPanel
@@ -362,19 +364,25 @@ class SpeedPpiPanel(wx.Panel):
 
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.speed = float(self.text_speed.GetValue())
+            value = float(self.text_speed.GetValue())
+            if self.operation.speed != value:
+                self.operation.speed = value
+                self.context.elements.signal("element_property_reload", self.operation, "text_speed")
         except ValueError:
-            return
-        self.context.elements.signal("element_property_reload", self.operation)
+            pass
+        event.Skip()
 
     def on_text_frequency(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.frequency = float(self.text_frequency.GetValue())
+            value = float(self.text_frequency.GetValue())
+            if self.operation.frequency != value:
+                self.operation.frequency = value
+                self.context.elements.signal("element_property_reload", self.operation, "text_frquency")
         except ValueError:
-            return
-        self.context.elements.signal("element_property_reload", self.operation)
+            pass
+        event.Skip()
 
     def update_power_label(self):
         # if self.operation.power <= 100:
@@ -385,11 +393,14 @@ class SpeedPpiPanel(wx.Panel):
 
     def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.power = float(self.text_power.GetValue())
+            value = float(self.text_power.GetValue())
+            if self.operation.power != value:
+                self.operation.power = value
+                self.update_power_label()
+                self.context.elements.signal("element_property_reload", self.operation, "text_power")
         except ValueError:
             return
-        self.update_power_label()
-        self.context.elements.signal("element_property_reload", self.operation)
+        event.Skip()
 
 
 # end of class SpeedPpiPanel
@@ -442,15 +453,18 @@ class PassesPanel(wx.Panel):
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
         self.operation.passes_custom = bool(on)
-        self.context.elements.signal("element_property_reload", self.operation)
+        self.context.elements.signal("element_property_reload", self.operation, "check_passes")
+        event.Skip()
 
     def on_text_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.passes = int(self.text_passes.GetValue())
+            value = int(self.text_passes.GetValue())
+            if self.operation.passes != value:
+                self.operation.passes = value
+                self.context.elements.signal("element_property_reload", self.operation, "text_Passes")
         except ValueError:
-            return
-        self.context.elements.signal("element_property_reload", self.operation)
-
+            pass
+        event.Skip()
 
 # end of class PassesPanel
 
@@ -807,23 +821,26 @@ class PanelStartPreference(wx.Panel):
                 self.slider_left.Enable(True)
 
     def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_top = self.slider_top.GetValue() - 1
-        self.context.elements.signal("element_property_reload", self.operation)
+        if self.operation.raster_preference_top != self.slider_top.GetValue() - 1:
+            self.operation.raster_preference_top = self.slider_top.GetValue() - 1
+            self.context.elements.signal("element_property_reload", self.operation, "slider_top")
 
     def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_left = self.slider_left.GetValue() - 1
-        self.context.elements.signal("element_property_reload", self.operation)
+        if self.operation.raster_preference_left != self.slider_left.GetValue() - 1:
+            self.operation.raster_preference_left = self.slider_left.GetValue() - 1
+            self.context.elements.signal("element_property_reload", self.operation, "slider_left")
 
     def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_right = self.slider_right.GetValue() - 1
-        self.context.elements.signal("element_property_reload", self.operation)
+        if self.operation.raster_preference_right != self.slider_right.GetValue() - 1:
+            self.operation.raster_preference_right = self.slider_right.GetValue() - 1
+            self.context.elements.signal("element_property_reload", self.operation, "slider_right")
 
     def on_slider_bottom(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
-        self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
-        self.context.elements.signal("element_property_reload", self.operation)
-
+        if self.operation.raster_preference_bottom != self.slider_bottom.GetValue() - 1:
+            self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
+            self.context.elements.signal("element_property_reload", self.operation, "slider_bottom")
 
 # end of class PanelStartPreference
 
@@ -937,34 +954,46 @@ class RasterSettingsPanel(wx.Panel):
 
     def on_text_dpi(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.dpi = int(self.text_dpi.GetValue())
+            value = int(self.text_dpi.GetValue())
+            if self.operation.dpi != value:
+                self.operation.dpi = value
+                self.context.signal("element_property_reload", self.operation, "text_dpi")
         except ValueError:
-            return
-        self.context.signal("element_property_reload", self.operation)
+            pass
+        event.Skip()
 
     def on_text_overscan(self, event=None):
+        start_text = self.text_overscan.GetValue()
         ctrl = self.text_overscan
         try:
-            v = Length(ctrl.GetValue())
+            v = Length(ctrl.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4)
             ctrl.SetBackgroundColour(None)
             ctrl.Refresh()
         except ValueError:
             ctrl.SetBackgroundColour(wx.RED)
             ctrl.Refresh()
             return
-        self.operation.overscan = v.preferred_length
-        self.context.elements.signal("element_property_reload", self.operation)
+        # print ("Start overscan=%s - target=%s" % (start_text, str(v.preferred_length)))
+        value = v.preferred_length
+        if v._amount < 0.0000000001:
+            value = 0
+        if self.operation.overscan != value:
+            self.operation.overscan = value
+            self.context.elements.signal("element_property_reload", self.operation, "text_overscan")
+        event.Skip()
 
     def on_combo_raster_direction(self, event=None):
-        self.operation.raster_direction = self.combo_raster_direction.GetSelection()
-        self.context.raster_direction = self.operation.raster_direction
-        self.context.elements.signal("element_property_reload", self.operation)
+        if self.operation.raster_direction != self.combo_raster_direction.GetSelection():
+            self.operation.raster_direction = self.combo_raster_direction.GetSelection()
+            self.context.raster_direction = self.operation.raster_direction
+            self.context.elements.signal("element_property_reload", self.operation, "combo_raster")
+        event.Skip()
 
-    def on_radio_directional(
-        self, event=None
-    ):  # wxGlade: RasterProperty.<event_handler>
-        self.operation.raster_swing = self.radio_directional_raster.GetSelection()
-        self.context.elements.signal("element_property_reload", self.operation)
+    def on_radio_directional(self, event=None):
+        if self.operation.raster_swing != self.radio_directional_raster.GetSelection():
+            self.operation.raster_swing = self.radio_directional_raster.GetSelection()
+            self.context.elements.signal("element_property_reload", self.operation, "radio_direct")
+        event.Skip()
 
 
 # end of class RasterSettingsPanel
@@ -1286,13 +1315,14 @@ class DwellSettingsPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
         try:
-            self.operation.dwell_time = float(self.text_dwelltime.GetValue())
+            value = float(self.text_dwelltime.GetValue())
             self.text_dwelltime.SetBackgroundColour(None)
+            if self.operation.dwell_time != value:
+                self.operation.dwell_time = value
+                self.context.elements.signal("element_property_reload", self.operation, "text_dwell")
         except ValueError:
             self.text_dwelltime.SetBackgroundColour(wx.RED)
-            return
-        self.context.elements.signal("element_property_reload", self.operation)
-
+        event.Skip()
 
 # end of class PassesPanel
 
@@ -1346,6 +1376,11 @@ class ParameterPanel(ScrolledPanel):
 
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
+        # if origin is None:
+        #     print ("EPR called with no origin")
+        # else:
+        #     print ("EPR called from:", args)
+
         try:
             self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
