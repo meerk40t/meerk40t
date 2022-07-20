@@ -48,13 +48,16 @@ class OutputOperation(Node):
         settings = self.settings
         for param, cast in parameters:
             try:
-                settings[param] = cast(settings[param])
+                if param in settings and settings[param] is not None:
+                    settings[param] = (
+                        cast(settings[param]) if settings[param] != "None" else None
+                    )
             except (KeyError, ValueError):
                 pass
 
     @property
     def mask(self):
-        return int(self.settings.get("output_mask"))
+        return self.settings.get("output_mask")
 
     @mask.setter
     def mask(self, v):
@@ -62,7 +65,7 @@ class OutputOperation(Node):
 
     @property
     def value(self):
-        return int(self.settings.get("output_value"))
+        return self.settings.get("output_value")
 
     @value.setter
     def value(self, v):
@@ -70,7 +73,7 @@ class OutputOperation(Node):
 
     @property
     def message(self):
-        return str(self.settings.get("output_message"))
+        return self.settings.get("output_message")
 
     @message.setter
     def message(self, v):

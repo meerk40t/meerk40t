@@ -46,7 +46,10 @@ class ConsoleOperation(Node):
         settings = self.settings
         for param, cast in parameters:
             try:
-                settings[param] = cast(settings[param])
+                if param in settings and settings[param] is not None:
+                    settings[param] = (
+                        cast(settings[param]) if settings[param] != "None" else None
+                    )
             except (KeyError, ValueError):
                 pass
 
