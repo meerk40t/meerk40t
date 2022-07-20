@@ -5614,18 +5614,7 @@ class Elemental(Service):
             if removed:
                 self.signal("tree_changed")
 
-        def has_output(node):
-            res = False
-            if hasattr(node, "output"):
-                try:
-                    node.output = node.output
-                    res = True
-                except AttributeError:
-                    pass
-            return res
-        @self.tree_conditional(
-            lambda node: has_output(node)
-        )
+        @self.tree_conditional(lambda node: hasattr(node, "output"))
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):

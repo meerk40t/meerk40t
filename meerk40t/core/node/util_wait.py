@@ -24,9 +24,24 @@ class WaitOperation(Node):
     def __len__(self):
         return 1
 
+    def validate(self):
+        parameters = [
+            ("output", lambda v: str(v).lower() == "true"),
+            ("wait", float),
+        ]
+        settings = self.settings
+        for param, cast in parameters:
+            try:
+                if param in settings and settings[param] is not None:
+                    settings[param] = (
+                        cast(settings[param]) if settings[param] != "None" else None
+                    )
+            except (KeyError, ValueError):
+                pass
+
     @property
     def wait(self):
-        return float(self.settings.get("wait"))
+        return self.settings.get("wait")
 
     @wait.setter
     def wait(self, v):
@@ -68,6 +83,7 @@ class WaitOperation(Node):
     def load(self, settings, section):
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
         self.settings.update(update_dict)
+        self.validate()
 
     def save(self, settings, section):
         settings.write_persistent_dict(section, self.settings)

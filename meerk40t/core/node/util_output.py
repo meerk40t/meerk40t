@@ -38,9 +38,26 @@ class OutputOperation(Node):
                 bits[m] = ord("1") if (value >> m) & 1 else ord("0")
         return bits.decode("utf8")
 
+    def validate(self):
+        parameters = [
+            ("output", lambda v: str(v).lower() == "true"),
+            ("output_message", str),
+            ("output_value", int),
+            ("output_mask", int),
+        ]
+        settings = self.settings
+        for param, cast in parameters:
+            try:
+                if param in settings and settings[param] is not None:
+                    settings[param] = (
+                        cast(settings[param]) if settings[param] != "None" else None
+                    )
+            except (KeyError, ValueError):
+                pass
+
     @property
     def mask(self):
-        return int(self.settings.get("output_mask"))
+        return self.settings.get("output_mask")
 
     @mask.setter
     def mask(self, v):
@@ -48,7 +65,7 @@ class OutputOperation(Node):
 
     @property
     def value(self):
-        return int(self.settings.get("output_value"))
+        return self.settings.get("output_value")
 
     @value.setter
     def value(self, v):
@@ -56,7 +73,7 @@ class OutputOperation(Node):
 
     @property
     def message(self):
-        return str(self.settings.get("output_message"))
+        return self.settings.get("output_message")
 
     @message.setter
     def message(self, v):
@@ -129,6 +146,7 @@ class OutputOperation(Node):
     def load(self, settings, section):
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
         self.settings.update(update_dict)
+        self.validate()
 
     def save(self, settings, section):
         settings.write_persistent_dict(section, self.settings)
