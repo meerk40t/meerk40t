@@ -38,6 +38,20 @@ class OutputOperation(Node):
                 bits[m] = ord("1") if (value >> m) & 1 else ord("0")
         return bits.decode("utf8")
 
+    def validate(self):
+        parameters = [
+            ("output", lambda v: str(v).lower() == "true"),
+            ("output_message", str),
+            ("output_value", int),
+            ("output_mask", int),
+        ]
+        settings = self.settings
+        for param, cast in parameters:
+            try:
+                settings[param] = cast(settings[param])
+            except (KeyError, ValueError):
+                pass
+
     @property
     def mask(self):
         return int(self.settings.get("output_mask"))
@@ -129,6 +143,7 @@ class OutputOperation(Node):
     def load(self, settings, section):
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
         self.settings.update(update_dict)
+        self.validate()
 
     def save(self, settings, section):
         settings.write_persistent_dict(section, self.settings)

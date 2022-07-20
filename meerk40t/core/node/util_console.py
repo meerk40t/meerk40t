@@ -38,6 +38,18 @@ class ConsoleOperation(Node):
     def output(self, v):
         self.settings["output"] = v
 
+    def validate(self):
+        parameters = [
+            ("output", lambda v: str(v).lower() == "true"),
+            ("command", str),
+        ]
+        settings = self.settings
+        for param, cast in parameters:
+            try:
+                settings[param] = cast(settings[param])
+            except (KeyError, ValueError):
+                pass
+
     def __repr__(self):
         return f"ConsoleOperation('{self.command}')"
 
@@ -71,6 +83,7 @@ class ConsoleOperation(Node):
     def load(self, settings, section):
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
         self.settings.update(update_dict)
+        self.validate()
 
     def save(self, settings, section):
         settings.write_persistent_dict(section, self.settings)
