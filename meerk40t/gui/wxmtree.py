@@ -913,25 +913,12 @@ class ShadowTree:
         return image_id
 
     def update_op_labels(self):
-        invalid_nodes = []
         startnode = self.elements.get(type="branch ops").item
         child, cookie = self.wxtree.GetFirstChild(startnode)
         while child.IsOk():
             node = self.wxtree.GetItemData(child)  # Make sure the map is updated...
-            if node is None:
-                invalid_nodes.append(child)
-            else:
-                if node.type == "op" and len(node.children)==0: # Invalid data
-                    invalid_nodes.append(child)
-                else:
-                    self.update_decorations(node=node, force=True)
+            self.update_decorations(node=node, force=True)
             child, cookie = self.wxtree.GetNextChild(startnode, cookie)
-        # Get rid of invalid nodes...
-        for child in invalid_nodes:
-            node = self.wxtree.GetItemData(child)
-            if not node is None:
-                node.unregister_object()
-            self.wxtree.Delete(child)
 
     def update_decorations(self, node, force=False):
         """
