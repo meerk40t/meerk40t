@@ -26,6 +26,10 @@ class ConsoleOperation(Node):
     def command(self):
         return self.settings.get("command")
 
+    @command.setter
+    def command(self, v):
+        self.settings["command"] = v
+
     @property
     def output(self):
         return self.settings.get("output", True)
