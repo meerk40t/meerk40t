@@ -389,6 +389,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Position", register_panel_position)
 
+        from meerk40t.gui.opassignment import register_panel_operation_assign
+
+        kernel.register("wxpane/opassign", register_panel_operation_assign)
+
         from meerk40t.gui.lasertoolpanel import register_panel_lasertool
 
         kernel.register("wxpane/Lasertool", register_panel_lasertool)

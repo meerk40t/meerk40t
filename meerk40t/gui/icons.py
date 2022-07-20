@@ -24,7 +24,7 @@ class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
         super().__init__(data)
 
-    def GetBitmap(self, use_theme=True, resize=None, color=None, rotate=None, noadjustment=False):
+    def GetBitmap(self, use_theme=True, resize=None, color=None, rotate=None, noadjustment=False, keepalpha = False):
         """
         Assumes greyscale icon black on transparent background using alpha for shading
         Ready for Dark Theme
@@ -91,7 +91,7 @@ class PyEmbeddedImage(py_embedded_image):
             else:
                 reverse = color.distance_to("white") <= 200
                 black_bg = True
-            if reverse:
+            if reverse and not keepalpha:
                 self.RemoveAlpha(image, black_bg=black_bg)
         elif DARKMODE and use_theme:
             image.Replace(0, 0, 0, 255, 255, 255)
