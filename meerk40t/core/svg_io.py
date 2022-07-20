@@ -721,7 +721,7 @@ class SVGProcessor:
                 self.elements.signal("note", self.pathname)
                 return
             node_type = element.values.get("type")
-            if node_type is None or node_type == "op":
+            if node_type == "op":
                 # Meerk40t 0.7.x fallback node types.
                 op_type = element.values.get("operation")
                 if op_type is None:
@@ -729,6 +729,7 @@ class SVGProcessor:
                     if op_type is None:
                         return
                 node_type = f"op {op_type.lower()}"
+                element.values['attributes']['type'] = node_type
 
             if node_type is not None:
                 node_id = element.values.get("id")
