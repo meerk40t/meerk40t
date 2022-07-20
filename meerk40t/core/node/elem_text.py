@@ -15,7 +15,6 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        font_style=None,
         underline=None,
         strikethrough=None,
         overline=None,
@@ -42,10 +41,6 @@ class TextNode(Node):
             self.stroke_width = text.stroke_width
         else:
             self.stroke_width = stroke_width
-        if font_style is None:
-            self.font_style = "normal"
-        else:
-            self.font_style = font_style  # normal / italic / oblique
         if underline is None:
             self.underline = False
         else:
@@ -72,7 +67,6 @@ class TextNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            font_style=self.font_style,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,

@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.16"
+SVGELEMENTS_VERSION = "1.7.0"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -124,9 +124,11 @@ SVG_ATTR_DY = "dy"
 SVG_ATTR_TAG = "tag"
 SVG_ATTR_FONT = "font"
 SVG_ATTR_FONT_FAMILY = "font-family"  # Serif, sans-serif, cursive, fantasy, monospace
-SVG_ATTR_FONT_FACE = "font-face"
-SVG_ATTR_FONT_SIZE = "font-size"
+SVG_ATTR_FONT_STYLE = "font-style"
+SVG_ATTR_FONT_VARIANT = "font-variant"
 SVG_ATTR_FONT_WEIGHT = "font-weight"  # normal, bold, bolder, lighter, 100-900
+SVG_ATTR_FONT_STRETCH = "font-stretch"
+SVG_ATTR_FONT_SIZE = "font-size"
 SVG_ATTR_TEXT_ANCHOR = "text-anchor"
 SVG_ATTR_PATTERN_CONTENT_UNITS = "patternContentUnits"
 SVG_ATTR_PATTERN_TRANSFORM = "patternTransform"
@@ -223,7 +225,24 @@ REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
 REGEX_CSS_COMMENT = re.compile(r"\/\*[\s\S]*?\*\/|\/\/.*$", re.MULTILINE)
 REGEX_CSS_STYLE = re.compile(r"([^{]+)\s*\{\s*([^}]+)\s*\}")
 REGEX_CSS_FONT = re.compile(
-    r"(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?"
+    r"^"
+    r"(?:"
+    r"(?:(normal|italic|oblique)\s)?"
+    r"(?:(normal|small-caps)\s)?"
+    r"(?:(normal|bold|bolder|lighter|[0-9]{3})\s)?"
+    r"(?:(normal|(?:ultra-|extra-|semi-)?condensed|(?:semi-|extra-)?expanded)\s)"
+    r"?){0,4}"
+    r"(?:"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"(?:/"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r")?\s"
+    r")?"
+    r"([^;]*);?"
+    r"$"
+)
+REGEX_CSS_FONT_FAMILY = re.compile(
+    r'(?:([^\s";,]+|"[^";,]+"|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?'
 )
 
 svg_parse = [("COMMAND", r"[MmZzLlHhVvCcSsQqTtAa]"), ("SKIP", PATTERN_COMMAWSP)]
@@ -581,7 +600,7 @@ class Length(object):
         if self.amount is None:
             return None
         if self.units == "pt":
-            return self.amount * 1.3333
+            return self.amount * 4.0 / 3.0
         elif self.units == "pc":
             return self.amount * 16.0
         return self.amount
@@ -626,7 +645,7 @@ class Length(object):
             if other.units == "px" or other.units == "":
                 self.amount += other.amount
             elif other.units == "pt":
-                self.amount += other.amount * 1.3333
+                self.amount += other.amount * 4.0 / 3.0
             elif other.units == "pc":
                 self.amount += other.amount * 16.0
             else:
@@ -634,7 +653,7 @@ class Length(object):
             return self
         if self.units == "pt":
             if other.units == "px" or other.units == "":
-                self.amount += other.amount / 1.3333
+                self.amount += other.amount / 4.0 / 3.0
             elif other.units == "pc":
                 self.amount += other.amount * 12.0
             else:
@@ -696,14 +715,14 @@ class Length(object):
             if other.units == "px" or other.units == "":
                 return self.amount / other.amount
             elif other.units == "pt":
-                return self.amount / (other.amount * 1.3333)
+                return self.amount / (other.amount * 4.0 / 3.0)
             elif other.units == "pc":
                 return self.amount / (other.amount * 16.0)
             else:
                 raise ValueError
         if self.units == "pt":
             if other.units == "px" or other.units == "":
-                return self.amount / (other.amount / 1.3333)
+                return self.amount / (other.amount * 3.0 / 4.0)
             elif other.units == "pc":
                 return self.amount / (other.amount * 12.0)
             else:
@@ -841,7 +860,7 @@ class Length(object):
         if self.units == "px" or self.units == "":
             return self.amount
         if self.units == "pt":
-            return self.amount / 1.3333
+            return self.amount * 3.0 / 4.0
         if self.units == "pc":
             return self.amount / 16.0
         return None
@@ -952,7 +971,7 @@ class Length(object):
         if self.units == "px" or self.units == "":
             return self.amount
         if self.units == "pt":
-            return self.amount * 1.3333
+            return self.amount * 4.0 / 3.0
         if self.units == "pc":
             return self.amount * 16.0
         if self.units == "em":
@@ -7737,12 +7756,15 @@ class Text(SVGElement, GraphicObject, Transformable):
         self.dx = 0
         self.dy = 0
         self.anchor = "start"  # start, middle, end.
+        self.font_style = "normal"
+        self.font_variant = "normal"
+        self.font_weight = 400
+        self.font_stretch = "normal"
+        self.font_size = 16.0  # 16px font 'normal' 12pt font
+        self.line_height = 16.0
         self.font_family = "san-serif"
-        self.font_size = 16.0  # 16 point font 'normal'
-        self.font_weight = 400.0  # Thin=100, Normal=400, Bold=700
-        self.font_face = ""
-
         self.path = None
+
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
         SVGElement.__init__(self, *args, **kwargs)
@@ -7751,10 +7773,11 @@ class Text(SVGElement, GraphicObject, Transformable):
         values = list()
         values.append("'%s'" % self.text)
         values.append("%s='%s'" % (SVG_ATTR_FONT_FAMILY, self.font_family))
-        if self.font_face:
-            values.append("%s=%s" % (SVG_ATTR_FONT_FACE, self.font_face))
-        values.append("%s=%d" % (SVG_ATTR_FONT_SIZE, self.font_size))
+        values.append("%s='%s'" % (SVG_ATTR_FONT_STYLE, self.font_style))
+        values.append("%s='%s'" % (SVG_ATTR_FONT_VARIANT, self.font_variant))
         values.append("%s='%s'" % (SVG_ATTR_FONT_WEIGHT, str(self.font_weight)))
+        values.append("%s='%s'" % (SVG_ATTR_FONT_STRETCH, self.font_stretch))
+        values.append("%s=%d" % (SVG_ATTR_FONT_SIZE, self.font_size))
         values.append("%s='%s'" % (SVG_ATTR_TEXT_ANCHOR, self.anchor))
         if self.x != 0 or self.y != 0:
             values.append("%s=%s" % (SVG_ATTR_X, self.x))
@@ -7779,10 +7802,14 @@ class Text(SVGElement, GraphicObject, Transformable):
         values = list()
         values.append("'%s'" % self.text)
         values.append("font_family='%s'" % self.font_family)
-        if self.font_face:
-            values.append("font_face=%s" % self.font_face)
-        values.append("font_size=%d" % self.font_size)
+        if self.font_style != "normal":
+            values.append("font_style='%s'" % self.font_style)
+        if self.font_variant != "normal":
+            values.append("font_variant='%s'" % self.font_variant)
         values.append("font_weight='%s'" % str(self.font_weight))
+        if self.font_stretch != "normal":
+            values.append("font_stretch='%s'" % self.font_stretch)
+        values.append("font_size=%d" % self.font_size)
         values.append("text_anchor='%s'" % self.anchor)
         if self.x != 0 or self.y != 0:
             values.append("%s=%s" % (SVG_ATTR_X, self.x))
@@ -7823,13 +7850,23 @@ class Text(SVGElement, GraphicObject, Transformable):
             return False
         if self.anchor != other.anchor:
             return False
+        if self.font_style != other.font_style:
+            return False
+        if self.font_variant != other.font_variant:
+            return False
+        if self.font_weight != other.font_weight:
+            return False
+        if self.font_stretch != other.font_stretch:
+            return False
+        if self.font_size != other.font_size:
+            return False
+        if self.line_height != other.line_height:
+            return False
         if self.font_family != other.font_family:
             return False
         if self.font_size != other.font_size:
             return False
-        if self.font_weight != other.font_weight:
-            return False
-        return self.font_face == other.font_face
+        return True
 
     def __ne__(self, other):
         if not isinstance(other, Text):
@@ -7849,9 +7886,12 @@ class Text(SVGElement, GraphicObject, Transformable):
         self.dy = s.dy
         self.anchor = s.anchor
         self.font_family = s.font_family
-        self.font_size = s.font_size
+        self.font_style = s.font_style
+        self.font_variant = s.font_variant
         self.font_weight = s.font_weight
-        self.font_face = s.font_face
+        self.font_stretch = s.font_stretch
+        self.font_size = s.font_size
+        self.line_height = s.line_height
 
     def parse_font(self, font):
         """
@@ -7868,57 +7908,119 @@ class Text(SVGElement, GraphicObject, Transformable):
         generic-family:  `serif`, `sans-serif`, `cursive`, `fantasy`, and `monospace`
         """
         # https://www.w3.org/TR/css-fonts-3/#font-prop
-        font_elements = list(*re.findall(REGEX_CSS_FONT, font))
+        match = REGEX_CSS_FONT.match(font)
+        if not match:
+            # This is not a qualified shorthand font.
+            return
+        self.font_style = match.group(1)
+        if self.font_style is None:
+            self.font_style = "normal"
 
-        font_style = font_elements[0]
-        font_variant = font_elements[1]
-        font_weight = font_elements[2]
-        font_stretch = font_elements[3]
-        font_size = font_elements[4]
-        line_height = font_elements[5]
-        font_face = font_elements[6]
-        font_family = font_elements[7]
-        if len(font_weight) > 0:
-            self.font_weight = self.parse_font_weight(font_weight)
-        if len(font_size) > 0:
-            self.font_size = Length(font_size).value()
-        if len(font_face) > 0:
-            if font_face.endswith(","):
-                font_face = font_face[:-1]
-            self.font_face = font_face
+        self.font_variant = match.group(2)
+        if self.font_variant is None:
+            self.font_variant = "normal"
 
-        if len(font_family) > 0:
-            self.font_family = font_family
+        self.font_weight = match.group(3)
+        if self.font_weight is None:
+            self.font_weight = "normal"
 
-    def parse_font_weight(self, weight):
-        if weight == "bold":
+        self.font_stretch = match.group(4)
+        if self.font_stretch is None:
+            self.font_stretch = "normal"
+
+        self.font_size = match.group(5)
+        if self.font_size is None:
+            self.font_size = "12pt"
+        if self.font_size:
+            size = self.font_size
+            self.font_size = Length(self.font_size)
+            try:
+                self.font_size = Length(self.font_size).value()
+                if self.font_size == 0:
+                    self.font_size = size
+            except ValueError:
+                self.font_size = size
+
+        self.line_height = match.group(6)
+        if self.line_height is None:
+            self.line_height = "12pt"
+        if self.line_height:
+            height = self.line_height
+            self.line_height = Length(self.line_height)
+            try:
+                self.line_height = Length(
+                    self.line_height, relative_length=self.font_size
+                ).value()
+                if self.line_height == 0:
+                    self.line_height = height
+            except ValueError:
+                self.line_height = height
+
+        self.font_family = match.group(7)
+
+    @property
+    def font_list(self):
+        return [
+            family[1:-1] if family.startswith('"') else family
+            for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
+        ]
+
+    @property
+    def weight(self):
+        """
+        This does not correctly parse weights for bolder or lighter. Those are relative to the previous set
+        font-weight and that is generally unknown in this context.
+        """
+        if self.font_weight == "bold":
             return 700
-        if weight == "normal":
+        if self.font_weight == "normal":
             return 400
         try:
-            return int(weight)
+            return int(self.font_weight)
         except ValueError:
             return 400
+
+    @property
+    def font_face(self):
+        """
+        Deprecated Fontface.
+        """
+        return ""
 
     def property_by_values(self, values):
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
         SVGElement.property_by_values(self, values)
-        self.anchor = values.get(SVG_ATTR_TEXT_ANCHOR, self.anchor)
-        self.font_face = values.get("font_face")
-        self.font_face = values.get(SVG_ATTR_FONT_FACE, self.font_face)
+
         self.font_family = values.get("font_family", self.font_family)
         self.font_family = values.get(SVG_ATTR_FONT_FAMILY, self.font_family)
-        self.font_size = Length(values.get("font_size", self.font_size)).value()
-        self.font_size = Length(values.get(SVG_ATTR_FONT_SIZE, self.font_size)).value()
+
+        self.font_style = values.get("font_style", self.font_style)
+        self.font_style = values.get(SVG_ATTR_FONT_STYLE, self.font_family)
+
+        self.font_variant = values.get("font_variant", self.font_variant)
+        self.font_variant = values.get(SVG_ATTR_FONT_VARIANT, self.font_variant)
+
         self.font_weight = values.get("font_weight", self.font_weight)
         self.font_weight = values.get(SVG_ATTR_FONT_WEIGHT, self.font_weight)
-        self.font_weight = self.parse_font_weight(self.font_weight)
+        try:
+            self.font_weight = int(self.font_weight)
+        except ValueError:
+            pass
+
+        self.font_stretch = values.get("font_stretch", self.font_stretch)
+        self.font_stretch = values.get(SVG_ATTR_FONT_STRETCH, self.font_stretch)
+
+        self.font_size = Length(values.get("font_size", self.font_size)).value()
+        self.font_size = Length(values.get(SVG_ATTR_FONT_SIZE, self.font_size)).value()
+
         self.anchor = values.get("text_anchor", self.anchor)
         self.anchor = values.get(SVG_ATTR_TEXT_ANCHOR, self.anchor)
+
         font = values.get(SVG_ATTR_FONT, None)
         if font is not None:
             self.parse_font(font)
+
         self.text = values.get(SVG_TAG_TEXT, self.text)
         self.x = Length(values.get(SVG_ATTR_X, self.x)).value()
         self.y = Length(values.get(SVG_ATTR_Y, self.y)).value()
@@ -8552,6 +8654,7 @@ class SVG(Group):
         color="black",
         transform=None,
         context=None,
+        parse_display_none=False,
     ):
         """
         Parses the SVG file. All attributes are things which the SVG document itself could not be aware of, such as
@@ -8565,6 +8668,7 @@ class SVG(Group):
         :param color: the `currentColor` value from outside the current scope.
         :param transform: Any required transformations to be pre-applied to this document
         :param context: Any existing document context.
+        :param parse_display_none: Parse display_none values anyway.
         :return:
         """
         clip = 0
@@ -8588,7 +8692,8 @@ class SVG(Group):
             if event == "start":
                 stack.append((context, values))
                 if (
-                    SVG_ATTR_DISPLAY in values
+                    not parse_display_none
+                    and SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
                     continue  # Values has a display=none. Do not render anything. No Shadow Dom.
@@ -8684,7 +8789,8 @@ class SVG(Group):
                 values.update(attributes)
                 values[SVG_STRUCT_ATTRIB] = attributes
                 if (
-                    SVG_ATTR_DISPLAY in values
+                    not parse_display_none
+                    and SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
                     continue  # If the attributes flags our values to display=none, stop rendering.

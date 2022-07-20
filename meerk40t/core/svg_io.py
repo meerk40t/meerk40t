@@ -12,10 +12,13 @@ from ..svgelements import (
     SVG_ATTR_DATA,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
-    SVG_ATTR_FONT_FACE,
+    # SVG_ATTR_FONT_FACE, no longer supported
     SVG_ATTR_FONT_FAMILY,
     SVG_ATTR_FONT_SIZE,
     SVG_ATTR_FONT_WEIGHT,
+    SVG_ATTR_FONT_STRETCH,
+    SVG_ATTR_FONT_STYLE,
+    SVG_ATTR_FONT_VARIANT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_STROKE,
@@ -294,7 +297,6 @@ class SVGWriter:
                 for key, val in element.values.items():
                     if key in (
                         "font-family",
-                        "font-face",
                         "font-size",
                         "font-weight",
                         "anchor",
@@ -304,10 +306,10 @@ class SVGWriter:
                         subelement.set(key, str(val))
                 attribs = [
                     ("font_family", SVG_ATTR_FONT_FAMILY),
-                    ("font_face", SVG_ATTR_FONT_FACE),
+                    # ("font_face", SVG_ATTR_FONT_FACE),
                     ("font_size", SVG_ATTR_FONT_SIZE),
                     ("font_weight", SVG_ATTR_FONT_WEIGHT),
-                    ("font_style", "font-style"),  # Not implemented yet afaics
+                    ("font_style", SVG_ATTR_FONT_STYLE),  # Not implemented yet afaics
                     ("text_transform", "text-transform"),
                     ("anchor", SVG_ATTR_TEXT_ANCHOR),
                     ("x", SVG_ATTR_X),
@@ -568,13 +570,14 @@ class SVGProcessor:
                     node.label = my_label
                 # Maybe superseded by concrete values later, so do it first
                 font_style = element.values.get("font")
+                # TODO: This is now generally duplicated parsing.
                 if font_style is not None:
                     # This comes inherited from a class so let's split it up...
                     subvalues = font_style.split()
                     for subvalue in subvalues:
                         subvalue_lower = subvalue.lower()
                         if subvalue_lower in ("italic", "normal", "oblique"):
-                            node.font_style = subvalue_lower
+                            node.text.font_style = subvalue_lower
                         elif subvalue_lower in ("lighter", "bold", "bolder"):
                             node.text.font_weight = subvalue_lower
                         elif subvalue_lower in (

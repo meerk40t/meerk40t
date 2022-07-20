@@ -373,7 +373,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest.SetLabelText(self.node.text.text)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
         self.button_attrib_bold.SetValue(self.node.text.font_weight != "normal")
-        self.button_attrib_italic.SetValue(self.node.font_style != "normal")
+        self.button_attrib_italic.SetValue(self.node.text.font_style != "normal")
         self.button_attrib_underline.SetValue(self.node.underline)
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
         self.combo_font.SetValue(self.node.wxfont.GetFaceName())
