@@ -1,15 +1,53 @@
+import re
 import wx
 
 from meerk40t.core.units import PX_PER_INCH
 
 # from meerk40t.core.node import node
 # from meerk40t.svgelements import Text
-
+# Svg-text has the following properties (and default values)
+# .anchor = "start"  # start, middle, end.
+# .font_family = "san-serif"
+# .font_size = 16.0  # 16px font 'normal' 12pt font
+# .font_weight = 400
+# NEW since svg 1.7:
+# .font_style = "normal" * DONE
+# .font_variant = "normal" * NOT SUPPORTED (ornaments, small-caps etc.)
+# .font_stretch = "normal" * NOT SUPPORTED (normal, condensed, expanded etc.)
+# .line_height = 16.0
+# Removed:
+# .font_face
 
 def wxfont_to_svg(svgtextnode):
     ###
     ### Translates all wxfont - properties to their svg-equivalents
     ###
+    def build_family_name(wxfont):
+        fontface = wxfont.GetFaceName()
+        if any([ char in fontface for char in [" ", ","] ]):
+            fontface = "'" + fontface + "'"
+        family = ""
+        ff = wxfont.GetFamily()
+        if ff == wx.FONTFAMILY_DECORATIVE:
+            family = ", fantasy"
+        elif ff == wx.FONTFAMILY_ROMAN:
+            family = ", serif"
+        elif ff == wx.FONTFAMILY_SCRIPT:
+            family = ", cursive"
+        elif ff == wx.FONTFAMILY_SWISS:
+            family = ", sans-serif"
+        elif ff == wx.FONTFAMILY_MODERN:
+            family = ", sans-serif"
+        elif ff == wx.FONTFAMILY_TELETYPE:
+            family = ", monospace"
+        else:
+            family = ", sans-serif"
+        family_name = fontface + family
+        if family_name.startswith(","):
+            family_name = family_name[1:].strip()
+        return family_name
+
+
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
 
@@ -31,22 +69,7 @@ def wxfont_to_svg(svgtextnode):
         fontweight = "normal"
     svgtextnode.text.font_weight = fontweight
 
-    svgtextnode.text.font_face = wxfont.GetFaceName()
-    ff = wxfont.GetFamily()
-    if ff == wx.FONTFAMILY_DECORATIVE:
-        family = "fantasy"
-    elif ff == wx.FONTFAMILY_ROMAN:
-        family = "serif"
-    elif ff == wx.FONTFAMILY_SCRIPT:
-        family = "cursive"
-    elif ff == wx.FONTFAMILY_SWISS:
-        family = "sans-serif"
-    elif ff == wx.FONTFAMILY_MODERN:
-        family = "sans-serif"
-    elif ff == wx.FONTFAMILY_TELETYPE:
-        family = "monospace"
-    else:
-        family = "sans-serif"
+    family = build_family_name(wxfont)
     svgtextnode.text.font_family = family
 
     ff = wxfont.GetStyle()
@@ -59,16 +82,28 @@ def wxfont_to_svg(svgtextnode):
     else:
         fontstyle = "normal"
 
-    svgtextnode.font_style = fontstyle
+    svgtextnode.text.font_style = fontstyle
 
     svgtextnode.underline = wxfont.GetUnderlined()
     svgtextnode.strikethrough = wxfont.GetStrikethrough()
-
 
 def svgfont_to_wx(svgtextnode):
     ###
     ### Translates all svg-text-properties to their wxfont-equivalents
     ###
+    def get_font_names(node):
+        face_family = node.text.font_family
+        fontface = ""
+        family = ""
+        if face_family is not None and face_family!="":
+            components = re.findall(r"(?:[^\s,']|'(?:\\.|[^'])*')+", face_family)
+            if len(components)>0:
+                fontface = components[0]
+                family = components[-1]
+            else:
+                family = components[0]
+        return fontface, family
+
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
     wxfont = svgtextnode.wxfont
@@ -84,8 +119,8 @@ def svgfont_to_wx(svgtextnode):
     else:
         fontweight = wx.FONTWEIGHT_NORMAL
     wxfont.SetWeight(fontweight)
-
-    ff = svgtextnode.text.font_family
+    font_face, font_family = get_font_names(svgtextnode)
+    ff = font_family
     if ff == "fantasy":
         family = wx.FONTFAMILY_DECORATIVE
     elif ff == "serif":
@@ -99,10 +134,10 @@ def svgfont_to_wx(svgtextnode):
     else:
         family = wx.FONTFAMILY_SWISS
     wxfont.SetFamily(family)
-    if not svgtextnode.text.font_face is None:
-        if svgtextnode.text.font_face[0] == "'":
-            svgtextnode.text.font_face = svgtextnode.text.font_face.strip("'")
-        okay = wxfont.SetFaceName(svgtextnode.text.font_face)
+    if font_face != "":
+        if font_face[0] == "'":
+            font_face = font_face.strip("'")
+        okay = wxfont.SetFaceName(font_face)
     else:
         try:
             tst = wxfont.GetFaceName()
@@ -110,15 +145,13 @@ def svgfont_to_wx(svgtextnode):
         except:
             okay = False
     if not okay:
-        if not svgtextnode.text.font_family is None:
-            if svgtextnode.text.font_family[0] == "'":
-                svgtextnode.text.font_family = svgtextnode.text.font_family.strip("'")
-            ff = svgtextnode.text.font_family
+        if font_family != "":
+            if font_family[0] == "'":
+                font_family = font_family.strip("'")
+            ff = font_family
             # Will try Family Name instead
             okay = wxfont.SetFaceName(ff)
-            if okay:
-                svgtextnode.text.font_face = ff
-    ff = svgtextnode.font_style
+    ff = svgtextnode.text.font_style
     if ff == "normal":
         fontstyle = wx.FONTSTYLE_NORMAL
     elif ff == "italic":
