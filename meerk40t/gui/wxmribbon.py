@@ -40,7 +40,7 @@ class RibbonButtonBar(RB.RibbonButtonBar):
         if self.screen_refresh_lock.acquire(timeout=0.2):
 
             dc = wx.AutoBufferedPaintDC(self)
-            if not dc is None:
+            if dc is not None:
 
                 self._art.DrawButtonBarBackground(
                     dc, self, wx.Rect(0, 0, *self.GetSize())
@@ -97,6 +97,9 @@ class MyRibbonPanel(RB.RibbonPanel):
             size = (0, 0)
         oldw = size[0]
         oldh = size[1]
+        # Set default values
+        wd = oldw
+        ht = oldh
         if size[0]<50: # There's something wrong here
             # print ("Wrong best size for %s = %s" % (self.GetLabel(), size))
             for bar in self.GetChildren():
@@ -294,7 +297,7 @@ class RibbonPanel(wx.Panel):
             if item_id == evt_id:
                 bar = item
                 # Now look for the corresponding buttons...
-                if not bar._hovered_button is None:
+                if bar._hovered_button is not None:
                     # print ("Hovered button: %d" % bar._hovered_button.base.id)
                     active_button = bar._hovered_button.base.id
                 break
