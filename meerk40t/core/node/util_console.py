@@ -30,6 +30,10 @@ class ConsoleOperation(Node):
     def output(self):
         return self.settings.get("output", True)
 
+    @output.setter
+    def output(self, v):
+        self.settings["output"] = v
+
     def __repr__(self):
         return f"ConsoleOperation('{self.command}')"
 
