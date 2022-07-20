@@ -1,5 +1,5 @@
 import wx
-
+from wx.lib.scrolledpanel import ScrolledPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 from ...core.units import Length
@@ -8,7 +8,7 @@ from ..balor_params import Parameters
 _ = wx.GetTranslation
 
 
-class BalorOperationPanel(wx.Panel):
+class BalorOperationPanel(ScrolledPanel):
     name = "Balor"
 
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -139,10 +139,11 @@ class BalorOperationPanel(wx.Panel):
         ]
 
         self.panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
 

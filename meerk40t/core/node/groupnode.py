@@ -38,7 +38,6 @@ class GroupNode(Node):
         default_map["element_type"] = "Group"
         default_map["children"] = str(len(self.children))
         default_map["id"] = str(self.id)
-        default_map["label"] = self.label
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -55,7 +54,7 @@ class GroupNode(Node):
         return False
 
     @property
-    def label(self):
+    def name(self):
         if self.id is None:
-            return f"Group {len(self.children)}"
-        return f"Group {len(self.children)}: %s" % self.id
+            return f"Group ({len(self.children)} elems)"
+        return f"Group ({len(self.children)} elems): %s" % self.id

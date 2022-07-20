@@ -16,7 +16,17 @@ class ChoicePropertyPanel(ScrolledPanel):
     and display the given properties, automatically generating an appropriate changer for that property.
     """
 
-    def __init__(self, *args, context: Context = None, choices=None, scrolling = True, **kwds):
+    def __init__(self, *args, context: Context = None, choices=None, scrolling = True, constraint=None, **kwds):
+        # constraints is either
+        # - None (default) - all choices will be display
+        # - a pair of integers (start, end), from where to where (index) to display
+        #   use case: display the first 10 entries constraint=(0, 9)
+        #   then the remaining: constraint=(10, -1)
+        #   -1 defines the min / max boundaries
+        # - a list of strings that describe
+        #   the pages to show : constraint=("page1", "page2")
+        #   the pages to omit : constraint=("-page1", "-page2")
+        #   a leading hyphen establishes omission
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
@@ -38,10 +48,69 @@ class ChoicePropertyPanel(ScrolledPanel):
             except KeyError:
                 c["page"] = ""
         # print ("Choices: " , choices)
-        self.choices = sorted(sorted(choices, key=lambda d: d["section"]), key=lambda d: d["page"])
-        # print ("Sorted choices: " , self.choices)
-
-
+        prechoices = sorted(sorted(choices, key=lambda d: d["section"]), key=lambda d: d["page"])
+        self.choices = list()
+        dealt_with = False
+        if not constraint is None:
+            if isinstance(constraint, (tuple, list, str)):
+                if isinstance(constraint, str):
+                    # make it a tuple
+                    constraint=(constraint,)
+                if len(constraint)>0:
+                    if isinstance(constraint[0], str):
+                        dealt_with = True
+                        # Section list
+                        positive = list()
+                        negative = list()
+                        for item in constraint:
+                            if item.startswith("-"):
+                                item = item[1:]
+                                negative.append(item.lower())
+                            else:
+                                positive.append(item.lower())
+                        for i, c in enumerate(prechoices):
+                            try:
+                                this_page = c["page"].lower()
+                            except KeyError:
+                                this_page = ""
+                            if len(negative)>0 and len(positive)>0:
+                                # Negative takes precedence:
+                                if not this_page in negative and this_page in positive:
+                                    self.choices.append(c)
+                            elif len(negative)>0:
+                                # only negative....
+                                if not this_page in negative:
+                                    self.choices.append(c)
+                            elif len(positive)>0:
+                                # only positive....
+                                if this_page in positive:
+                                    self.choices.append(c)
+                    else:
+                        dealt_with = True
+                        # Section list
+                        startfrom = 0
+                        endat = len(prechoices)
+                        if constraint[0]>=0:
+                            startfrom = constraint[0]
+                        if len(constraint)>1 and constraint[1]>=0:
+                            endat = constraint[1]
+                        if startfrom < 0:
+                            startfrom = 0
+                        if endat>len(prechoices):
+                            endat = len(prechoices)
+                        if endat<startfrom:
+                            endat = len(prechoices)
+                        for i, c in enumerate(prechoices):
+                            if i>=startfrom and i<endat:
+                                self.choices.append(c)
+        else:
+            # Empty constraint
+            pass
+        if not dealt_with:
+            # no valid constraints
+            self.choices = prechoices
+        if len(self.choices)==0:
+            return
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         last_page = ""
         last_section = ""
@@ -99,10 +168,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Undefined label is the attr
                 label = attr
             if last_page != this_page:
+                last_section = ""
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
                 last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_page)), wx.VERTICAL)
                 sizer_main.Add(last_box, 0, wx.EXPAND, 0 )
                 current_main_sizer = last_box
+                current_sizer = last_box
 
             if last_section != this_section:
                 last_box = wx.StaticBoxSizer(wx.StaticBox(self, id=wx.ID_ANY, label=_(this_section)), wx.VERTICAL)
@@ -175,7 +246,19 @@ class ChoicePropertyPanel(ScrolledPanel):
                     choices=choice_list,
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
-                control.SetValue(str(data))
+                if data is not None:
+                    if data_type == str:
+                        control.SetValue(str(data))
+                    else:
+                        least = None
+                        for entry in choice_list:
+                            if least is None:
+                                least = entry
+                            else:
+                                if abs(data_type(entry) - data) < abs(data_type(least) - data):
+                                    least = entry
+                        if least is not None:
+                            control.SetValue(least)
 
                 def on_combo_text(param, ctrl, obj, dtype):
                     def select(event=None):
@@ -201,7 +284,21 @@ class ChoicePropertyPanel(ScrolledPanel):
                     choices=choice_list,
                     style=wx.CB_DROPDOWN | wx.CB_READONLY,
                 )
-                control.SetValue(str(data))
+                # print ("Choices: %s" % choice_list)
+                # print ("To set: %s" % str(data))
+                if data is not None:
+                    if data_type == str:
+                        control.SetValue(str(data))
+                    else:
+                        least = None
+                        for entry in choice_list:
+                            if least is None:
+                                least = entry
+                            else:
+                                if abs(data_type(entry) - data) < abs(data_type(least) - data):
+                                    least = entry
+                        if least is not None:
+                            control.SetValue(least)
 
                 def on_combosmall_text(param, ctrl, obj, dtype):
                     def select(event=None):

@@ -81,6 +81,8 @@ class Node:
         self.icon = None
         self.cache = None
         self.id = None
+        # Label
+        self.label = None
 
     def __repr__(self):
         return "Node('%s', %s)" % (self.type, str(self._parent))
@@ -99,10 +101,6 @@ class Node:
 
     def __eq__(self, other):
         return other is self
-
-    @property
-    def label(self):
-        return str(self)
 
     @property
     def children(self):
@@ -176,10 +174,35 @@ class Node:
         self._points_dirty = False
         return self._points
 
+    def create_label(self, text=None):
+        if text is None:
+            text = "{element_type}:{id}"
+        # Just for the optical impression (who understands what a "Rect: None" means),
+        # lets replace some of the more obvious ones...
+        mymap = self.default_map()
+        for key in mymap:
+            if hasattr(self, key) and mymap[key]=="None":
+                if getattr(self, key) is None:
+                    mymap[key] = "-"
+        # slist = text.split("{")
+        # for item in slist:
+        #     idx = item.find("}")
+        #     if idx>0:
+        #         sitem = item[0:idx]
+        #     else:
+        #         sitem = item
+        #     try:
+        #         dummy = mymap[sitem]
+        #     except KeyError:
+        #         # Addit
+        #         mymap[sitem] = "??ERR??"
+        return text.format_map(mymap)
+
     def default_map(self, default_map=None):
         if default_map is None:
             default_map = dict()
         default_map["id"] = str(self.id) if self.id is not None else "-"
+        default_map["label"] = self.label if self.label is not None else ""
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
@@ -707,3 +730,7 @@ class Node:
             if box[3] > ymax:
                 ymax = box[3]
         return xmin, ymin, xmax, ymax
+
+    @property
+    def name(self):
+        return self.__str__()

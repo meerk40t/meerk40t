@@ -153,6 +153,9 @@ def plugin(kernel, lifecycle=None):
             script = []
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             if not len(script) and inode.operations:
                 channel(_("Disabled raster script."))
             inode.operations = script
@@ -176,6 +179,27 @@ def plugin(kernel, lifecycle=None):
                     channel(_("Element was not locked: %s") % str(inode))
             except AttributeError:
                 channel(_("Element was not locked: %s") % str(inode))
+        context.signal("element_property_update", data)
+        return "image", data
+
+    @context.console_command(
+        "lock",
+        help=_("lock manipulations"),
+        input_type="image",
+        output_type="image",
+    )
+    def image_lock(command, channel, _, data, **kwargs):
+        channel(_("Locking Elements..."))
+        for inode in data:
+            try:
+                if not inode.lock:
+                    channel("Locked: %s" % str(inode))
+                    inode.lock = True
+                else:
+                    channel(_("Element was not unlocked: %s") % str(inode))
+            except AttributeError:
+                channel(_("Element was not unlocked: %s") % str(inode))
+        context.signal("element_property_update", data)
         return "image", data
 
     @context.console_argument("threshold_max", type=float)
@@ -183,11 +207,14 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "threshold", help="", input_type="image", output_type="image"
     )
-    def image_threshold(data, threshold_max=None, threshold_min=None, **kwargs):
+    def image_threshold(command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs):
         if threshold_min is None:
             raise CommandSyntaxError
         divide = (threshold_max - threshold_min) / 255.0
         for node in data:
+            if node.lock:
+                channel(_("Can't modify a locked image: %s") % str(node))
+                continue
             image_node = copy(node)
             image_node.image = image_node.image.copy()
             if image_node.needs_actualization():
@@ -226,8 +253,11 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "dither", help=_("Dither to 1-bit"), input_type="image", output_type="image"
     )
-    def image_dither(data, method="Floyd-Steinberg", **kwargs):
+    def image_dither(command, channel, _, data, method="Floyd-Steinberg", **kwargs):
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "RGBA":
                 pixel_data = img.load()
@@ -261,7 +291,7 @@ def plugin(kernel, lifecycle=None):
         input_type="image",
         output_type="image",
     )
-    def image_remove(data, color, distance=1, **kwargs):
+    def image_remove(command, channel, _, data, color, distance=1, **kwargs):
         if color is None:
             raise CommandSyntaxError(_("Must specify a color"))
         distance_sq = distance * distance
@@ -273,6 +303,9 @@ def plugin(kernel, lifecycle=None):
             return r * r + g * g + b * b <= distance_sq
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode != "RGBA":
                 img = img.convert("RGBA")
@@ -296,6 +329,9 @@ def plugin(kernel, lifecycle=None):
             return
         pix = (color.red, color.green, color.blue, color.alpha)
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode != "RGBA":
                 img = img.convert("RGBA")
@@ -316,6 +352,9 @@ def plugin(kernel, lifecycle=None):
     )
     def image_dewhite(channel, _, data, **kwargs):
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode not in ("1", "L"):
                 channel(_("Requires 1-bit or grayscale image."))
@@ -332,8 +371,11 @@ def plugin(kernel, lifecycle=None):
         return "image", data
 
     @context.console_command("rgba", help="", input_type="image", output_type="image")
-    def image_rgba(data, **kwargs):
+    def image_rgba(command, channel, _, data, **kwargs):
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode != "RGBA":
                 img = img.convert("RGBA")
@@ -348,8 +390,11 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "crop", help=_("Crop image"), input_type="image", output_type="image"
     )
-    def image_crop(data, left, upper, right, lower, **kwargs):
+    def image_crop(command, channel, _, data, left, upper, right, lower, **kwargs):
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             try:
                 if left >= right:
@@ -379,6 +424,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageEnhance
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             try:
                 img = inode.image
                 enhancer = ImageEnhance.Contrast(img)
@@ -401,6 +449,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageEnhance
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             try:
                 factor = float(args[1])
                 img = inode.image
@@ -422,6 +473,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageEnhance
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             try:
                 img = inode.image
                 enhancer = ImageEnhance.Color(img)
@@ -444,6 +498,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageEnhance
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             try:
                 img = inode.image
                 enhancer = ImageEnhance.Sharpness(img)
@@ -461,6 +518,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -478,6 +538,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -493,6 +556,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -510,6 +576,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -525,6 +594,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -542,6 +614,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -557,6 +632,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -574,6 +652,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageFilter
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -593,6 +674,9 @@ def plugin(kernel, lifecycle=None):
     )
     def image_quantize(command, channel, _, data, colors, **kwargs):
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             try:
                 img = inode.image
                 inode.image = img.quantize(colors=colors)
@@ -613,6 +697,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageOps
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             try:
                 img = inode.image
                 inode.image = ImageOps.solarize(img, threshold=threshold)
@@ -628,6 +715,9 @@ def plugin(kernel, lifecycle=None):
     def image_invert(command, channel, _, data, **kwargs):
         from PIL import ImageOps
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             original_mode = img.mode
             if img.mode in ("P", "RGBA", "1"):
@@ -651,6 +741,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageOps
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             inode.image = ImageOps.flip(img)
             inode.altered()
@@ -664,6 +757,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageOps
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             inode.image = ImageOps.mirror(img)
             if hasattr(inode, "node"):
@@ -679,6 +775,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import Image
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             inode.image = img.transpose(Image.ROTATE_90)
             inode.altered()
@@ -692,6 +791,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import Image
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             inode.image = img.transpose(Image.ROTATE_270)
             if hasattr(inode, "node"):
@@ -713,6 +815,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageOps
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             try:
                 img = inode.image
                 if img.mode == "RGBA":
@@ -740,6 +845,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageOps
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if method is not None:
                 if method == "red":
@@ -773,6 +881,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import ImageOps
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             inode.image = ImageOps.equalize(img)
             inode.altered()
@@ -792,6 +903,9 @@ def plugin(kernel, lifecycle=None):
     )
     def image_slice(command, channel, _, data, x, **kwargs):
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             image_left = img.crop((0, 0, x, inode.image.height))
             image_right = img.crop((x, 0, inode.image.width, inode.image.height))
@@ -824,6 +938,9 @@ def plugin(kernel, lifecycle=None):
     )
     def image_slash(command, channel, _, data, y, **kwargs):
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             image_top = img.crop((0, 0, inode.image.width, y))
             image_bottom = img.crop((0, y, inode.image.width, inode.image.height))
@@ -867,6 +984,9 @@ def plugin(kernel, lifecycle=None):
         from PIL import Image
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             img = inode.image
             if img.mode == "P":
                 img = img.convert("RGBA")
@@ -935,6 +1055,9 @@ def plugin(kernel, lifecycle=None):
         e.g. flatrotary 0 .2 .7 1
         """
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             points = len(args) - 1
             im = inode.image
             w, h = im.size
@@ -975,7 +1098,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_halftone(
-        data, oversample, sample=10, scale=1, angle=Angle.degrees(22), **kwargs
+        command, channel, _, data, oversample, sample=10, scale=1, angle=Angle.degrees(22), **kwargs
     ):
         """
         Returns halftone image for image.
@@ -990,6 +1113,9 @@ def plugin(kernel, lifecycle=None):
         angle = angle.as_degrees
 
         for inode in data:
+            if inode.lock:
+                channel(_("Can't modify a locked image: %s") % str(inode))
+                continue
             image = inode.image
             im = image
             image = image.convert("L")
@@ -1437,6 +1563,8 @@ class RasterScripts:
 
     @staticmethod
     def wizard_image(image_node, operations):
+        if image_node.lock:
+            return
         image = image_node.image
         matrix = Matrix(image_node.matrix)
         step = None

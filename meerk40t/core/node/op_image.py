@@ -23,9 +23,12 @@ class ImageOpNode(Node, Parameters):
             if "type" in kwargs:
                 del kwargs["type"]
         Node.__init__(self, type="op image", **kwargs)
+        # Is this op out of useful bounds?
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
         self.settings.update(kwargs)
+        self.dangerous = False
+        # self.settings["stopop"] = True
 
         if len(args) == 1:
             obj = args[0]
@@ -37,6 +40,8 @@ class ImageOpNode(Node, Parameters):
         self.allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self.allowed_elements = ("elem image",)
+        self.stopop = True
+        self.allowed_attributes = []
 
     def __repr__(self):
         return "ImageOpNode()"
@@ -51,9 +56,19 @@ class ImageOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    def is_dangerous(self, minpower, maxspeed):
+        result = False
+        if maxspeed is not None and self.speed > maxspeed:
+            result = True
+        if minpower is not None and self.power < minpower:
+            result = True
+        self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Image"
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
@@ -82,8 +97,10 @@ class ImageOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
         return default_map
 
@@ -120,11 +137,11 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
-    def classify(self, node):
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         if node.type in self.allowed_elements:
             self.add_reference(node)
             # Have classified and no more classification are needed
-            return True, True
+            return True, self.stopop
         return False, False
 
     def load(self, settings, section):
@@ -163,6 +180,8 @@ class ImageOpNode(Node, Parameters):
             estimate += (e.image_width * e.image_height * step) / (
                 MILS_IN_MM * self.speed
             )
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (

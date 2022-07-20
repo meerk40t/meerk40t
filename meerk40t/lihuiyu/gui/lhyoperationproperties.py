@@ -1,5 +1,5 @@
 import wx
-
+from meerk40t.gui.wxutils import TextCtrl
 _ = wx.GetTranslation
 
 OPERATION_ACCEL_TOOLTIP = _(
@@ -59,7 +59,7 @@ class LhyAdvancedPanel(wx.Panel):
         )
         sizer_11.Add(self.check_dratio_custom, 1, 0, 0)
 
-        self.text_dratio = wx.TextCtrl(self, wx.ID_ANY, "0.261")
+        self.text_dratio = TextCtrl(self, wx.ID_ANY, "0.261", limited=True)
         self.text_dratio.SetToolTip(OPERATION_DRATIO_TOOLTIP)
         sizer_11.Add(self.text_dratio, 1, 0, 0)
 
@@ -90,7 +90,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, "Dot Length")
         self.check_dot_length_custom.SetToolTip("Enable Dot Length")
         sizer_20.Add(self.check_dot_length_custom, 1, 0, 0)
-        self.text_dot_length = wx.TextCtrl(self, wx.ID_ANY, "1")
+        self.text_dot_length = TextCtrl(self, wx.ID_ANY, "1", limited=True)
         self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
         sizer_20.Add(self.text_dot_length, 1, 0, 0)
 
@@ -151,6 +151,10 @@ class LhyAdvancedPanel(wx.Panel):
             self.text_dot_length.SetValue(str(self.operation.dot_length))
         if self.operation.shift_enabled is not None:
             self.check_shift_enabled.SetValue(self.operation.shift_enabled)
+        on = self.check_dratio_custom.GetValue()
+        self.text_dratio.Enable(on)
+        on = self.check_dot_length_custom.GetValue()
+        self.text_dot_length.Enable(on)
 
     def on_check_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_dratio_custom.GetValue()

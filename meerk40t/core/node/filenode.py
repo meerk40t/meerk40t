@@ -46,3 +46,11 @@ class FileNode(Node):
     @filepath.setter
     def filepath(self, value):
         self._filepath = value
+
+    @property
+    def name(self):
+        if self.filepath is None:
+            s = None
+        else:
+            s = os.path.basename(self._filepath)
+        return s
