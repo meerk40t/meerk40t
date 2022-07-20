@@ -84,6 +84,10 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 pass
             page_panel.Layout()
+            try:
+                page_panel.SetupScrolling()
+            except AttributeError:
+                pass
 
         self.Layout()
 

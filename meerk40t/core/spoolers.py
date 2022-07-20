@@ -570,7 +570,7 @@ class Spooler:
         """
         send a wrapped laser job to the spooler.
         """
-        laserjob = LaserJob(str(job), job, driver=self.driver, priority=priority, loops=loops)
+        laserjob = LaserJob(str(job), list(job), driver=self.driver, priority=priority, loops=loops)
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(laserjob)

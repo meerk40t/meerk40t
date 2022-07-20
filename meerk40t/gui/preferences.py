@@ -103,7 +103,7 @@ class PreferencesLanguagePanel(wx.Panel):
         self.combo_language = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
-        self.combo_language.SetToolTip(_("Select the desired language to use."))
+        self.combo_language.SetToolTip(_("Select the desired language to use (requires a restart to take effect)."))
         sizer_2.Add(self.combo_language, 0, 0, 0)
 
         self.SetSizer(sizer_2)
@@ -227,6 +227,12 @@ class PreferencesMain(wx.Panel):
         self.panel_ppi = PreferencesPixelsPerInchPanel(self, wx.ID_ANY, context=context)
         sizer_main.Add(self.panel_ppi, 0, wx.EXPAND, 0)
 
+        self.panel_pref1 = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=context,
+            choices="preferences", constraint=("Classification", "Input/Output", "Options"),
+        )
+        sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
 
         self.Layout()
@@ -249,7 +255,8 @@ class PreferencesPanel(wx.Panel):
         sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
 
         self.checklist_options = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=context, choices="preferences"
+            self, id=wx.ID_ANY, context=context,
+            choices="preferences", constraint=("-Classification", "-Input/Output", "-Options"),
         )
         self.checklist_options.SetupScrolling()
         sizer_settings.Add(self.checklist_options, 2, wx.EXPAND, 0)
@@ -264,7 +271,7 @@ class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
             565,
-            367,
+            400,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX

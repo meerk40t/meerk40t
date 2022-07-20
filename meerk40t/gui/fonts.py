@@ -145,6 +145,6 @@ def svgfont_to_wx(svgtextnode):
     try:
         wxfont.SetFractionalPointSize(fsize)
     except AttributeError:
-        wxfont.SetSize(int(fsize))
+        wxfont.SetPointSize(int(fsize))
     wxfont.SetUnderlined(svgtextnode.underline)
     wxfont.SetStrikethrough(svgtextnode.strikethrough)

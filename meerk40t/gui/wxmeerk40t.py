@@ -408,6 +408,11 @@ class wxMeerK40t(wx.App, Module):
 
         context = kernel.root
 
+        context.setting(bool, "developer_mode", False)
+        if context.developer_mode:
+            from meerk40t.gui.mkdebug import register_panel_debugger
+            kernel.register("wxpane/debug_tree", register_panel_debugger)
+
         #################
         # WINDOW COMMANDS
         #################
