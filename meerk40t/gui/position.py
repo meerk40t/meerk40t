@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
+from meerk40t.gui.icons import icons8_up_left_50
 
 _ = wx.GetTranslation
 
@@ -43,7 +43,7 @@ class PositionPanel(wx.Panel):
         self.chk_indivdually = wx.CheckBox(self, wx.ID_ANY, _("Individ."))
         self.chk_lock = wx.CheckBox(self, wx.ID_ANY, _("Keep ratio"))
         self.button_execute = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_lock_50.GetBitmap()
+            self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
         )
         self.choices = [_("mm"), _("cm"), _("inch"), _("mil"), "%"]
         self.combo_box_units = wx.ComboBox(
@@ -76,6 +76,10 @@ class PositionPanel(wx.Panel):
         self.position_y = 0.0
         self.position_h = 0.0
         self.position_w = 0.0
+        self.org_x = None
+        self.org_y = None
+        self.org_w = None
+        self.org_h = None
         self.context.setting(int, "units_name", "mm")
         self.position_units = self.context.units_name
         self._update_position()
