@@ -1783,7 +1783,8 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
             for e in data:
-                e.lock = False
+                if hasattr(e, "lock"):
+                    e.lock = False
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
             return "elements", data
@@ -2185,6 +2186,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             top_edge = min([e[1] for e in boundary_points])
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
+
             for node in data:
                 subbox = node.bounds
                 top = subbox[1] - top_edge
@@ -2211,6 +2221,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 bottom = subbox[3] - bottom_edge
@@ -2237,6 +2256,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             left_edge = min([e[0] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 left = subbox[0] - left_edge
@@ -2263,6 +2291,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             right_edge = max([e[2] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 right = subbox[2] - right_edge
@@ -2292,6 +2329,15 @@ class Elemental(Service):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
@@ -2326,6 +2372,15 @@ class Elemental(Service):
             dx = 0
             dy = -1.0 * top_edge
             matrix = "translate(%f, %f)" % (dx, dy)
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 for q in node.flat(types=elem_nodes):
                     try:
@@ -2356,6 +2411,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = 0
             dy = device_height - bottom_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2387,6 +2451,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = -1 * left_edge
             dy = 0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2418,6 +2491,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = device_width - right_edge
             dy = 0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2449,6 +2531,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = (device_width - left_edge - right_edge) / 2.0
             dy = (device_height - top_edge - bottom_edge) / 2.0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2462,7 +2553,7 @@ class Elemental(Service):
 
         @self.console_command(
             "centerh",
-            help=_("align elements at center vertical"),
+            help=_("align elements at center horizontally"),
             input_type="align",
             output_type="align",
         )
@@ -2474,6 +2565,15 @@ class Elemental(Service):
                 return
             left_edge = min([e[0] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
@@ -2488,7 +2588,7 @@ class Elemental(Service):
 
         @self.console_command(
             "centerv",
-            help=_("align elements at center horizontal"),
+            help=_("align elements at center vertically"),
             input_type="align",
             output_type="align",
         )
@@ -2500,6 +2600,15 @@ class Elemental(Service):
                 return
             top_edge = min([e[1] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
@@ -2536,6 +2645,15 @@ class Elemental(Service):
             distributed_distance = dim_available / (len(data) - 1)
             data.sort(key=lambda n: n.bounds[0])  # sort by left edge
             dim_pos = left_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 delta = subbox[0] - dim_pos
@@ -2574,6 +2692,15 @@ class Elemental(Service):
             distributed_distance = dim_available / (len(data) - 1)
             data.sort(key=lambda n: n.bounds[1])  # sort by top edge
             dim_pos = top_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 delta = subbox[1] - dim_pos
@@ -2605,6 +2732,15 @@ class Elemental(Service):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 device_width = self.length_x("100%")
                 device_height = self.length_y("100%")
@@ -2672,6 +2808,15 @@ class Elemental(Service):
             for node in data:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
+                return
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
                 return
             left_edge = min([e[0] for e in boundary_points])
             top_edge = min([e[1] for e in boundary_points])
@@ -4423,10 +4568,15 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
+                        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                            continue
+
                         node.matrix *= matrix
                         node.modified()
                 else:
                     for node in data:
+                        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                            continue
                         otx = node.matrix.value_trans_x()
                         oty = node.matrix.value_trans_y()
                         ntx = tx - otx
@@ -4458,6 +4608,8 @@ class Elemental(Service):
                 ntx = tx - otx
                 nty = ty - oty
                 for node in data:
+                    if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                        continue
                     node.matrix.post_translate(ntx, nty)
                     node.modified()
             except ValueError:
@@ -6903,10 +7055,8 @@ class Elemental(Service):
                     data.append(item)
             for item in data:
                 # No usecase for having a locked regmark element
-                try:
+                if hasattr(item, "lock"):
                     item.lock = False
-                except AttributeError:
-                    pass
                 drop_node.drop(item)
                 signal_needed = True
             if signal_needed:
@@ -7785,6 +7935,8 @@ class Elemental(Service):
 
     def move_emphasized(self, dx, dy):
         for node in self.elems(emphasized=True):
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                continue
             node.matrix.post_translate(dx, dy)
             node.modified()
 
