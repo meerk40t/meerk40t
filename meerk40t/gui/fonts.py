@@ -96,7 +96,7 @@ def svgfont_to_wx(svgtextnode):
         fontface = ""
         family = ""
         if face_family is not None and face_family!="":
-            components = re.findall(r"(?:[^\s,']|'(?:\\.|[^'])*')+", face_family)
+            components = re.findall(r"(?:[^\s,']|'(?:\\.|[^'\.])*')+", face_family)
             if len(components)>0:
                 fontface = components[0]
                 family = components[-1]
