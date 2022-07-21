@@ -12,6 +12,7 @@ from .icons import (
     icons8_input_20,
     icons8_laser_beam_20,
     icons8_scatter_plot_20,
+    icons8_diagonal_20,
     icons8_smartphone_ram_50,
     icons8_system_task_20,
     icons8_timer_20,
@@ -271,7 +272,7 @@ class ShadowTree:
         self.iconsize = 20
         fact = get_default_scale_factor()
         if fact>1.0:
-            self.iconsize *= fact 
+            self.iconsize *= fact
 
         self.do_not_select = False
         self.was_already_expanded = []
@@ -868,13 +869,20 @@ class ShadowTree:
                 except AttributeError:
                     c = None
                 image_id = self.set_icon(node, icons8_direction_20.GetBitmap(color=c, resize=(self.iconsize, self.iconsize), noadjustment=True))
-            elif node.type in ("op engrave", "op cut", "op hatch"):
+            elif node.type in ("op engrave", "op cut"):
                 try:
                     c = node.color
                     self.set_color(node, c)
                 except AttributeError:
                     c = None
                 image_id = self.set_icon(node, icons8_laser_beam_20.GetBitmap(color=c, resize=(self.iconsize, self.iconsize), noadjustment=True))
+            elif node.type == "op hatch":
+                try:
+                    c = node.color
+                    self.set_color(node, c)
+                except AttributeError:
+                    c = None
+                image_id = self.set_icon(node, icons8_diagonal_20.GetBitmap(color=c, resize=(self.iconsize, self.iconsize), noadjustment=True))
             elif node.type == "op dots":
                 try:
                     c = node.color
