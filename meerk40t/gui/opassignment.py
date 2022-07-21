@@ -213,6 +213,8 @@ class OperationAssignPanel(wx.Panel):
         else:
              self.chk_exclusive.SetValue(self.context.elements.classify_inherit_exclusive)
         if flag:
+            siz = self.GetSize()
+            self._set_grid_layout(siz[0])
             self.sizer_options.Layout()
             self.sizer_buttons.Layout()
             self.sizer_main.Layout()
