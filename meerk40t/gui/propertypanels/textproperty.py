@@ -12,14 +12,16 @@ _ = wx.GetTranslation
 
 
 class PromptingComboBox(wx.ComboBox):
-    def __init__(self, parent, choices=[], style=0, **args):
+    def __init__(self, parent, choices=None, style=0, **kwargs):
+        if choices is None:
+            choices = []
         wx.ComboBox.__init__(
             self,
             parent,
             wx.ID_ANY,
             style=style | wx.CB_DROPDOWN,
             choices=choices,
-            **args,
+            **kwargs,
         )
         self.choices = choices
         self.Bind(wx.EVT_TEXT, self.OnText)
@@ -56,9 +58,9 @@ class PromptingComboBox(wx.ComboBox):
 
 
 class TextPropertyPanel(ScrolledPanel):
-    def __init__(self, *args, context=None, node=None, **kwds):
+    def __init__(self, parent, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        super().__init__(parent, *args, **kwds)
         self.context = context
         self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -124,7 +126,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.combo_font = PromptingComboBox(
             self, choices=elist, style=wx.TE_PROCESS_ENTER
         )
-        #        self.combo_font = wx.ComboBox(self, id=wx.ID_ANY, choices = elist, style = wx.CB_READONLY)
         self.button_attrib_larger = wx.Button(
             self, id=wx.ID_ANY, label="A", size=wx.Size(23, 23)
         )
@@ -372,7 +373,7 @@ class TextPropertyPanel(ScrolledPanel):
             pass
         self.label_fonttest.SetLabelText(self.node.text.text)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
-        self.button_attrib_bold.SetValue(self.node.text.font_weight != "normal")
+        self.button_attrib_bold.SetValue(self.node.text.weight > 600)
         self.button_attrib_italic.SetValue(self.node.text.font_style != "normal")
         self.button_attrib_underline.SetValue(self.node.underline)
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
@@ -399,20 +400,17 @@ class TextPropertyPanel(ScrolledPanel):
     def on_button_smaller(self, event):
         try:
             size = self.node.wxfont.GetFractionalPointSize()
-            intmode = False
-        except:
+        except AttributeError:
             size = self.node.wxfont.GetPointSize()
-            intmode = True
-        if intmode:
-            size = int(size / 1.2)
-            if size < 4:
-                size = 4
-            self.node.wxfont.SetPointSize(size)
-        else:
-            size = size / 1.2
-            if size < 4:
-                size = 4.0
+
+        size = size / 1.2
+        if size < 4:
+            size = 4
+        try:
             self.node.wxfont.SetFractionalPointSize(size)
+        except AttributeError:
+            self.node.wxfont.SetPointSize(int(size))
+
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
@@ -421,16 +419,15 @@ class TextPropertyPanel(ScrolledPanel):
     def on_button_larger(self, event):
         try:
             size = self.node.wxfont.GetFractionalPointSize()
-            intmode = False
-        except:
+        except AttributeError:
             size = self.node.wxfont.GetPointSize()
-            intmode = True
-        if intmode:
-            size = int(size * 1.2)
-            self.node.wxfont.SetPointSize(size)
-        else:
-            size = size * 1.2
+        size *= 1.2
+
+        try:
             self.node.wxfont.SetFractionalPointSize(size)
+        except AttributeError:
+            self.node.wxfont.SetPointSize(int(size))
+
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
@@ -451,9 +448,9 @@ class TextPropertyPanel(ScrolledPanel):
         button = event.EventObject
         state = button.GetValue()
         if state:
-            self.node.wxfont.SetWeight(wx.FONTWEIGHT_BOLD)
+            self.node.wxfont.SetWeight(700)
         else:
-            self.node.wxfont.SetWeight(wx.FONTWEIGHT_NORMAL)
+            self.node.wxfont.SetWeight(400)
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
@@ -520,7 +517,7 @@ class TextPropertyPanel(ScrolledPanel):
                 self.node.wxfont = font
                 wxfont_to_svg(self.node)
                 self.node.modified()
-            except Exception:  # rgb get failed.
+            except AttributeError:  # rgb get failed.
                 pass
 
             self.update_label()
@@ -548,7 +545,7 @@ class TextPropertyPanel(ScrolledPanel):
                 self.node.fill = color
                 self.node.altered()
             else:
-                self.fill = Color("none")
+                self.node.fill = Color("none")
                 self.node.altered()
         self.update_label()
         self.refresh()
