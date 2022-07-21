@@ -88,7 +88,6 @@ def wxfont_to_svg(svgtextnode):
     svgtextnode.strikethrough = wxfont.GetStrikethrough()
 
 def svgfont_to_wx(svgtextnode):
-    ###
     ### Translates all svg-text-properties to their wxfont-equivalents
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
