@@ -448,9 +448,15 @@ class TextPropertyPanel(ScrolledPanel):
         button = event.EventObject
         state = button.GetValue()
         if state:
-            self.node.wxfont.SetWeight(700)
+            try:
+                self.node.wxfont.SetNumericWeight(700)
+            except AttributeError:
+                self.node.wxfont.SetWeight(wx.FONTWEIGHT_BOLD)
         else:
-            self.node.wxfont.SetWeight(400)
+            try:
+                self.node.wxfont.SetNumericWeight(400)
+            except AttributeError:
+                self.node.wxfont.SetWeight(wx.FONTWEIGHT_NORMAL)
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()

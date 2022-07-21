@@ -127,8 +127,13 @@ def svgfont_to_wx(svgtextnode):
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
     wxfont = svgtextnode.wxfont
+    try:
+        wxfont.SetNumericWeight(svgtextnode.text.weight)  # Gets numeric weight.
+    except AttributeError:
+        # Running version wx4.0. No set Numeric Weight, can only set bold or normal.
+        weight = svgtextnode.text.weight
+        wxfont.SetWeight(wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL)  # Gets numeric weight.
 
-    wxfont.SetWeight(svgtextnode.text.weight)  # Gets numeric weight.
     svg_to_wx_family(svgtextnode, wxfont)
     svg_to_wx_fontstyle(svgtextnode, wxfont)
 
