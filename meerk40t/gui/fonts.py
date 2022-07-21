@@ -1,22 +1,24 @@
-import re
 import wx
 
 from meerk40t.core.units import PX_PER_INCH
 
-# from meerk40t.core.node import node
-# from meerk40t.svgelements import Text
-# Svg-text has the following properties (and default values)
-# .anchor = "start"  # start, middle, end.
-# .font_family = "san-serif"
-# .font_size = 16.0  # 16px font 'normal' 12pt font
-# .font_weight = 400
-# NEW since svg 1.7:
-# .font_style = "normal" * DONE
-# .font_variant = "normal" * NOT SUPPORTED (ornaments, small-caps etc.)
-# .font_stretch = "normal" * NOT SUPPORTED (normal, condensed, expanded etc.)
-# .line_height = 16.0
-# Removed:
-# .font_face
+"""
+Svg-text has the following properties (and default values)
+ .anchor = "start"  # start, middle, end.
+ .font_family = "san-serif"
+ .font_size = 16.0  # 16px font 'normal' 12pt font
+ .font_weight = 400
+NEW since svg 1.7:
+ .font_style = "normal" * DONE
+ .font_variant = "normal" * NOT SUPPORTED (ornaments, small-caps etc.)
+ .font_stretch = "normal" * NOT SUPPORTED (normal, condensed, expanded etc.)
+ .line_height = 16.0
+Removed:
+ .font_face
+ 
+ The wx.FONTWEIGHT_THIN does not exist in wxPython 4.0.x and thus isn't used. 
+"""
+
 
 CONVERSION_SVG_WX = {
     "fantasy": wx.FONTFAMILY_DECORATIVE,
