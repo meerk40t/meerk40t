@@ -24,6 +24,7 @@ def wxfont_to_svg(svgtextnode):
     ###
     def build_family_name(wxfont):
         fontface = wxfont.GetFaceName()
+
         if any([ char in fontface for char in [" ", ","] ]):
             fontface = "'" + fontface + "'"
         family = ""
@@ -47,7 +48,6 @@ def wxfont_to_svg(svgtextnode):
             family_name = family_name[1:].strip()
         return family_name
 
-
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
 
@@ -56,18 +56,7 @@ def wxfont_to_svg(svgtextnode):
     factor = PX_PER_INCH / 72
     svgtextnode.text.font_size = wxfont.GetPointSize() * factor
 
-    fw = wxfont.GetWeight()
-    if fw in (wx.FONTWEIGHT_THIN, wx.FONTWEIGHT_EXTRALIGHT, wx.FONTWEIGHT_LIGHT):
-        fontweight = "lighter"
-    elif fw in (wx.FONTWEIGHT_NORMAL, wx.FONTWEIGHT_MEDIUM):
-        fontweight = "normal"
-    elif fw in (wx.FONTWEIGHT_SEMIBOLD, wx.FONTWEIGHT_BOLD):
-        fontweight = "bold"
-    elif fw in (wx.FONTWEIGHT_EXTRABOLD, wx.FONTWEIGHT_HEAVY, wx.FONTWEIGHT_EXTRAHEAVY):
-        fontweight = "bolder"
-    else:
-        fontweight = "normal"
-    svgtextnode.text.font_weight = fontweight
+    svgtextnode.text.font_weight = str(wxfont.GetWeight())
 
     family = build_family_name(wxfont)
     svgtextnode.text.font_family = family
@@ -92,18 +81,7 @@ def svgfont_to_wx(svgtextnode):
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
     wxfont = svgtextnode.wxfont
-    fw = svgtextnode.text.font_weight
-    if fw == "lighter":
-        fontweight = wx.FONTWEIGHT_THIN
-    elif fw == "normal":
-        fontweight = wx.FONTWEIGHT_NORMAL
-    elif fw == "bold":
-        fontweight = wx.FONTWEIGHT_BOLD
-    elif fw == "bolder":
-        fontweight = wx.FONTWEIGHT_EXTRABOLD
-    else:
-        fontweight = wx.FONTWEIGHT_NORMAL
-    wxfont.SetWeight(fontweight)
+    wxfont.SetWeight(svgtextnode.text.weight)
     font_list = svgtextnode.text.font_list
     for ff in font_list:
         if ff == "fantasy":
