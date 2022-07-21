@@ -18,95 +18,92 @@ from meerk40t.core.units import PX_PER_INCH
 # Removed:
 # .font_face
 
-def wxfont_to_svg(svgtextnode):
-    ###
-    ### Translates all wxfont - properties to their svg-equivalents
-    ###
-    def build_family_name(wxfont):
-        fontface = wxfont.GetFaceName()
+CONVERSION_SVG_WX = {
+    "fantasy": wx.FONTFAMILY_DECORATIVE,
+    "serif": wx.FONTFAMILY_ROMAN,
+    "cursive": wx.FONTFAMILY_SCRIPT,
+    "sans-serif": wx.FONTFAMILY_SWISS,
+    "monospace": wx.FONTFAMILY_TELETYPE,
+}
+CONVERSION_WX_SVG = {
+    wx.FONTFAMILY_DECORATIVE: "fantasy",
+    wx.FONTFAMILY_ROMAN: "serif",
+    wx.FONTFAMILY_SCRIPT: "cursive",
+    wx.FONTFAMILY_SWISS: "sans-serif",
+    wx.FONTFAMILY_MODERN: "sans-serif",
+    wx.FONTFAMILY_TELETYPE: "monospace",
+}
 
-        if any([ char in fontface for char in [" ", ","] ]):
-            fontface = "'" + fontface + "'"
-        family = ""
-        ff = wxfont.GetFamily()
-        if ff == wx.FONTFAMILY_DECORATIVE:
-            family = ", fantasy"
-        elif ff == wx.FONTFAMILY_ROMAN:
-            family = ", serif"
-        elif ff == wx.FONTFAMILY_SCRIPT:
-            family = ", cursive"
-        elif ff == wx.FONTFAMILY_SWISS:
-            family = ", sans-serif"
-        elif ff == wx.FONTFAMILY_MODERN:
-            family = ", sans-serif"
-        elif ff == wx.FONTFAMILY_TELETYPE:
-            family = ", monospace"
-        else:
-            family = ", sans-serif"
-        family_name = fontface + family
-        if family_name.startswith(","):
-            family_name = family_name[1:].strip()
-        return family_name
+
+def wx_to_svg_family_name(wxfont):
+    fontface = wxfont.GetFaceName()
+    if " " in fontface or "," in fontface:
+        fontface = f"'{fontface}'"
+    family = CONVERSION_WX_SVG.get(wxfont.GetFamily(), "sans-serif")
+    return f"{fontface}, {family}"
+
+
+def wx_to_svg_fontstyle(wxfont):
+    ff = wxfont.GetStyle()
+    if ff == wx.FONTSTYLE_NORMAL:
+        return "normal"
+    elif ff == wx.FONTSTYLE_ITALIC:
+        return "italic"
+    elif ff == wx.FONTSTYLE_SLANT:
+        return "oblique"
+    return "normal"
+
+
+def wxfont_to_svg(svgtextnode):
+    """
+    Translates all wxfont - properties to their svg-equivalents
+    @param svgtextnode:
+    @return:
+    """
 
     if not hasattr(svgtextnode, "wxfont"):
         svgtextnode.wxfont = wx.Font()
-
     wxfont = svgtextnode.wxfont
+
     # A point is 1/72 of an inch
     factor = PX_PER_INCH / 72
     svgtextnode.text.font_size = wxfont.GetPointSize() * factor
-
     svgtextnode.text.font_weight = str(wxfont.GetWeight())
-
-    family = build_family_name(wxfont)
-    svgtextnode.text.font_family = family
-
-    ff = wxfont.GetStyle()
-    if ff == wx.FONTSTYLE_NORMAL:
-        fontstyle = "normal"
-    elif ff == wx.FONTSTYLE_ITALIC:
-        fontstyle = "italic"
-    elif ff == wx.FONTSTYLE_SLANT:
-        fontstyle = "oblique"
-    else:
-        fontstyle = "normal"
-
-    svgtextnode.text.font_style = fontstyle
-
+    svgtextnode.text.font_family = wx_to_svg_family_name(wxfont)
+    svgtextnode.text.font_style = wx_to_svg_fontstyle(wxfont)
     svgtextnode.underline = wxfont.GetUnderlined()
     svgtextnode.strikethrough = wxfont.GetStrikethrough()
 
-def svgfont_to_wx(svgtextnode):
-    ### Translates all svg-text-properties to their wxfont-equivalents
-    if not hasattr(svgtextnode, "wxfont"):
-        svgtextnode.wxfont = wx.Font()
-    wxfont = svgtextnode.wxfont
-    wxfont.SetWeight(svgtextnode.text.weight)
+
+def svg_to_wx_family(svgtextnode, wxfont):
     font_list = svgtextnode.text.font_list
     for ff in font_list:
         if ff == "fantasy":
             family = wx.FONTFAMILY_DECORATIVE
             wxfont.SetFamily(family)
-            break
+            return
         elif ff == "serif":
             family = wx.FONTFAMILY_ROMAN
             wxfont.SetFamily(family)
-            break
+            return
         elif ff == "cursive":
             family = wx.FONTFAMILY_SCRIPT
             wxfont.SetFamily(family)
-            break
+            return
         elif ff == "sans-serif":
             family = wx.FONTFAMILY_SWISS
             wxfont.SetFamily(family)
-            break
+            return
         elif ff == "monospace":
             family = wx.FONTFAMILY_TELETYPE
             wxfont.SetFamily(family)
-            break
+            return
         if wxfont.SetFaceName(ff):
             # We found a correct face name.
-            break
+            return
+
+
+def svg_to_wx_fontstyle(svgtextnode, wxfont):
     ff = svgtextnode.text.font_style
     if ff == "normal":
         fontstyle = wx.FONTSTYLE_NORMAL
@@ -117,23 +114,39 @@ def svgfont_to_wx(svgtextnode):
     else:
         fontstyle = wx.FONTSTYLE_NORMAL
     wxfont.SetStyle(fontstyle)
+
+
+def svgfont_to_wx(svgtextnode):
+    """
+    Translates all svg-text-properties to their wxfont-equivalents
+    @param svgtextnode:
+    @return:
+    """
+    if not hasattr(svgtextnode, "wxfont"):
+        svgtextnode.wxfont = wx.Font()
+    wxfont = svgtextnode.wxfont
+
+    wxfont.SetWeight(svgtextnode.text.weight)  # Gets numeric weight.
+    svg_to_wx_family(svgtextnode, wxfont)
+    svg_to_wx_fontstyle(svgtextnode, wxfont)
+
     # A point is 1/72 of an inch
     factor = 72 / PX_PER_INCH
-    fsize = svgtextnode.text.font_size * factor
-    if fsize < 1:
-        if fsize > 0:
+    font_size = svgtextnode.text.font_size * factor
+    if font_size < 1:
+        if font_size > 0:
             textx = 0
             texty = 0
             if hasattr(svgtextnode.text, "x"):
                 textx = svgtextnode.text.x
             if hasattr(svgtextnode.text, "y"):
                 texty = svgtextnode.text.y
-            svgtextnode.matrix.pre_scale(fsize, fsize, textx, texty)
-            fsize = 1
-            svgtextnode.text.font_size = fsize  # No zero sized fonts.
+            svgtextnode.matrix.pre_scale(font_size, font_size, textx, texty)
+            font_size = 1
+            svgtextnode.text.font_size = font_size  # No zero sized fonts.
     try:
-        wxfont.SetFractionalPointSize(fsize)
+        wxfont.SetFractionalPointSize(font_size)
     except AttributeError:
-        wxfont.SetPointSize(int(fsize))
+        wxfont.SetPointSize(int(font_size))
     wxfont.SetUnderlined(svgtextnode.underline)
     wxfont.SetStrikethrough(svgtextnode.strikethrough)
