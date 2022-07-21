@@ -549,7 +549,7 @@ class TextPropertyPanel(ScrolledPanel):
                 self.node.fill = color
                 self.node.altered()
             else:
-                self.fill = Color("none")
+                self.node.fill = Color("none")
                 self.node.altered()
         self.update_label()
         self.refresh()
