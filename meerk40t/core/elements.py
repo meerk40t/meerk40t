@@ -432,6 +432,121 @@ class Elemental(Service):
         except (TypeError, KeyError):
             num = 0
         return num
+    ### Operation tools
+
+    def assign_operation(self, op_assign, data, impose="none", attrib = None, similar=False, exclusive = False):
+        # op_assign:    operation to assign to
+        # data:         nodes to assign to as minimum (will be extened is similar=True, see below)
+        # impose:       - if "to_op" will use attrib-color (see below),
+        #                 to impose the first evidence of color in data on the targetop
+        #               - if "to_elem" will impose the color of the operation and make it the color of the
+        #                 element attrib (ie stroke or fill)
+        #               - anything else: leave all colors unchanged
+        # attrib:       one of 'stroke', 'fill' to establish the source color
+        # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
+        #               color) and assign those as well
+        # exclusive:    will delete all other assignments of the source elements in other operations if True
+        if len(data) == 0:
+            return
+        # some validation...
+        if impose is not None:
+            impose = impose.lower()
+            if impose in ("to_op", "to_elem"):
+                if attrib is None:
+                    impose = None
+            else:
+                impose = None
+        if attrib is None:
+            similar = False
+        # print ("parameters:")
+        # print ("Impose=%s, operation=%s" % (impose, op_assign) )
+        # print ("similar=%s, attrib=%s" % (similar, attrib) )
+        # print ("exclusive=%s" % exclusive )
+        first_color = None
+        target_color = None
+        has_a_color = False
+        # No need to check, if no one needs it...
+        if impose=="to_elem":
+            target_color = op_assign.color
+
+        if impose=="to_op" or similar:
+            # Let's establish the color first
+            # Look for the first element that has stroke/fill
+            for n in data:
+                if hasattr(n, attrib):
+                    c = getattr(n, attrib)
+                    # We accept stroke none or fill none as well!
+                    has_a_color = True
+                    try:
+                        if c is not None and c.argb is not None:
+                            first_color = c
+                    except (AttributeError, ValueError):
+                        first_color = None
+                        # Strange....
+                        has_a_color = False
+                    if has_a_color:
+                        break
+            if impose == "to_op":
+                target_color = first_color
+
+        if impose=="to_op" and target_color is not None:
+            op_assign.color = target_color
+            if hasattr(op_assign, "add_color_attribute"): # not true for image
+                op_assign.remove_color_attribute("stroke")
+                op_assign.remove_color_attribute("fill")
+                op_assign.add_color_attribute(attrib)
+        # If we havent identified a color, then similar makes no sense
+        if not has_a_color:
+            similar = False
+        # print ("We have now established the following:")
+        # print ("Impose=%s, operation=%s" % (impose, op_assign) )
+        # print ("Firstcolor=%s, targetcolor=%s" % (first_color, target_color) )
+        # print ("Similar=%s, # data=%d" % (similar, len(data)) )
+        if similar:
+            # Now that we have the colors lets iterate through all elements
+            fuzzy = self.classify_fuzzy
+            fuzzydistance = self.classify_fuzzydistance
+            for n in self.flat(types=elem_nodes):
+                addit = False
+                if hasattr(n, attrib):
+                    c = getattr(n, attrib)
+                    try:
+                        if c is not None and c.argb is not None:
+                            pass
+                        else:
+                            c = None
+                    except AttributeError:
+                        c = None
+                    if c is not None and first_color is not None:
+                        if fuzzy:
+                            if Color.distance(first_color, c) <= fuzzydistance:
+                                addit = True
+                        else:
+                            if c == first_color:
+                                addit = True
+                    elif c is None and first_color is None:
+                        addit = True
+                if addit and n not in data:
+                    data.append(n)
+
+        needs_refresh = False
+        for n in data:
+            if op_assign.drop(n, modify=False):
+                if exclusive:
+                    for ref in list(n._references):
+                        ref.remove_node()
+                op_assign.drop(n, modify=True)
+                if impose == "to_elem" and target_color is not None:
+                    if hasattr(n, attrib):
+                        setattr(n, attrib, target_color)
+                        needs_refresh = True
+        # Refresh the operation so any changes like color materialize...
+        self.signal("element_property_reload", op_assign)
+        if needs_refresh:
+            # We changed elems, so update the tree and the scene
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+
 
     def _init_commands(self, kernel):
 
@@ -6709,82 +6824,29 @@ class Elemental(Service):
         @self.tree_submenu(_("Assign Operation"))
         @self.tree_values("op_assign", values=get_values)
         @self.tree_operation("{op_assign}", node_type=elem_nodes, help="")
-        def assign_operations(node, op_assign, **kwargs):
-            inh_stroke = self.classify_inherit_stroke
-            inh_fill = self.classify_inherit_fill
+        def menu_assign_operations(node, op_assign, **kwargs):
+            if self.classify_inherit_stroke:
+                impose = "to_op"
+                attrib = "stroke"
+                similar = True
+            elif self.classify_inherit_fill:
+                impose = "to_op"
+                attrib = "fill"
+                similar = True
+            else:
+                impose = None
+                attrib = None
+                similar = False
             exclusive = self.classify_inherit_exclusive
             data = list(self.elems(emphasized=True))
-            if len(data) == 0:
-                return
-            if inh_stroke or inh_fill:
-                # Let's establish the colors first
-                first_color_stroke = None
-                first_color_fill = None
-                # Look for the first element that has stroke/fill
-                for n in data:
-                    if inh_stroke and first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-                        first_color_stroke = n.stroke
-                    if inh_fill and first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-                        first_color_fill = n.fill
-                    canbreak = True
-                    if inh_stroke and first_color_stroke is None:
-                        canbreak = False
-                    if inh_fill and first_color_fill is None:
-                        canbreak = False
-                    if canbreak:
-                        break
-
-                # print ("Colors found: stroke=%s, fill=%s" % ("None" if first_color_stroke is None else first_color_stroke.hexrgb, "None" if first_color_fill is None else first_color_fill.hexrgb))
-                if hasattr(op_assign, "color") and inh_stroke and inh_fill and (first_color_fill is not None or first_color_stroke is not None):
-                    # Well if you have both options, then you get that
-                    # color that is present, precedence for stroke
-                    if first_color_stroke is not None:
-                        col = first_color_stroke
-                    else:
-                        col = first_color_stroke
-                    op_assign.color = col
-                    if hasattr(op_assign, "add_color_attribute"): # not true for image
-                        op_assign.add_color_attribute("fill")
-                        op_assign.add_color_attribute("stroke")
-                elif inh_stroke and first_color_stroke is not None:
-                    op_assign.color = first_color_stroke
-                    if hasattr(op_assign, "add_color_attribute"): # not true for image
-                        op_assign.add_color_attribute("stroke")
-                elif inh_fill and first_color_fill is not None:
-                    op_assign.color = first_color_fill
-                    if hasattr(op_assign, "add_color_attribute"): # not true for image
-                        op_assign.add_color_attribute("fill")
-                # Now that we have the colors lets iterate through all elements
-                fuzzy = self.classify_fuzzy
-                fuzzydistance = self.classify_fuzzydistance
-                for n in self.flat(types=elem_nodes):
-                    addit = False
-                    if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
-                        if fuzzy:
-                            if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
-                                addit = True
-                        else:
-                            if n.stroke == first_color_stroke:
-                                addit = True
-                    if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
-                        if fuzzy:
-                            if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
-                                addit = True
-                        else:
-                            if n.fill == first_color_fill:
-                                addit = True
-                    # print ("Checked %s and will addit=%s" % (n.type, addit))
-                    if addit and n not in data:
-                        data.append(n)
-
-            for n in data:
-                if op_assign.drop(n, modify=False):
-                    if exclusive:
-                        for ref in list(n._references):
-                            ref.remove_node()
-                    op_assign.drop(n, modify=True)
-            # Refresh the operation so any changes like color materialize...
-            self.signal("element_property_reload", op_assign)
+            self.assign_operation(
+                op_assign=op_assign,
+                data=data,
+                impose=impose,
+                attrib=attrib,
+                similar=similar,
+                exclusive=exclusive,
+            )
 
         def exclusive_match(node, **kwargs):
             return self.classify_inherit_exclusive
@@ -6811,6 +6873,9 @@ class Elemental(Service):
         )
         def set_assign_option_stroke(node, **kwargs):
             self.classify_inherit_stroke = not self.classify_inherit_stroke
+            # Poor mans radio
+            if self.classify_inherit_stroke:
+                self.classify_inherit_fill = False
 
         def fill_match(node, **kwargs):
             return self.classify_inherit_fill
@@ -6823,6 +6888,9 @@ class Elemental(Service):
         )
         def set_assign_option_fill(node, **kwargs):
             self.classify_inherit_fill = not self.classify_inherit_fill
+            # Poor mans radio
+            if self.classify_inherit_fill:
+                self.classify_inherit_stroke = False
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
