@@ -98,6 +98,15 @@ class Scene(Module, Job):
         self.tool_active = False
         self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
 
+        self._animating = list()
+        self._animate_lock = threading.Lock()
+        self._adding_widgets = list()
+        self._animate_job = Job(
+            self._animate_scene,
+            job_name=f"Animate-Scene{path}",
+            interval=1.0 / 60.0,
+        )
+
     def reset_grids(self):
         self.draw_grid_primary = True
         self.tick_distance = 0
@@ -296,6 +305,44 @@ class Scene(Module, Job):
         except AttributeError:
             pass
 
+    def animate(self, widget):
+        with self._animate_lock:
+            if widget not in self._adding_widgets:
+                self._adding_widgets.append(widget)
+        if self.log:
+            self.log("Start Animation...")
+        self.context.schedule(self._animate_job)
+
+    def _animate_scene(self, *args, **kwargs):
+        if self.log:
+            self.log("Animating Scene...")
+        if self._adding_widgets:
+            with self._animate_lock:
+                for widget in self._adding_widgets:
+                    self._animating.append(widget)
+                    try:
+                        widget.start_threaded()
+                    except AttributeError:
+                        pass
+                self._adding_widgets.clear()
+        if self._animating:
+            for idx in range(len(self._animating) -1, -1, -1):
+                widget = self._animating[idx]
+                try:
+                    more = widget.tick()
+                    if not more:
+                        try:
+                            widget.stop_threaded()
+                        except AttributeError:
+                            pass
+                        del self._animating[idx]
+                except AttributeError:
+                    pass
+        if not self._animating:
+            self._animate_job.cancel()
+            if self.log:
+                self.log("Removing Animation...")
+
     def refresh_scene(self, *args, **kwargs):
         """
         Called by the Scheduler at a given the specified framerate.
@@ -354,9 +401,6 @@ class Scene(Module, Job):
             if w is None:
                 continue
             self._signal_widget(w, *args, **kwargs)
-
-    def animate_tick(self):
-        pass
 
     def notify_added_to_parent(self, parent):
         """
