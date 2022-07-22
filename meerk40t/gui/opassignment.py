@@ -186,9 +186,12 @@ class OperationAssignPanel(wx.Panel):
 
     def set_buttons(self, skip_layout = False):
         self._clear_old()
-        for idx, node in enumerate(list(self.context.elements.flat(types=op_nodes))):
-            self.op_nodes[idx] = node
-            self._set_button(node)
+        idx = 0
+        for node in list(self.context.elements.flat(types=op_nodes)):
+            if node.type.startswith("op "):
+                self.op_nodes[idx] = node
+                self._set_button(node)
+                idx += 1
         self._set_grid_layout()
         if not skip_layout:
             self.Layout()
