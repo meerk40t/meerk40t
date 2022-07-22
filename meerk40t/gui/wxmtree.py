@@ -287,8 +287,8 @@ class ShadowTree:
 
     def setup_state_images(self):
         self.state_images = wx.ImageList()
-        self.state_images.Create(width=20, height=20)
-        image_id = self.state_images.Add(bitmap=icons8_lock_50.GetBitmap(resize=(20,20)))
+        self.state_images.Create(width=self.iconsize, height=self.iconsize)
+        image_id = self.state_images.Add(bitmap=icons8_lock_50.GetBitmap(resize=(self.iconsize, self.iconsize)))
         self.wxtree.SetStateImageList(self.state_images)
 
     def node_created(self, node, **kwargs):
@@ -829,9 +829,13 @@ class ShadowTree:
                 # Don't do it twice
                 return image_id
 
+            # print ("Default size for iconsize, tree_images", self.iconsize, self.tree_images.GetSize())
             if node.type == "elem image":
                 image = self.renderer.make_thumbnail(node.image, width=self.iconsize, height=self.iconsize)
                 if image_id < 0:
+                    size_test = image.GetSize()
+                    if size_test[0] != self.iconsize or size_test[1] != self.iconsize:
+                        print ("Ouch, elem-image-thumbnail: w=%s, h=%s - iconsize=%s" % ( size_test[0], size_test[1], self.iconsize))
                     image_id = self.tree_images.Add(bitmap=image)
                 else:
                     self.tree_images.Replace(index=image_id, bitmap=image)
@@ -858,8 +862,16 @@ class ShadowTree:
                 )
                 if image is not None:
                     if image_id < 0:
+                        size_test = image.GetSize()
+                        if size_test[0] != self.iconsize or size_test[1] != self.iconsize:
+                            print ("Ouch, elem-..-thumbnail: w=%s, h=%s - iconsize=%s" % ( size_test[0], size_test[1], self.iconsize))
+
                         image_id = self.tree_images.Add(bitmap=image)
                     else:
+                        size_test = image.GetSize()
+                        if size_test[0] != self.iconsize or size_test[1] != self.iconsize:
+                            print ("Ouch, icon-thumbnail replace: w=%s, h=%s - iconsize=%s" % ( size_test[0], size_test[1], self.iconsize))
+
                         self.tree_images.Replace(index=image_id, bitmap=image)
                     tree.SetItemImage(item, image=image_id)
             elif node.type in ("op raster", "op image"):
@@ -913,8 +925,15 @@ class ShadowTree:
                 image_id = -1
                 # Reset Image Node in List
             if image_id < 0:
+                size_test = icon.GetSize()
+                if size_test[0] != self.iconsize or size_test[1] != self.iconsize:
+                    print ("Ouch, icon-thumbnail: w=%s, h=%s - iconsize=%s" % ( size_test[0], size_test[1], self.iconsize))
+
                 image_id = self.tree_images.Add(bitmap=icon)
             else:
+                size_test = icon.GetSize()
+                if size_test[0] != self.iconsize or size_test[1] != self.iconsize:
+                    print ("Ouch, icon-thumbnail replace: w=%s, h=%s - iconsize=%s" % ( size_test[0], size_test[1], self.iconsize))
                 self.tree_images.Replace(index=image_id, bitmap=icon)
 
             tree.SetItemImage(item, image=image_id)
