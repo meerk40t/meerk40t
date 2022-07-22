@@ -140,8 +140,8 @@ class OperationAssignPanel(wx.Panel):
                 return iconcolor, background
 
             iconsize = 20
-            result = None,
-            c = None
+            result = None
+            d = None
             if node.type in ("op raster", "op image"):
                 c, d = get_color()
                 result = icons8_direction_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
@@ -158,6 +158,8 @@ class OperationAssignPanel(wx.Panel):
 
         def process_button(myidx):
             col, image = get_bitmap()
+            if image is None:
+                return
             if col is not None:
                 self.buttons[myidx].SetBackgroundColour(wx.Colour(swizzlecolor(col)))
             else:
