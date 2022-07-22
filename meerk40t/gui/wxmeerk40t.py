@@ -871,7 +871,24 @@ Send the following data to the MeerK40t team?
         )
         caption = _("Crash Detected! Send Log?")
         style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
-    ext_msg += error_log
+    error_log_short = error_log
+    # Usually that gets quite messy with a lot of information
+    # So we try to split this:
+    error_log_list = error_log.split("\n")
+    max_error_lines = 15
+    header_lines = 4
+    if len(error_log_list)> max_error_lines:
+        error_log_short = ""
+        for idx in range(header_lines):
+            error_log_short += error_log_list[idx]
+            if idx>0:
+                error_log_short += "\n"
+        error_log_short += "[...]"
+        for idx in range(header_lines-max_error_lines, 0):
+            error_log_short += "\n"
+            error_log_short += error_log_list[idx]
+
+    ext_msg += error_log_short
     dlg = wx.MessageDialog(
         None,
         message,
