@@ -28,6 +28,7 @@ from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
 from meerk40t.gui.toolwidgets.toolpolyline import PolylineTool
 from meerk40t.gui.toolwidgets.toolrect import RectTool
 from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
+from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
 from meerk40t.gui.wxutils import get_key_name
@@ -118,6 +119,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/text", TextTool)
         context.register("tool/vector", VectorTool)
         context.register("tool/measure", MeasureTool)
+        context.register("tool/ribbon", RibbonTool)
 
         @context.console_command("dialog_fps", hidden=True)
         def fps(**kwargs):
