@@ -104,6 +104,7 @@ class Scene(Module, Job):
         self._animate_job = Job(
             self._animate_scene,
             job_name=f"Animate-Scene{path}",
+            run_main=True,
             interval=1.0 / 60.0,
         )
 
