@@ -1,6 +1,7 @@
 import os
 import platform
 import sys
+import threading
 import traceback
 from datetime import datetime
 
@@ -236,13 +237,10 @@ class wxMeerK40t(wx.App, Module):
         self.supported_languages = supported_languages
         import meerk40t.gui.icons as icons
 
-        def run_later(command, *args):
-            if wx.IsMainThread():
-                command(*args)
-            else:
-                wx.CallAfter(command, *args)
-
-        context._kernel.run_later = run_later
+        self.timer = wx.Timer(self, id=wx.ID_ANY)
+        self.Bind(wx.EVT_TIMER, context._kernel.scheduler_main, self.timer)
+        context._kernel.scheduler_handles_main_thread_jobs = False
+        self.timer.Start(10)
 
         icons.DARKMODE = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
         icons.icon_r = 230
@@ -545,16 +543,28 @@ class wxMeerK40t(wx.App, Module):
 
             if command == "open":
                 if context.lookup(window_uri) is not None:
-                    kernel.run_later(window_open, None)
+                    if wx.IsMainThread():
+                        window_open(None)
+                    else:
+                        wx.CallAfter(window_open, None)
+                    # kernel.run_later(window_open, None)
                 else:
                     channel(_("No such window as %s" % window))
                     raise CommandSyntaxError
             else:  # Toggle.
                 if window_class is not None:
                     if window_name in path.opened:
-                        kernel.run_later(window_close, None)
+                        if wx.IsMainThread():
+                            window_close(None)
+                        else:
+                            wx.CallAfter(window_close, None)
+                        # kernel.run_later(window_close, None)
                     else:
-                        kernel.run_later(window_open, None)
+                        if wx.IsMainThread():
+                            window_open(window_open(), None)
+                        else:
+                            wx.CallAfter(window_open, None)
+                        # kernel.run_later(window_open, None)
                 else:
                     channel(_("No such window as %s" % window))
                     raise CommandSyntaxError

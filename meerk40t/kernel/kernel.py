@@ -100,7 +100,8 @@ class Kernel(Settings):
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
-        self.run_later = lambda execute, op: execute(op)
+        self.scheduler_handles_main_thread_jobs = True
+        self.scheduler_handles_default_thread_jobs = True
 
         self.state = STATE_INITIALIZE
 
@@ -1668,6 +1669,53 @@ class Kernel(Settings):
     # SCHEDULER
     # ==========
 
+    def scheduler_main(self, *args):
+        self.schedule_run(defaults=False, mains=True)
+
+    def scheduler_default(self, *args):
+        self.schedule_run(defaults=True, mains=False)
+
+    def schedule_run(self, defaults=True, mains=True):
+        """
+        Single run of scheduler jobs.
+        @return:
+        """
+        jobs = self.jobs
+        for job_name in list(jobs):
+            try:
+                job = jobs[job_name]
+            except KeyError:
+                continue  # Job was removed during execution.
+
+            # Checking if jobs should run.
+            if job.run_main:
+                if not mains:
+                    # Do not attempt to run mains.
+                    continue
+            else:
+                if not defaults:
+                    # Do not attempt to run defaults.
+                    continue
+            if job.scheduled:
+                job._next_run = 0  # Set to zero while running.
+                if job._remaining is not None:
+                    job._remaining = job._remaining - 1
+                    if job._remaining <= 0:
+                        del jobs[job_name]
+                    if job._remaining < 0:
+                        continue
+                try:
+                    if job.args is None:
+                        job.process()
+                    else:
+                        job.process(*job.args)
+                except Exception:
+                    import sys
+
+                    sys.excepthook(*sys.exc_info())
+                job._last_run = time.time()
+                job._next_run += job._last_run + job.interval
+
     def run(self, *args) -> None:
         """
         Scheduler main loop.
@@ -1679,43 +1727,12 @@ class Kernel(Settings):
         self.state = STATE_ACTIVE
         while self.state != STATE_END:
             time.sleep(0.005)  # 200 ticks a second.
-            if self.state == STATE_TERMINATE:
-                break
             while self.state == STATE_PAUSE:
                 # The scheduler is paused.
                 time.sleep(0.1)
             if self.state == STATE_TERMINATE:
                 break
-            jobs = self.jobs
-            for job_name in list(jobs):
-                try:
-                    job = jobs[job_name]
-                except KeyError:
-                    continue  # Job was removed during execution.
-
-                # Checking if jobs should run.
-                if job.scheduled:
-                    job._next_run = 0  # Set to zero while running.
-                    if job._remaining is not None:
-                        job._remaining = job._remaining - 1
-                        if job._remaining <= 0:
-                            del jobs[job_name]
-                        if job._remaining < 0:
-                            continue
-                    try:
-                        if job.run_main and self.run_later is not None:
-                            self.run_later(job.process, job.args)
-                        else:
-                            if job.args is None:
-                                job.process()
-                            else:
-                                job.process(*job.args)
-                    except Exception:
-                        import sys
-
-                        sys.excepthook(*sys.exc_info())
-                    job._last_run = time.time()
-                    job._next_run += job._last_run + job.interval
+            self.schedule_run(self.scheduler_handles_default_thread_jobs, self.scheduler_handles_main_thread_jobs)
         self.state = STATE_END
 
     def schedule(self, job: "Job") -> "Job":
