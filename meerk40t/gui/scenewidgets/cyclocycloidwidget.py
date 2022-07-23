@@ -169,19 +169,16 @@ class MajorHandleWidget(Widget):
         self.bitmap = icons.icons8_point_50.GetBitmap()
         self._start_x = None
         self._start_y = None
-        self._start_value = None
         self._current_x = None
         self._current_y = None
+        self._start_value = None
 
     def hit(self):
         return HITCHAIN_HIT
 
     def tick(self):
-        print("tick")
         if self._current_x is None or self._current_y is None:
-            print("Stopping ticking.")
             return False
-
         diff = (self._current_x - self._start_x)
         self._start_value += diff * 0.01
         self.widget.r_major = self._start_value
@@ -207,7 +204,7 @@ class MajorHandleWidget(Widget):
             self._current_y = space_pos[1]
             self._start_value = self.widget.r_major
             response = RESPONSE_CONSUME
-        if event_type == "move":
+        elif event_type == "move":
             self._current_x = space_pos[0]
             self._current_y = space_pos[1]
             response = RESPONSE_CONSUME
@@ -232,10 +229,21 @@ class MinorHandleWidget(Widget):
         self.bitmap = icons.icons8_point_50.GetBitmap()
         self._start_x = None
         self._start_y = None
+        self._current_x = None
+        self._current_y = None
         self._start_value = None
 
     def hit(self):
         return HITCHAIN_HIT
+
+    def tick(self):
+        if self._current_x is None or self._current_y is None:
+            return False
+        diff = (self._current_x - self._start_x)
+        self._start_value += diff * 0.01
+        self.widget.r_minor = self._start_value
+        self.widget.update_shape()
+        return True
 
     def process_draw(self, gc: wx.GraphicsContext):
         self.left = self.widget.x + self.widget.r_major + (self.widget.r_minor * 2) - self.width/2
@@ -249,17 +257,22 @@ class MinorHandleWidget(Widget):
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
+            self.scene.animate(self)
             self._start_x = self.left
             self._start_y = self.top
+            self._current_x = space_pos[0]
+            self._current_y = space_pos[1]
             self._start_value = self.widget.r_minor
             response = RESPONSE_CONSUME
-        if event_type == "move":
-            if self._start_x:
-                self.widget.r_minor = self._start_value + (space_pos[0] - self._start_x) / 2
-                self.widget.update_shape()
+        elif event_type == "move":
+            self._current_x = space_pos[0]
+            self._current_y = space_pos[1]
             response = RESPONSE_CONSUME
         elif event_type == "leftup":
             self._start_x = None
             self._start_y = None
+            self._current_x = None
+            self._current_y = None
+            self._start_value = None
             response = RESPONSE_CONSUME
         return response
