@@ -16,6 +16,11 @@ from meerk40t.svgelements import Path
 
 
 class CyclocycloidWidget(Widget):
+    """
+    Cyclocycloid widgets performs basic epicycloidal shapes. This code is also set to be solid example code for a
+    widget with some advanced controls. It contains a relocation widget and several button widgets. It shows how to
+    use animations to better implement subtle changes to a particular parameter.
+    """
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.pen = wx.Pen()
@@ -159,6 +164,9 @@ class CyclocycloidWidget(Widget):
 
 
 class MajorHandleWidget(Widget):
+    """
+    Widget to adjust the radius major of the shape. Performs this adjustment within an animation.
+    """
     def __init__(self, scene, cyclowidget):
         self.size = 20000
         Widget.__init__(self, scene, 0, 0, self.size, self.size)
@@ -219,6 +227,10 @@ class MajorHandleWidget(Widget):
 
 
 class MinorHandleWidget(Widget):
+    """
+    Does the same as Major but for the r_minor of the given shape.
+    """
+
     def __init__(self, scene, cyclowidget):
         self.size = 20000
         Widget.__init__(self, scene, 0, 0, self.size, self.size)
