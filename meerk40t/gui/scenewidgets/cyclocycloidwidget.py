@@ -75,6 +75,9 @@ class CyclocycloidWidget(Widget):
                 self.confirm,
             ),
         )
+        self.add_widget(-1, MajorHandleWidget(scene, self))
+        self.add_widget(-1, MinorHandleWidget(scene, self))
+        self.random_shape()
         self.update_shape()
 
     def confirm(self, **kwargs):
@@ -100,18 +103,23 @@ class CyclocycloidWidget(Widget):
             gc.SetPen(self.pen)
             gc.StrokeLines(self.series)
 
-    def update_shape(self):
+    def random_shape(self):
         import random
 
         self.r_minor = random.randint(5000, 50000)
         self.r_major = random.randint(self.r_minor, 50000)
-        self.offset = random.randint(5000, 5000)
+        self.offset = random.randint(0, 5000)
+        self.offset = 0
+
+    def update_shape(self):
         self.series.clear()
         radian_step = math.radians(self.degree_step)
         t = 0
         m = math.tau * self.rotations
         while t < m:
             r_minor = self.r_minor
+            if r_minor == 0:
+                r_minor = 1
             r_major = self.r_major
             offset = self.offset
             px = (r_minor + r_major) * math.cos(t) - (r_minor + offset) * math.cos(
@@ -122,7 +130,7 @@ class CyclocycloidWidget(Widget):
             )
             self.series.append((self.x + px, self.y + py))
             t += radian_step
-        self.scene.request_refresh()
+        self.scene.request_refresh_for_animation()
 
     def event(
         self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
@@ -131,9 +139,117 @@ class CyclocycloidWidget(Widget):
         if self.series is None:
             self.series = []
         if event_type == "leftdown":
+            self.random_shape()
             self.update_shape()
             response = RESPONSE_CONSUME
         elif event_type == "rightdown":
             self.confirm()
+            response = RESPONSE_CONSUME
+        return response
+
+
+class MajorHandleWidget(Widget):
+    def __init__(self, scene, cyclowidget):
+        self.size = 20000
+        Widget.__init__(self, scene, 0, 0, self.size, self.size)
+        self.pen = wx.Pen()
+        self.pen.SetColour(wx.BLUE)
+        self.pen.SetWidth(1000)
+        self.widget = cyclowidget
+        self.bitmap = icons.icons8_point_50.GetBitmap()
+        self._start_x = None
+        self._start_y = None
+        self._start_value = None
+        self._current_x = None
+        self._current_y = None
+
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def tick(self):
+        print("tick")
+        if self._current_x is None or self._current_y is None:
+            print("Stopping ticking.")
+            return False
+
+        diff = (self._current_x - self._start_x)
+        self._start_value += diff * 0.01
+        self.widget.r_major = self._start_value
+        self.widget.update_shape()
+        return True
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        self.left = self.widget.x + self.widget.r_major - self.width/2
+        self.top = self.widget.y - self.height/2
+        self.right = self.left + self.size
+        self.bottom = self.top + self.size
+        gc.DrawBitmap(self.bitmap, self.left, self.top , self.width, self.height)
+
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
+        response = RESPONSE_CHAIN
+        if event_type == "leftdown":
+            self.scene.animate(self)
+            self._start_x = self.left
+            self._start_y = self.top
+            self._current_x = space_pos[0]
+            self._current_y = space_pos[1]
+            self._start_value = self.widget.r_major
+            response = RESPONSE_CONSUME
+        if event_type == "move":
+            self._current_x = space_pos[0]
+            self._current_y = space_pos[1]
+            response = RESPONSE_CONSUME
+        elif event_type == "leftup":
+            self._start_x = None
+            self._start_y = None
+            self._current_x = None
+            self._current_y = None
+            self._start_value = None
+            response = RESPONSE_CONSUME
+        return response
+
+
+class MinorHandleWidget(Widget):
+    def __init__(self, scene, cyclowidget):
+        self.size = 20000
+        Widget.__init__(self, scene, 0, 0, self.size, self.size)
+        self.pen = wx.Pen()
+        self.pen.SetColour(wx.BLUE)
+        self.pen.SetWidth(1000)
+        self.widget = cyclowidget
+        self.bitmap = icons.icons8_point_50.GetBitmap()
+        self._start_x = None
+        self._start_y = None
+        self._start_value = None
+
+    def hit(self):
+        return HITCHAIN_HIT
+
+    def process_draw(self, gc: wx.GraphicsContext):
+        self.left = self.widget.x + self.widget.r_major + (self.widget.r_minor * 2) - self.width/2
+        self.top = self.widget.y - self.height/2
+        self.right = self.left + self.size
+        self.bottom = self.top + self.size
+        gc.DrawBitmap(self.bitmap, self.left, self.top , self.width, self.height)
+
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+    ):
+        response = RESPONSE_CHAIN
+        if event_type == "leftdown":
+            self._start_x = self.left
+            self._start_y = self.top
+            self._start_value = self.widget.r_minor
+            response = RESPONSE_CONSUME
+        if event_type == "move":
+            if self._start_x:
+                self.widget.r_minor = self._start_value + (space_pos[0] - self._start_x) / 2
+                self.widget.update_shape()
+            response = RESPONSE_CONSUME
+        elif event_type == "leftup":
+            self._start_x = None
+            self._start_y = None
             response = RESPONSE_CONSUME
         return response
