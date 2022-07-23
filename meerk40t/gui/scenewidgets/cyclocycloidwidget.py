@@ -88,11 +88,23 @@ class CyclocycloidWidget(Widget):
         self.update_shape()
 
     def translate_self(self, dx, dy):
+        """
+        Dx and Dy for the translation provided by the relocation widget fails to move the x and y value since they
+        are not from the base widget. This hook catches the self translation routine and also changes x and y position
+        @param dx:
+        @param dy:
+        @return:
+        """
         Widget.translate_self(self, dx, dy)
         self.x += dx
         self.y += dy
 
     def confirm(self, **kwargs):
+        """
+        Converts the series into a path and adds it to the current scene. This removes the current widget when executed
+        @param kwargs:
+        @return:
+        """
         try:
             t = Path(stroke="blue", stroke_width=1000)
             t.move((self.series[0][0] + self.x, self.series[0][1] + self.y))
@@ -108,6 +120,11 @@ class CyclocycloidWidget(Widget):
         self.scene.request_refresh()
 
     def hit(self):
+        """
+        Since this widget has button, major, minor and relocation widgets it should process the children first then
+        if those children do not handle the events, process itself.
+        @return:
+        """
         return HITCHAIN_DELEGATE_AND_HIT
 
     def process_draw(self, gc: wx.GraphicsContext):
@@ -119,6 +136,10 @@ class CyclocycloidWidget(Widget):
         gc.PopState()
 
     def random_shape(self):
+        """
+        Randomizes the shape.
+        @return:
+        """
         import random
 
         self.r_minor = random.randint(5000, 50000)
@@ -127,6 +148,11 @@ class CyclocycloidWidget(Widget):
         self.offset = 0
 
     def update_shape(self):
+        """
+        Updates the shape and regenerates the series based on the current values.
+
+        @return:
+        """
         self.series.clear()
         radian_step = math.radians(self.degree_step)
         t = 0
@@ -185,6 +211,10 @@ class MajorHandleWidget(Widget):
         return HITCHAIN_HIT
 
     def tick(self):
+        """
+        This widget is animated, we slowly adjust the value based on the current location.
+        @return: True, if more to animate.
+        """
         if self._current_x is None or self._current_y is None:
             return False
         diff = (self._current_x - self._start_x)
@@ -194,6 +224,11 @@ class MajorHandleWidget(Widget):
         return True
 
     def process_draw(self, gc: wx.GraphicsContext):
+        """
+        Draws the current widget, simply a bitmap.
+        @param gc:
+        @return:
+        """
         self.left = self.widget.x + self.widget.r_major - self.width/2
         self.top = self.widget.y - self.height/2
         self.right = self.left + self.size
@@ -205,7 +240,7 @@ class MajorHandleWidget(Widget):
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
-            self.scene.animate(self)
+            self.scene.animate(self)  # Starts the animation. This will stop when tick() returns false.
             self._start_x = self.left
             self._start_y = self.top
             self._current_x = space_pos[0]
