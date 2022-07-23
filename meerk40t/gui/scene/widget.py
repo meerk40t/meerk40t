@@ -38,6 +38,7 @@ class Widget(list):
         """
         All produces a widget of infinite space rather than finite space.
         """
+        assert scene.__class__.__name__ == "Scene"
         list.__init__(self)
         self.matrix = Matrix()
         self.scene = scene
@@ -349,11 +350,11 @@ class Widget(list):
         if widget is None:
             return
         if isinstance(widget, Widget):
-            list.remove(widget)
+            self.remove(widget)
         elif isinstance(widget, int):
             index = widget
             widget = self[index]
-            list.remove(index)
+            del self[index]
         widget.parent = None
         widget.notify_removed_from_parent(self)
         self.notify_removed_child(widget)

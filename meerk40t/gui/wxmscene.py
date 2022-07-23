@@ -11,6 +11,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
+from meerk40t.gui.scenewidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
@@ -135,6 +136,11 @@ class MeerK40tScenePanel(wx.Panel):
                 except ValueError:
                     pass
             dlg.Destroy()
+
+        @context.console_command("cyclocycloid", hidden=True)
+        def cyclocycloid(channel, _, **kwargs):
+            self.widget_scene.widget_root.scene_widget.add_widget(0, CyclocycloidWidget(self.widget_scene))
+            channel(_("Added cyclocycloid widget to scene."))
 
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
