@@ -5,7 +5,7 @@ from ..kernel import signal_listener
 
 from meerk40t.core.element_types import elem_nodes, op_nodes
 from meerk40t.core.elements import Elemental
-from meerk40t.gui.icons import icons8_direction_20, icons8_laser_beam_20, icons8_scatter_plot_20, icons8_padlock_50, icons8_diagonal_20
+from meerk40t.gui.icons import icons8_direction_20, icons8_laser_beam_20, icons8_scatter_plot_20, icons8_padlock_50, icons8_diagonal_20, icons8_image_20, icons8_small_beam_20
 from meerk40t.svgelements import Color
 from meerk40t.gui.laserrender import swizzlecolor
 
@@ -142,10 +142,16 @@ class OperationAssignPanel(wx.Panel):
             iconsize = 20
             result = None
             d = None
-            if node.type in ("op raster", "op image"):
+            if node.type == "op raster":
                 c, d = get_color()
                 result = icons8_direction_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
-            elif node.type in ("op engrave", "op cut"):
+            elif node.type == "op image":
+                c, d = get_color()
+                result = icons8_image_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            elif node.type == "op engrave":
+                c, d = get_color()
+                result = icons8_small_beam_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            elif node.type == "op cut":
                 c, d = get_color()
                 result = icons8_laser_beam_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
             elif node.type == "op hatch":
