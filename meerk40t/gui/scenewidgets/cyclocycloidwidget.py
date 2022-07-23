@@ -11,6 +11,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.scenewidgets.buttonwidget import ButtonWidget
+from meerk40t.gui.scenewidgets.relocatewidget import RelocateWidget
 from meerk40t.svgelements import Path
 
 
@@ -75,17 +76,23 @@ class CyclocycloidWidget(Widget):
                 self.confirm,
             ),
         )
+        self.add_widget(-1, RelocateWidget(scene, self.x, self.y))
         self.add_widget(-1, MajorHandleWidget(scene, self))
         self.add_widget(-1, MinorHandleWidget(scene, self))
         self.random_shape()
         self.update_shape()
 
+    def translate_self(self, dx, dy):
+        Widget.translate_self(self, dx, dy)
+        self.x += dx
+        self.y += dy
+
     def confirm(self, **kwargs):
         try:
             t = Path(stroke="blue", stroke_width=1000)
-            t.move(self.series[0])
+            t.move((self.series[0][0] + self.x, self.series[0][1] + self.y))
             for m in self.series:
-                t.line(m)
+                t.line((m[0] + self.x, m[1] + self.y))
             elements = self.scene.context.elements
             node = elements.elem_branch.add(path=t, type="elem path")
             elements.classify([node])
@@ -99,9 +106,12 @@ class CyclocycloidWidget(Widget):
         return HITCHAIN_DELEGATE_AND_HIT
 
     def process_draw(self, gc: wx.GraphicsContext):
+        gc.PushState()
+        gc.Translate(self.x, self.y)
         if self.series is not None and len(self.series) > 1:
             gc.SetPen(self.pen)
             gc.StrokeLines(self.series)
+        gc.PopState()
 
     def random_shape(self):
         import random
@@ -128,7 +138,7 @@ class CyclocycloidWidget(Widget):
             py = (r_minor + r_major) * math.sin(t) - (r_minor + offset) * math.sin(
                 ((r_major + r_minor) / r_minor) * t
             )
-            self.series.append((self.x + px, self.y + py))
+            self.series.append((px, py))
             t += radian_step
         self.scene.request_refresh_for_animation()
 
