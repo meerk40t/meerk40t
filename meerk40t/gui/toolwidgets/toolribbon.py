@@ -9,6 +9,7 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Point
+from meerk40t.gui.laserrender import swizzlecolor
 
 
 class RibbonTool(ToolWidget):
@@ -27,6 +28,10 @@ class RibbonTool(ToolWidget):
         self.pos = 0
 
     def process_draw(self, gc: wx.GraphicsContext):
+        if self.scene.context.elements.default_stroke is None:
+            self.pen.SetColour(wx.BLUE)
+        else:
+            self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke)))
         gc.SetPen(self.pen)
         gc.SetBrush(wx.RED_BRUSH)
         gc.DrawEllipse(self.track_object[0], self.track_object[1], 5000, 5000)
@@ -85,10 +90,7 @@ class RibbonTool(ToolWidget):
         elif event_type == "leftup":
             self.stop = True
             if self.series:
-                if self.scene.context.elements.default_stroke is not None:
-                    path_stroke = self.scene.context.elements.default_stroke
-                else:
-                    path_stroke = "blue"
+                path_stroke = self.scene.context.elements.default_stroke
                 t = Path(stroke=path_stroke, stroke_width=1000)
                 t.move(self.series[0])
                 for m in self.series:
