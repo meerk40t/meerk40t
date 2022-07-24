@@ -161,7 +161,7 @@ class Widget(list):
         The properties can be used to trigger particular layouts or properties for the added widget.
         """
         if len(self) == 0:
-            last = None
+            last = self
         else:
             last = self[-1]
         if 0 <= index < len(self):

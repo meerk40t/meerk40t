@@ -5,13 +5,13 @@ from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icon_meerk40t
+from meerk40t.gui.icons import icon_meerk40t, icons8_expansion_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
-from meerk40t.gui.scenewidgets.cyclocycloidwidget import CyclocycloidWidget
+from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
@@ -32,6 +32,7 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Angle, Color
@@ -136,6 +137,13 @@ class MeerK40tScenePanel(wx.Panel):
                 except ValueError:
                     pass
             dlg.Destroy()
+
+        @context.console_command("tm", hidden=True)
+        def tool_menu(channel, _, **kwargs):
+            self.widget_scene.widget_root.interface_widget.add_widget(0,
+                                                                      ToggleWidget(self.widget_scene, 20, 20, 70, 70, icons8_expansion_50.GetBitmap()))
+            channel(_("Added tool widget to interface"))
+
 
         @context.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwargs):

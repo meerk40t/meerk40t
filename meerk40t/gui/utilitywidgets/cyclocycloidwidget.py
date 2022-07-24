@@ -10,8 +10,8 @@ from meerk40t.gui.scene.sceneconst import (
     HITCHAIN_DELEGATE_AND_HIT,
 )
 from meerk40t.gui.scene.widget import Widget
-from meerk40t.gui.scenewidgets.buttonwidget import ButtonWidget
 from meerk40t.gui.scenewidgets.relocatewidget import RelocateWidget
+from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
 from meerk40t.svgelements import Path
 
 
