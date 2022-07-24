@@ -138,16 +138,27 @@ class MeerK40tScenePanel(wx.Panel):
                     pass
             dlg.Destroy()
 
-        @context.console_command("tm", hidden=True)
+        @context.console_command("tool_menu", hidden=True)
         def tool_menu(channel, _, **kwargs):
-            self.widget_scene.widget_root.interface_widget.add_widget(0,
-                                                                      ToggleWidget(self.widget_scene, 20, 20, 70, 70, icons8_expansion_50.GetBitmap()))
+            self.widget_scene.widget_root.interface_widget.add_widget(
+                0,
+                ToggleWidget(
+                    self.widget_scene,
+                    20,
+                    20,
+                    70,
+                    70,
+                    icons8_expansion_50.GetBitmap(),
+                    "button/tool",
+                ),
+            )
             channel(_("Added tool widget to interface"))
-
 
         @context.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwargs):
-            self.widget_scene.widget_root.scene_widget.add_widget(0, CyclocycloidWidget(self.widget_scene))
+            self.widget_scene.widget_root.scene_widget.add_widget(
+                0, CyclocycloidWidget(self.widget_scene)
+            )
             channel(_("Added cyclocycloid widget to scene."))
 
         @context.console_argument("tool", help=_("tool to use."))
@@ -523,7 +534,11 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
-        self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
+        self.context(
+            "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
+                zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level
+            )
+        )
 
     def pane_hide(self, *args):
         pass

@@ -9,8 +9,9 @@ from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
 
 class ToggleWidget(Widget):
 
-    def __init__(self, scene, left, top, right, bottom, bitmap):
+    def __init__(self, scene, left, top, right, bottom, bitmap, buttons):
         Widget.__init__(self, scene, left, top, right, bottom)
+        self.buttons = buttons
         self.bitmap = bitmap
         self._opened = False
         self.scene.request_refresh()
@@ -40,7 +41,7 @@ class ToggleWidget(Widget):
         self.scene.request_refresh()
 
     def maximize(self, window_pos=None, space_pos=None):
-        new_values = self.scene.context.find("button/tool")
+        new_values = self.scene.context.find(self.buttons)
         buttons = []
         for button, name, sname in new_values:
             buttons.append(button)
