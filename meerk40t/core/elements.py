@@ -135,6 +135,17 @@ def plugin(kernel, lifecycle=None):
                 "section": "",
             },
             {
+                "attr": "classify_new",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Classify newly created elements"),
+                "tip":  _("MK will immediately try to classify an element as soon as it is created,") + "\n" +
+                        _("if you want to defer this to apply manual classification, then untick this option."),
+                "page": "Classification",
+                "section": "",
+            },
+            {
                 "attr": "classify_fuzzy",
                 "object": elements,
                 "default": False,
@@ -346,6 +357,34 @@ class Elemental(Service):
         ops = list(self.ops())
         if not len(ops) and not self.operation_default_empty:
             self.load_default(performclassify=False)
+
+        self._default_stroke = None
+        self._default_fill = None
+
+    @property
+    def default_stroke(self):
+        if self._default_stroke is None:
+            mystroke = Color("blue")
+        else:
+            mystroke = self._default_stroke
+        return mystroke
+
+    @default_stroke.setter
+    def default_stroke(self, color):
+        if color is None:
+            # Intentionally so
+            self._default_stroke = "none"
+        else:
+            self._default_stroke = color
+
+    @property
+    def default_fill(self):
+        return self._default_fill
+
+    @default_fill.setter
+    def default_fill(self, color):
+        self._default_fill = color
+
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -2217,7 +2256,8 @@ class Elemental(Service):
             self.remove_elements(data)
             node = self.elem_branch.add(path=super_element, type="elem path")
             node.emphasized = True
-            self.classify([node])
+            if self.classify_new:
+                self.classify([node])
             return "elements", [node]
 
         @self.console_command(
@@ -2242,7 +2282,8 @@ class Elemental(Service):
                     elements.append(subelement)
                     group_node.add(path=subelement, type="elem path")
                 elements_nodes.append(group_node)
-                self.classify(elements)
+                if self.classify_new:
+                    self.classify(elements)
             return "elements", elements_nodes
 
         # ==========
@@ -3486,7 +3527,8 @@ class Elemental(Service):
 
             poly_path = Polygon(star_points)
             node = self.elem_branch.add(shape=poly_path, type="elem polyline")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3553,9 +3595,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(
-                shape=circ, type="elem ellipse", stroke=Color("black")
+                shape=circ, type="elem ellipse", stroke=self.default_stroke, fill = self.default_fill,
             )
-            # node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3577,7 +3618,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=circ, type="elem ellipse")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3606,7 +3648,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=ellip, type="elem ellipse")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3663,7 +3706,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=rect, type="elem rect")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3688,7 +3732,7 @@ class Elemental(Service):
             """
             simple_line = SimpleLine(x0, y0, x1, y1)
             node = self.elem_branch.add(shape=simple_line, type="elem line")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3717,7 +3761,7 @@ class Elemental(Service):
             node = self.elem_branch.add(
                 text=svg_text, matrix=svg_text.transform, type="elem text"
             )
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3750,7 +3794,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=shape, type="elem polyline")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3867,7 +3912,8 @@ class Elemental(Service):
                 raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
 
             node = self.elem_branch.add(path=path, type="elem path")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4332,7 +4378,8 @@ class Elemental(Service):
             node.stroke = Color("red")
             self.set_emphasis([node])
             node.focus()
-            self.classify([node])
+            if self.classify_new:
+                self.classify([node])
 
             if data is None:
                 data = list()
@@ -5751,7 +5798,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=shape, type="elem polyline")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             data.append(node)
@@ -6914,7 +6962,8 @@ class Elemental(Service):
                     node.parent.add_node(copy_node)
                     copy_nodes.append(copy_node)
 
-            self.classify(copy_nodes)
+            if self.classify_new:
+                self.classify(copy_nodes)
 
             self.set_emphasis(None)
 

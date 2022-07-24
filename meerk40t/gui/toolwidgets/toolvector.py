@@ -100,7 +100,8 @@ class VectorTool(ToolWidget):
             if len(t) != 0:
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(path=t, type="elem path")
-                elements.classify([node])
+                if elements.classify_new:
+                    elements.classify([node])
             self.path = None
             self.mouse_position = None
             self.notify_created(node)
