@@ -1264,10 +1264,11 @@ class BalorDevice(Service, ViewPort):
 
                 values = [0] * 6
                 byte_i = 0
-                for b in cmd.split(" "):
-                    if b == "":
-                        # Double-Space
-                        continue
+                split_bytes = [b for b in cmd.split(" ") if b.strip()]
+                if len(split_bytes) > 6:
+                    channel(f"Invalid command line {cmd_i}: {split_bytes} has more than six entries.")
+                    return
+                for b in split_bytes:
                     v = None
                     convert = reverse_lookup.get(b)
                     if convert is not None:
