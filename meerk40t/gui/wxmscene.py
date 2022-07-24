@@ -141,7 +141,7 @@ class MeerK40tScenePanel(wx.Panel):
         @context.console_command("tool_menu", hidden=True)
         def tool_menu(channel, _, **kwargs):
             self.widget_scene.widget_root.interface_widget.add_widget(
-                0,
+                -1,
                 ToggleWidget(
                     self.widget_scene,
                     50,
