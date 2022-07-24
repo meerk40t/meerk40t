@@ -433,7 +433,7 @@ class CustomStatusBar(wx.StatusBar):
                 try:
                     newval = float(self.spin_width.GetValue())
                     chg = True
-                except ValueError:                    
+                except ValueError:
                     chg = False
             if chg:
                 value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
@@ -465,7 +465,7 @@ class CustomStatusBar(wx.StatusBar):
         rect.x += int(wd)
         self.cb_rotate.SetRect(rect)
         rect.x += int(wd)
-        self.cb_skew.SetRect(rect)        
+        self.cb_skew.SetRect(rect)
         if self.context.show_colorbar:
             rect = self.GetFieldRect(self.pos_stroke)
             ct = 3
@@ -709,8 +709,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
                 ),
-                "page": "Gui",
-                "section": "Scene",
+                "page": "Scene",
+                "section": "General",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -741,8 +741,73 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Active: draw handles outside of / Inactive: Draw them on the bounding box of the selection."
                 ),
-                "page": "Gui",
-                "section": "Scene",
+                "page": "Scene",
+                "section": "General",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+
+        choices = [
+            {
+                "attr": "show_attract_len",
+                "object": context.root,
+                "default": 45,
+                "type": int,
+                "style": "slider",
+                "min": 1,
+                "max": 75,
+                "label": _("Distance"),
+                "tip": _("Defines until which distance snap points will be highlighted"),
+                "page": "Scene",
+                "section": "Snap-Options",
+            },
+            {
+                "attr": "snap_points",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Snap to element"),
+                "tip": _("Shall the cursor snap to the next element point?"),
+                "page": "Scene",
+                "section": "Snap-Options",
+            },
+            {
+                "attr": "action_attract_len",
+                "object": context.root,
+                "conditional": (context.root, "snap_points"),
+                "default": 20,
+                "type": int,
+                "style": "slider",
+                "min": 1,
+                "max": 75,
+                "label": _("Distance"),
+                "tip": _("Set the distance inside which the cursor will snap to the next element point"),
+                "page": "Scene",
+                "section": "Snap-Options",
+            },
+            {
+                "attr": "snap_grid",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Snap to Grid"),
+                "tip": _("Shall the cursor snap to the next grid intersection?"),
+                "page": "Scene",
+                "section": "Snap-Options",
+            },
+            {
+                "attr": "grid_attract_len",
+                "object": context.root,
+                "default": 15,
+                "conditional": (context.root, "snap_grid"),
+                "type": int,
+                "style": "slider",
+                "min": 1,
+                "max": 75,
+                "label": _("Distance"),
+                "tip": _("Set the distance inside which the cursor will snap to the next grid intersection"),
+                "page": "Scene",
+                "section": "Snap-Options",
             },
         ]
         context.kernel.register_choices("preferences", choices)

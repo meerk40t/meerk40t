@@ -231,8 +231,8 @@ def plugin(kernel, lifecycle=None):
                 "tip":
                     _("Locked elements cannot be modified, but can still be moved if this option is checked.")
                 ,
-                "page": "Gui",
-                "section": "Scene",
+                "page": "Scene",
+                "section": "General",
             },
         ]
         kernel.register_choices("preferences", choices)
