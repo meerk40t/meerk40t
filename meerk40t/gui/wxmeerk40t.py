@@ -8,6 +8,7 @@ import wx
 from wx import aui
 
 from .propertypanels.inputproperty import InputPropertyPanel
+from .propertypanels.opbranchproperties import OpBranchPanel
 from .propertypanels.outputproperty import OutputPropertyPanel
 from .propertypanels.waitproperty import WaitPropertyPanel
 
@@ -342,6 +343,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
+        kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
         kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
         kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
 
@@ -387,6 +389,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Position", register_panel_position)
 
+        from meerk40t.gui.opassignment import register_panel_operation_assign
+
+        kernel.register("wxpane/opassign", register_panel_operation_assign)
+
         from meerk40t.gui.lasertoolpanel import register_panel_lasertool
 
         kernel.register("wxpane/Lasertool", register_panel_lasertool)
@@ -405,6 +411,15 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("wxpane/Pause", register_panel_pause)
 
         context = kernel.root
+
+        context.setting(bool, "developer_mode", False)
+        if context.developer_mode:
+            from meerk40t.gui.mkdebug import register_panel_debugger
+            kernel.register("wxpane/debug_tree", register_panel_debugger)
+
+        #################
+        # WINDOW COMMANDS
+        #################
 
         @kernel.console_option(
             "path",
@@ -464,6 +479,27 @@ class wxMeerK40t(wx.App, Module):
                 channel("%d: %s" % (i + 1, name))
             return "window", data
 
+        @kernel.console_command(
+            "displays",
+            input_type="window",
+            output_type="window",
+            help=_("Give display info for the current opened windows"),
+        )
+        def window_list(channel, _, data, **kwargs):
+            for idx in range(wx.Display.GetCount()):
+                d = wx.Display(idx)
+                channel(f"{idx} Primary: {d.IsPrimary()} {d.GetGeometry()}")
+            channel(_("----------"))
+            path = data
+            for opened in path.opened:
+                if opened.startswith("window/"):
+                    window = path.opened[opened]
+                    display = wx.Display.GetFromWindow(window)
+                    if display == wx.NOT_FOUND:
+                        display = "Display Not Found"
+                    channel(f"Window {opened} with bounds {window.GetRect()} is located on display: {display})")
+            return "window", data
+
         @kernel.console_option(
             "multi",
             "m",
@@ -513,7 +549,7 @@ class wxMeerK40t(wx.App, Module):
                 else:
                     channel(_("No such window as %s" % window))
                     raise CommandSyntaxError
-            else:
+            else:  # Toggle.
                 if window_class is not None:
                     if window_name in path.opened:
                         kernel.run_later(window_close, None)
@@ -535,7 +571,7 @@ class wxMeerK40t(wx.App, Module):
             try:
                 parent = context.gui if hasattr(context, "gui") else None
                 kernel.run_later(
-                    lambda e: path.close("window/%s" % window, parent, *args), None
+                    lambda e: path.close(f"window/{window}", parent, *args), None
                 )
                 channel(_("Window closed."))
             except (KeyError, ValueError):

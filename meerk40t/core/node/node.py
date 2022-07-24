@@ -56,6 +56,7 @@ class Node:
 
     def __init__(self, type=None, *args, **kwargs):
         super().__init__()
+        self._formatter = "{element_type}:{id}"
         self._children = list()
         self._root = None
         self._parent = None
@@ -80,19 +81,26 @@ class Node:
         self.icon = None
         self.cache = None
         self.id = None
+        # Label
+        self.label = None
 
     def __repr__(self):
         return "Node('%s', %s)" % (self.type, str(self._parent))
 
     def __str__(self):
-        return self.create_label()
+        text = self._formatter
+        if text is None:
+            text = "{element_type}"
+        default_map = self.default_map()
+        try:
+            return text.format_map(default_map)
+        except KeyError as e:
+            raise KeyError(
+                f"mapping '{text}' did not contain a required key in {default_map} for {self.__class__}"
+            ) from e
 
     def __eq__(self, other):
         return other is self
-
-    @property
-    def label(self):
-        return str(self)
 
     @property
     def children(self):
@@ -147,6 +155,14 @@ class Node:
         return None
 
     @property
+    def formatter(self):
+        return self._formatter
+
+    @formatter.setter
+    def formatter(self, formatter):
+        self._formatter = formatter
+
+    @property
     def points(self):
         """
         Returns the node points values
@@ -161,12 +177,32 @@ class Node:
     def create_label(self, text=None):
         if text is None:
             text = "{element_type}:{id}"
-        return text.format_map(self.default_map())
+        # Just for the optical impression (who understands what a "Rect: None" means),
+        # lets replace some of the more obvious ones...
+        mymap = self.default_map()
+        for key in mymap:
+            if hasattr(self, key) and mymap[key]=="None":
+                if getattr(self, key) is None:
+                    mymap[key] = "-"
+        # slist = text.split("{")
+        # for item in slist:
+        #     idx = item.find("}")
+        #     if idx>0:
+        #         sitem = item[0:idx]
+        #     else:
+        #         sitem = item
+        #     try:
+        #         dummy = mymap[sitem]
+        #     except KeyError:
+        #         # Addit
+        #         mymap[sitem] = "??ERR??"
+        return text.format_map(mymap)
 
     def default_map(self, default_map=None):
         if default_map is None:
             default_map = dict()
-        default_map["id"] = str(self.id)
+        default_map["id"] = str(self.id) if self.id is not None else "-"
+        default_map["label"] = self.label if self.label is not None else ""
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
@@ -174,7 +210,7 @@ class Node:
     def is_movable(self):
         return True
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         return False
 
     def reverse(self):
@@ -694,3 +730,7 @@ class Node:
             if box[3] > ymax:
                 ymax = box[3]
         return xmin, ymin, xmax, ymax
+
+    @property
+    def name(self):
+        return self.__str__()

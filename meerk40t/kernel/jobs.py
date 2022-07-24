@@ -48,6 +48,9 @@ class Job:
                 return self.process.__name__
             except AttributeError:
                 return object.__str__(self)
+    @property
+    def remaining(self) -> int:
+        return self._remaining
 
     @property
     def scheduled(self) -> bool:
@@ -86,9 +89,11 @@ class ConsoleFunction(Job):
         )
         self.context = context
         self.data = data
+        self.index = 1
 
     def __call__(self, *args, **kwargs):
-        self.context.console(self.data)
+        self.context.console(self.data.format(index=self.index, remaining=self.remaining))
+        self.index += 1
 
     def __str__(self):
         return self.data.replace("\n", "")

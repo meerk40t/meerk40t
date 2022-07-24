@@ -1,4 +1,3 @@
-# ----------------------------------------------------------------------
 from wx import IMAGE_ALPHA_OPAQUE, Bitmap
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
@@ -6,12 +5,26 @@ DARKMODE = False
 
 STD_ICON_SIZE = 50
 
+_MIN_ICON_SIZE = 0
+_GLOBAL_FACTOR = 1.0
+
+def set_icon_appearance(factor, min_size):
+    global _MIN_ICON_SIZE
+    global _GLOBAL_FACTOR
+    _MIN_ICON_SIZE = min_size
+    _GLOBAL_FACTOR = factor
+
+def get_default_icon_size():
+    return _GLOBAL_FACTOR * STD_ICON_SIZE
+
+def get_default_scale_factor():
+    return _GLOBAL_FACTOR
 
 class PyEmbeddedImage(py_embedded_image):
     def __init__(self, data):
         super().__init__(data)
 
-    def GetBitmap(self, use_theme=True, resize=None, color=None, rotate=None):
+    def GetBitmap(self, use_theme=True, resize=None, color=None, rotate=None, noadjustment=False, keepalpha = False):
         """
         Assumes greyscale icon black on transparent background using alpha for shading
         Ready for Dark Theme
@@ -27,6 +40,32 @@ class PyEmbeddedImage(py_embedded_image):
         """
 
         image = py_embedded_image.GetImage(self)
+        if not noadjustment and _GLOBAL_FACTOR != 1.0:
+            oldresize = resize
+            wd, ht = image.GetSize()
+            if resize is not None:
+                if isinstance(resize, int) or isinstance(resize, float):
+                    resize *= _GLOBAL_FACTOR
+                    if _MIN_ICON_SIZE>0 and oldresize>_MIN_ICON_SIZE:
+                        if resize<_MIN_ICON_SIZE:
+                            resize = _MIN_ICON_SIZE
+                elif isinstance(resize, tuple): # (tuple wd ht)
+                    resize = [oldresize[0], oldresize[1]]
+                    for i in range(2):
+                        resize[i] *= _GLOBAL_FACTOR
+                        if _MIN_ICON_SIZE > 0 and oldresize[i]>_MIN_ICON_SIZE:
+                            if resize[i]<_MIN_ICON_SIZE:
+                                resize[i]=_MIN_ICON_SIZE
+            else:
+                resize = [wd, ht]
+                oldresize = (wd, ht)
+                for i in range(2):
+                    resize[i] *= _GLOBAL_FACTOR
+                    if _MIN_ICON_SIZE > 0 and oldresize[i]>_MIN_ICON_SIZE:
+                        if resize[i]<_MIN_ICON_SIZE:
+                            resize[i]=_MIN_ICON_SIZE
+            # print ("Will adjust from %s to %s (was: %s)" % ((wd, ht), resize, oldresize))
+
         if resize is not None:
             if isinstance(resize, int) or isinstance(resize, float):
                 image = image.Scale(resize, resize)
@@ -52,7 +91,7 @@ class PyEmbeddedImage(py_embedded_image):
             else:
                 reverse = color.distance_to("white") <= 200
                 black_bg = True
-            if reverse:
+            if reverse and not keepalpha:
                 self.RemoveAlpha(image, black_bg=black_bg)
         elif DARKMODE and use_theme:
             image.Replace(0, 0, 0, 255, 255, 255)
@@ -2701,3 +2740,10 @@ icons8_quick_mode_on_50 = PyEmbeddedImage(
     b'aaISDOKbVol5K3gozGOnVTYU5nFEq8hk2jjlGdOUWFDDUNiNNZHuu4CXeI1Lfz/36bMa+QMe'
     b'3GnvusfBCwAAAABJRU5ErkJggg==')
 
+icons8_diagonal_20 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAA'
+    b'90lEQVQ4jdXUr0pEQRiG8Z/4B9wii3obglXWZBItIhhEi02jImxc9BIMYrAZxPUStAsKYjUI'
+    b'2r0DYQ3nC8M6Z2EOBn3bPDDPfO934PDXM55hW1hHG68J38UqpvEWbAIHmMJH7oFjDPCC+YSf'
+    b'Bn/ATCK7Dn6Uk203lN3E+Ud6IZtL2ElcelKtgGpNV8H7mMzJYHNI1niyXEpkLayMkpXUbOFO'
+    b'ta5fmew++H5OttdQdoaxnLA3ouZtpuYAF3UyWKuZrF862XBKZbPYqJOV1mzjUc1XbjLZc/Cd'
+    b'nPCwoaybStKldrCIc3wFW8YSPnEZAqrf2ALeo9U/yjfm22E9jSsxrQAAAABJRU5ErkJggg==')

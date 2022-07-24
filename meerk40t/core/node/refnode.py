@@ -11,6 +11,7 @@ class ReferenceNode(Node):
     def __init__(self, node, **kwargs):
         super(ReferenceNode, self).__init__(type="reference", **kwargs)
         node._references.append(self)
+        self._formatter = "*{reference}"
         self.node = node
 
     def __repr__(self):
@@ -32,14 +33,16 @@ class ReferenceNode(Node):
         default_map["ref_id"] = str(self.id)
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
             op = self.parent
             drop_index = op.children.index(self)
-            op.add_reference(drag_node, pos=drop_index)
+            if modify:
+                op.add_reference(drag_node, pos=drop_index)
             return True
         elif drag_node.type == "reference":
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         return False
 

@@ -9,7 +9,7 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class LhystudiosAccelerationChartPanel(ScrolledPanel):
+class LihuiyuAccelerationChartPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -278,19 +278,19 @@ class LhystudiosAccelerationChartPanel(ScrolledPanel):
 
     def on_check_vector_accel_enable(
         self, event=None
-    ):  # wxGlade: LhystudiosDriver.<event_handler>
+    ):
 
         self.context.vector_accel_table = self.checkbox_vector_accel_enable.GetValue()
 
-    def on_text_vector_accel(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_text_vector_accel(self, event):
         pass
 
     def on_check_raster_accel_enable(
         self, event=None
-    ):  # wxGlade: LhystudiosDriver.<event_handler>
+    ):
         self.context.raster_accel_table = self.checkbox_raster_accel_enable.GetValue()
 
-    def on_text_raster_accel(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_text_raster_accel(self, event):
         pass
 
     def on_check_vraster_accel_enable(
@@ -302,11 +302,11 @@ class LhystudiosAccelerationChartPanel(ScrolledPanel):
         pass
 
 
-class LhystudiosAccelerationChart(MWindow):
+class LihuiyuAccelerationChart(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, *args, **kwds)
 
-        self.panel = LhystudiosAccelerationChartPanel(
+        self.panel = LihuiyuAccelerationChartPanel(
             self, wx.ID_ANY, context=self.context
         )
         self.add_module_delegate(self.panel)

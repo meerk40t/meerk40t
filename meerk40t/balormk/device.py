@@ -22,12 +22,31 @@ class ElementLightJob:
     ):
         self.service = service
         self.elements = elements
+        self.started = False
         self.stopped = False
         self.travel_speed = travel_speed
         self.jump_delay = jump_delay
         self.simulation_speed = simulation_speed
         self.quantization = quantization
         self.simulate = simulate
+        self.priority = -1
+
+    def is_running(self):
+        return not self.stopped and self.started
+
+    def execute(self, driver):
+        if self.stopped:
+            return True
+        self.started = True
+        connection = driver.connection
+        connection.rapid_mode()
+        connection.light_mode()
+        while self.process(connection):
+            if self.stopped:
+                break
+        connection.abort()
+        self.stopped = True
+        return True
 
     def stop(self):
         self.stopped = True
@@ -107,8 +126,27 @@ class LiveSelectionLightJob:
     ):
         self.service = service
         self.stopped = False
+        self.started = False
         self._current_points = None
         self._last_bounds = None
+        self.priority = -1
+
+    def is_running(self):
+        return not self.stopped
+
+    def execute(self, driver):
+        if self.stopped:
+            return True
+        self.started = True
+        connection = driver.connection
+        connection.rapid_mode()
+        connection.light_mode()
+        while self.process(connection):
+            if self.stopped:
+                break
+        connection.abort()
+        self.stopped = True
+        return True
 
     def update_points(self, bounds):
         if bounds == self._last_bounds and self._current_points is not None:
@@ -226,9 +264,28 @@ class LiveFullLightJob:
     ):
         self.service = service
         self.stopped = False
+        self.started = False
         self.changed = False
         service.listen("emphasized", self.on_emphasis_changed)
         self._last_bounds = None
+        self.priority = -1
+
+    def is_running(self):
+        return not self.stopped
+
+    def execute(self, driver):
+        if self.stopped:
+            return True
+        self.started = True
+        connection = driver.connection
+        connection.rapid_mode()
+        connection.light_mode()
+        while self.process(connection):
+            if self.stopped:
+                break
+        connection.abort()
+        self.stopped = True
+        return True
 
     def stop(self):
         self.stopped = True
@@ -393,29 +450,36 @@ class BalorDevice(Service, ViewPort):
 
         self.register(
             "format/op cut",
-            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op engrave",
-            "{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op hatch",
-            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op raster",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op image",
-            "{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz",
+            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
         )
         self.register(
             "format/op dots",
-            "{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz",
+            "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz {colcode} {opstop}",
         )
         self.register("format/util console", "{enabled}{command}")
+        # Define maxspeed min, need to be adjusted for balor
+        kernel.register("dangerlevel/op cut", (50, 100))
+        kernel.register("dangerlevel/op engrave", (50, 100))
+        kernel.register("dangerlevel/op hatch", (500, 100))
+        kernel.register("dangerlevel/op raster", (500, 100))
+        kernel.register("dangerlevel/op image", (500, 100))
+        kernel.register("dangerlevel/op dots", (500, 100))
 
         choices = [
             {
@@ -912,39 +976,6 @@ class BalorDevice(Service, ViewPort):
 
         self.viewbuffer = ""
 
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(
-            command, channel, _, data=None, data_type=None, remainder=None, **kwgs
-        ):
-            """
-            Registers the spool command for the Balor driver.
-            """
-            spooler = self.spooler
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-
-            return "spooler", spooler
-
         @self.console_option(
             "travel_speed", "t", type=float, help="Set the travel speed."
         )
@@ -1010,7 +1041,7 @@ class BalorDevice(Service, ViewPort):
                     quantization=quantization,
                     simulate=True,
                 )
-            self.spooler.job(("light_loop", self.job.process))
+            self.spooler.command("light_loop", self.job.process)
 
         @self.console_command(
             "select-light", help=_("Execute selection light idle job")
@@ -1019,14 +1050,14 @@ class BalorDevice(Service, ViewPort):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveSelectionLightJob(self)
-            self.spooler.job(("light_loop", self.job.process))
+            self.spooler.command("light_loop", self.job.process)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def select_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveFullLightJob(self)
-            self.spooler.job(("light_loop", self.job.process))
+            self.spooler.send(self.job)
 
         @self.console_command(
             "stop",
@@ -1048,7 +1079,6 @@ class BalorDevice(Service, ViewPort):
             channel("Stopping Job")
             if self.job is not None:
                 self.job.stop()
-            self.spooler.set_idle(None)
             self.spooler.clear_queue()
             self.driver.set_abort()
 
@@ -1095,7 +1125,8 @@ class BalorDevice(Service, ViewPort):
                         return
                 except IndexError:
                     return
-            if self.spooler.job_if_idle(("pulse", time)):
+            if self.spooler.is_idle:
+                self.spooler.command("pulse", time)
                 channel(_("Pulse laser for %f milliseconds") % time)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -1106,18 +1137,18 @@ class BalorDevice(Service, ViewPort):
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.spooler.job("connect")
+            self.spooler.command("connect", priority=1)
 
         @self.console_command(
             "usb_disconnect",
             help=_("connect usb"),
         )
         def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
-            self.spooler.job("disconnect")
+            self.spooler.command("disconnect", priority=1)
 
         @self.console_command("usb_abort", help=_("Stops USB retries"))
         def usb_abort(command, channel, _, **kwargs):
-            self.spooler.job("abort_retry")
+            self.spooler.command("abort_retry", priority=1)
 
         @self.console_option(
             "default",

@@ -47,7 +47,7 @@ from .icons import (
     icons_evenspace_vert,
     icons8_group_objects_50,
     icons8_ungroup_objects_50,
-
+    set_icon_appearance,
 )
 from .laserrender import (
     DRAW_MODE_ALPHABLACK,
@@ -270,8 +270,7 @@ class CustomStatusBar(wx.StatusBar):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        self.spin_width = wx.SpinCtrlDouble(self, value="0.10", min=0, max=25, inc=0.10)
-        self.spin_width.SetDigits(2)
+        self.spin_width = wx.TextCtrl(self, id=wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER)
         self.spin_width.SetFont(
             wx.Font(
                 FONT_SIZE,
@@ -298,7 +297,7 @@ class CustomStatusBar(wx.StatusBar):
         )
         self.combo_units.SetSelection(0)
         self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        self.Bind(wx.EVT_SPINCTRLDOUBLE, self.on_stroke_width, self.spin_width)
+        # self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
 
         # set the initial position of the checkboxes
@@ -348,7 +347,7 @@ class CustomStatusBar(wx.StatusBar):
                     # Set Values
                     self.startup = True
                     stdlen = float(Length("1mm"))
-                    value = sw_default / stdlen
+                    value = "%.2f" % (sw_default / stdlen)
                     self.spin_width.SetValue(value)
                     self.combo_units.SetSelection(self.choices.index("mm"))
                     self.startup = False
@@ -431,8 +430,11 @@ class CustomStatusBar(wx.StatusBar):
             chg = False
             if self.combo_units.GetSelection() >= 0:
                 newunit = self.choices[self.combo_units.GetSelection()]
-                newval = self.spin_width.GetValue()
-                chg = True
+                try:
+                    newval = float(self.spin_width.GetValue())
+                    chg = True
+                except ValueError:                    
+                    chg = False
             if chg:
                 value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
                 mysignal = "selstrokewidth"
@@ -450,6 +452,8 @@ class CustomStatusBar(wx.StatusBar):
     # reposition the checkboxes
     def Reposition(self):
         rect = self.GetFieldRect(self.pos_handle_options)
+        if rect[3]<20 or rect[2]<20:
+            return
         ct = 4
         wd = int(round(rect.width / ct))
         rect.x += 1
@@ -461,20 +465,22 @@ class CustomStatusBar(wx.StatusBar):
         rect.x += int(wd)
         self.cb_rotate.SetRect(rect)
         rect.x += int(wd)
-        self.cb_skew.SetRect(rect)
-
+        self.cb_skew.SetRect(rect)        
         if self.context.show_colorbar:
             rect = self.GetFieldRect(self.pos_stroke)
-            ct = 2
-            wd = int(round(rect.width / ct))
-            # print ("Width:", wd)
-            toosmall = wd <= 100
+            ct = 3
+            wd0 = int(round(rect.width / ct))
+            wd1 = wd0
+            wd2 = wd0
+            # print ("Width:", wd1, wd2)
+            toosmall = wd1 < 45
             rect.x += 1
             rect.y += 1
             old_y = rect.y
             old_ht = rect.height
-            rect.width = wd
+            rect.width = wd1
             if toosmall:
+                wd2 = ct/2 * wd0
                 if self.cb_enabled:
                     self.strokewidth_label.Hide()
             else:
@@ -488,12 +494,15 @@ class CustomStatusBar(wx.StatusBar):
                 # reset to previous values
                 rect.y = old_y
                 rect.height = old_ht
-                rect.x += wd
+                rect.x += wd1
                 # Make the next two elements smaller
-                wd = wd / 2
-            rect.width = wd
+            rect.width = wd2
+            # Linux has some issues with controls smaller than 32 pixels...
+            #old_rect = self.spin_width.GetRect()
+            #rect.height = old_rect.height
+            #print (rect, old_rect)
             self.spin_width.SetRect(rect)
-            rect.x += wd
+            rect.x += wd2
             self.combo_units.SetRect(rect)
 
             rect = self.GetFieldRect(self.pos_colorbar)
@@ -594,6 +603,88 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
+        context.setting(int, "zoom_level", 4) # 4%
+        # Standard-Icon-Sizes
+        # default, factor 1 - leave as is
+        # small = factor 2/3, min_size = 32
+        # tiny  = factor 1/2, min_size = 25
+        context.setting(str, "icon_size", "default")
+        # Ribbon-Size (NOT YET ACTIVE)
+        # default - std icon size + panel-labels,
+        # small - std icon size / no labels
+        # tiny - reduced icon size / no labels
+        context.setting(str, "ribbon_appearance", "default")
+        choices = [
+            {
+                "attr": "ribbon_appearance",
+                "object": self.context.root,
+                "default": "default",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "default",
+                    "small",
+                    "tiny"
+                ],
+                "label": _("Ribbon-Size:"),
+                "tip": _("Appearance of ribbon at the top (requires a restart to take effect))"),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+        ]
+        # context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "icon_size",
+                "object": self.context.root,
+                "default": "default",
+                "type": str,
+                "style": "combosmall",
+                "choices": [
+                    "large",
+                    "big",
+                    "default",
+                    "small",
+                    "tiny"
+                ],
+                "label": _("Icon size:"),
+                "tip": _("Appearance of all icons in the GUI (requires a restart to take effect))"),
+                "page": "Gui",
+                "section": "Appearance",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+
+        choices = [
+            {
+                "attr": "zoom_level",
+                "object": self.context.root,
+                "default": 4,
+                "trailer": "%",
+                "type": int,
+                "style": "combosmall",
+                "choices": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    15,
+                    20,
+                    25,
+                ],
+                "label": _("Default zoom level:"),
+                "tip": _("Default zoom level when changing zoom (automatically or via Ctrl-B)"),
+                "page": "Gui",
+                "section": "Zoom",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
         choices = [
             {
                 "attr": "disable_auto_zoom",
@@ -603,7 +694,7 @@ class MeerK40t(MWindow):
                 "label": _("Don't autoadjust zoom level"),
                 "tip": _("Don't autoadjust zoom level when resizing the main window"),
                 "page": "Gui",
-                "section": "Scene",
+                "section": "Zoom",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -658,6 +749,16 @@ class MeerK40t(MWindow):
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
         )
+        if context.icon_size == "tiny":
+            set_icon_appearance(0.5, int(0.5 * STD_ICON_SIZE))
+        elif context.icon_size == "small":
+            set_icon_appearance(2/3, int(2/3 * STD_ICON_SIZE))
+        elif context.icon_size == "big":
+            set_icon_appearance(1.5, 0)
+        elif context.icon_size == "large":
+            set_icon_appearance(2.0, 0)
+        else:
+            set_icon_appearance(1.0, 0)
 
     def open_property_window_for_node(self, node):
         """
@@ -989,6 +1090,7 @@ class MeerK40t(MWindow):
                     if group_node is None:
                         group_node = node.parent.add(type="group", label="Group")
                     group_node.append_child(node)
+                kernel.signal("element_property_reload", "Scene", group_node)
 
         kernel.register(
             "button/geometry/Group",
@@ -1814,8 +1916,9 @@ class MeerK40t(MWindow):
         self.window_menu.AppendSeparator()
         # If the Main-window has disappeared out of sight (i.e. on a multi-monitor environment)
         # then resetting windows becomes difficult, so a shortcut is in order...
+        # REVISED: CTRL-W is needed for mac close-window
         self.window_menu.windowreset = self.window_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Windows\tCtrl-R"), ""
+            ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
         )
         self.Bind(
             wx.EVT_MENU,
@@ -2519,11 +2622,20 @@ class MeerK40t(MWindow):
         elements = self.context.elements
         valu = elements.has_emphasis()
         self.main_statusbar.cb_enabled = valu
-        # Then sync the selected status to the emphasized status
-        if valu:
-            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                if not e.selected:
-                    e.selected = True
+        # # Then sync the selected status to the emphasized status
+        # if valu:
+        #     anychanges = False
+        #     selected_list = list(self.context.elements.flat(types=elem_nodes, selected=True))
+        #     emphasized_list = list(self.context.elements.flat(types=elem_nodes, emphasized=True))
+        #     print ("Main tries to sync, selcount=%d, emphcount=%d" % (len(selected_list), len(emphasized_list)))
+        #     for e in emphasized_list:
+        #         if not e.selected:
+        #             e.selected = True
+        #             anychanges = True
+        #     for e in selected_list:
+        #         if e not in emphasized_list:
+        #             e.selected = False
+        #             anychanges = True
 
     def __set_titlebar(self):
         device_name = ""
@@ -2711,7 +2823,8 @@ class MeerK40t(MWindow):
             return False
         else:
             if results:
-                self.context("scene focus -4% -4% 104% 104%\n")
+                self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
+
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
                     self.context("window open Notes\n")  # open/not toggle.
@@ -2747,7 +2860,7 @@ class MeerK40t(MWindow):
             return
         self.Layout()
         if not self.context.disable_auto_zoom:
-            self.context("scene focus -4% -4% 104% 104%\n")
+            self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
 
     def on_focus_lost(self, event):
         self.context("-laser\nend\n")
@@ -2809,8 +2922,10 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.on_click_zoom_bed(event=event)
         else:
-            x_delta = (bbox[2] - bbox[0]) * 0.04
-            y_delta = (bbox[3] - bbox[1]) * 0.04
+            zfact = self.context.zoom_level / 100.0
+
+            x_delta = (bbox[2] - bbox[0]) * zfact
+            y_delta = (bbox[3] - bbox[1]) * zfact
             x0 = Length(
                 amount=bbox[0] - x_delta, relative_length=self.context.device.width
             ).length_mm
@@ -2827,13 +2942,13 @@ class MeerK40t(MWindow):
 
     def on_click_toggle_ui(self, event=None):
         self.context("pane toggleui\n")
-        self.context("scene focus -4% -4% 104% 104%\n")
+        self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom scene to bed size.
         """
-        self.context("scene focus -4% -4% 104% 104%\n")
+        self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
 
     def toggle_draw_mode(self, bits):
         """

@@ -130,6 +130,8 @@ def plugin(kernel, lifecycle=None):
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
                 ),
+                "page": "Optimizations",
+                "section": "",
             },
             {
                 "attr": "opt_complete_subpaths",
@@ -155,6 +157,8 @@ def plugin(kernel, lifecycle=None):
                     + "It may also avoid minor differences in total burn depth "
                     + "at the point the burns join. "
                 ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_merge_passes",
@@ -181,6 +185,8 @@ def plugin(kernel, lifecycle=None):
                     + "and this can result in greater charring "
                     + "or even an increased risk of the material catching fire."
                 ),
+                "page": "Optimizations",
+                "section": "Merging",
             },
             {
                 "attr": "opt_merge_ops",
@@ -203,6 +209,8 @@ def plugin(kernel, lifecycle=None):
                     "If you have a complex design with many paths across multiple consecutive burn operations, "
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
+                "page": "Optimizations",
+                "section": "Merging",
             },
             {
                 "attr": "opt_inner_first",
@@ -222,6 +230,8 @@ def plugin(kernel, lifecycle=None):
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
                 ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_inners_grouped",
@@ -248,6 +258,8 @@ def plugin(kernel, lifecycle=None):
                     + "inner elements may span multiple design pieces, "
                     + "in which case they may be optimised together."
                 ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_closed_distance",
@@ -258,6 +270,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
+                "page": "Optimizations",
+                "section": "",
             },
         ]
         kernel.register_choices("optimize", choices)
@@ -275,13 +289,14 @@ def plugin(kernel, lifecycle=None):
 
     elif lifecycle == "poststart":
         planner = kernel.planner
-        if hasattr(kernel.args, "auto") and kernel.args.auto:
+        auto = hasattr(kernel.args, "auto") and kernel.args.auto
+        if auto:
             planner("plan copy preprocess validate blob preopt optimize\n")
-        if hasattr(kernel.args, "origin") and kernel.args.origin:
-            planner("plan append origin\n")
-        if hasattr(kernel.args, "quit") and kernel.args.quit:
-            planner("plan append shutdown\n")
-        planner("plan spool\n")
+            if hasattr(kernel.args, "origin") and kernel.args.origin:
+                planner("plan append origin\n")
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                planner("plan append shutdown\n")
+            planner("plan spool\n")
 
 
 class Planner(Service):

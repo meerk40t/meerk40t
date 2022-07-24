@@ -22,6 +22,7 @@ class LineNode(Node):
         **kwargs,
     ):
         super(LineNode, self).__init__(type="elem line", **kwargs)
+        self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
         if matrix is None:
@@ -100,10 +101,11 @@ class LineNode(Node):
         default_map["matrix"] = self.matrix
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         # Dragging element into element.
         if drag_node.type.startswith("elem"):
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         return False
 

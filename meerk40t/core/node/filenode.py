@@ -13,11 +13,7 @@ class FileNode(Node):
     def __init__(self, filepath=None, **kwargs):
         super(FileNode, self).__init__(type="file", **kwargs)
         self._filepath = filepath
-
-    def __str__(self):
-        if self.filepath is None:
-            return "File: None"
-        return os.path.basename(self._filepath)
+        self._formatter = "{element_type}: {filename}"
 
     def default_map(self, default_map=None):
         default_map = super(FileNode, self).default_map(default_map=default_map)
@@ -30,9 +26,10 @@ class FileNode(Node):
         default_map["filename"] = s
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type == "group":
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
         return False
 
     @property
@@ -49,3 +46,11 @@ class FileNode(Node):
     @filepath.setter
     def filepath(self, value):
         self._filepath = value
+
+    @property
+    def name(self):
+        if self.filepath is None:
+            s = None
+        else:
+            s = os.path.basename(self._filepath)
+        return s

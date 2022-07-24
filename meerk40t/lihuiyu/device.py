@@ -78,7 +78,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         kernel.register("load/EgvLoader", EgvLoader)
-        kernel.register("emulator/lhystudios", LihuiyuEmulator)
+        kernel.register("emulator/lihuiyu", LihuiyuEmulator)
         kernel.register("parser/egv", LihuiyuParser)
     if lifecycle == "preboot":
         suffix = "lhystudios"
@@ -92,7 +92,7 @@ def plugin(kernel, lifecycle=None):
 
 class LihuiyuDevice(Service, ViewPort):
     """
-    LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
+    LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
 
     def __init__(self, kernel, path, *args, **kwargs):
@@ -209,47 +209,19 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.state = 0
 
-        self.driver = LhystudiosDriver(self)
+        self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
         self.tcp = TCPOutput(self)
         self.add_service_delegate(self.tcp)
 
-        self.controller = LhystudiosController(self)
+        self.controller = LihuiyuController(self)
         self.add_service_delegate(self.controller)
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
         _ = self.kernel.translation
-
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-
-            return "spooler", spooler
 
         @self.console_option(
             "idonotlovemyhouse",
@@ -282,7 +254,8 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "wait", time
                 yield "laser_off"
 
-            if self.spooler.job_if_idle(timed_fire):
+            if self.spooler.is_idle:
+                self.spooler.laserjob([list(timed_fire)])
                 channel(_("Pulse laser for %f milliseconds") % time)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -301,8 +274,9 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "program_mode"
                 yield "move_relative", dx.mil, dy.mil
                 yield "rapid_mode"
-
-            if not self.spooler.job_if_idle(move_at_speed):
+            if self.spooler.is_idle:
+                self.spooler.laserjob([list(move_at_speed)])
+            else:
                 channel(_("Busy"))
             return
 
@@ -315,7 +289,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
         @self.console_command(
-            "speed", input_type="lhystudios", help=_("Set current speed of driver.")
+            "speed", input_type="lihuiyu", help=_("Set current speed of driver.")
         )
         def speed(
             command, channel, _, data=None, speed=None, difference=False, **kwargs
@@ -440,7 +414,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwargs):
             self.driver.reset()
-            channel(_("Lhystudios Channel Aborted."))
+            channel(_("Lihuiyu Channel Aborted."))
 
         @self.console_argument(
             "rapid_x", type=float, help=_("limit x speed for rapid.")
@@ -473,7 +447,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_argument("filename", type=str)
         @self.console_command(
             "egv_import",
-            help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
+            help=_("Lihuiyu Engrave Buffer Import. egv_import <egv_file>"),
         )
         def egv_import(channel, _, filename, **kwargs):
             if filename is None:
@@ -511,7 +485,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_argument("filename", type=str)
         @self.console_command(
             "egv_export",
-            help=_("Lhystudios Engrave Buffer Export. egv_export <egv_file>"),
+            help=_("Lihuiyu Engrave Buffer Export. egv_export <egv_file>"),
         )
         def egv_export(channel, _, filename, **kwargs):
             if filename is None:
@@ -535,11 +509,11 @@ class LihuiyuDevice(Service, ViewPort):
 
         @self.console_command(
             "egv",
-            help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
+            help=_("Lihuiyu Engrave Code Sender. egv <lhymicro-gl>"),
         )
         def egv(command, channel, _, remainder=None, **kwargs):
             if not remainder:
-                channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
+                channel("Lihuiyu Engrave Code Sender. egv <lhymicro-gl>")
             else:
                 self.output.write(
                     bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
@@ -563,19 +537,19 @@ class LihuiyuDevice(Service, ViewPort):
         def pipe_start(command, channel, _, **kwargs):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
-            channel(_("Lhystudios Channel Started."))
+            channel(_("Lihuiyu Channel Started."))
 
         @self.console_command("hold", help=_("Hold Controller"))
         def pipe_pause(command, channel, _, **kwargs):
             self.controller.update_state(STATE_PAUSE)
             self.controller.pause()
-            channel("Lhystudios Channel Paused.")
+            channel("Lihuiyu Channel Paused.")
 
         @self.console_command("resume", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, **kwargs):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
-            channel(_("Lhystudios Channel Resumed."))
+            channel(_("Lihuiyu Channel Resumed."))
 
         @self.console_command("usb_connect", help=_("Connects USB"))
         def usb_connect(command, channel, _, **kwargs):
@@ -646,7 +620,7 @@ class LihuiyuDevice(Service, ViewPort):
                 if quit:
                     self.close(server_name)
                     return
-                channel(_("TCP Server for Lhystudios on port: %d" % port))
+                channel(_("TCP Server for lihuiyu on port: %d" % port))
                 if not silent:
                     console = kernel.channel("console")
                     server.events_channel.watch(console)
@@ -667,8 +641,8 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
         def lhyemulator(channel, _, **kwargs):
             try:
-                self.open_as("emulator/lhystudios", "lhyemulator")
-                channel(_("Lhystudios Emulator attached to %s" % str(self)))
+                self.open_as("emulator/lihuiyu", "lhyemulator")
+                channel(_("Lihuiyu Emulator attached to %s" % str(self)))
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
             return
@@ -744,7 +718,7 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "laser_off"
                     yield "wait_finish"
 
-            spooler.job(jog_transition_test)
+            spooler.laserjob([list(jog_transition_test)])
 
     @property
     def viewbuffer(self):
@@ -769,9 +743,9 @@ class LihuiyuDevice(Service, ViewPort):
             return self.controller
 
 
-class LhystudiosDriver(Parameters):
+class LihuiyuDriver(Parameters):
     """
-    LhystudiosDriver provides Lhystudios specific coding for elements and sends it to the backend
+    LihuiyuDriver provides Lihuiyu specific coding for elements and sends it to the backend
     to write to the usb.
     """
 
@@ -846,12 +820,12 @@ class LhystudiosDriver(Parameters):
         self.step_total = 0.0
 
     def __repr__(self):
-        return "LhystudiosDriver(%s)" % self.name
+        return "LihuiyuDriver(%s)" % self.name
 
     def __call__(self, e):
         self.out_pipe.write(e)
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
         criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
@@ -859,6 +833,10 @@ class LhystudiosDriver(Parameters):
 
         @return: Whether data interpretation should hold.
         """
+        if priority > 0:
+            # Don't hold realtime work.
+            return False
+
         temp_hold = False
         fail_hold = False
         for i, hold in enumerate(self.temp_holds):
@@ -876,9 +854,6 @@ class LhystudiosDriver(Parameters):
                 return True
         return False
 
-    def hold_idle(self):
-        return False
-
     def plotplanner_process(self):
         """
         Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
@@ -889,7 +864,7 @@ class LhystudiosDriver(Parameters):
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
-            while self.hold_work():
+            while self.hold_work(0):
                 time.sleep(0.05)
             sx = self.native_x
             sy = self.native_y
@@ -1844,14 +1819,10 @@ class LhystudiosDriver(Parameters):
         """
         self.service.signal(signal, *args)
 
-    @property
-    def type(self):
-        return "lhystudios"
 
-
-class LhystudiosController:
+class LihuiyuController:
     """
-    K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
+    K40 Controller controls the Lihuiyu boards sending any queued data to the USB when the signal is not busy.
 
     Opening and closing of the pipe are dealt with internally. There are three primary monitor data channels.
     'send', 'recv' and 'usb'. They display the reading and writing of information to/from the USB and the USB connection
@@ -1927,7 +1898,7 @@ class LhystudiosController:
             self.realtime_write(b"\x18\n")
 
     def __repr__(self):
-        return "LhystudiosController(%s)" % str(self.context)
+        return f"LihuiyuController({str(self.context)})"
 
     def __len__(self):
         """Provides the length of the buffer of this device."""

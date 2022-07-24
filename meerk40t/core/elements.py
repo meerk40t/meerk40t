@@ -44,46 +44,54 @@ def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "preregister":
         kernel.register(
-            "format/op cut", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op cut", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}"
         )
         kernel.register(
-            "format/op engrave", "{enabled}{pass}{element_type} {speed}mm/s @{power}"
+            "format/op engrave", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}"
         )
         kernel.register(
             "format/op hatch",
-            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op raster",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op image",
-            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {opstop}",
         )
         kernel.register(
-            "format/op dots", "{enabled}{pass}{element_type} {dwell_time}ms dwell"
+            "format/op dots", "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {opstop}"
         )
+        # Define maxspeed min
+        kernel.register("dangerlevel/op cut", (50, 100))
+        kernel.register("dangerlevel/op engrave", (50, 100))
+        kernel.register("dangerlevel/op hatch", (500, 100))
+        kernel.register("dangerlevel/op raster", (500, 100))
+        kernel.register("dangerlevel/op image", (500, 100))
+        kernel.register("dangerlevel/op dots", (500, 100))
+
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
-        kernel.register("format/elem ellipse", "{element_type} {id}")
-        kernel.register("format/elem image", "{element_type} {width}x{height}")
-        kernel.register("format/elem line", "{element_type} {id}")
-        kernel.register("format/elem path", "{element_type} {id}")
-        kernel.register("format/elem point", "{element_type} {id}")
-        kernel.register("format/elem polyline", "{element_type} {id}")
-        kernel.register("format/elem rect", "{element_type} {id}")
-        kernel.register("format/elem text", "{element_type} {id}: {text}")
+        kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem image", "{element_type} {label} {width}x{height}")
+        kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem polyline", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem rect", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem text", "{element_type} {id} {label}: {text}")
         kernel.register("format/reference", "*{reference}")
-        kernel.register("format/group", "{element_type} {id}")
+        kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
         kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
         kernel.register("format/file", "{element_type}: {filename}")
-        kernel.register("format/lasercode", "{element_type}")
+        kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
-        kernel.register("format/branch ops", _("Operations"))
+        kernel.register("format/branch ops", _("Operations {loops}"))
         kernel.register("format/branch elems", _("Elements"))
         kernel.register("format/branch reg", _("Regmarks"))
     elif lifecycle == "register":
@@ -99,8 +107,8 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Default Operation Empty"),
                 "tip": _("Leave empty operations or default Other/Red/Blue"),
-                "page": "Laser",
-                "section": "Classification",
+                "page": "Classification",
+                "section": "",
             },
             {
                 "attr": "classify_reverse",
@@ -111,8 +119,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
-                "page": "Laser",
-                "section": "Classification",
+                "page": "Classification",
+                "section": "",
             },
             {
                 "attr": "legacy_classification",
@@ -123,8 +131,108 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Use the legacy classification algorithm rather than the modern classification algorithm."
                 ),
-                "page": "Laser",
-                "section": "Classification",
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_fuzzy",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Fuzzy color-logic"),
+                "tip":
+                    _("Unticked: Classify elements into operations with an *exact* color match") +
+                    "\n" +
+                    _("Ticked: Allow a certain color-distance for classification")
+                ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_fuzzydistance",
+                "object": elements,
+                "default": 100,
+                "type": float,
+                "label": _("Color distance"),
+                "style": "combosmall",
+                "choices": [
+                    0,
+                    100,
+                    200,
+                    400,
+                ],
+                "conditional": (elements, "classify_fuzzy"),
+                "tip":
+                    _("The color distance of an element to an operations that will still allow classifiation") +
+                    "\n" +
+                    _("Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind")
+                    ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_default",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Assign to default operations"),
+                "tip":
+                    _("If classification did not find a match,") +
+                    "\n" +
+                    _("either with color matching (exact or fuzzy, see above)") +
+                    "\n" +
+                    _("then it will try to assign it to matching 'default' operation")
+                ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_autogenerate",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Autogenerate Operations"),
+                "tip":
+                    _("If classification did not find a match,") +
+                    "\n" +
+                    _("either with color matching (exact or fuzzy, see above)") +
+                    "\n" +
+                    _("or by assigning to a default operation (see above),") +
+                    "\n" +
+                    _("then MeerK40t can create a matching operation for you.")
+                ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_auto_inherit",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Autoinherit for empty operation"),
+                "tip":
+                    _("If you drag and drop an element into an operation to assign it there,") +
+                    "\n" +
+                    _("then the op can (if this option is ticked) inherit the color from the element") +
+                    "\n" +
+                    _("and adopt not only the dragged element but all elements with the same color") +
+                    "\n" +
+                    _("- provided no elements are assigned to it yet (ie works only for an empty op)!")
+                ,
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "lock_allows_move",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Locked element may move"),
+                "tip":
+                    _("Locked elements cannot be modified, but can still be moved if this option is checked.")
+                ,
+                "page": "Gui",
+                "section": "Scene",
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -207,6 +315,15 @@ class Elemental(Service):
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
+        self.setting(bool, "classify_fuzzy", False)
+        self.setting(float, "classify_fuzzydistance", 100.0)
+        self.setting(bool, "classify_autogenerate", True)
+        self.setting(bool, "classify_inherit_stroke", False)
+        self.setting(bool, "classify_inherit_fill", False)
+        self.setting(bool, "classify_inherit_exclusive", True)
+        self.setting(bool, "classify_auto_inherit", False)
+        self.setting(bool, "classify_default", True)
+        self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
@@ -228,7 +345,7 @@ class Elemental(Service):
 
         ops = list(self.ops())
         if not len(ops) and not self.operation_default_empty:
-            self.load_default()
+            self.load_default(performclassify=False)
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -304,6 +421,132 @@ class Elemental(Service):
             lly = Length("1{unit}".format(unit=llx._preferred_units))
         ly = float(lly)
         return lx * ly
+
+    def has_clipboard(self):
+        """
+        Returns the amount of elements in the clipboard
+        """
+        destination = self._clipboard_default
+        try:
+            num = len(self._clipboard[destination])
+        except (TypeError, KeyError):
+            num = 0
+        return num
+    ### Operation tools
+
+    def assign_operation(self, op_assign, data, impose="none", attrib = None, similar=False, exclusive = False):
+        # op_assign:    operation to assign to
+        # data:         nodes to assign to as minimum (will be extened is similar=True, see below)
+        # impose:       - if "to_op" will use attrib-color (see below),
+        #                 to impose the first evidence of color in data on the targetop
+        #               - if "to_elem" will impose the color of the operation and make it the color of the
+        #                 element attrib (ie stroke or fill)
+        #               - anything else: leave all colors unchanged
+        # attrib:       one of 'stroke', 'fill' to establish the source color
+        # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
+        #               color) and assign those as well
+        # exclusive:    will delete all other assignments of the source elements in other operations if True
+        if len(data) == 0:
+            return
+        # some validation...
+        if impose is not None:
+            impose = impose.lower()
+            if impose in ("to_op", "to_elem"):
+                if attrib is None:
+                    impose = None
+            else:
+                impose = None
+        if attrib is None:
+            similar = False
+        # print ("parameters:")
+        # print ("Impose=%s, operation=%s" % (impose, op_assign) )
+        # print ("similar=%s, attrib=%s" % (similar, attrib) )
+        # print ("exclusive=%s" % exclusive )
+        first_color = None
+        target_color = None
+        has_a_color = False
+        # No need to check, if no one needs it...
+        if impose=="to_elem":
+            target_color = op_assign.color
+
+        if impose=="to_op" or similar:
+            # Let's establish the color first
+            # Look for the first element that has stroke/fill
+            for n in data:
+                if hasattr(n, attrib):
+                    c = getattr(n, attrib)
+                    # We accept stroke none or fill none as well!
+                    has_a_color = True
+                    try:
+                        if c is not None and c.argb is not None:
+                            first_color = c
+                    except (AttributeError, ValueError):
+                        first_color = None
+                        # Strange....
+                        has_a_color = False
+                    if has_a_color:
+                        break
+            if impose == "to_op":
+                target_color = first_color
+
+        if impose=="to_op" and target_color is not None:
+            op_assign.color = target_color
+            if hasattr(op_assign, "add_color_attribute"): # not true for image
+                op_assign.remove_color_attribute("stroke")
+                op_assign.remove_color_attribute("fill")
+                op_assign.add_color_attribute(attrib)
+        # If we havent identified a color, then similar makes no sense
+        if not has_a_color:
+            similar = False
+        # print ("We have now established the following:")
+        # print ("Impose=%s, operation=%s" % (impose, op_assign) )
+        # print ("Firstcolor=%s, targetcolor=%s" % (first_color, target_color) )
+        # print ("Similar=%s, # data=%d" % (similar, len(data)) )
+        if similar:
+            # Now that we have the colors lets iterate through all elements
+            fuzzy = self.classify_fuzzy
+            fuzzydistance = self.classify_fuzzydistance
+            for n in self.flat(types=elem_nodes):
+                addit = False
+                if hasattr(n, attrib):
+                    c = getattr(n, attrib)
+                    try:
+                        if c is not None and c.argb is not None:
+                            pass
+                        else:
+                            c = None
+                    except AttributeError:
+                        c = None
+                    if c is not None and first_color is not None:
+                        if fuzzy:
+                            if Color.distance(first_color, c) <= fuzzydistance:
+                                addit = True
+                        else:
+                            if c == first_color:
+                                addit = True
+                    elif c is None and first_color is None:
+                        addit = True
+                if addit and n not in data:
+                    data.append(n)
+
+        needs_refresh = False
+        for n in data:
+            if op_assign.drop(n, modify=False):
+                if exclusive:
+                    for ref in list(n._references):
+                        ref.remove_node()
+                op_assign.drop(n, modify=True)
+                if impose == "to_elem" and target_color is not None:
+                    if hasattr(n, attrib):
+                        setattr(n, attrib, target_color)
+                        needs_refresh = True
+        # Refresh the operation so any changes like color materialize...
+        self.signal("element_property_reload", op_assign)
+        if needs_refresh:
+            # We changed elems, so update the tree and the scene
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+
 
     def _init_commands(self, kernel):
 
@@ -1593,9 +1836,17 @@ class Elemental(Service):
         )
         def op_disable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.output = False
-                channel(_("Operation '%s' disabled.") % str(op))
-                op.notify_update()
+                no_op = True
+                if hasattr(op, "output"):
+                    try:
+                        op.output = False
+                        channel(_("Operation '%s' disabled.") % str(op))
+                        op.notify_update()
+                        no_op = False
+                    except AttributeError:
+                        pass
+                if no_op:
+                    channel(_("Operation '%s' can't be disabled.") % str(op))
             return "ops", data
 
         @self.console_command(
@@ -1606,27 +1857,97 @@ class Elemental(Service):
         )
         def op_enable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.output = True
-                channel(_("Operation '%s' enabled.") % str(op))
-                op.notify_update()
+                no_op = True
+                if hasattr(op, "output"):
+                    try:
+                        op.output = True
+                        channel(_("Operation '%s' enabled.") % str(op))
+                        op.notify_update()
+                        no_op = False
+                    except AttributeError:
+                        pass
+                if no_op:
+                    channel(_("Operation '%s' can't be enabled.") % str(op))
             return "ops", data
 
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
         @self.console_command(
+            "lock",
+            help=_("Lock element (protect from manipulation)"),
+            input_type=("elements"),
+            output_type=("elements"),
+        )
+        def e_lock(data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                e.lock = True
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+            return "elements", data
+
+        @self.console_command(
+            "unlock",
+            help=_("Unlock element (allow manipulation)"),
+            input_type=("elements"),
+            output_type=("elements"),
+        )
+        def e_unlock(data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                if hasattr(e, "lock"):
+                    e.lock = False
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+            return "elements", data
+
+        @self.console_option(
+            "dx", "x", help=_("copy offset x (for elems)"), type=Length, default=0
+        )
+        @self.console_option(
+            "dy", "y", help=_("copy offset y (for elems)"), type=Length, default=0
+        )
+        @self.console_command(
             "copy",
             help=_("Duplicate elements"),
             input_type=("elements", "ops"),
             output_type=("elements", "ops"),
         )
-        def e_copy(data=None, data_type=None, **kwargs):
-            add_elem = list(map(copy, data))
-            if data_type == "ops":
+        def e_copy(data=None, data_type=None, dx=None, dy=None, **kwargs):
+            if data is None:
+                # Take tree selection for ops, scene selection for elements
+                if data_type=="ops":
+                    data = list(self.ops(selected=True))
+                else:
+                    data = list(self.elems(emphasized=True))
+
+            if data_type=="ops":
+                add_elem = list(map(copy, data))
                 self.add_ops(add_elem)
+                return "ops", add_elem
             else:
-                self.add_elems(add_elem)
-            return data_type, add_elem
+                if dx is None:
+                    x_pos = 0
+                else:
+                    x_pos = dx
+                if dy is None:
+                    y_pos = 0
+                else:
+                    y_pos = dy
+                add_elem = list(map(copy, data))
+                if x_pos!=0 or y_pos!=0:
+                    matrix = Matrix(
+                        "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
+                    )
+                for e in add_elem:
+                    if x_pos!=0 or y_pos!=0:
+                        e.matrix *= matrix
+                    self.elem_branch.add_node(e)
+                self.signal("refresh_scene", "Scene")
+                return "elements", add_elem
 
         @self.console_command(
             "delete", help=_("Delete elements"), input_type=("elements", "ops")
@@ -1980,6 +2301,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             top_edge = min([e[1] for e in boundary_points])
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
+
             for node in data:
                 subbox = node.bounds
                 top = subbox[1] - top_edge
@@ -2006,6 +2336,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 bottom = subbox[3] - bottom_edge
@@ -2032,6 +2371,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             left_edge = min([e[0] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 left = subbox[0] - left_edge
@@ -2058,6 +2406,15 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             right_edge = max([e[2] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 right = subbox[2] - right_edge
@@ -2087,6 +2444,15 @@ class Elemental(Service):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
@@ -2121,6 +2487,15 @@ class Elemental(Service):
             dx = 0
             dy = -1.0 * top_edge
             matrix = "translate(%f, %f)" % (dx, dy)
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 for q in node.flat(types=elem_nodes):
                     try:
@@ -2151,6 +2526,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = 0
             dy = device_height - bottom_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2182,6 +2566,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = -1 * left_edge
             dy = 0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2213,6 +2606,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = device_width - right_edge
             dy = 0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2244,6 +2646,15 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = (device_width - left_edge - right_edge) / 2.0
             dy = (device_height - top_edge - bottom_edge) / 2.0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2256,8 +2667,8 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
-            "centerv",
-            help=_("align elements at center vertical"),
+            "centerh",
+            help=_("align elements at center horizontally"),
             input_type="align",
             output_type="align",
         )
@@ -2269,6 +2680,15 @@ class Elemental(Service):
                 return
             left_edge = min([e[0] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
@@ -2282,8 +2702,8 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
-            "centerh",
-            help=_("align elements at center horizontal"),
+            "centerv",
+            help=_("align elements at center vertically"),
             input_type="align",
             output_type="align",
         )
@@ -2295,6 +2715,15 @@ class Elemental(Service):
                 return
             top_edge = min([e[1] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
@@ -2331,6 +2760,15 @@ class Elemental(Service):
             distributed_distance = dim_available / (len(data) - 1)
             data.sort(key=lambda n: n.bounds[0])  # sort by left edge
             dim_pos = left_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 delta = subbox[0] - dim_pos
@@ -2369,6 +2807,15 @@ class Elemental(Service):
             distributed_distance = dim_available / (len(data) - 1)
             data.sort(key=lambda n: n.bounds[1])  # sort by top edge
             dim_pos = top_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 subbox = node.bounds
                 delta = subbox[1] - dim_pos
@@ -2400,6 +2847,15 @@ class Elemental(Service):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
+                return
             for node in data:
                 device_width = self.length_x("100%")
                 device_height = self.length_y("100%")
@@ -2467,6 +2923,15 @@ class Elemental(Service):
             for node in data:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
+                return
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(_("Your selection contains a locked element, that cannot be moved"))
                 return
             left_edge = min([e[0] for e in boundary_points])
             top_edge = min([e[1] for e in boundary_points])
@@ -3449,6 +3914,9 @@ class Elemental(Service):
                 channel(_("No selected elements."))
                 return
             for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: %s") % str(e))
+                    continue
                 e.stroke_width = stroke_width
                 e.altered()
             return "elements", data
@@ -3515,6 +3983,9 @@ class Elemental(Service):
                 if not capvalue is None:
                     for e in apply:
                         if hasattr(e, "linecap"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(_("Can't modify a locked element: %s") % str(e))
+                                continue
                             e.linecap = capvalue
                             e.altered()
                 return "elements", data
@@ -3591,6 +4062,9 @@ class Elemental(Service):
                 if not joinvalue is None:
                     for e in apply:
                         if hasattr(e, "linejoin"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(_("Can't modify a locked element: %s") % str(e))
+                                continue
                             e.linejoin = joinvalue
                             e.altered()
                 return "elements", data
@@ -3654,6 +4128,9 @@ class Elemental(Service):
                 if not rulevalue is None:
                     for e in apply:
                         if hasattr(e, "fillrule"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(_("Can't modify a locked element: %s") % str(e))
+                                continue
                             e.fillrule = rulevalue
                             e.altered()
                 return "elements", data
@@ -3711,10 +4188,16 @@ class Elemental(Service):
                 return
             elif color == "none":
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.stroke = None
                     e.altered()
             else:
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.stroke = Color(color)
                     e.altered()
             if classify is None:
@@ -3726,7 +4209,7 @@ class Elemental(Service):
                     for e in apply:
                         e.emphasized = True
                 # self.signal("rebuild_tree")
-                self.signal("refresh_tree")
+                self.signal("refresh_tree", apply)
             return "elements", data
 
         @self.console_option(
@@ -3780,10 +4263,16 @@ class Elemental(Service):
                 return "elements", data
             elif color == "none":
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.fill = None
                     e.altered()
             else:
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(_("Can't modify a locked element: %s") % str(e))
+                        continue
                     e.fill = Color(color)
                     e.altered()
             if classify is None:
@@ -3794,7 +4283,7 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
-                self.signal("refresh_tree")
+                self.signal("refresh_tree", apply)
             #                self.signal("rebuild_tree")
             return "elements", data
 
@@ -3915,11 +4404,8 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
+                        if hasattr(node, "lock") and node.lock:
+                            continue
 
                         node.matrix *= matrix
                         node.modified()
@@ -4008,22 +4494,14 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
+                        if hasattr(node, "lock") and node.lock:
+                            continue
                         node.matrix *= matrix
                         node.modified()
                 else:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
+                        if hasattr(node, "lock") and node.lock:
+                            continue
                         osx = node.matrix.value_scale_x()
                         osy = node.matrix.value_scale_y()
                         nsx = scale_x / osx
@@ -4205,10 +4683,15 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
+                        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                            continue
+
                         node.matrix *= matrix
                         node.modified()
                 else:
                     for node in data:
+                        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                            continue
                         otx = node.matrix.value_trans_x()
                         oty = node.matrix.value_trans_y()
                         ntx = tx - otx
@@ -4240,6 +4723,8 @@ class Elemental(Service):
                 ntx = tx - otx
                 nty = ty - oty
                 for node in data:
+                    if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                        continue
                     node.matrix.post_translate(ntx, nty)
                     node.modified()
             except ValueError:
@@ -4293,13 +4778,9 @@ class Elemental(Service):
                 if data is None:
                     data = list(self.elems(emphasized=True))
                 for node in data:
-                    try:
-                        if node.lock:
-                            channel(_("resize: cannot resize a locked image"))
-                            return
-                    except AttributeError:
-                        pass
-                for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        channel(_("resize: cannot resize a locked element"))
+                        continue
                     node.matrix *= matrix
                     node.modified()
                 return "elements", data
@@ -4351,12 +4832,8 @@ class Elemental(Service):
                     ty,
                 )
                 for node in data:
-                    try:
-                        if node.lock:
-                            continue
-                    except AttributeError:
-                        pass
-
+                    if hasattr(node, "lock") and node.lock:
+                        continue
                     node.matrix = Matrix(m)
                     node.modified()
             except ValueError:
@@ -4373,12 +4850,8 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
             for e in data:
-                try:
-                    if e.lock:
-                        continue
-                except AttributeError:
-                    pass
-
+                if hasattr(e, "lock") and e.lock:
+                    continue
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "…"
@@ -4482,7 +4955,7 @@ class Elemental(Service):
                             str(n._bounds),
                             str(n._bounds_dirty),
                             str(n.type),
-                            str(n.label[:16]),
+                            str(str(n)[:16]),
                         )
                     )
                     b_list(p, n)
@@ -4492,7 +4965,7 @@ class Elemental(Service):
                 if d.type == "root":
                     channel(_("Tree:"))
                 else:
-                    channel("%s:" % d.label)
+                    channel("%s:" % str(d))
                 b_list([], d)
                 channel("----------")
 
@@ -4574,7 +5047,7 @@ class Elemental(Service):
         ):
             """
             Create menu for a particular node.
-            Processes submenus, references, radio_state as needed.
+            Processes submenus, references, radio_state and check_state as needed.
             """
             try:
                 menu_node = self._tree
@@ -4617,8 +5090,11 @@ class Elemental(Service):
                 else:
                     if func.separate_before:
                         menu_context.append(("------", None))
+                    n = func.real_name
+                    if hasattr(func, "check_state") and func.check_state:
+                        n = "✓" + n
                     menu_context.append(
-                        (func.real_name, menu_functions(func, menu_node))
+                        (n, menu_functions(func, menu_node))
                     )
                 if func.separate_after:
                     menu_context.append(("------", None))
@@ -4658,6 +5134,9 @@ class Elemental(Service):
             """
             Set tree list to selected node
             """
+            # print ("selected")
+            # for n in self.flat():
+            #     print ("Node: %s, selected=%s, emphasized=%s" % (n.type, n.selected, n.emphasized))
             return "tree", list(self.flat(selected=True))
 
         @self.console_command(
@@ -4707,9 +5186,96 @@ class Elemental(Service):
             Delete nodes.
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
+            if len(data) == 0:
+                channel(_("Nothing to delete"))
+                return
+            # print ("Delete called with data:")
+            # for n in data:
+            #     print ("Node: %s, sel=%s, emp=%s" % (n.type, n.selected, n.emphasized))
+            typecount = [0,0,0,0,0]
+            todelete = [[], [], [], [], []]
+            nodetypes = ("Operations", "References", "Elements", "Regmarks", "Branches")
+            regmk = list(self.regmarks())
+            for node in data:
+                if node.type in op_nodes:
+                    typecount[0] += 1
+                    todelete[0].append(node)
+                elif node.type == "reference":
+                    typecount[1] += 1
+                    todelete[1].append(node)
+                elif node.type in elem_group_nodes:
+                    if node in regmk:
+                        typecount[3] += 1
+                        todelete[3].append(node)
+                    else:
+                        if hasattr(node, "lock") and node.lock:
+                            # Don't delete locked nodes
+                            continue
+                        typecount[2] += 1
+                        todelete[2].append(node)
+                else: # branches etc...
+                    typecount[4] += 1
+            # print ("Types: ops=%d, refs=%d, elems=%d, regmarks=%d, branches=%d" %
+            #     (typecount[0], typecount[1], typecount[2], typecount[3], typecount[4]))
+            single = False
+            if typecount[0]>0 and typecount[1]==0 and typecount[2]==0 and typecount[3]==0:
+                single = True
+                entry = 0
+            elif typecount[1]>0 and typecount[0]==0 and typecount[2]==0 and typecount[3]==0:
+                single = True
+                entry = 1
+            elif typecount[2]>0 and typecount[0]==0 and typecount[1]==0 and typecount[3]==0:
+                single = True
+                entry = 2
+            elif typecount[3]>0 and typecount[0]==0 and typecount[1]==0 and typecount[2]==0:
+                single = True
+                entry = 3
+            if not single:
+                if typecount[3]>0:
+                    # regmarks take precedence, the least dangereous delete
+                    entry = 3
+                elif typecount[1]>0:
+                    # refs next
+                    entry = 1
+                elif typecount[0]>0:
+                    # ops next
+                    entry = 0
+                else:
+                    # Not sure why and when this suposed to happen?
+                    entry = 2
+                channel(
+                    _("There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4}).").format(
+                            c1=typecount[0], c2=typecount[1], c3=typecount[2], c4=typecount[3]
+                    ) + "\n" +
+                    _("Only nodes of type {nodetype} were deleted.").format(nodetype=nodetypes[entry]) + "\n" +
+                    _("If you want to remove all nodes regardless of their type, consider: 'tree selected remove'")
+                )
+            # print ("Want to delete %d" % entry)
+            # for n in todelete[entry]:
+            #     print ("Node to delete: %s" % n.type)
+            self.remove_nodes(todelete[entry])
+            self.signal("tree_changed")
+            self.signal("refresh_scene", "Scene")
+            return "tree", [self._tree]
+
+        @self.console_command(
+            "remove",
+            help=_("forcefully deletes all given nodes"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def remove(channel, _, data=None, **kwargs):
+            """
+            Delete nodes.
+            Structural nodes such as root, elements branch, and operations branch are not able to be deleted
+            """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
             self.remove_nodes(data)
             self.signal("tree_changed")
-            self.signal("refresh_scene", 0)
+            self.signal("refresh_scene", "Scene")
             return "tree", [self._tree]
 
         @self.console_command(
@@ -4780,7 +5346,7 @@ class Elemental(Service):
             destination = self._clipboard_default
             try:
                 pasted = [copy(e) for e in self._clipboard[destination]]
-            except KeyError:
+            except (TypeError, KeyError):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
@@ -4789,10 +5355,11 @@ class Elemental(Service):
                 )
                 for node in pasted:
                     node.matrix *= matrix
-            group = self.elem_branch.add(type="group", label="Group")
+            group = self.elem_branch.add(type="group", label="Group", id="Copy")
             for p in pasted:
                 group.add_node(copy(p))
             self.set_emphasis([group])
+            self.signal("refresh_tree", group)
             return "elements", pasted
 
         @self.console_command(
@@ -4815,7 +5382,10 @@ class Elemental(Service):
         )
         def clipboard_clear(data=None, **kwargs):
             destination = self._clipboard_default
-            old = self._clipboard[destination]
+            try:
+                old = self._clipboard[destination]
+            except KeyError:
+                old = None
             self._clipboard[destination] = None
             return "elements", old
 
@@ -4838,6 +5408,8 @@ class Elemental(Service):
             for v in self._clipboard:
                 k = self._clipboard[v]
                 channel("%s: %s" % (str(v).ljust(5), str(k)))
+            num = self.has_clipboard()
+            channel (_("Clipboard-Entries: %d") % num)
 
         # ==========
         # NOTES COMMANDS
@@ -5137,7 +5709,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                spooler.job(trace_hull)
+                spooler.laserjob([list(trace_hull)])
 
             run_shape(spooler, hull)
 
@@ -5168,7 +5740,6 @@ class Elemental(Service):
                 )
                 return
 
-            spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
             hull = generate_hull_shape(method, data, resolution=resolution)
@@ -5310,11 +5881,16 @@ class Elemental(Service):
             if removed:
                 self.signal("tree_changed")
 
+        @self.tree_conditional(lambda node: hasattr(node, "output"))
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
-                n.output = not n.output
-                n.notify_update()
+                if hasattr(n, "output"):
+                    try:
+                        n.output = not n.output
+                        n.notify_update()
+                    except AttributeError:
+                        pass
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
@@ -5583,6 +6159,7 @@ class Elemental(Service):
         # ==========
         # REMOVE SINGLE (Tree Selected - ELEMENT)
         # ==========
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_conditional(
             lambda cond: len(
                 list(self.flat(selected=True, cascade=False, types=elem_nodes))
@@ -5595,9 +6172,11 @@ class Elemental(Service):
             help="",
         )
         def remove_type_elem(node, **kwargs):
-
-            node.remove_node()
-            self.set_emphasis(None)
+            if hasattr(node, "lock") and node.lock:
+                pass
+            else:
+                node.remove_node()
+                self.set_emphasis(None)
 
         @self.tree_conditional(
             lambda cond: len(
@@ -5615,6 +6194,15 @@ class Elemental(Service):
             node.remove_node()
             self.set_emphasis(None)
 
+        def contains_no_locked_items():
+            nolock = True
+            for e in list(self.flat(selected=True, cascade=True)):
+                if hasattr(e, "lock") and e.lock:
+                    nolock = False
+                    break
+            return nolock
+
+        @self.tree_conditional(lambda cond: contains_no_locked_items())
         @self.tree_conditional(
             lambda cond: len(
                 list(self.flat(selected=True, cascade=False, types=("file", "group")))
@@ -5623,11 +6211,26 @@ class Elemental(Service):
         )
         @self.tree_operation(
             _("Delete group '%s' and all its child-elements fully") % "{name}",
-            node_type=("file", "group"),
+            node_type=("group"),
             help="",
         )
         def remove_type_grp(node, **kwargs):
+            node.remove_node()
+            self.set_emphasis(None)
+        @self.tree_conditional(lambda cond: contains_no_locked_items())
 
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=("file", "group")))
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Remove loaded file '%s' and all its child-elements fully") % "{name}",
+            node_type=("file"),
+            help="",
+        )
+        def remove_type_file(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
 
@@ -5818,13 +6421,13 @@ class Elemental(Service):
         @self.tree_submenu(_("Load"))
         @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwargs):
-            self.load_default()
+            self.load_default(performclassify=True)
 
         @self.tree_submenu(_("Load"))
         @self.tree_separator_after()
         @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwargs):
-            self.load_default2()
+            self.load_default2(performclassify=True)
 
         @self.tree_submenu(_("Save"))
         @self.tree_values("opname", values=self.op_data.section_set)
@@ -6065,8 +6668,6 @@ class Elemental(Service):
                 node.add_reference(n.node)
             self.signal("refresh_tree")
 
-        #            self.signal("rebuild_tree")
-
         @self.tree_operation(
             _("Make raster image"),
             node_type=("op image", "op raster"),
@@ -6215,6 +6816,81 @@ class Elemental(Service):
                 from os import system as open_in_shell
 
                 open_in_shell("xdg-open '{file}'".format(file=normalized))
+
+        def get_values():
+            return [o for o in self.ops() if o.type.startswith("op")]
+
+        @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_values("op_assign", values=get_values)
+        @self.tree_operation("{op_assign}", node_type=elem_nodes, help="")
+        def menu_assign_operations(node, op_assign, **kwargs):
+            if self.classify_inherit_stroke:
+                impose = "to_op"
+                attrib = "stroke"
+                similar = True
+            elif self.classify_inherit_fill:
+                impose = "to_op"
+                attrib = "fill"
+                similar = True
+            else:
+                impose = None
+                attrib = None
+                similar = False
+            exclusive = self.classify_inherit_exclusive
+            data = list(self.elems(emphasized=True))
+            self.assign_operation(
+                op_assign=op_assign,
+                data=data,
+                impose=impose,
+                attrib=attrib,
+                similar=similar,
+                exclusive=exclusive,
+            )
+
+        def exclusive_match(node, **kwargs):
+            return self.classify_inherit_exclusive
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(exclusive_match)
+        @self.tree_operation(
+            _("Exclusive assignment"),
+            node_type=elem_nodes,
+            help=_("An assignment will remove all other classifications of this element if checked")
+        )
+        def set_assign_option_exclusive(node, **kwargs):
+            self.classify_inherit_exclusive = not self.classify_inherit_exclusive
+
+        def stroke_match(node, **kwargs):
+            return self.classify_inherit_stroke
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(stroke_match)
+        @self.tree_operation(
+            _("Inherit stroke and classify similar"),
+            node_type=elem_nodes,
+            help=_("Operation will inherit element stroke color")
+        )
+        def set_assign_option_stroke(node, **kwargs):
+            self.classify_inherit_stroke = not self.classify_inherit_stroke
+            # Poor mans radio
+            if self.classify_inherit_stroke:
+                self.classify_inherit_fill = False
+
+        def fill_match(node, **kwargs):
+            return self.classify_inherit_fill
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(fill_match)
+        @self.tree_operation(
+            _("Inherit fill and classify similar"),
+            node_type=elem_nodes,
+            help=_("Operation will inherit element fill color")
+        )
+        def set_assign_option_fill(node, **kwargs):
+            self.classify_inherit_fill = not self.classify_inherit_fill
+            # Poor mans radio
+            if self.classify_inherit_fill:
+                self.classify_inherit_stroke = False
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
@@ -6392,6 +7068,18 @@ class Elemental(Service):
         def merge_elements(node, **kwargs):
             self("element merge\n")
 
+        @self.tree_conditional(lambda node: node.lock)
+        @self.tree_separator_before()
+        @self.tree_operation(_("Unlock element, allows manipulation"), node_type=elem_nodes, help="")
+        def element_unlock_manipulations(node, **kwargs):
+            self("element unlock\n")
+
+        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_separator_before()
+        @self.tree_operation(_("Lock elements, prevents manipulations"), node_type=elem_nodes, help="")
+        def element_lock_manipulations(node, **kwargs):
+            self("element lock\n")
+
         @self.tree_conditional(lambda node: is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(
@@ -6423,6 +7111,9 @@ class Elemental(Service):
                 if item.selected:
                     data.append(item)
             for item in data:
+                # No usecase for having a locked regmark element
+                if hasattr(item, "lock"):
+                    item.lock = False
                 drop_node.drop(item)
                 signal_needed = True
             if signal_needed:
@@ -6430,11 +7121,13 @@ class Elemental(Service):
             drop_node.drop(node)
             self.signal("tree_changed")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem image", help="")
         def image_actualize_pixels(node, **kwargs):
             self("image resample\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Z-depth divide"))
         @self.tree_iterate("divide", 2, 10)
         @self.tree_operation(
@@ -6449,37 +7142,49 @@ class Elemental(Service):
                 threshold_max = threshold_min + band
                 self("image threshold %f %f\n" % (threshold_min, threshold_max))
 
-        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_conditional(lambda node: node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock manipulations"), node_type="elem image", help="")
         def image_unlock_manipulations(node, **kwargs):
             self("image unlock\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Lock manipulations"), node_type="elem image", help="")
+        def image_lock_manipulations(node, **kwargs):
+            self("image lock\n")
+
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem image", help="")
         def image_dither(node, **kwargs):
             self("image dither\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert image"), node_type="elem image", help="")
         def image_invert(node, **kwargs):
             self("image invert\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror horizontal"), node_type="elem image", help="")
         def image_mirror(node, **kwargs):
             self("image mirror\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip vertical"), node_type="elem image", help="")
         def image_flip(node, **kwargs):
             self("image flip\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CW"), node_type="elem image", help="")
         def image_cw(node, **kwargs):
             self("image cw\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CCW"), node_type="elem image", help="")
         def image_ccw(node, **kwargs):
@@ -6597,7 +7302,7 @@ class Elemental(Service):
     def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
-    def load_default(self):
+    def load_default(self, performclassify = True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -6610,9 +7315,10 @@ class Elemental(Service):
         self.add_op(RasterOpNode())
         self.add_op(EngraveOpNode())
         self.add_op(CutOpNode())
-        self.classify(list(self.elems()))
+        if performclassify:
+            self.classify(list(self.elems()))
 
-    def load_default2(self):
+    def load_default2(self, performclassify = True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -6629,7 +7335,8 @@ class Elemental(Service):
         self.add_op(EngraveOpNode(color="cyan"))
         self.add_op(EngraveOpNode(color="yellow"))
         self.add_op(CutOpNode())
-        self.classify(list(self.elems()))
+        if performclassify:
+            self.classify(list(self.elems()))
 
     def tree_operations_for_node(self, node):
         for func, m, sname in self.find("tree", node.type, ".*"):
@@ -6650,8 +7357,8 @@ class Elemental(Service):
             if reject:
                 continue
             func_dict = {
-                "name": str(node.label),
-                "label": str(node.label),
+                "name": str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label),
+                "label": str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label),
             }
 
             iterator = func.values
@@ -6681,6 +7388,13 @@ class Elemental(Service):
                         func.radio_state = False
                 else:
                     func.radio_state = None
+                if hasattr(func, "check") and func.check is not None:
+                    try:
+                        func.check_state = func.check(node, **func_dict)
+                    except:
+                        func.check_state = False
+                else:
+                    func.check_state = None
                 name = func.name.format_map(func_dict)
                 func.func_dict = func_dict
                 func.real_name = name
@@ -6719,6 +7433,14 @@ class Elemental(Service):
     def tree_radio(radio_function):
         def decor(func):
             func.radio = radio_function
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_check(check_function):
+        def decor(func):
+            func.check = check_function
             return func
 
         return decor
@@ -6955,7 +7677,9 @@ class Elemental(Service):
         """
         branch = self._tree.get(type=branch_type)
         items = []
+        ct = 0
         for element in adding_elements:
+            ct += 1
             node_type = get_type_from_element(element)
             if node_type:
                 items.append(branch.add(element, type=node_type))
@@ -6996,6 +7720,107 @@ class Elemental(Service):
     def clear_note(self):
         self.note = None
 
+    # def drag_and_drop(self, dragging_nodes, drop_node, inheritance_mode="auto", inherit_stroke = True, inherit_fill = True):
+
+    #     print ("elements d+d called")
+    #     if inheritance_mode.lower() == "auto":
+    #     elif inheritance_mode.lower() =
+    #     if inherit_stroke is None:
+    #         inh_stroke = False
+    #     else:
+    #         inh_stroke = inherit_stroke
+    #     if inherit_fill is None:
+    #         inh_fill = False
+    #     else:
+    #         inh_fill = inherit_fill
+
+    #     data = dragging_nodes
+    #     success = False
+    #     special_occasion = False
+    #     if drop_node.type.startswith("op"):
+    #         if len(drop_node.children) == 0 and self.classify_auto_inherit:
+    #             # only for empty operations!
+    #             # Let's establish the colors first
+    #             first_color_stroke = None
+    #             first_color_fill = None
+    #             # Look for the first element that has stroke/fill
+    #             for n in data:
+    #                 if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+    #                     first_color_stroke = n.stroke
+    #                 if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+    #                     first_color_fill = n.fill
+    #                 canbreak = first_color_fill is not None or first_color_stroke is not None
+    #                 if canbreak:
+    #                     break
+    #             if hasattr(drop_node, "color") and (first_color_fill is not None or first_color_stroke is not None):
+    #                 # Well if you have both options, then you get that
+    #                 # color that is present, precedence for fill
+    #                 if first_color_fill is not None:
+    #                     col = first_color_fill
+    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
+    #                         drop_node.add_color_attribute("fill")
+    #                         drop_node.remove_color_attribute("stroke")
+    #                 else:
+    #                     col = first_color_stroke
+    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
+    #                         drop_node.add_color_attribute("stroke")
+    #                         drop_node.remove_color_attribute("fill")
+    #                 drop_node.color = col
+
+    #             # Now that we have the colors lets iterate through all elements
+    #             fuzzy = self.classify_fuzzy
+    #             fuzzydistance = self.classify_fuzzydistance
+    #             for n in self.flat(types=elem_nodes):
+    #                 addit = False
+    #                 if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+    #                     if fuzzy:
+    #                         if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
+    #                             addit = True
+    #                     else:
+    #                         if n.stroke == first_color_stroke:
+    #                             addit = True
+    #                 if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+    #                     if fuzzy:
+    #                         if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
+    #                             addit = True
+    #                     else:
+    #                         if n.fill == first_color_fill:
+    #                             addit = True
+    #                 # print ("Checked %s and will addit=%s" % (n.type, addit))
+    #                 if addit and n not in data:
+    #                     data.append(n)
+    #     for drag_node in data:
+    #         if drop_node is drag_node:
+    #             continue
+    #         if drop_node.drop(drag_node, modify=False):
+    #             if special_occasion:
+    #                 for ref in list(drag_node._references):
+    #                     ref.remove_node()
+    #             drop_node.drop(drag_node, modify=True)
+    #             success = True
+
+    #     # Refresh the target node so any changes like color materialize...
+    #     self.signal("element_property_reload", drop_node)
+    #     return success
+
+    def drag_and_drop(self, dragging_nodes, drop_node):
+        data = dragging_nodes
+        success = False
+        special_occasion = False
+        for drag_node in data:
+            if drop_node is drag_node:
+                continue
+            if drop_node.drop(drag_node, modify=False):
+                if special_occasion:
+                    for ref in list(drag_node._references):
+                        ref.remove_node()
+                drop_node.drop(drag_node, modify=True)
+                success = True
+
+        # Refresh the target node so any changes like color materialize...
+        self.signal("element_property_reload", drop_node)
+        return success
+
     def remove_nodes(self, node_list):
         for node in node_list:
             for n in node.flat():
@@ -7011,6 +7836,11 @@ class Elemental(Service):
 
     def remove_elements(self, element_node_list):
         for elem in element_node_list:
+            try:
+                if hasattr(elem, "lock") and elem.lock:
+                    continue
+            except AttributeError:
+                pass
             elem.remove_node(references=True)
         self.validate_selected_area()
 
@@ -7117,6 +7947,8 @@ class Elemental(Service):
                 s.highlighted = False
             if s.targeted:
                 s.targeted = False
+            if s.selected:
+                s.selected = False
 
             in_list = emphasize is not None and s in emphasize
             if s.emphasized:
@@ -7125,6 +7957,7 @@ class Elemental(Service):
             else:
                 if in_list:
                     s.emphasized = True
+                    s.selected = True
         if emphasize is not None:
             for e in emphasize:
                 if e.type == "reference":
@@ -7132,6 +7965,7 @@ class Elemental(Service):
                     e.highlighted = True
                 else:
                     e.emphasized = True
+                    e.selected = True
                 # if hasattr(e, "object"):
                 #     self.target_clones(self._tree, e, e.object)
                 self.highlight_children(e)
@@ -7158,6 +7992,8 @@ class Elemental(Service):
 
     def move_emphasized(self, dx, dy):
         for node in self.elems(emphasized=True):
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                continue
             node.matrix.post_translate(dx, dy)
             node.modified()
 
@@ -7237,14 +8073,20 @@ class Elemental(Service):
         """
         @param elements: list of elements to classify.
         @param operations: operations list to classify into.
-        @param add_op_function: function to add a new operation, because of a lack of classification options.
+        @param add_op_function: function to add a new operation,
+                because of a lack of classification options.
         @return:
         """
         if elements is None:
             return
+
         if not len(list(self.ops())) and not self.operation_default_empty:
-            self.load_default()
+            self.load_default(performclassify=False)
         reverse = self.classify_reverse
+        fuzzy = self.classify_fuzzy
+        fuzzydistance = self.classify_fuzzydistance
+        usedefault = self.classify_default
+        autogen = self.classify_autogenerate
         if reverse:
             elements = reversed(elements)
         if operations is None:
@@ -7260,7 +8102,7 @@ class Elemental(Service):
             was_classified = False
             for op in operations:
                 if hasattr(op, "classify"):
-                    classified, should_break = op.classify(node)
+                    classified, should_break = op.classify(node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=False)
                 else:
                     continue
                 if classified:
@@ -7271,36 +8113,76 @@ class Elemental(Service):
             ######################
             # NON-CLASSIFIED ELEMENTS
             ######################
-            if not was_classified:
+            if not was_classified and usedefault:
+                # let's iterate through the default ops and add them
+                for op in operations:
+                    if hasattr(op, "classify"):
+                        classified, should_break = op.classify(node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=True)
+                    else:
+                        continue
+                    if classified:
+                        was_classified = True
+                    if should_break:
+                        break
+            if not was_classified and autogen:
+                # Despite all efforts we couldn't classify the element, so let's add an op
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
-                elif hasattr(node, "stroke") and node.stroke is not None:
-                    if (
-                        node.stroke.red == 0xFF
-                        and node.stroke.blue == 0
-                        and node.stroke.green == 0
-                    ):
-                        op = CutOpNode(color=node.stroke, speed=5.0)
+                elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
+                    if fuzzy:
+                        is_cut = Color.distance("red", node.stroke) <= fuzzydistance
+                    else:
+                        is_cut = Color("red") == node.stroke
+                    if is_cut:
+                        op = CutOpNode(color=Color("red"), speed=5.0)
                     else:
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
-
-                if op is not None:
-                    add_op_function(op)
-                    op.add_reference(node)
-                    operations.append(op)
-
-                if (
-                    hasattr(node, "fill")
+                elif (hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    op = RasterOpNode(color=0, output=False)
-                    add_op_function(op)
+                    op = RasterOpNode(color=0, output=True)
+
+                if op is not None:
+                    # Lets make sure we don't have something like that already
+                    already_found = False
+                    for testop in self.ops():
+                        if type(op) == type(testop):
+                            sameop = True
+                        else:
+                            sameop = False
+                        samecolor = False
+                        if hasattr(op, "color") and hasattr(testop, "color"):
+                            # print ("Comparing color %s to %s" % ( op.color, testop.color ))
+                            if op.color == testop.color:
+                                samecolor = True
+                        elif hasattr(op, "color") != hasattr(testop, "color"):
+                            samecolor = False
+                        else:
+                            samecolor = True
+                        samespeed = False
+                        if hasattr(op, "speed") and hasattr(testop, "speed"):
+                            if op.speed == testop.speed:
+                                samespeed = True
+                        elif hasattr(op, "speed") != hasattr(testop, "speed"):
+                            samespeed = False
+                        else:
+                            samespeed = True
+                        # print ("Compare: %s to %s - op=%s, col=%s, speed=%s" % (type(op).__name__, type(testop).__name__, sameop, samecolor, samespeed))
+                        if sameop and samecolor and samespeed:
+                            already_found = True
+                            op = testop
+                            break
+                    if not already_found:
+                        if hasattr(op, "output"):
+                            op.output = True
+                        add_op_function(op)
+                        operations.append(op)
+                        already_found = True
                     op.add_reference(node)
-                    operations.append(op)
 
     def add_classify_op(self, op):
         """

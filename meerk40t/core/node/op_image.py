@@ -23,8 +23,12 @@ class ImageOpNode(Node, Parameters):
             if "type" in kwargs:
                 del kwargs["type"]
         Node.__init__(self, type="op image", **kwargs)
+        # Is this op out of useful bounds?
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}"
         self.settings.update(kwargs)
+        self.dangerous = False
+        # self.settings["stopop"] = True
 
         if len(args) == 1:
             obj = args[0]
@@ -36,47 +40,11 @@ class ImageOpNode(Node, Parameters):
         self.allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
         self.allowed_elements = ("elem image",)
+        self.stopop = True
+        self.allowed_attributes = []
 
     def __repr__(self):
         return "ImageOpNode()"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        parts.append("Image")
-        if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        if self.raster_swing:
-            raster_dir = "-"
-        else:
-            raster_dir = "="
-        if self.raster_direction == 0:
-            raster_dir += "T2B"
-        elif self.raster_direction == 1:
-            raster_dir += "B2T"
-        elif self.raster_direction == 2:
-            raster_dir += "R2L"
-        elif self.raster_direction == 3:
-            raster_dir += "L2R"
-        elif self.raster_direction == 4:
-            raster_dir += "X"
-        else:
-            raster_dir += "%d" % self.raster_direction
-        parts.append(raster_dir)
-        if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        parts.append("±{overscan}".format(overscan=self.overscan))
-        parts.append("%s" % self.color.hex)
-        if self.acceleration_custom:
-            parts.append("a:%d" % self.acceleration)
-        return " ".join(parts)
 
     def __copy__(self):
         return ImageOpNode(self)
@@ -88,9 +56,19 @@ class ImageOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    def is_dangerous(self, minpower, maxspeed):
+        result = False
+        if maxspeed is not None and self.speed > maxspeed:
+            result = True
+        if minpower is not None and self.power < minpower:
+            result = True
+        self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(ImageOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Image"
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
@@ -119,43 +97,51 @@ class ImageOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
+        default_map["overscan"] = f"±{self.overscan}"
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
             if not drag_node.type in self.allowed_elements_dnd:
                 return False
             # Dragging element onto operation adds that element to the op.
-            self.add_reference(drag_node, pos=0)
+            if modify:
+                self.add_reference(drag_node, pos=0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if not drag_node.node.type in self.allowed_elements_dnd:
                 return False
             # Move a refelem to end of op.
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
                 if e.type in self.allowed_elements_dnd:
-                    self.add_reference(e)
+                    if modify:
+                        self.add_reference(e)
                     some_nodes = True
             return some_nodes
         return False
 
-    def classify(self, node):
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         if node.type in self.allowed_elements:
             self.add_reference(node)
             # Have classified and no more classification are needed
-            return True, True
+            return True, self.stopop
         return False, False
 
     def load(self, settings, section):
@@ -194,6 +180,8 @@ class ImageOpNode(Node, Parameters):
             estimate += (e.image_width * e.image_height * step) / (
                 MILS_IN_MM * self.speed
             )
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return "%s:%s:%s" % (
@@ -267,6 +255,9 @@ class ImageOpNode(Node, Parameters):
             # Get steps from individual images
             step_x = image_node.step_x
             step_y = image_node.step_y
+
+            settings["raster_step_x"] = step_x
+            settings["raster_step_x"] = step_y
 
             # Set variables
             matrix = image_node.active_matrix

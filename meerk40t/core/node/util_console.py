@@ -13,6 +13,7 @@ class ConsoleOperation(Node):
 
     def __init__(self, command=None, **kwargs):
         super().__init__(type="util console", **kwargs)
+        self._formatter = "{enabled}{command}"
         self.settings = {}
         if command is not None:
             self.settings["command"] = command
@@ -25,20 +26,35 @@ class ConsoleOperation(Node):
     def command(self):
         return self.settings.get("command")
 
+    @command.setter
+    def command(self, v):
+        self.settings["command"] = v
+
     @property
     def output(self):
         return self.settings.get("output", True)
 
+    @output.setter
+    def output(self, v):
+        self.settings["output"] = v
+
+    def validate(self):
+        parameters = [
+            ("output", lambda v: str(v).lower() == "true"),
+            ("command", str),
+        ]
+        settings = self.settings
+        for param, cast in parameters:
+            try:
+                if param in settings and settings[param] is not None:
+                    settings[param] = (
+                        cast(settings[param]) if settings[param] != "None" else None
+                    )
+            except (KeyError, ValueError):
+                pass
+
     def __repr__(self):
         return f"ConsoleOperation('{self.command}')"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.command is not None:
-            parts.append(self.command)
-        return " ".join(parts)
 
     def __copy__(self):
         return ConsoleOperation(self.command)
@@ -54,20 +70,23 @@ class ConsoleOperation(Node):
         default_map.update(self.settings)
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         drop_node = self
         if drag_node.type in op_nodes:
-            drop_node.insert_sibling(drag_node)
+            if modify:
+                drop_node.insert_sibling(drag_node)
             return True
         elif drop_node.type == "branch ops":
             # Dragging operation to op branch to effectively move to bottom.
-            drop_node.append_child(drag_node)
+            if modify:
+                drop_node.append_child(drag_node)
             return True
         return False
 
     def load(self, settings, section):
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
         self.settings.update(update_dict)
+        self.validate()
 
     def save(self, settings, section):
         settings.write_persistent_dict(section, self.settings)

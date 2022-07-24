@@ -15,7 +15,6 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        font_style=None,
         underline=None,
         strikethrough=None,
         overline=None,
@@ -23,6 +22,7 @@ class TextNode(Node):
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
+        self._formatter = "{element_type} {id}: {text}"
         self.text = text
         self.settings = kwargs
         if matrix is None:
@@ -41,10 +41,6 @@ class TextNode(Node):
             self.stroke_width = text.stroke_width
         else:
             self.stroke_width = stroke_width
-        if font_style is None:
-            self.font_style = "normal"
-        else:
-            self.font_style = font_style  # normal / italic / oblique
         if underline is None:
             self.underline = False
         else:
@@ -71,7 +67,6 @@ class TextNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            font_style=self.font_style,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,
@@ -114,10 +109,11 @@ class TextNode(Node):
         default_map["matrix"] = self.matrix
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         # Dragging element into element.
         if drag_node.type.startswith("elem"):
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         return False
 

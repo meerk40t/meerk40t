@@ -402,43 +402,59 @@ class CutCode(CutGroup):
             yield "plot", cutobject
         yield "plot_start"
 
-    def length_travel(self, include_start=False):
+    def length_travel(self, include_start=False, stop_at = -1):
         cutcode = list(self.flat())
         if len(cutcode) == 0:
             return 0
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at>len(cutcode):
+            stop_at = len(cutcode)
         distance = 0
         if include_start:
             if self.start is not None:
                 distance += abs(complex(*self.start) - complex(*cutcode[0].start))
             else:
                 distance += abs(0 - complex(*cutcode[0].start))
-        for i in range(1, len(cutcode)):
+        for i in range(1, stop_at):
             prev = cutcode[i - 1]
             curr = cutcode[i]
             delta = Point.distance(prev.end, curr.start)
             distance += delta
         return distance
 
-    def length_cut(self):
+    def length_cut(self, stop_at = -1):
         cutcode = list(self.flat())
         distance = 0
-        for i in range(0, len(cutcode)):
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at>len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             distance += curr.length()
         return distance
 
-    def extra_time(self):
+    def extra_time(self, stop_at = -1):
         cutcode = list(self.flat())
         extra = 0
-        for i in range(0, len(cutcode)):
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at>len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             extra += curr.extra()
         return extra
 
-    def duration_cut(self):
+    def duration_cut(self, stop_at = None):
         cutcode = list(self.flat())
         distance = 0
-        for i in range(0, len(cutcode)):
+        if stop_at is None:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             if curr.speed != 0:
                 distance += (curr.length() / MILS_IN_MM) / curr.speed

@@ -65,7 +65,7 @@ class BalorDriver:
     def abort_retry(self):
         self.connection.abort_connect()
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
 
@@ -74,15 +74,7 @@ class BalorDriver:
 
         @return:
         """
-        return self.paused
-
-    def hold_idle(self):
-        """
-        This is checked by the spooler to see if we should abort checking if there's any idle job after the work queue
-        was found to be empty.
-        @return:
-        """
-        return False
+        return priority <= 0 and self.paused
 
     def laser_off(self, *values):
         """
@@ -102,13 +94,6 @@ class BalorDriver:
         """
         self.laser = True
 
-    def light_loop(self, job):
-        self.connection.rapid_mode()
-        self.connection.light_mode()
-        while job(self.connection):
-            if self._shutdown:
-                break
-        self.connection.abort()
 
     def plot(self, plot):
         """
@@ -174,7 +159,7 @@ class BalorDriver:
                     if con._port_bits != self._list_bits:
                         con.list_write_port()
                         self._list_bits = con._port_bits
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
 
                     p = q.point(t)
@@ -194,7 +179,7 @@ class BalorDriver:
                     if con._port_bits != self._list_bits:
                         con.list_write_port()
                         self._list_bits = con._port_bits
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
 
                     # q.plot can have different on values, these are parsed
@@ -253,7 +238,7 @@ class BalorDriver:
                     if con._port_bits != self._list_bits:
                         self._list_bits = con._port_bits
                         con.list_write_port()
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
 
                     if on > 1:

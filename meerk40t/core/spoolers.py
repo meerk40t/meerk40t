@@ -9,6 +9,45 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
 
+        @kernel.console_command(
+            "spool",
+            help=_("spool <command>"),
+            regex=True,
+            input_type=(None, "plan"),
+            output_type="spooler",
+        )
+        def spool(command, channel, _, data=None, remainder=None, **kwgs):
+            device = kernel.device
+
+            spooler = device.spooler
+
+            if data is not None:
+                # If plan data is in data, then we copy that and move on to next step.
+                loops = 1
+                elements = kernel.elements
+                e = elements.op_branch
+
+                if e.loop_continuous:
+                    loops = float('inf')
+                else:
+                    if e.loop_enabled:
+                        loops = e.loop_n
+                spooler.laserjob(data.plan, loops=loops)
+                channel(_("Spooled Plan."))
+                kernel.root.signal("plan", data.name, 6)
+
+            if remainder is None:
+                channel(_("----------"))
+                channel(_("Spoolers:"))
+                for d, d_name in enumerate(device.match("device", suffix=True)):
+                    channel("%d: %s" % (d, d_name))
+                channel(_("----------"))
+                channel(_("Spooler on device %s:" % str(device.label)))
+                for s, op_name in enumerate(spooler.queue):
+                    channel("%d: %s" % (s, op_name))
+                channel(_("----------"))
+            return "spooler", spooler
+
         @kernel.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
         @kernel.console_command(
             "send",
@@ -24,7 +63,7 @@ def plugin(kernel, lifecycle):
                 raise CommandSyntaxError
             try:
                 for plan_command, command_name, suffix in kernel.find("plan", op):
-                    spooler.job(plan_command)
+                    spooler.laserjob(plan_command)
                     return data_type, spooler
             except (KeyError, IndexError):
                 pass
@@ -72,7 +111,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("laser_on")
+            spooler.command("laser_on")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -86,7 +125,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("laser_off")
+            spooler.command("laser_off")
             return "spooler", spooler
 
         @kernel.console_argument(
@@ -137,11 +176,12 @@ def plugin(kernel, lifecycle):
             except AttributeError:
                 return
             if force:
-                spooler.job("move_rel", idx, idy)
+                spooler.command("move_rel", idx, idy)
                 spooler._dx = Length(0)
                 spooler._dy = Length(0)
             else:
-                if spooler.job_if_idle("move_rel", float(idx), float(idy)):
+                if spooler.is_idle:
+                    spooler.command("move_rel", float(idx), float(idy))
                     channel(_("Position moved: {x} {y}").format(x=idx, y=idy))
                     spooler._dx = Length(0)
                     spooler._dy = Length(0)
@@ -165,9 +205,11 @@ def plugin(kernel, lifecycle):
             if y is None:
                 raise CommandSyntaxError
             if force:
-                spooler.job("move_abs", x, y)
+                spooler.command("move_abs", x, y)
             else:
-                if not spooler.job_if_idle("move_abs", x, y):
+                if spooler.is_idle:
+                    spooler.command("move_abs", x, y)
+                else:
                     channel(_("Busy Error"))
             return "spooler", spooler
 
@@ -187,9 +229,11 @@ def plugin(kernel, lifecycle):
             if dy is None:
                 raise CommandSyntaxError
             if force:
-                spooler.job("move_rel", dx, dy)
+                spooler.command("move_rel", dx, dy)
             else:
-                if not spooler.job_if_idle("move_rel", dx, dy):
+                if spooler.is_idle:
+                    spooler.command("move_rel", dx, dy)
+                else:
                     channel(_("Busy Error"))
             return "spooler", spooler
 
@@ -206,9 +250,9 @@ def plugin(kernel, lifecycle):
                 data = kernel.device.spooler
             spooler = data
             if x is not None and y is not None:
-                spooler.job("home", x, y)
+                spooler.command("home", x, y)
                 return "spooler", spooler
-            spooler.job("home")
+            spooler.command("home")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -221,7 +265,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("unlock_rail")
+            spooler.command("unlock_rail")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -234,7 +278,7 @@ def plugin(kernel, lifecycle):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            spooler.job("lock_rail")
+            spooler.command("lock_rail")
             return "spooler", spooler
 
         @kernel.console_command(
@@ -262,8 +306,111 @@ def plugin(kernel, lifecycle):
                 yield "home"
                 yield "wait_finish"
 
-            spooler.job(home_dot_test)
+            spooler.laserjob([list(home_dot_test())])
             return "spooler", spooler
+
+
+class LaserJob:
+    def __init__(self, label, items, driver=None, priority=0, loops=1):
+        self.items = items
+        self.label = label
+        self.priority = priority
+        self.time_submitted = time.time()
+        self.time_started = None
+        self.runtime = 0
+
+        self.loops = loops
+        self.loops_executed = 0
+
+        self._driver = driver
+        self.item_index = 0
+
+        self._stopped = True
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
+
+    def is_running(self):
+        return not self._stopped
+
+    def execute(self, driver):
+        """
+        Execute calls each item in the list of items in order. This is intended to be called by the spooler thread. And
+        hold the spooler while these items are executing.
+        @return:
+        """
+        self._stopped = False
+        self.time_started = time.time()
+        try:
+            while self.loops_executed < self.loops:
+                if self._stopped:
+                    return False
+                while self.item_index < len(self.items):
+                    if self._stopped:
+                        return False
+                    item = self.items[self.item_index]
+                    self.execute_item(item)
+                    if self._stopped:
+                        return False
+                    self.item_index += 1
+                self.item_index = 0
+                self.loops_executed += 1
+        finally:
+            self.runtime += time.time() - self.time_started
+            self._stopped = True
+        return True
+
+    def execute_item(self, item):
+        """
+        This executes the different classes of spoolable object.
+
+        * (str, attribute, ...) calls self.driver.str(*attributes)
+        * str, calls self.driver.str()
+        * has_attribute(generator), recursive call to list of lines produced by the
+        generator, recursive call to list of lines produced by generator
+
+        @param item:
+        @return:
+        """
+        if isinstance(item, tuple):
+            attr = item[0]
+            if hasattr(self._driver, attr):
+                function = getattr(self._driver, attr)
+                function(*item[1:])
+            return
+
+        # STRING
+        if isinstance(item, str):
+            attr = item
+
+            if hasattr(self._driver, attr):
+                function = getattr(self._driver, attr)
+                function()
+            return
+
+        # .generator is a Generator
+        if hasattr(item, "generate"):
+            item = getattr(item, "generate")
+
+        # Generator item
+        for p in item():
+            if self._stopped:
+                return
+            self.execute_item(p)
+
+    def stop(self):
+        """
+        Stop this current laser-job, cannot be called from the spooler thread.
+        @return:
+        """
+        self._stopped = True
+
+    def estimate_time(self):
+        """
+        Give laser job time estimate.
+        @return:
+        """
+        return 0
 
 
 class Spooler:
@@ -287,13 +434,6 @@ class Spooler:
     When the queues are empty the idle job is repeatedly executed in a loop. If there is no idle job
     then the spooler is inactive.
 
-    * peek()
-    * pop()
-    * job(job)
-    * jobs(iterable<job>)
-    * job_if_idle(job) -- Will enqueue the job if the device is currently idle.
-    * clear_queue()
-    * remove(job)
     """
 
     def __init__(self, context, driver=None, **kwargs):
@@ -302,13 +442,8 @@ class Spooler:
         self.foreground_only = True
         self._current = None
 
-        self._realtime_lock = Lock()
-        self._realtime_queue = []
-
         self._lock = Lock()
         self._queue = []
-
-        self._idle = None
 
         self._shutdown = False
         self._thread = None
@@ -384,50 +519,6 @@ class Spooler:
             )
             self._thread.stop = clear_thread
 
-    def _execute_program(self, program):
-        """
-        This executes the different classes of spoolable object.
-
-        * (str, attribute, ...) calls self.driver.str(*attributes)
-        * str, calls self.driver.str()
-        * callable, callable()
-        * has_attribute(generator), recursive call to list of lines produced by the
-        generator, recursive call to list of lines produced by generator
-
-        @param program: line to be executed.
-        @return:
-        """
-        if self._shutdown:
-            return
-        # TUPLE[str, Any,...]
-        if isinstance(program, tuple):
-            attr = program[0]
-
-            if hasattr(self.driver, attr):
-                function = getattr(self.driver, attr)
-                function(*program[1:])
-            return
-
-        # STRING
-        if isinstance(program, str):
-            attr = program
-
-            if hasattr(self.driver, attr):
-                function = getattr(self.driver, attr)
-                function()
-            return
-
-        # .generator is a Generator
-        if hasattr(program, "generate"):
-            program = getattr(program, "generate")
-
-        # GENERATOR
-        for p in program():
-            if self._shutdown:
-                return
-            self._execute_program(p)
-        # print("Unspoolable object: {s}".format(s=str(program)))
-
     def run(self):
         """
         Run thread for the spooler.
@@ -440,172 +531,98 @@ class Spooler:
 
         @return:
         """
-        while True:
-            # Forever Looping.
-            if self._shutdown:
-                # We have been told to stop.
-                break
-            if len(self._realtime_queue):
-                # There is realtime work.
-                with self._lock:
-                    # threadsafe
-                    program = self._realtime_queue.pop(0)
-                self._current = program
-                self.context.signal("spooler;realtime", len(self._realtime_queue))
-                if program is not None:
-                    # Process all data in the program.
-                    self._execute_program(program)
-            # Check if driver is holding work.
-            if self.driver.hold_work():
-                time.sleep(0.01)
-                continue
-            if len(self._queue):
-                # There is active work to do.
-                with self._lock:
-                    # threadsafe
-                    program = self._queue.pop(0)
-                self._current = program
-                self.context.signal("spooler;queue", len(self._queue))
-                if program is not None:
-                    # Process all data in the program.
-                    self._execute_program(program)
-            # Check if driver is holding idle.
-            if self.driver.hold_idle():
-                time.sleep(0.01)
-                continue
-            if self._current is not self._idle:
-                self.context.signal("spooler;idle", True)
-            self._current = self._idle
-            if self._idle is not None:
-                self._execute_program(self._idle)
-                # Finished idle cycle.
-                continue
-            else:
-                # There is nothing to send or do.
+        while not self._shutdown:
+            if not len(self._queue):
+                # There is no work to do.
                 time.sleep(0.1)
+                continue
+
+            with self._lock:
+                # threadsafe
+                program = self._queue[0]
+
+            priority = program.priority
+
+            # Check if the driver holds work at this priority level.
+            if self.driver.hold_work(priority):
+                time.sleep(0.01)
+                continue
+            self._current = program
+
+            fully_executed = program.execute(self.driver)
+            if fully_executed:
+                # all work finished
+                self.remove(program, 0)
+
+    @property
+    def is_idle(self):
+        return len(self._queue) == 0 or self._queue[0].priority < 0
 
     @property
     def current(self):
         return self._current
 
     @property
-    def idle(self):
-        return self._idle
-
-    @property
-    def realtime_queue(self):
-        return self._realtime_queue
-
-    @property
     def queue(self):
         return self._queue
 
-    def append(self, item):
-        self.job(item)
-
-    def peek(self):
-        if len(self._queue) == 0:
-            return None
-        return self._queue[0]
-
-    def pop(self):
-        if len(self._queue) == 0:
-            self.context.signal("spooler;queue", len(self._queue))
-            return None
+    def laserjob(self, job, priority=0, loops=1):
+        """
+        send a wrapped laser job to the spooler.
+        """
+        laserjob = LaserJob(str(job), list(job), driver=self.driver, priority=priority, loops=loops)
         with self._lock:
-            queue_head = self._queue[0]
-            del self._queue[0]
+            self._stop_lower_priority_running_jobs(priority)
+            self._queue.append(laserjob)
+            self._queue.sort(key=lambda e: e.priority, reverse=True)
         self.context.signal("spooler;queue", len(self._queue))
-        return queue_head
 
-    def realtime(self, *job):
+    def command(self, *job, priority=0):
+        laserjob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+        with self._lock:
+            self._stop_lower_priority_running_jobs(priority)
+            self._queue.append(laserjob)
+            self._queue.sort(key=lambda e: e.priority, reverse=True)
+        self.context.signal("spooler;queue", len(self._queue))
+
+    def send(self, job):
         """
-        Enqueues a job into the realtime buffer. This preempts the regular work and is checked before hold_work.
-
-        @param job:
-        @return:
-        """
-        with self._realtime_lock:
-            if len(job) == 1:
-                self._realtime_queue.extend(job)
-            else:
-                self._realtime_queue.append(job)
-        self.context.signal("spooler;realtime", len(self._realtime_queue))
-
-    def job(self, *job):
-        """
-        Send a single job event with parameters as needed.
-
-        The job can be a single command with ("move" 20 20) or without parameters ("home"), or a generator
-        which can yield many lasercode commands.
+        Send a job to the spooler queue
 
         @param job: job to send to the spooler.
         @return:
         """
         with self._lock:
-            if len(job) == 1:
-                self._queue.extend(job)
-            else:
-                self._queue.append(job)
+            self._stop_lower_priority_running_jobs(job.priority)
+            self._queue.append(job)
+            self._queue.sort(key=lambda e: e.priority, reverse=True)
         self.context.signal("spooler;queue", len(self._queue))
 
-    def jobs(self, jobs):
-        """
-        Send several jobs be appended to the end of the queue.
-
-        The 'jobs' parameter must be suitable to be .extended to the end of the queue list.
-
-        @param jobs: jobs to extend
-        @return:
-        """
-        with self._lock:
-            if isinstance(jobs, (list, tuple)):
-                self._queue.extend(jobs)
-            else:
-                self._queue.append(jobs)
-        self.context.signal("spooler;queue", len(self._queue))
-
-    def set_idle(self, job):
-        """
-        Sets the idle job.
-
-        @param job:
-        @return:
-        """
-        if self._idle is not job:
-            self.context.signal("spooler;idle", True)
-        self._idle = job
-
-    def job_if_idle(self, *element):
-        """
-        Deprecated.
-
-        This should be fed into various forms of idle job.
-        @param element:
-        @return:
-        """
-        if len(self._queue) == 0:
-            self.job(*element)
-            return True
-        else:
-            return False
+    def _stop_lower_priority_running_jobs(self, priority):
+        for e in self._queue:
+            if e.is_running() and e.priority < priority:
+                e.stop()
 
     def clear_queue(self):
         with self._lock:
-            if self._current is not None:
-                try:
-                    self._current.stop()
-                except AttributeError:
-                    pass
-                self._current = None
-
+            for e in self._queue:
+                e.stop()
             self._queue.clear()
             self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element, index=None):
         with self._lock:
             if index is None:
+                try:
+                    element.stop()
+                except AttributeError:
+                    pass
                 self._queue.remove(element)
             else:
+                element = self._queue[index]
+                try:
+                    element.stop()
+                except AttributeError:
+                    pass
                 del self._queue[index]
         self.context.signal("spooler;queue", len(self._queue))

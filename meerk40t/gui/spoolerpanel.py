@@ -1,3 +1,5 @@
+from math import isinf
+
 import wx
 from wx import aui
 
@@ -82,7 +84,7 @@ class SpoolerPanel(wx.Panel):
         # begin wxGlade: SpoolerPanel.__set_properties
         self.combo_device.SetToolTip(_("Select the device"))
         self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
-        self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=78)
+        self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
         self.list_job_spool.AppendColumn(
             _("Name"), format=wx.LIST_FORMAT_LEFT, width=143
         )
@@ -93,10 +95,16 @@ class SpoolerPanel(wx.Panel):
             _("Type"), format=wx.LIST_FORMAT_LEFT, width=60
         )
         self.list_job_spool.AppendColumn(
-            _("Speed"), format=wx.LIST_FORMAT_LEFT, width=83
+            _("Passes"), format=wx.LIST_FORMAT_LEFT, width=83
         )
         self.list_job_spool.AppendColumn(
-            _("Settings"), format=wx.LIST_FORMAT_LEFT, width=223
+            _("Priority"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_spool.AppendColumn(
+            _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_spool.AppendColumn(
+            _("Estimate"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         # end wxGlade
 
@@ -127,14 +135,32 @@ class SpoolerPanel(wx.Panel):
         except IndexError:
             return
         menu = wx.Menu()
-        convert = menu.Append(
+        item = menu.Append(
             wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), convert)
-        convert = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), convert)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), item)
+
+        item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), item)
+
         self.PopupMenu(menu)
         menu.Destroy()
+
+    def on_tree_popup_clear(self, element=None):
+        def clear(event=None):
+            spooler = self.selected_device.spooler
+            spooler.clear_queue()
+            self.refresh_spooler_list()
+
+        return clear
+
+    def on_tree_popup_delete(self, element, index=None):
+        def delete(event=None):
+            spooler = self.selected_device.spooler
+            spooler.remove(element, index)
+            self.refresh_spooler_list()
+
+        return delete
 
     def pane_show(self, *args):
         self.refresh_spooler_list()
@@ -149,39 +175,9 @@ class SpoolerPanel(wx.Panel):
         except AttributeError:
             return str(named_obj)
 
-    def set_spool_item(self, list_id, spool_obj, status=None):
-        if list_id != -1:
-            self.list_job_spool.SetItem(list_id, 1, SpoolerPanel._name_str(spool_obj))
-            if status is not None:
-                self.list_job_spool.SetItem(list_id, 2, status)
-
-            try:
-                self.list_job_spool.SetItem(list_id, 3, str(spool_obj))
-            except AttributeError:
-                pass
-            try:
-                self.list_job_spool.SetItem(list_id, 4, _("%.1fmm/s") % spool_obj.speed)
-            except AttributeError:
-                pass
-            settings = list()
-            try:
-                settings.append(_("power=%g") % spool_obj.power)
-            except AttributeError:
-                pass
-            try:
-                settings.append(_("step=%d") % spool_obj.raster_step_x)
-            except AttributeError:
-                pass
-            try:
-                settings.append(_("overscan=%s") % str(spool_obj.overscan))
-            except AttributeError:
-                pass
-            self.list_job_spool.SetItem(list_id, 5, " ".join(settings))
-
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
-
         try:
             self.list_job_spool.DeleteAllItems()
         except RuntimeError:
@@ -190,44 +186,69 @@ class SpoolerPanel(wx.Panel):
         spooler = self.selected_device.spooler
         if spooler is None:
             return
-        idx = 0
-        if spooler.current is not None:
-            m = self.list_job_spool.InsertItem(idx, _("Current"))
-            self.set_spool_item(m, spooler.current, status=_("running"))
-            idx += 1
 
-        if len(spooler.realtime_queue) > 0:
-            for e in spooler.queue:
-                m = self.list_job_spool.InsertItem(idx, f"#{idx}")
-                self.set_spool_item(m, e, status=_("realtime"))
-                idx += 1
+        for idx, e in enumerate(spooler.queue):
+            # Idx, Status, Type, Passes, Priority, Runtime, Estimate
+            m = self.list_job_spool.InsertItem(idx, f"#{idx}")
+            list_id = m
+            spool_obj = e
 
-        if len(spooler.queue) > 0:
-            for e in spooler.queue:
-                m = self.list_job_spool.InsertItem(idx, f"#{idx}")
-                self.set_spool_item(m, e, status=_("queued"))
-                idx += 1
+            if list_id != -1:
+                # IDX
+                try:
+                    self.list_job_spool.SetItem(list_id, 1, spool_obj.label)
+                except AttributeError:
+                    self.list_job_spool.SetItem(list_id, 1, SpoolerPanel._name_str(spool_obj))
 
-        if spooler.idle is not None:
-            m = self.list_job_spool.InsertItem(idx, _("Idle"))
-            self.set_spool_item(m, spooler.idle, status=_("idle"))
-            idx += 1
+                # STATUS
+                try:
+                    status = spool_obj.status
+                except AttributeError:
+                    status = _("Queued")
+                self.list_job_spool.SetItem(list_id, 2, status)
 
-    def on_tree_popup_clear(self, element=None):
-        def delete(event=None):
-            spooler = self.selected_device.spooler
-            spooler.clear_queue()
-            self.refresh_spooler_list()
+                # TYPE
+                try:
+                    self.list_job_spool.SetItem(list_id, 3, str(spool_obj.__class__.__name__))
+                except AttributeError:
+                    pass
 
-        return delete
+                # PASSES
+                try:
+                    loop = spool_obj.loops_executed
+                    total = spool_obj.loops
 
-    def on_tree_popup_delete(self, element, index=None):
-        def delete(event=None):
-            spooler = self.selected_device.spooler
-            spooler.remove(element, index)
-            self.refresh_spooler_list()
+                    if isinf(total):
+                        total = "∞"
+                    self.list_job_spool.SetItem(list_id, 4, f"{loop}/{total}")
+                except AttributeError:
+                    self.list_job_spool.SetItem(list_id, 4, "-")
 
-        return delete
+                # Priority
+                try:
+                    self.list_job_spool.SetItem(list_id, 5, f"{spool_obj.priority}")
+                except AttributeError:
+                    self.list_job_spool.SetItem(list_id, 5, "-")
+
+                # Runtime
+                try:
+                    t = spool_obj.runtime
+                    hours, remainder = divmod(t, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                    self.list_job_spool.SetItem(list_id, 6, runtime)
+                except AttributeError:
+                    self.list_job_spool.SetItem(list_id, 6, "-")
+
+                # Estimate Time
+                try:
+                    t = spool_obj.estimate_time()
+                    hours, remainder = divmod(t, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                    self.list_job_spool.SetItem(list_id, 7, runtime)
+                except AttributeError:
+                    self.list_job_spool.SetItem(list_id, 7, "-")
 
     @signal_listener("spooler;queue")
     @signal_listener("spooler;idle")

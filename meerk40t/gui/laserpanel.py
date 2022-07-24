@@ -34,7 +34,7 @@ def register_panel_laser(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()
-        .MinSize(250, 210)
+        .MinSize(150, 210)
         .FloatingSize(400, 200)
         .MaxSize(500, 300)
         .Caption(_("Laser"))
@@ -42,7 +42,7 @@ def register_panel_laser(window, context):
         .Name("laser")
     )
     pane.control = notebook
-    pane.dock_proportion = 210
+    pane.dock_proportion = 150
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(optimize_panel, _("Optimize"))
 
@@ -356,4 +356,4 @@ class LaserPanel(wx.Panel):
             "device", self.selected_device.path
         )
         # Device change, so let's focus properly...
-        self.context("scene focus -4% -4% 104% 104%\n")
+        self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))

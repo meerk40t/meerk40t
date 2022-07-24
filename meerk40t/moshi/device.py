@@ -216,34 +216,6 @@ class MoshiDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-
-            return "spooler", spooler
-
         @self.console_command("usb_connect", help=_("Connect USB"))
         def usb_connect(command, channel, _, **kwargs):
             """
@@ -375,7 +347,7 @@ class MoshiDriver(Parameters):
     def __repr__(self):
         return "MoshiDriver(%s)" % self.name
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Required.
 
@@ -383,16 +355,7 @@ class MoshiDriver(Parameters):
 
         @return: hold?
         """
-        return self.hold or self.paused
-
-    def hold_idle(self):
-        """
-        Required.
-
-        Spooler check. Should the idle job be processed or held.
-        @return:
-        """
-        return False
+        return priority <= 0 and (self.paused or self.hold)
 
     def laser_off(self, *values):
         """
@@ -440,7 +403,7 @@ class MoshiDriver(Parameters):
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
-                    while self.hold_work():
+                    while self.hold_work(0):
                         time.sleep(0.05)
                     self._goto_absolute(*q.point(t), 1)
                     t += step_size
@@ -459,7 +422,7 @@ class MoshiDriver(Parameters):
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_data:
-                    if self.hold_work():
+                    if self.hold_work(0):
                         time.sleep(0.05)
                         continue
                     on = int(on)
@@ -955,7 +918,7 @@ class MoshiController:
     according to established moshi protocols.
 
     The output device is concerned with sending the moshiblobs to the control board and control events and
-    to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lhystudios boards. Giving us
+    to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lihuiyu boards. Giving us
     access to both libusb drivers and windll drivers.
 
     The protocol for sending rasters is as follows:

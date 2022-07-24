@@ -99,7 +99,7 @@ class CH341(Module, Handler):
     """
     Generic CH341 Module performs the interactions between the requested operations and several delegated backend ch341
     drivers. This permits interfacing with LibUsb, Windll or Mock Ch341 backends. In use-agnostic fashion, this should
-    be valid and acceptable for any CH341 interactions. CH341 chip interfacing is required for Lhystudios Controllers,
+    be valid and acceptable for any CH341 interactions. CH341 chip interfacing is required for Lihuiyu Controllers,
     Moshiboard Controllers, and other interactions such as a plugin that uses addition CH341 devices.
     """
 

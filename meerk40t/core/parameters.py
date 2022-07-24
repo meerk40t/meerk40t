@@ -36,6 +36,7 @@ BOOL_PARAMETERS = (
     "acceleration_custom",
     "dratio_custom",
     "default",
+    "dangerous",
     "output",
     "laser_enabled",
     "job_enabled",
@@ -43,6 +44,7 @@ BOOL_PARAMETERS = (
     "shift_enabled",
     "raster_swing",
     "advanced",
+    "stopop",
     "raster_alt",
     "force_twitchless",
 )
@@ -60,6 +62,7 @@ STRING_PARAMETERS = (
 
 COLOR_PARAMETERS = ("color", "line_color")
 
+LIST_PARAMETERS = ("allowed_attributes", )
 
 class Parameters:
     """
@@ -106,6 +109,23 @@ class Parameters:
         for v in COLOR_PARAMETERS:
             if v in settings:
                 settings[v] = Color(settings[v])
+        for v in LIST_PARAMETERS:
+            if v in settings:
+                if isinstance(settings[v], str):
+                    myarr = []
+                    sett = settings[v]
+                    if sett != "":
+                        # First of all is it in he old format where we used eval?
+                        if sett.startswith("["):
+                            sett = sett[1:-1]
+                        if "'," in sett:
+                            slist = sett.split(",")
+                            for n in slist:
+                                n = n.strip().strip("'")
+                                myarr.append(n)
+                        else:
+                            myarr = [sett.strip().strip("'")]
+                    settings[v] = myarr
 
     @property
     def color(self):
@@ -148,12 +168,28 @@ class Parameters:
         self.settings["default"] = value
 
     @property
+    def allowed_attributes(self):
+        return self.settings.get("allowed_attributes", None)
+
+    @allowed_attributes.setter
+    def allowed_attributes(self, value):
+        self.settings["allowed_attributes"] = value
+
+    @property
     def output(self):
         return self.settings.get("output", True)
 
     @output.setter
     def output(self, value):
         self.settings["output"] = value
+
+    @property
+    def stopop(self):
+        return self.settings.get("stopop", False)
+
+    @stopop.setter
+    def stopop(self, value):
+        self.settings["stopop"] = value
 
     @property
     def raster_step_x(self):
@@ -170,6 +206,14 @@ class Parameters:
     @raster_step_y.setter
     def raster_step_y(self, value):
         self.settings["raster_step_y"] = value
+
+    @property
+    def desc(self):
+        return self.settings.get("desc", "")
+
+    @desc.setter
+    def desc(self, value):
+        self.settings["desc"] = value
 
     @property
     def dpi(self):
