@@ -6193,6 +6193,7 @@ class Elemental(Service):
 
             node.remove_node()
             self.set_emphasis(None)
+            self.signal("operation_removed")
 
         def contains_no_locked_items():
             nolock = True
@@ -7657,6 +7658,7 @@ class Elemental(Service):
         """
         operation_branch = self._tree.get(type="branch ops")
         operation_branch.add_node(op, pos=pos)
+        self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")
@@ -7664,6 +7666,7 @@ class Elemental(Service):
         for op in adding_ops:
             operation_branch.add_node(op)
             items.append(op)
+        self.signal("add_operation", items)
         return items
 
     def add_elems(self, adding_elements, classify=False, branch_type="branch elems"):
@@ -7694,6 +7697,7 @@ class Elemental(Service):
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children()
+        self.signal("operation_removed")
 
     def clear_elements(self):
         elements = self._tree.get(type="branch elems")
@@ -7849,7 +7853,7 @@ class Elemental(Service):
             for i, o in enumerate(list(self.ops())):
                 if o is op:
                     o.remove_node()
-            self.signal("operation_removed", op)
+            self.signal("operation_removed")
 
     def remove_elements_from_operations(self, elements_list):
         for node in elements_list:

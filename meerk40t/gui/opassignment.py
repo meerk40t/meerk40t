@@ -262,6 +262,9 @@ class OperationAssignPanel(wx.Panel):
 
     @signal_listener("rebuild_tree")
     @signal_listener("refresh_tree")
+    @signal_listener("tree_changed")
+    @signal_listener("operation_removed")
+    @signal_listener("add_operation")
     def on_rebuild(self, origin, *args):
         self.set_buttons()
 
