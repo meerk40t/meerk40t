@@ -302,6 +302,7 @@ class ShadowTree:
             "op image": icons8_image_20,
             "op raster": icons8_direction_20,
             "op hatch": icons8_diagonal_20,
+            "op dots": icons8_scatter_plot_20,
             "elem point": icons8_scatter_plot_20,
             "file": icons8_file_20,
             "group": icons8_group_objects_20,
