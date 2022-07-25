@@ -161,6 +161,10 @@ class MeerK40tScenePanel(wx.Panel):
             )
             channel(_("Added cyclocycloid widget to scene."))
 
+        @context.console_command("toast", hidden=True)
+        def toast_scene(remainder, **kwargs):
+            self.widget_scene.toast(remainder)
+
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
         def tool_base(command, channel, _, tool=None, **kwargs):
