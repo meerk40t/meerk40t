@@ -86,7 +86,7 @@ class SceneToast:
         """
         if alpha != self.alpha:
             self.alpha = alpha
-            self.brush_color.SetRGBA(0x707070 | alpha << 24)
+            self.brush_color.SetRGBA(0xFFFFFF | alpha << 24)
             self.pen_color.SetRGBA(0x70FF70 | alpha << 24)
             self.font_color.SetRGBA(0x000000 | alpha << 24)
             self.brush.SetColour(self.brush_color)
