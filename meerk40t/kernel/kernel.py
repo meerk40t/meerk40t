@@ -2316,7 +2316,7 @@ class Kernel(Settings):
                             subfound = True
                     if subfound:
                         allparams.append(s)
-                        found = Truep
+                        found = True
                 if found:
                     if len(allcommands)>0:
                         s = "Commands:\n"
