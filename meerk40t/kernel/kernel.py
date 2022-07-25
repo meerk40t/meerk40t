@@ -2317,6 +2317,8 @@ class Kernel(Settings):
                     if subfound:
                         allparams.append(s)
                         found = True
+                if not found and substr in ("booze", "whisky", "gin", "alcohol", "beer"):
+                    channel (("Do you really think it's that simple and that I leave my {booze} around for you b**ards to steal it? Get a life, p*nk...").format(booze=substr))
                 if found:
                     if len(allcommands)>0:
                         s = "Commands:\n"
