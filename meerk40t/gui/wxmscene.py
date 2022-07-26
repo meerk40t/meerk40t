@@ -5,7 +5,7 @@ from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icon_meerk40t, icons8_expansion_50
+from meerk40t.gui.icons import icon_meerk40t, icons8_menu_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
@@ -144,11 +144,11 @@ class MeerK40tScenePanel(wx.Panel):
                 -1,
                 ToggleWidget(
                     self.widget_scene,
-                    50,
-                    50,
-                    100,
-                    100,
-                    icons8_expansion_50.GetBitmap(),
+                    5,
+                    5,
+                    5 + 25,
+                    5 + 25,
+                    icons8_menu_50.GetBitmap(),
                     "button/tool",
                 ),
             )
