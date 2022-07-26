@@ -26,3 +26,5 @@ class ToolContainer(Widget):
             tool="none"
         message = ("tool", tool)
         self.scene.context.signal("tool_changed", message)
+        self.scene._signal_widget(self.scene.widget_root, "tool_changed", message)
+
