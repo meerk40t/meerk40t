@@ -2870,6 +2870,7 @@ icons8_close_window_20 = PyEmbeddedImage(
     b'mumfyGWYy6wrx7bP4aOQ303C7TNd1jgsHb0Oq7AX3A2g9ZkuGqGCaq+7ERrnoGAboYLGFc5W'
     b'Qp8Oj2+JXWSupLCkIQAAAABJRU5ErkJggg==')
 
+
 icons8_next_page_20 = PyEmbeddedImage(
     b'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB'
     b'HElEQVQ4jcXUMU5CQRDG8R92UgoeQKDEO1iLKOrVtFQ8gYqFEsMJRHuDxxCJVFjsEsnLewto'
@@ -2967,3 +2968,12 @@ join_round = PyEmbeddedImage(
     b'gKIol7e2zPdKp9MWrZVEIpF8Pl+v1+fzuWEY5la73fZ4TF8FSZKSyWSpVOp2u6qq/tmy/L9a'
     b'rVY0GhWEz+fLZrOVSmUymVhVXIZhNQKapvV6vdFoFA6HU6mU+LhW+ZvlNJL9kf9saZoG/Aa3'
     b'/yM6a1FRBwAAAABJRU5ErkJggg==')
+
+icons8_menu_50 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAA'
+    b'zklEQVRoge3YvQ3CMBCG4RdEyRLAAgRahoFBkJCggxUyDTVMkGQLOqSkgMJY+XGExDnoe6Qr'
+    b'bLn4fI1PBhEREZHojGr21sD810F6KoBb24EdUA6ktm7wsXeRTVA/4tCaNQEy7LvdVRmw/KoN'
+    b'IiIiDn/WmgJ7YGaQpY8COAKPpgMX7F/t0Dq7wf1ZqwxtSWwm3voAPIGFQZY+cuBkHUJERP5X'
+    b'wuuxsR4/uip/Z22URhAytFI3uD9rXdtuGZmPrHVfpiuGMWvdrUOIiIiIdKgAK0vhhB7uSF4A'
+    b'AAAASUVORK5CYII=')
+

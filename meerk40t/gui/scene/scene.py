@@ -31,6 +31,133 @@ from meerk40t.svgelements import Matrix, Point
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 
+XCELLS = 15
+YCELLS = 15
+
+
+class SceneToast:
+    """
+    SceneToast is drawn directly by the Scene. It creates an text message in a box that animates a fade.
+    """
+    def __init__(self, scene, left, top, right, bottom):
+        self.scene = scene
+        self.left = left
+        self.top = top
+        self.right = right
+        self.bottom = bottom
+        self.countdown = 0
+        self.message = None
+        self.token = None
+
+        self.brush = wx.Brush()
+        self.pen = wx.Pen()
+        self.font = wx.Font()
+        self.brush_color = wx.Colour()
+        self.pen_color = wx.Colour()
+        self.font_color = wx.Colour()
+
+        self.pen.SetWidth(10)
+        self.text_height = float('inf')
+        self.text_width = float('inf')
+
+        self.alpha = None
+        self.set_alpha(255)
+
+    def tick(self):
+        """
+        Each tick reduces countdown by 1. Once countdown is below 20 we call requests for animation.
+        @return:
+        """
+        self.countdown -= 1
+        if self.countdown <= 20:
+            self.scene.request_refresh_for_animation()
+        if self.countdown <= 0:
+            self.scene.request_refresh()
+            self.message = None
+            self.token = None
+        return self.countdown > 0
+
+    def set_alpha(self, alpha):
+        """
+        We set the alpha for all the colors.
+
+        @param alpha:
+        @return:
+        """
+        if alpha != self.alpha:
+            self.alpha = alpha
+            self.brush_color.SetRGBA(0xFFFFFF | alpha << 24)
+            self.pen_color.SetRGBA(0x70FF70 | alpha << 24)
+            self.font_color.SetRGBA(0x000000 | alpha << 24)
+            self.brush.SetColour(self.brush_color)
+            self.pen.SetColour(self.pen_color)
+
+    def draw(self, gc: wx.GraphicsContext):
+        if not self.message:
+            return
+        alpha = 255
+        if self.countdown <= 20:
+            alpha = int(self.countdown * 12.5)
+        self.set_alpha(alpha)
+
+        width = self.right - self.left
+        height = self.bottom - self.top
+        text_size = height
+
+        while self.text_height > height or self.text_width > width:
+            # If we do not fit in the box, decrease size
+            text_size *= 0.9
+            try:
+                self.font.SetFractionalPointSize(text_size)
+            except AttributeError:
+                self.font.SetPointSize(int(text_size))
+            gc.SetFont(self.font, self.font_color)
+            self.text_width, self.text_height = gc.GetTextExtent(self.message)
+        if text_size == height:
+            gc.SetFont(self.font, self.font_color)
+        gc.SetPen(self.pen)
+        gc.SetBrush(self.brush)
+        gc.DrawRectangle(self.left, self.top, self.right-self.left, self.bottom-self.top)
+
+        toast_x = self.left + (width - self.text_width) / 2.0
+        toast_y = self.top
+        gc.DrawText(self.message, toast_x, toast_y)
+
+    def start_threaded(self):
+        """
+        First start of threaded animate. Refresh to draw.
+        @return:
+        """
+        self.scene.request_refresh()
+
+    def stop_threaded(self):
+        """
+        Stop of threaded animate. Unset text dims and delete the toast.
+        @return:
+        """
+        self.scene._toast = None
+        self.text_height = float('inf')
+        self.text_width = float('inf')
+
+    def set_message(self, message, token=-1, duration=100):
+        """
+        Sets the message. If the token is different, we reset the text position.
+
+        We always reset the duration.
+
+        @param message:
+        @param token:
+        @param duration:
+        @return:
+        """
+        if token != self.token or token == -1:
+            self.text_height = float('inf')
+            self.text_width = float('inf')
+        self.message = message
+        self.token = token
+        self.countdown = duration
+
+
 class Scene(Module, Job):
     """
     The Scene Module holds all the needed references to widgets and catches the events from the ScenePanel which
@@ -105,6 +232,7 @@ class Scene(Module, Job):
             run_main=True,
             interval=1.0 / 60.0,
         )
+        self._toast = None
 
     def reset_grids(self):
         self.draw_grid_primary = True
@@ -388,6 +516,27 @@ class Scene(Module, Job):
         dc.SelectObject(wx.NullBitmap)
         del dc
 
+    def toast(self, message, token=-1):
+        if self._toast is None:
+            self._toast = SceneToast(self, self.x(0.1), self.y(0.8), self.x(0.9), self.y(0.9))
+            self._toast.set_message(message, token)
+            self.animate(self._toast)
+        else:
+            self._toast.set_message(message, token)
+            self.animate(self._toast)
+
+    def x(self, v):
+        width, height = self.gui.ClientSize
+        return width * v
+
+    def y(self, v):
+        width, height = self.gui.ClientSize
+        return height * v
+
+    def cell(self):
+        width, height = self.gui.ClientSize
+        return min(width / XCELLS, height / YCELLS)
+
     def _signal_widget(self, widget, *args, **kwargs):
         """
         Calls the signal widget with the given args. Calls signal for the entire widget node tree.
@@ -445,6 +594,8 @@ class Scene(Module, Job):
             self.widget_root.draw(canvas)
             if self.log:
                 self.log("Redraw Canvas")
+        if self._toast is not None:
+            self._toast.draw(canvas)
 
     def convert_scene_to_window(self, position):
         """
