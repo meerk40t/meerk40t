@@ -594,7 +594,7 @@ class MeerK40tScenePanel(wx.Panel):
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
-        self.widget_scene.default_stroke = color
+        self.widget_scene.context.elements.default_stroke = color
 
     @signal_listener("selfill")
     def on_selfill(self, origin, rgb, *args):
@@ -603,7 +603,7 @@ class MeerK40tScenePanel(wx.Panel):
             color = None
         else:
             color = Color(rgb[0], rgb[1], rgb[2])
-        self.widget_scene.default_fill = color
+        self.widget_scene.context.elements.default_fill = color
 
     @signal_listener("selstrokewidth")
     def on_selstrokewidth(self, origin, stroke_width, *args):

@@ -70,8 +70,6 @@ class Scene(Module, Job):
         self._cursor = None
         self._reference = None  # Reference Object
         self.attraction_points = []  # Clear all
-        self.default_stroke = None
-        self.default_fill = None
         self.compute = True
         self.has_background = False
 

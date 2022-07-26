@@ -331,7 +331,8 @@ class TextTool(ToolWidget):
                 node.wxfont = dlg.result_font
                 dlg.store_font_history()
                 wxfont_to_svg(node)
-                elements.classify([node])
+                if elements.classify_new:
+                    elements.classify([node])
                 self.notify_created(node)
             dlg.Destroy()
             response = RESPONSE_CONSUME
