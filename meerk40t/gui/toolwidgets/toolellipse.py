@@ -29,17 +29,17 @@ class EllipseTool(ToolWidget):
             y0 = min(self.p1.imag, self.p2.imag)
             x1 = max(self.p1.real, self.p2.real)
             y1 = max(self.p1.imag, self.p2.imag)
-            if self.scene.default_stroke is None:
+            if self.scene.context.elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
             else:
-                self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.default_stroke)))
+                self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke)))
             gc.SetPen(self.pen)
-            if self.scene.default_fill is None:
+            if self.scene.context.elements.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
                 gc.SetBrush(
                     wx.Brush(
-                        wx.Colour(swizzlecolor(self.scene.default_fill)),
+                        wx.Colour(swizzlecolor(self.scene.context.elements.default_fill)),
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
@@ -95,12 +95,13 @@ class EllipseTool(ToolWidget):
                 if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(shape=ellipse, type="elem ellipse")
-                    if not self.scene.default_stroke is None:
-                        node.stroke = self.scene.default_stroke
-                    if not self.scene.default_fill is None:
-                        node.fill = self.scene.default_fill
+                    if not self.scene.context.elements.default_stroke is None:
+                        node.stroke = self.scene.context.elements.default_stroke
+                    if not self.scene.context.elements.default_fill is None:
+                        node.fill = self.scene.context.elements.default_fill
 
-                    elements.classify([node])
+                    if elements.classify_new:
+                        elements.classify([node])
                     self.notify_created(node)
                 self.p1 = None
                 self.p2 = None

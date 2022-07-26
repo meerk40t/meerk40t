@@ -61,7 +61,7 @@ class TestElements(unittest.TestCase):
                         r=1000 * UNITS_PER_MIL,
                     ),
                 )
-                self.assertEqual(node.stroke, "black")
+                self.assertEqual(node.stroke, "blue")
         finally:
             kernel.shutdown()
 

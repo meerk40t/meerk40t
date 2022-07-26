@@ -82,8 +82,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
                 ),
-                "page": "Gui",
-                "section": "Scene",
+                "page": "Scene",
+                "section": "General",
             },
             {
                 "attr": "windows_save",

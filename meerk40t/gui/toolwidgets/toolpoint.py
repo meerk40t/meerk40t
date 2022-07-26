@@ -32,10 +32,12 @@ class PointTool(ToolWidget):
             node = elements.elem_branch.add(
                 point=point, matrix=Matrix(), type="elem point"
             )
-            if self.scene.default_stroke is not None:
-                node.stroke = self.scene.default_stroke
-            if self.scene.default_fill is not None:
-                node.fill = self.scene.default_fill
+            if self.scene.context.elements.default_stroke is not None:
+                node.stroke = self.scene.context.elements.default_stroke
+            if self.scene.context.elements.default_fill is not None:
+                node.fill = self.scene.context.elements.default_fill
+            if elements.classify_new:
+                elements.classify([node])
             self.notify_created(node)
             response = RESPONSE_CONSUME
         return response

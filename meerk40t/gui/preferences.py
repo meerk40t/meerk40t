@@ -229,7 +229,7 @@ class PreferencesMain(wx.Panel):
 
         self.panel_pref1 = ChoicePropertyPanel(
             self, id=wx.ID_ANY, context=context,
-            choices="preferences", constraint=("Classification", "Input/Output", "Options"),
+            choices="preferences", constraint=("-Classification", "-Gui", "-Scene"),
         )
         sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
 
@@ -249,17 +249,10 @@ class PreferencesPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_settings = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_settings = wx.BoxSizer(wx.VERTICAL)
 
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=context)
         sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
-
-        self.checklist_options = ChoicePropertyPanel(
-            self, id=wx.ID_ANY, context=context,
-            choices="preferences", constraint=("-Classification", "-Input/Output", "-Options"),
-        )
-        self.checklist_options.SetupScrolling()
-        sizer_settings.Add(self.checklist_options, 2, wx.EXPAND, 0)
 
         self.SetSizer(sizer_settings)
 
@@ -280,9 +273,46 @@ class Preferences(MWindow):
             | (wx.RESIZE_BORDER if platform.system() != "Darwin" else 0),
             **kwds,
         )
+        self.notebook_main = wx.aui.AuiNotebook(
+            self,
+            -1,
+            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | wx.aui.AUI_NB_SCROLL_BUTTONS
+            | wx.aui.AUI_NB_TAB_SPLIT
+            | wx.aui.AUI_NB_TAB_MOVE,
+        )
 
-        self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
+        self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+
+        self.panel_classification = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context,
+            choices="preferences", constraint=("Classification"),
+        )
+        self.panel_classification.SetupScrolling()
+
+        self.panel_gui = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context,
+            choices="preferences", constraint=("Gui"),
+        )
+        self.panel_gui.SetupScrolling()
+
+        self.panel_scene = ChoicePropertyPanel(
+            self, id=wx.ID_ANY, context=self.context,
+            choices="preferences", constraint=("Scene"),
+        )
+        self.panel_scene.SetupScrolling()
+
+
+        self.notebook_main.AddPage(self.panel_main, _("General"))
+        self.notebook_main.AddPage(self.panel_classification, _("Classification"))
+        self.notebook_main.AddPage(self.panel_gui, _("GUI"))
+        self.notebook_main.AddPage(self.panel_scene, _("Scene"))
+        self.Layout()
+
+        self.add_module_delegate(self.panel_main)
+        self.add_module_delegate(self.panel_classification)
+        self.add_module_delegate(self.panel_gui)
+        self.add_module_delegate(self.panel_scene)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
