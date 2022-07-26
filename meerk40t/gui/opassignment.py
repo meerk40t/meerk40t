@@ -45,11 +45,6 @@ class OperationAssignPanel(wx.Panel):
         self.op_nodes= []
         for idx in range(self.MAXBUTTONS):
             btn = wx.Button(self, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize))
-            btn.SetToolTip(
-                _("Assign the selected elements to the operation.") +
-                "\n" +
-                _("Left click: consider stroke as main color, right click: use fill")
-            )
             self.buttons.append(btn)
             self.op_nodes.append(None)
 
@@ -66,9 +61,11 @@ class OperationAssignPanel(wx.Panel):
             _("-> OP - the assigned operation will adopt the color of the element") + "\n" +
             _("-> Elem - the elements will adopt the color of the assigned operation")
         )
-        self.chk_all_similar.SetToolTip(_("Assign as well all other elements with the same stroke-color (fill-color if right-click"))
+        self.chk_all_similar.SetToolTip(
+            _("Assign as well all other elements with the same stroke-color,") +"\n" +
+            _("respectively with the same fill-color if you right-click the button")
+        )
         self.chk_exclusive.SetToolTip(_("When assigning to an operation remove all assignments of the elements to other operations"))
-        self.lbl_nothing = wx.StaticText(self, wx.ID_ANY, _("No elements selected"))
         self.lastsize = None
         self.lastcolcount = None
         self._set_layout()
@@ -89,7 +86,6 @@ class OperationAssignPanel(wx.Panel):
         self.sizer_options.Add(self.cbo_apply_color, 1, wx.EXPAND, 0)
         self.sizer_options.Add(self.chk_all_similar, 1, wx.EXPAND, 0)
         self.sizer_options.Add(self.chk_exclusive, 1, wx.EXPAND, 0)
-        self.sizer_options.Add(self.lbl_nothing, 1, wx.EXPAND, 0)
 
         self.sizer_main.Add(self.sizer_options, 0, wx.EXPAND, 0)
         self.sizer_main.Add(self.sizer_buttons, 1, wx.EXPAND, 0)
@@ -175,7 +171,14 @@ class OperationAssignPanel(wx.Panel):
             else:
                 self.buttons[myidx].SetBitmap(image)
                 # self.buttons[myidx].SetBitmapDisabled(icons8_padlock_50.GetBitmap(color=Color("Grey"), resize=(self.iconsize, self.iconsize), noadjustment=True, keepalpha=True))
-            # self.buttons[myidx].Show(True)
+            self.buttons[myidx].SetToolTip(
+                str(node) +
+                "\n" +
+                _("Assign the selected elements to the operation.") +
+                "\n" +
+                _("Left click: consider stroke as main color, right click: use fill")
+            )
+            self.buttons[myidx].Show()
 
         lastfree = -1
         found = False
@@ -200,6 +203,9 @@ class OperationAssignPanel(wx.Panel):
                 self.op_nodes[idx] = node
                 self._set_button(node)
                 idx += 1
+                if idx>=self.MAXBUTTONS:
+                    # too many...
+                    break
         self._set_grid_layout()
         if not skip_layout:
             self.Layout()
@@ -207,15 +213,13 @@ class OperationAssignPanel(wx.Panel):
     def show_stuff(self, flag):
         if flag:
             self.set_buttons(skip_layout=True)
-        self.chk_all_similar.Show(flag)
-        self.cbo_apply_color.Show(flag)
-        self.chk_exclusive.Show(flag)
-
-        self.lbl_nothing.Show(not flag)
+        self.chk_all_similar.Enable(flag)
+        self.cbo_apply_color.Enable(flag)
+        self.chk_exclusive.Enable(flag)
 
         for idx in range(self.MAXBUTTONS):
             myflag = flag and self.op_nodes[idx] is not None
-            self.buttons[idx].Show(myflag)
+            self.buttons[idx].Enable(myflag)
             self.buttons[idx].Enable(myflag)
         if not flag:
             if self.hover>0:
@@ -223,12 +227,11 @@ class OperationAssignPanel(wx.Panel):
                 self.hover = 0
         else:
              self.chk_exclusive.SetValue(self.context.elements.classify_inherit_exclusive)
-        if flag:
-            siz = self.GetSize()
-            self._set_grid_layout(siz[0])
-            self.sizer_options.Layout()
-            self.sizer_buttons.Layout()
-            self.sizer_main.Layout()
+        siz = self.GetSize()
+        self._set_grid_layout(siz[0])
+        self.sizer_options.Layout()
+        self.sizer_buttons.Layout()
+        self.sizer_main.Layout()
         self.Layout()
 
     @signal_listener("emphasized")
@@ -259,6 +262,9 @@ class OperationAssignPanel(wx.Panel):
 
     @signal_listener("rebuild_tree")
     @signal_listener("refresh_tree")
+    @signal_listener("tree_changed")
+    @signal_listener("operation_removed")
+    @signal_listener("add_operation")
     def on_rebuild(self, origin, *args):
         self.set_buttons()
 

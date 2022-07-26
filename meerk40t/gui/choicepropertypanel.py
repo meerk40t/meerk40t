@@ -235,6 +235,31 @@ class ChoicePropertyPanel(ScrolledPanel):
                     on_button_filename(attr, control, obj, c.get("wildcard", "*")),
                 )
                 current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
+            elif data_type in (int, float) and data_style == "slider":
+                control_sizer = wx.StaticBoxSizer(
+                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                )
+                minvalue = c.get("min", 0)
+                maxvalue = c.get("max", 0)
+                if data_type == float:
+                    value = float(data)
+                elif data_type == int:
+                    value = int(data)
+                else:
+                    value = int(data)
+                control = wx.Slider(self, wx.ID_ANY, value=value, minValue=minvalue, maxValue=maxvalue, style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL)
+
+                def on_slider(param, ctrl, obj, dtype):
+                    def select(event=None):
+                        v = dtype(ctrl.GetValue())
+                        setattr(obj, param, v)
+                        self.context.signal(param, v)
+
+                    return select
+
+                control_sizer.Add(control)
+                control.Bind(wx.EVT_SLIDER, on_slider(attr, control, obj, data_type),)
+                current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combo":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL

@@ -68,6 +68,10 @@ class ElementsWidget(Widget):
         elif event_type == "kb_ctrl_release":
             if self.key_ctrl_pressed:
                 self.key_ctrl_pressed = False
+        elif event_type == "rightdown":
+            if not self.scene.tool_active:
+                self.scene.context("tool none")
+                return RESPONSE_CONSUME
         elif event_type == "leftclick":
             elements = self.scene.context.elements
             keep_old = self.key_shift_pressed
