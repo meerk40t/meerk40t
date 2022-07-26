@@ -6,7 +6,6 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
 
-
 class ToggleWidget(Widget):
 
     def __init__(self, scene, left, top, right, bottom, bitmap, buttons):
@@ -14,6 +13,8 @@ class ToggleWidget(Widget):
         self.buttons = buttons
         self.bitmap = bitmap
         self._opened = False
+        flag = self.scene.context.menu_autohide
+        self.autohide = flag
         self.scene.request_refresh()
 
     def hit(self):
@@ -36,6 +37,13 @@ class ToggleWidget(Widget):
                 self._opened = True
         return RESPONSE_ABORT
 
+    def signal(self, signal, *args, **kwargs):
+        if signal == "tool_changed":
+            if self.autohide:
+                if self._opened:
+                    self.minimize(window_pos=None, space_pos=None)
+                    self._opened = False
+
     def minimize(self, window_pos=None, space_pos=None):
         self.remove_all_widgets()
         self.scene.request_refresh()
@@ -57,7 +65,7 @@ class ToggleWidget(Widget):
             return act
 
         for button in buttons:
-            button_size = 25
+            button_size = self.width
             resize_param = button.get("size")
             icon = button["icon"].GetBitmap(resize=button_size)
             self.add_widget(-1, ButtonWidget(self.scene, 0, 0, button_size, button_size, icon, clicked(button.get("action"))), ORIENTATION_VERTICAL)

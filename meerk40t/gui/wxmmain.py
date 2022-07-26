@@ -433,7 +433,7 @@ class CustomStatusBar(wx.StatusBar):
                 try:
                     newval = float(self.spin_width.GetValue())
                     chg = True
-                except ValueError:                    
+                except ValueError:
                     chg = False
             if chg:
                 value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
@@ -465,7 +465,7 @@ class CustomStatusBar(wx.StatusBar):
         rect.x += int(wd)
         self.cb_rotate.SetRect(rect)
         rect.x += int(wd)
-        self.cb_skew.SetRect(rect)        
+        self.cb_skew.SetRect(rect)
         if self.context.show_colorbar:
             rect = self.GetFieldRect(self.pos_stroke)
             ct = 3
@@ -746,6 +746,22 @@ class MeerK40t(MWindow):
             },
         ]
         context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "menu_autohide",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Menu auto-minimize"),
+                "tip": _(
+                    "The scene-menu will minimize itself automatically after selection of a tool."
+                ),
+                "page": "Gui",
+                "section": "Scene",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
         )
