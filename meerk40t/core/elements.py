@@ -547,6 +547,69 @@ class Elemental(Service):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
+    def get_information(self, elem, fine = True):
+        this_area = 0
+        this_length = 0
+        if elem is None:
+            return this_area, this_length
+        try:
+            path = elem.as_path()
+        except AttributeError:
+            path = None
+        if fine:
+            interpolation = 1000
+        else:
+            interpolation = 250
+
+        subject_polygons = []
+        if not path is None:
+            for subpath in path.as_subpaths():
+                subj = Path(subpath).npoint(linspace(0, 1, interpolation))
+                subj.reshape((2, interpolation))
+                s = list(map(Point, subj))
+                subject_polygons.append(s)
+        else:
+            try:
+                bb = elem.bounds
+            except:
+                # Even bounds failed, next element please
+                return this_area, this_length
+            s = [
+                Point(bb[0], bb[1]),
+                Point(bb[2], bb[1]),
+                Point(bb[2], bb[3]),
+                Point(bb[1], bb[3]),
+            ]
+            subject_polygons.append(s)
+
+        if len(subject_polygons) > 0:
+            idx = len(subject_polygons[0]) - 1
+            if (
+                subject_polygons[0][0].x != subject_polygons[0][idx].x
+                or subject_polygons[0][0].y != subject_polygons[0][idx].y
+            ):
+                # not identical, so close the loop
+                subject_polygons.append(
+                    Point(subject_polygons[0][0].x, subject_polygons[0][0].y)
+                )
+
+        if len(subject_polygons) > 0:
+            idx = -1
+            area_x_y = 0
+            area_y_x = 0
+            for pt in subject_polygons[0]:
+                idx += 1
+                if idx > 0:
+                    dx = pt.x - last_x
+                    dy = pt.y - last_y
+                    this_length += sqrt(dx*dx + dy*dy)
+                    area_x_y += last_x * pt.y
+                    area_y_x += last_y * pt.x
+                last_x = pt.x
+                last_y = pt.y
+            this_area = 0.5 * abs(area_x_y - area_y_x)
+
+        return this_area, this_length
 
     def _init_commands(self, kernel):
 
@@ -4554,56 +4617,7 @@ class Elemental(Service):
 
             i = 0
             for elem in data:
-                this_area = 0
-                try:
-                    path = elem.as_path()
-                except AttributeError:
-                    path = None
-
-                subject_polygons = []
-                if not path is None:
-                    for subpath in path.as_subpaths():
-                        subj = Path(subpath).npoint(linspace(0, 1, 1000))
-                        subj.reshape((2, 1000))
-                        s = list(map(Point, subj))
-                        subject_polygons.append(s)
-                else:
-                    try:
-                        bb = elem.bounds
-                    except:
-                        # Even bounds failed, next element please
-                        continue
-                    s = [
-                        Point(bb[0], bb[1]),
-                        Point(bb[2], bb[1]),
-                        Point(bb[2], bb[3]),
-                        Point(bb[1], bb[3]),
-                    ]
-                    subject_polygons.append(s)
-
-                if len(subject_polygons) > 0:
-                    idx = len(subject_polygons[0]) - 1
-                    if (
-                        subject_polygons[0][0].x != subject_polygons[0][idx].x
-                        or subject_polygons[0][0].y != subject_polygons[0][idx].y
-                    ):
-                        # not identical, so close the loop
-                        subject_polygons.append(
-                            Point(subject_polygons[0][0].x, subject_polygons[0][0].y)
-                        )
-
-                if len(subject_polygons) > 0:
-                    idx = -1
-                    area_x_y = 0
-                    area_y_x = 0
-                    for pt in subject_polygons[0]:
-                        idx += 1
-                        if idx > 0:
-                            area_x_y += last_x * pt.y
-                            area_y_x += last_y * pt.x
-                        last_x = pt.x
-                        last_y = pt.y
-                    this_area = 0.5 * abs(area_x_y - area_y_x)
+                this_area, this_length = self.get_information(elem, fine = True)
 
                 if display_only:
                     name = str(elem)

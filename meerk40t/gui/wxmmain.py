@@ -11,6 +11,7 @@ from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
 from ..core.element_types import elem_nodes
+
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (
@@ -47,6 +48,15 @@ from .icons import (
     icons_evenspace_vert,
     icons8_group_objects_50,
     icons8_ungroup_objects_50,
+    icons8_next_page_20,
+    cap_butt_20,
+    cap_round_20,
+    cap_square_20,
+    fill_evenodd,
+    fill_nonzero,
+    join_bevel,
+    join_miter,
+    join_round,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -159,220 +169,646 @@ ID_IRC = wx.NewId()
 class CustomStatusBar(wx.StatusBar):
     """Overloading of Statusbar to allow some elements on it"""
 
-    panelct = 5
-    # Where shall the different controls be placed?
-    pos_handle_options = 4
-    pos_colorbar = 3
-    pos_stroke = 2
-    startup = True
-
     def __init__(self, parent, panelct):
-        self.Startup = True
+        # Where shall the different controls be placed?
+        self.startup = True
         self.panelct = panelct
         self.context = parent.context
         wx.StatusBar.__init__(self, parent, -1)
-        FONT_SIZE = 7
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)
         self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
         sizes = [-2] * self.panelct
         # Make the first Panel large
-        sizes[0] = -3
+        sizes[0] = -4
         self.status_text = [""] * self.panelct
         self.previous_text = [""] * self.panelct
-        # The most intelligent way would be  to calculate the needed size...
-        sizes[self.pos_handle_options] = -1
+        # The most intelligent way would be to calculate the needed size...
+        sizes[self.panelct - 1] =  -1
         self.SetStatusWidths(sizes)
         self.sizeChanged = False
+        self.box_id_visible = {}
+        self.activesizer = [None] * self.panelct
+        self.nextbuttons = []
+        for idx in range(self.panelct):
+            btn = wx.Button(self, id=wx.ID_ANY, label="", size=wx.Size(20,-1))
+            btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True))
+            btn.Show(False)
+            btn.Bind(wx.EVT_BUTTON, self.on_button_next)
+            btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
+            self.nextbuttons.append(btn)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        # These will fall into the last field
-        self.cb_move = wx.CheckBox(self, id=wx.ID_ANY, label=_("Move"))
-        self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
-        self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
-        self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
-        self.cb_move.SetFont(
-            wx.Font(
-                FONT_SIZE,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-        self.cb_handle.SetFont(
-            wx.Font(
-                FONT_SIZE,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-        self.cb_rotate.SetFont(
-            wx.Font(
-                FONT_SIZE,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-        self.cb_skew.SetFont(
-            wx.Font(
-                FONT_SIZE,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
-
-        self.cb_move.SetValue(self.context.enable_sel_move)
-        self.cb_handle.SetValue(self.context.enable_sel_size)
-        self.cb_rotate.SetValue(self.context.enable_sel_rotate)
-        self.cb_skew.SetValue(self.context.enable_sel_skew)
-        self.cb_move.SetToolTip(_("Toggle visibility of Move-Indicator"))
-        self.cb_handle.SetToolTip(_("Toggle visibility of Resize-handles"))
-        self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
-        self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
-        # And now 8 Buttons for Stroke / Fill:
-        colors = (
-            0xFFFFFF,
-            0x000000,
-            0xFF0000,
-            0x00FF00,
-            0x0000FF,
-            0xFFFF00,
-            0xFF00FF,
-            0x00FFFF,
-        )
-        self.button_color = []
-        for idx in range(len(colors)):
-            self.button_color.append(wx.Button(self, id=wx.ID_ANY, label=""))
-            self.button_color[idx].SetBackgroundColour(wx.Colour(colors[idx]))
-            self.button_color[idx].SetToolTip(
-                _("Set stroke-color (right click set fill color)")
-            )
-            self.Bind(wx.EVT_BUTTON, self.on_button_color_left, self.button_color[idx])
-            self.button_color[idx].Bind(wx.EVT_RIGHT_DOWN, self.on_button_color_right)
-        # Plus one combobox + value field for stroke width
-        self.strokewidth_label = wx.StaticText(
-            self, id=wx.ID_ANY, label=_("Stroke-Width:")
-        )
-        self.strokewidth_label.SetFont(
-            wx.Font(
-                FONT_SIZE,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-        self.spin_width = wx.TextCtrl(self, id=wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER)
-        self.spin_width.SetFont(
-            wx.Font(
-                FONT_SIZE,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-
-        self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
-        self.combo_units = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=self.choices,
-            style=wx.CB_DROPDOWN | wx.CB_READONLY,
-        )
-        self.combo_units.SetFont(
-            wx.Font(
-                FONT_SIZE,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-        self.combo_units.SetSelection(0)
-        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        # self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
 
         # set the initial position of the checkboxes
-        self._cb_enabled = None
-        self.cb_enabled = False
         self.Reposition()
         self.startup = False
 
     def SetStatusText(self, message="", panel=0):
         if panel >= 0 and panel < self.panelct:
             self.status_text[panel] = message
-        if (
-            self.cb_enabled
-            and panel in (self.pos_handle_options, self.pos_colorbar, self.pos_stroke)
-            and len(message) > 0
-        ):
+        if self.activesizer[panel] is not None and len(message) > 0:
             # Someone wanted to have a message while displaying some control elements
             return
         super().SetStatusText(message, panel)
 
-    @property
-    def cb_enabled(self):
-        return self._cb_enabled
+    def AddPanel(self, panel_idx, wx_boxsizer, identifier, visible=True):
+        if panel_idx<0 or panel_idx>= self.panelct:
+            return
+        # Mke sure they belong to me, else the wx.Boxsizer
+        # will have wrong information to work with
+        for sizeritem in wx_boxsizer.GetChildren():
+            wind = sizeritem.GetWindow()
+            if wind is not None:
+                wind.Reparent(self)
 
-    @cb_enabled.setter
-    def cb_enabled(self, cb_enabled):
-        if cb_enabled:
-            self.cb_move.Show()
-            self.cb_handle.Show()
-            self.cb_rotate.Show()
-            self.cb_skew.Show()
-            if self.context.show_colorbar:
-                if self._cb_enabled != cb_enabled:
-                    # Keep old values...
-                    for idx, text in enumerate(self.status_text):
-                        self.previous_text[idx] = text
-                    self.SetStatusText("", self.pos_handle_options)
-                    self.SetStatusText("", self.pos_stroke)
-                    self.SetStatusText("", self.pos_colorbar)
-                sw_default = None
-                for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                    if hasattr(e, "stroke_width"):
-                        if sw_default is None:
-                            sw_default = e.stroke_width
-                            break
-                if not sw_default is None:
-                    # Set Values
-                    self.startup = True
-                    stdlen = float(Length("1mm"))
-                    value = "%.2f" % (sw_default / stdlen)
-                    self.spin_width.SetValue(value)
-                    self.combo_units.SetSelection(self.choices.index("mm"))
-                    self.startup = False
-                self.spin_width.Show()
-                self.combo_units.Show()
-                self.strokewidth_label.Show()
-                for btn in self.button_color:
-                    btn.Show()
+        storage = [wx_boxsizer, panel_idx, visible] # Visible by default
+        self.box_id_visible[identifier] = storage
+
+    def ActivatePanel(self, identifier, newflag):
+        # Activate Panel will make the indicated panel become choosable
+        try:
+            oldflag = self.box_id_visible[identifier][2]
+        except (IndexError, KeyError):
+            return
+        if oldflag != newflag:
+            panelidx = self.box_id_visible[identifier][1]
+
+            # Choosable
+            self.box_id_visible[identifier][2] = newflag
+            if newflag and self.activesizer[panelidx] is None:
+                self.activesizer[panelidx] = identifier
+            elif not newflag and self.activesizer[panelidx] == identifier:
+                # Was the active one
+                self.activesizer[panelidx] = None
+                for key in self.box_id_visible:
+                    entry = self.box_id_visible[key]
+                    if entry[2] and entry[1] == panelidx:
+                        self.activesizer[panelidx] = key
+                        break
+            self.Reposition(panelidx=panelidx)
+
+    def ForcePanel(self, identifier):
+        # ForcePanel will make the indicated panel choosable and visible
+        try:
+            oldflag = self.box_id_visible[identifier][2]
+        except (IndexError, KeyError):
+            return
+        if not oldflag:
+            # Make it choosable
+            self.box_id_visible[identifier][2] = True
+        panelidx = self.box_id_visible[identifier][1]
+        self.activesizer[panelidx] = identifier
+        self.Reposition(panelidx=panelidx)
+
+    def NextEntryInPanel(self, panelidx):
+        if panelidx<0 or panelidx>=self.panelct:
+            return
+        first_entry = None
+        next_entry = None
+        visible_seen = False
+        for key in self.box_id_visible:
+            entry = self.box_id_visible[key]
+            if entry[1] == panelidx and entry[2]:
+                if key == self.activesizer[panelidx]: # Visible
+                    visible_seen = True
+                else:
+                    if visible_seen and next_entry is None:
+                        next_entry = key
+                        break
+                    else:
+                        if first_entry is None:
+                            first_entry = key
+        if next_entry is None:
+            next_entry = first_entry
+        if next_entry is not None:
+            self.ForcePanel(next_entry)
         else:
-            self.SetStatusText(
-                self.previous_text[self.pos_handle_options], self.pos_handle_options
+            self.activesizer[panelidx] = None
+
+    def PreviousEntryInPanel(self, panelidx):
+        if panelidx<0 or panelidx>=self.panelct:
+            return
+        last_entry = None
+        prev_entry = None
+        visible_seen = False
+        for key in self.box_id_visible:
+            entry = self.box_id_visible[key]
+            if entry[1] == panelidx and entry[2]:
+                if key == self.activesizer[panelidx]: # Visible
+                    visible_seen = True
+                elif visible_seen:
+                    last_entry = key
+                else:
+                    prev_entry = key
+        if prev_entry is None:
+            prev_entry = last_entry
+        if prev_entry is not None:
+            self.ForcePanel(prev_entry)
+        else:
+            self.activesizer[panelidx] = None
+
+    def on_button_next(self, event):
+        button = event.GetEventObject()
+        for idx in range(self.panelct):
+            if self.nextbuttons[idx] == button:
+                self.NextEntryInPanel(idx)
+                break
+#        self.Reposition()
+        event.Skip()
+
+    def on_button_prev(self, event):
+        button = event.GetEventObject()
+        for idx in range(self.panelct):
+            if self.nextbuttons[idx] == button:
+                self.PreviousEntryInPanel(idx)
+                break
+#        self.Reposition()
+        event.Skip()
+
+    # Draw the panels
+    def Reposition(self, panelidx = None):
+        def debug_me():
+            for key in self.box_id_visible:
+                siz = self.box_id_visible[key][0]
+                items = siz.GetItemCount()
+                print ("Sizer '%s', children=%s" % (key, items))
+                for idx in range(items):
+                    print("   Item #%d - shown=%s" % (idx, siz.IsShown(idx)))
+
+        def deep_show_hide(sizerbox, key, showit, debugidx, debugdefault):
+            # print ("Showit: key=%s, flag=%s, idx=%d, default=%s" % (key, showit, debugidx, debugdefault))
+            if showit:
+                sizerbox.ShowItems(True)
+                sizerbox.Show(True)
+            else:
+                sizerbox.ShowItems(False)
+                sizerbox.Hide(True)
+            # for siz_item in sizerbox.GetChildren():
+            #     wind = siz_item.GetWindow()
+            #     if wind is not None:
+            #         wind.Show(showit)
+            sizerbox.Layout()
+
+        selfrect = self.GetRect()
+        if panelidx is None:
+            targets = range(self.panelct)
+        else:
+            targets = (panelidx,)
+        for pidx in targets:
+            # print("panel # %d has default: %s" % (pidx, self.activesizer[pidx]))
+            panelrect = self.GetFieldRect(pidx)
+            # Establish the amount of 'choosable' sizers
+            ct = 0
+            sizer = None
+            for key in self.box_id_visible:
+                entry = self.box_id_visible[key]
+                # print ("%s = %s" %(key, entry) )
+                if entry[1] == pidx:
+                    if entry[2]: # The right one and choosable...
+                        ct += 1
+                        if self.activesizer[pidx] is None:
+                            self.activesizer[pidx] = key
+                        if self.activesizer[pidx] != key: # its not the default, so hide
+                            deep_show_hide(entry[0], key, False, pidx, self.activesizer[pidx])
+                    else: # not choosable --> hide:
+                        deep_show_hide(entry[0], key, False, pidx, self.activesizer[pidx])
+            if ct > 1:
+                # Show Button and reduce available width for sizer
+                myrect = self.nextbuttons[pidx].GetRect()
+                myrect.x = panelrect.x + panelrect.width - myrect.width
+                myrect.y = panelrect.y
+                self.nextbuttons[pidx].SetRect(myrect)
+                panelrect.width -= myrect.width
+                self.nextbuttons[pidx].Show(True)
+            else:
+                self.nextbuttons[pidx].Show(False)
+            if self.activesizer[pidx] is not None:
+                sizer = self.box_id_visible[self.activesizer[pidx]][0]
+                # print ("Panel %s='%s' - %s" % (pidx, self.activesizer[pidx], panelrect))
+                # print ("Entries: %s" % sizer.GetItemCount())
+                sizer.SetDimension(panelrect.x, panelrect.y, panelrect.width, panelrect.height)
+                deep_show_hide(sizer, self.activesizer[pidx], True, pidx, self.activesizer[pidx])
+                text = self.status_text[pidx]
+                if text != "":
+                    self.previous_text[pidx] = text
+                self.SetStatusText("", pidx)
+            else:
+                self.SetStatusText(self.previous_text[pidx], pidx)
+        # debug_me()
+        self.sizeChanged = False
+
+    def OnSize(self, evt):
+        evt.Skip()
+        self.Reposition()  # for normal size events
+        self.sizeChanged = True
+
+    def OnIdle(self, evt):
+        if self.sizeChanged:
+            self.Reposition()
+
+
+
+class MeerK40t(MWindow):
+    """MeerK40t main window"""
+
+    def __init__(self, *args, **kwds):
+        width, height = wx.DisplaySize()
+
+        super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
+        try:
+            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
+        except AttributeError:
+            # Not WX 4.1
+            pass
+
+        self.context.gui = self
+        self.usb_running = False
+        context = self.context
+        self.register_options_and_choices(context)
+
+        if self.context.disable_tool_tips:
+            wx.ToolTip.Enable(False)
+
+        self.root_context = context.root
+        self.DragAcceptFiles(True)
+
+        self.needs_saving = False
+        self.working_file = None
+
+        self.pipe_state = None
+        self.previous_position = None
+        self.is_paused = False
+
+        self._mgr = aui.AuiManager()
+        self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
+        self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
+        self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
+
+        self.ui_visible = True
+        self.hidden_panes = []
+
+        # notify AUI which frame to use
+        self._mgr.SetManagedWindow(self)
+
+        self.__set_panes()
+        self.__set_commands()
+
+        # Menu Bar
+        self.main_menubar = wx.MenuBar()
+        self.__set_menubars()
+        # Status Bar
+        self.startup = True
+        self.main_statusbar = CustomStatusBar(self, 4)
+        self.setup_statusbar_panels()
+        self.SetStatusBar(self.main_statusbar)
+        self.main_statusbar.SetStatusStyles(
+            [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
+        )
+        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
+        self.SetStatusBarPane(0)
+        self.main_statusbar.SetStatusText("", 0)
+        self.startup = False
+
+        self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
+        self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
+        self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
+        self.DoGiveHelp_called = False
+        self.menus_open = 0
+        self.top_menu = None  # Needed because event.GetMenu is None for submenu titles
+
+        self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
+
+        self.__set_properties()
+        self.Layout()
+
+        self.__set_titlebar()
+        self.__kernel_initialize()
+
+        self.Bind(wx.EVT_SIZE, self.on_size)
+
+        self.CenterOnScreen()
+
+    def setup_statusbar_panels(self):
+        def define_selection():
+            self.handle_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.stroke_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.stroke_options_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.operation_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+            # These will fall into the last field
+            self.cb_move = wx.CheckBox(self, id=wx.ID_ANY, label=_("Move"))
+            self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
+            self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
+            self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+            self.cb_move.SetFont(
+                wx.Font(
+                    FONT_SIZE,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
             )
-            self.SetStatusText(self.previous_text[self.pos_stroke], self.pos_stroke)
-            self.SetStatusText(self.previous_text[self.pos_colorbar], self.pos_colorbar)
-            self.cb_move.Hide()
-            self.cb_handle.Hide()
-            self.cb_rotate.Hide()
-            self.cb_skew.Hide()
-            if not self.button_color is None:
-                self.spin_width.Hide()
-                self.combo_units.Hide()
-                self.strokewidth_label.Hide()
-                for btn in self.button_color:
-                    btn.Hide()
-        self._cb_enabled = cb_enabled
+            self.cb_handle.SetFont(
+                wx.Font(
+                    FONT_SIZE,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            )
+            self.cb_rotate.SetFont(
+                wx.Font(
+                    FONT_SIZE,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            )
+            self.cb_skew.SetFont(
+                wx.Font(
+                    FONT_SIZE,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            )
+
+            self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
+            self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
+            self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
+            self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
+
+            self.cb_move.SetValue(self.context.enable_sel_move)
+            self.cb_handle.SetValue(self.context.enable_sel_size)
+            self.cb_rotate.SetValue(self.context.enable_sel_rotate)
+            self.cb_skew.SetValue(self.context.enable_sel_skew)
+            self.cb_move.SetToolTip(_("Toggle visibility of Move-indicator"))
+            self.cb_handle.SetToolTip(_("Toggle visibility of Resize-handles"))
+            self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
+            self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
+            self.handle_sizer.PrependSpacer(5)
+            self.handle_sizer.Add(self.cb_move, 1, wx.EXPAND, 0)
+            self.handle_sizer.Add(self.cb_handle, 1, wx.EXPAND, 0)
+            self.handle_sizer.Add(self.cb_rotate, 1, wx.EXPAND, 0)
+            self.handle_sizer.Add(self.cb_skew, 1, wx.EXPAND, 0)
+
+        def define_info():
+            self.info_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.info_text1 = wx.StaticText(self, wx.ID_ANY, label="")
+            self.info_text2 = wx.StaticText(self, wx.ID_ANY, label="")
+            self.info_text3 = wx.StaticText(self, wx.ID_ANY, label="")
+            self.info_sizer.PrependSpacer(5)
+            self.info_sizer.Add(self.info_text1, 1, wx.EXPAND, 0)
+            self.info_sizer.Add(self.info_text2, 1, wx.EXPAND, 0)
+            self.info_sizer.Add(self.info_text3, 1, wx.EXPAND, 0)
+
+        def define_color():
+            # And now 8 Buttons for Stroke / Fill:
+            colors = (
+                0xFFFFFF,
+                0x000000,
+                0xFF0000,
+                0x00FF00,
+                0x0000FF,
+                0xFFFF00,
+                0xFF00FF,
+                0x00FFFF,
+            )
+            self.button_color = []
+            for idx in range(len(colors)):
+                wx_button = wx.Button(self.main_statusbar, id=wx.ID_ANY, size=wx.Size(20,-1), label="")
+                wx_button.SetBackgroundColour(wx.Colour(colors[idx]))
+                wx_button.SetMinSize(wx.Size(10, -1))
+                wx_button.SetToolTip(_("Set stroke-color (right click set fill color)"))
+                wx_button.Bind(wx.EVT_BUTTON, self.on_button_color_left)
+                wx_button.Bind(wx.EVT_RIGHT_DOWN, self.on_button_color_right)
+                self.button_color.append(wx_button)
+            for idx in range(len(colors)):
+                self.stroke_sizer.Add(self.button_color[idx], 1, wx.EXPAND, 0)
+
+        def define_stroke():
+            # Plus one combobox + value field for stroke width
+            self.strokewidth_label = wx.StaticText(
+                self.main_statusbar, id=wx.ID_ANY, label=_("Stroke:")
+            )
+            self.strokewidth_label.SetFont(
+                wx.Font(
+                    FONT_SIZE,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            )
+            self.spin_width = wx.TextCtrl(self, id=wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER)
+            self.spin_width.SetFont(
+                wx.Font(
+                    FONT_SIZE,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            )
+            self.spin_width.SetMinSize(wx.Size(30, -1))
+            self.spin_width.SetMaxSize(wx.Size(80, -1))
+
+            self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
+            self.combo_units = wx.ComboBox(
+                self,
+                wx.ID_ANY,
+                choices=self.choices,
+                style=wx.CB_DROPDOWN | wx.CB_READONLY,
+            )
+            self.combo_units.SetFont(
+                wx.Font(
+                    FONT_SIZE,
+                    wx.FONTFAMILY_DEFAULT,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+            )
+            self.combo_units.SetMinSize(wx.Size(30, -1))
+            self.combo_units.SetMaxSize(wx.Size(120, -1))
+            self.combo_units.SetSelection(0)
+            self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
+            # self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
+            self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
+            self.stroke_options_sizer.Add(self.strokewidth_label, 0, wx.EXPAND, 1)
+            self.stroke_options_sizer.Add(self.spin_width, 1, wx.EXPAND, 1)
+            self.stroke_options_sizer.Add(self.combo_units, 1, wx.EXPAND, 1)
+
+        def define_linecap():
+            self.linecap_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.cap_lbl = wx.StaticText(self, wx.ID_ANY, label=_("Cap"))
+            self.btn_cap_butt = wx.Button(self, id=wx.ID_ANY, size=wx.Size(30, -1))
+            self.btn_cap_butt.SetBitmap(cap_butt_20.GetBitmap(noadjustment=True))
+            self.btn_cap_butt.SetMaxSize(wx.Size(50, -1))
+            self.btn_cap_butt.SetToolTip(_("Set the end of the lines to a butt-shape"))
+            self.btn_cap_butt.Bind(wx.EVT_BUTTON, self.on_cap_butt)
+
+            self.btn_cap_round = wx.Button(self, id=wx.ID_ANY, size=wx.Size(30, -1))
+            self.btn_cap_round.SetBitmap(cap_round_20.GetBitmap(noadjustment=True))
+            self.btn_cap_round.SetMaxSize(wx.Size(50, -1))
+            self.btn_cap_round.SetToolTip(_("Set the end of the lines to a round-shape"))
+            self.btn_cap_round.Bind(wx.EVT_BUTTON, self.on_cap_round)
+
+            self.btn_cap_square = wx.Button(self, id=wx.ID_ANY, size=wx.Size(30, -1))
+            self.btn_cap_square.SetBitmap(cap_square_20.GetBitmap(noadjustment=True))
+            self.btn_cap_square.SetMaxSize(wx.Size(50, -1))
+            self.btn_cap_square.SetToolTip(_("Set the end of the lines to a square-shape"))
+            self.btn_cap_square.Bind(wx.EVT_BUTTON, self.on_cap_square)
+
+            self.linecap_sizer.Add(self.cap_lbl, 0, wx.EXPAND, 0)
+            self.linecap_sizer.Add(self.btn_cap_butt, 1, wx.EXPAND, 0)
+            self.linecap_sizer.Add(self.btn_cap_round, 1, wx.EXPAND, 0)
+            self.linecap_sizer.Add(self.btn_cap_square, 1, wx.EXPAND, 0)
+
+        def define_linejoin():
+            self.linejoin_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.join_lbl = wx.StaticText(self, wx.ID_ANY, label=_("Join"))
+
+            self.btn_join_bevel = wx.Button(self, id=wx.ID_ANY, size=wx.Size(25, -1))
+            self.btn_join_bevel.SetBitmap(join_bevel.GetBitmap(noadjustment=True))
+            self.btn_join_bevel.SetToolTip(_("Set the join of the lines to a bevel-shape"))
+            self.btn_join_bevel.Bind(wx.EVT_BUTTON, self.on_join_bevel)
+
+            self.btn_join_round = wx.Button(self, id=wx.ID_ANY, size=wx.Size(25, -1))
+            self.btn_join_round.SetBitmap(join_round.GetBitmap(noadjustment=True))
+            self.btn_join_round.SetToolTip(_("Set the join of lines to a round-shape"))
+            self.btn_join_round.Bind(wx.EVT_BUTTON, self.on_join_round)
+
+            self.btn_join_miter = wx.Button(self, id=wx.ID_ANY, size=wx.Size(25, -1))
+            self.btn_join_miter.SetBitmap(join_miter.GetBitmap(noadjustment=True))
+            self.btn_join_miter.SetToolTip(_("Set the join of lines to a miter-shape"))
+            self.btn_join_miter.Bind(wx.EVT_BUTTON, self.on_join_miter)
+
+            # self.btn_join_arcs = wx.Button(self, id=wx.ID_ANY, size=wx.Size(25, -1))
+            # self.btn_join_arcs.SetBitmap(join_round.GetBitmap(noadjustment=True))
+            # self.btn_join_arcs.SetToolTip(_("Set the join of lines to an arc-shape"))
+            # self.btn_join_arcs.Bind(wx.EVT_BUTTON, self.on_join_arcs)
+
+            # self.btn_join_miterclip = wx.Button(self, id=wx.ID_ANY, size=wx.Size(25, -1))
+            # self.btn_join_miterclip.SetBitmap(join_miter.GetBitmap(noadjustment=True))
+            # self.btn_join_miterclip.SetToolTip(_("Set the join of lines to a miter-clip-shape"))
+            # self.btn_join_miterclip.Bind(wx.EVT_BUTTON, self.on_join_miterclip)
+
+            self.linejoin_sizer.Add(self.join_lbl, 0, wx.EXPAND, 0)
+            self.linejoin_sizer.Add(self.btn_join_bevel, 1, wx.EXPAND, 0)
+            self.linejoin_sizer.Add(self.btn_join_round, 1, wx.EXPAND, 0)
+            self.linejoin_sizer.Add(self.btn_join_miter, 1, wx.EXPAND, 0)
+            # Who the h... needs those?
+            # self.linejoin_sizer.Add(self.btn_join_arcs, 1, wx.EXPAND, 0)
+            # self.linejoin_sizer.Add(self.btn_join_miterclip, 1, wx.EXPAND, 0)
+
+        def define_fill():
+            self.fill_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.fill_lbl = wx.StaticText(self, wx.ID_ANY, label=_("Fill"))
+            self.btn_fill_nonzero = wx.Button(self, id=wx.ID_ANY, size=wx.Size(30, -1))
+            self.btn_fill_nonzero.SetMaxSize(wx.Size(50, -1))
+            self.btn_fill_nonzero.SetBitmap(fill_nonzero.GetBitmap(noadjustment=True))
+            self.btn_fill_nonzero.SetToolTip(_("Set the fillstyle to non-zero (regular)"))
+            self.btn_fill_nonzero.Bind(wx.EVT_BUTTON, self.on_fill_nonzero)
+
+            self.btn_fill_evenodd = wx.Button(self, id=wx.ID_ANY, size=wx.Size(30, -1))
+            self.btn_fill_evenodd.SetBitmap(fill_evenodd.GetBitmap(noadjustment=True))
+            self.btn_fill_evenodd.SetMaxSize(wx.Size(50, -1))
+            self.btn_fill_evenodd.SetToolTip(_("Set the fillstyle to even-odd (alternating areas)"))
+            self.btn_fill_evenodd.Bind(wx.EVT_BUTTON, self.on_fill_evenodd)
+            self.fill_sizer.Add(self.fill_lbl, 0, wx.EXPAND, 0)
+            self.fill_sizer.Add(self.btn_fill_nonzero, 1, wx.EXPAND, 0)
+            self.fill_sizer.Add(self.btn_fill_evenodd, 1, wx.EXPAND, 0)
+
+        def define_assign_options():
+            self.assign_option_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            choices = [
+                _("Leave"),
+                _("-> OP"),
+                _("-> Elem"),
+            ]
+            self.cbo_apply_color = wx.ComboBox(self, wx.ID_ANY, choices=choices, value=choices[0], style=wx.CB_READONLY | wx.CB_DROPDOWN)
+            self.chk_all_similar = wx.CheckBox(self, wx.ID_ANY, _("Similar"))
+            self.chk_exclusive = wx.CheckBox(self, wx.ID_ANY, _("Exclusive"))
+            self.cbo_apply_color.SetToolTip(
+                _("Leave - neither the color of the operation nor of the elements will be changed") + "\n" +
+                _("-> OP - the assigned operation will adopt the color of the element") + "\n" +
+                _("-> Elem - the elements will adopt the color of the assigned operation")
+            )
+            self.chk_all_similar.SetToolTip(_("Assign as well all other elements with the same stroke-color (fill-color if right-click"))
+            self.chk_exclusive.SetToolTip(_("When assigning to an operation remove all assignments of the elements to other operations"))
+            self.assign_option_sizer.Add(self.cbo_apply_color, 1, wx.EXPAND, 0)
+            self.assign_option_sizer.Add(self.chk_all_similar, 1, wx.EXPAND, 0)
+            self.assign_option_sizer.Add(self.chk_exclusive, 1, wx.EXPAND, 0)
+
+        FONT_SIZE = 7
+        idx_selection = self.main_statusbar.panelct - 1
+        idx_colors = self.main_statusbar.panelct - 2
+        idx_assign = self.main_statusbar.panelct - 3
+
+        define_selection()
+        self.main_statusbar.AddPanel(idx_selection, self.handle_sizer, "selection", False)
+
+        define_info()
+        self.main_statusbar.AddPanel(idx_selection, self.info_sizer, "infos", False)
+
+        # ----- Color buttons and stroke
+        define_color()
+        self.main_statusbar.AddPanel(idx_colors, self.stroke_sizer, "color", True)
+
+        define_stroke()
+        self.main_statusbar.AddPanel(idx_colors, self.stroke_options_sizer, "stroke", False)
+
+        define_linecap()
+        self.main_statusbar.AddPanel(idx_colors, self.linecap_sizer, "linecap", False)
+
+        define_linejoin()
+        self.main_statusbar.AddPanel(idx_colors, self.linejoin_sizer, "linejoin", False)
+
+        define_fill()
+        self.main_statusbar.AddPanel(idx_colors, self.fill_sizer, "fillrule", False)
+
+        define_assign_options()
+        self.main_statusbar.AddPanel(idx_assign, self.assign_option_sizer, "assign-options", False)
+
+# --------- Events for status bar
+    def assign_fill(self, filltype):
+        self.context("fillrule {fill}".format(fill=filltype))
+
+    def on_fill_evenodd(self, event):
+        self.assign_fill("evenodd")
+
+    def on_fill_nonzero(self, event):
+        self.assign_fill("nonzero")
+
+    def assign_cap(self, captype):
+        self.context("linecap {cap}".format(cap=captype))
+
+    def on_cap_square(self, event):
+        self.assign_cap("square")
+
+    def on_cap_butt(self, event):
+        self.assign_cap("butt")
+
+    def on_cap_round(self, event):
+        self.assign_cap("round")
+
+    def assign_join(self, jointype):
+        self.context("linejoin {join}".format(join=jointype))
+
+    def on_join_miter(self, event):
+        self.assign_join("miter")
+
+    def on_join_miterclip(self, event):
+        self.assign_join("miter-clip")
+
+    def on_join_bevel(self, event):
+        self.assign_join("bevel")
+
+    def on_join_arcs(self, event):
+        self.assign_join("arcs")
+
+    def on_join_round(self, event):
+        self.assign_join("round")
 
     # the checkbox was clicked
     def on_toggle_move(self, event):
@@ -433,168 +869,65 @@ class CustomStatusBar(wx.StatusBar):
                 try:
                     newval = float(self.spin_width.GetValue())
                     chg = True
-                except ValueError:                    
+                except ValueError:
                     chg = False
             if chg:
                 value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
                 mysignal = "selstrokewidth"
                 self.context.signal(mysignal, value)
 
-    def OnSize(self, evt):
-        evt.Skip()
-        self.Reposition()  # for normal size events
-        self.sizeChanged = True
+    @signal_listener("emphasized")
+    def on_update_statusbar(self, origin, *args):
+        # First enable/disable the controls in the statusbar
+        elements = self.context.elements
+        ct = 0
+        total_area = 0
+        total_length = 0
+        _mm = float(Length("1{unit}".format(unit="mm")))
+        for e in elements.flat(types=elem_nodes, emphasized=True):
+            ct += 1
+            this_area, this_length = elements.get_information(e, fine = False)
+            total_area += this_area
+            total_length += this_length
 
-    def OnIdle(self, evt):
-        if self.sizeChanged:
-            self.Reposition()
-
-    # reposition the checkboxes
-    def Reposition(self):
-        rect = self.GetFieldRect(self.pos_handle_options)
-        if rect[3]<20 or rect[2]<20:
-            return
-        ct = 4
-        wd = int(round(rect.width / ct))
-        rect.x += 1
-        rect.y += 1
-        rect.width = int(wd)
-        self.cb_move.SetRect(rect)
-        rect.x += wd
-        self.cb_handle.SetRect(rect)
-        rect.x += int(wd)
-        self.cb_rotate.SetRect(rect)
-        rect.x += int(wd)
-        self.cb_skew.SetRect(rect)        
-        if self.context.show_colorbar:
-            rect = self.GetFieldRect(self.pos_stroke)
-            ct = 3
-            wd0 = int(round(rect.width / ct))
-            wd1 = wd0
-            wd2 = wd0
-            # print ("Width:", wd1, wd2)
-            toosmall = wd1 < 45
-            rect.x += 1
-            rect.y += 1
-            old_y = rect.y
-            old_ht = rect.height
-            rect.width = wd1
-            if toosmall:
-                wd2 = ct/2 * wd0
-                if self.cb_enabled:
-                    self.strokewidth_label.Hide()
-            else:
-                if self.cb_enabled:
-                    self.strokewidth_label.Show()
-                # Centering in Y
-                ht = self.strokewidth_label.GetCharHeight()
-                rect.y = old_y + (old_ht - ht) / 2
-                rect.height = ht
-                self.strokewidth_label.SetRect(rect)
-                # reset to previous values
-                rect.y = old_y
-                rect.height = old_ht
-                rect.x += wd1
-                # Make the next two elements smaller
-            rect.width = wd2
-            # Linux has some issues with controls smaller than 32 pixels...
-            #old_rect = self.spin_width.GetRect()
-            #rect.height = old_rect.height
-            #print (rect, old_rect)
-            self.spin_width.SetRect(rect)
-            rect.x += wd2
-            self.combo_units.SetRect(rect)
-
-            rect = self.GetFieldRect(self.pos_colorbar)
-            ct = len(self.button_color)
-            wd = int(round(rect.width / ct)) - 1
-            rect.x += 1
-            rect.y += 1
-            rect.width = wd
-            for btn in self.button_color:
-                btn.SetRect(rect)
-                rect.x += wd
-
-        self.sizeChanged = False
+        valu = ct > 0
+        total_area = total_area / (_mm * _mm)
+        total_length = total_length / _mm
+        self.info_text1.SetLabel("# = %d" % ct)
+        self.info_text2.SetLabel("A = %.1f mm²" % total_area)
+        self.info_text3.SetLabel("D = %.1f mm" % total_length)
+        self.main_statusbar.ActivatePanel("selection", valu)
+        self.main_statusbar.ActivatePanel("infos", valu)
+        self.main_statusbar.ActivatePanel("fillrule", valu)
+        self.main_statusbar.ActivatePanel("linejoin", valu)
+        self.main_statusbar.ActivatePanel("linecap", valu)
+        self.main_statusbar.ActivatePanel("stroke", valu)
+        self.main_statusbar.Reposition()
+    #         if self.context.show_colorbar:
+    #             if self._cb_enabled != cb_enabled:
+    #                 # Keep old values...
+    #                 for idx, text in enumerate(self.status_text):
+    #                     self.previous_text[idx] = text
+    #                 self.SetStatusText("", self.pos_handle_options)
+    #                 self.SetStatusText("", self.pos_stroke)
+    #                 self.SetStatusText("", self.pos_colorbar)
+    #             sw_default = None
+    #             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+    #                 if hasattr(e, "stroke_width"):
+    #                     if sw_default is None:
+    #                         sw_default = e.stroke_width
+    #                         break
+    #             if not sw_default is None:
+    #                 # Set Values
+    #                 self.startup = True
+    #                 stdlen = float(Length("1mm"))
+    #                 value = "%.2f" % (sw_default / stdlen)
+    #                 self.spin_width.SetValue(value)
+    #                 self.combo_units.SetSelection(self.choices.index("mm"))
+    #                 self.startup = False
 
 
-class MeerK40t(MWindow):
-    """MeerK40t main window"""
-
-    def __init__(self, *args, **kwds):
-        width, height = wx.DisplaySize()
-
-        super().__init__(int(width * 0.9), int(height * 0.9), *args, **kwds)
-        try:
-            self.EnableTouchEvents(wx.TOUCH_ZOOM_GESTURE | wx.TOUCH_PAN_GESTURES)
-        except AttributeError:
-            # Not WX 4.1
-            pass
-
-        self.context.gui = self
-        self.usb_running = False
-        context = self.context
-        self.register_options_and_choices(context)
-
-        if self.context.disable_tool_tips:
-            wx.ToolTip.Enable(False)
-
-        self.root_context = context.root
-        self.DragAcceptFiles(True)
-
-        self.needs_saving = False
-        self.working_file = None
-
-        self.pipe_state = None
-        self.previous_position = None
-        self.is_paused = False
-
-        self._mgr = aui.AuiManager()
-        self._mgr.SetFlags(self._mgr.GetFlags() | aui.AUI_MGR_LIVE_RESIZE)
-        self._mgr.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_pane_closed)
-        self._mgr.Bind(aui.EVT_AUI_PANE_ACTIVATED, self.on_pane_active)
-
-        self.ui_visible = True
-        self.hidden_panes = []
-
-        # notify AUI which frame to use
-        self._mgr.SetManagedWindow(self)
-
-        self.__set_panes()
-        self.__set_commands()
-
-        # Menu Bar
-        self.main_menubar = wx.MenuBar()
-        self.__set_menubars()
-
-        self.main_statusbar = CustomStatusBar(self, 5)
-        self.SetStatusBar(self.main_statusbar)
-        self.main_statusbar.SetStatusStyles(
-            [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
-        )
-        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
-        self.SetStatusBarPane(0)
-        self.main_statusbar.SetStatusText("", 0)
-
-        self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
-        self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
-        self.Bind(wx.EVT_MENU_HIGHLIGHT, self.on_menu_highlight)
-        self.DoGiveHelp_called = False
-        self.menus_open = 0
-        self.top_menu = None  # Needed because event.GetMenu is None for submenu titles
-
-        self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
-
-        self.__set_properties()
-        self.Layout()
-
-        self.__set_titlebar()
-        self.__kernel_initialize()
-
-        self.Bind(wx.EVT_SIZE, self.on_size)
-
-        self.CenterOnScreen()
-
+# ------------ Setup
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
@@ -2616,26 +2949,6 @@ class MeerK40t(MWindow):
     def on_update_statusmsg(self, origin, value):
         self.main_statusbar.SetStatusText(value, 0)
 
-    @signal_listener("emphasized")
-    def on_update_selwidget(self, origin, *args):
-        # First enable/disable the controls in the statusbar
-        elements = self.context.elements
-        valu = elements.has_emphasis()
-        self.main_statusbar.cb_enabled = valu
-        # # Then sync the selected status to the emphasized status
-        # if valu:
-        #     anychanges = False
-        #     selected_list = list(self.context.elements.flat(types=elem_nodes, selected=True))
-        #     emphasized_list = list(self.context.elements.flat(types=elem_nodes, emphasized=True))
-        #     print ("Main tries to sync, selcount=%d, emphcount=%d" % (len(selected_list), len(emphasized_list)))
-        #     for e in emphasized_list:
-        #         if not e.selected:
-        #             e.selected = True
-        #             anychanges = True
-        #     for e in selected_list:
-        #         if e not in emphasized_list:
-        #             e.selected = False
-        #             anychanges = True
 
     def __set_titlebar(self):
         device_name = ""
