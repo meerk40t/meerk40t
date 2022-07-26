@@ -811,6 +811,22 @@ class MeerK40t(MWindow):
             },
         ]
         context.kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "menu_autohide",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Menu auto-minimize"),
+                "tip": _(
+                    "The scene-menu will minimize itself automatically after selection of a tool."
+                ),
+                "page": "Gui",
+                "section": "Scene",
+            },
+        ]
+        context.kernel.register_choices("preferences", choices)
+
         context.register(
             "function/open_property_window_for_node", self.open_property_window_for_node
         )

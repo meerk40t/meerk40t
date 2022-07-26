@@ -5,13 +5,13 @@ from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icon_meerk40t
+from meerk40t.gui.icons import icon_meerk40t, icons8_menu_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
-from meerk40t.gui.scenewidgets.cyclocycloidwidget import CyclocycloidWidget
+from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
@@ -32,6 +32,8 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
+from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Angle, Color
@@ -137,10 +139,53 @@ class MeerK40tScenePanel(wx.Panel):
                     pass
             dlg.Destroy()
 
+        @context.console_command("tool_menu", hidden=True)
+        def tool_menu(channel, _, **kwargs):
+            self.widget_scene.widget_root.interface_widget.add_widget(
+                -1,
+                ToggleWidget(
+                    self.widget_scene,
+                    5,
+                    5,
+                    5 + 25,
+                    5 + 25,
+                    icons8_menu_50.GetBitmap(),
+                    "button/tool",
+                ),
+            )
+            channel(_("Added tool widget to interface"))
+
+        @context.console_command("seek_bar", hidden=True)
+        def seek_bar(channel, _, **kwargs):
+            def changed(values, seeker):
+                print(values)
+
+            widget = SeekbarWidget(
+                self.widget_scene, 25, 25, 200, 25, 0, 1000.0, changed
+            )
+
+            def clicked(values, seeker):
+                self.widget_scene.widget_root.interface_widget.remove_widget(widget)
+                self.widget_scene.request_refresh()
+
+            widget.add_value(500.0)
+            widget.add_value(250.0)
+            widget.clicked = clicked
+            self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
+
+            channel(_("Added example_seekbar to interface"))
+            self.widget_scene.request_refresh()
+
         @context.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwargs):
-            self.widget_scene.widget_root.scene_widget.add_widget(0, CyclocycloidWidget(self.widget_scene))
+            self.widget_scene.widget_root.scene_widget.add_widget(
+                0, CyclocycloidWidget(self.widget_scene)
+            )
             channel(_("Added cyclocycloid widget to scene."))
+
+        @context.console_command("toast", hidden=True)
+        def toast_scene(remainder, **kwargs):
+            self.widget_scene.toast(remainder)
 
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
@@ -515,7 +560,11 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
-        self.context("scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level))
+        self.context(
+            "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
+                zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level
+            )
+        )
 
     def pane_hide(self, *args):
         pass
