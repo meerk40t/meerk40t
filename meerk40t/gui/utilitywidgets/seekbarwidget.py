@@ -72,7 +72,7 @@ class SeekbarWidget(Widget):
         self.background_brush.SetColour(wx.WHITE)
 
     def hit(self):
-        return HITCHAIN_HIT | NO_HOVER
+        return HITCHAIN_HIT
 
     def process_draw(self, gc: wx.GraphicsContext):
         gc.SetBrush(self.background_brush)
