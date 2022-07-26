@@ -32,6 +32,7 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name
 from meerk40t.kernel import CommandSyntaxError, signal_listener
@@ -153,6 +154,27 @@ class MeerK40tScenePanel(wx.Panel):
                 ),
             )
             channel(_("Added tool widget to interface"))
+
+        @context.console_command("seek_bar", hidden=True)
+        def seek_bar(channel, _, **kwargs):
+            def changed(values, seeker):
+                print(values)
+
+            widget = SeekbarWidget(
+                self.widget_scene, 25, 25, 200, 25, 0, 1000.0, changed
+            )
+
+            def clicked(values, seeker):
+                self.widget_scene.widget_root.interface_widget.remove_widget(widget)
+                self.widget_scene.request_refresh()
+
+            widget.add_value(500.0)
+            widget.add_value(250.0)
+            widget.clicked = clicked
+            self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
+
+            channel(_("Added example_seekbar to interface"))
+            self.widget_scene.request_refresh()
 
         @context.console_command("cyclocycloid", hidden=True)
         def cyclocycloid(channel, _, **kwargs):
