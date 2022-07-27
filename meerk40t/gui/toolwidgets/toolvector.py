@@ -37,7 +37,7 @@ class VectorTool(ToolWidget):
             del gpath
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs
     ):
         response = RESPONSE_CHAIN
 

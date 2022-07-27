@@ -26,7 +26,7 @@ class ToggleWidget(Widget):
         gc.PopState()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         if event_type == "leftdown":
             if self._opened:

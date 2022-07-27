@@ -677,7 +677,7 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type="", nearest_snap=None):
+    def event(self, window_pos, event_type="", nearest_snap=None, modifiers=None):
         """
         Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
 
@@ -703,7 +703,13 @@ class Scene(Module, Job):
                 if hit is None:
                     continue  # Element was dropped.
                 current_widget, current_matrix = hit
-                current_widget.event(None, None, event_type, None)
+                current_widget.event(
+                    window_pos=None,
+                    scene_pos=None,
+                    event_type=event_type,
+                    nearest_snap=None,
+                    modifiers=None,
+                )
             return
         if self.last_position is None:
             self.last_position = window_pos
@@ -722,40 +728,6 @@ class Scene(Module, Job):
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
-
-        if event_type in (
-            "kb_shift_release",
-            "kb_shift_press",
-            "kb_ctrl_release",
-            "kb_ctrl_press",
-            "kb_alt_release",
-            "kb_alt_press",
-        ):
-            # print("Keyboard-Event raised: %s" % event_type)
-            self.rebuild_hittable_chain()
-            for current_widget, current_matrix in self.hittable_elements:
-                space_pos = window_pos
-                if current_matrix is not None and not current_matrix.is_identity():
-                    space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
-                    space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
-                    sdx = space_cur[0] - space_last[0]
-                    sdy = space_cur[1] - space_last[1]
-                    space_pos = (
-                        space_cur[0],
-                        space_cur[1],
-                        space_last[0],
-                        space_last[1],
-                        sdx,
-                        sdy,
-                    )
-                try:
-                    # We ignore the 'consume' etc. for the time being...
-                    response = current_widget.event(
-                        window_pos, space_pos, event_type, None
-                    )
-                except AttributeError:
-                    pass
-            return
 
         if event_type in (
             "leftdown",
@@ -801,9 +773,19 @@ class Scene(Module, Job):
                             "Converted %s: %s" % ("hover_end", str(window_pos))
                         )
                     previous_top_element.event(
-                        window_pos, window_pos, "hover_end", None
+                        window_pos=window_pos,
+                        space_pos=space_pos,
+                        event_type="hover_end",
+                        nearest_snap=None,
+                        modifiers=modifiers,
                     )
-                current_widget.event(window_pos, space_pos, "hover_start", None)
+                current_widget.event(
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type="hover_start",
+                    nearest_snap=None,
+                    modifiers=modifiers,
+                )
                 if self.log_events:
                     self.log_events(
                         "Converted %s: %s" % ("hover_start", str(window_pos))
@@ -816,7 +798,11 @@ class Scene(Module, Job):
                 < 50
             ):  # Anything within 0.3 seconds will be converted to a leftclick
                 response = current_widget.event(
-                    window_pos, space_pos, "leftclick", nearest_snap
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type="leftclick",
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
                 )
                 if self.log_events:
                     self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
@@ -826,15 +812,26 @@ class Scene(Module, Job):
                         f"Did not convert to click, {time.time() - self._down_start_time}"
                     )
                 response = current_widget.event(
-                    window_pos, space_pos, event_type, nearest_snap
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type=event_type,
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
                 )
                 # print ("Leftup called for widget #%d" % i )
                 # print (response)
             else:
                 response = current_widget.event(
-                    window_pos, space_pos, event_type, nearest_snap
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type=event_type,
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
                 )
 
+            ##################
+            # PROCESS RESPONSE
+            ##################
             if type(response) is tuple:
                 # We get two additional parameters which are the screen location of the nearest snap point
                 params = response[1:]

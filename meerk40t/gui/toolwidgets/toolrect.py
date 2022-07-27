@@ -46,7 +46,7 @@ class RectTool(ToolWidget):
             gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":

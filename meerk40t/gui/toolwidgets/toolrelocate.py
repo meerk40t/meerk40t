@@ -23,7 +23,7 @@ class RelocateTool(ToolWidget):
         pass
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs
     ):
         # Add snap behaviour
         response = RESPONSE_CHAIN

@@ -22,7 +22,7 @@ class RelocateWidget(Widget):
         gc.DrawBitmap(self.bitmap, self.left, self.top, self.width, self.height)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         if event_type == "move":
             dx = space_pos[4]

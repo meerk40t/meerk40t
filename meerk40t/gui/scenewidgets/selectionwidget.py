@@ -216,7 +216,7 @@ class BorderWidget(Widget):
         return HITCHAIN_DELEGATE
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         return RESPONSE_CHAIN
 
@@ -564,7 +564,7 @@ class RotationWidget(Widget):
         return value == 2
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "rotation"
         response = process_event(
@@ -778,7 +778,7 @@ class CornerWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "corner"
         response = process_event(
@@ -977,7 +977,7 @@ class SideWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "side"
         s_help = "Size element in %s-direction (with Ctrl+shift from center)" % (
@@ -1101,7 +1101,7 @@ class SkewWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "skew"
         s_help = "Skew element in %s-direction" % ("X" if self.is_x else "Y")
@@ -1249,7 +1249,7 @@ class MoveWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "move"
         response = process_event(
@@ -1336,7 +1336,7 @@ class MoveRotationOriginWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "rotcenter"
         response = process_event(
@@ -1452,7 +1452,7 @@ class ReferenceWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "reference"
         response = process_event(
@@ -1555,7 +1555,7 @@ class LockWidget(Widget):
             self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         s_me = "lock"
         response = process_event(
@@ -2023,7 +2023,7 @@ class SelectionWidget(Widget):
             menu.Destroy()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         elements = self.scene.context.elements
         # mirror key-events to provide them to the widgets as they get deleted and created after every event...

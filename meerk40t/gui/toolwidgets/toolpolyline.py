@@ -41,7 +41,7 @@ class PolylineTool(ToolWidget):
             gc.DrawLines(points)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":

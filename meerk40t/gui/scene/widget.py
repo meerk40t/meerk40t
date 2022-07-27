@@ -115,7 +115,7 @@ class Widget(list):
         return self.left <= x <= self.right and self.top <= y <= self.bottom
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         """
         Default event which simply chains the event to the next hittable object.

@@ -33,7 +33,7 @@ class DrawTool(ToolWidget):
         self.series.append(point)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         # We don't set tool_active here, as this can't be properly honored...
         # And we don't care about nearest_snap either...

@@ -81,7 +81,7 @@ class RectSelectWidget(Widget):
     # debug_msg = ""
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         # sdbg = event_type
         # if sdbg in ("hover_start", "hover_end", "hover"):
