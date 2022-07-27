@@ -61,7 +61,7 @@ class ElementsWidget(Widget):
         elif event_type == "leftclick":
             elements = self.scene.context.elements
             keep_old = "shift" in modifiers
-            smallest = bool(self.scene.context.select_smallest) == bool("ctrl" in modifiers)
+            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
             elements.set_emphasized_by_position(space_pos, keep_old, smallest)
             elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME
