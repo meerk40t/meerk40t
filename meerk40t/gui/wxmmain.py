@@ -10,7 +10,7 @@ from wx import aui
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.element_types import elem_nodes
+from ..core.element_types import elem_nodes, op_nodes
 
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import Color, Matrix, Path
@@ -57,6 +57,12 @@ from .icons import (
     join_bevel,
     join_miter,
     join_round,
+    icons8_direction_20,
+    icons8_scatter_plot_20,
+    icons8_laser_beam_20,
+    icons8_image_20,
+    icons8_small_beam_20,
+    icons8_diagonal_20,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -207,7 +213,7 @@ class CustomStatusBar(wx.StatusBar):
             return
         super().SetStatusText(message, panel)
 
-    def AddPanel(self, panel_idx, wx_boxsizer, identifier, visible=True):
+    def AddPanel(self, panel_idx, wx_boxsizer, identifier, visible=True, callback = None):
         if panel_idx<0 or panel_idx>= self.panelct:
             return
         # Mke sure they belong to me, else the wx.Boxsizer
@@ -217,7 +223,7 @@ class CustomStatusBar(wx.StatusBar):
             if wind is not None:
                 wind.Reparent(self)
 
-        storage = [wx_boxsizer, panel_idx, visible] # Visible by default
+        storage = [wx_boxsizer, panel_idx, visible, callback] # Visible by default
         self.box_id_visible[identifier] = storage
 
     def ActivatePanel(self, identifier, newflag):
@@ -331,13 +337,19 @@ class CustomStatusBar(wx.StatusBar):
                 for idx in range(items):
                     print("   Item #%d - shown=%s" % (idx, siz.IsShown(idx)))
 
-        def deep_show_hide(sizerbox, key, showit, debugidx, debugdefault):
+        def deep_show_hide(sizerbox, key, showit, callback):
             # print ("Showit: key=%s, flag=%s, idx=%d, default=%s" % (key, showit, debugidx, debugdefault))
             if showit:
-                sizerbox.ShowItems(True)
+                if callback is None:
+                    sizerbox.ShowItems(True)
+                else:
+                    callback(True)
                 sizerbox.Show(True)
             else:
-                sizerbox.ShowItems(False)
+                if callback is None:
+                    sizerbox.ShowItems(False)
+                else:
+                    callback(True)
                 sizerbox.Hide(True)
             # for siz_item in sizerbox.GetChildren():
             #     wind = siz_item.GetWindow()
@@ -365,9 +377,9 @@ class CustomStatusBar(wx.StatusBar):
                         if self.activesizer[pidx] is None:
                             self.activesizer[pidx] = key
                         if self.activesizer[pidx] != key: # its not the default, so hide
-                            deep_show_hide(entry[0], key, False, pidx, self.activesizer[pidx])
+                            deep_show_hide(entry[0], key, False, entry[3])
                     else: # not choosable --> hide:
-                        deep_show_hide(entry[0], key, False, pidx, self.activesizer[pidx])
+                        deep_show_hide(entry[0], key, False, entry[3])
             if ct > 1:
                 # Show Button and reduce available width for sizer
                 myrect = self.nextbuttons[pidx].GetRect()
@@ -380,10 +392,11 @@ class CustomStatusBar(wx.StatusBar):
                 self.nextbuttons[pidx].Show(False)
             if self.activesizer[pidx] is not None:
                 sizer = self.box_id_visible[self.activesizer[pidx]][0]
+                callback = self.box_id_visible[self.activesizer[pidx]][3]
                 # print ("Panel %s='%s' - %s" % (pidx, self.activesizer[pidx], panelrect))
                 # print ("Entries: %s" % sizer.GetItemCount())
                 sizer.SetDimension(panelrect.x, panelrect.y, panelrect.width, panelrect.height)
-                deep_show_hide(sizer, self.activesizer[pidx], True, pidx, self.activesizer[pidx])
+                deep_show_hide(sizer, self.activesizer[pidx], True, callback)
                 text = self.status_text[pidx]
                 if text != "":
                     self.previous_text[pidx] = text
@@ -472,6 +485,8 @@ class MeerK40t(MWindow):
         self.SetStatusBarPane(0)
         self.main_statusbar.SetStatusText("", 0)
         self.startup = False
+        # Make sure its showing up properly
+        self.main_statusbar.Reposition()
 
         self.Bind(wx.EVT_MENU_OPEN, self.on_menu_open)
         self.Bind(wx.EVT_MENU_CLOSE, self.on_menu_close)
@@ -741,38 +756,281 @@ class MeerK40t(MWindow):
             self.assign_option_sizer.Add(self.cbo_apply_color, 1, wx.EXPAND, 0)
             self.assign_option_sizer.Add(self.chk_all_similar, 1, wx.EXPAND, 0)
             self.assign_option_sizer.Add(self.chk_exclusive, 1, wx.EXPAND, 0)
+            self.chk_exclusive.Bind(wx.EVT_CHECKBOX, self.on_chk_exclusive)
+
+        def define_assign_buttons():
+            self.iconsize = 20
+            self.buttonsize = self.iconsize + 4
+            self.MAXBUTTONS = 24
+            self.assign_hover = 0
+            self.assign_buttons = []
+            self.op_nodes= []
+            self.assign_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            for idx in range(self.MAXBUTTONS):
+                btn = wx.Button(self, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize))
+                self.assign_buttons.append(btn)
+                self.op_nodes.append(None)
+                self.assign_sizer.Add(btn, 1, wx.EXPAND, 0)
+                btn.Bind(wx.EVT_ENTER_WINDOW, self.on_assign_mouse_over)
+                btn.Bind(wx.EVT_LEAVE_WINDOW, self.on_assign_mouse_leave)
+                btn.Bind(wx.EVT_BUTTON, self.on_assign_button_left)
+                btn.Bind(wx.EVT_RIGHT_DOWN, self.on_assign_button_right)
+
 
         FONT_SIZE = 7
-        idx_selection = self.main_statusbar.panelct - 1
-        idx_colors = self.main_statusbar.panelct - 2
-        idx_assign = self.main_statusbar.panelct - 3
+        self.idx_selection = self.main_statusbar.panelct - 1
+        self.idx_colors = self.main_statusbar.panelct - 2
+        self.idx_assign = self.main_statusbar.panelct - 3
 
         define_selection()
-        self.main_statusbar.AddPanel(idx_selection, self.handle_sizer, "selection", False)
+        self.main_statusbar.AddPanel(self.idx_selection, self.handle_sizer, "selection", False)
 
         define_info()
-        self.main_statusbar.AddPanel(idx_selection, self.info_sizer, "infos", False)
+        self.main_statusbar.AddPanel(self.idx_selection, self.info_sizer, "infos", False)
 
         # ----- Color buttons and stroke
         define_color()
-        self.main_statusbar.AddPanel(idx_colors, self.stroke_sizer, "color", True)
+        self.main_statusbar.AddPanel(self.idx_colors, self.stroke_sizer, "color", True)
 
         define_stroke()
-        self.main_statusbar.AddPanel(idx_colors, self.stroke_options_sizer, "stroke", False)
+        self.main_statusbar.AddPanel(self.idx_colors, self.stroke_options_sizer, "stroke", False)
 
         define_linecap()
-        self.main_statusbar.AddPanel(idx_colors, self.linecap_sizer, "linecap", False)
+        self.main_statusbar.AddPanel(self.idx_colors, self.linecap_sizer, "linecap", False)
 
         define_linejoin()
-        self.main_statusbar.AddPanel(idx_colors, self.linejoin_sizer, "linejoin", False)
+        self.main_statusbar.AddPanel(self.idx_colors, self.linejoin_sizer, "linejoin", False)
 
         define_fill()
-        self.main_statusbar.AddPanel(idx_colors, self.fill_sizer, "fillrule", False)
+        self.main_statusbar.AddPanel(self.idx_colors, self.fill_sizer, "fillrule", False)
+
+        define_assign_buttons()
+        self.main_statusbar.AddPanel(self.idx_assign, self.assign_sizer, "assign", True, callback = self.callback_show_assign_buttons)
 
         define_assign_options()
-        self.main_statusbar.AddPanel(idx_assign, self.assign_option_sizer, "assign-options", False)
+        self.main_statusbar.AddPanel(self.idx_assign, self.assign_option_sizer, "assign-options", True)
+        # Setup assign buttons
+        self.assign_show_stuff(False)
+
+# --------- Logic for operation assignment
+    def assign_clear_old(self):
+        for idx in range(self.MAXBUTTONS):
+            self.op_nodes[idx] = None
+            self.assign_buttons[idx].SetBitmap(wx.NullBitmap)
+            self.assign_buttons[idx].Show(False)
+        if self.assign_hover>0:
+            self.main_statusbar.SetStatusText("", 0)
+            self.assign_hover = 0
+
+    def assign_set_single_button(self, node):
+        def get_bitmap():
+            def get_color():
+                iconcolor = None
+                background = node.color
+                if background is not None:
+                    c1 = Color("Black")
+                    c2 = Color("White")
+                    if Color.distance(background, c1)> Color.distance(background, c2):
+                        iconcolor = c1
+                    else:
+                        iconcolor = c2
+                return iconcolor, background
+
+            iconsize = 20
+            result = None
+            d = None
+            if node.type == "op raster":
+                c, d = get_color()
+                result = icons8_direction_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            elif node.type == "op image":
+                c, d = get_color()
+                result = icons8_image_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            elif node.type == "op engrave":
+                c, d = get_color()
+                result = icons8_small_beam_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            elif node.type == "op cut":
+                c, d = get_color()
+                result = icons8_laser_beam_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            elif node.type == "op hatch":
+                c, d = get_color()
+                result = icons8_diagonal_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            elif node.type == "op dots":
+                c, d = get_color()
+                result = icons8_scatter_plot_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+            return d, result
+
+        def process_button(myidx):
+            col, image = get_bitmap()
+            if image is None:
+                return
+            if col is not None:
+                self.assign_buttons[myidx].SetBackgroundColour(wx.Colour(swizzlecolor(col)))
+            else:
+                self.assign_buttons[myidx].SetBackgroundColour(wx.LIGHT_GREY)
+            if image is None:
+                self.assign_buttons[myidx].SetBitmap(wx.NullBitmap)
+            else:
+                self.assign_buttons[myidx].SetBitmap(image)
+                # self.assign_buttons[myidx].SetBitmapDisabled(icons8_padlock_50.GetBitmap(color=Color("Grey"), resize=(self.iconsize, self.iconsize), noadjustment=True, keepalpha=True))
+            self.assign_buttons[myidx].SetToolTip(
+                str(node) +
+                "\n" +
+                _("Assign the selected elements to the operation.") +
+                "\n" +
+                _("Left click: consider stroke as main color, right click: use fill")
+            )
+            self.assign_buttons[myidx].Show()
+
+        lastfree = -1
+        found = False
+        for idx in range(self.MAXBUTTONS):
+            if node is self.op_nodes[idx]:
+                process_button(idx)
+                found = True
+                break
+            else:
+                if lastfree<0 and self.op_nodes[idx] is None:
+                    lastfree = idx
+        if not found:
+            if lastfree>=0:
+                self.op_nodes[lastfree] = node
+                process_button(lastfree)
+
+    def assign_set_buttons(self):
+        self.assign_clear_old()
+        idx = 0
+        for node in list(self.context.elements.flat(types=op_nodes)):
+            if node.type.startswith("op "):
+                self.op_nodes[idx] = node
+                self.assign_set_single_button(node)
+                idx += 1
+                if idx>=self.MAXBUTTONS:
+                    # too many...
+                    break
+        # We need to call reposition for the updates to be seen
+        self.main_statusbar.Reposition(panelidx=self.idx_assign)
+
+    def assign_show_stuff(self, flag):
+        if flag:
+            self.assign_set_buttons()
+        self.chk_all_similar.Enable(flag)
+        self.cbo_apply_color.Enable(flag)
+        self.chk_exclusive.Enable(flag)
+
+        for idx in range(self.MAXBUTTONS):
+            myflag = flag and self.op_nodes[idx] is not None
+            self.assign_buttons[idx].Enable(myflag)
+            self.assign_buttons[idx].Enable(myflag)
+        if not flag:
+            if self.assign_hover>0:
+                self.main_statusbar.SetStatusText("", 0)
+                self.assign_hover = 0
+        else:
+             self.chk_exclusive.SetValue(self.context.elements.classify_inherit_exclusive)
+        self.main_statusbar.Reposition(self.idx_assign)
+
+    # --- Listen to external events to update the bar
+    @signal_listener("element_property_reload")
+    @signal_listener("element_property_update")
+    def on_element_update(self, origin, *args):
+        """
+        Called by 'element_property_update' when the properties of an element are changed.
+
+        @param origin: the path of the originating signal
+        @param args:
+        @return:
+        """
+        if len(args) > 0:
+            # Need to do all?!
+            element = args[0]
+            if isinstance(element, (tuple, list)):
+                for node in element:
+                    if node.type.startswith("op "):
+                        self.assign_set_single_button(node)
+            else:
+                if element.type.startswith("op "):
+                    self.assign_set_single_button(element)
+
+    @signal_listener("rebuild_tree")
+    @signal_listener("refresh_tree")
+    @signal_listener("tree_changed")
+    @signal_listener("operation_removed")
+    @signal_listener("add_operation")
+    def on_rebuild(self, origin, *args):
+        self.assign_set_buttons()
+
+    def callback_show_assign_buttons(self, showit):
+        # Callback function that decideds whether to show an element or not
+        if showit:
+            for idx, btn in enumerate(self.assign_buttons):
+                if self.op_nodes[idx] is None:
+                    btn.Show(False)
+                else:
+                    btn.Show(True)
+        else:
+            for btn in self.assign_buttons:
+                btn.Show(False)
+
+    def on_assign_mouse_leave(self, event):
+        # Leave events of one tool may come later than the enter events of the next
+        self.assign_hover -= 1
+        if self.assign_hover<0:
+            self.assign_hover = 0
+        if self.assign_hover == 0:
+            self.main_statusbar.SetStatusText("", 0)
+        event.Skip()
+
+    def on_assign_mouse_over(self, event):
+        button = event.GetEventObject()
+        msg = ""
+        for idx in range(self.MAXBUTTONS):
+            if button == self.assign_buttons[idx]:
+                msg = str(self.op_nodes[idx])
+        self.assign_hover += 1
+        self.main_statusbar.SetStatusText(msg, 0)
+        event.Skip()
+
+    def execute_on(self, targetop, attrib):
+        data = list(self.context.elements.flat(emphasized = True))
+        idx = self.cbo_apply_color.GetCurrentSelection()
+        if idx==1:
+            impose = "to_op"
+        elif idx==2:
+            impose = "to_elem"
+        else:
+            impose = None
+        similar = self.chk_all_similar.GetValue()
+        exclusive = self.chk_exclusive.GetValue()
+        if len(data) == 0:
+            return
+        self.context.elements.assign_operation(
+            op_assign=targetop, data=data, impose=impose,
+            attrib = attrib, similar=similar, exclusive = exclusive)
+
+    def on_assign_button_left(self, event):
+        button = event.GetEventObject()
+        for idx in range(self.MAXBUTTONS):
+            if button == self.assign_buttons[idx]:
+                node = self.op_nodes[idx]
+                self.execute_on(node, "stroke")
+                break
+        event.Skip()
+
+    def on_assign_button_right(self, event):
+        button = event.GetEventObject()
+        for idx in range(self.MAXBUTTONS):
+            if button == self.assign_buttons[idx]:
+                node = self.op_nodes[idx]
+                self.execute_on(node, "fill")
+                break
+        event.Skip()
+
+    def on_chk_exclusive(self, event):
+        newval = self.chk_exclusive.GetValue()
+        self.context.elements.classify_inherit_exclusive = newval
 
 # --------- Events for status bar
+
     def assign_fill(self, filltype):
         self.context("fillrule {fill}".format(fill=filltype))
 
@@ -815,26 +1073,26 @@ class MeerK40t(MWindow):
     # the checkbox was clicked
     def on_toggle_move(self, event):
         if not self.startup:
-            valu = self.cb_move.GetValue()
-            self.context.enable_sel_move = valu
+            value = self.cb_move.GetValue()
+            self.context.enable_sel_move = value
             self.context.signal("refresh_scene", "Scene")
 
     def on_toggle_handle(self, event):
         if not self.startup:
-            valu = self.cb_handle.GetValue()
-            self.context.enable_sel_size = valu
+            value = self.cb_handle.GetValue()
+            self.context.enable_sel_size = value
             self.context.signal("refresh_scene", "Scene")
 
     def on_toggle_rotate(self, event):
         if not self.startup:
-            valu = self.cb_rotate.GetValue()
-            self.context.enable_sel_rotate = valu
+            value = self.cb_rotate.GetValue()
+            self.context.enable_sel_rotate = value
             self.context.signal("refresh_scene", "Scene")
 
     def on_toggle_skew(self, event):
         if not self.startup:
-            valu = self.cb_skew.GetValue()
-            self.context.enable_sel_skew = valu
+            value = self.cb_skew.GetValue()
+            self.context.enable_sel_skew = value
             self.context.signal("refresh_scene", "Scene")
 
     def on_button_color_left(self, event):
@@ -892,18 +1150,20 @@ class MeerK40t(MWindow):
             total_area += this_area
             total_length += this_length
 
-        valu = ct > 0
+        value = ct > 0
         total_area = total_area / (_mm * _mm)
         total_length = total_length / _mm
         self.info_text1.SetLabel("# = %d" % ct)
         self.info_text2.SetLabel("A = %.1f mm²" % total_area)
         self.info_text3.SetLabel("D = %.1f mm" % total_length)
-        self.main_statusbar.ActivatePanel("selection", valu)
-        self.main_statusbar.ActivatePanel("infos", valu)
-        self.main_statusbar.ActivatePanel("fillrule", valu)
-        self.main_statusbar.ActivatePanel("linejoin", valu)
-        self.main_statusbar.ActivatePanel("linecap", valu)
-        self.main_statusbar.ActivatePanel("stroke", valu)
+
+        self.assign_show_stuff(value)
+        self.main_statusbar.ActivatePanel("selection", value)
+        self.main_statusbar.ActivatePanel("infos", value)
+        self.main_statusbar.ActivatePanel("fillrule", value)
+        self.main_statusbar.ActivatePanel("linejoin", value)
+        self.main_statusbar.ActivatePanel("linecap", value)
+        self.main_statusbar.ActivatePanel("stroke", value)
         self.main_statusbar.Reposition()
     #         if self.context.show_colorbar:
     #             if self._cb_enabled != cb_enabled:
