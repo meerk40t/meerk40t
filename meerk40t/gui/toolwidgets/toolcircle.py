@@ -52,7 +52,7 @@ class CircleTool(ToolWidget):
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
@@ -114,8 +114,13 @@ class CircleTool(ToolWidget):
                 pass
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "lost":
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.p1 = None
             self.p2 = None
-            self.scene.tool_active = False
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response

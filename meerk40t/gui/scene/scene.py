@@ -694,7 +694,7 @@ class Scene(Module, Job):
         """
         if self.log_events:
             self.log_events(
-                "%s: %s %s" % (event_type, str(window_pos), str(nearest_snap))
+                f"{event_type}: {str(window_pos)} {str(nearest_snap)} {str(modifiers)}"
             )
 
         if window_pos is None:
@@ -728,6 +728,53 @@ class Scene(Module, Job):
             previous_top_element = self.hit_chain[0][0]
         except (IndexError, TypeError):
             previous_top_element = None
+
+        if event_type in (
+            "key_down",
+            "key_up",
+        ):
+            # print("Keyboard-Event raised: %s" % event_type)
+            self.rebuild_hittable_chain()
+            for current_widget, current_matrix in self.hittable_elements:
+                space_pos = window_pos
+                if current_matrix is not None and not current_matrix.is_identity():
+                    space_cur = current_matrix.point_in_inverse_space(window_pos[0:2])
+                    space_last = current_matrix.point_in_inverse_space(window_pos[2:4])
+                    sdx = space_cur[0] - space_last[0]
+                    sdy = space_cur[1] - space_last[1]
+                    space_pos = (
+                        space_cur[0],
+                        space_cur[1],
+                        space_last[0],
+                        space_last[1],
+                        sdx,
+                        sdy,
+                    )
+                response = current_widget.event(
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type=event_type,
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
+                )
+
+                if response == RESPONSE_ABORT:
+                    self.hit_chain.clear()
+                    return
+                elif response == RESPONSE_CONSUME:
+                    # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
+                    #      widgetname = type(current_widget).__name__
+                    #      print("Event %s was consumed by %s" % (event_type, widgetname))
+                    return
+                elif response == RESPONSE_CHAIN:
+                    continue
+                elif response == RESPONSE_DROP:
+                    # self.hit_chain[i] = None
+                    continue
+                #
+                # if response == RESPONSE_ABORT:
+                #     self.hit_chain.clear()
+            return
 
         if event_type in (
             "leftdown",

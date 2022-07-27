@@ -293,7 +293,7 @@ class TextTool(ToolWidget):
             gc.DrawText(self.text.text, self.x, self.y)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
@@ -336,4 +336,11 @@ class TextTool(ToolWidget):
                 self.notify_created(node)
             dlg.Destroy()
             response = RESPONSE_CONSUME
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response

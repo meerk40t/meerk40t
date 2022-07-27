@@ -46,7 +46,7 @@ class EllipseTool(ToolWidget):
             gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
@@ -109,8 +109,13 @@ class EllipseTool(ToolWidget):
                 pass
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "lost":
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
             self.p1 = None
             self.p2 = None
-            self.scene.tool_active = False
         return response

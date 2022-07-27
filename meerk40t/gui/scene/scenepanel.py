@@ -24,6 +24,9 @@ class ScenePanel(wx.Panel):
         self.scene_panel.Bind(wx.EVT_PAINT, self.on_paint)
         self.scene_panel.Bind(wx.EVT_ERASE_BACKGROUND, self.on_erase)
 
+        self.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
+
         self.scene_panel.Bind(wx.EVT_MOTION, self.on_mouse_move)
 
         self.scene_panel.Bind(wx.EVT_MOUSEWHEEL, self.on_mousewheel)
@@ -41,6 +44,8 @@ class ScenePanel(wx.Panel):
         self.scene_panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.on_mouse_capture_lost)
 
         self.scene_panel.Bind(wx.EVT_SIZE, self.on_size)
+
+        self.last_key = None
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
@@ -81,57 +86,17 @@ class ScenePanel(wx.Panel):
             modifiers.append("meta")
         return modifiers
 
-    # def on_key_down(self, evt):
-    #     literal = get_key_name(evt, True)
-    #     # keycode = evt.GetKeyCode()
-    #     # print("Key-Down: %f - literal: %s" % (keycode, literal))
-    #     if "shift+" in literal:
-    #         if not self.isShiftPressed:  # ignore multiple calls
-    #             self.isShiftPressed = True
-    #             self.scene.event(self.scene.last_position, "kb_shift_press", None)
-    #     if "ctrl+" in literal:
-    #         if not self.isCtrlPressed:  # ignore multiple calls
-    #             self.isCtrlPressed = True
-    #             self.scene.event(self.scene.last_position, "kb_ctrl_press", None)
-    #     if "alt+" in literal:
-    #         if not self.isAltPressed:  # ignore multiple calls
-    #             self.isAltPressed = True
-    #             self.scene.event(self.scene.last_position, "kb_alt_press", None)
-    #             # self.scene.event(self.scene.last_position, "kb_alt_press")
-    #     evt.Skip()
-    #
-    # def on_key_up(self, evt):
-    #     literal = ""
-    #     keystates = (evt.ShiftDown(), evt.ControlDown(), evt.AltDown())
-    #     if self.isShiftPressed and not keystates[0]:
-    #         literal += "shift+"
-    #     if self.isCtrlPressed and not keystates[1]:
-    #         literal += "ctrl+"
-    #     if self.isAltPressed and not keystates[2]:
-    #         literal += "alt+"
-    #     key = evt.GetKeyCode()
-    #     # print("Key-Up: %f - literal: %s" % (key, literal))
-    #
-    #     if "shift+" in literal:
-    #         if self.isShiftPressed:  # ignore multiple calls
-    #             self.isShiftPressed = False
-    #             self.scene.event(self.scene.last_position, "kb_shift_release", None)
-    #     if "ctrl+" in literal:
-    #         if self.isCtrlPressed:  # ignore multiple calls
-    #             self.isCtrlPressed = False
-    #             self.scene.event(self.scene.last_position, "kb_ctrl_release", None)
-    #     if "alt+" in literal:
-    #         if self.isAltPressed:  # ignore multiple calls
-    #             self.isAltPressed = False
-    #             self.scene.event(self.scene.last_position, "kb_alt_release", None)
-    #     if key == wx.WXK_ESCAPE:  # ESC
-    #         # Is a tool active? If yes -> stop it, if no -> reset tool to none
-    #         if self.scene.tool_active:
-    #             self.scene.event(self.scene.last_position, "lost", None)
-    #             self.scene.request_refresh()
-    #         else:
-    #             self.scene.context("tool none\n")
-    #     evt.Skip()
+    def on_key_down(self, evt):
+        literal = get_key_name(evt, True)
+        if literal != self.last_key:
+            self.scene.event(self.scene.last_position, "key_down", None, literal)
+        self.last_key = literal
+        evt.Skip()
+
+    def on_key_up(self, evt):
+        literal = get_key_name(evt, True)
+        self.scene.event(self.scene.last_position, "key_up", None, literal)
+        evt.Skip()
 
     def on_size(self, event=None):
         if self.context is None:

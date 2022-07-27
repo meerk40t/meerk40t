@@ -71,7 +71,7 @@ class RibbonTool(ToolWidget):
         )
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         # We don't set tool_active here, as this can't be properly honored...
         # And we don't care about nearest_snap either...
@@ -84,9 +84,15 @@ class RibbonTool(ToolWidget):
         elif event_type == "move" or event_type == "hover":
             self.last_position = space_pos[:2]
             response = RESPONSE_CONSUME
-        elif event_type == "lost":
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.stop = True
-            return RESPONSE_DROP
+            self.series.clear()
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                return RESPONSE_CONSUME
+            else:
+                return RESPONSE_CHAIN
         elif event_type == "leftup":
             self.stop = True
             if self.series:
