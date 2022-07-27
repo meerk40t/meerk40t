@@ -34,9 +34,6 @@ class AttractionWidget(Widget):
         self.display_points = []
         self.show_attract_len = 0
         self.action_attract_len = 0
-        self.isShiftPressed = False
-        self.isCtrlPressed = False
-        self.isAltPressed = False
         self.show_snap_points = False
         self.scene.context.setting(bool, "snap_grid", True)
         self.scene.context.setting(bool, "snap_points", True)
@@ -58,7 +55,7 @@ class AttractionWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         """
         Event-Logic - just note the current position
@@ -75,25 +72,6 @@ class AttractionWidget(Widget):
                 self.show_snap_points = True
             else:
                 self.show_snap_points = False
-        # print("Key-Down: %f - literal: %s" % (keycode, literal))
-        if event_type == "kb_shift_press":
-            if not self.isShiftPressed:  # ignore multiple calls
-                self.isShiftPressed = True
-        elif event_type == "kb_ctrl_press":
-            if not self.isCtrlPressed:  # ignore multiple calls
-                self.isCtrlPressed = True
-        elif event_type == "kb_alt_press":
-            if not self.isAltPressed:  # ignore multiple calls
-                self.isAltPressed = True
-        elif event_type == "kb_shift_release":
-            if self.isShiftPressed:  # ignore multiple calls
-                self.isShiftPressed = False
-        elif event_type == "kb_ctrl_release":
-            if self.isCtrlPressed:  # ignore multiple calls
-                self.isCtrlPressed = False
-        elif event_type == "kb_alt_release":
-            if self.isAltPressed:  # ignore multiple calls
-                self.isAltPressed = False
         elif event_type in (
             "leftdown",
             "leftup",
@@ -102,7 +80,7 @@ class AttractionWidget(Widget):
             "hover",
         ):
             # Check whether shift key is pressed...
-            if not self.isShiftPressed:
+            if "shift" not in modifiers:
                 # Loop through display points
                 if len(self.display_points) > 0 and not self.my_x is None:
                     # Has to be lower than the action threshold

@@ -23,51 +23,12 @@ def process_event(
     window_pos=None,
     space_pos=None,
     event_type=None,
+    modifiers=None,
     helptext="",
     optimize_drawing=True,
 ):
     if widget_identifier is None:
         widget_identifier = "none"
-    # print("Its me - %s, event=%s, pos=%s" % (widget_identifier, event_type, space_pos))
-    # Keyboard-Events...
-    if event_type == "kb_shift_release":
-        if widget.key_shift_pressed:
-            widget.key_shift_pressed = False
-            if widget.contains(space_pos[0], space_pos[1]):
-                widget.scene.cursor(widget.cursor)
-                widget.hovering = True
-        return RESPONSE_CHAIN
-    elif event_type == "kb_shift_press":
-        if not widget.key_shift_pressed:
-            widget.key_shift_pressed = True
-        # Are we hovering ? If yes reset cursor
-        if widget.hovering:
-            widget.hovering = False
-            widget.scene.cursor("arrow")
-        return RESPONSE_CHAIN
-    elif event_type == "kb_ctrl_release":
-        if widget.key_control_pressed:
-            widget.key_control_pressed = False
-            if widget.contains(space_pos[0], space_pos[1]):
-                widget.scene.cursor("sizing")
-                widget.hovering = True
-        return RESPONSE_CHAIN
-    elif event_type == "kb_ctrl_press":
-        if not widget.key_control_pressed:
-            widget.key_control_pressed = True
-        # Are we hovering ? If yes reset cursor
-        if widget.hovering:
-            widget.hovering = False
-            widget.scene.cursor("arrow")
-        return RESPONSE_CHAIN
-    elif event_type == "kb_alt_release":
-        if widget.key_alt_pressed:
-            widget.key_alt_pressed = False
-        return RESPONSE_CHAIN
-    elif event_type == "kb_alt_press":
-        if not widget.key_alt_pressed:
-            widget.key_alt_pressed = True
-        return RESPONSE_CHAIN
     try:
         inside = widget.contains(space_pos[0], space_pos[1])
     except TypeError:
@@ -78,11 +39,9 @@ def process_event(
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
     if event_type == "hover" and widget.hovering and not inside:
-        # print ("Hover %s, That was not for me ?!" % widget_identifier)
         widget.hovering = False
         widget.scene.cursor("arrow")
         widget.scene.context.signal("statusmsg", "")
-
         return RESPONSE_CHAIN
 
     if event_type == "hover_start":
@@ -112,20 +71,7 @@ def process_event(
 
     if event_type == "leftdown":
         # We want to establish that we don't have a singular Shift key or a singular ctrl-key
-        different_event = False
-        if (
-            widget.key_control_pressed
-            and not widget.key_shift_pressed
-            and not widget.key_alt_pressed
-        ):
-            different_event = True
-        if (
-            widget.key_shift_pressed
-            and not widget.key_control_pressed
-            and not widget.key_alt_pressed
-        ):
-            different_event = True
-        if not different_event:
+        if not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)):
             widget.was_lb_raised = True
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
@@ -564,7 +510,7 @@ class RotationWidget(Widget):
         return value == 2
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "rotation"
         response = process_event(
@@ -573,6 +519,7 @@ class RotationWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Rotate element",
         )
         if event_type == "leftdown":
@@ -778,7 +725,7 @@ class CornerWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "corner"
         response = process_event(
@@ -787,6 +734,7 @@ class CornerWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Size element (with Alt-Key freely, with Ctrl+shift from center)",
         )
         return response
@@ -977,7 +925,7 @@ class SideWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "side"
         s_help = "Size element in %s-direction (with Ctrl+shift from center)" % (
@@ -990,6 +938,7 @@ class SideWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext=s_help,
         )
         return response
@@ -1101,7 +1050,7 @@ class SkewWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "skew"
         s_help = "Skew element in %s-direction" % ("X" if self.is_x else "Y")
@@ -1111,6 +1060,7 @@ class SkewWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext=s_help,
         )
         if event_type == "leftdown":
@@ -1249,7 +1199,7 @@ class MoveWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "move"
         response = process_event(
@@ -1258,6 +1208,7 @@ class MoveWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Move element",
         )
         return response
@@ -1336,7 +1287,7 @@ class MoveRotationOriginWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "rotcenter"
         response = process_event(
@@ -1345,6 +1296,7 @@ class MoveRotationOriginWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Move rotation center",
         )
         return response
@@ -1452,7 +1404,7 @@ class ReferenceWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "reference"
         response = process_event(
@@ -1461,6 +1413,7 @@ class ReferenceWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Toggle reference status of element",
             optimize_drawing=False,
         )
@@ -1555,7 +1508,7 @@ class LockWidget(Widget):
             self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "lock"
         response = process_event(
@@ -1564,6 +1517,7 @@ class LockWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Remove the 'locked' status of the element",
             optimize_drawing=False,
         )
