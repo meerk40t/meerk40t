@@ -31,6 +31,7 @@ from meerk40t.svgelements import Matrix, Point
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
 
 
+_reused_identity_widget = Matrix()
 XCELLS = 15
 YCELLS = 15
 
@@ -184,11 +185,9 @@ class Scene(Module, Job):
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
-        self.matrix = Matrix()
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
-        self.matrix_root = Matrix()
         self.screen_refresh_lock = threading.Lock()
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
@@ -619,7 +618,7 @@ class Scene(Module, Job):
         This is dynamically rebuilt on the mouse event.
         """
         self.hittable_elements.clear()
-        self.rebuild_hit_chain(self.widget_root, self.matrix_root)
+        self.rebuild_hit_chain(self.widget_root, _reused_identity_widget)
 
     def rebuild_hit_chain(self, current_widget, current_matrix=None):
         """

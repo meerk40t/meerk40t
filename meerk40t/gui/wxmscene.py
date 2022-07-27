@@ -366,9 +366,10 @@ class MeerK40tScenePanel(wx.Panel):
             except ValueError:
                 raise CommandSyntaxError("Not a valid length.")
             bbox = (x, y, width, height)
+            matrix = data.widget_root.scene_widget.matrix
             data.widget_root.focus_viewport_scene(bbox, self.ClientSize)
             data.request_refresh()
-            channel(str(data.matrix))
+            channel(str(matrix))
             return "scene", data
 
         @context.console_command("reference")
