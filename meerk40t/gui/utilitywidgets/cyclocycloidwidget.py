@@ -42,7 +42,7 @@ class CyclocycloidWidget(Widget):
         self.add_widget(
             -1,
             ButtonWidget(
-                scene, 0, 0, size, size, icons.icon_corner1.GetBitmap(), self.confirm
+                scene, 0, 0, size, size, icons.icon_corner1.GetBitmap(use_theme=False), self.confirm
             ),
         )
         self.add_widget(
@@ -53,7 +53,7 @@ class CyclocycloidWidget(Widget):
                 0,
                 bed_width,
                 size,
-                icons.icon_corner2.GetBitmap(),
+                icons.icon_corner2.GetBitmap(use_theme=False),
                 self.confirm,
             ),
         )
@@ -65,7 +65,7 @@ class CyclocycloidWidget(Widget):
                 bed_height - size,
                 bed_width,
                 bed_height,
-                icons.icon_corner3.GetBitmap(),
+                icons.icon_corner3.GetBitmap(use_theme=False),
                 self.confirm,
             ),
         )
@@ -77,7 +77,7 @@ class CyclocycloidWidget(Widget):
                 bed_height - size,
                 size,
                 bed_height,
-                icons.icon_corner4.GetBitmap(),
+                icons.icon_corner4.GetBitmap(use_theme=False),
                 self.confirm,
             ),
         )
@@ -200,7 +200,7 @@ class MajorHandleWidget(Widget):
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
         self.widget = cyclowidget
-        self.bitmap = icons.icons8_point_50.GetBitmap()
+        self.bitmap = icons.icons8_point_50.GetBitmap(use_theme=False)
         self._start_x = None
         self._start_y = None
         self._current_x = None
@@ -273,7 +273,7 @@ class MinorHandleWidget(Widget):
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
         self.widget = cyclowidget
-        self.bitmap = icons.icons8_point_50.GetBitmap()
+        self.bitmap = icons.icons8_point_50.GetBitmap(use_theme=False)
         self._start_x = None
         self._start_y = None
         self._current_x = None

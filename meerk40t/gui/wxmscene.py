@@ -150,7 +150,7 @@ class MeerK40tScenePanel(wx.Panel):
                     5,
                     5 + 25,
                     5 + 25,
-                    icons8_menu_50.GetBitmap(),
+                    icons8_menu_50.GetBitmap(use_theme=False),
                     "button/tool",
                 ),
             )

@@ -67,7 +67,7 @@ class ToggleWidget(Widget):
         for button in buttons:
             button_size = self.width
             resize_param = button.get("size")
-            icon = button["icon"].GetBitmap(resize=button_size)
+            icon = button["icon"].GetBitmap(resize=button_size, use_theme=False)
             self.add_widget(-1, ButtonWidget(self.scene, 0, 0, button_size, button_size, icon, clicked(button.get("action"))), ORIENTATION_VERTICAL)
 
             # group = button.get("group")
