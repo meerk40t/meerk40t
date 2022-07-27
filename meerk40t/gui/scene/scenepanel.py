@@ -118,7 +118,7 @@ class ScenePanel(wx.Panel):
             if self.isAltPressed:  # ignore multiple calls
                 self.isAltPressed = False
                 self.scene.event(self.scene.last_position, "kb_alt_release", None)
-        if key == 27: # ESC
+        if key == wx.WXK_ESCAPE:  # ESC
             # Is a tool active? If yes -> stop it, if no -> reset tool to none
             if self.scene.tool_active:
                 self.scene.event(self.scene.last_position, "lost", None)
