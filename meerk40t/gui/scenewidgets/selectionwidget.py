@@ -75,7 +75,7 @@ def process_event(
             widget.was_lb_raised = True
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
-            widget.uniform = not widget.key_alt_pressed
+            widget.uniform = not widget.master.key_alt_pressed
             widget.master.total_delta_x = dx
             widget.master.total_delta_y = dy
             widget.master.tool_running = optimize_drawing
@@ -271,9 +271,6 @@ class RotationWidget(Widget):
         self.half = size / 2
         self.inner = inner
         self.cursor = "rotate1"
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -560,9 +557,6 @@ class CornerWidget(Widget):
         self.half = size / 2
         self.allow_x = True
         self.allow_y = True
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -751,9 +745,6 @@ class SideWidget(Widget):
         self.scene = scene
         self.index = index
         self.half = size / 2
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -956,9 +947,6 @@ class SkewWidget(Widget):
         self.is_x = is_x
         self.half = size / 2
         self.last_skew = 0
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1084,9 +1072,6 @@ class MoveWidget(Widget):
         self.half_x = size / 2
         self.half_y = size / 2
         self.drawhalf = drawsize / 2
-        self.key_shift_pressed = self.master.key_shift_pressed
-        self.key_control_pressed = self.master.key_control_pressed
-        self.key_alt_pressed = self.master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1149,7 +1134,6 @@ class MoveWidget(Widget):
         return HITCHAIN_HIT
 
     def check_for_magnets(self):
-        # print ("Shift-key-Status: self=%g, master=%g" % (self.key_shift_pressed, self.master.key_shift_pressed))
         if (
             not self.master.key_shift_pressed
         ):  # if Shift-Key pressed then ignore Magnets...
@@ -1180,7 +1164,7 @@ class MoveWidget(Widget):
                 except AttributeError:
                     pass
         elif event == -1:  # start
-            if self.key_alt_pressed:
+            if self.master.key_alt_pressed:
                 self.create_duplicate()
         elif event == 0:  # move
 
@@ -1224,9 +1208,6 @@ class MoveRotationOriginWidget(Widget):
         self.master = master
         self.scene = scene
         self.half = size / 2
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1314,9 +1295,6 @@ class ReferenceWidget(Widget):
         self.half = size / 2
         if is_reference_object:
             self.half = self.half * 1.5
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1430,9 +1408,6 @@ class LockWidget(Widget):
         self.scene = scene
         # Slightly bigger to be clearly seen
         self.half = size / 2
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1720,6 +1695,7 @@ class SelectionWidget(Widget):
         self.popupID3 = None
         self.gc = None
         self.reset_variables()
+        self.modifiers = []
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
@@ -1728,7 +1704,20 @@ class SelectionWidget(Widget):
     def final(self, context):
         context.unlisten("ext-modified", self.external_modification)
 
+    @property
+    def key_shift_pressed(self):
+        return "shift" in self.modifiers
+
+    @property
+    def key_control_pressed(self):
+        return "control" in self.modifiers
+
+    @property
+    def key_alt_pressed(self):
+        return "alt" in self.modifiers
+
     def reset_variables(self):
+        self.modifiers = []
         self.save_width = None
         self.save_height = None
         self.cursor = "arrow"
@@ -1976,6 +1965,7 @@ class SelectionWidget(Widget):
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
+        self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
             self.hovering = True
