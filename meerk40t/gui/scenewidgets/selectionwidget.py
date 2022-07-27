@@ -1738,9 +1738,6 @@ class SelectionWidget(Widget):
         self.rotated_angle = 0
         self.total_delta_x = 0
         self.total_delta_y = 0
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
         self.was_lb_raised = False
         self.hovering = False
         self.use_handle_rotate = True
@@ -1977,38 +1974,9 @@ class SelectionWidget(Widget):
             menu.Destroy()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         elements = self.scene.context.elements
-        # mirror key-events to provide them to the widgets as they get deleted and created after every event...
-        if event_type == "kb_shift_release":
-            if self.key_shift_pressed:
-                self.key_shift_pressed = False
-            return RESPONSE_CHAIN
-        elif event_type == "kb_shift_press":
-            if not self.key_shift_pressed:
-                self.key_shift_pressed = True
-            return RESPONSE_CHAIN
-        elif event_type == "kb_ctrl_release":
-            if self.key_control_pressed:
-                self.key_control_pressed = False
-            return RESPONSE_CHAIN
-        elif event_type == "kb_ctrl_press":
-            if not self.key_control_pressed:
-                self.key_control_pressed = True
-            return RESPONSE_CHAIN
-        elif event_type == "kb_alt_release":
-            if self.key_alt_pressed:
-                self.key_alt_pressed = False
-            return RESPONSE_CHAIN
-        elif event_type == "kb_alt_press":
-            if not self.key_alt_pressed:
-                self.key_alt_pressed = True
-            return RESPONSE_CHAIN
-
-        # Now all hovering, there is some empty space in the selection widget that get these events
-        # print("** MASTER, event=%s, pos=%s" % (event_type, space_pos))
-
         if event_type == "hover_start":
             self.hovering = True
             self.scene.context.signal("statusmsg", "")
@@ -2028,10 +1996,7 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
-            if self.scene.context.select_smallest:
-                smallest = not self.key_control_pressed
-            else:
-                smallest = self.key_control_pressed
+            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,
@@ -2048,10 +2013,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
-            if self.scene.context.select_smallest:
-                smallest = not self.key_control_pressed
-            else:
-                smallest = self.key_control_pressed
+            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,
