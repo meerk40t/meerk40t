@@ -11,6 +11,7 @@ from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
+from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
@@ -174,6 +175,18 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
 
             channel(_("Added example_seekbar to interface"))
+            self.widget_scene.request_refresh()
+
+        @context.console_command("checkbox", hidden=True)
+        def checkbox(channel, _, **kwargs):
+            def checked(value):
+                print(value)
+
+            widget = CheckboxWidget(
+                self.widget_scene, 25, 25, text="Example", tool_tip="Example's tool tip", checked=checked
+            )
+            self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
+            channel(_("Added example_checkbox to interface"))
             self.widget_scene.request_refresh()
 
         @context.console_command("cyclocycloid", hidden=True)
