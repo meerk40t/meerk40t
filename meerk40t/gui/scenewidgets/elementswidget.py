@@ -54,7 +54,7 @@ class ElementsWidget(Widget):
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
-        if event_type == "rightdown":
+        if event_type == "rightdown" and not modifiers:
             if not self.scene.tool_active:
                 self.scene.context("tool none")
                 return RESPONSE_CONSUME

@@ -112,9 +112,8 @@ class ScenePanel(wx.Panel):
         """
         ScenePanel mousewheel event.
 
-        If modifiers are present it calls the event 'wheelup_ctrl' or 'wheeldown_ctrl' this also triggers scene events
-        for up, down, and left and right which exist on some mice and trackpads. If shift is held down while the wheel
-        event occurs the up and down rotation is treated as left and right.
+        Triggers scene events for up, down, and left and right which exist on some mice and trackpads. If shift is held
+        down while the wheel event occurs the up and down rotation is treated as left and right.
 
         """
         if self.scene_panel.HasCapture():
