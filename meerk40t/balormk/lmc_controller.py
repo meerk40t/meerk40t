@@ -363,7 +363,7 @@ class GalvoController:
     def rapid_mode(self):
         if self.mode == DRIVER_STATE_RAPID:
             return
-
+        self.list_end_of_list()  # Ensure at least one list_end_of_list
         self._list_end()
         if not self._list_executing and self._number_of_list_packets:
             # If we never ran the list and we sent some lists.
@@ -443,8 +443,6 @@ class GalvoController:
     #######################
 
     def _list_end(self):
-        if self._active_list is None:
-            return
         if self._active_list and self._active_index:
             self.wait_ready()
             while self.paused:
@@ -681,6 +679,7 @@ class GalvoController:
         self.reset_list()
         if dummy_packet:
             self._list_new()
+            self.list_end_of_list()  # Ensure packet is sent on end.
             self._list_end()
             if not self._list_executing:
                 self.execute_list()
