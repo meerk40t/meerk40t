@@ -39,7 +39,7 @@ class RootNode(Node):
 
     def __init__(self, context, **kwargs):
         _ = context._
-        super(RootNode, self).__init__(type="reference", **kwargs)
+        super(RootNode, self).__init__(type="root", **kwargs)
         self._root = self
         self.context = context
         self.listeners = []
