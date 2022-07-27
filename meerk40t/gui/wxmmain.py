@@ -179,14 +179,8 @@ class CustomStatusBar(wx.StatusBar):
         self.SetMinHeight(25)
         self.SetFieldsCount(self.panelct)
         self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
-        sizes = [-2] * self.panelct
-        # Make the first Panel large
-        sizes[0] = -4
         self.status_text = [""] * self.panelct
         self.previous_text = [""] * self.panelct
-        # The most intelligent way would be to calculate the needed size...
-        sizes[self.panelct - 1] =  -1
-        self.SetStatusWidths(sizes)
         self.sizeChanged = False
         self.box_id_visible = {}
         self.activesizer = [None] * self.panelct
@@ -466,7 +460,15 @@ class MeerK40t(MWindow):
         self.main_statusbar.SetStatusStyles(
             [wx.SB_SUNKEN] * self.main_statusbar.GetFieldsCount()
         )
-        self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
+        # Set the panel sizes
+        sizes = [-3] * self.main_statusbar.GetFieldsCount()
+        # Make the first Panel large
+        sizes[0] = -4
+        # And the last one smaller
+        sizes[self.main_statusbar.GetFieldsCount() - 1] = -2
+        self.SetStatusWidths(sizes)
+
+        # self.main_statusbar.SetStatusWidths([-1] * self.main_statusbar.GetFieldsCount())
         self.SetStatusBarPane(0)
         self.main_statusbar.SetStatusText("", 0)
         self.startup = False
