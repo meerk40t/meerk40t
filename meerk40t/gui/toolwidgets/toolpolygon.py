@@ -46,7 +46,7 @@ class PolygonTool(ToolWidget):
             gc.DrawLines(points)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
@@ -94,8 +94,13 @@ class PolygonTool(ToolWidget):
             self.mouse_position = None
             self.notify_created(node)
             response = RESPONSE_CONSUME
-        elif event_type == "lost":
-            self.scene.tool_active = False
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
             self.point_series = []
             self.mouse_position = None
         return response

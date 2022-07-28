@@ -1,3 +1,4 @@
+from meerk40t.gui.scene.sceneconst import HITCHAIN_DELEGATE_AND_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
 
@@ -8,6 +9,14 @@ class ToolContainer(Widget):
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
+
+    def hit(self):
+        return HITCHAIN_DELEGATE_AND_HIT
+
+    def event(self, event_type=None, modifiers=None, **kwargs):
+        if event_type == "key_up" and modifiers == "escape":
+            self.set_tool(None)
+        return RESPONSE_CHAIN
 
     def signal(self, signal, *args, **kwargs):
         if signal == "tool":
@@ -23,7 +32,7 @@ class ToolContainer(Widget):
             if new_tool is not None:
                 self.add_widget(0, new_tool(self.scene))
         if tool is None:
-            tool="none"
+            tool = "none"
         message = ("tool", tool)
         self.scene.context.signal("tool_changed", message)
         self.scene._signal_widget(self.scene.widget_root, "tool_changed", message)

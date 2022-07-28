@@ -174,7 +174,7 @@ class CyclocycloidWidget(Widget):
         self.scene.request_refresh_for_animation()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         response = RESPONSE_CHAIN
         if self.series is None:
@@ -236,7 +236,7 @@ class MajorHandleWidget(Widget):
         gc.DrawBitmap(self.bitmap, self.left, self.top , self.width, self.height)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
@@ -300,7 +300,7 @@ class MinorHandleWidget(Widget):
         gc.DrawBitmap(self.bitmap, self.left, self.top , self.width, self.height)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":

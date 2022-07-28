@@ -362,8 +362,6 @@ WX_SPECIALKEYS = {
     wx.WXK_F14: "f14",
     wx.WXK_F15: "f15",
     wx.WXK_F16: "f16",
-    wx.WXK_F16: "f17",
-    wx.WXK_F16: "f16",
     wx.WXK_F17: "f17",
     wx.WXK_F18: "f18",
     wx.WXK_F19: "f19",

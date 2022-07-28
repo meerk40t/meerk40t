@@ -22,7 +22,7 @@ class BedWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         """
         Capture and deal with the double click event.

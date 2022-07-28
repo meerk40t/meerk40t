@@ -81,7 +81,7 @@ class CheckboxWidget(Widget):
             gc.DrawText(self.text, self.right + width * self._text_gap, self.top)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         if event_type in ("hover", "hover_start", "hover_end"):
             if self.tool_tip:

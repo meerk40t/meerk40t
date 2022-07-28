@@ -23,51 +23,12 @@ def process_event(
     window_pos=None,
     space_pos=None,
     event_type=None,
+    modifiers=None,
     helptext="",
     optimize_drawing=True,
 ):
     if widget_identifier is None:
         widget_identifier = "none"
-    # print("Its me - %s, event=%s, pos=%s" % (widget_identifier, event_type, space_pos))
-    # Keyboard-Events...
-    if event_type == "kb_shift_release":
-        if widget.key_shift_pressed:
-            widget.key_shift_pressed = False
-            if widget.contains(space_pos[0], space_pos[1]):
-                widget.scene.cursor(widget.cursor)
-                widget.hovering = True
-        return RESPONSE_CHAIN
-    elif event_type == "kb_shift_press":
-        if not widget.key_shift_pressed:
-            widget.key_shift_pressed = True
-        # Are we hovering ? If yes reset cursor
-        if widget.hovering:
-            widget.hovering = False
-            widget.scene.cursor("arrow")
-        return RESPONSE_CHAIN
-    elif event_type == "kb_ctrl_release":
-        if widget.key_control_pressed:
-            widget.key_control_pressed = False
-            if widget.contains(space_pos[0], space_pos[1]):
-                widget.scene.cursor("sizing")
-                widget.hovering = True
-        return RESPONSE_CHAIN
-    elif event_type == "kb_ctrl_press":
-        if not widget.key_control_pressed:
-            widget.key_control_pressed = True
-        # Are we hovering ? If yes reset cursor
-        if widget.hovering:
-            widget.hovering = False
-            widget.scene.cursor("arrow")
-        return RESPONSE_CHAIN
-    elif event_type == "kb_alt_release":
-        if widget.key_alt_pressed:
-            widget.key_alt_pressed = False
-        return RESPONSE_CHAIN
-    elif event_type == "kb_alt_press":
-        if not widget.key_alt_pressed:
-            widget.key_alt_pressed = True
-        return RESPONSE_CHAIN
     try:
         inside = widget.contains(space_pos[0], space_pos[1])
     except TypeError:
@@ -78,11 +39,9 @@ def process_event(
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
     if event_type == "hover" and widget.hovering and not inside:
-        # print ("Hover %s, That was not for me ?!" % widget_identifier)
         widget.hovering = False
         widget.scene.cursor("arrow")
         widget.scene.context.signal("statusmsg", "")
-
         return RESPONSE_CHAIN
 
     if event_type == "hover_start":
@@ -112,30 +71,17 @@ def process_event(
 
     if event_type == "leftdown":
         # We want to establish that we don't have a singular Shift key or a singular ctrl-key
-        different_event = False
-        if (
-            widget.key_control_pressed
-            and not widget.key_shift_pressed
-            and not widget.key_alt_pressed
-        ):
-            different_event = True
-        if (
-            widget.key_shift_pressed
-            and not widget.key_control_pressed
-            and not widget.key_alt_pressed
-        ):
-            different_event = True
-        if not different_event:
+        if not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)):
             widget.was_lb_raised = True
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
-            widget.uniform = not widget.key_alt_pressed
+            widget.uniform = not widget.master.key_alt_pressed
             widget.master.total_delta_x = dx
             widget.master.total_delta_y = dy
             widget.master.tool_running = optimize_drawing
             widget.master.invalidate_rot_center()
             widget.master.check_rot_center()
-            widget.tool(space_pos, dx, dy, -1)
+            widget.tool(space_pos, dx, dy, -1, modifiers)
             return RESPONSE_CONSUME
     elif event_type == "middledown":
         # Hmm, I think this is never called due to the consumption of this evennt by scene pane...
@@ -146,11 +92,11 @@ def process_event(
         widget.master.total_delta_x = dx
         widget.master.total_delta_y = dy
         widget.master.tool_running = optimize_drawing
-        widget.tool(space_pos, dx, dy, -1)
+        widget.tool(space_pos, dx, dy, -1, modifiers)
         return RESPONSE_CONSUME
     elif event_type == "leftup":
         if widget.was_lb_raised:
-            widget.tool(space_pos, dx, dy, 1)
+            widget.tool(space_pos, dx, dy, 1, modifiers)
             widget.scene.context.elements.ensure_positive_bounds()
             widget.was_lb_raised = False
             widget.master.show_border = True
@@ -158,7 +104,7 @@ def process_event(
             return RESPONSE_CONSUME
     elif event_type in ("middleup", "lost"):
         if widget.was_lb_raised:
-            widget.tool(space_pos, dx, dy, 1)
+            widget.tool(space_pos, dx, dy, 1, modifiers)
             widget.was_lb_raised = False
             widget.master.show_border = True
             widget.master.tool_running = False
@@ -173,11 +119,11 @@ def process_event(
                 widget.save_height = widget.height
             widget.master.total_delta_x += dx
             widget.master.total_delta_y += dy
-            widget.tool(space_pos, dx, dy, 0)
+            widget.tool(space_pos, dx, dy, 0, modifiers)
             return RESPONSE_CONSUME
     elif event_type == "leftclick":
         if widget.was_lb_raised:
-            widget.tool(space_pos, dx, dy, 1)
+            widget.tool(space_pos, dx, dy, 1, modifiers)
             widget.scene.context.elements.ensure_positive_bounds()
             widget.was_lb_raised = False
             widget.master.tool_running = False
@@ -216,7 +162,7 @@ class BorderWidget(Widget):
         return HITCHAIN_DELEGATE
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         return RESPONSE_CHAIN
 
@@ -325,9 +271,6 @@ class RotationWidget(Widget):
         self.half = size / 2
         self.inner = inner
         self.cursor = "rotate1"
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -424,7 +367,7 @@ class RotationWidget(Widget):
         gc.SetPen(self.master.handle_pen)
         gc.StrokeLines(segment)
 
-    def tool(self, position, dx, dy, event=0):
+    def tool(self, position, dx, dy, event=0, modifiers=None):
         """
         Change the rotation of the selected elements.
         """
@@ -564,7 +507,7 @@ class RotationWidget(Widget):
         return value == 2
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "rotation"
         response = process_event(
@@ -573,6 +516,7 @@ class RotationWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Rotate element",
         )
         if event_type == "leftdown":
@@ -613,9 +557,6 @@ class CornerWidget(Widget):
         self.half = size / 2
         self.allow_x = True
         self.allow_y = True
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -673,7 +614,7 @@ class CornerWidget(Widget):
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
-    def tool(self, position, dx, dy, event=0):
+    def tool(self, position, dx, dy, event=0, modifiers=None):
         elements = self.scene.context.elements
         if event == 1:
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
@@ -778,7 +719,7 @@ class CornerWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "corner"
         response = process_event(
@@ -787,6 +728,7 @@ class CornerWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Size element (with Alt-Key freely, with Ctrl+shift from center)",
         )
         return response
@@ -803,9 +745,6 @@ class SideWidget(Widget):
         self.scene = scene
         self.index = index
         self.half = size / 2
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -869,7 +808,7 @@ class SideWidget(Widget):
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
-    def tool(self, position, dx, dy, event=0):
+    def tool(self, position, dx, dy, event=0, modifiers=None):
         elements = self.scene.context.elements
         if event == 1:
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
@@ -977,7 +916,7 @@ class SideWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "side"
         s_help = "Size element in %s-direction (with Ctrl+shift from center)" % (
@@ -990,6 +929,7 @@ class SideWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext=s_help,
         )
         return response
@@ -1007,9 +947,6 @@ class SkewWidget(Widget):
         self.is_x = is_x
         self.half = size / 2
         self.last_skew = 0
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1048,7 +985,7 @@ class SkewWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def tool(self, position, dx, dy, event=0):
+    def tool(self, position, dx, dy, event=0, modifiers=None):
         """
         Change the skew of the selected elements.
         """
@@ -1101,7 +1038,7 @@ class SkewWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "skew"
         s_help = "Skew element in %s-direction" % ("X" if self.is_x else "Y")
@@ -1111,6 +1048,7 @@ class SkewWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext=s_help,
         )
         if event_type == "leftdown":
@@ -1134,9 +1072,6 @@ class MoveWidget(Widget):
         self.half_x = size / 2
         self.half_y = size / 2
         self.drawhalf = drawsize / 2
-        self.key_shift_pressed = self.master.key_shift_pressed
-        self.key_control_pressed = self.master.key_control_pressed
-        self.key_alt_pressed = self.master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1199,7 +1134,6 @@ class MoveWidget(Widget):
         return HITCHAIN_HIT
 
     def check_for_magnets(self):
-        # print ("Shift-key-Status: self=%g, master=%g" % (self.key_shift_pressed, self.master.key_shift_pressed))
         if (
             not self.master.key_shift_pressed
         ):  # if Shift-Key pressed then ignore Magnets...
@@ -1217,7 +1151,7 @@ class MoveWidget(Widget):
 
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
-    def tool(self, position, dx, dy, event=0):
+    def tool(self, position, dx, dy, event=0, modifiers=None):
         """
         Change the position of the selected elements.
         """
@@ -1230,7 +1164,7 @@ class MoveWidget(Widget):
                 except AttributeError:
                     pass
         elif event == -1:  # start
-            if self.key_alt_pressed:
+            if "alt" in modifiers:
                 self.create_duplicate()
         elif event == 0:  # move
 
@@ -1249,7 +1183,7 @@ class MoveWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "move"
         response = process_event(
@@ -1258,6 +1192,7 @@ class MoveWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Move element",
         )
         return response
@@ -1273,9 +1208,6 @@ class MoveRotationOriginWidget(Widget):
         self.master = master
         self.scene = scene
         self.half = size / 2
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1323,7 +1255,7 @@ class MoveRotationOriginWidget(Widget):
         )
         gc.DrawEllipse(self.left, self.top, self.width, self.height)
 
-    def tool(self, position, dx, dy, event=0):
+    def tool(self, position, dx, dy, event=0, modifiers=None):
         """
         Change the rotation-center of the selected elements.
         """
@@ -1336,7 +1268,7 @@ class MoveRotationOriginWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "rotcenter"
         response = process_event(
@@ -1345,6 +1277,7 @@ class MoveRotationOriginWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Move rotation center",
         )
         return response
@@ -1362,9 +1295,6 @@ class ReferenceWidget(Widget):
         self.half = size / 2
         if is_reference_object:
             self.half = self.half * 1.5
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1428,7 +1358,7 @@ class ReferenceWidget(Widget):
         return HITCHAIN_HIT
 
     def tool(
-        self, position=None, dx=None, dy=None, event=0
+        self, position=None, dx=None, dy=None, event=0, modifiers=None
     ):  # Don't need all arguments, just for compatibility with pattern
         """
         Toggle the Reference Status of the selected elements
@@ -1452,7 +1382,7 @@ class ReferenceWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "reference"
         response = process_event(
@@ -1461,6 +1391,7 @@ class ReferenceWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Toggle reference status of element",
             optimize_drawing=False,
         )
@@ -1477,9 +1408,6 @@ class LockWidget(Widget):
         self.scene = scene
         # Slightly bigger to be clearly seen
         self.half = size / 2
-        self.key_shift_pressed = master.key_shift_pressed
-        self.key_control_pressed = master.key_control_pressed
-        self.key_alt_pressed = master.key_alt_pressed
         self.was_lb_raised = False
         self.hovering = False
         self.save_width = 0
@@ -1538,7 +1466,7 @@ class LockWidget(Widget):
         return HITCHAIN_HIT
 
     def tool(
-        self, position=None, dx=None, dy=None, event=0
+        self, position=None, dx=None, dy=None, event=0, modifiers=None
     ):  # Don't need all arguments, just for compatibility with pattern
         """
         Toggle the Reference Status of the selected elements
@@ -1555,7 +1483,7 @@ class LockWidget(Widget):
             self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "lock"
         response = process_event(
@@ -1564,6 +1492,7 @@ class LockWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            modifiers=modifiers,
             helptext="Remove the 'locked' status of the element",
             optimize_drawing=False,
         )
@@ -1766,6 +1695,7 @@ class SelectionWidget(Widget):
         self.popupID3 = None
         self.gc = None
         self.reset_variables()
+        self.modifiers = []
 
     def init(self, context):
         context.listen("ext-modified", self.external_modification)
@@ -1774,7 +1704,20 @@ class SelectionWidget(Widget):
     def final(self, context):
         context.unlisten("ext-modified", self.external_modification)
 
+    @property
+    def key_shift_pressed(self):
+        return "shift" in self.modifiers
+
+    @property
+    def key_control_pressed(self):
+        return "control" in self.modifiers
+
+    @property
+    def key_alt_pressed(self):
+        return "alt" in self.modifiers
+
     def reset_variables(self):
+        self.modifiers = []
         self.save_width = None
         self.save_height = None
         self.cursor = "arrow"
@@ -1784,9 +1727,6 @@ class SelectionWidget(Widget):
         self.rotated_angle = 0
         self.total_delta_x = 0
         self.total_delta_y = 0
-        self.key_shift_pressed = False
-        self.key_control_pressed = False
-        self.key_alt_pressed = False
         self.was_lb_raised = False
         self.hovering = False
         self.use_handle_rotate = True
@@ -2023,38 +1963,10 @@ class SelectionWidget(Widget):
             menu.Destroy()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
+        self.modifiers = modifiers
         elements = self.scene.context.elements
-        # mirror key-events to provide them to the widgets as they get deleted and created after every event...
-        if event_type == "kb_shift_release":
-            if self.key_shift_pressed:
-                self.key_shift_pressed = False
-            return RESPONSE_CHAIN
-        elif event_type == "kb_shift_press":
-            if not self.key_shift_pressed:
-                self.key_shift_pressed = True
-            return RESPONSE_CHAIN
-        elif event_type == "kb_ctrl_release":
-            if self.key_control_pressed:
-                self.key_control_pressed = False
-            return RESPONSE_CHAIN
-        elif event_type == "kb_ctrl_press":
-            if not self.key_control_pressed:
-                self.key_control_pressed = True
-            return RESPONSE_CHAIN
-        elif event_type == "kb_alt_release":
-            if self.key_alt_pressed:
-                self.key_alt_pressed = False
-            return RESPONSE_CHAIN
-        elif event_type == "kb_alt_press":
-            if not self.key_alt_pressed:
-                self.key_alt_pressed = True
-            return RESPONSE_CHAIN
-
-        # Now all hovering, there is some empty space in the selection widget that get these events
-        # print("** MASTER, event=%s, pos=%s" % (event_type, space_pos))
-
         if event_type == "hover_start":
             self.hovering = True
             self.scene.context.signal("statusmsg", "")
@@ -2074,10 +1986,7 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
-            if self.scene.context.select_smallest:
-                smallest = not self.key_control_pressed
-            else:
-                smallest = self.key_control_pressed
+            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,
@@ -2094,10 +2003,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
-            if self.scene.context.select_smallest:
-                smallest = not self.key_control_pressed
-            else:
-                smallest = self.key_control_pressed
+            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,

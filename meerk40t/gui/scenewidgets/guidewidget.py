@@ -162,7 +162,7 @@ class GuideWidget(Widget):
             pass
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None,**kwargs
     ):
         """
         Capture and deal with the double click event.

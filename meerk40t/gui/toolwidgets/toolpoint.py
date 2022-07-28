@@ -20,7 +20,7 @@ class PointTool(ToolWidget):
         pass
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
@@ -40,4 +40,11 @@ class PointTool(ToolWidget):
                 elements.classify([node])
             self.notify_created(node)
             response = RESPONSE_CONSUME
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response
