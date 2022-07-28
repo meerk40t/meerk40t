@@ -8,9 +8,20 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
+from meerk40t.gui.statusbarwidgets.infowidget import InformationWidget
+from meerk40t.gui.statusbarwidgets.opassignwidget import (
+    OperationAssignOptionWidget,
+    OperationAssignWidget,
+)
+from meerk40t.gui.statusbarwidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.statusbarwidgets.shapepropwidget import (
+    FillruleWidget,
+    LinecapWidget,
+    LinejoinWidget,
+)
+from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
+from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
-
-from ..core.element_types import elem_nodes, op_nodes
 
 from ..core.units import UNITS_PER_INCH, Length
 from ..svgelements import Color, Matrix, Path
@@ -28,6 +39,7 @@ from .icons import (
     icons8_circle_50,
     icons8_cursor_50,
     icons8_flip_vertical,
+    icons8_group_objects_50,
     icons8_measure_50,
     icons8_mirror_horizontal,
     icons8_opened_folder_50,
@@ -42,12 +54,11 @@ from .icons import (
     icons8_rotate_right_50,
     icons8_save_50,
     icons8_type_50,
+    icons8_ungroup_objects_50,
     icons8_vector_50,
     icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_group_objects_50,
-    icons8_ungroup_objects_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -74,13 +85,6 @@ from .laserrender import (
     swizzlecolor,
 )
 from .mwindow import MWindow
-from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
-from meerk40t.gui.statusbarwidgets.infowidget import SBW_Information
-from meerk40t.gui.statusbarwidgets.selectionwidget import SBW_Selection
-from meerk40t.gui.statusbarwidgets.opassignwidget import SBW_AssignButtons, SBW_AssignOptions
-from meerk40t.gui.statusbarwidgets.shapepropwidget import SBW_Fillrule, SBW_Linecap, SBW_Linejoin
-from meerk40t.gui.statusbarwidgets.strokewidget import SBW_Color, SBW_Stroke
-
 
 _ = wx.GetTranslation
 
@@ -259,26 +263,44 @@ class MeerK40t(MWindow):
         self.idx_colors = self.main_statusbar.panelct - 2
         self.idx_assign = self.main_statusbar.panelct - 3
 
-        self.select_panel = SBW_Selection()
-        self.info_panel = SBW_Information()
-        self.main_statusbar.add_panel_widget(self.select_panel, self.idx_selection, "selection", False)
-        self.main_statusbar.add_panel_widget(self.info_panel, self.idx_selection, "infos", False)
+        self.select_panel = SelectionWidget()
+        self.info_panel = InformationWidget()
+        self.main_statusbar.add_panel_widget(
+            self.select_panel, self.idx_selection, "selection", False
+        )
+        self.main_statusbar.add_panel_widget(
+            self.info_panel, self.idx_selection, "infos", False
+        )
 
-        self.assign_button_panel = SBW_AssignButtons()
-        self.assign_option_panel = SBW_AssignOptions()
-        self.main_statusbar.add_panel_widget(self.assign_button_panel, self.idx_assign, "assign", True)
-        self.main_statusbar.add_panel_widget(self.assign_option_panel, self.idx_assign, "assign-options", True)
+        self.assign_button_panel = OperationAssignWidget()
+        self.assign_option_panel = OperationAssignOptionWidget()
+        self.main_statusbar.add_panel_widget(
+            self.assign_button_panel, self.idx_assign, "assign", True
+        )
+        self.main_statusbar.add_panel_widget(
+            self.assign_option_panel, self.idx_assign, "assign-options", True
+        )
 
-        self.color_panel = SBW_Color()
-        self.stroke_panel = SBW_Stroke()
-        self.linecap_panel = SBW_Linecap()
-        self.linejoin_panel = SBW_Linejoin()
-        self.fillrule_panel = SBW_Fillrule()
-        self.main_statusbar.add_panel_widget(self.color_panel, self.idx_colors, "color", False)
-        self.main_statusbar.add_panel_widget(self.stroke_panel, self.idx_colors, "stroke", False)
-        self.main_statusbar.add_panel_widget(self.linecap_panel, self.idx_colors, "linecap", False)
-        self.main_statusbar.add_panel_widget(self.linejoin_panel, self.idx_colors, "linejoin", False)
-        self.main_statusbar.add_panel_widget(self.fillrule_panel, self.idx_colors, "fillrule", False)
+        self.color_panel = ColorWidget()
+        self.stroke_panel = StrokeWidget()
+        self.linecap_panel = LinecapWidget()
+        self.linejoin_panel = LinejoinWidget()
+        self.fillrule_panel = FillruleWidget()
+        self.main_statusbar.add_panel_widget(
+            self.color_panel, self.idx_colors, "color", False
+        )
+        self.main_statusbar.add_panel_widget(
+            self.stroke_panel, self.idx_colors, "stroke", False
+        )
+        self.main_statusbar.add_panel_widget(
+            self.linecap_panel, self.idx_colors, "linecap", False
+        )
+        self.main_statusbar.add_panel_widget(
+            self.linejoin_panel, self.idx_colors, "linejoin", False
+        )
+        self.main_statusbar.add_panel_widget(
+            self.fillrule_panel, self.idx_colors, "fillrule", False
+        )
 
         self.assign_button_panel.show_stuff(False)
 

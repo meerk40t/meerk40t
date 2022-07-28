@@ -1,5 +1,7 @@
 from threading import Timer
+
 import wx
+
 from meerk40t.gui.icons import icons8_next_page_20
 
 
@@ -23,7 +25,7 @@ class CustomStatusBar(wx.StatusBar):
         self.widgets = {}
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
-        for idx in range(self.panelct):
+        for __ in range(self.panelct):
             btn = wx.Button(self, id=wx.ID_ANY, label="", size=wx.Size(20, -1))
             btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True))
             btn.Show(False)

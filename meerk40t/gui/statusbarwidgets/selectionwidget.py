@@ -1,10 +1,11 @@
 import wx
+
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
 
-class SBW_Selection(StatusBarWidget):
+class SelectionWidget(StatusBarWidget):
     """
     Panel to set some of the options for the selection rectangle
     around an emphasized element

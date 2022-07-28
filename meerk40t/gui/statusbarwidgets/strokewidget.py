@@ -1,12 +1,16 @@
 import wx
-from .statusbarwidget import StatusBarWidget
-from ...core.units import UNITS_PER_INCH, Length
+
 from ...core.element_types import elem_nodes
+from ...core.units import Length
+from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
 
-class SBW_Color(StatusBarWidget):
+class ColorWidget(StatusBarWidget):
+    """
+    Displays the 8 'main' colors and allows assignment to stroke and fill
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -64,13 +68,16 @@ class SBW_Color(StatusBarWidget):
             self.context.signal("selfill", rgb)
 
 
-class SBW_Stroke(StatusBarWidget):
+class StrokeWidget(StatusBarWidget):
+    """
+    Allows manipulation of the strokewidth properties
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
-        FONT_SIZE = 7
+        font_size = 7
 
         # Plus one combobox + value field for stroke width
         self.strokewidth_label = wx.StaticText(
@@ -78,7 +85,7 @@ class SBW_Stroke(StatusBarWidget):
         )
         self.strokewidth_label.SetFont(
             wx.Font(
-                FONT_SIZE,
+                font_size,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -89,7 +96,7 @@ class SBW_Stroke(StatusBarWidget):
         )
         self.spin_width.SetFont(
             wx.Font(
-                FONT_SIZE,
+                font_size,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -107,7 +114,7 @@ class SBW_Stroke(StatusBarWidget):
         )
         self.combo_units.SetFont(
             wx.Font(
-                FONT_SIZE,
+                font_size,
                 wx.FONTFAMILY_DEFAULT,
                 wx.FONTSTYLE_NORMAL,
                 wx.FONTWEIGHT_NORMAL,
@@ -122,9 +129,6 @@ class SBW_Stroke(StatusBarWidget):
         self.Add(self.strokewidth_label, 0, wx.EXPAND, 1)
         self.Add(self.spin_width, 1, wx.EXPAND, 1)
         self.Add(self.combo_units, 1, wx.EXPAND, 1)
-
-    def SetValues(self, swidth):
-        return
 
     def on_stroke_width(self, event):
         if not self.startup:
