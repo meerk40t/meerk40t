@@ -8,17 +8,19 @@ class SBW_Selection(StatusBarWidget):
     Panel to set some of the options for the selection rectangle
     around an emphasized element
     """
-    def __init__(self, parent, panelidx, identifier, context, **args):
-        super().__init__(parent, panelidx, identifier, context, args)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
+
         FONT_SIZE = 7
-        self.stroke_options_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.operation_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # These will fall into the last field
-        self.cb_move = wx.CheckBox(self, id=wx.ID_ANY, label=_("Move"))
-        self.cb_handle = wx.CheckBox(self, id=wx.ID_ANY, label=_("Resize"))
-        self.cb_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
-        self.cb_skew = wx.CheckBox(self, id=wx.ID_ANY, label=_("Skew"))
+        self.cb_move = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Move"))
+        self.cb_handle = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Resize"))
+        self.cb_rotate = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Rotate"))
+        self.cb_skew = wx.CheckBox(self.parent, id=wx.ID_ANY, label=_("Skew"))
         self.cb_move.SetFont(
             wx.Font(
                 FONT_SIZE,
@@ -52,10 +54,10 @@ class SBW_Selection(StatusBarWidget):
             )
         )
 
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
-        self.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
+        self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
+        self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
+        self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
+        self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_skew, self.cb_skew)
         self.StartPopulation()
         self.cb_move.SetValue(self.context.enable_sel_move)
         self.cb_handle.SetValue(self.context.enable_sel_size)
@@ -67,10 +69,10 @@ class SBW_Selection(StatusBarWidget):
         self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
         self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
         self.PrependSpacer(5)
-        self.parent.Add(self.cb_move, 1, wx.EXPAND, 0)
-        self.parent.Add(self.cb_handle, 1, wx.EXPAND, 0)
-        self.parent.Add(self.cb_rotate, 1, wx.EXPAND, 0)
-        self.parent.Add(self.cb_skew, 1, wx.EXPAND, 0)
+        self.Add(self.cb_move, 1, wx.EXPAND, 0)
+        self.Add(self.cb_handle, 1, wx.EXPAND, 0)
+        self.Add(self.cb_rotate, 1, wx.EXPAND, 0)
+        self.Add(self.cb_skew, 1, wx.EXPAND, 0)
 
     # the checkbox was clicked
     def on_toggle_move(self, event):

@@ -1,11 +1,16 @@
 import wx
 from .statusbarwidget import StatusBarWidget
+from ...core.units import UNITS_PER_INCH, Length
+from ...core.element_types import elem_nodes
 
 _ = wx.GetTranslation
 
 class SBW_Color(StatusBarWidget):
-    def __init__(self, parent, panelidx, identifier, context, **args):
-        super().__init__(parent, panelidx, identifier, context, args)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
         # And now 8 Buttons for Stroke / Fill:
         colors = (
             0xFFFFFF,
@@ -58,8 +63,11 @@ class SBW_Color(StatusBarWidget):
             self.context.signal("selfill", rgb)
 
 class SBW_Stroke(StatusBarWidget):
-    def __init__(self, parent, panelidx, identifier, context, **args):
-        super().__init__(parent, panelidx, identifier, context, args)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
         FONT_SIZE = 7
 
         # Plus one combobox + value field for stroke width
@@ -106,9 +114,9 @@ class SBW_Stroke(StatusBarWidget):
         self.combo_units.SetMinSize(wx.Size(30, -1))
         self.combo_units.SetMaxSize(wx.Size(120, -1))
         self.combo_units.SetSelection(0)
-        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
-        # self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
+        self.parent.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
+        # self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
+        self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
         self.Add(self.strokewidth_label, 0, wx.EXPAND, 1)
         self.Add(self.spin_width, 1, wx.EXPAND, 1)
         self.Add(self.combo_units, 1, wx.EXPAND, 1)
@@ -131,3 +139,23 @@ class SBW_Stroke(StatusBarWidget):
                 mysignal = "selstrokewidth"
                 self.context.signal(mysignal, value)
 
+    def Signal(self, signal, *args):
+        if signal == "emphasized":
+            if len(args)>0:
+                value = args[0]
+            else:
+                value = self.context.elements.has_emphasis()
+                sw_default = None
+                for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                    if hasattr(e, "stroke_width"):
+                        if sw_default is None:
+                            sw_default = e.stroke_width
+                            break
+                if sw_default is not None:
+                    # Set Values
+                    self.startup = True
+                    stdlen = float(Length("1mm"))
+                    value = "%.2f" % (sw_default / stdlen)
+                    self.spin_width.SetValue(value)
+                    self.combo_units.SetSelection(self.choices.index("mm"))
+                    self.startup = False

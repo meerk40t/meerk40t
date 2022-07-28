@@ -18,8 +18,11 @@ class SBW_AssignOptions(StatusBarWidget):
     """
     Panel to set some options for manual operation assignment
     """
-    def __init__(self, parent, panelidx, identifier, context, **args):
-        super().__init__(parent, panelidx, identifier, context, args)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
         choices = [
             _("Leave"),
             _("-> OP"),
@@ -88,26 +91,32 @@ class SBW_AssignOptions(StatusBarWidget):
             newval = self.chk_all_similar.GetValue()
             self.context.elements.classify_all_similar = newval
 
+    def Signal(self, signal, *args):
+        if signal == "emphasized":
+            self.Enable(self.context.elements.has_emphasis())
+
 class SBW_AssignButtons(StatusBarWidget):
     """
     Panel to quickly assign a laser operation to any emphasized element
     """
-    def __init__(self, parent, panelidx, identifier, context, **args):
-        super().__init__(parent, panelidx, identifier, context, args)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.iconsize = 20
         self.buttonsize = self.iconsize + 4
         self.MAXBUTTONS = 24
         self.assign_hover = 0
         self.assign_buttons = []
         self.op_nodes = []
-        self.assign_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
+
         for idx in range(self.MAXBUTTONS):
             btn = wx.Button(
                 self.parent, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize)
             )
             self.assign_buttons.append(btn)
             self.op_nodes.append(None)
-            self.assign_sizer.Add(btn, 1, wx.EXPAND, 0)
             btn.Bind(wx.EVT_ENTER_WINDOW, self.on_assign_mouse_over)
             btn.Bind(wx.EVT_LEAVE_WINDOW, self.on_assign_mouse_leave)
             btn.Bind(wx.EVT_BUTTON, self.on_assign_button_left)
@@ -150,7 +159,7 @@ class SBW_AssignButtons(StatusBarWidget):
         if self.assign_hover < 0:
             self.assign_hover = 0
         if self.assign_hover == 0:
-            self.context.signal("statusmsg", "")
+            self.parent.SetStatusText("")
         event.Skip()
 
     def on_assign_mouse_over(self, event):
@@ -160,7 +169,7 @@ class SBW_AssignButtons(StatusBarWidget):
             if button == self.assign_buttons[idx]:
                 msg = str(self.op_nodes[idx])
         self.assign_hover += 1
-        self.context.signal("statusmsg", msg)
+        self.parent.SetStatusText(msg)
         event.Skip()
 
     def execute_on(self, targetop, attrib):
@@ -192,7 +201,7 @@ class SBW_AssignButtons(StatusBarWidget):
             self.assign_buttons[idx].SetBitmap(wx.NullBitmap)
             self.assign_buttons[idx].Show(False)
         if self.assign_hover > 0:
-            self.context.signal("statusmsg", "")
+            self.parent.SetStatusText("")
             self.assign_hover = 0
 
     def assign_set_single_button(self, node):
@@ -313,14 +322,11 @@ class SBW_AssignButtons(StatusBarWidget):
                     # too many...
                     break
         # We need to call reposition for the updates to be seen
-        self.context.signal("statusupdate", self.idx_assign)
+        self.parent.Reposition(self.panelidx)
 
     def assign_show_stuff(self, flag):
         if flag:
             self.assign_set_buttons()
-        self.chk_all_similar.Enable(flag)
-        self.cbo_apply_color.Enable(flag)
-        self.chk_exclusive.Enable(flag)
 
         for idx in range(self.MAXBUTTONS):
             myflag = flag and self.op_nodes[idx] is not None
@@ -328,10 +334,26 @@ class SBW_AssignButtons(StatusBarWidget):
             self.assign_buttons[idx].Enable(myflag)
         if not flag:
             if self.assign_hover > 0:
-                self.context.signal("statusmsg", "")
+                self.parent.Set("statusmsg", "")
                 self.assign_hover = 0
         else:
             self.chk_exclusive.SetValue(
                 self.context.elements.classify_inherit_exclusive
             )
-        self.context.signal("statusupdate", self.idx_assign)
+        self.parent.Reposition(self.panelidx)
+
+    def Signal(self, signal, *args):
+        if signal in ("element_property_update", "element_property_reload") and len(args)>0:
+            # Need to do all?!
+            element = args[0]
+            if isinstance(element, (tuple, list)):
+                for node in element:
+                    if node.type.startswith("op "):
+                        self.assign_set_single_button(node)
+            else:
+                if element.type.startswith("op "):
+                    self.assign_set_single_button(element)
+        elif signal == "rebuild_tree":
+            self.assign_set_buttons()
+        elif signal == "emphasized":
+            self.Enable(self.context.elements.has_emphasis())

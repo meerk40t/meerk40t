@@ -44,12 +44,13 @@ class CustomStatusBar(wx.StatusBar):
             return
         super().SetStatusText(message, panel)
 
-    def add_sizer_panel(self, panel_idx, widget, identifier, visible=True, callback=None):
+    def add_panel_widget(self, widget,  panel_idx, identifier, visible=True):
         if panel_idx < 0 or panel_idx >= self.panelct:
             return
-        # Mke sure they belong to me, else the wx.Boxsizer
+        # Make sure they belong to me, else the wx.Boxsizer
         # will have wrong information to work with
-        widget.Reparent(self)
+        widget.GenerateControls(self, panel_idx, identifier, self.context)
+        widget.visible = visible
         self.widgets[identifier] = widget
 
     def activate_panel(self, identifier, newflag):
@@ -215,7 +216,7 @@ class CustomStatusBar(wx.StatusBar):
         if self.sizeChanged:
             self.Reposition()
 
-    def Signal(self, signal, **args):
+    def Signal(self, signal, **kwargs):
         # Propagate to widgets
-        for widget in self.widgets:
-            widget.Signal(signal, args)
+        for key in self.widgets:
+            self.widgets[key].Signal(signal, **kwargs)

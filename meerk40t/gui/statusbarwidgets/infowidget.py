@@ -11,8 +11,13 @@ class SBW_Information(StatusBarWidget):
     if none is given externally it falls back to basic infos
     about the emphasized elements
     """
-    def __init__(self, parent, panelidx, identifier, context, **args):
-        super().__init__(parent, panelidx, identifier, context, args)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._externalinfo = None
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
+
         FONT_SIZE = 7
         self.info_text = wx.StaticText(self.parent, wx.ID_ANY, label="")
         self.info_text.SetFont(
@@ -23,7 +28,6 @@ class SBW_Information(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        self._externalinfo = None
         self.PrependSpacer(5)
         self.Add(self.info_text, 1, wx.EXPAND, 0)
 
