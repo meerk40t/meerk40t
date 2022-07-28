@@ -28,36 +28,28 @@ jobs:
     - name: Install dependencies
       run: |
         pip install wheel
-        pip install wxPython==4.0.7-post2
+        pip install wxPython==4.1.1
         pip install ezdxf
         pip install meerk40t-camera opencv-python-headless==4.5.3.56
 # 10/25/2021 0.7.3-beta4 ok, but 0.7.3 release lacked camera. Fixing opencv @4.5.3.56 until it's fixed
 
 # Compile bootloaders in order to reduce virus totals
 # PYTHONHASHSEED is an attempt to get deterministic builds for VirusTotal
+# 05/28/2022 JS - Locked pyinstaller at v4.9 because 4.10 couldn't find the icon 
+# when it branch v4 updated to commit e319ae3d00. Fixes made in v5 branches, not v4
     - name: Build pyinstaller, generate bootloaders
       env:
         PYTHONHASHSEED: 12506
       run: |
-        git clone --depth=1 --branch=v4 https://github.com/pyinstaller/pyinstaller
+        git clone --depth=1 --branch=v4.9 https://github.com/pyinstaller/pyinstaller
         cd pyinstaller/bootloader
         python3 ./waf distclean all --target-arch=32bit
         cd ..
         python3 setup.py install
         cd ..
 
-    - name: Build MeerK40t (wxPython 4.0.7-post2)
+    - name: Build MeerK40t
       run: |
-        move meerk40t.py mk40t.py
-        pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
-        move mk40t.py meerk40t.py
-        cd dist
-        move Meerk40t.exe wx4.0.7-meerk40t.exe
-        cd ..
-
-    - name: Build MeerK40t (wxPython 4.1.1)
-      run: |
-        pip install wxPython==4.1.1
         move meerk40t.py mk40t.py
         pyinstaller --windowed --onefile --name meerk40t .github/workflows/win/meerk40t.spec
         move mk40t.py meerk40t.py
@@ -71,4 +63,3 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: |
           dist/MeerK40t.exe
-          dist/wx4.0.7-meerk40t.exe

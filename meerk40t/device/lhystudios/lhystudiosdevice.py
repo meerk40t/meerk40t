@@ -289,7 +289,7 @@ def plugin(kernel, lifecycle=None):
             input_type="lhystudios",
             help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
         )
-        def egv_import(filename, data=None, **kwargs):
+        def egv_import(channel, _, filename, data=None, **kwargs):
             spooler, driver, output = data
             if filename is None:
                 raise SyntaxError
@@ -310,15 +310,18 @@ def plugin(kernel, lifecycle=None):
                 skip(file, "\n", 3)
                 skip(file, "%", 5)
 
-            with open(filename, "r") as f:
-                skip_header(f)
-                while True:
-                    data = f.read(1024)
-                    if not data:
-                        break
-                    buffer = bytes(data, "utf8")
-                    output.write(buffer)
-                output.write(b"\n")
+            try:
+                with open(filename, "r") as f:
+                    skip_header(f)
+                    while True:
+                        data = f.read(1024)
+                        if not data:
+                            break
+                        buffer = bytes(data, "utf8")
+                        output.write(buffer)
+                    output.write(b"\n")
+            except (PermissionError, IOError, FileNotFoundError):
+                channel(_("Could not load: %s" % filename))
 
         @context.console_argument("filename", type=str)
         @context.console_command(

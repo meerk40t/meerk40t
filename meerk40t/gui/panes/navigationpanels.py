@@ -929,7 +929,7 @@ class SizePanel(wx.Panel):
                     self.objratio = 0
                 else:
                     self.objratio = mw / mh
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError, TypeError):
                 self.objratio = 1.0
                 v = False  # has no bounding box...
 

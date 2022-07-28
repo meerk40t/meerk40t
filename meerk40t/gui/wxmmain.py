@@ -216,11 +216,11 @@ class CustomStatusBar(wx.StatusBar):
         wd = rect.width / 3
         rect.x += 1
         rect.y += 1
-        rect.width = wd
+        rect.width = int(wd)
         self.cb_handle.SetRect(rect)
-        rect.x += wd
+        rect.x += int(wd)
         self.cb_rotate.SetRect(rect)
-        rect.x += wd
+        rect.x += int(wd)
         self.cb_skew.SetRect(rect)
         self.sizeChanged = False
 

@@ -20,8 +20,6 @@ from os import times
 from time import time
 from typing import Any, List
 
-from PIL import Image
-
 from ..device.lhystudios.laserspeed import LaserSpeed
 from ..device.lhystudios.lhystudiosdevice import LhystudiosDriver
 from ..image.actualize import actualize
@@ -30,6 +28,12 @@ from ..tools.pathtools import VectorMontonizer
 from ..tools.rastergrouping import group_elements_overlap, group_overlapped_rasters
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
 from .elements import LaserOperation
+
+try:
+    from PIL import Image
+    PILLOW_LOADED = True
+except ImportError:
+    PILLOW_LOADED = False
 
 
 class CutPlan:
@@ -328,7 +332,7 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     c = self.plan[i] = self.inner_first_ident(c)
-                if self.grouped_inner():
+                if self.grouped_inner() and PILLOW_LOADED:
                     c = self.plan[i] = self.inner_first_image_optimize(c)
                 self.plan[i] = self.inner_selection_cutcode(c)
 
@@ -338,7 +342,7 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     c = self.plan[i] = self.inner_first_ident(c)
-                if self.grouped_inner():
+                if self.grouped_inner() and PILLOW_LOADED:
                     c = self.plan[i] = self.inner_first_image_optimize(c)
                 if last is not None:
                     self.plan[i].start = last
@@ -392,6 +396,8 @@ class CutPlan:
             3. Device type - only have accel values for lhy devices
             4. Acceleration number (manual or automatic)
             5. Actual raster speed (adjusted if necessary from Op speed)
+        If choice between merged or separated is evenly balanced, we prefer merged
+        by adding a constant value of 50 (mils) to the margins.
         """
 
         # Determine raster direction(s)
@@ -411,8 +417,8 @@ class CutPlan:
             return dx, dy
 
         # set minimum margins otherwise
-        dx = 500 if h_sweep else 0
-        dy = 500 if v_sweep else 0
+        dx = 500 if h_sweep else 50
+        dy = 500 if v_sweep else 50
 
         # Get device and check for lhystudios
         try:
@@ -446,9 +452,9 @@ class CutPlan:
 
         # Calculate margins
         if h_sweep:
-            dx = max(dx, CutPlan.sweep_distance(speed, h_accel))
+            dx = max(dx, CutPlan.sweep_distance(speed, h_accel)) + 50
         if v_sweep:
-            dy = max(dy, CutPlan.sweep_distance(speed, v_accel))
+            dy = max(dy, CutPlan.sweep_distance(speed, v_accel)) + 50
 
         return dx, dy
 
@@ -475,6 +481,8 @@ class CutPlan:
             dx, dy = self.get_raster_margins(op.settings)
 
             def adjust_bbox(bbox):
+                if bbox is None:
+                    return None
                 x1, y1, x2, y2 = bbox
                 return x1 - dx, y1 - dy, x2 + dx, y2 + dy
 
@@ -937,7 +945,7 @@ class CutPlan:
             # Travel only if path is completely burned or gap > 1/20"
             if distance > 50:
                 closest, backwards = self.short_travel_cutcode_candidate(
-                    context, closest, curr, distance
+                    context, closest, backwards, curr, distance
                 )
 
             if closest is None:
@@ -990,7 +998,7 @@ class CutPlan:
         return ordered
 
     def short_travel_cutcode_candidate(
-        self, context: CutCode, closest: Any, curr: complex, distance: float
+        self, context: CutCode, closest: Any, backwards: Any, curr: complex, distance: float
     ) -> Any:
         complete_path = self.context.opt_complete_subpaths
         for cut in context.candidate(

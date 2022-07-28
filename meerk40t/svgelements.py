@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.12"
+SVGELEMENTS_VERSION = "1.6.17"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -220,6 +220,7 @@ REGEX_COLOR_HSL = re.compile(
     % (PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT, PATTERN_FLOAT)
 )
 REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
+REGEX_CSS_COMMENT = re.compile(r"\/\*[\s\S]*?\*\/|\/\/.*$", re.MULTILINE)
 REGEX_CSS_STYLE = re.compile(r"([^{]+)\s*\{\s*([^}]+)\s*\}")
 REGEX_CSS_FONT = re.compile(
     r"(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?"
@@ -2595,6 +2596,14 @@ class Matrix:
             self.f,
         )
 
+    @property
+    def rotation(self):
+        prx = Point(1, 0)
+        prx *= self
+        origin = Point(0, 0)
+        origin *= self
+        return origin.angle_to(prx)
+
     def parse(self, transform_str):
         """Parses the svg transform string.
 
@@ -4124,6 +4133,24 @@ class Curve(PathSegment):
         self.start = Point(start) if start is not None else None
         self.end = Point(end) if end is not None else None
 
+    def as_circular_arcs(self, error=ERROR, start=0.0, end=1.0):
+        mid = 0.5 * (end - start) + start
+        start_point = self.point(start)
+        mid_point = self.point(mid)
+        end_point = self.point(end)
+        sample_point0 = self.point(0.25 * (end - start) + start)
+        sample_point1 = self.point(0.75 * (end - start) + start)
+        arc = Arc(start=start_point, end=end_point, control=mid_point)
+        radius = Point.distance(start_point, arc.center)
+        r0 = Point.distance(sample_point0, arc.center)
+        r1 = Point.distance(sample_point1, arc.center)
+        current_error = (abs(r0 - radius) + abs(r1 - radius)) / radius
+        if current_error < error:
+            yield arc
+        else:
+            yield from self.as_circular_arcs(error=error, start=start, end=mid)
+            yield from self.as_circular_arcs(error=error, start=mid, end=end)
+
 
 class Linear(PathSegment):
     """Represents line commands."""
@@ -4745,44 +4772,52 @@ class Arc(Curve):
             if control is not None:
                 delta_a = control - self.start
                 delta_b = self.end - control
-                if abs(delta_a.x) > 1e-12:
-                    slope_a = delta_a.y / delta_a.x
-                else:
-                    slope_a = float("inf")
-                if abs(delta_b.x) > 1e-12:
-                    slope_b = delta_b.y / delta_b.x
-                else:
-                    slope_b = float("inf")
                 ab_mid = Point.towards(self.start, control, 0.5)
                 bc_mid = Point.towards(control, self.end, 0.5)
-                if abs(delta_a.y) < 1e-12:  # slope_a == 0
+                if self.start == self.end:
                     cx = ab_mid.x
-                    if abs(delta_b.x) < 1e-12:  # slope_b == inf
-                        cy = bc_mid.y
+                    cy = ab_mid.y
+                    self.sweep = tau
+                else:
+                    if abs(delta_a.x) > 1e-12:
+                        slope_a = delta_a.y / delta_a.x
                     else:
-                        cy = bc_mid.y + (bc_mid.x - cx) / slope_b
-                elif abs(delta_b.y) < 1e-12:  # slope_b == 0
-                    cx = bc_mid.x
-                    if abs(delta_a.y) < 1e-12:  # slope_a == inf
+                        slope_a = float("inf")
+                    if abs(delta_b.x) > 1e-12:
+                        slope_b = delta_b.y / delta_b.x
+                    else:
+                        slope_b = float("inf")
+                    if abs(delta_a.y) < 1e-12:  # slope_a == 0
+                        cx = ab_mid.x
+                        if abs(delta_b.x) < 1e-12:  # slope_b == inf
+                            cy = bc_mid.y
+                        else:
+                            if abs(slope_b) > 1e-12:
+                                cy = bc_mid.y + (bc_mid.x - cx) / slope_b
+                            else:
+                                cy = float("inf")
+                    elif abs(delta_b.y) < 1e-12:  # slope_b == 0
+                        cx = bc_mid.x
+                        if abs(delta_a.y) < 1e-12:  # slope_a == inf
+                            cy = ab_mid.y
+                        else:
+                            cy = ab_mid.y + (ab_mid.x - cx) / slope_a
+                    elif abs(delta_a.x) < 1e-12:  # slope_a == inf
+                        cy = ab_mid.y
+                        cx = slope_b * (bc_mid.y - cy) + bc_mid.x
+                    elif abs(delta_b.x) < 1e-12:  # slope_b == inf
+                        cy = bc_mid.y
+                        cx = slope_a * (ab_mid.y - cy) + ab_mid.x
+                    elif abs(slope_a - slope_b) < 1e-12:
+                        cx = ab_mid.x
                         cy = ab_mid.y
                     else:
-                        cy = ab_mid.y + (ab_mid.x - cx) / slope_a
-                elif abs(delta_a.x) < 1e-12:  # slope_a == inf
-                    cy = ab_mid.y
-                    cx = slope_b * (bc_mid.y - cy) + bc_mid.x
-                elif abs(delta_b.x) < 1e-12:  # slope_b == inf
-                    cy = bc_mid.y
-                    cx = slope_a * (ab_mid.y - cy) + ab_mid.x
-                elif abs(slope_a - slope_b) < 1e-12:
-                    cx = ab_mid.x
-                    cy = ab_mid.y
-                else:
-                    cx = (
-                        slope_a * slope_b * (ab_mid.y - bc_mid.y)
-                        - slope_a * bc_mid.x
-                        + slope_b * ab_mid.x
-                    ) / (slope_b - slope_a)
-                    cy = ab_mid.y - (cx - ab_mid.x) / slope_a
+                        cx = (
+                            slope_a * slope_b * (ab_mid.y - bc_mid.y)
+                            - slope_a * bc_mid.x
+                            + slope_b * ab_mid.x
+                        ) / (slope_b - slope_a)
+                        cy = ab_mid.y - (cx - ab_mid.x) / slope_a
                 self.center = Point(cx, cy)
                 cw = bool(Point.orientation(self.start, control, self.end) == 2)
             elif "r" in kwargs:
@@ -6058,12 +6093,17 @@ class Path(Shape, MutableSequence):
         return len(subpaths)
 
     def as_subpaths(self):
-        last = 0
+        start = 0
         for current, seg in enumerate(self):
-            if current != last and isinstance(seg, Move):
-                yield Subpath(self, last, current - 1)
-                last = current
-        yield Subpath(self, last, len(self) - 1)
+            if isinstance(seg, Move):
+                if current != start:
+                    yield Subpath(self, start, current - 1)
+                    start = current
+            if isinstance(seg, Close):
+                yield Subpath(self, start, current)
+                start = current + 1
+        if start != len(self):
+            yield Subpath(self, start, len(self) - 1)
 
     def as_points(self):
         """Returns the list of defining points within path"""
@@ -6175,6 +6215,15 @@ class Path(Shape, MutableSequence):
             if isinstance(segment, Arc):
                 arc_required = int(ceil(abs(segment.sweep) / sweep_limit))
                 self[s : s + 1] = list(segment.as_quad_curves(arc_required))
+
+    def approximate_bezier_with_circular_arcs(self, error=0.01):
+        """
+        Iterates through this path and replaces any bezier curves with circular arcs.
+        """
+        for s in range(len(self) - 1, -1, -1):
+            segment = self[s]
+            if isinstance(segment, (QuadraticBezier, CubicBezier)):
+                self[s : s + 1] = list(segment.as_circular_arcs(error=error))
 
 
 class Rect(Shape):
@@ -7848,7 +7897,7 @@ class Text(SVGElement, GraphicObject, Transformable):
             return 400
         try:
             return int(weight)
-        except KeyError:
+        except ValueError:
             return 400
 
     def property_by_values(self, values):
@@ -8503,6 +8552,7 @@ class SVG(Group):
         color="black",
         transform=None,
         context=None,
+        parse_display_none=False,
     ):
         """
         Parses the SVG file. All attributes are things which the SVG document itself could not be aware of, such as
@@ -8516,6 +8566,7 @@ class SVG(Group):
         :param color: the `currentColor` value from outside the current scope.
         :param transform: Any required transformations to be pre-applied to this document
         :param context: Any existing document context.
+        :param parse_display_none: Parse display_none values anyway.
         :return:
         """
         clip = 0
@@ -8539,7 +8590,8 @@ class SVG(Group):
             if event == "start":
                 stack.append((context, values))
                 if (
-                    SVG_ATTR_DISPLAY in values
+                    not parse_display_none
+                    and SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
                     continue  # Values has a display=none. Do not render anything. No Shadow Dom.
@@ -8590,6 +8642,8 @@ class SVG(Group):
                             style += styles[css_tag]
                 # Split style element into parts; priority highest
                 if SVG_ATTR_STYLE in attributes:
+                    if len(style) != 0:
+                        style += ";"
                     style += attributes[SVG_ATTR_STYLE]
 
                 # Process style tag left to right.
@@ -8633,6 +8687,7 @@ class SVG(Group):
                 values.update(attributes)
                 values[SVG_STRUCT_ATTRIB] = attributes
                 if (
+                    not parse_display_none and
                     SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
@@ -8792,7 +8847,9 @@ class SVG(Group):
                     s = Title(values, title=elem.text)
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
-                    assignments = list(re.findall(REGEX_CSS_STYLE, elem.text))
+                    textstyle = elem.text
+                    textstyle = re.sub(REGEX_CSS_COMMENT, "", textstyle)
+                    assignments = list(re.findall(REGEX_CSS_STYLE, textstyle.strip()))
                     for key, value in assignments:
                         key = key.strip()
                         value = value.strip()

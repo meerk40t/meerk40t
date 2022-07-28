@@ -452,10 +452,13 @@ class LaserRender:
         if bounds is None:
             return None
         xmin, ymin, xmax, ymax = bounds
-        xmax = ceil(xmax)
-        ymax = ceil(ymax)
-        xmin = floor(xmin)
-        ymin = floor(ymin)
+        try:
+            xmax = ceil(xmax)
+            ymax = ceil(ymax)
+            xmin = floor(xmin)
+            ymin = floor(ymin)
+        except ValueError:
+            return None
 
         image_width = int(xmax - xmin)
         if image_width == 0:
