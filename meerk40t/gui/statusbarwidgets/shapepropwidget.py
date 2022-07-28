@@ -13,10 +13,12 @@ from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
+
 class SBW_Linecap(StatusBarWidget):
     """
     Panel to change / assign the linecap of an element
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -32,17 +34,13 @@ class SBW_Linecap(StatusBarWidget):
         self.btn_cap_round = wx.Button(self.parent, id=wx.ID_ANY, size=wx.Size(30, -1))
         self.btn_cap_round.SetBitmap(cap_round_20.GetBitmap(noadjustment=True))
         self.btn_cap_round.SetMaxSize(wx.Size(50, -1))
-        self.btn_cap_round.SetToolTip(
-            _("Set the end of the lines to a round-shape")
-        )
+        self.btn_cap_round.SetToolTip(_("Set the end of the lines to a round-shape"))
         self.btn_cap_round.Bind(wx.EVT_BUTTON, self.on_cap_round)
 
         self.btn_cap_square = wx.Button(self.parent, id=wx.ID_ANY, size=wx.Size(30, -1))
         self.btn_cap_square.SetBitmap(cap_square_20.GetBitmap(noadjustment=True))
         self.btn_cap_square.SetMaxSize(wx.Size(50, -1))
-        self.btn_cap_square.SetToolTip(
-            _("Set the end of the lines to a square-shape")
-        )
+        self.btn_cap_square.SetToolTip(_("Set the end of the lines to a square-shape"))
         self.btn_cap_square.Bind(wx.EVT_BUTTON, self.on_cap_square)
 
         self.Add(self.cap_lbl, 0, wx.EXPAND, 0)
@@ -68,6 +66,7 @@ class SBW_Linejoin(StatusBarWidget):
     Panel to change / assign the linejoin of an element
     (actually a subset: arcs and miter-clip have been intentionally omitted)
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -77,9 +76,7 @@ class SBW_Linejoin(StatusBarWidget):
 
         self.btn_join_bevel = wx.Button(self.parent, id=wx.ID_ANY, size=wx.Size(25, -1))
         self.btn_join_bevel.SetBitmap(join_bevel.GetBitmap(noadjustment=True))
-        self.btn_join_bevel.SetToolTip(
-            _("Set the join of the lines to a bevel-shape")
-        )
+        self.btn_join_bevel.SetToolTip(_("Set the join of the lines to a bevel-shape"))
         self.btn_join_bevel.Bind(wx.EVT_BUTTON, self.on_join_bevel)
 
         self.btn_join_round = wx.Button(self.parent, id=wx.ID_ANY, size=wx.Size(25, -1))
@@ -128,25 +125,29 @@ class SBW_Linejoin(StatusBarWidget):
     def on_join_round(self, event):
         self.assign_join("round")
 
+
 class SBW_Fillrule(StatusBarWidget):
     """
     Panel to change / assign the fillrule of an element
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
         self.fill_lbl = wx.StaticText(self.parent, wx.ID_ANY, label=_("Fill"))
-        self.btn_fill_nonzero = wx.Button(self.parent, id=wx.ID_ANY, size=wx.Size(30, -1))
+        self.btn_fill_nonzero = wx.Button(
+            self.parent, id=wx.ID_ANY, size=wx.Size(30, -1)
+        )
         self.btn_fill_nonzero.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_nonzero.SetBitmap(fill_nonzero.GetBitmap(noadjustment=True))
-        self.btn_fill_nonzero.SetToolTip(
-            _("Set the fillstyle to non-zero (regular)")
-        )
+        self.btn_fill_nonzero.SetToolTip(_("Set the fillstyle to non-zero (regular)"))
         self.btn_fill_nonzero.Bind(wx.EVT_BUTTON, self.on_fill_nonzero)
 
-        self.btn_fill_evenodd = wx.Button(self.parent, id=wx.ID_ANY, size=wx.Size(30, -1))
+        self.btn_fill_evenodd = wx.Button(
+            self.parent, id=wx.ID_ANY, size=wx.Size(30, -1)
+        )
         self.btn_fill_evenodd.SetBitmap(fill_evenodd.GetBitmap(noadjustment=True))
         self.btn_fill_evenodd.SetMaxSize(wx.Size(50, -1))
         self.btn_fill_evenodd.SetToolTip(

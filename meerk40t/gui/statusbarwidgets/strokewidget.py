@@ -5,6 +5,7 @@ from ...core.element_types import elem_nodes
 
 _ = wx.GetTranslation
 
+
 class SBW_Color(StatusBarWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -61,6 +62,7 @@ class SBW_Color(StatusBarWidget):
                 colstr = "#%02x%02x%02x" % (rgb[0], rgb[1], rgb[2])
             self.context("fill %s --classify\n" % colstr)
             self.context.signal("selfill", rgb)
+
 
 class SBW_Stroke(StatusBarWidget):
     def __init__(self, **kwargs):
@@ -141,21 +143,18 @@ class SBW_Stroke(StatusBarWidget):
 
     def Signal(self, signal, *args):
         if signal == "emphasized":
-            if len(args)>0:
-                value = args[0]
-            else:
-                value = self.context.elements.has_emphasis()
-                sw_default = None
-                for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                    if hasattr(e, "stroke_width"):
-                        if sw_default is None:
-                            sw_default = e.stroke_width
-                            break
-                if sw_default is not None:
-                    # Set Values
-                    self.startup = True
-                    stdlen = float(Length("1mm"))
-                    value = "%.2f" % (sw_default / stdlen)
-                    self.spin_width.SetValue(value)
-                    self.combo_units.SetSelection(self.choices.index("mm"))
-                    self.startup = False
+            value = self.context.elements.has_emphasis()
+            sw_default = None
+            for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
+                if hasattr(e, "stroke_width"):
+                    if sw_default is None:
+                        sw_default = e.stroke_width
+                        break
+            if sw_default is not None:
+                # Set Values
+                self.startup = True
+                stdlen = float(Length("1mm"))
+                value = "%.2f" % (sw_default / stdlen)
+                self.spin_width.SetValue(value)
+                self.combo_units.SetSelection(self.choices.index("mm"))
+                self.startup = False

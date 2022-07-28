@@ -14,10 +14,12 @@ from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
+
 class SBW_AssignOptions(StatusBarWidget):
     """
     Panel to set some options for manual operation assignment
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -42,13 +44,9 @@ class SBW_AssignOptions(StatusBarWidget):
                 "Leave - neither the color of the operation nor of the elements will be changed"
             )
             + "\n"
-            + _(
-                "-> OP - the assigned operation will adopt the color of the element"
-            )
+            + _("-> OP - the assigned operation will adopt the color of the element")
             + "\n"
-            + _(
-                "-> Elem - the elements will adopt the color of the assigned operation"
-            )
+            + _("-> Elem - the elements will adopt the color of the assigned operation")
         )
         self.chk_all_similar.SetToolTip(
             _(
@@ -95,10 +93,12 @@ class SBW_AssignOptions(StatusBarWidget):
         if signal == "emphasized":
             self.Enable(self.context.elements.has_emphasis())
 
+
 class SBW_AssignButtons(StatusBarWidget):
     """
     Panel to quickly assign a laser operation to any emphasized element
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.iconsize = 20
@@ -117,13 +117,13 @@ class SBW_AssignButtons(StatusBarWidget):
             )
             self.assign_buttons.append(btn)
             self.op_nodes.append(None)
-            btn.Bind(wx.EVT_ENTER_WINDOW, self.on_assign_mouse_over)
-            btn.Bind(wx.EVT_LEAVE_WINDOW, self.on_assign_mouse_leave)
-            btn.Bind(wx.EVT_BUTTON, self.on_assign_button_left)
-            btn.Bind(wx.EVT_RIGHT_DOWN, self.on_assign_button_right)
+            btn.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_over)
+            btn.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
+            btn.Bind(wx.EVT_BUTTON, self.on_button_left)
+            btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_right)
             self.Add(btn, 1, wx.EXPAND, 0)
 
-    def on_assign_button_left(self, event):
+    def on_button_left(self, event):
         button = event.GetEventObject()
         for idx in range(self.MAXBUTTONS):
             if button == self.assign_buttons[idx]:
@@ -132,7 +132,7 @@ class SBW_AssignButtons(StatusBarWidget):
                 break
         event.Skip()
 
-    def on_assign_button_right(self, event):
+    def on_button_right(self, event):
         button = event.GetEventObject()
         for idx in range(self.MAXBUTTONS):
             if button == self.assign_buttons[idx]:
@@ -153,23 +153,23 @@ class SBW_AssignButtons(StatusBarWidget):
             for btn in self.assign_buttons:
                 btn.Show(False)
 
-    def on_assign_mouse_leave(self, event):
+    def on_mouse_leave(self, event):
         # Leave events of one tool may come later than the enter events of the next
         self.assign_hover -= 1
         if self.assign_hover < 0:
             self.assign_hover = 0
         if self.assign_hover == 0:
-            self.parent.SetStatusText("")
+            self.parent.SetStatusText("", 0)
         event.Skip()
 
-    def on_assign_mouse_over(self, event):
+    def on_mouse_over(self, event):
         button = event.GetEventObject()
         msg = ""
         for idx in range(self.MAXBUTTONS):
             if button == self.assign_buttons[idx]:
                 msg = str(self.op_nodes[idx])
         self.assign_hover += 1
-        self.parent.SetStatusText(msg)
+        self.parent.SetStatusText(msg, 0)
         event.Skip()
 
     def execute_on(self, targetop, attrib):
@@ -201,10 +201,10 @@ class SBW_AssignButtons(StatusBarWidget):
             self.assign_buttons[idx].SetBitmap(wx.NullBitmap)
             self.assign_buttons[idx].Show(False)
         if self.assign_hover > 0:
-            self.parent.SetStatusText("")
+            self.parent.SetStatusText("", 0)
             self.assign_hover = 0
 
-    def assign_set_single_button(self, node):
+    def set_single_button(self, node):
         def get_bitmap():
             def get_color():
                 iconcolor = None
@@ -310,13 +310,13 @@ class SBW_AssignButtons(StatusBarWidget):
                 self.op_nodes[lastfree] = node
                 process_button(lastfree)
 
-    def assign_set_buttons(self):
+    def set_buttons(self):
         self.assign_clear_old()
         idx = 0
         for node in list(self.context.elements.flat(types=op_nodes)):
             if node.type.startswith("op "):
                 self.op_nodes[idx] = node
-                self.assign_set_single_button(node)
+                self.set_single_button(node)
                 idx += 1
                 if idx >= self.MAXBUTTONS:
                     # too many...
@@ -324,9 +324,9 @@ class SBW_AssignButtons(StatusBarWidget):
         # We need to call reposition for the updates to be seen
         self.parent.Reposition(self.panelidx)
 
-    def assign_show_stuff(self, flag):
+    def show_stuff(self, flag):
         if flag:
-            self.assign_set_buttons()
+            self.set_buttons()
 
         for idx in range(self.MAXBUTTONS):
             myflag = flag and self.op_nodes[idx] is not None
@@ -334,26 +334,25 @@ class SBW_AssignButtons(StatusBarWidget):
             self.assign_buttons[idx].Enable(myflag)
         if not flag:
             if self.assign_hover > 0:
-                self.parent.Set("statusmsg", "")
+                self.parent.SetStatusText("statusmsg", 0)
                 self.assign_hover = 0
-        else:
-            self.chk_exclusive.SetValue(
-                self.context.elements.classify_inherit_exclusive
-            )
         self.parent.Reposition(self.panelidx)
 
     def Signal(self, signal, *args):
-        if signal in ("element_property_update", "element_property_reload") and len(args)>0:
+        if (
+            signal in ("element_property_update", "element_property_reload")
+            and len(args) > 0
+        ):
             # Need to do all?!
             element = args[0]
             if isinstance(element, (tuple, list)):
                 for node in element:
                     if node.type.startswith("op "):
-                        self.assign_set_single_button(node)
+                        self.set_single_button(node)
             else:
                 if element.type.startswith("op "):
-                    self.assign_set_single_button(element)
+                    self.set_single_button(element)
         elif signal == "rebuild_tree":
-            self.assign_set_buttons()
+            self.set_buttons()
         elif signal == "emphasized":
             self.Enable(self.context.elements.has_emphasis())

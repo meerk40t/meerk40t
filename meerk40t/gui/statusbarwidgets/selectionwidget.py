@@ -3,11 +3,13 @@ from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
+
 class SBW_Selection(StatusBarWidget):
     """
     Panel to set some of the options for the selection rectangle
     around an emphasized element
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -98,4 +100,3 @@ class SBW_Selection(StatusBarWidget):
             value = self.cb_skew.GetValue()
             self.context.enable_sel_skew = value
             self.context.signal("refresh_scene", "Scene")
-

@@ -280,37 +280,38 @@ class MeerK40t(MWindow):
         self.main_statusbar.add_panel_widget(self.linejoin_panel, self.idx_colors, "linejoin", False)
         self.main_statusbar.add_panel_widget(self.fillrule_panel, self.idx_colors, "fillrule", False)
 
-        self.assign_button_panel.assign_show_stuff(False)
+        self.assign_button_panel.show_stuff(False)
 
     # --- Listen to external events to update the bar
     @signal_listener("element_property_reload")
     @signal_listener("element_property_update")
     def on_element_update(self, origin, *args):
-        self.main_statusbar.Signal("element_property_update", args)
+        self.main_statusbar.Signal("element_property_update", *args)
 
     @signal_listener("rebuild_tree")
     @signal_listener("refresh_tree")
     @signal_listener("tree_changed")
     @signal_listener("operation_removed")
     @signal_listener("add_operation")
-    def on_rebuild(self, origin, **kwargs):
-        self.main_statusbar.Signal("rebuild_tree", **kwargs)
+    def on_rebuild(self, origin, *args):
+        self.main_statusbar.Signal("rebuild_tree")
 
     # --------- Events for status bar
 
     @signal_listener("emphasized")
-    def on_update_statusbar(self, origin, **args):
+    def on_update_statusbar(self, origin, *args):
         value = self.context.elements.has_emphasis()
-        self.main_statusbar.Signal("emphasized", value)
+        self.main_statusbar.Signal("emphasized")
         # First enable/disable the controls in the statusbar
 
-        self.assign_button_panel.assign_show_stuff(value)
+        self.assign_button_panel.show_stuff(value)
         self.main_statusbar.activate_panel("selection", value)
         self.main_statusbar.activate_panel("infos", value)
+        self.main_statusbar.activate_panel("color", value)
+        self.main_statusbar.activate_panel("stroke", value)
         self.main_statusbar.activate_panel("fillrule", value)
         self.main_statusbar.activate_panel("linejoin", value)
         self.main_statusbar.activate_panel("linecap", value)
-        self.main_statusbar.activate_panel("stroke", value)
         self.main_statusbar.Reposition()
 
     # ------------ Setup

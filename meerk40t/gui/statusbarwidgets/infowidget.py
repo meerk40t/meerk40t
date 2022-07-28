@@ -5,12 +5,14 @@ from ...core.units import UNITS_PER_INCH, Length
 
 _ = wx.GetTranslation
 
+
 class SBW_Information(StatusBarWidget):
     """
     Placeholder to accept any kind of information,
     if none is given externally it falls back to basic infos
     about the emphasized elements
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._externalinfo = None
@@ -37,24 +39,27 @@ class SBW_Information(StatusBarWidget):
         self.info_text.SetLabel("" if msg is None else msg)
         self.EndPopulation()
 
-    def Signal(self, signal, **args):
-        if signal == "emphasized" and self._externalinfo is not None:
-            elements = self.context.elements
-            ct = 0
-            total_area = 0
-            total_length = 0
-            _mm = float(Length("1{unit}".format(unit="mm")))
-            msg = ""
-            for e in elements.flat(types=elem_nodes, emphasized=True):
-                ct += 1
-                this_area, this_length = elements.get_information(e, fine=False)
-                total_area += this_area
-                total_length += this_length
+    def GenerateInfos(self):
+        elements = self.context.elements
+        ct = 0
+        total_area = 0
+        total_length = 0
+        _mm = float(Length("1{unit}".format(unit="mm")))
+        msg = ""
+        for e in elements.flat(types=elem_nodes, emphasized=True):
+            ct += 1
+            this_area, this_length = elements.get_information(e, fine=False)
+            total_area += this_area
+            total_length += this_length
 
-            if ct > 0:
-                total_area = total_area / (_mm * _mm)
-                total_length = total_length / _mm
-                msg = "# = %d, A = %.1f mm², D = %.1f mm" % (ct, total_area, total_length)
-            self.StartPopulation()
-            self.info_text.SetLabel(msg)
-            self.EndPopulation()
+        if ct > 0:
+            total_area = total_area / (_mm * _mm)
+            total_length = total_length / _mm
+            msg = "# = %d, A = %.1f mm², D = %.1f mm" % (ct, total_area, total_length)
+        self.StartPopulation()
+        self.info_text.SetLabel(msg)
+        self.EndPopulation()
+
+    def Signal(self, signal, *args):
+        if signal == "emphasized" and self._externalinfo is None:
+            self.GenerateInfos()

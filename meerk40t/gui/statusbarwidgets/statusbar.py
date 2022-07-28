@@ -1,5 +1,7 @@
+from threading import Timer
 import wx
 from meerk40t.gui.icons import icons8_next_page_20
+
 
 class CustomStatusBar(wx.StatusBar):
     """
@@ -17,7 +19,6 @@ class CustomStatusBar(wx.StatusBar):
         self.SetFieldsCount(self.panelct)
         self.SetStatusStyles([wx.SB_SUNKEN] * self.panelct)
         self.status_text = [""] * self.panelct
-        self.previous_text = [""] * self.panelct
         self.sizeChanged = False
         self.widgets = {}
         self.activesizer = [None] * self.panelct
@@ -31,62 +32,130 @@ class CustomStatusBar(wx.StatusBar):
             self.nextbuttons.append(btn)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.timer_active = False
+        self.timer_info = None
+        self.timer_lastmsg = -1
 
         # set the initial position of the checkboxes
         self.Reposition()
         self.startup = False
 
+    def __del__(self):
+        if self.timer_info is not None:
+            self.timer_info.cancel()
+            self.timer_info = None
+
+    def check_for_hidden_infos(self):
+        hidden = False
+        for idx in range(self.panelct):
+            if self.activesizer[idx] is not None and len(self.status_text[idx]) > 0:
+                hidden = True
+                break
+        if hidden and not self.timer_active:
+            self.activate_timed_messages(True)
+        elif not hidden and self.timer_active:
+            self.activate_timed_messages(False)
+
     def SetStatusText(self, message="", panel=0):
         if panel >= 0 and panel < self.panelct:
             self.status_text[panel] = message
+        # Check whether we have hidden messages
+        self.check_for_hidden_infos()
         if self.activesizer[panel] is not None and len(message) > 0:
             # Someone wanted to have a message while displaying some control elements
             return
         super().SetStatusText(message, panel)
 
-    def add_panel_widget(self, widget,  panel_idx, identifier, visible=True):
+    def update_info(self):
+        # Loop through non-emptive messages
+        msg = ""
+        for idx in range(self.panelct):
+            if idx > self.timer_lastmsg and len(self.status_text[idx]) > 0:
+                if idx > 0:
+                    msg += str(idx) + "#: "
+                msg += self.status_text[idx]
+                self.timer_lastmsg = idx
+                break
+        if len(msg) == 0:
+            # didn't find any so reset
+            self.timer_lastmsg = -1
+            if len(self.status_text[0]) > 0:
+                msg = self.status_text[0]
+                self.timer_lastmsg = -0
+        try:
+            super().SetStatusText(msg, 0)
+        except RuntimeError:
+            return
+        # restart timer
+        self.timer_info.cancel()
+        self.timer_info = Timer(interval=3, function=self.update_info)
+        self.timer_info.start()
+
+    def activate_timed_messages(self, active):
+        """
+        If we can't show the relevant StatusTexts in some panels then
+        we circle through the displays
+        """
+        if active:
+            if self.timer_active:
+                if self.timer_info is not None:
+                    self.timer_info.cancel()
+                    self.timer_lastmsg = -1
+            self.timer_info = Timer(interval=3, function=self.update_info)
+            self.timer_info.start()
+            self.timer_active = True
+        else:
+            if self.timer_info is not None:
+                self.timer_info.cancel()
+            self.timer_active = False
+            self.timer_lastmsg = -1
+
+    def add_panel_widget(self, widget, panel_idx, identifier, visible=True):
         if panel_idx < 0 or panel_idx >= self.panelct:
             return
         # Make sure they belong to me, else the wx.Boxsizer
         # will have wrong information to work with
         widget.GenerateControls(self, panel_idx, identifier, self.context)
-        widget.visible = visible
+        widget.active = visible
         self.widgets[identifier] = widget
 
     def activate_panel(self, identifier, newflag):
         # Activate Panel will make the indicated panel become choosable
+        # print ("Activate Panel: %s -> %s" % (identifier, newflag))
         try:
-            oldflag = self.widgets[identifier].visible
+            oldflag = self.widgets[identifier].active
         except (IndexError, KeyError):
             return
         if oldflag != newflag:
             panelidx = self.widgets[identifier].panelidx
 
             # Choosable
-            self.widgets[identifier].visible = newflag
+            self.widgets[identifier].active = newflag
             if newflag and self.activesizer[panelidx] is None:
                 self.activesizer[panelidx] = identifier
             elif not newflag and self.activesizer[panelidx] == identifier:
-                # Was the active one
+                # Was the active one, so look for an alternative
                 self.activesizer[panelidx] = None
                 for key in self.widgets:
                     entry = self.widgets[key]
-                    if entry.visible and entry.panelidx == panelidx:
+                    if entry.active and entry.panelidx == panelidx:
                         self.activesizer[panelidx] = key
                         break
+            self.check_for_hidden_infos()
             self.Reposition(panelidx=panelidx)
 
     def force_panel(self, identifier):
         # force_panel will make the indicated panel choosable and visible
         try:
-            oldflag = self.widgets[identifier].visible
+            oldflag = self.widgets[identifier].active
         except (IndexError, KeyError):
             return
         if not oldflag:
             # Make it choosable
-            self.widgets[identifier].visible = True
+            self.widgets[identifier].active = True
         panelidx = self.widgets[identifier].panelidx
         self.activesizer[panelidx] = identifier
+        self.check_for_hidden_infos()
         self.Reposition(panelidx=panelidx)
 
     def next_entry_in_panel(self, panelidx):
@@ -97,7 +166,7 @@ class CustomStatusBar(wx.StatusBar):
         visible_seen = False
         for key in self.widgets:
             entry = self.widgets[key]
-            if entry.panelidx == panelidx and entry.visible:
+            if entry.panelidx == panelidx and entry.active:
                 if key == self.activesizer[panelidx]:  # Visible
                     visible_seen = True
                 else:
@@ -122,7 +191,7 @@ class CustomStatusBar(wx.StatusBar):
         visible_seen = False
         for key in self.widgets:
             entry = self.widgets[key]
-            if entry.panelidx == panelidx and entry.visible:
+            if entry.panelidx == panelidx and entry.active:
                 if key == self.activesizer[panelidx]:  # Visible
                     visible_seen = True
                 elif visible_seen:
@@ -154,10 +223,17 @@ class CustomStatusBar(wx.StatusBar):
         #        self.Reposition()
         event.Skip()
 
-    # Draw the panels
-    def Reposition(self, panelidx=None):
+    # def debug_me(self):
+    #     for key in self.widgets:
+    #         entry = self.widgets[key]
+    #         print ("%s - Panel=%s Vis=%s" % (key, entry.panelidx, entry.active))
 
-        # selfrect = self.GetRect()
+    def Reposition(self, panelidx=None):
+        """
+        Draw the panels
+        """
+
+        # self.debug_me()
         if panelidx is None:
             targets = range(self.panelct)
         else:
@@ -172,7 +248,7 @@ class CustomStatusBar(wx.StatusBar):
                 entry = self.widgets[key]
                 # print ("%s = %s" %(key, entry) )
                 if entry.panelidx == pidx:
-                    if entry.visible:  # The right one and choosable...
+                    if entry.active:  # The right one and choosable...
                         ct += 1
                         if self.activesizer[pidx] is None:
                             self.activesizer[pidx] = key
@@ -181,7 +257,7 @@ class CustomStatusBar(wx.StatusBar):
                         ):  # its not the default, so hide
                             entry.Show(False)
                     else:  # not choosable --> hide:
-                        entry.Show(True)
+                        entry.Show(False)
             if ct > 1:
                 # Show Button and reduce available width for sizer
                 myrect = self.nextbuttons[pidx].GetRect()
@@ -200,10 +276,9 @@ class CustomStatusBar(wx.StatusBar):
                 sizer.Show(True)
                 text = self.status_text[pidx]
                 if text != "":
-                    self.previous_text[pidx] = text
-                self.SetStatusText("", pidx)
+                    super().SetStatusText("", pidx)
             else:
-                self.SetStatusText(self.previous_text[pidx], pidx)
+                super().SetStatusText(self.status_text[pidx], pidx)
         # debug_me()
         self.sizeChanged = False
 
@@ -216,7 +291,7 @@ class CustomStatusBar(wx.StatusBar):
         if self.sizeChanged:
             self.Reposition()
 
-    def Signal(self, signal, **kwargs):
+    def Signal(self, signal, *args):
         # Propagate to widgets
         for key in self.widgets:
-            self.widgets[key].Signal(signal, **kwargs)
+            self.widgets[key].Signal(signal, *args)
