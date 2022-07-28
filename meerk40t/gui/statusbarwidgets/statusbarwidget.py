@@ -1,6 +1,11 @@
 import wx
 
 class StatusBarWidget(wx.BoxSizer):
+    """
+    General class to be added to a CustomStatusBar,
+    defines some general routines that can be overloaded
+    by a concrete implementation
+    """
     def __init__(self, parent, panelidx, identifier, context, **args):
         super().init(wx.HORIZONTAL, args)
         self.identifier = identifier
@@ -28,6 +33,9 @@ class StatusBarWidget(wx.BoxSizer):
         if cnt==0:
             return
         if cnt==1:
+            # Address an assertion issue in wxpython 4.1.1 that throws
+            # an error if a sizer contains just one element
+
             # dummylbl = wx.StaticText(self.parent, wx.ID_ANY, "")
             # self.Add(dummylbl, 0, 0, 0)
             self.Prepend(5)
@@ -55,3 +63,6 @@ class StatusBarWidget(wx.BoxSizer):
             if wind is not None:
                 wind.Reparent(self.parent)
 
+    def Signal(self, signal, **args):
+        # needs to be done in the concrete implementation
+        return

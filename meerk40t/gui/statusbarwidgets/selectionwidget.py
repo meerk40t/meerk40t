@@ -4,6 +4,10 @@ from .statusbarwidget import StatusBarWidget
 _ = wx.GetTranslation
 
 class SBW_Selection(StatusBarWidget):
+    """
+    Panel to set some of the options for the selection rectangle
+    around an emphasized element
+    """
     def __init__(self, parent, panelidx, identifier, context, **args):
         super().__init__(parent, panelidx, identifier, context, args)
         FONT_SIZE = 7

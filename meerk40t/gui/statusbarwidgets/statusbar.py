@@ -2,7 +2,9 @@ import wx
 from meerk40t.gui.icons import icons8_next_page_20
 
 class CustomStatusBar(wx.StatusBar):
-    """Overloading of Statusbar to allow some elements on it"""
+    """
+    Overloading of wx.Statusbar to allow some elements on it
+    """
 
     def __init__(self, parent, panelct):
         # Where shall the different controls be placed?
@@ -17,7 +19,7 @@ class CustomStatusBar(wx.StatusBar):
         self.status_text = [""] * self.panelct
         self.previous_text = [""] * self.panelct
         self.sizeChanged = False
-        self.box_id_visible = {}
+        self.widgets = {}
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
         for idx in range(self.panelct):
@@ -42,38 +44,33 @@ class CustomStatusBar(wx.StatusBar):
             return
         super().SetStatusText(message, panel)
 
-    def add_sizer_panel(self, panel_idx, wx_boxsizer, identifier, visible=True, callback=None):
+    def add_sizer_panel(self, panel_idx, widget, identifier, visible=True, callback=None):
         if panel_idx < 0 or panel_idx >= self.panelct:
             return
         # Mke sure they belong to me, else the wx.Boxsizer
         # will have wrong information to work with
-        for sizeritem in wx_boxsizer.GetChildren():
-            wind = sizeritem.GetWindow()
-            if wind is not None:
-                wind.Reparent(self)
-
-        storage = [wx_boxsizer, panel_idx, visible, callback]  # Visible by default
-        self.box_id_visible[identifier] = storage
+        widget.Reparent(self)
+        self.widgets[identifier] = widget
 
     def activate_panel(self, identifier, newflag):
         # Activate Panel will make the indicated panel become choosable
         try:
-            oldflag = self.box_id_visible[identifier][2]
+            oldflag = self.widgets[identifier].visible
         except (IndexError, KeyError):
             return
         if oldflag != newflag:
-            panelidx = self.box_id_visible[identifier][1]
+            panelidx = self.widgets[identifier].panelidx
 
             # Choosable
-            self.box_id_visible[identifier][2] = newflag
+            self.widgets[identifier].visible = newflag
             if newflag and self.activesizer[panelidx] is None:
                 self.activesizer[panelidx] = identifier
             elif not newflag and self.activesizer[panelidx] == identifier:
                 # Was the active one
                 self.activesizer[panelidx] = None
-                for key in self.box_id_visible:
-                    entry = self.box_id_visible[key]
-                    if entry[2] and entry[1] == panelidx:
+                for key in self.widgets:
+                    entry = self.widgets[key]
+                    if entry.visible and entry.panelidx == panelidx:
                         self.activesizer[panelidx] = key
                         break
             self.Reposition(panelidx=panelidx)
@@ -81,13 +78,13 @@ class CustomStatusBar(wx.StatusBar):
     def force_panel(self, identifier):
         # force_panel will make the indicated panel choosable and visible
         try:
-            oldflag = self.box_id_visible[identifier][2]
+            oldflag = self.widgets[identifier].visible
         except (IndexError, KeyError):
             return
         if not oldflag:
             # Make it choosable
-            self.box_id_visible[identifier][2] = True
-        panelidx = self.box_id_visible[identifier][1]
+            self.widgets[identifier].visible = True
+        panelidx = self.widgets[identifier].panelidx
         self.activesizer[panelidx] = identifier
         self.Reposition(panelidx=panelidx)
 
@@ -97,9 +94,9 @@ class CustomStatusBar(wx.StatusBar):
         first_entry = None
         next_entry = None
         visible_seen = False
-        for key in self.box_id_visible:
-            entry = self.box_id_visible[key]
-            if entry[1] == panelidx and entry[2]:
+        for key in self.widgets:
+            entry = self.widgets[key]
+            if entry.panelidx == panelidx and entry.visible:
                 if key == self.activesizer[panelidx]:  # Visible
                     visible_seen = True
                 else:
@@ -122,9 +119,9 @@ class CustomStatusBar(wx.StatusBar):
         last_entry = None
         prev_entry = None
         visible_seen = False
-        for key in self.box_id_visible:
-            entry = self.box_id_visible[key]
-            if entry[1] == panelidx and entry[2]:
+        for key in self.widgets:
+            entry = self.widgets[key]
+            if entry.panelidx == panelidx and entry.visible:
                 if key == self.activesizer[panelidx]:  # Visible
                     visible_seen = True
                 elif visible_seen:
@@ -158,33 +155,6 @@ class CustomStatusBar(wx.StatusBar):
 
     # Draw the panels
     def Reposition(self, panelidx=None):
-        # def debug_me():
-        #     for key in self.box_id_visible:
-        #         siz = self.box_id_visible[key][0]
-        #         items = siz.GetItemCount()
-        #         print("Sizer '%s', children=%s" % (key, items))
-        #         for idx in range(items):
-        #             print("   Item #%d - shown=%s" % (idx, siz.IsShown(idx)))
-
-        def deep_show_hide(sizerbox, key, showit, callback):
-            # print ("Showit: key=%s, flag=%s, idx=%d, default=%s" % (key, showit, debugidx, debugdefault))
-            if showit:
-                if callback is None:
-                    sizerbox.ShowItems(True)
-                else:
-                    callback(True)
-                sizerbox.Show(True)
-            else:
-                if callback is None:
-                    sizerbox.ShowItems(False)
-                else:
-                    callback(True)
-                sizerbox.Hide(True)
-            # for siz_item in sizerbox.GetChildren():
-            #     wind = siz_item.GetWindow()
-            #     if wind is not None:
-            #         wind.Show(showit)
-            sizerbox.Layout()
 
         # selfrect = self.GetRect()
         if panelidx is None:
@@ -197,20 +167,20 @@ class CustomStatusBar(wx.StatusBar):
             # Establish the amount of 'choosable' sizers
             ct = 0
             sizer = None
-            for key in self.box_id_visible:
-                entry = self.box_id_visible[key]
+            for key in self.widgets:
+                entry = self.widgets[key]
                 # print ("%s = %s" %(key, entry) )
-                if entry[1] == pidx:
-                    if entry[2]:  # The right one and choosable...
+                if entry.panelidx == pidx:
+                    if entry.visible:  # The right one and choosable...
                         ct += 1
                         if self.activesizer[pidx] is None:
                             self.activesizer[pidx] = key
                         if (
                             self.activesizer[pidx] != key
                         ):  # its not the default, so hide
-                            deep_show_hide(entry[0], key, False, entry[3])
+                            entry.Show(False)
                     else:  # not choosable --> hide:
-                        deep_show_hide(entry[0], key, False, entry[3])
+                        entry.Show(True)
             if ct > 1:
                 # Show Button and reduce available width for sizer
                 myrect = self.nextbuttons[pidx].GetRect()
@@ -222,14 +192,11 @@ class CustomStatusBar(wx.StatusBar):
             else:
                 self.nextbuttons[pidx].Show(False)
             if self.activesizer[pidx] is not None:
-                sizer = self.box_id_visible[self.activesizer[pidx]][0]
-                callback = self.box_id_visible[self.activesizer[pidx]][3]
-                # print ("Panel %s='%s' - %s" % (pidx, self.activesizer[pidx], panelrect))
-                # print ("Entries: %s" % sizer.GetItemCount())
+                sizer = self.widgets[self.activesizer[pidx]]
                 sizer.SetDimension(
                     panelrect.x, panelrect.y, panelrect.width, panelrect.height
                 )
-                deep_show_hide(sizer, self.activesizer[pidx], True, callback)
+                sizer.Show(True)
                 text = self.status_text[pidx]
                 if text != "":
                     self.previous_text[pidx] = text
@@ -247,3 +214,8 @@ class CustomStatusBar(wx.StatusBar):
     def OnIdle(self, evt):
         if self.sizeChanged:
             self.Reposition()
+
+    def Signal(self, signal, **args):
+        # Propagate to widgets
+        for widget in self.widgets:
+            widget.Signal(signal, args)

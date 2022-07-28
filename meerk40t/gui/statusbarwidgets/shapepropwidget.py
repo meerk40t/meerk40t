@@ -14,6 +14,9 @@ from .statusbarwidget import StatusBarWidget
 _ = wx.GetTranslation
 
 class SBW_Linecap(StatusBarWidget):
+    """
+    Panel to change / assign the linecap of an element
+    """
     def __init__(self, parent, panelidx, identifier, context, **args):
         super().__init__(parent, panelidx, identifier, context, args)
         self.cap_lbl = wx.StaticText(self, wx.ID_ANY, label=_("Cap"))
@@ -58,6 +61,10 @@ class SBW_Linecap(StatusBarWidget):
 
 
 class SBW_Linejoin(StatusBarWidget):
+    """
+    Panel to change / assign the linejoin of an element
+    (actually a subset: arcs and miter-clip have been intentionally omitted)
+    """
     def __init__(self, parent, panelidx, identifier, context, **args):
         super().__init__(parent, panelidx, identifier, context, args)
         self.join_lbl = wx.StaticText(self, wx.ID_ANY, label=_("Join"))
@@ -116,6 +123,9 @@ class SBW_Linejoin(StatusBarWidget):
         self.assign_join("round")
 
 class SBW_Fillrule(StatusBarWidget):
+    """
+    Panel to change / assign the fillrule of an element
+    """
     def __init__(self, parent, panelidx, identifier, context, **args):
         super().__init__(parent, panelidx, identifier, context, args)
         self.fill_lbl = wx.StaticText(self, wx.ID_ANY, label=_("Fill"))

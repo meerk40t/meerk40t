@@ -15,6 +15,9 @@ from .statusbarwidget import StatusBarWidget
 _ = wx.GetTranslation
 
 class SBW_AssignOptions(StatusBarWidget):
+    """
+    Panel to set some options for manual operation assignment
+    """
     def __init__(self, parent, panelidx, identifier, context, **args):
         super().__init__(parent, panelidx, identifier, context, args)
         choices = [
@@ -86,6 +89,9 @@ class SBW_AssignOptions(StatusBarWidget):
             self.context.elements.classify_all_similar = newval
 
 class SBW_AssignButtons(StatusBarWidget):
+    """
+    Panel to quickly assign a laser operation to any emphasized element
+    """
     def __init__(self, parent, panelidx, identifier, context, **args):
         super().__init__(parent, panelidx, identifier, context, args)
         self.iconsize = 20
