@@ -28,6 +28,7 @@ class SceneSpaceWidget(Widget):
         self._previous_zoom = None
         self._placement_event = None
         self._placement_event_type = None
+        self._scene_matrix_animator = SceneAnimateMatrix(self.scene_widget)
         self.osv = -1
 
     def hit(self):
@@ -253,7 +254,7 @@ class SceneSpaceWidget(Widget):
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
 
     def focus_viewport_scene(
-        self, new_scene_viewport, scene_size, buffer=0.0, lock=True
+        self, new_scene_viewport, scene_size, buffer=0.0, lock=True, animate=False
     ):
         """
         Focus on the given viewport in the scene.
@@ -262,6 +263,7 @@ class SceneSpaceWidget(Widget):
         @param scene_size: Size of the scene in which this viewport is active.
         @param buffer: Amount of buffer around the edge of the new viewport.
         @param lock: lock the scalex, scaley.
+        @param animate: perform focus with animated scene.
         @return:
         """
         window_width, window_height = scene_size
@@ -288,13 +290,54 @@ class SceneSpaceWidget(Widget):
 
         cx = (right + left) / 2
         cy = (top + bottom) / 2
-        self.scene_widget.matrix.reset()
-        self.scene_widget.matrix.post_translate(-cx, -cy)
+        matrix = Matrix()
+        matrix.post_translate(-cx, -cy)
         if lock:
             scale = min(scale_x, scale_y)
             if scale != 0:
-                self.scene_widget.matrix.post_scale(scale)
+                matrix.post_scale(scale)
         else:
             if scale_x != 0 and scale_y != 0:
-                self.scene_widget.matrix.post_scale(scale_x, scale_y)
-        self.scene_widget.matrix.post_translate(window_width / 2.0, window_height / 2.0)
+                matrix.post_scale(scale_x, scale_y)
+        matrix.post_translate(window_width / 2.0, window_height / 2.0)
+
+        if animate:
+            self._scene_matrix_animator.set_animate_zoom(matrix)
+            self.scene.animate(self._scene_matrix_animator)
+        else:
+            self.scene_widget.matrix.reset()
+            self.scene_widget.matrix.post_cat(matrix)
+
+
+class SceneAnimateMatrix:
+    def __init__(self, widget):
+        self.widget = widget
+        self.tick_max = 10
+        self.tick_index = 0
+        self._from_matrix = None
+        self._to_matrix = None
+
+    def set_animate_zoom(self, matrix):
+        self._from_matrix = Matrix(self.widget.matrix)
+        self._to_matrix = matrix
+
+    def start_threaded(self):
+        self.tick_index = 0
+
+    def tick(self):
+        if self._to_matrix is None or self._from_matrix is None:
+            return False  # Nothing to animate.
+        if self.tick_max < self.tick_index:
+            self.widget.scene.request_refresh()
+            return False  # Animation was complete.
+        amount = self.tick_index / self.tick_max
+        self.widget.matrix.a = amount * (self._to_matrix.a - self._from_matrix.a) + self._from_matrix.a
+        self.widget.matrix.b = amount * (self._to_matrix.b - self._from_matrix.b) + self._from_matrix.b
+        self.widget.matrix.c = amount * (self._to_matrix.c - self._from_matrix.c) + self._from_matrix.c
+        self.widget.matrix.d = amount * (self._to_matrix.d - self._from_matrix.d) + self._from_matrix.d
+        self.widget.matrix.e = amount * (self._to_matrix.e - self._from_matrix.e) + self._from_matrix.e
+        self.widget.matrix.f = amount * (self._to_matrix.f - self._from_matrix.f) + self._from_matrix.f
+        self.widget.scene.request_refresh_for_animation()
+        self.widget.on_matrix_change()
+        self.tick_index += 1
+        return True
