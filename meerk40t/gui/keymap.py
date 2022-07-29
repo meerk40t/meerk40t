@@ -100,7 +100,7 @@ class KeymapPanel(wx.Panel):
             ),
         )
         ct = self.list_keymap.GetSelectedItemCount()
-        if ct>1:
+        if ct > 1:
             self.Bind(
                 wx.EVT_MENU,
                 self.on_tree_popup_delete_all_selected,
@@ -143,7 +143,7 @@ class KeymapPanel(wx.Panel):
 
     def on_tree_popup_delete_all_selected(self, event):
         item = self.list_keymap.GetFirstSelected()
-        while item>=0:
+        while item >= 0:
             key = self.list_keymap.GetItemText(item, col=0)
             # print ("Try to delete key %s" % key)
             try:
@@ -151,7 +151,6 @@ class KeymapPanel(wx.Panel):
             except KeyError:
                 pass
             item = self.list_keymap.GetNextSelected(item)
-        self.list_keymap.DeleteAllItems()
         self.reload_keymap()
 
     def restore_keymap(self, event):
