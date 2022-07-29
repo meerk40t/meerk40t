@@ -2782,7 +2782,7 @@ class MeerK40t(MWindow):
             y1 = Length(
                 amount=bbox[3] + y_delta, relative_length=self.context.device.height
             ).length_mm
-            self.context(f"scene focus {x0} {y0} {x1} {y1}\n")
+            self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 
     def on_click_toggle_ui(self, event=None):
         self.context("pane toggleui\n")
@@ -2796,11 +2796,8 @@ class MeerK40t(MWindow):
         """
         Zoom scene to bed size.
         """
-        self.context(
-            "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
-                zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level
-            )
-        )
+        zoom = self.context.zoom_level
+        self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
 
     def toggle_draw_mode(self, bits):
         """
