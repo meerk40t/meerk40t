@@ -13,6 +13,7 @@ class KeymapPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        self.parent = args[0]
         self.context = context
         self.list_index = []
 
@@ -26,6 +27,10 @@ class KeymapPanel(wx.Panel):
         self.text_command_name = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         )
+
+        self.key_menu = wx.MenuBar()
+        self.create_menu(self.key_menu.Append)
+        self.parent.SetMenuBar(self.key_menu)
 
         self.__set_properties()
         self.__do_layout()
@@ -68,6 +73,12 @@ class KeymapPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def create_menu(self, append):
+        tmp_menu = wx.Menu()
+        item = tmp_menu.Append(wx.ID_ANY, _("Reset Keymap to defaults"), "")
+        self.parent.Bind(wx.EVT_MENU, self.restore_keymap, id=item.GetId())
+        append(tmp_menu, _("Standard"))
+
     def on_item_activated(self, event):
         element = event.Text
         self.text_key_name.SetValue(element)
@@ -77,6 +88,7 @@ class KeymapPanel(wx.Panel):
 
     def on_item_rightclick(self, event):
         element = event.Text
+
         menu = wx.Menu()
         self.Bind(
             wx.EVT_MENU,
@@ -87,6 +99,18 @@ class KeymapPanel(wx.Panel):
                 "",
             ),
         )
+        ct = self.list_keymap.GetSelectedItemCount()
+        if ct>1:
+            self.Bind(
+                wx.EVT_MENU,
+                self.on_tree_popup_delete_all_selected,
+                menu.Append(
+                    wx.ID_ANY,
+                    _("Remove %d entries") % ct,
+                    "",
+                ),
+            )
+
         self.Bind(
             wx.EVT_MENU,
             self.on_tree_popup_clear(element),
@@ -116,6 +140,23 @@ class KeymapPanel(wx.Panel):
                 pass
 
         return delete
+
+    def on_tree_popup_delete_all_selected(self, event):
+        item = self.list_keymap.GetFirstSelected()
+        while item>=0:
+            key = self.list_keymap.GetItemText(item, col=0)
+            # print ("Try to delete key %s" % key)
+            try:
+                del self.context.bind.keymap[key]
+            except KeyError:
+                pass
+            item = self.list_keymap.GetNextSelected(item)
+        self.list_keymap.DeleteAllItems()
+        self.reload_keymap()
+
+    def restore_keymap(self, event):
+        self.context.bind.default_keymap()
+        self.reload_keymap()
 
     def reload_keymap(self):
         self.list_keymap.DeleteAllItems()
