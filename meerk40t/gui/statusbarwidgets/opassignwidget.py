@@ -1,21 +1,23 @@
 import wx
-from meerk40t.svgelements import Color
+
 from meerk40t.core.element_types import op_nodes
 from meerk40t.gui.icons import (
+    icons8_diagonal_20,
     icons8_direction_20,
     icons8_image_20,
-    icons8_small_beam_20,
     icons8_laser_beam_20,
-    icons8_diagonal_20,
     icons8_scatter_plot_20,
+    icons8_small_beam_20,
 )
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.svgelements import Color
+
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
 
-class SBW_AssignOptions(StatusBarWidget):
+class OperationAssignOptionWidget(StatusBarWidget):
     """
     Panel to set some options for manual operation assignment
     """
@@ -30,16 +32,16 @@ class SBW_AssignOptions(StatusBarWidget):
             _("-> OP"),
             _("-> Elem"),
         ]
-        self.cbo_apply_color = wx.ComboBox(
+        self.combo_apply_color = wx.ComboBox(
             self.parent,
             wx.ID_ANY,
             choices=choices,
             value=choices[0],
             style=wx.CB_READONLY | wx.CB_DROPDOWN,
         )
-        self.chk_all_similar = wx.CheckBox(self.parent, wx.ID_ANY, _("Similar"))
-        self.chk_exclusive = wx.CheckBox(self.parent, wx.ID_ANY, _("Exclusive"))
-        self.cbo_apply_color.SetToolTip(
+        self.check_all_similar = wx.CheckBox(self.parent, wx.ID_ANY, _("Similar"))
+        self.check_exclusive = wx.CheckBox(self.parent, wx.ID_ANY, _("Exclusive"))
+        self.combo_apply_color.SetToolTip(
             _(
                 "Leave - neither the color of the operation nor of the elements will be changed"
             )
@@ -48,12 +50,12 @@ class SBW_AssignOptions(StatusBarWidget):
             + "\n"
             + _("-> Elem - the elements will adopt the color of the assigned operation")
         )
-        self.chk_all_similar.SetToolTip(
+        self.check_all_similar.SetToolTip(
             _(
                 "Assign as well all other elements with the same stroke-color (fill-color if right-click"
             )
         )
-        self.chk_exclusive.SetToolTip(
+        self.check_exclusive.SetToolTip(
             _(
                 "When assigning to an operation remove all assignments of the elements to other operations"
             )
@@ -62,31 +64,31 @@ class SBW_AssignOptions(StatusBarWidget):
         self.context.elements.setting(bool, "classify_all_similar", True)
         self.context.elements.setting(int, "classify_impose_default", 0)
         self.StartPopulation()
-        self.chk_exclusive.SetValue(self.context.elements.classify_inherit_exclusive)
-        self.chk_all_similar.SetValue(self.context.elements.classify_all_similar)
+        self.check_exclusive.SetValue(self.context.elements.classify_inherit_exclusive)
+        self.check_all_similar.SetValue(self.context.elements.classify_all_similar)
         value = self.context.elements.classify_impose_default
-        self.cbo_apply_color.SetSelection(value)
+        self.combo_apply_color.SetSelection(value)
         self.EndPopulation()
-        self.Add(self.cbo_apply_color, 1, wx.EXPAND, 0)
-        self.Add(self.chk_all_similar, 1, wx.EXPAND, 0)
-        self.Add(self.chk_exclusive, 1, wx.EXPAND, 0)
-        self.chk_exclusive.Bind(wx.EVT_CHECKBOX, self.on_chk_exclusive)
-        self.chk_all_similar.Bind(wx.EVT_CHECKBOX, self.on_chk_allsimilar)
-        self.cbo_apply_color.Bind(wx.EVT_COMBOBOX, self.on_cbo_color)
+        self.Add(self.combo_apply_color, 1, wx.EXPAND, 0)
+        self.Add(self.check_all_similar, 1, wx.EXPAND, 0)
+        self.Add(self.check_exclusive, 1, wx.EXPAND, 0)
+        self.check_exclusive.Bind(wx.EVT_CHECKBOX, self.on_check_exclusive)
+        self.check_all_similar.Bind(wx.EVT_CHECKBOX, self.on_check_allsimilar)
+        self.combo_apply_color.Bind(wx.EVT_COMBOBOX, self.on_combo_color)
 
-    def on_cbo_color(self, event):
+    def on_combo_color(self, event):
         if not self.startup:
-            value = self.cbo_apply_color.GetCurrentSelection()
+            value = self.combo_apply_color.GetCurrentSelection()
             self.context.elements.classify_impose_default = value
 
-    def on_chk_exclusive(self, event):
+    def on_check_exclusive(self, event):
         if not self.startup:
-            newval = self.chk_exclusive.GetValue()
+            newval = self.check_exclusive.GetValue()
             self.context.elements.classify_inherit_exclusive = newval
 
-    def on_chk_allsimilar(self, event):
+    def on_check_allsimilar(self, event):
         if not self.startup:
-            newval = self.chk_all_similar.GetValue()
+            newval = self.check_all_similar.GetValue()
             self.context.elements.classify_all_similar = newval
 
     def Signal(self, signal, *args):
@@ -94,7 +96,7 @@ class SBW_AssignOptions(StatusBarWidget):
             self.Enable(self.context.elements.has_emphasis())
 
 
-class SBW_AssignButtons(StatusBarWidget):
+class OperationAssignWidget(StatusBarWidget):
     """
     Panel to quickly assign a laser operation to any emphasized element
     """
@@ -111,7 +113,7 @@ class SBW_AssignButtons(StatusBarWidget):
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
 
-        for idx in range(self.MAXBUTTONS):
+        for __ in range(self.MAXBUTTONS):
             btn = wx.Button(
                 self.parent, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize)
             )

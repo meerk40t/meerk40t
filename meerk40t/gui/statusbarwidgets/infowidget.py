@@ -1,12 +1,13 @@
 import wx
+
 from ...core.element_types import elem_nodes
+from ...core.units import Length
 from .statusbarwidget import StatusBarWidget
-from ...core.units import UNITS_PER_INCH, Length
 
 _ = wx.GetTranslation
 
 
-class SBW_Information(StatusBarWidget):
+class InformationWidget(StatusBarWidget):
     """
     Placeholder to accept any kind of information,
     if none is given externally it falls back to basic infos

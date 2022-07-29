@@ -1,20 +1,22 @@
 import wx
+
 from meerk40t.gui.icons import (
     cap_butt_20,
     cap_round_20,
     cap_square_20,
+    fill_evenodd,
+    fill_nonzero,
     join_bevel,
     join_miter,
     join_round,
-    fill_evenodd,
-    fill_nonzero,
 )
+
 from .statusbarwidget import StatusBarWidget
 
 _ = wx.GetTranslation
 
 
-class SBW_Linecap(StatusBarWidget):
+class LinecapWidget(StatusBarWidget):
     """
     Panel to change / assign the linecap of an element
     """
@@ -61,7 +63,7 @@ class SBW_Linecap(StatusBarWidget):
         self.assign_cap("round")
 
 
-class SBW_Linejoin(StatusBarWidget):
+class LinejoinWidget(StatusBarWidget):
     """
     Panel to change / assign the linejoin of an element
     (actually a subset: arcs and miter-clip have been intentionally omitted)
@@ -126,7 +128,7 @@ class SBW_Linejoin(StatusBarWidget):
         self.assign_join("round")
 
 
-class SBW_Fillrule(StatusBarWidget):
+class FillruleWidget(StatusBarWidget):
     """
     Panel to change / assign the fillrule of an element
     """
