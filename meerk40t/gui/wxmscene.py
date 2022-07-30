@@ -6,7 +6,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icon_meerk40t, icons8_menu_50
-from meerk40t.gui.laserrender import LaserRender
+from meerk40t.gui.laserrender import LaserRender, DRAW_MODE_GUIDES
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
@@ -142,14 +142,20 @@ class MeerK40tScenePanel(wx.Panel):
 
         @context.console_command("tool_menu", hidden=True)
         def tool_menu(channel, _, **kwargs):
+            orgx = 5
+            orgy = 5
+            # Are guides drawn?
+            if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
+                orgx += 25
+                orgy += 25
             self.widget_scene.widget_root.interface_widget.add_widget(
                 -1,
                 ToggleWidget(
                     self.widget_scene,
-                    5,
-                    5,
-                    5 + 25,
-                    5 + 25,
+                    orgx,
+                    orgy,
+                    orgx + 25,
+                    orgy + 25,
                     icons8_menu_50.GetBitmap(use_theme=False),
                     "button/tool",
                 ),

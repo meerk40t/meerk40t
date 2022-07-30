@@ -1,20 +1,24 @@
 import wx
 
 from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_ABORT, ORIENTATION_VERTICAL, HITCHAIN_DELEGATE_AND_HIT,
+    RESPONSE_ABORT,
+    ORIENTATION_GRID,
+    ORIENTATION_VERTICAL,
+    ORIENTATION_HORIZONTAL,
+    HITCHAIN_DELEGATE_AND_HIT,
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
 
-class ToggleWidget(Widget):
+_ = wx.GetTranslation
 
+class ToggleWidget(Widget):
     def __init__(self, scene, left, top, right, bottom, bitmap, buttons):
         Widget.__init__(self, scene, left, top, right, bottom)
         self.buttons = buttons
         self.bitmap = bitmap
         self._opened = False
-        flag = self.scene.context.menu_autohide
-        self.autohide = flag
+        self._orientation = ORIENTATION_HORIZONTAL
         self.scene.request_refresh()
 
     def hit(self):
@@ -25,9 +29,7 @@ class ToggleWidget(Widget):
         gc.DrawBitmap(self.bitmap, self.left, self.top, self.width, self.height)
         gc.PopState()
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "leftdown":
             if self._opened:
                 self.minimize(window_pos=None, space_pos=None)
@@ -35,11 +37,56 @@ class ToggleWidget(Widget):
             else:
                 self.maximize(window_pos=None, space_pos=None)
                 self._opened = True
+        elif event_type == "rightdown":
+            self.show_options()
         return RESPONSE_ABORT
+
+    def on_popup_close(self, event):
+        self.remove_all_widgets()
+        self.scene.request_refresh()
+        self.scene.widget_root.interface_widget.remove_widget(self)
+
+    def on_popup_horizontal(self, event):
+        self._orientation = ORIENTATION_HORIZONTAL
+        if self._opened:
+            self.minimize(window_pos=None, space_pos=None)
+            self._opened = False
+            self.maximize(window_pos=None, space_pos=None)
+            self._opened = True
+
+    def on_popup_vertical(self, event):
+        self._orientation = ORIENTATION_VERTICAL
+        if self._opened:
+            self.minimize(window_pos=None, space_pos=None)
+            self._opened = False
+            self.maximize(window_pos=None, space_pos=None)
+            self._opened = True
+
+    def on_popup_autohide(self, event):
+        self.scene.context.menu_autohide = not self.scene.context.menu_autohide
+
+    def show_options(self):
+        menu = wx.Menu()
+        gui = self.scene.context.gui
+        item1 = menu.Append(wx.ID_ANY, _("Close"), "", wx.ITEM_NORMAL)
+        menu.AppendSeparator()
+        item2 = menu.Append(wx.ID_ANY, _("Horizontal"), "", wx.ITEM_CHECK)
+        item3 = menu.Append(wx.ID_ANY, _("Vertical"), "", wx.ITEM_CHECK)
+        menu.AppendSeparator()
+        item4 = menu.Append(wx.ID_ANY, _("Autohide"), "", wx.ITEM_CHECK)
+        item2.Check(self._orientation == ORIENTATION_HORIZONTAL)
+        item3.Check(self._orientation == ORIENTATION_VERTICAL)
+        item4.Check(self.scene.context.menu_autohide)
+        gui.Bind(wx.EVT_MENU, self.on_popup_close, item1)
+        gui.Bind(wx.EVT_MENU, self.on_popup_horizontal, item2)
+        gui.Bind(wx.EVT_MENU, self.on_popup_vertical, item3)
+        gui.Bind(wx.EVT_MENU, self.on_popup_autohide, item4)
+        gui.PopupMenu(menu)
+        menu.Destroy()
 
     def signal(self, signal, *args, **kwargs):
         if signal == "tool_changed":
-            if self.autohide:
+            if self.scene.context.menu_autohide:
                 if self._opened:
                     self.minimize(window_pos=None, space_pos=None)
                     self._opened = False
@@ -56,6 +103,7 @@ class ToggleWidget(Widget):
 
         def sort_priority(elem):
             return elem.get("priority", 0)
+
         buttons.sort(key=sort_priority)  # Sort buttons by priority
 
         def clicked(action):
@@ -68,7 +116,19 @@ class ToggleWidget(Widget):
             button_size = self.width
             resize_param = button.get("size")
             icon = button["icon"].GetBitmap(resize=button_size, use_theme=False)
-            self.add_widget(-1, ButtonWidget(self.scene, 0, 0, button_size, button_size, icon, clicked(button.get("action"))), ORIENTATION_VERTICAL)
+            self.add_widget(
+                -1,
+                ButtonWidget(
+                    self.scene,
+                    0,
+                    0,
+                    button_size,
+                    button_size,
+                    icon,
+                    clicked(button.get("action")),
+                ),
+                self._orientation,
+            )
 
             # group = button.get("group")
             # if "multi" in button:
