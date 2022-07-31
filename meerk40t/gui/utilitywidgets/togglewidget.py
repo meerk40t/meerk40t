@@ -18,7 +18,13 @@ class ToggleWidget(Widget):
         self.buttons = buttons
         self.bitmap = bitmap
         self._opened = False
-        self._orientation = ORIENTATION_HORIZONTAL
+        # If we use the tool-menu, how shall
+        self.scene.context.setting(bool, "menu_autohide", True)
+        self.scene.context.setting(bool, "menu_vertical", True)
+        if self.scene.context.menu_vertical:
+            self._orientation = ORIENTATION_VERTICAL
+        else:
+            self._orientation = ORIENTATION_HORIZONTAL
         self.scene.request_refresh()
 
     def hit(self):
@@ -46,6 +52,7 @@ class ToggleWidget(Widget):
         self.scene.request_refresh()
 
     def on_popup_horizontal(self, event):
+        self.scene.context.menu_vertical = False
         self._orientation = ORIENTATION_HORIZONTAL
         if self._opened:
             self.minimize(window_pos=None, space_pos=None)
@@ -54,6 +61,7 @@ class ToggleWidget(Widget):
             self._opened = True
 
     def on_popup_vertical(self, event):
+        self.scene.context.menu_vertical = True
         self._orientation = ORIENTATION_VERTICAL
         if self._opened:
             self.minimize(window_pos=None, space_pos=None)
@@ -73,8 +81,8 @@ class ToggleWidget(Widget):
         item3 = menu.Append(wx.ID_ANY, _("Vertical"), "", wx.ITEM_CHECK)
         menu.AppendSeparator()
         item4 = menu.Append(wx.ID_ANY, _("Autohide"), "", wx.ITEM_CHECK)
-        item2.Check(self._orientation == ORIENTATION_HORIZONTAL)
-        item3.Check(self._orientation == ORIENTATION_VERTICAL)
+        item2.Check(not self.scene.context.menu_vertical)
+        item3.Check(self.scene.context.menu_vertical)
         item4.Check(self.scene.context.menu_autohide)
         gui.Bind(wx.EVT_MENU, self.on_popup_close, item1)
         gui.Bind(wx.EVT_MENU, self.on_popup_horizontal, item2)

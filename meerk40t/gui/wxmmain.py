@@ -557,13 +557,13 @@ class MeerK40t(MWindow):
         context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "menu_autohide",
+                "attr": "use_toolmenu",
                 "object": context.root,
                 "default": True,
                 "type": bool,
-                "label": _("Menu auto-minimize"),
+                "label": _("Use in-scene tool-menu"),
                 "tip": _(
-                    "The scene-menu will minimize itself automatically after selection of a tool."
+                    "The scene-menu will appear if you right-click on the scene-background"
                 ),
                 "page": "Gui",
                 "section": "Scene",

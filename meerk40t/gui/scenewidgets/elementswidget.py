@@ -58,11 +58,12 @@ class ElementsWidget(Widget):
             if not self.scene.tool_active:
                 if self.scene.active_tool != "none":
                     self.scene.context("tool none")
+                    return RESPONSE_CONSUME
                 else:
-                    self.scene.context("tool_menu")
-                return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
+                    if self.scene.context.use_toolmenu:
+                        self.scene.context("tool_menu")
+                        return RESPONSE_CONSUME
+            return RESPONSE_CHAIN
         elif event_type == "leftclick":
             elements = self.scene.context.elements
             keep_old = "shift" in modifiers
