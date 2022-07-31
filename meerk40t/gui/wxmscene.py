@@ -354,8 +354,9 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_argument("y", type=str, help="y position")
         @self.context.console_argument("width", type=str, help="width of view")
         @self.context.console_argument("height", type=str, help="height of view")
+        @self.context.console_option("animate", "a", type=bool, action="store_true", help="perform focus with animation")
         @self.context.console_command("focus", input_type="scene")
-        def scene_focus(command, _, channel, data, x, y, width, height, **kwargs):
+        def scene_focus(command, _, channel, data, x, y, width, height, animate=False, **kwargs):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
@@ -367,7 +368,7 @@ class MeerK40tScenePanel(wx.Panel):
                 raise CommandSyntaxError("Not a valid length.")
             bbox = (x, y, width, height)
             matrix = data.widget_root.scene_widget.matrix
-            data.widget_root.focus_viewport_scene(bbox, self.ClientSize)
+            data.widget_root.focus_viewport_scene(bbox, self.Size, animate=animate)
             data.request_refresh()
             channel(str(matrix))
             return "scene", data
