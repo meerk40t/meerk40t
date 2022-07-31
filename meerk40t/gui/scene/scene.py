@@ -220,6 +220,7 @@ class Scene(Module, Job):
         self.reset_grids()
 
         self.tool_active = False
+        self.active_tool = "none"
         self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
 
         self._animating = list()

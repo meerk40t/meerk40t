@@ -42,9 +42,8 @@ class ToggleWidget(Widget):
         return RESPONSE_ABORT
 
     def on_popup_close(self, event):
-        self.remove_all_widgets()
+        self.hide()
         self.scene.request_refresh()
-        self.scene.widget_root.interface_widget.remove_widget(self)
 
     def on_popup_horizontal(self, event):
         self._orientation = ORIENTATION_HORIZONTAL
@@ -90,6 +89,9 @@ class ToggleWidget(Widget):
                 if self._opened:
                     self.minimize(window_pos=None, space_pos=None)
                     self._opened = False
+        elif signal == "guide":
+            # print ("guide")
+            pass
 
     def minimize(self, window_pos=None, space_pos=None):
         self.remove_all_widgets()
@@ -129,140 +131,4 @@ class ToggleWidget(Widget):
                 ),
                 self._orientation,
             )
-
-            # group = button.get("group")
-            # if "multi" in button:
-            #     # Button is a multi-type button
-            #     b = button_bar.AddHybridButton(
-            #         button_id=new_id,
-            #         label=button["label"],
-            #         bitmap=button["icon"].GetBitmap(resize=resize_param),
-            #         help_string=button["tip"] if show_tip else "",
-            #     )
-            #     button_bar.Bind(
-            #         RB.EVT_RIBBONBUTTONBAR_DROPDOWN_CLICKED,
-            #         self.drop_click,
-            #         id=new_id,
-            #     )
-            # else:
-            #     if "group" in button:
-            #         bkind = RB.RIBBON_BUTTON_TOGGLE
-            #     else:
-            #         bkind = RB.RIBBON_BUTTON_NORMAL
-            #     if "toggle" in button:
-            #         bkind = RB.RIBBON_BUTTON_TOGGLE
-            #     b = button_bar.AddButton(
-            #         button_id=new_id,
-            #         label=button["label"],
-            #         bitmap=button["icon"].GetBitmap(resize=resize_param),
-            #         bitmap_disabled=button["icon"].GetBitmap(
-            #             resize=resize_param, color=Color("grey")
-            #         ),
-            #         help_string=button["tip"] if show_tip else "",
-            #         kind=bkind,
-            #     )
-            #
-            # # Store all relevant aspects for newly registered button.
-            # b.button_dict = button
-            # b.state_pressed = None
-            # b.state_unpressed = None
-            # b.toggle = False
-            # b.parent = button_bar
-            # b.group = group
-            # b.identifier = button.get("identifier")
-            # b.action = button.get("action")
-            # b.action_right = button.get("right")
-            # if "rule_enabled" in button:
-            #     b.enable_rule = button.get("rule_enabled")
-            # else:
-            #     b.enable_rule = lambda cond: True
-            #
-            # if "multi" in button:
-            #     # Store alternative aspects for multi-buttons, load stored previous state.
-            #
-            #     multi_action = button["multi"]
-            #     multi_ident = button.get("identifier")
-            #     b.save_id = multi_ident
-            #     initial_id = self.context.setting(str, b.save_id, "default")
-            #
-            #     for i, v in enumerate(multi_action):
-            #         key = v.get("identifier", i)
-            #         self._store_button_aspect(b, key)
-            #         self._update_button_aspect(b, key, **v)
-            #         if "icon" in v:
-            #             v_icon = button.get("icon")
-            #             self._update_button_aspect(
-            #                 b,
-            #                 key,
-            #                 bitmap_large=v_icon.GetBitmap(resize=resize_param),
-            #                 bitmap_large_disabled=v_icon.GetBitmap(
-            #                     resize=resize_param, color=Color("grey")
-            #                 ),
-            #             )
-            #             if resize_param is None:
-            #                 siz = v_icon.GetBitmap().GetSize()
-            #                 small_resize = 0.5 * siz[0]
-            #             else:
-            #                 small_resize = 0.5 * resize_param
-            #             self._update_button_aspect(
-            #                 b,
-            #                 key,
-            #                 bitmap_small=v_icon.GetBitmap(resize=small_resize),
-            #                 bitmap_small_disabled=v_icon.GetBitmap(
-            #                     resize=small_resize, color=Color("grey")
-            #                 ),
-            #             )
-            #         if key == initial_id:
-            #             self._restore_button_aspect(b, key)
-            # if "toggle" in button:
-            #     # Store toggle and original aspects for toggle-buttons
-            #
-            #     b.state_pressed = "toggle"
-            #     b.state_unpressed = "original"
-            #
-            #     self._store_button_aspect(b, "original")
-            #
-            #     toggle_action = button["toggle"]
-            #     key = toggle_action.get("identifier", "toggle")
-            #     self._store_button_aspect(
-            #         b,
-            #         key,
-            #         **toggle_action
-            #     )
-            #     if "icon" in toggle_action:
-            #         toggle_icon = toggle_action.get("icon")
-            #         self._update_button_aspect(
-            #             b,
-            #             key,
-            #             bitmap_large=toggle_icon.GetBitmap(resize=resize_param),
-            #             bitmap_large_disabled=toggle_icon.GetBitmap(
-            #                 resize=resize_param, color=Color("grey")
-            #             ),
-            #         )
-            #         if resize_param is None:
-            #             siz = v_icon.GetBitmap().GetSize()
-            #             small_resize = 0.5 * siz[0]
-            #         else:
-            #             small_resize = 0.5 * resize_param
-            #         self._update_button_aspect(
-            #             b,
-            #             key,
-            #             bitmap_small=toggle_icon.GetBitmap(resize=small_resize),
-            #             bitmap_small_disabled=toggle_icon.GetBitmap(
-            #                 resize=small_resize, color=Color("grey")
-            #             ),
-            #         )
-            # # Store newly created button in the various lookups
-            # self.button_lookup[new_id] = b
-            # if group is not None:
-            #     c_group = self.group_lookup.get(group)
-            #     if c_group is None:
-            #         c_group = []
-            #         self.group_lookup[group] = c_group
-            #     c_group.append(b)
-            #
-            # button_bar.Bind(
-            #     RB.EVT_RIBBONBUTTONBAR_CLICKED, self.button_click, id=new_id
-            # )
-            # button_bar.Bind(wx.EVT_RIGHT_UP, self.button_click_right)
         self.scene.request_refresh()
