@@ -1,5 +1,5 @@
 from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
 
@@ -56,8 +56,14 @@ class ElementsWidget(Widget):
     ):
         if event_type == "rightdown" and not modifiers:
             if not self.scene.tool_active:
-                self.scene.context("tool none")
-                return RESPONSE_CONSUME
+                if self.scene.active_tool != "none":
+                    self.scene.context("tool none")
+                    return RESPONSE_CONSUME
+                else:
+                    if self.scene.context.use_toolmenu:
+                        self.scene.context("tool_menu")
+                        return RESPONSE_CONSUME
+            return RESPONSE_CHAIN
         elif event_type == "leftclick":
             elements = self.scene.context.elements
             keep_old = "shift" in modifiers

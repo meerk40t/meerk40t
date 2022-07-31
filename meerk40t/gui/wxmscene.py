@@ -6,7 +6,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icon_meerk40t, icons8_menu_50
-from meerk40t.gui.laserrender import LaserRender
+from meerk40t.gui.laserrender import LaserRender, DRAW_MODE_GUIDES
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
@@ -112,6 +112,8 @@ class MeerK40tScenePanel(wx.Panel):
 
         self.Bind(wx.EVT_SIZE, self.on_size)
 
+        self._tool_widget = None
+
         context.register("tool/draw", DrawTool)
         context.register("tool/rect", RectTool)
         context.register("tool/polyline", PolylineTool)
@@ -142,18 +144,31 @@ class MeerK40tScenePanel(wx.Panel):
 
         @context.console_command("tool_menu", hidden=True)
         def tool_menu(channel, _, **kwargs):
-            self.widget_scene.widget_root.interface_widget.add_widget(
-                -1,
-                ToggleWidget(
+            orgx = 5
+            orgy = 5
+            # Are guides drawn?
+            if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
+                orgx += 25
+                orgy += 25
+            if self._tool_widget is not None:
+                visible = self._tool_widget.visible
+                self._tool_widget.show(not visible)
+                self.widget_scene.request_refresh()
+
+            if self._tool_widget is None:
+                self._tool_widget = ToggleWidget(
                     self.widget_scene,
-                    5,
-                    5,
-                    5 + 25,
-                    5 + 25,
+                    orgx,
+                    orgy,
+                    orgx + 25,
+                    orgy + 25,
                     icons8_menu_50.GetBitmap(use_theme=False),
                     "button/tool",
-                ),
-            )
+                )
+                self.widget_scene.widget_root.interface_widget.add_widget(
+                    -1,
+                    self._tool_widget,
+                )
             channel(_("Added tool widget to interface"))
 
         @context.console_command("seek_bar", hidden=True)
@@ -553,6 +568,17 @@ class MeerK40tScenePanel(wx.Panel):
                     self.request_refresh()
                 else:
                     channel(_("Target needs to be one of primary, secondary, circular"))
+
+    @signal_listener("draw_mode")
+    def on_draw_mode(self, origin, *args):
+        if self._tool_widget is not None:
+            orgx = 5
+            orgy = 5
+            # Are guides drawn?
+            if self.context.draw_mode & DRAW_MODE_GUIDES == 0:
+                orgx += 25
+                orgy += 25
+            self._tool_widget.set_position(orgx, orgy)
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):

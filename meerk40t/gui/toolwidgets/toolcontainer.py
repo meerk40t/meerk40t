@@ -33,6 +33,7 @@ class ToolContainer(Widget):
                 self.add_widget(0, new_tool(self.scene))
         if tool is None:
             tool = "none"
+        self.scene.active_tool = tool.lower()
         message = ("tool", tool)
         self.scene.context.signal("tool_changed", message)
         self.scene._signal_widget(self.scene.widget_root, "tool_changed", message)
