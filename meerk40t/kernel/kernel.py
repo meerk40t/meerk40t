@@ -2686,6 +2686,9 @@ class Kernel(Settings):
 
         @self.console_argument("name", help="Name of service to start")
         @self.console_option(
+            "label", "l", help="optional label for the service to start"
+        )
+        @self.console_option(
             "path", "p", help="optional forced path initialize location"
         )
         @self.console_option(
@@ -2699,7 +2702,7 @@ class Kernel(Settings):
             "start", input_type="service", help=_("Initialize a provider")
         )
         def service_init(
-            channel, _, data=None, name=None, path=None, init=None, **kwargs
+            channel, _, data=None, name=None, label=None, path=None, init=None, **kwargs
         ):
             domain, available, active = data
             if name is None:
@@ -2718,6 +2721,8 @@ class Kernel(Settings):
                 i += 1
 
             service = provider(self, service_path)
+            if label is not None and hasattr(service, "label"):
+                service.label = label
             self.add_service(domain, service, provider_path)
             if init is True:
                 self.activate(domain, service, assigned=True)
