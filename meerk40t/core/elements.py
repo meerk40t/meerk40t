@@ -5961,6 +5961,7 @@ class Elemental(Service):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op image"
                 n.replace_node(**new_settings)
+            self.signal("tree_changed")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
@@ -5969,6 +5970,7 @@ class Elemental(Service):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op raster"
                 n.replace_node(**new_settings)
+            self.signal("tree_changed")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(
@@ -5979,6 +5981,7 @@ class Elemental(Service):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op engrave"
                 n.replace_node(**new_settings)
+            self.signal("tree_changed")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
@@ -5987,6 +5990,7 @@ class Elemental(Service):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op cut"
                 n.replace_node(**new_settings)
+            self.signal("tree_changed")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
@@ -5995,6 +5999,7 @@ class Elemental(Service):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op hatch"
                 n.replace_node(**new_settings)
+            self.signal("tree_changed")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
@@ -6003,6 +6008,7 @@ class Elemental(Service):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op dots"
                 n.replace_node(**new_settings)
+            self.signal("tree_changed")
 
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_operation(_("Set to None"), node_type="elem image", help="")
@@ -6671,6 +6677,7 @@ class Elemental(Service):
                         copy_op.add_reference(child.node)
                     except AttributeError:
                         pass
+            self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
@@ -6798,7 +6805,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Dots"), node_type=op_nodes, help="")
         def add_operation_dots(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_dots(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
