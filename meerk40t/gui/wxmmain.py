@@ -8,7 +8,7 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.gui.statusbarwidgets.infowidget import InformationWidget
+from meerk40t.gui.statusbarwidgets.infowidget import InformationWidget, StatusPanelWidget
 from meerk40t.gui.statusbarwidgets.opassignwidget import (
     OperationAssignOptionWidget,
     OperationAssignWidget,
@@ -262,6 +262,11 @@ class MeerK40t(MWindow):
         self.idx_selection = self.main_statusbar.panelct - 1
         self.idx_colors = self.main_statusbar.panelct - 2
         self.idx_assign = self.main_statusbar.panelct - 3
+
+        self.status_panel = StatusPanelWidget(self.main_statusbar.panelct)
+        self.main_statusbar.add_panel_widget(
+            self.status_panel, 0, "status", True
+        )
 
         self.select_panel = SelectionWidget()
         self.info_panel = InformationWidget()
