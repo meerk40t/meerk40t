@@ -13,7 +13,7 @@ class CustomStatusBar(wx.StatusBar):
         self.startup = True
         self.panelct = panelct
         self.context = parent.context
-            
+
         wx.StatusBar.__init__(self, parent, -1)
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
@@ -25,16 +25,16 @@ class CustomStatusBar(wx.StatusBar):
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
         for __ in range(self.panelct):
-            # Linux wxPython has a fundamental flaw in the treatment of 
-            # small bitmap buttons. It reserves an extent around the 
-            # bitmap and tries to reduce the size (which leads to a lot of 
+            # Linux wxPython has a fundamental flaw in the treatment of
+            # small bitmap buttons. It reserves an extent around the
+            # bitmap and tries to reduce the size (which leads to a lot of
             # unwanted messages plus some very unwanted X-Windows crash...
             btn = wx.StaticBitmap(
                 self,
                 id=wx.ID_ANY,
                 bitmap=icons8_next_page_20.GetBitmap(noadjustment=True),
                 size=wx.Size(20, self.MinHeight),
-                style=wx.BORDER_RAISED,
+                # style=wx.BORDER_RAISED,
             )
             # btn.SetBackgroundColour(wx.RED)
             # btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True, color=Color("red")))
@@ -58,7 +58,7 @@ class CustomStatusBar(wx.StatusBar):
             self.status_text[panel] = message
         # Signal it onwards....
         self.Signal("statusmsg", message, panel)
-        
+
     def add_panel_widget(self, widget, panel_idx, identifier, visible=True):
         if panel_idx < 0 or panel_idx >= self.panelct:
             return
@@ -221,6 +221,7 @@ class CustomStatusBar(wx.StatusBar):
                     panelrect.x, panelrect.y, panelrect.width, panelrect.height
                 )
                 sizer.Show(True)
+                sizer.Layout()
         # debug_me()
         self.sizeChanged = False
 

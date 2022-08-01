@@ -118,7 +118,7 @@ class OperationAssignWidget(StatusBarWidget):
                 self.parent,
                 id=wx.ID_ANY,
                 size=(self.buttonsize, self.buttonsize),
-                style=wx.BORDER_RAISED,
+                # style=wx.BORDER_RAISED,
             )
             self.assign_buttons.append(btn)
             self.op_nodes.append(None)
