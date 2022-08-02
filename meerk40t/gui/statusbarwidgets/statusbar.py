@@ -44,13 +44,25 @@ class CustomStatusBar(wx.StatusBar):
             self.nextbuttons.append(btn)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.timer_active = False
-        self.timer_info = None
-        self.timer_lastmsg = -1
 
         # set the initial position of the checkboxes
         self.Reposition()
         self.startup = False
+
+    def Clear(self):
+        """
+        Resets all panels
+        """
+        for key in self.widgets:
+            widget = self.widgets[key]
+            widget.Hide()
+            del widget
+        for btn in self.nextbuttons:
+            btn.Show(False)
+        self.widgets = {}
+        self.activesizer = [None] * self.panelct
+        for idx in range(self.panelct):
+            super().SetStatusText(self.status_text[idx], idx)
 
 
     def SetStatusText(self, message="", panel=0):
@@ -58,6 +70,8 @@ class CustomStatusBar(wx.StatusBar):
             self.status_text[panel] = message
         # Signal it onwards....
         self.Signal("statusmsg", message, panel)
+        if len(self.widgets) == 0:
+            super().SetStatusText(message, panel)
 
     def add_panel_widget(self, widget, panel_idx, identifier, visible=True):
         if panel_idx < 0 or panel_idx >= self.panelct:
