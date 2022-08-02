@@ -114,14 +114,17 @@ class OperationAssignWidget(StatusBarWidget):
         super().GenerateControls(parent, panelidx, identifier, context)
 
         for __ in range(self.MAXBUTTONS):
-            btn = wx.Button(
-                self.parent, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize)
+            btn = wx.StaticBitmap(
+                self.parent,
+                id=wx.ID_ANY,
+                size=(self.buttonsize, self.buttonsize),
+                # style=wx.BORDER_RAISED,
             )
             self.assign_buttons.append(btn)
             self.op_nodes.append(None)
             btn.Bind(wx.EVT_ENTER_WINDOW, self.on_mouse_over)
             btn.Bind(wx.EVT_LEAVE_WINDOW, self.on_mouse_leave)
-            btn.Bind(wx.EVT_BUTTON, self.on_button_left)
+            btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_left)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_right)
             self.Add(btn, 1, wx.EXPAND, 0)
 
@@ -148,12 +151,13 @@ class OperationAssignWidget(StatusBarWidget):
         if showit:
             for idx, btn in enumerate(self.assign_buttons):
                 if self.op_nodes[idx] is None:
-                    btn.Show(False)
+                    self.SetActive(btn, False)
                 else:
-                    btn.Show(True)
+                    self.SetActive(btn, True)
         else:
             for btn in self.assign_buttons:
-                btn.Show(False)
+                self.SetActive(btn, False)
+        self.RefreshItems(showit)
 
     def on_mouse_leave(self, event):
         # Leave events of one tool may come later than the enter events of the next
@@ -201,6 +205,7 @@ class OperationAssignWidget(StatusBarWidget):
         for idx in range(self.MAXBUTTONS):
             self.op_nodes[idx] = None
             self.assign_buttons[idx].SetBitmap(wx.NullBitmap)
+            self.SetActive(self.assign_buttons[idx], False)
             self.assign_buttons[idx].Show(False)
         if self.assign_hover > 0:
             self.parent.SetStatusText("", 0)
@@ -316,6 +321,8 @@ class OperationAssignWidget(StatusBarWidget):
         self.assign_clear_old()
         idx = 0
         for node in list(self.context.elements.flat(types=op_nodes)):
+            if node is None:
+                continue
             if node.type.startswith("op "):
                 self.op_nodes[idx] = node
                 self.set_single_button(node)
@@ -323,6 +330,8 @@ class OperationAssignWidget(StatusBarWidget):
                 if idx >= self.MAXBUTTONS:
                     # too many...
                     break
+        if self.visible:
+            self.ShowItems(True)
         # We need to call reposition for the updates to be seen
         self.parent.Reposition(self.panelidx)
 
@@ -341,20 +350,12 @@ class OperationAssignWidget(StatusBarWidget):
         self.parent.Reposition(self.panelidx)
 
     def Signal(self, signal, *args):
-        if (
-            signal in ("element_property_update", "element_property_reload")
-            and len(args) > 0
+        if signal in (
+            "element_property_update",
+            "element_property_reload",
+            "rebuild_tree",
+            "tree_changed",
         ):
-            # Need to do all?!
-            element = args[0]
-            if isinstance(element, (tuple, list)):
-                for node in element:
-                    if node.type.startswith("op "):
-                        self.set_single_button(node)
-            else:
-                if element.type.startswith("op "):
-                    self.set_single_button(element)
-        elif signal == "rebuild_tree":
             self.set_buttons()
         elif signal == "emphasized":
             self.Enable(self.context.elements.has_emphasis())

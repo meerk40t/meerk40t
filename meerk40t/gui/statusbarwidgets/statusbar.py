@@ -1,9 +1,7 @@
-from threading import Timer
-
 import wx
 
 from meerk40t.gui.icons import icons8_next_page_20
-
+from meerk40t.svgelements import Color
 
 class CustomStatusBar(wx.StatusBar):
     """
@@ -15,6 +13,7 @@ class CustomStatusBar(wx.StatusBar):
         self.startup = True
         self.panelct = panelct
         self.context = parent.context
+
         wx.StatusBar.__init__(self, parent, -1)
         # Make sure that the statusbar elements are visible fully
         self.SetMinHeight(25)
@@ -26,10 +25,21 @@ class CustomStatusBar(wx.StatusBar):
         self.activesizer = [None] * self.panelct
         self.nextbuttons = []
         for __ in range(self.panelct):
-            btn = wx.Button(self, id=wx.ID_ANY, label="", size=wx.Size(20, -1))
-            btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True))
+            # Linux wxPython has a fundamental flaw in the treatment of
+            # small bitmap buttons. It reserves an extent around the
+            # bitmap and tries to reduce the size (which leads to a lot of
+            # unwanted messages plus some very unwanted X-Windows crash...
+            btn = wx.StaticBitmap(
+                self,
+                id=wx.ID_ANY,
+                bitmap=icons8_next_page_20.GetBitmap(noadjustment=True),
+                size=wx.Size(20, self.MinHeight),
+                # style=wx.BORDER_RAISED,
+            )
+            # btn.SetBackgroundColour(wx.RED)
+            # btn.SetBitmap(icons8_next_page_20.GetBitmap(noadjustment=True, color=Color("red")))
             btn.Show(False)
-            btn.Bind(wx.EVT_BUTTON, self.on_button_next)
+            btn.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
             btn.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
             self.nextbuttons.append(btn)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -42,75 +52,12 @@ class CustomStatusBar(wx.StatusBar):
         self.Reposition()
         self.startup = False
 
-    def __del__(self):
-        if self.timer_info is not None:
-            self.timer_info.cancel()
-            self.timer_info = None
-
-    def check_for_hidden_infos(self):
-        hidden = False
-        for idx in range(self.panelct):
-            if self.activesizer[idx] is not None and len(self.status_text[idx]) > 0:
-                hidden = True
-                break
-        if hidden and not self.timer_active:
-            self.activate_timed_messages(True)
-        elif not hidden and self.timer_active:
-            self.activate_timed_messages(False)
 
     def SetStatusText(self, message="", panel=0):
         if panel >= 0 and panel < self.panelct:
             self.status_text[panel] = message
-        # Check whether we have hidden messages
-        self.check_for_hidden_infos()
-        if self.activesizer[panel] is not None and len(message) > 0:
-            # Someone wanted to have a message while displaying some control elements
-            return
-        super().SetStatusText(message, panel)
-
-    def update_info(self):
-        # Loop through non-emptive messages
-        msg = ""
-        for idx in range(self.panelct):
-            if idx > self.timer_lastmsg and len(self.status_text[idx]) > 0:
-                if idx > 0:
-                    msg += str(idx) + "#: "
-                msg += self.status_text[idx]
-                self.timer_lastmsg = idx
-                break
-        if len(msg) == 0:
-            # didn't find any so reset
-            self.timer_lastmsg = -1
-            if len(self.status_text[0]) > 0:
-                msg = self.status_text[0]
-                self.timer_lastmsg = -0
-        try:
-            super().SetStatusText(msg, 0)
-        except RuntimeError:
-            return
-        # restart timer
-        self.timer_info.cancel()
-        self.timer_info = Timer(interval=3, function=self.update_info)
-        self.timer_info.start()
-
-    def activate_timed_messages(self, active):
-        """
-        If we can't show the relevant StatusTexts in some panels then
-        we circle through the displays
-        """
-        if active:
-            if self.timer_active:
-                if self.timer_info is not None:
-                    self.timer_info.cancel()
-                    self.timer_lastmsg = -1
-            self.timer_info = Timer(interval=3, function=self.update_info)
-            self.timer_info.start()
-            self.timer_active = True
-        else:
-            if self.timer_info is not None:
-                self.timer_info.cancel()
-            self.timer_active = False
-            self.timer_lastmsg = -1
+        # Signal it onwards....
+        self.Signal("statusmsg", message, panel)
 
     def add_panel_widget(self, widget, panel_idx, identifier, visible=True):
         if panel_idx < 0 or panel_idx >= self.panelct:
@@ -143,7 +90,6 @@ class CustomStatusBar(wx.StatusBar):
                     if entry.active and entry.panelidx == panelidx:
                         self.activesizer[panelidx] = key
                         break
-            self.check_for_hidden_infos()
             self.Reposition(panelidx=panelidx)
 
     def force_panel(self, identifier):
@@ -157,7 +103,6 @@ class CustomStatusBar(wx.StatusBar):
             self.widgets[identifier].active = True
         panelidx = self.widgets[identifier].panelidx
         self.activesizer[panelidx] = identifier
-        self.check_for_hidden_infos()
         self.Reposition(panelidx=panelidx)
 
     def next_entry_in_panel(self, panelidx):
@@ -276,11 +221,7 @@ class CustomStatusBar(wx.StatusBar):
                     panelrect.x, panelrect.y, panelrect.width, panelrect.height
                 )
                 sizer.Show(True)
-                text = self.status_text[pidx]
-                if text != "":
-                    super().SetStatusText("", pidx)
-            else:
-                super().SetStatusText(self.status_text[pidx], pidx)
+                sizer.Layout()
         # debug_me()
         self.sizeChanged = False
 
