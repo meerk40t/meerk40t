@@ -118,7 +118,7 @@ class InformationWidget(SimpleInfoWidget):
         msg = ""
         for e in elements.flat(types=elem_nodes, emphasized=True):
             ct += 1
-            this_area, this_length = elements.get_information(e, fine=False)
+            this_area, this_length = elements.get_information(e, density=50)
             total_area += this_area
             total_length += this_length
 
