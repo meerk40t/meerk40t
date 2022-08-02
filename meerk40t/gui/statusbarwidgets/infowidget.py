@@ -96,8 +96,20 @@ class InformationWidget(SimpleInfoWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.fontsize = 7
+        self.needs_generation = False
+
+    def Show(self, showit):
+        if self.needs_generation and showit:
+            self.calculate_infos()
+        super().Show(showit)
 
     def GenerateInfos(self):
+        if self.visible:
+            self.calculate_infos()
+        else:
+            self.needs_generation = True
+
+    def calculate_infos(self):
         elements = self.context.elements
         ct = 0
         total_area = 0
@@ -117,6 +129,7 @@ class InformationWidget(SimpleInfoWidget):
         self.StartPopulation()
         self.SetInformation(msg)
         self.EndPopulation()
+        self.needs_generation = False
 
     def Signal(self, signal, *args):
         if signal == "emphasized":
