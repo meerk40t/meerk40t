@@ -598,7 +598,7 @@ class Elemental(Service):
         if fine:
             interpolation = 1000
         else:
-            interpolation = 250
+            interpolation = 100
 
         subject_polygons = []
         if not path is None:
@@ -633,10 +633,20 @@ class Elemental(Service):
                 )
 
         if len(subject_polygons) > 0:
+            # idx = 0
+            # for pt in subject_polygons[0]:
+            #     if pt.x > 1.0E8 or pt.y > 1.0E8:
+            #         print ("Rather high [%d]: x=%.1f, y=%.1f" % (idx, pt.x, pt.y))
+            #     idx += 1
             idx = -1
             area_x_y = 0
             area_y_x = 0
             for pt in subject_polygons[0]:
+                if pt is None or pt.x is None or pt.y is None:
+                    continue
+                if abs(pt.x) > 1.0E8 or abs(pt.y) > 1.0E8:
+                    # this does not seem to be a valid coord...
+                    continue
                 idx += 1
                 if idx > 0:
                     dx = pt.x - last_x
