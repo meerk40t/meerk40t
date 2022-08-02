@@ -5970,8 +5970,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op image"
-                n.replace_node(**new_settings)
-            self.signal("tree_changed")
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
@@ -5979,8 +5979,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op raster"
-                n.replace_node(**new_settings)
-            self.signal("tree_changed")
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(
@@ -5990,8 +5990,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op engrave"
-                n.replace_node(**new_settings)
-            self.signal("tree_changed")
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
@@ -5999,8 +5999,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op cut"
-                n.replace_node(**new_settings)
-            self.signal("tree_changed")
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
@@ -6008,8 +6008,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op hatch"
-                n.replace_node(**new_settings)
-            self.signal("tree_changed")
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
@@ -6017,8 +6017,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op dots"
-                n.replace_node(**new_settings)
-            self.signal("tree_changed")
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_operation(_("Set to None"), node_type="elem image", help="")
