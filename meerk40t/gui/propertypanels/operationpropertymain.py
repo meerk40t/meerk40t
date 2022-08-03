@@ -5,7 +5,7 @@ from meerk40t.kernel import signal_listener
 from ...core.units import Length, UNITS_PER_MM
 from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
-from ..wxutils import TextCtrl
+from ..wxutils import TextCtrl, set_ctrl_value
 
 _ = wx.GetTranslation
 
@@ -355,12 +355,12 @@ class SpeedPpiPanel(wx.Panel):
     def set_widgets(self, node):
         self.operation = node
         if self.operation.speed is not None:
-            self.text_speed.SetValue(str(self.operation.speed))
+            set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
             self.update_power_label()
-            self.text_power.SetValue(str(self.operation.power))
+            set_ctrl_value(self.text_power, str(self.operation.power))
         if self.operation.frequency is not None:
-            self.text_frequency.SetValue(str(self.operation.frequency))
+            set_ctrl_value(self.text_frequency, str(self.operation.frequency))
 
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
@@ -445,7 +445,7 @@ class PassesPanel(wx.Panel):
         if self.operation.passes_custom is not None:
             self.check_passes.SetValue(self.operation.passes_custom)
         if self.operation.passes is not None:
-            self.text_passes.SetValue(str(self.operation.passes))
+            set_ctrl_value(self.text_passes, str(self.operation.passes))
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
 
@@ -944,9 +944,9 @@ class RasterSettingsPanel(wx.Panel):
     def set_widgets(self, node):
         self.operation = node
         if self.operation.dpi is not None:
-            self.text_dpi.SetValue(str(self.operation.dpi))
+            set_ctrl_value(self.text_dpi, str(self.operation.dpi))
         if self.operation.overscan is not None:
-            self.text_overscan.SetValue(str(self.operation.overscan))
+            set_ctrl_value(self.text_overscan, str(self.operation.overscan))
         if self.operation.raster_direction is not None:
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
         if self.operation.raster_swing is not None:
@@ -1089,8 +1089,8 @@ class HatchSettingsPanel(wx.Panel):
         if i == len(self.fills):
             i = 0
         self.combo_fill_style.SetSelection(i)
-        self.text_angle.SetValue(self.operation.hatch_angle)
-        self.text_distance.SetValue(str(self.operation.hatch_distance))
+        set_ctrl_value(self.text_angle, self.operation.hatch_angle)
+        set_ctrl_value(self.text_distance, str(self.operation.hatch_distance))
         try:
             h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
             self.slider_angle.SetValue(int(h_angle))
@@ -1309,7 +1309,7 @@ class DwellSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        self.text_dwelltime.SetValue(str(self.operation.dwell_time))
+        set_ctrl_value(self.text_dwelltime, str(self.operation.dwell_time))
 
     def on_text_dwelltime(
         self, event=None

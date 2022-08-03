@@ -475,3 +475,10 @@ def disable_window(window):
             m.Disable()
         if hasattr(m, "Children"):
             disable_window(m)
+
+def set_ctrl_value(ctrl, value):
+    # Lets try to save the caret position
+    cursor = ctrl.GetLastPosition()
+    if ctrl.GetValue() != value:
+        ctrl.SetValue(value)
+        ctrl.SetInsertionPoint(min(len(value), cursor))
