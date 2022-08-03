@@ -797,9 +797,10 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     except:
         pass
 
-    error_log = "MeerK40t crash log. Version: %s on %s:%s - %s\n" % (
+    error_log = "MeerK40t crash log. Version: %s on %s: Python %s: %s - wxPython: %s\n" % (
         APPLICATION_VERSION,
         platform.system(),
+        platform.python_version(),
         platform.machine(),
         wxversion,
     )
