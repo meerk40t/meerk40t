@@ -219,6 +219,30 @@ class MyRibbonPanel(RB.RibbonPanel):
 
         return True
 
+    def OnSize(self, event):
+        """
+        Handles the ``wx.EVT_SIZE`` event for :class:`RibbonButtonBar`.
+
+        :param `event`: a :class:`wx.SizeEvent` event to be processed.
+        """
+
+        new_size = event.GetSize()
+        layout_count = len(self._layouts)
+        self._current_layout = layout_count - 1
+
+        for layout_i in range(layout_count):
+
+            layout_size = self._layouts[layout_i].overall_size
+            if layout_size.x <= new_size.x and layout_size.y <= new_size.y:
+                self._layout_offset.x = int((new_size.x - layout_size.x)/2)
+                self._layout_offset.y = int((new_size.y - layout_size.y)/2)
+                self._current_layout = layout_i
+                break
+
+        self._hovered_button = self._layouts[self._current_layout].FindSimilarInstance(self._hovered_button)
+        self.Refresh()
+
+
 def register_panel_ribbon(window, context):
     iconsize = get_default_icon_size()
     minh = 3 * iconsize
