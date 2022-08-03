@@ -122,6 +122,7 @@ class MyRibbonPanel(RB.RibbonPanel):
         if platform.system != "Windows":
             ht = max(ht, 120)
             maxw = 0
+            ct = 0
             for bar in self.GetChildren():
                 ct = 0
 
@@ -132,7 +133,7 @@ class MyRibbonPanel(RB.RibbonPanel):
                         ct += 1
                     maxw = max(maxw, 25 + 10)
             # print ("Ct=%d, widest=%d, wd=%.1f, wd2=%.1f, ht=%.1f, oldh=%.1f" % (ct, maxw, wd, 1.5*ct*maxw, ht, oldh))
-            wd = max(wd, 1.5 * ct * maxw)
+            wd = max(wd, int(1.5 * ct * maxw))
         size = wx.Size(wd, ht)
         # print (size, size2)
         # size = size2
