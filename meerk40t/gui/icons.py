@@ -15,7 +15,7 @@ def set_icon_appearance(factor, min_size):
     _GLOBAL_FACTOR = factor
 
 def get_default_icon_size():
-    return _GLOBAL_FACTOR * STD_ICON_SIZE
+    return int(_GLOBAL_FACTOR * STD_ICON_SIZE)
 
 def get_default_scale_factor():
     return _GLOBAL_FACTOR
