@@ -29,13 +29,13 @@ class ColorWidget(StatusBarWidget):
         )
         self.button_color = []
         for idx in range(len(colors)):
-            wx_button = wx.Button(
-                self.parent, id=wx.ID_ANY, size=wx.Size(20, -1), label=""
+            wx_button = wx.StaticBitmap(
+                self.parent, id=wx.ID_ANY, size=wx.Size(20, -1), style=wx.BORDER_RAISED,
             )
             wx_button.SetBackgroundColour(wx.Colour(colors[idx]))
             wx_button.SetMinSize(wx.Size(10, -1))
             wx_button.SetToolTip(_("Set stroke-color (right click set fill color)"))
-            wx_button.Bind(wx.EVT_BUTTON, self.on_button_color_left)
+            wx_button.Bind(wx.EVT_LEFT_DOWN, self.on_button_color_left)
             wx_button.Bind(wx.EVT_RIGHT_DOWN, self.on_button_color_right)
             self.button_color.append(wx_button)
         for idx in range(len(colors)):
@@ -126,9 +126,9 @@ class StrokeWidget(StatusBarWidget):
         self.parent.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
         # self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
         self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
-        self.Add(self.strokewidth_label, 0, wx.EXPAND, 1)
-        self.Add(self.spin_width, 1, wx.EXPAND, 1)
-        self.Add(self.combo_units, 1, wx.EXPAND, 1)
+        self.Add(self.strokewidth_label, 0, 0, 0)
+        self.Add(self.spin_width, 1, wx.EXPAND, 0)
+        self.Add(self.combo_units, 1, wx.EXPAND, 0)
 
     def on_stroke_width(self, event):
         if not self.startup:

@@ -8,7 +8,7 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.gui.statusbarwidgets.infowidget import InformationWidget
+from meerk40t.gui.statusbarwidgets.infowidget import InformationWidget, StatusPanelWidget
 from meerk40t.gui.statusbarwidgets.opassignwidget import (
     OperationAssignOptionWidget,
     OperationAssignWidget,
@@ -219,6 +219,7 @@ class MeerK40t(MWindow):
         # Status Bar
         self.startup = True
         self.main_statusbar = CustomStatusBar(self, 4)
+        self.widgets_created = False
         self.setup_statusbar_panels()
         self.SetStatusBar(self.main_statusbar)
         self.main_statusbar.SetStatusStyles(
@@ -259,9 +260,17 @@ class MeerK40t(MWindow):
         self.CenterOnScreen()
 
     def setup_statusbar_panels(self):
+        if not self.context.show_colorbar:
+            return
+        self.widgets_created = True
         self.idx_selection = self.main_statusbar.panelct - 1
         self.idx_colors = self.main_statusbar.panelct - 2
         self.idx_assign = self.main_statusbar.panelct - 3
+
+        self.status_panel = StatusPanelWidget(self.main_statusbar.panelct)
+        self.main_statusbar.add_panel_widget(
+            self.status_panel, 0, "status", True
+        )
 
         self.select_panel = SelectionWidget()
         self.info_panel = InformationWidget()
@@ -304,11 +313,29 @@ class MeerK40t(MWindow):
 
         self.assign_button_panel.show_stuff(False)
 
+    def destroy_statusbar_panels(self):
+        self.main_statusbar.Clear()
+        self.widgets_created = False
+
     # --- Listen to external events to update the bar
+    @signal_listener("show_colorbar")
+    def on_colobar_signal(self, origin, *args):
+        if len(args)>0:
+            showem = args[0]
+        else:
+            showem = True
+        if showem:
+            if not self.widgets_created:
+                self.setup_statusbar_panels()
+        else:
+            if self.widgets_created:
+                self.destroy_statusbar_panels()
+
     @signal_listener("element_property_reload")
     @signal_listener("element_property_update")
     def on_element_update(self, origin, *args):
-        self.main_statusbar.Signal("element_property_update", *args)
+        if self.widgets_created:
+            self.main_statusbar.Signal("element_property_update", *args)
 
     @signal_listener("rebuild_tree")
     @signal_listener("refresh_tree")
@@ -316,12 +343,15 @@ class MeerK40t(MWindow):
     @signal_listener("operation_removed")
     @signal_listener("add_operation")
     def on_rebuild(self, origin, *args):
-        self.main_statusbar.Signal("rebuild_tree")
+        if self.widgets_created:
+            self.main_statusbar.Signal("rebuild_tree")
 
     # --------- Events for status bar
 
     @signal_listener("emphasized")
     def on_update_statusbar(self, origin, *args):
+        if not self.context.show_colorbar or not self.widgets_created:
+            return
         value = self.context.elements.has_emphasis()
         self.main_statusbar.Signal("emphasized")
         # First enable/disable the controls in the statusbar

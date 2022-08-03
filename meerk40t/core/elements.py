@@ -598,7 +598,7 @@ class Elemental(Service):
         if fine:
             interpolation = 1000
         else:
-            interpolation = 250
+            interpolation = 100
 
         subject_polygons = []
         if not path is None:
@@ -633,10 +633,20 @@ class Elemental(Service):
                 )
 
         if len(subject_polygons) > 0:
+            # idx = 0
+            # for pt in subject_polygons[0]:
+            #     if pt.x > 1.0E8 or pt.y > 1.0E8:
+            #         print ("Rather high [%d]: x=%.1f, y=%.1f" % (idx, pt.x, pt.y))
+            #     idx += 1
             idx = -1
             area_x_y = 0
             area_y_x = 0
             for pt in subject_polygons[0]:
+                if pt is None or pt.x is None or pt.y is None:
+                    continue
+                if abs(pt.x) > 1.0E8 or abs(pt.y) > 1.0E8:
+                    # this does not seem to be a valid coord...
+                    continue
                 idx += 1
                 if idx > 0:
                     dx = pt.x - last_x
@@ -5960,7 +5970,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op image"
-                n.replace_node(**new_settings)
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
@@ -5968,7 +5979,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op raster"
-                n.replace_node(**new_settings)
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(
@@ -5978,7 +5990,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op engrave"
-                n.replace_node(**new_settings)
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
@@ -5986,7 +5999,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op cut"
-                n.replace_node(**new_settings)
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
@@ -5994,7 +6008,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op hatch"
-                n.replace_node(**new_settings)
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Convert operation"))
         @self.tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
@@ -6002,7 +6017,8 @@ class Elemental(Service):
             for n in list(self.ops(emphasized=True)):
                 new_settings = dict(n.settings)
                 new_settings["type"] = "op dots"
-                n.replace_node(**new_settings)
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
 
         @self.tree_submenu(_("Apply raster script"))
         @self.tree_operation(_("Set to None"), node_type="elem image", help="")
@@ -6671,6 +6687,7 @@ class Elemental(Service):
                         copy_op.add_reference(child.node)
                     except AttributeError:
                         pass
+            self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
@@ -6798,7 +6815,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Dots"), node_type=op_nodes, help="")
         def add_operation_dots(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_dots(node, pos=add_after_index(self, node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")

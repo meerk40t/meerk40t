@@ -648,10 +648,12 @@ class Node:
         new_sibling._parent = reference_sibling._parent
         new_sibling.notify_attached(new_sibling, pos=reference_position)
 
-    def replace_node(self, *args, **kwargs):
+    def replace_node(self, keep_children = None, *args, **kwargs):
         """
         Replace this current node with a bootstrapped replacement node.
         """
+        if keep_children is None:
+            keep_children = False
         parent = self._parent
         index = parent._children.index(self)
         parent._children.remove(self)
@@ -660,6 +662,12 @@ class Node:
         self.notify_destroyed()
         for ref in list(self._references):
             ref.remove_node()
+        if keep_children:
+            for ref in list(self._children):
+                node._children.append(ref)
+                ref._parent = node
+                # Dont call attach / detach, as the tree
+                # doesn't know about the new node yet...
         self.item = None
         self._parent = None
         self._root = None
