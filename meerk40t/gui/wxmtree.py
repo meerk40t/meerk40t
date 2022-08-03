@@ -281,7 +281,7 @@ class ShadowTree:
         self.iconsize = 20
         fact = get_default_scale_factor()
         if fact>1.0:
-            self.iconsize *= fact
+            self.iconsize = int(self.iconsize * fact)
 
         self.do_not_select = False
         self.was_already_expanded = []
