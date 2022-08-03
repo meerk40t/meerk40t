@@ -586,7 +586,7 @@ class Elemental(Service):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-    def get_information(self, elem, fine = True):
+    def get_information(self, elem, density = None):
         this_area = 0
         this_length = 0
         if elem is None:
@@ -595,15 +595,16 @@ class Elemental(Service):
             path = elem.as_path()
         except AttributeError:
             path = None
-        if fine:
-            interpolation = 1000
-        else:
+        if density is None:
             interpolation = 100
+        else:
+            interpolation = density
 
         subject_polygons = []
         if not path is None:
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
+
                 subj.reshape((2, interpolation))
                 s = list(map(Point, subj))
                 subject_polygons.append(s)
@@ -4636,6 +4637,9 @@ class Elemental(Service):
         @self.console_option(
             "new_area", "n", type=self.area, help=_("provide a new area to cover")
         )
+        @self.console_option(
+            "density", "d", type=int, help=_("Defines the interpolation density")
+        )
         @self.console_command(
             "area",
             help=_("provides information about/changes the area of a selected element"),
@@ -4647,9 +4651,12 @@ class Elemental(Service):
             channel,
             _,
             new_area=None,
+            density=None,
             data=None,
             **kwargs,
         ):
+            if density is None:
+                density = 200
             if new_area is None:
                 display_only = True
             else:
@@ -4665,7 +4672,8 @@ class Elemental(Service):
             total_area = 0
             if display_only:
                 channel("----------")
-                channel(_("Area values:"))
+                channel(_("Area values (Density=%d)") % density)
+
             units = ("mm", "cm", "in")
             square_unit = [0] * len(units)
             for idx, u in enumerate(units):
@@ -4674,7 +4682,7 @@ class Elemental(Service):
 
             i = 0
             for elem in data:
-                this_area, this_length = self.get_information(elem, fine = True)
+                this_area, this_length = self.get_information(elem, density=density)
 
                 if display_only:
                     name = str(elem)
