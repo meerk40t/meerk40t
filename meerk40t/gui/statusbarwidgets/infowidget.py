@@ -96,40 +96,62 @@ class InformationWidget(SimpleInfoWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.fontsize = 7
-        self.needs_generation = False
+        self._needs_generation = False
+        # We dont have a context yet...
+        self._info_active = True
 
     def Show(self, showit):
-        if self.needs_generation and showit:
+        if self._needs_generation and showit:
             self.calculate_infos()
         super().Show(showit)
+
+    def GenerateControls(self, parent, panelidx, identifier, context):
+        super().GenerateControls(parent, panelidx, identifier, context)
+        self.context.setting(bool, "statusbar_auto_statistic", True)
+        self._info_active = self.context.statusbar_auto_statistic
+
+        self.chk_active = wx.CheckBox(parent, wx.ID_ANY, "")
+        self.chk_active.SetToolTip(_("Uncheck if you don't want automatic statistic generation"))
+        self.chk_active.SetValue(self._info_active)
+        self.chk_active.Bind(wx.EVT_CHECKBOX, self.on_checkbox)
+        self.Add(self.chk_active, 0, 0, 0)
+
+    def on_checkbox(self, event):
+        self._info_active = self.chk_active.GetValue()
+        self.context.statusbar_auto_statistic = self._info_active
+        self.calculate_infos()
+        event.Skip()
 
     def GenerateInfos(self):
         if self.visible:
             self.calculate_infos()
         else:
-            self.needs_generation = True
+            self._needs_generation = True
 
     def calculate_infos(self):
-        elements = self.context.elements
-        ct = 0
-        total_area = 0
-        total_length = 0
-        _mm = float(Length("1{unit}".format(unit="mm")))
         msg = ""
-        for e in elements.flat(types=elem_nodes, emphasized=True):
-            ct += 1
-            this_area, this_length = elements.get_information(e, fine=False)
-            total_area += this_area
-            total_length += this_length
+        if self._info_active:
+            elements = self.context.elements
+            ct = 0
+            total_area = 0
+            total_length = 0
+            _mm = float(Length("1{unit}".format(unit="mm")))
+            for e in elements.flat(types=elem_nodes, emphasized=True):
+                ct += 1
+                this_area, this_length = elements.get_information(e, density=50)
+                total_area += this_area
+                total_length += this_length
 
-        if ct > 0:
-            total_area = total_area / (_mm * _mm)
-            total_length = total_length / _mm
-            msg = "# = %d, A = %.1f mm², D = %.1f mm" % (ct, total_area, total_length)
+            if ct > 0:
+                total_area = total_area / (_mm * _mm)
+                total_length = total_length / _mm
+                msg = "# = %d, A = %.1f mm², D = %.1f mm" % (ct, total_area, total_length)
+        else:
+            msg = "---"
         self.StartPopulation()
         self.SetInformation(msg)
         self.EndPopulation()
-        self.needs_generation = False
+        self._needs_generation = False
 
     def Signal(self, signal, *args):
         if signal == "emphasized":

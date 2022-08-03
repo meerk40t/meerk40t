@@ -24,7 +24,11 @@ class Wobble:
     def wobble(self, x0, y0, x1, y1):
         distance_change = abs(complex(x0, y0) - complex(x1, y1))
         positions = 1 - self._remainder
-        intervals = distance_change / self.interval
+        # Circumvent a div by zero error
+        try:
+            intervals = distance_change / self.interval
+        except ZeroDivisionError:
+            intervals = 1
         while positions <= intervals:
             amount = positions / intervals
             tx = amount * (x1 - x0) + x0
