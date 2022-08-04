@@ -9,6 +9,7 @@ import wx
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
+from .wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
@@ -154,7 +155,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
 
         sizer_3.Add((20, 20), 0, 0, 0)
 
-        self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_svg_ppi = TextCtrl(self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER)
         self.text_svg_ppi.SetMinSize((60, 23))
         self.text_svg_ppi.SetToolTip(
             _("Custom Pixels Per Inch to use when loading an SVG file")
@@ -166,7 +167,8 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
-        self.Bind(wx.EVT_TEXT, self.on_text_svg_ppi, self.text_svg_ppi)
+        self.text_svg_ppi.Bind(wx.EVT_TEXT_ENTER, self.on_text_svg_ppi)
+        self.text_svg_ppi.Bind(wx.EVT_KILL_FOCUS, self.on_text_svg_ppi)
         # end wxGlade
 
         context.elements.setting(float, "svg_ppi", 96.0)

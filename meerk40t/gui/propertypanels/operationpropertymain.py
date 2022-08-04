@@ -310,7 +310,7 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
 
-        self.text_speed = TextCtrl(self, wx.ID_ANY, "20.0", limited=True)
+        self.text_speed = TextCtrl(self, wx.ID_ANY, "20.0", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
@@ -319,7 +319,7 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
 
-        self.text_power = TextCtrl(self, wx.ID_ANY, "1000.0", limited=True)
+        self.text_power = TextCtrl(self, wx.ID_ANY, "1000.0", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
@@ -328,7 +328,7 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
 
-        self.text_frequency = TextCtrl(self, wx.ID_ANY, "20.0", limited=True)
+        self.text_frequency = TextCtrl(self, wx.ID_ANY, "20.0", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         # self.text_frequency.SetToolTip(OPERATION_SPEED_TOOLTIP)
         frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
 
@@ -336,13 +336,13 @@ class SpeedPpiPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_speed, self.text_speed)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed, self.text_speed)
-        self.Bind(wx.EVT_TEXT, self.on_text_power, self.text_power)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_power, self.text_power)
+        self.text_speed.Bind(wx.EVT_KILL_FOCUS, self.on_text_speed)
+        self.text_speed.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed)
+        self.text_power.Bind(wx.EVT_KILL_FOCUS, self.on_text_power)
+        self.text_power.Bind(wx.EVT_TEXT_ENTER, self.on_text_power)
 
-        self.Bind(wx.EVT_TEXT, self.on_text_frequency, self.text_frequency)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency, self.text_frequency)
+        self.text_frequency.Bind(wx.EVT_KILL_FOCUS, self.on_text_frequency)
+        self.text_frequency.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency)
 
         # end wxGlade
 
@@ -422,7 +422,7 @@ class PassesPanel(wx.Panel):
         self.check_passes.SetToolTip(_("Enable Operation Passes"))
         sizer_passes.Add(self.check_passes, 0, wx.EXPAND, 0)
 
-        self.text_passes = TextCtrl(self, wx.ID_ANY, "1", limited=True)
+        self.text_passes = TextCtrl(self, wx.ID_ANY, "1", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
         sizer_passes.Add(self.text_passes, 1, wx.EXPAND, 0)
 
@@ -431,7 +431,9 @@ class PassesPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
-        self.Bind(wx.EVT_TEXT, self.on_text_passes, self.text_passes)
+
+        self.text_passes.Bind(wx.EVT_KILL_FOCUS, self.on_text_passes)
+        self.text_passes.Bind(wx.EVT_TEXT_ENTER, self.on_text_passes)
         # end wxGlade
 
     def pane_hide(self):
@@ -862,7 +864,7 @@ class RasterSettingsPanel(wx.Panel):
         )
         param_sizer.Add(sizer_3, 1, wx.EXPAND, 0)
 
-        self.text_dpi = TextCtrl(self, wx.ID_ANY, "500", limited=True)
+        self.text_dpi = TextCtrl(self, wx.ID_ANY, "500", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
         sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
@@ -873,7 +875,7 @@ class RasterSettingsPanel(wx.Panel):
 
         raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
 
-        self.text_overscan = TextCtrl(self, wx.ID_ANY, "1mm", limited=True)
+        self.text_overscan = TextCtrl(self, wx.ID_ANY, "1mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
         self.text_overscan.SetToolTip(_("Overscan amount"))
         sizer_6.Add(self.text_overscan, 1, wx.EXPAND, 0)
 
@@ -919,10 +921,11 @@ class RasterSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_dpi, self.text_dpi)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi, self.text_dpi)
-        self.Bind(wx.EVT_TEXT, self.on_text_overscan, self.text_overscan)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan, self.text_overscan)
+        self.text_dpi.Bind(wx.EVT_KILL_FOCUS, self.on_text_dpi)
+        self.text_dpi.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi)
+        self.text_overscan.Bind(wx.EVT_KILL_FOCUS, self.on_text_overscan)
+        self.text_overscan.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan)
+
         self.Bind(
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
         )
@@ -967,11 +970,7 @@ class RasterSettingsPanel(wx.Panel):
         ctrl = self.text_overscan
         try:
             v = Length(ctrl.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4)
-            ctrl.SetBackgroundColour(None)
-            ctrl.Refresh()
         except ValueError:
-            ctrl.SetBackgroundColour(wx.RED)
-            ctrl.Refresh()
             return
         # print ("Start overscan=%s - target=%s" % (start_text, str(v.preferred_length)))
         value = v.preferred_length
@@ -1016,7 +1015,7 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
 
-        self.text_distance = TextCtrl(self, wx.ID_ANY, "1mm", limited=True)
+        self.text_distance = TextCtrl(self, wx.ID_ANY, "1mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
         sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
 
         sizer_angle = wx.StaticBoxSizer(
@@ -1024,7 +1023,7 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
-        self.text_angle = TextCtrl(self, wx.ID_ANY, "0deg", limited=True)
+        self.text_angle = TextCtrl(self, wx.ID_ANY, "0deg", limited=True, check="angle", style=wx.TE_PROCESS_ENTER)
         sizer_angle.Add(self.text_angle, 1, wx.EXPAND, 0)
 
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
@@ -1048,8 +1047,10 @@ class HatchSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_distance, self.text_distance)
-        self.Bind(wx.EVT_TEXT, self.on_text_angle, self.text_angle)
+        self.text_distance.Bind(wx.EVT_TEXT_ENTER, self.on_text_distance)
+        self.text_distance.Bind(wx.EVT_KILL_FOCUS, self.on_text_distance)
+        self.text_angle.Bind(wx.EVT_TEXT_ENTER, self.on_text_angle)
+        self.text_angle.Bind(wx.EVT_KILL_FOCUS, self.on_text_angle)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
@@ -1288,7 +1289,7 @@ class DwellSettingsPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Dwell Time: (ms)")), wx.HORIZONTAL
         )
 
-        self.text_dwelltime = TextCtrl(self, wx.ID_ANY, "1.0", limited=True)
+        self.text_dwelltime = TextCtrl(self, wx.ID_ANY, "1.0", limited=True, style=wx.TE_PROCESS_ENTER, check="float")
         self.text_dwelltime.SetToolTip(
             _("Dwell time (ms) at each location in the sequence")
         )
@@ -1298,7 +1299,8 @@ class DwellSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_dwelltime, self.text_dwelltime)
+        self.text_dwelltime.Bind(wx.EVT_TEXT_ENTER, self.on_text_dwelltime)
+        self.text_dwelltime.Bind(wx.EVT_KILL_FOCUS, self.on_text_dwelltime)
         # end wxGlade
 
     def pane_hide(self):
@@ -1316,12 +1318,11 @@ class DwellSettingsPanel(wx.Panel):
     ):  # wxGlade: OperationProperty.<event_handler>
         try:
             value = float(self.text_dwelltime.GetValue())
-            self.text_dwelltime.SetBackgroundColour(None)
             if self.operation.dwell_time != value:
                 self.operation.dwell_time = value
                 self.context.elements.signal("element_property_reload", self.operation, "text_dwell")
         except ValueError:
-            self.text_dwelltime.SetBackgroundColour(wx.RED)
+            pass
         event.Skip()
 
 # end of class PassesPanel

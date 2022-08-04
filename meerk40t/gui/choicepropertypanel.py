@@ -412,7 +412,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
-                control = wx.TextCtrl(self, -1)
+                control = wx.TextCtrl(self, wx.ID_ANY, style = wx.TE_PROCESS_ENTER)
                 control.SetValue(str(data))
                 control_sizer.Add(control)
 
@@ -430,7 +430,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return text
 
                 control.Bind(
-                    wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
+                    wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type)
+                )
+                control.Bind(
+                    wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
                 current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Length:
@@ -438,11 +441,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
-                control = wx.TextCtrl(self, -1)
+                control = wx.TextCtrl(self, wx.ID_ANY, style = wx.TE_PROCESS_ENTER)
                 control.SetValue(str(data))
                 control_sizer.Add(control)
 
-                def on_textbox_text(param, ctrl, obj, dtype):
+                def on_textbox_check(param, ctrl):
                     def text(event=None):
                         try:
                             v = Length(ctrl.GetValue())
@@ -452,7 +455,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                             ctrl.SetBackgroundColour(wx.RED)
                             ctrl.Refresh()
                             return
+                    return text
+
+                def on_textbox_text(param, ctrl, obj, dtype):
+                    def text(event=None):
                         try:
+                            v = Length(ctrl.GetValue())
                             data_v = v.preferred_length
                             setattr(obj, param, data_v)
                             self.context.signal(param, data_v)
@@ -463,7 +471,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return text
 
                 control.Bind(
-                    wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
+                    wx.EVT_TEXT, on_textbox_check(attr, control)
+                )
+                control.Bind(
+                    wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type)
+                )
+                control.Bind(
+                    wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
                 current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Angle:
@@ -471,11 +485,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
-                control = wx.TextCtrl(self, -1)
+                control = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
                 control.SetValue(str(data))
                 control_sizer.Add(control)
 
-                def on_textbox_text(param, ctrl, obj, dtype):
+                def on_textbox_check(param, ctrl):
                     def text(event=None):
                         try:
                             v = Angle(ctrl.GetValue(), digits=5)
@@ -485,7 +499,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                             ctrl.SetBackgroundColour(wx.RED)
                             ctrl.Refresh()
                             return
+
+                    return text
+
+                def on_textbox_text(param, ctrl, obj, dtype):
+                    def text(event=None):
                         try:
+                            v = Angle(ctrl.GetValue(), digits=5)
                             data_v = str(v)
                             setattr(obj, param, data_v)
                             self.context.signal(param, data_v)
@@ -496,7 +516,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return text
 
                 control.Bind(
-                    wx.EVT_TEXT, on_textbox_text(attr, control, obj, data_type)
+                    wx.EVT_TEXT, on_textbox_check(attr, control)
+                )
+                control.Bind(
+                    wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type)
+                )
+                control.Bind(
+                    wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
                 current_sizer.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:

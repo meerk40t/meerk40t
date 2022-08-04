@@ -59,7 +59,7 @@ class LhyAdvancedPanel(wx.Panel):
         )
         sizer_11.Add(self.check_dratio_custom, 1, 0, 0)
 
-        self.text_dratio = TextCtrl(self, wx.ID_ANY, "0.261", limited=True)
+        self.text_dratio = TextCtrl(self, wx.ID_ANY, "0.261", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_dratio.SetToolTip(OPERATION_DRATIO_TOOLTIP)
         sizer_11.Add(self.text_dratio, 1, 0, 0)
 
@@ -90,7 +90,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, "Dot Length")
         self.check_dot_length_custom.SetToolTip("Enable Dot Length")
         sizer_20.Add(self.check_dot_length_custom, 1, 0, 0)
-        self.text_dot_length = TextCtrl(self, wx.ID_ANY, "1", limited=True)
+        self.text_dot_length = TextCtrl(self, wx.ID_ANY, "1", limited=True, check="int", style=wx.TE_PROCESS_ENTER)
         self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
         sizer_20.Add(self.text_dot_length, 1, 0, 0)
 
@@ -112,8 +112,8 @@ class LhyAdvancedPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
-        self.Bind(wx.EVT_TEXT, self.on_text_dratio, self.text_dratio)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio, self.text_dratio)
+        self.text_dratio.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio)
+        self.text_dratio.Bind(wx.EVT_KILL_FOCUS, self.on_text_dratio)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel
         )
@@ -121,8 +121,8 @@ class LhyAdvancedPanel(wx.Panel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom
         )
-        self.Bind(wx.EVT_TEXT, self.on_text_dot_length, self.text_dot_length)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length, self.text_dot_length)
+        self.text_dot_length.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length)
+        self.text_dot_length.Bind(wx.EVT_KILL_FOCUS, self.on_text_dot_length)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_shift_enabled, self.check_shift_enabled
         )

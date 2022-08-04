@@ -17,8 +17,8 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.node = node
 
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
         self.button_stroke_none.name = "stroke none"
         self.button_stroke_F00 = wx.Button(self, wx.ID_ANY, "")
@@ -58,10 +58,10 @@ class PathPropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT, self.on_text_label_change, self.text_label)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change, self.text_label)
+        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
+        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
+        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
+        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F00)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_0F0)

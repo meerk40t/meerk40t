@@ -79,7 +79,7 @@ class ConfigurationUsb(wx.Panel):
         )
         sizer_serial.Add(self.check_serial_number, 0, wx.EXPAND, 0)
 
-        self.text_serial_number = TextCtrl(self, wx.ID_ANY, "")
+        self.text_serial_number = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_serial_number.SetMinSize((50, -1))
         self.text_serial_number.SetToolTip(
             _(
@@ -135,7 +135,8 @@ class ConfigurationUsb(wx.Panel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_serial_number, self.check_serial_number
         )
-        self.Bind(wx.EVT_TEXT, self.on_text_serial_number, self.text_serial_number)
+        self.text_serial_number.Bind(wx.EVT_TEXT_ENTER, self.on_text_serial_number)
+        self.text_serial_number.Bind(wx.EVT_KILL_FOCUS, self.on_text_serial_number)
         self.Bind(
             wx.EVT_CHECKBOX,
             self.on_check_limit_packet_buffer,
@@ -209,6 +210,7 @@ class ConfigurationUsb(wx.Panel):
         self.context.serial_enable = self.check_serial_number.GetValue()
 
     def on_text_serial_number(self, event):  # wxGlade: ConfigurationUsb.<event_handler>
+        event.Skip()
         self.context.serial = self.text_serial_number.GetValue()
 
 
@@ -228,7 +230,7 @@ class ConfigurationTcp(wx.Panel):
         )
         sizer_13.Add(h_sizer_y1, 3, wx.EXPAND, 0)
 
-        self.text_address = TextCtrl(self, wx.ID_ANY, "")
+        self.text_address = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_address.SetMinSize((75, -1))
         self.text_address.SetToolTip(_("IP/Host if the server computer"))
         h_sizer_y1.Add(self.text_address, 1, wx.EXPAND, 0)
@@ -238,7 +240,7 @@ class ConfigurationTcp(wx.Panel):
         )
         sizer_13.Add(sizer_port, 1, wx.EXPAND, 0)
 
-        self.text_port = TextCtrl(self, wx.ID_ANY, "", limited=True)
+        self.text_port = TextCtrl(self, wx.ID_ANY, "", limited=True, check="int", style=wx.TE_PROCESS_ENTER)
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
         sizer_port.Add(self.text_port, 1, wx.EXPAND, 0)
 
@@ -246,10 +248,10 @@ class ConfigurationTcp(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_address, self.text_address)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_address, self.text_address)
-        self.Bind(wx.EVT_TEXT, self.on_text_port, self.text_port)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_port, self.text_port)
+        self.text_address.Bind(wx.EVT_KILL_FOCUS, self.on_text_address)
+        self.text_address.Bind(wx.EVT_TEXT_ENTER, self.on_text_address)
+        self.text_port.Bind(wx.EVT_KILL_FOCUS, self.on_text_port)
+        self.text_port.Bind(wx.EVT_TEXT_ENTER, self.on_text_port)
         # end wxGlade
         self.text_port.SetValue(str(self.context.port))
         self.text_address.SetValue(self.context.address)
@@ -261,9 +263,11 @@ class ConfigurationTcp(wx.Panel):
         pass
 
     def on_text_address(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
+        event.Skip()
         self.context.address = self.text_address.GetValue()
 
     def on_text_port(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
+        event.Skip()
         try:
             self.context.port = int(self.text_port.GetValue())
         except ValueError:
@@ -291,7 +295,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_home.Add(h_sizer_x, 1, wx.EXPAND, 0)
 
-        self.text_home_x = TextCtrl(self, wx.ID_ANY, "0mm", limited=True)
+        self.text_home_x = TextCtrl(self, wx.ID_ANY, "0mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
         self.text_home_x.SetToolTip(_("Translate Home X"))
         h_sizer_x.Add(self.text_home_x, 1, wx.EXPAND, 0)
 
@@ -300,7 +304,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_home.Add(h_sizer_y, 1, wx.EXPAND, 0)
 
-        self.text_home_y = TextCtrl(self, wx.ID_ANY, "0mm", limited=True)
+        self.text_home_y = TextCtrl(self, wx.ID_ANY, "0mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
         self.text_home_y.SetToolTip(_("Translate Home Y"))
         h_sizer_y.Add(self.text_home_y, 1, wx.EXPAND, 0)
 
@@ -321,7 +325,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_bed.Add(h_sizer_wd, 1, wx.EXPAND, 0)
 
-        self.text_bedwidth = TextCtrl(self, wx.ID_ANY, "310mm", limited=True)
+        self.text_bedwidth = TextCtrl(self, wx.ID_ANY, "310mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
         self.text_bedwidth.SetToolTip(_("Width of the laser bed."))
         h_sizer_wd.Add(self.text_bedwidth, 1, wx.EXPAND, 0)
 
@@ -333,7 +337,7 @@ class ConfigurationLaserPanel(wx.Panel):
         label_3 = wx.StaticText(self, wx.ID_ANY, "")
         h_sizer_ht.Add(label_3, 0, wx.EXPAND, 0)
 
-        self.text_bedheight = TextCtrl(self, wx.ID_ANY, "210mm", limited=True)
+        self.text_bedheight = TextCtrl(self, wx.ID_ANY, "210mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
         self.text_bedheight.SetToolTip(_("Height of the laser bed."))
         h_sizer_ht.Add(self.text_bedheight, 1, wx.EXPAND, 0)
 
@@ -347,7 +351,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_scale_factors.Add(h_sizer_x_2, 1, wx.EXPAND, 0)
 
-        self.text_scale_x = TextCtrl(self, wx.ID_ANY, "1.000", limited=True)
+        self.text_scale_x = TextCtrl(self, wx.ID_ANY, "1.000", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_scale_x.SetToolTip(
             _("Scale factor for the X-axis. Board units to actual physical units.")
         )
@@ -358,7 +362,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         sizer_scale_factors.Add(h_sizer_y_2, 1, wx.EXPAND, 0)
 
-        self.text_scale_y = TextCtrl(self, wx.ID_ANY, "1.000", limited=True)
+        self.text_scale_y = TextCtrl(self, wx.ID_ANY, "1.000", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_scale_y.SetToolTip(
             _("Scale factor for the Y-axis. Board units to actual physical units.")
         )
@@ -375,15 +379,21 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_home_x, self.text_home_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_home_y, self.text_home_y)
+        self.text_home_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_x)
+        self.text_home_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_x)
+        self.text_home_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_y)
+        self.text_home_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
-        self.Bind(wx.EVT_TEXT, self.on_text_bedwidth, self.text_bedwidth)
-        self.Bind(wx.EVT_TEXT, self.on_text_bedheight, self.text_bedheight)
-        self.Bind(wx.EVT_TEXT, self.on_text_x_scale, self.text_scale_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_y_scale, self.text_scale_y)
+        self.text_bedwidth.Bind(wx.EVT_TEXT_ENTER, self.on_text_bedwidth)
+        self.text_bedwidth.Bind(wx.EVT_KILL_FOCUS, self.on_text_bedwidth)
+        self.text_bedheight.Bind(wx.EVT_TEXT_ENTER, self.on_text_bedheight)
+        self.text_bedheight.Bind(wx.EVT_KILL_FOCUS, self.on_text_bedheight)
+        self.text_scale_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_scale)
+        self.text_scale_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_scale)
+        self.text_scale_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_scale)
+        self.text_scale_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_scale)
 
     def pane_show(self):
         pass
@@ -392,28 +402,20 @@ class ConfigurationLaserPanel(wx.Panel):
         pass
 
     def on_text_home_x(self, event=None):
-        ctrl = self.text_home_x
+        event.Skip()
         try:
-            length = Length(ctrl.GetValue())
-            ctrl.SetBackgroundColour(None)
-            ctrl.Refresh()
+            length = Length(self.text_home_x.GetValue())
+            self.context.home_x = length.preferred_length
         except ValueError:
-            ctrl.SetBackgroundColour(wx.RED)
-            ctrl.Refresh()
             return
-        self.context.home_x = length.preferred_length
 
     def on_text_home_y(self, event=None):
-        ctrl = self.text_home_y
+        event.Skip()
         try:
-            length = Length(ctrl.GetValue())
-            ctrl.SetBackgroundColour(None)
-            ctrl.Refresh()
+            length = Length(self.text_home_y.GetValue())
+            self.context.home_y = length.preferred_length
         except ValueError:
-            ctrl.SetBackgroundColour(wx.RED)
-            ctrl.Refresh()
             return
-        self.context.home_y = length.preferred_length
 
     def on_button_set_home_current(self, event=None):
         current_x, current_y = self.context.device.current
@@ -423,14 +425,11 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_home_y.SetValue(self.context.home_y)
 
     def on_text_bedwidth(self, event=None):
+        event.Skip()
         ctrl = self.text_bedwidth
         try:
             bedwidth = Length(ctrl.GetValue())
-            ctrl.SetBackgroundColour(None)
-            ctrl.Refresh()
         except ValueError:
-            ctrl.SetBackgroundColour(wx.RED)
-            ctrl.Refresh()
             return
 
         self.context.device.width = bedwidth.preferred_length
@@ -442,14 +441,11 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context("viewport_update\n")
 
     def on_text_bedheight(self, event=None):
+        event.Skip()
         ctrl = self.text_bedheight
         try:
             bedheight = Length(ctrl.GetValue())
-            ctrl.SetBackgroundColour(None)
-            ctrl.Refresh()
         except ValueError:
-            ctrl.SetBackgroundColour(wx.RED)
-            ctrl.Refresh()
             return
         self.context.device.height = bedheight.preferred_length
         self.context.device.bedheight = bedheight.preferred_length
@@ -460,36 +456,32 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context("viewport_update\n")
 
     def on_text_x_scale(self, event=None):
+        event.Skip()
         try:
             self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
             self.context.device.user_scale_y = float(self.text_scale_y.GetValue())
-            self.text_scale_x.SetBackgroundColour(None)
-            self.text_scale_x.Refresh()
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
             self.context.device.realize()
             self.context("viewport_update\n")
         except ValueError:
-            self.text_scale_x.SetBackgroundColour(wx.RED)
-            self.text_scale_x.Refresh()
+            pass
 
     def on_text_y_scale(self, event=None):
+        event.Skip()
         try:
             self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
             self.context.device.user_scale_y = float(self.text_scale_y.GetValue())
             self.context.device.scale_x = self.context.device.user_scale_x
             self.context.device.scale_y = self.context.device.user_scale_y
-            self.text_scale_y.SetBackgroundColour(None)
-            self.text_scale_y.Refresh()
             self.context.signal(
                 "scale_step", (self.context.device.scale_x, self.context.device.scale_y)
             )
             self.context.device.realize()
             self.context("viewport_update\n")
         except ValueError:
-            self.text_scale_y.SetBackgroundColour(wx.RED)
-            self.text_scale_y.Refresh()
+            pass
 
 
 class ConfigurationInterfacePanel(ScrolledPanel):
@@ -504,7 +496,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         sizer_name = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Device Name")), wx.HORIZONTAL
         )
-        self.text_device_label = TextCtrl(self, wx.ID_ANY, "")
+        self.text_device_label = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_device_label.SetToolTip(
             _("The internal label to be used for this device")
         )
@@ -622,7 +614,8 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_device_label, self.text_device_label)
+        self.text_device_label.Bind(wx.EVT_TEXT_ENTER, self.on_device_label)
+        self.text_device_label.Bind(wx.EVT_KILL_FOCUS, self.on_device_label)
         self.Bind(wx.EVT_COMBOBOX, self.on_combobox_boardtype, self.combobox_board)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_flip_x, self.checkbox_flip_x)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
@@ -797,7 +790,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         h_sizer_y3.Add(h_sizer_y5, 0, wx.EXPAND, 0)
 
-        self.text_minimum_jog_distance = TextCtrl(self, wx.ID_ANY, "", limited=True)
+        self.text_minimum_jog_distance = TextCtrl(self, wx.ID_ANY, "", limited=True, style=wx.TE_PROCESS_ENTER)
         h_sizer_y5.Add(self.text_minimum_jog_distance, 1, wx.EXPAND, 0)
 
         self.radio_box_jog_method = wx.RadioBox(
@@ -831,7 +824,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_rapid_override.Add(sizer_36, 0, wx.EXPAND, 0)
 
-        self.text_rapid_x = TextCtrl(self, wx.ID_ANY, "", limited=True)
+        self.text_rapid_x = TextCtrl(self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         sizer_36.Add(self.text_rapid_x, 1, wx.EXPAND, 0)
 
         label_2 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
@@ -842,7 +835,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_rapid_override.Add(sizer_35, 0, wx.EXPAND, 0)
 
-        self.text_rapid_y = TextCtrl(self, wx.ID_ANY, "", limited=True)
+        self.text_rapid_y = TextCtrl(self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         sizer_35.Add(self.text_rapid_y, 1, wx.EXPAND, 0)
 
         label_4 = wx.StaticText(self, wx.ID_ANY, _("mm/s"))
@@ -882,7 +875,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         h_sizer_y9.Add(self.check_scale_speed, 1, wx.EXPAND, 0)
 
-        self.text_speed_scale_amount = TextCtrl(self, wx.ID_ANY, "1.000", limited=True)
+        self.text_speed_scale_amount = TextCtrl(self, wx.ID_ANY, "1.000", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_speed_scale_amount.SetToolTip(
             _(
                 "Scales the machine's speed ratio so that rated speeds speeds multiplied by this ratio."
@@ -901,7 +894,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_30.Add(self.check_max_speed_vector, 1, wx.EXPAND, 0)
 
-        self.text_max_speed_vector = TextCtrl(self, wx.ID_ANY, "100", limited=True)
+        self.text_max_speed_vector = TextCtrl(self, wx.ID_ANY, "100", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_max_speed_vector.SetToolTip(
             _("maximum speed at which all greater speeds are limited")
         )
@@ -918,7 +911,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_31.Add(self.check_max_speed_raster, 1, wx.EXPAND, 0)
 
-        self.text_max_speed_raster = TextCtrl(self, wx.ID_ANY, "750", limited=True)
+        self.text_max_speed_raster = TextCtrl(self, wx.ID_ANY, "750", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
         self.text_max_speed_raster.SetToolTip(
             _("maximum speed at which all greater speeds are limited")
         )
@@ -938,30 +931,30 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_rapid_between, self.check_rapid_moves_between
         )
-        self.Bind(
-            wx.EVT_TEXT, self.on_text_min_jog_distance, self.text_minimum_jog_distance
-        )
+        self.text_minimum_jog_distance.Bind(wx.EVT_TEXT_ENTER, self.on_text_min_jog_distance)
+        self.text_minimum_jog_distance.Bind(wx.EVT_KILL_FOCUS, self.on_text_min_jog_distance)
         self.Bind(wx.EVT_RADIOBOX, self.on_jog_method_radio, self.radio_box_jog_method)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_override_rapid, self.check_override_rapid
         )
-        self.Bind(wx.EVT_TEXT, self.on_text_rapid_x, self.text_rapid_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_rapid_y, self.text_rapid_y)
+        self.text_rapid_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_rapid_x)
+        self.text_rapid_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_rapid_x)
+        self.text_rapid_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_rapid_y)
+        self.text_rapid_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_rapid_y)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_fix_speeds, self.check_fix_speeds)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_scale_speed, self.check_scale_speed)
-        self.Bind(wx.EVT_TEXT, self.on_text_speed_scale, self.text_speed_scale_amount)
+        self.text_speed_scale_amount.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed_scale)
+        self.text_speed_scale_amount.Bind(wx.EVT_KILL_FOCUS, self.on_text_speed_scale)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_max_speed_vector, self.check_max_speed_vector
         )
-        self.Bind(
-            wx.EVT_TEXT, self.on_text_speed_max_vector, self.text_max_speed_vector
-        )
+        self.text_max_speed_vector.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed_max_vector)
+        self.text_max_speed_vector.Bind(wx.EVT_KILL_FOCUS, self.on_text_speed_max_vector)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_max_speed_raster, self.check_max_speed_raster
         )
-        self.Bind(
-            wx.EVT_TEXT, self.on_text_speed_max_raster, self.text_max_speed_raster
-        )
+        self.text_max_speed_raster.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed_max_raster)
+        self.text_max_speed_raster.Bind(wx.EVT_KILL_FOCUS, self.on_text_speed_max_raster)
         # end wxGlade
 
         self.check_autolock.SetValue(self.context.autolock)
@@ -1057,6 +1050,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_rapid_x(
         self, event
     ):
+        event.Skip()
         try:
             self.context.rapid_override_speed_x = float(self.text_rapid_x.GetValue())
         except ValueError:
@@ -1065,6 +1059,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_rapid_y(
         self, event
     ):
+        event.Skip()
         try:
             self.context.rapid_override_speed_y = float(self.text_rapid_y.GetValue())
         except ValueError:
@@ -1078,6 +1073,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_speed_scale(
         self, event
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+        event.Skip()
         try:
             self.context.scale_speed = float(self.text_speed_scale_amount.GetValue())
         except ValueError:
@@ -1091,6 +1087,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_speed_max_vector(
         self, event
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+        event.Skip()
         try:
             self.context.max_speed_vector = float(self.text_max_speed_vector.GetValue())
         except ValueError:
@@ -1104,6 +1101,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_speed_max_raster(
         self, event
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+        event.Skip()
         try:
             self.context.max_speed_raster = float(self.text_max_speed_raster.GetValue())
         except ValueError:

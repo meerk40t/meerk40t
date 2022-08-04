@@ -2,6 +2,7 @@ import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
+from ..wxutils import TextCtrl
 from ...core.units import Length
 _ = wx.GetTranslation
 
@@ -13,14 +14,14 @@ class ImagePropertyPanel(ScrolledPanel):
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.node = node
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
-        self.text_dpi = wx.TextCtrl(self, wx.ID_ANY, "500")
-        self.text_x = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_y = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_height = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_dpi = TextCtrl(self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float")
+        self.text_x = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
+        self.text_y = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
+        self.text_width = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
+        self.text_height = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
 
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
@@ -67,26 +68,19 @@ class ImagePropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT, self.on_text_label_change, self.text_label)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change, self.text_label)
+        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
+        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
+        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
+        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither
         )
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
 
-        self.Bind(wx.EVT_TEXT, self.on_text_dpi, self.text_dpi)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi, self.text_dpi)
-        self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_x, self.text_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y, self.text_y)
-        self.Bind(wx.EVT_TEXT, self.on_text_width, self.text_width)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_width, self.text_width)
-        self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
+        self.text_dpi.Bind(wx.EVT_KILL_FOCUS, self.on_text_dpi)
+        self.text_dpi.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi)
+
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_invert_grayscale, self.check_invert_grayscale
         )
@@ -160,13 +154,9 @@ class ImagePropertyPanel(ScrolledPanel):
 
     def __set_properties(self):
         self.text_x.SetToolTip(_("X property of image"))
-        self.text_x.Enable(False)
         self.text_y.SetToolTip(_("Y property of image"))
-        self.text_y.Enable(False)
         self.text_width.SetToolTip(_("Width property of image"))
-        self.text_width.Enable(False)
         self.text_height.SetToolTip(_("Height property of image"))
-        self.text_height.Enable(False)
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
@@ -267,6 +257,11 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_grayscale.Add(sizer_rg, 5, wx.EXPAND, 0)
         sizer_grayscale.Add(sizer_bl, 5, wx.EXPAND, 0)
 
+        self.text_grayscale_red.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_green.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_blue.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_lightness.SetMaxSize(wx.Size(70, -1))
+
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.Layout()
@@ -290,18 +285,6 @@ class ImagePropertyPanel(ScrolledPanel):
     def on_text_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
-
-    def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
-
-    def on_text_y(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
-
-    def on_text_width(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
-
-    def on_text_height(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
 
     def on_check_enable_dither(
         self, event=None

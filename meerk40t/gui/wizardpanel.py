@@ -81,22 +81,23 @@ class WizardPanel(wx.Panel):
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
-                control = wx.TextCtrl(self, -1)
+                control = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER)
                 control.SetValue(str(data))
                 control_sizer.Add(control)
 
-                def on_textbox_text(param, ctrl, obj):
+                def on_textbox_text(param, ctrl, obj, dtype):
                     def text(event=None):
                         v = ctrl.GetValue()
                         try:
-                            setattr(obj, param, data_type(v))
+                            setattr(obj, param, dtype(v))
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
 
                     return text
 
-                control.Bind(wx.EVT_TEXT, on_textbox_text(attr, control, obj))
+                control.Bind(wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type))
+                control.Bind(wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type))
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:
                 control_sizer = wx.StaticBoxSizer(
@@ -150,7 +151,7 @@ class TreeSelectionPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
 
         main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, selection_text), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, ""), wx.VERTICAL
         )
 
         self.selected_tree = wx.TreeCtrl(self, wx.ID_ANY)
