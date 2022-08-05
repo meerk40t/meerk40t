@@ -588,6 +588,12 @@ class QuadCut(CutObject):
         self.raster_step = 0
         self._control = control_point
 
+    def __repr__(self):
+        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.implicit_passes})"
+
     def c(self):
         return self._control
 
@@ -640,6 +646,12 @@ class CubicCut(CutObject):
         self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
+
+    def __repr__(self):
+        return f'CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, passes={self.implicit_passes})"
 
     def c1(self):
         return self._control1 if self.normal else self._control2
