@@ -1,5 +1,6 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
+
 # from ...svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects_50
 from ..mwindow import MWindow

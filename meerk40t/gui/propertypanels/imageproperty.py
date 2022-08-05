@@ -4,6 +4,7 @@ from ..icons import icons8_image_50
 from ..mwindow import MWindow
 from ..wxutils import TextCtrl
 from ...core.units import Length
+
 _ = wx.GetTranslation
 
 
@@ -17,11 +18,17 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
-        self.text_dpi = TextCtrl(self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float")
+        self.text_dpi = TextCtrl(
+            self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float"
+        )
         self.text_x = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
         self.text_y = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
-        self.text_width = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
-        self.text_height = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
+        self.text_width = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True
+        )
+        self.text_height = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True
+        )
 
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
@@ -143,10 +150,18 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi.SetValue(str(node.dpi))
         try:
             bounds = node.bounds
-            self.text_x.SetValue(Length(amount=bounds[0], unitless=1, digits=2).length_mm)
-            self.text_y.SetValue(Length(amount=bounds[1], unitless=1, digits=2).length_mm)
-            self.text_width.SetValue(Length(amount=bounds[2]-bounds[0], unitless=1, digits=2).length_mm)
-            self.text_height.SetValue(Length(amount=bounds[3]-bounds[1], unitless=1, digits=2).length_mm)
+            self.text_x.SetValue(
+                Length(amount=bounds[0], unitless=1, digits=2).length_mm
+            )
+            self.text_y.SetValue(
+                Length(amount=bounds[1], unitless=1, digits=2).length_mm
+            )
+            self.text_width.SetValue(
+                Length(amount=bounds[2] - bounds[0], unitless=1, digits=2).length_mm
+            )
+            self.text_height.SetValue(
+                Length(amount=bounds[3] - bounds[1], unitless=1, digits=2).length_mm
+            )
         except AttributeError:
             pass
         self.check_enable_dither.SetValue(node.dither)

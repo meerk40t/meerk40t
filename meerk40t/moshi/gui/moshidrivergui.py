@@ -19,8 +19,12 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
-        self.text_home_x = TextCtrl(self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER)
-        self.text_home_y = TextCtrl(self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER)
+        self.text_home_x = TextCtrl(
+            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_home_y = TextCtrl(
+            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+        )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
         # self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
 

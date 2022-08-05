@@ -96,8 +96,12 @@ class WizardPanel(wx.Panel):
 
                     return text
 
-                control.Bind(wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type))
-                control.Bind(wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type))
+                control.Bind(
+                    wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type)
+                )
+                control.Bind(
+                    wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
+                )
                 sizer_main.Add(control_sizer, 0, wx.EXPAND, 0)
             elif data_type == Color:
                 control_sizer = wx.StaticBoxSizer(
@@ -150,9 +154,7 @@ class TreeSelectionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
 
-        main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, ""), wx.VERTICAL
-        )
+        main_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, ""), wx.VERTICAL)
 
         self.selected_tree = wx.TreeCtrl(self, wx.ID_ANY)
         main_sizer.Add(self.controller_tree, 7, wx.EXPAND, 0)

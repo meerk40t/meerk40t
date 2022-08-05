@@ -100,8 +100,12 @@ class LayerSettingPanel(wx.Panel):
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
         self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
         layer_sizer.Add(self.button_layer_color, 0, wx.EXPAND, 0)
-        h_classify_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Classification")), wx.HORIZONTAL)
-        h_property_sizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Properties")), wx.HORIZONTAL)
+        h_classify_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Classification")), wx.HORIZONTAL
+        )
+        h_property_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Properties")), wx.HORIZONTAL
+        )
 
         try:
             self.has_stroke = self.operation.has_color_attribute("stroke")
@@ -127,8 +131,9 @@ class LayerSettingPanel(wx.Panel):
             self.has_stop = self.operation.has_color_attribute("stopop")
             self.checkbox_stop = wx.CheckBox(self, wx.ID_ANY, _("Stop"))
             self.checkbox_stop.SetToolTip(
-                _("If active, then this op will prevent further classification") + "\n" +
-                _("from other ops if it could classify an element by itself.")
+                _("If active, then this op will prevent further classification")
+                + "\n"
+                + _("from other ops if it could classify an element by itself.")
             )
             self.checkbox_stop.SetValue(1 if self.has_stop else 0)
             h_classify_sizer.Add(self.checkbox_stop, 1, 0, 0)
@@ -136,7 +141,11 @@ class LayerSettingPanel(wx.Panel):
         except AttributeError:
             self.has_stop = None
 
-        if self.has_fill is not None or self.has_stroke is not None or self.has_stop is not None:
+        if (
+            self.has_fill is not None
+            or self.has_stroke is not None
+            or self.has_stop is not None
+        ):
             layer_sizer.Add(h_classify_sizer, 1, wx.EXPAND, 0)
 
         # self.combo_type = wx.ComboBox(
@@ -208,12 +217,16 @@ class LayerSettingPanel(wx.Panel):
             self.checkbox_default.SetValue(self.operation.default)
         try:
             if self.has_fill:
-                self.checkbox_fill.SetValue(1 if self.operation.has_color_attribute("fill") else 0)
+                self.checkbox_fill.SetValue(
+                    1 if self.operation.has_color_attribute("fill") else 0
+                )
         except AttributeError:
             pass
         try:
             if self.has_stroke:
-                self.checkbox_stroke.SetValue(1 if self.operation.has_color_attribute("stroke") else 0)
+                self.checkbox_stroke.SetValue(
+                    1 if self.operation.has_color_attribute("stroke") else 0
+                )
         except AttributeError:
             pass
         try:
@@ -237,7 +250,9 @@ class LayerSettingPanel(wx.Panel):
             self.button_layer_color.SetBackgroundColour(
                 wx.Colour(swizzlecolor(self.operation.color))
             )
-        self.context.elements.signal("element_property_reload", self.operation, "button_layer")
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "button_layer"
+        )
 
     # def on_combo_operation(
     #     self, event=None
@@ -261,19 +276,25 @@ class LayerSettingPanel(wx.Panel):
     def on_check_output(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.output != bool(self.checkbox_output.GetValue()):
             self.operation.output = bool(self.checkbox_output.GetValue())
-            self.context.elements.signal("element_property_reload", self.operation, "check_output")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "check_output"
+            )
 
     def on_check_default(self, event=None):
         if self.operation.default != bool(self.checkbox_default.GetValue()):
             self.operation.default = bool(self.checkbox_default.GetValue())
-            self.context.elements.signal("element_property_reload", self.operation, "check_default")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "check_default"
+            )
 
     def on_check_fill(self, event=None):
         if self.checkbox_fill.GetValue():
             self.operation.add_color_attribute("fill")
         else:
             self.operation.remove_color_attribute("fill")
-        self.context.elements.signal("element_property_reload", self.operation, "check_fill")
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "check_fill"
+        )
         event.Skip()
 
     def on_check_stroke(self, event=None):
@@ -281,7 +302,9 @@ class LayerSettingPanel(wx.Panel):
             self.operation.add_color_attribute("stroke")
         else:
             self.operation.remove_color_attribute("stroke")
-        self.context.elements.signal("element_property_reload", self.operation, "check_stroke")
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "check_stroke"
+        )
         event.Skip()
 
     def on_check_stop(self, event=None):
@@ -289,8 +312,11 @@ class LayerSettingPanel(wx.Panel):
             self.operation.stopop = True
         else:
             self.operation.stopop = False
-        self.context.elements.signal("element_property_reload", self.operation, "check_stopop")
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "check_stopop"
+        )
         event.Skip()
+
 
 # end of class LayerSettingPanel
 
@@ -310,7 +336,14 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(speed_sizer, 1, wx.EXPAND, 0)
 
-        self.text_speed = TextCtrl(self, wx.ID_ANY, "20.0", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
+        self.text_speed = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "20.0",
+            limited=True,
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
+        )
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
@@ -319,7 +352,14 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(power_sizer, 1, wx.EXPAND, 0)
 
-        self.text_power = TextCtrl(self, wx.ID_ANY, "1000.0", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
+        self.text_power = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "1000.0",
+            limited=True,
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
+        )
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
@@ -328,7 +368,14 @@ class SpeedPpiPanel(wx.Panel):
         )
         speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
 
-        self.text_frequency = TextCtrl(self, wx.ID_ANY, "20.0", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
+        self.text_frequency = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "20.0",
+            limited=True,
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
+        )
         # self.text_frequency.SetToolTip(OPERATION_SPEED_TOOLTIP)
         frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
 
@@ -367,7 +414,9 @@ class SpeedPpiPanel(wx.Panel):
             value = float(self.text_speed.GetValue())
             if self.operation.speed != value:
                 self.operation.speed = value
-                self.context.elements.signal("element_property_reload", self.operation, "text_speed")
+                self.context.elements.signal(
+                    "element_property_reload", self.operation, "text_speed"
+                )
         except ValueError:
             pass
         event.Skip()
@@ -379,7 +428,9 @@ class SpeedPpiPanel(wx.Panel):
             value = float(self.text_frequency.GetValue())
             if self.operation.frequency != value:
                 self.operation.frequency = value
-                self.context.elements.signal("element_property_reload", self.operation, "text_frquency")
+                self.context.elements.signal(
+                    "element_property_reload", self.operation, "text_frquency"
+                )
         except ValueError:
             pass
         event.Skip()
@@ -397,7 +448,9 @@ class SpeedPpiPanel(wx.Panel):
             if self.operation.power != value:
                 self.operation.power = value
                 self.update_power_label()
-                self.context.elements.signal("element_property_reload", self.operation, "text_power")
+                self.context.elements.signal(
+                    "element_property_reload", self.operation, "text_power"
+                )
         except ValueError:
             return
         event.Skip()
@@ -422,7 +475,9 @@ class PassesPanel(wx.Panel):
         self.check_passes.SetToolTip(_("Enable Operation Passes"))
         sizer_passes.Add(self.check_passes, 0, wx.EXPAND, 0)
 
-        self.text_passes = TextCtrl(self, wx.ID_ANY, "1", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
+        self.text_passes = TextCtrl(
+            self, wx.ID_ANY, "1", limited=True, check="float", style=wx.TE_PROCESS_ENTER
+        )
         self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
         sizer_passes.Add(self.text_passes, 1, wx.EXPAND, 0)
 
@@ -455,7 +510,9 @@ class PassesPanel(wx.Panel):
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
         self.operation.passes_custom = bool(on)
-        self.context.elements.signal("element_property_reload", self.operation, "check_passes")
+        self.context.elements.signal(
+            "element_property_reload", self.operation, "check_passes"
+        )
         event.Skip()
 
     def on_text_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
@@ -463,12 +520,16 @@ class PassesPanel(wx.Panel):
             value = int(self.text_passes.GetValue())
             if self.operation.passes != value:
                 self.operation.passes = value
-                self.context.elements.signal("element_property_reload", self.operation, "text_Passes")
+                self.context.elements.signal(
+                    "element_property_reload", self.operation, "text_Passes"
+                )
         except ValueError:
             pass
         event.Skip()
 
+
 # end of class PassesPanel
+
 
 class InfoPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -495,7 +556,9 @@ class InfoPanel(wx.Panel):
         self.text_time = wx.TextCtrl(self, wx.ID_ANY, "---", style=wx.TE_READONLY)
         self.text_time.SetMinSize((55, -1))
         self.text_time.SetMaxSize((100, -1))
-        self.text_children.SetToolTip(_("How many elements does this operation contain"))
+        self.text_children.SetToolTip(
+            _("How many elements does this operation contain")
+        )
         self.text_time.SetToolTip(_("Estimated time for execution (hh:mm:ss)"))
 
         sizer_children.Add(self.text_children, 1, wx.EXPAND, 0)
@@ -532,6 +595,7 @@ class InfoPanel(wx.Panel):
 
 
 # end of class InfoPanel
+
 
 class PanelStartPreference(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -825,24 +889,33 @@ class PanelStartPreference(wx.Panel):
     def on_slider_top(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.raster_preference_top != self.slider_top.GetValue() - 1:
             self.operation.raster_preference_top = self.slider_top.GetValue() - 1
-            self.context.elements.signal("element_property_reload", self.operation, "slider_top")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "slider_top"
+            )
 
     def on_slider_left(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.raster_preference_left != self.slider_left.GetValue() - 1:
             self.operation.raster_preference_left = self.slider_left.GetValue() - 1
-            self.context.elements.signal("element_property_reload", self.operation, "slider_left")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "slider_left"
+            )
 
     def on_slider_right(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.raster_preference_right != self.slider_right.GetValue() - 1:
             self.operation.raster_preference_right = self.slider_right.GetValue() - 1
-            self.context.elements.signal("element_property_reload", self.operation, "slider_right")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "slider_right"
+            )
 
     def on_slider_bottom(
         self, event=None
     ):  # wxGlade: OperationProperty.<event_handler>
         if self.operation.raster_preference_bottom != self.slider_bottom.GetValue() - 1:
             self.operation.raster_preference_bottom = self.slider_bottom.GetValue() - 1
-            self.context.elements.signal("element_property_reload", self.operation, "slider_bottom")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "slider_bottom"
+            )
+
 
 # end of class PanelStartPreference
 
@@ -864,7 +937,14 @@ class RasterSettingsPanel(wx.Panel):
         )
         param_sizer.Add(sizer_3, 1, wx.EXPAND, 0)
 
-        self.text_dpi = TextCtrl(self, wx.ID_ANY, "500", limited=True, check="float", style=wx.TE_PROCESS_ENTER)
+        self.text_dpi = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "500",
+            limited=True,
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
+        )
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
         sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
@@ -875,7 +955,14 @@ class RasterSettingsPanel(wx.Panel):
 
         raster_sizer.Add(param_sizer, 0, wx.EXPAND, 0)
 
-        self.text_overscan = TextCtrl(self, wx.ID_ANY, "1mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
+        self.text_overscan = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "1mm",
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
         self.text_overscan.SetToolTip(_("Overscan amount"))
         sizer_6.Add(self.text_overscan, 1, wx.EXPAND, 0)
 
@@ -960,7 +1047,9 @@ class RasterSettingsPanel(wx.Panel):
             value = int(self.text_dpi.GetValue())
             if self.operation.dpi != value:
                 self.operation.dpi = value
-                self.context.signal("element_property_reload", self.operation, "text_dpi")
+                self.context.signal(
+                    "element_property_reload", self.operation, "text_dpi"
+                )
         except ValueError:
             pass
         event.Skip()
@@ -969,7 +1058,9 @@ class RasterSettingsPanel(wx.Panel):
         start_text = self.text_overscan.GetValue()
         ctrl = self.text_overscan
         try:
-            v = Length(ctrl.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4)
+            v = Length(
+                ctrl.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4
+            )
         except ValueError:
             return
         # print ("Start overscan=%s - target=%s" % (start_text, str(v.preferred_length)))
@@ -978,20 +1069,29 @@ class RasterSettingsPanel(wx.Panel):
             value = 0
         if self.operation.overscan != value:
             self.operation.overscan = value
-            self.context.elements.signal("element_property_reload", self.operation, "text_overscan")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "text_overscan"
+            )
         event.Skip()
 
     def on_combo_raster_direction(self, event=None):
-        if self.operation.raster_direction != self.combo_raster_direction.GetSelection():
+        if (
+            self.operation.raster_direction
+            != self.combo_raster_direction.GetSelection()
+        ):
             self.operation.raster_direction = self.combo_raster_direction.GetSelection()
             self.context.raster_direction = self.operation.raster_direction
-            self.context.elements.signal("element_property_reload", self.operation, "combo_raster")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "combo_raster"
+            )
         event.Skip()
 
     def on_radio_directional(self, event=None):
         if self.operation.raster_swing != self.radio_directional_raster.GetSelection():
             self.operation.raster_swing = self.radio_directional_raster.GetSelection()
-            self.context.elements.signal("element_property_reload", self.operation, "radio_direct")
+            self.context.elements.signal(
+                "element_property_reload", self.operation, "radio_direct"
+            )
         event.Skip()
 
 
@@ -1015,7 +1115,14 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_distance, 0, wx.EXPAND, 0)
 
-        self.text_distance = TextCtrl(self, wx.ID_ANY, "1mm", limited=True, check="length", style=wx.TE_PROCESS_ENTER)
+        self.text_distance = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "1mm",
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
         sizer_distance.Add(self.text_distance, 1, wx.EXPAND, 0)
 
         sizer_angle = wx.StaticBoxSizer(
@@ -1023,7 +1130,14 @@ class HatchSettingsPanel(wx.Panel):
         )
         raster_sizer.Add(sizer_angle, 1, wx.EXPAND, 0)
 
-        self.text_angle = TextCtrl(self, wx.ID_ANY, "0deg", limited=True, check="angle", style=wx.TE_PROCESS_ENTER)
+        self.text_angle = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "0deg",
+            limited=True,
+            check="angle",
+            style=wx.TE_PROCESS_ENTER,
+        )
         sizer_angle.Add(self.text_angle, 1, wx.EXPAND, 0)
 
         self.slider_angle = wx.Slider(self, wx.ID_ANY, 0, 0, 360)
@@ -1289,7 +1403,14 @@ class DwellSettingsPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Dwell Time: (ms)")), wx.HORIZONTAL
         )
 
-        self.text_dwelltime = TextCtrl(self, wx.ID_ANY, "1.0", limited=True, style=wx.TE_PROCESS_ENTER, check="float")
+        self.text_dwelltime = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "1.0",
+            limited=True,
+            style=wx.TE_PROCESS_ENTER,
+            check="float",
+        )
         self.text_dwelltime.SetToolTip(
             _("Dwell time (ms) at each location in the sequence")
         )
@@ -1320,10 +1441,13 @@ class DwellSettingsPanel(wx.Panel):
             value = float(self.text_dwelltime.GetValue())
             if self.operation.dwell_time != value:
                 self.operation.dwell_time = value
-                self.context.elements.signal("element_property_reload", self.operation, "text_dwell")
+                self.context.elements.signal(
+                    "element_property_reload", self.operation, "text_dwell"
+                )
         except ValueError:
             pass
         event.Skip()
+
 
 # end of class PassesPanel
 
@@ -1434,5 +1558,6 @@ class ParameterPanel(ScrolledPanel):
         self.hatch_panel.pane_show()
         self.dwell_panel.pane_show()
         self.info_panel.pane_show()
+
 
 # end of class ParameterPanel

@@ -161,15 +161,15 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(max(3*iconsize, 3*57), 3*iconsize + dy)
-        .FloatingSize(max(3*iconsize, 3*57), 3*iconsize + dy)
+        .MinSize(max(3 * iconsize, 3 * 57), 3 * iconsize + dy)
+        .FloatingSize(max(3 * iconsize, 3 * 57), 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = max(3*iconsize, 3*57)
+    pane.dock_proportion = max(3 * iconsize, 3 * 57)
     pane.control = panel
     pane.submenu = _("Editing")
 
@@ -931,8 +931,22 @@ class MovePanel(wx.Panel):
         )
         units = self.context.units_name
         default_pos = f"0{units}"
-        self.text_position_x = TextCtrl(self, wx.ID_ANY, default_pos, limited=True, check="length", style=wx.TE_PROCESS_ENTER)
-        self.text_position_y = TextCtrl(self, wx.ID_ANY, default_pos, limited=True, check="length", style=wx.TE_PROCESS_ENTER)
+        self.text_position_x = TextCtrl(
+            self,
+            wx.ID_ANY,
+            default_pos,
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_position_y = TextCtrl(
+            self,
+            wx.ID_ANY,
+            default_pos,
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -981,7 +995,6 @@ class MovePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
-
 
     def on_button_navigate_move_to(
         self, event=None
@@ -1281,6 +1294,7 @@ class SizePanel(wx.Panel):
             return
         event.Skip()
 
+
 class Transform(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: Transform.__init__
@@ -1315,22 +1329,52 @@ class Transform(wx.Panel):
             self, wx.ID_ANY, icons8_rotate_right_50.GetBitmap()
         )
         self.text_a = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000", check="percent", limited=True
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="1.000000",
+            check="percent",
+            limited=True,
         )
         self.text_d = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000", check="percent", limited=True
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="1.000000",
+            check="percent",
+            limited=True,
         )
         self.text_c = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000", check="angle", limited=True
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.000000",
+            check="angle",
+            limited=True,
         )
         self.text_b = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000", check="angle", limited=True
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.000000",
+            check="angle",
+            limited=True,
         )
         self.text_e = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0", check="float", limited=True
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.0",
+            check="float",
+            limited=True,
         )
         self.text_f = TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0", check="float", limited=True
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.0",
+            check="float",
+            limited=True,
         )
 
         self.__set_properties()
@@ -1756,7 +1800,6 @@ class NavigationPanel(wx.Panel):
         self.context = context
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-
 
         pulse_and_move_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_panels_sizer = wx.BoxSizer(wx.HORIZONTAL)

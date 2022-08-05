@@ -38,7 +38,7 @@ class ConsolePropertiesPanel(wx.Panel):
             self,
             wx.ID_ANY,
             "Command text",
-            style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP ,
+            style=wx.TE_BESTWRAP | wx.TE_MULTILINE | wx.TE_WORDWRAP,
         )
 
         self.__do_layout()

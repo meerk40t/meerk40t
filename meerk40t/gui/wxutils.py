@@ -205,9 +205,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                 else:
                     kind = wx.ITEM_NORMAL
                     check = None
-                item = menu_context.Append(
-                    wx.ID_ANY, func.real_name, func.help, kind
-                )
+                item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
                 if check is not None:
                     item.Check(check)
                 if func.enabled:
@@ -270,9 +268,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             else:
                 kind = wx.ITEM_NORMAL
                 check = None
-            item = menu_context.Append(
-                wx.ID_ANY, func.real_name, func.help, kind
-            )
+            item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
             if check is not None:
                 item.Check(check)
             if func.enabled:
@@ -322,11 +318,33 @@ def create_menu(gui, node, elements):
         gui.PopupMenu(menu)
         menu.Destroy()
 
+
 class TextCtrl(wx.TextCtrl):
-# Just to add someof the more common things we need, i.e. smaller default size...
-#
-    def __init__(self, parent, id=wx.ID_ANY, value="", pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, validator=wx.DefaultValidator, name="", check="", limited=False):
-        super().__init__(parent, id=id, value=value, pos=pos, size=size, style=style, validator=validator, name=name)
+    # Just to add someof the more common things we need, i.e. smaller default size...
+    #
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        value="",
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        style=0,
+        validator=wx.DefaultValidator,
+        name="",
+        check="",
+        limited=False,
+    ):
+        super().__init__(
+            parent,
+            id=id,
+            value=value,
+            pos=pos,
+            size=size,
+            style=style,
+            validator=validator,
+            name=name,
+        )
         self.SetMinSize(wx.Size(35, -1))
         if limited:
             self.SetMaxSize(wx.Size(100, -1))
@@ -360,6 +378,7 @@ class TextCtrl(wx.TextCtrl):
         except ValueError:
             self.SetBackgroundColour(wx.RED)
             self.Refresh()
+
 
 WX_METAKEYS = [
     wx.WXK_START,
@@ -507,6 +526,7 @@ def disable_window(window):
             m.Disable()
         if hasattr(m, "Children"):
             disable_window(m)
+
 
 def set_ctrl_value(ctrl, value):
     # Lets try to save the caret position
