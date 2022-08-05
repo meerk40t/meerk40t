@@ -8,7 +8,11 @@ from PIL import Image
 from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.gui.statusbarwidgets.infowidget import InformationWidget, StatusPanelWidget
+from meerk40t.gui.statusbarwidgets.infowidget import (
+    InformationWidget,
+    StatusPanelWidget,
+    BurnProgressPanel,
+)
 from meerk40t.gui.statusbarwidgets.opassignwidget import (
     OperationAssignOptionWidget,
     OperationAssignWidget,
@@ -309,6 +313,10 @@ class MeerK40t(MWindow):
         )
         self.main_statusbar.add_panel_widget(
             self.fillrule_panel, self.idx_colors, "fillrule", False
+        )
+        self.burn_panel = BurnProgressPanel()
+        self.main_statusbar.add_panel_widget(
+            self.burn_panel, self.idx_selection, "burninfo", True
         )
 
         self.assign_button_panel.show_stuff(False)
@@ -2504,6 +2512,12 @@ class MeerK40t(MWindow):
             _("Spooler: %s") % self.context.get_text_thread_state(value),
             3,
         )
+        self.main_statusbar.Signal("spooler;thread", value)
+
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
+    def on_device_update(self, origin, pos):
+        self.main_statusbar.Signal("spooler;update")
 
     @signal_listener("export-image")
     def on_export_signal(self, origin, frame):
