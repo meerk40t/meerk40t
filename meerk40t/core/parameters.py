@@ -618,19 +618,3 @@ class Parameters:
     @force_twitchless.setter
     def force_twitchless(self, value):
         self.settings["force_twitchless"] = value
-
-    @property
-    def constant_move_x(self):
-        return self.settings.get("constant_move_x", False)
-
-    @constant_move_x.setter
-    def constant_move_x(self, value):
-        self.settings["constant_move_x"] = value
-
-    @property
-    def constant_move_y(self):
-        return self.settings.get("constant_move_y", False)
-
-    @constant_move_y.setter
-    def constant_move_y(self, value):
-        self.settings["constant_move_y"] = value

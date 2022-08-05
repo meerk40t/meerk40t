@@ -423,7 +423,9 @@ class Smooth(PlotManipulation):
                 yield from self.flush()
                 yield x, y, on
                 continue
-            if not self.planner.constant_move_x and not self.planner.constant_move_y:
+            if not self.planner.settings.get(
+                "_constant_move_x", False
+            ) and not self.planner.settings.get("_constant_move_y", False):
                 yield x, y, on
                 continue  # We are not smoothing.
             if px is not None and py is not None:
@@ -445,11 +447,11 @@ class Smooth(PlotManipulation):
                 continue
             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-            if self.planner.constant_move_x and dx == 0:
+            if self.planner.settings.get("_constant_move_x", False) and dx == 0:
                 # If we are moving x and, we don't move x: skip.
                 if abs(total_dy) < self.planner.smooth_limit:
                     continue
-            if self.planner.constant_move_y and dy == 0:
+            if self.planner.settings.get("_constant_move_y", False) and dy == 0:
                 if abs(total_dx) < self.planner.smooth_limit:
                     continue
             self.smooth_x += dx
