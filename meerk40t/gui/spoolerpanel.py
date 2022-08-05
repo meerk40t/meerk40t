@@ -57,6 +57,10 @@ class SpoolerPanel(wx.Panel):
         self.list_job_spool = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
+        self.info_label = wx.StaticText(self, wx.ID_ANY, _("Completed jobs:"))
+        self.list_job_history = wx.ListCtrl(
+            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -75,6 +79,7 @@ class SpoolerPanel(wx.Panel):
         self.elements_progress = 0
         self.elements_progress_total = 0
         self.command_index = 0
+        self.history = []
         self.listener_list = None
         self.list_lookup = {}
         if index == -1:
@@ -106,13 +111,34 @@ class SpoolerPanel(wx.Panel):
         self.list_job_spool.AppendColumn(
             _("Estimate"), format=wx.LIST_FORMAT_LEFT, width=73
         )
+
+        self.list_job_history.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
+
+        self.list_job_history.AppendColumn(
+            _("Name"), format=wx.LIST_FORMAT_LEFT, width=143
+        )
+        self.list_job_history.AppendColumn(
+            _("Start"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("End"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Device"), format=wx.LIST_FORMAT_LEFT, width=143
+        )
+
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: SpoolerPanel.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
-        sizer_frame.Add(self.list_job_spool, 1, wx.EXPAND, 0)
+        sizer_frame.Add(self.list_job_spool, 4, wx.EXPAND, 0)
+        sizer_frame.Add(self.info_label, 0, wx.EXPAND, 0)
+        sizer_frame.Add(self.list_job_history, 2, wx.EXPAND, 0)
         self.SetSizer(sizer_frame)
         sizer_frame.Fit(self)
         self.Layout()
@@ -249,6 +275,38 @@ class SpoolerPanel(wx.Panel):
                     self.list_job_spool.SetItem(list_id, 7, runtime)
                 except AttributeError:
                     self.list_job_spool.SetItem(list_id, 7, "-")
+
+    def refresh_history(self, newestinfo):
+        def timestr(t, oneday):
+            hours, remainder = divmod(t, 3600)
+            if oneday:
+                hours = hours % 24
+            minutes, seconds = divmod(remainder, 60)
+            result = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+            return result
+
+        self.history.insert(0, newestinfo)
+        self.list_job_history.DeleteAllItems()
+        for idx, info in enumerate(self.history):
+            list_id = self.list_job_history.InsertItem(self.list_job_history.GetItemCount(), f"#{idx}")
+            self.list_job_history.SetItem(list_id, 1, info[0])
+            starttime = timestr(info[1], True)
+            self.list_job_history.SetItem(list_id, 2, starttime)
+            starttime = timestr(info[1] + info[2], True)
+            self.list_job_history.SetItem(list_id, 3, starttime)
+            runtime = timestr(info[2], False)
+            self.list_job_history.SetItem(list_id, 4, runtime)
+            self.list_job_history.SetItem(list_id, 5, info[3])
+
+    @signal_listener("spooler;completed")
+    def on_spooler_completed(self, origin, info, *args):
+        # Info is just a tuple with the label and the runtime
+        # print ("Signalled...", type(origin).__name__, type(info).__name__)
+        # print(origin)
+        # print(info)
+        if info is None:
+            return
+        self.refresh_history(info)
 
     @signal_listener("spooler;queue")
     @signal_listener("spooler;idle")

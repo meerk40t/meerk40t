@@ -611,10 +611,12 @@ class Spooler:
             self.context.signal("spooler;queue", len(self._queue))
 
     def remove(self, element, index=None):
+        info = None
         with self._lock:
             if index is None:
                 try:
                     element.stop()
+                    info = (element.label, element.time_started, element.runtime, self.context.label)
                 except AttributeError:
                     pass
                 self._queue.remove(element)
@@ -622,7 +624,9 @@ class Spooler:
                 element = self._queue[index]
                 try:
                     element.stop()
+                    info = (element.label, element.time_started, element.runtime, self.context.label)
                 except AttributeError:
                     pass
                 del self._queue[index]
+        self.context.signal("spooler;completed", info)
         self.context.signal("spooler;queue", len(self._queue))
