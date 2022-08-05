@@ -543,14 +543,6 @@ class Parameters:
     def dwell_time(self, value):
         self.settings["dwell_time"] = value
 
-    @property
-    def raster_alt(self):
-        return self.settings.get("raster_alt", False)
-
-    @raster_alt.setter
-    def raster_alt(self, value):
-        self.settings["raster_alt"] = value
-
     #####################
     # INPUT PROPERTIES
     #####################
@@ -610,6 +602,14 @@ class Parameters:
     #####################
     # MISC PROPERTIES
     #####################
+
+    @property
+    def raster_alt(self):
+        return self.settings.get("raster_alt", False)
+
+    @raster_alt.setter
+    def raster_alt(self, value):
+        self.settings["raster_alt"] = value
 
     @property
     def force_twitchless(self):
