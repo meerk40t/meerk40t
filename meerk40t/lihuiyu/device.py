@@ -718,7 +718,7 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "laser_off"
                     yield "wait_finish"
 
-            spooler.laserjob([list(jog_transition_test)])
+            spooler.laserjob(list(jog_transition_test()))
 
     @property
     def viewbuffer(self):
