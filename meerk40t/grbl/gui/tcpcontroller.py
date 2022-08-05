@@ -13,8 +13,8 @@ class TCPController(MWindow):
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_port = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_ip_host = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_port = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.gauge_buffer = wx.Gauge(self, wx.ID_ANY, 10)
         self.text_buffer_length = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_buffer_max = wx.TextCtrl(self, wx.ID_ANY, "")
@@ -25,8 +25,10 @@ class TCPController(MWindow):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect
         )
-        self.Bind(wx.EVT_TEXT, self.on_port_change, self.text_port)
-        self.Bind(wx.EVT_TEXT, self.on_address_change, self.text_ip_host)
+        self.text_port.Bind(wx.EVT_TEXT_ENTER, self.on_port_change)
+        self.text_port.Bind(wx.EVT_KILL_FOCUS, self.on_port_change)
+        self.text_ip_host.Bind(wx.EVT_TEXT_ENTER, self.on_address_change)
+        self.text_ip_host.Bind(wx.EVT_KILL_FOCUS, self.on_address_change)
         # end wxGlade
         self.max = 0
         self.state = None

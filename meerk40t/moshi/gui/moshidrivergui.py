@@ -6,6 +6,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
@@ -18,8 +19,12 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
-        self.text_home_x = wx.TextCtrl(self, wx.ID_ANY, "0mm")
-        self.text_home_y = wx.TextCtrl(self, wx.ID_ANY, "0mm")
+        self.text_home_x = TextCtrl(
+            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_home_y = TextCtrl(
+            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+        )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
         # self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
 
@@ -28,8 +33,10 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
-        self.Bind(wx.EVT_TEXT, self.on_text_home_x, self.text_home_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_home_y, self.text_home_y)
+        self.text_home_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_x)
+        self.text_home_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_x)
+        self.text_home_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_y)
+        self.text_home_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
@@ -113,9 +120,11 @@ class MoshiConfigurationPanel(ScrolledPanel):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def on_text_home_x(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+        event.Skip()
         self.context.home_x = self.text_home_x.GetValue()
 
     def on_text_home_y(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+        event.Skip()
         self.context.home_y = self.text_home_y.GetValue()
 
     def on_button_set_home_current(
