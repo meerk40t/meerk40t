@@ -57,7 +57,9 @@ class SpoolerPanel(wx.Panel):
         self.list_job_spool = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
+
         self.info_label = wx.StaticText(self, wx.ID_ANY, _("Completed jobs:"))
+        self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear History"))
         self.list_job_history = wx.ListCtrl(
             self,
             wx.ID_ANY,
@@ -67,6 +69,7 @@ class SpoolerPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
+        self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
         self.Bind(
@@ -139,12 +142,19 @@ class SpoolerPanel(wx.Panel):
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_frame.Add(self.list_job_spool, 4, wx.EXPAND, 0)
-        sizer_frame.Add(self.info_label, 0, wx.EXPAND, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(self.info_label, 1, wx.EXPAND, 0)
+        hsizer.Add(self.btn_clear, 0, wx.EXPAND, 0)
+        sizer_frame.Add(hsizer, 0, wx.EXPAND, 0)
         sizer_frame.Add(self.list_job_history, 2, wx.EXPAND, 0)
         self.SetSizer(sizer_frame)
         sizer_frame.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_btn_clear(self, event):
+        self.history = []
+        self.list_job_history.DeleteAllItems()
 
     def on_combo_device(self, event=None):  # wxGlade: Spooler.<event_handler>
         index = self.combo_device.GetSelection()
