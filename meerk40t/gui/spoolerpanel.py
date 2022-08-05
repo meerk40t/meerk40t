@@ -59,7 +59,9 @@ class SpoolerPanel(wx.Panel):
         )
         self.info_label = wx.StaticText(self, wx.ID_ANY, _("Completed jobs:"))
         self.list_job_history = wx.ListCtrl(
-            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
 
         self.__set_properties()
@@ -224,7 +226,9 @@ class SpoolerPanel(wx.Panel):
                 try:
                     self.list_job_spool.SetItem(list_id, 1, spool_obj.label)
                 except AttributeError:
-                    self.list_job_spool.SetItem(list_id, 1, SpoolerPanel._name_str(spool_obj))
+                    self.list_job_spool.SetItem(
+                        list_id, 1, SpoolerPanel._name_str(spool_obj)
+                    )
 
                 # STATUS
                 try:
@@ -235,7 +239,9 @@ class SpoolerPanel(wx.Panel):
 
                 # TYPE
                 try:
-                    self.list_job_spool.SetItem(list_id, 3, str(spool_obj.__class__.__name__))
+                    self.list_job_spool.SetItem(
+                        list_id, 3, str(spool_obj.__class__.__name__)
+                    )
                 except AttributeError:
                     pass
 
@@ -288,7 +294,9 @@ class SpoolerPanel(wx.Panel):
         self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         for idx, info in enumerate(self.history):
-            list_id = self.list_job_history.InsertItem(self.list_job_history.GetItemCount(), f"#{idx}")
+            list_id = self.list_job_history.InsertItem(
+                self.list_job_history.GetItemCount(), f"#{idx}"
+            )
             self.list_job_history.SetItem(list_id, 1, info[0])
             starttime = timestr(info[1], True)
             self.list_job_history.SetItem(list_id, 2, starttime)
