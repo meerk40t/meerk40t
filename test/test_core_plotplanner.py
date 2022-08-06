@@ -20,7 +20,7 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        settings = {"power": 1000, "constant_move_x": True}
+        settings = {"power": 1000, "_constant_move_x": True}
         plan = PlotPlanner(settings, ppi=False)
         plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
         plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
@@ -57,7 +57,7 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        settings = {"power": 500, "constant_move_x": True}
+        settings = {"power": 500, "_constant_move_x": True}
         plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
         plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
@@ -98,7 +98,7 @@ class TestPlotplanner(unittest.TestCase):
         With smooth_raster set to 2 we should never have x = 0. The x should *always* be in motion.
         @return:
         """
-        settings = {"power": 1000, "constant_move_y": True}
+        settings = {"power": 1000, "_constant_move_y": True}
         plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(2, 20), settings=settings))
         plan.push(LineCut(Point(2, 20), Point(5, 20), settings=settings))
@@ -135,7 +135,7 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        settings = {"power": 1000, "constant_move_x": True, "constant_move_y": True}
+        settings = {"power": 1000, "_constant_move_x": True, "_constant_move_y": True}
         plan = PlotPlanner(settings)
         self.constant_move_x = True
         self.constant_move_y = True
