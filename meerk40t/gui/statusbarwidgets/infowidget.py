@@ -283,12 +283,16 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._job_elapsed = 0
         self._job_remaining = 0
 
+        percentage = -1
+
         spooler = self.context.device.spooler
         if spooler is None:
+            self.StartPopulation()
+            self.SetPercentage(percentage)
+            self.SetInformation(self._status_text)
+            self.EndPopulation()
             return
         self._driver = spooler.driver
-
-        percentage = -1
 
         self._queue_len = len(spooler.queue)
         # Lest establish the start time, as the queue grows and shrinks
@@ -368,10 +372,16 @@ class BurnProgressPanel(SimpleInfoWidget):
     def Signal(self, signal, *args):
         if signal == "spooler;queue":
             if len(args) > 0:
-                self._queue_len = args[0]
+                if isinstance(args[0], (tuple, list)):
+                    self._queue_len = args[0][0]
+                else:
+                    self._queue_len = args[0]
             else:
                 self._queue_len = 0
                 self._queue_pos = 0
+            if self._queue_len == 0:
+                self._last_invokation = 0  # Force display
+            self.GenerateInfos()
         elif signal == "spooler;update":
             self.GenerateInfos()
         elif signal == "spooler;thread":
