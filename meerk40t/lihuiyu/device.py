@@ -778,6 +778,9 @@ class LihuiyuDriver(Parameters):
         self.plot_planner.force_shift = service.plot_shift
         self.plot_data = None
 
+        self.current_steps = 0
+        self.total_steps = 0
+
         self.state = DRIVER_STATE_RAPID
         self.properties = 0
         self.is_relative = False
@@ -865,6 +868,7 @@ class LihuiyuDriver(Parameters):
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
+            self.current_steps += 1
             while self.hold_work(0):
                 time.sleep(0.05)
             sx = self.native_x
@@ -1722,6 +1726,10 @@ class LihuiyuDriver(Parameters):
     def plot_start(self):
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
+
+        self.total_steps = len(self.plot_data)
+        self.current_steps = 0
+
         self.plotplanner_process()
 
     def set(self, attribute, value):
