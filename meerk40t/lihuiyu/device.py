@@ -780,6 +780,7 @@ class LihuiyuDriver(Parameters):
 
         self.current_steps = 0
         self.total_steps = 0
+        self.dummy_planner = PlotPlanner(self.settings)
 
         self.state = DRIVER_STATE_RAPID
         self.properties = 0
@@ -1722,12 +1723,20 @@ class LihuiyuDriver(Parameters):
             self.wait(plot.dwell_time)
         else:
             self.plot_planner.push(plot)
+            # Mirror the stuff
+            self.dummy_planner.push(plot)
 
     def plot_start(self):
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
 
-        self.total_steps = len(self.plot_data)
+            assessment_start = time.time()
+            dummy_data = list(self.dummy_planner.gen())
+            self.total_steps += len(dummy_data)
+            self.dummy_planner.clear()
+            # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+
+
         self.current_steps = 0
 
         self.plotplanner_process()

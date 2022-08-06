@@ -544,7 +544,11 @@ class GRBLDriver(Parameters):
         @return:
         """
         # preprocess queue to establish steps
-        dummy_planner = PlotPlanner(self.settings)
+        assessment_start = time.time()
+        dummy_planner = PlotPlanner(
+            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+        )
+
         self.current_steps = 0
         self.total_steps = 0
         for q in self.queue:
@@ -566,9 +570,10 @@ class GRBLDriver(Parameters):
                 self.total_steps += 1
             else:
                 dummy_planner.push(q)
-                dummy_data = dummy_planner.gen()
+                dummy_data = list(dummy_planner.gen())
                 self.total_steps += len(dummy_data)
                 dummy_planner.clear()
+        # print ("GRBL-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
         self.g91_absolute()
         self.g94_feedrate()
