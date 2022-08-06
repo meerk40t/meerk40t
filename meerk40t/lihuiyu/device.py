@@ -267,6 +267,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command(
             "move_at_speed",
             help=_("move_at_speed <speed> <dx> <dy>"),
+            all_arguments_required=True,
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
             def move_at_speed():
