@@ -1,5 +1,6 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
+
 # from ...svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects_50
 from ..mwindow import MWindow
@@ -15,8 +16,8 @@ class GroupPropertiesPanel(ScrolledPanel):
 
         self.node = node
 
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         self.__set_properties()
         self.__do_layout()
@@ -33,10 +34,10 @@ class GroupPropertiesPanel(ScrolledPanel):
         except AttributeError:
             pass
 
-        self.Bind(wx.EVT_TEXT, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT, self.on_text_label_change, self.text_label)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change, self.text_label)
+        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
+        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
+        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
+        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
         # end wxGlade
 
     def __set_properties(self):

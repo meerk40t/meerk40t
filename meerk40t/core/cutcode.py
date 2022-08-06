@@ -227,6 +227,12 @@ class CutGroup(list, CutObject, ABC):
     def __copy__(self):
         return CutGroup(self.parent, self)
 
+    def __str__(self):
+        return "CutGroup(children=%s, parent=%s)" % (
+            list.__str__(self),
+            str(self.parent),
+        )
+
     def __repr__(self):
         return "CutGroup(children=%s, parent=%s)" % (
             list.__repr__(self),
@@ -588,6 +594,12 @@ class QuadCut(CutObject):
         self.raster_step = 0
         self._control = control_point
 
+    def __repr__(self):
+        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.implicit_passes})"
+
     def c(self):
         return self._control
 
@@ -640,6 +652,12 @@ class CubicCut(CutObject):
         self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
+
+    def __repr__(self):
+        return f'CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, passes={self.implicit_passes})"
 
     def c1(self):
         return self._control1 if self.normal else self._control2
@@ -1020,8 +1038,8 @@ class PlotCut(CutObject):
         """
         # Default to vector settings.
         self.settings["raster_alt"] = False
-        self.settings["constant_move_x"] = False
-        self.settings["constant_move_y"] = False
+        self.settings["_constant_move_x"] = False
+        self.settings["_constant_move_y"] = False
         self.settings["raster_step"] = 0
         if self.settings.get("speed", 0) < 80:
             # Twitchless gets sketchy at 80.
@@ -1032,10 +1050,10 @@ class PlotCut(CutObject):
         # Above 80 we're likely dealing with a raster.
         if 0 < self.max_dx <= 15:
             self.v_raster = True
-            self.settings["constant_move_y"] = True
+            self.settings["_constant_move_y"] = True
         if 0 < self.max_dy <= 15:
             self.h_raster = True
-            self.settings["constant_move_x"] = True
+            self.settings["_constant_move_x"] = True
         # if self.vertical_raster or self.horizontal_raster:
         self.settings["raster_step"] = min(self.max_dx, self.max_dy)
         self.settings["raster_alt"] = True

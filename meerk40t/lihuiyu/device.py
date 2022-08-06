@@ -255,7 +255,7 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "laser_off"
 
             if self.spooler.is_idle:
-                self.spooler.laserjob([list(timed_fire)])
+                self.spooler.laserjob(list(timed_fire()))
                 channel(_("Pulse laser for %f milliseconds") % time)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -267,6 +267,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command(
             "move_at_speed",
             help=_("move_at_speed <speed> <dx> <dy>"),
+            all_arguments_required=True,
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
             def move_at_speed():
@@ -275,7 +276,7 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "move_relative", dx.mil, dy.mil
                 yield "rapid_mode"
             if self.spooler.is_idle:
-                self.spooler.laserjob([list(move_at_speed)])
+                self.spooler.laserjob(list(move_at_speed()))
             else:
                 channel(_("Busy"))
             return
@@ -718,7 +719,7 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "laser_off"
                     yield "wait_finish"
 
-            spooler.laserjob([list(jog_transition_test)])
+            spooler.laserjob(list(jog_transition_test()))
 
     @property
     def viewbuffer(self):

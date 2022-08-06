@@ -6,6 +6,8 @@ from typing import List
 
 import wx
 
+from meerk40t.core.units import Angle, Length
+
 _ = wx.GetTranslation
 
 
@@ -203,9 +205,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                 else:
                     kind = wx.ITEM_NORMAL
                     check = None
-                item = menu_context.Append(
-                    wx.ID_ANY, func.real_name, func.help, kind
-                )
+                item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
                 if check is not None:
                     item.Check(check)
                 if func.enabled:
@@ -268,9 +268,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             else:
                 kind = wx.ITEM_NORMAL
                 check = None
-            item = menu_context.Append(
-                wx.ID_ANY, func.real_name, func.help, kind
-            )
+            item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
             if check is not None:
                 item.Check(check)
             if func.enabled:
@@ -320,14 +318,67 @@ def create_menu(gui, node, elements):
         gui.PopupMenu(menu)
         menu.Destroy()
 
+
 class TextCtrl(wx.TextCtrl):
-# Just to add someof the more common things we need, i.e. smaller default size...
-#
-    def __init__(self, parent, id=wx.ID_ANY, value="", pos=wx.DefaultPosition, size=wx.DefaultSize, style=0, validator=wx.DefaultValidator, name="", limited=False):
-        super().__init__(parent, id=id, value=value, pos=pos, size=size, style=style, validator=validator, name=name)
+    # Just to add someof the more common things we need, i.e. smaller default size...
+    #
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        value="",
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        style=0,
+        validator=wx.DefaultValidator,
+        name="",
+        check="",
+        limited=False,
+    ):
+        super().__init__(
+            parent,
+            id=id,
+            value=value,
+            pos=pos,
+            size=size,
+            style=style,
+            validator=validator,
+            name=name,
+        )
         self.SetMinSize(wx.Size(35, -1))
         if limited:
             self.SetMaxSize(wx.Size(100, -1))
+        self._check = check
+        if self._check is not None and self._check != "":
+            self.Bind(wx.EVT_TEXT, self.on_check)
+
+    def on_check(self, event):
+        event.Skip()
+        try:
+            txt = self.GetValue()
+            if self._check == "float":
+                __ = float(txt)
+            elif self._check == "percent":
+                if txt.endswith("%"):
+                    __ = float(txt[:-1]) / 100.0
+                else:
+                    __ = float(txt)
+            elif self._check == "int":
+                __ = int(txt)
+            elif self._check == "empty":
+                if len(txt) == 0:
+                    raise ValueError
+            elif self._check == "length":
+                __ = Length(txt)
+            elif self._check == "angle":
+                __ = Angle(txt)
+
+            self.SetBackgroundColour(None)
+            self.Refresh()
+        except ValueError:
+            self.SetBackgroundColour(wx.RED)
+            self.Refresh()
+
 
 WX_METAKEYS = [
     wx.WXK_START,
@@ -475,3 +526,11 @@ def disable_window(window):
             m.Disable()
         if hasattr(m, "Children"):
             disable_window(m)
+
+
+def set_ctrl_value(ctrl, value):
+    # Lets try to save the caret position
+    cursor = ctrl.GetLastPosition()
+    if ctrl.GetValue() != value:
+        ctrl.SetValue(value)
+        ctrl.SetInsertionPoint(min(len(value), cursor))
