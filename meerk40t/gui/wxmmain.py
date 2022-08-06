@@ -2519,6 +2519,10 @@ class MeerK40t(MWindow):
     def on_device_update(self, origin, pos):
         self.main_statusbar.Signal("spooler;update")
 
+    @signal_listener("spooler;completed")
+    def on_spool_finished(self, origin, pos):
+        self.main_statusbar.Signal("spooler;completed")
+
     @signal_listener("export-image")
     def on_export_signal(self, origin, frame):
         image_width, image_height, frame = frame

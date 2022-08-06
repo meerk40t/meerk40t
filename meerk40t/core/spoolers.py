@@ -410,7 +410,31 @@ class LaserJob:
         Give laser job time estimate.
         @return:
         """
-        return 0
+        # This is rather 'simple', we have no clue what exactly this job is doing,
+        # but we have some ideas, if and only if the job is_running:
+        # a) we know the elapsed time
+        # b) we know current and total steps (if the driver has such a property)
+        result = 0
+        if self.is_running:
+            # We fall back on elapsed and some info from the driver...
+            if self.time_started is not None:
+                elapsed = time.time() - self.time_started
+            else:
+                elapsed = 0
+            ratio = 1
+            if hasattr(self._driver, "total_steps"):
+                total = self._driver.total_steps
+                current = self._driver.current_steps
+                if current > 0:
+                    ratio = total / current
+            result = elapsed * ratio
+        else:
+            # Hmm we could ask the driver to assess the steps required
+            # and he could be using some basic assumptions then,
+            # but this is not implemented (yet)
+            pass
+
+        return result
 
 
 class Spooler:
@@ -572,7 +596,9 @@ class Spooler:
         """
         label = f"{self.__class__.__name__}:{len(job)} items"
         # label = str(job)
-        laserjob = LaserJob(label, list(job), driver=self.driver, priority=priority, loops=loops)
+        laserjob = LaserJob(
+            label, list(job), driver=self.driver, priority=priority, loops=loops
+        )
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(laserjob)
@@ -618,7 +644,12 @@ class Spooler:
             if index is None:
                 try:
                     element.stop()
-                    info = (element.label, element.time_started, element.runtime, self.context.label)
+                    info = (
+                        element.label,
+                        element.time_started,
+                        element.runtime,
+                        self.context.label,
+                    )
                 except AttributeError:
                     pass
                 self._queue.remove(element)
@@ -626,7 +657,12 @@ class Spooler:
                 element = self._queue[index]
                 try:
                     element.stop()
-                    info = (element.label, element.time_started, element.runtime, self.context.label)
+                    info = (
+                        element.label,
+                        element.time_started,
+                        element.runtime,
+                        self.context.label,
+                    )
                 except AttributeError:
                     pass
                 del self._queue[index]

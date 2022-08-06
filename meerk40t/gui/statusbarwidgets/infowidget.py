@@ -23,6 +23,7 @@ class SimpleInfoWidget(StatusBarWidget):
         self._counter = 0
         self.fontsize = None
         self.priority_for_first_message = True
+        self._percentage = -1
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
@@ -44,14 +45,27 @@ class SimpleInfoWidget(StatusBarWidget):
             size=wx.Size(20, 20),
             style=wx.BORDER_RAISED,
         )
+        self.progress_bar = wx.Gauge(self.parent, range=100, style=wx.GA_HORIZONTAL|wx.GA_SMOOTH)
         infocolor = wx.Colour(128, 128, 128, 128)
         self.btn_next.SetBackgroundColour(infocolor)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
         self.btn_next.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
 
-        self.Add(self.info_text, 1, wx.EXPAND, 0)
+        self.Add(self.info_text, 5, wx.EXPAND, 0)
+        self.Add(self.progress_bar, 1, wx.EXPAND, 0)
         self.Add(self.btn_next, 0, wx.EXPAND, 0)
         self.SetActive(self.btn_next, False)
+        self.SetActive(self.progress_bar, False)
+
+    def SetPercentage(self, newpercentage):
+        self._percentage = newpercentage
+        if newpercentage < 0:
+            self.progress_bar.SetValue(0)
+            self.SetActive(self.progress_bar, False)
+        else:
+            self.SetActive(self.progress_bar, True)
+            self.progress_bar.SetValue(newpercentage)
+        self._percentage = newpercentage
 
     def AppendInformation(self, msg):
         self._messages.append(msg)
@@ -203,6 +217,7 @@ class StatusPanelWidget(SimpleInfoWidget):
 class BurnProgressPanel(SimpleInfoWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.fontsize = 7
         self.priority_for_first_message = False
         self._status_text = []
         self._needs_generation = False
@@ -221,6 +236,7 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._loops_executed = 0
         self._job_estimate = 0
         self._job_elapsed = 0
+        self._job_remaining = 0
         # How often do i want to have an update?
         self._last_invokation = 0
         self._invokation_delta = 2 # Every 2 seconds max
@@ -265,17 +281,28 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._loops_executed = 0
         self._job_estimate = 0
         self._job_elapsed = 0
+        self._job_remaining = 0
 
         spooler = self.context.device.spooler
         if spooler is None:
             return
         self._driver = spooler.driver
 
+        percentage = -1
+
         self._queue_len = len(spooler.queue)
+        # Lest establish the start time, as the queue grows and shrinks
+        # we only reset the start_time if the queue became empty.
+        if self._queue_len == 0:
+            self._start_time = 0
+        else:
+            if self._start_time == 0:
+                self._start_time = time.time()
+
         for idx, spool_obj in enumerate(spooler.queue):
             # Idx, Status, Type, Passes, Priority, Runtime, Estimate
             if self._job_active:
-                # We already have one...
+                # We already have one, so these are the jobs still in the queue
                 # So we just add the time to the remaining...
                 self._queue_remaining += spool_obj.estimate_time()
             elif spool_obj.is_running():
@@ -284,25 +311,33 @@ class BurnProgressPanel(SimpleInfoWidget):
                 self._job_active = True
                 self._job_loops = spool_obj.loops
                 self._loops_executed = spool_obj.loops_executed
-                self._job_len = len(spool_obj.items)
-                self._job_pos = spool_obj.item_index
+                if hasattr(self._driver, "total_steps"):
+                    self._job_len = self._driver.total_steps
+                    self._job_pos = self._driver.current_steps
+                else:
+                    self._job_len = len(spool_obj.items)
+                    self._job_pos = spool_obj.item_index
                 self.inspect_job_details(spool_obj)
                 self._job_elapsed = time.time() - spool_obj.time_started
                 self._job_estimate = spool_obj.estimate_time()
                 self._queue_elapsed += self._job_elapsed
                 if self._job_estimate > self._job_elapsed:
-                    self._queue_remaining = self._job_estimate - self._job_elapsed
+                    self._job_remaining = self._job_estimate - self._job_elapsed
                 else:
                     if self._job_pos!=0:
-                        self._queue_remaining = (
+                        self._job_remaining = (
                             self._job_elapsed * self._job_len / self._job_pos
                         )
+                self._queue_remaining += self._job_remaining
+                if self._job_len > 0:
+                    percentage = min(100, 100 * self._job_pos / self._job_len)
             else:
+                # Already executed jobs
                 self._queue_elapsed += spool_obj.runtime
 
         if self._queue_pos > 0:
-            msg = _("Queue - Active: {step}, {elapsed}, To Go: {remaining}").format(
-                elapsed=timestr(self._queue_elapsed),
+            msg = _("Burn-Time: {elapsed}, Remaining: {total}, {remaining}").format(
+                elapsed=timestr(time.time() - self._start_time),
                 remaining=timestr(self._queue_remaining),
                 step=str(self._queue_pos),
                 total=str(self._queue_len),
@@ -310,16 +345,14 @@ class BurnProgressPanel(SimpleInfoWidget):
             )
             self._status_text.append(msg)
         if self._job_pos > 0:
-            msg = _("Job - Pass {passes}/{passtotal}: {steps} of {steptotal}").format(
-                passes=str(self._job_pos),
-                passtotal=str(self._job_len),
-                steps=str(self._queue_pos),
-                steptotal=str(self._queue_len),
-            )
-            self._status_text.append(msg)
-
-            msg = _("Job-Time: {elapsed} ({estimate})").format(
-                elapsed=timestr(self._job_elapsed), estimate=timestr(self._job_estimate)
+            msg = _("Job: {steps}/{steptotal}, {elapsed} [{remaining}]").format(
+                steps=str(self._job_pos),
+                steptotal=str(self._job_len),
+                elapsed=timestr(self._job_elapsed),
+                estimate=timestr(self._job_estimate),
+                remaining=timestr(self._job_remaining),
+                # passes=str(self._loops_executed + 1),
+                # passtotal=str(self._job_loops),
             )
             self._status_text.append(msg)
 
@@ -327,6 +360,7 @@ class BurnProgressPanel(SimpleInfoWidget):
             self._status_text.append(self._queue_misc)
 
         self.StartPopulation()
+        self.SetPercentage(percentage)
         self.SetInformation(self._status_text)
         self.EndPopulation()
         self._needs_generation = False
@@ -338,7 +372,6 @@ class BurnProgressPanel(SimpleInfoWidget):
             else:
                 self._queue_len = 0
                 self._queue_pos = 0
-            self._start_time = time.time()
         elif signal == "spooler;update":
             self.GenerateInfos()
         elif signal == "spooler;thread":
@@ -346,4 +379,7 @@ class BurnProgressPanel(SimpleInfoWidget):
                 value = args[0]
                 msg = self.context.get_text_thread_state(value)
                 self._queue_misc = msg
+            self.GenerateInfos()
+        elif signal == "spooler;completed":
+            self._last_invokation = 0  # Force display
             self.GenerateInfos()
