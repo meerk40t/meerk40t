@@ -316,7 +316,7 @@ class MeerK40t(MWindow):
         )
         self.burn_panel = BurnProgressPanel()
         self.main_statusbar.add_panel_widget(
-            self.burn_panel, self.idx_selection, "burninfo", True
+            self.burn_panel, self.idx_selection, "burninfo", False
         )
 
         self.assign_button_panel.show_stuff(False)
@@ -2517,6 +2517,16 @@ class MeerK40t(MWindow):
     @signal_listener("spooler;queue")
     def on_spooler_queue_signal(self, origin, *args):
         self.main_statusbar.Signal("spooler;queue", args)
+
+        if not self.context.show_colorbar or not self.widgets_created:
+            return
+        # Queue Len
+        if len(args)>0:
+            value = args[0]
+        else:
+            value = 0
+        flag = value > 0
+        self.main_statusbar.activate_panel("burninfo", flag)
 
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
