@@ -2514,6 +2514,10 @@ class MeerK40t(MWindow):
         )
         self.main_statusbar.Signal("spooler;thread", value)
 
+    @signal_listener("spooler;queue")
+    def on_spooler_queue_signal(self, origin, *args):
+        self.main_statusbar.Signal("spooler;queue", args)
+
     @signal_listener("driver;position")
     @signal_listener("emulator;position")
     def on_device_update(self, origin, pos):
