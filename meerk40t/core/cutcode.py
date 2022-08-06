@@ -227,6 +227,12 @@ class CutGroup(list, CutObject, ABC):
     def __copy__(self):
         return CutGroup(self.parent, self)
 
+    def __str__(self):
+        return "CutGroup(children=%s, parent=%s)" % (
+            list.__str__(self),
+            str(self.parent),
+        )
+
     def __repr__(self):
         return "CutGroup(children=%s, parent=%s)" % (
             list.__repr__(self),
