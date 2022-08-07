@@ -152,7 +152,6 @@ class DXFProcessor:
             element.transform.post_translate_y(self.elements.device.unit_height)
             node = context_node.add(shape=element, type="elem ellipse")
             self.check_for_attributes(node, entity)
-            print(element.implicit_stroke_width)
             e_list.append(node)
             return
         elif entity.dxftype() == "ARC":
