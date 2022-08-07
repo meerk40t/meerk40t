@@ -255,6 +255,15 @@ class LaserRender:
                 self.pen.SetJoin(wx.JOIN_MITER)
             else:
                 self.pen.SetJoin(wx.JOIN_ROUND)
+    def _get_fillstyle(self, node):
+        if not hasattr(node, "fillrule") or node.fillrule is None:
+            return wx.WINDING_RULE
+        else:
+            if node.fillrule == Fillrule.FILLRULE_EVENODD:
+                return wx.ODDEVEN_RULE
+            else:
+                return wx.WINDING_RULE
+
 
     def _set_penwidth_by_node_and_zoom(self, node, zoomscale):
         try:
@@ -444,17 +453,10 @@ class LaserRender:
             matrix = None
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
-        if not hasattr(node, "fillrule") or node.fillrule is None:
-            fr = wx.WINDING_RULE
-        else:
-            if node.fillrule == Fillrule.FILLRULE_EVENODD:
-                fr = wx.ODDEVEN_RULE
-            else:
-                fr = wx.WINDING_RULE
-
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, Path(node.shape))
             node.cache = cache
+
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
@@ -466,7 +468,7 @@ class LaserRender:
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=fr)
+            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
@@ -483,13 +485,6 @@ class LaserRender:
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
-        if not hasattr(node, "fillrule") or node.fillrule is None:
-            fr = wx.WINDING_RULE
-        else:
-            if node.fillrule == Fillrule.FILLRULE_EVENODD:
-                fr = wx.ODDEVEN_RULE
-            else:
-                fr = wx.WINDING_RULE
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
@@ -504,7 +499,7 @@ class LaserRender:
             self.set_pen(gc, node.stroke, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=fr)
+            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
@@ -521,14 +516,6 @@ class LaserRender:
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
 
-        if not hasattr(node, "fillrule") or node.fillrule is None:
-            fr = wx.WINDING_RULE
-        else:
-            if node.fillrule == Fillrule.FILLRULE_EVENODD:
-                fr = wx.ODDEVEN_RULE
-            else:
-                fr = wx.WINDING_RULE
-
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
@@ -543,7 +530,7 @@ class LaserRender:
             self.set_pen(gc, node.stroke, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=fr)
+            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
