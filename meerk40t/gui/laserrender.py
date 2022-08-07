@@ -256,6 +256,27 @@ class LaserRender:
             else:
                 self.pen.SetJoin(wx.JOIN_ROUND)
 
+    def _set_penwidth_by_node_and_zoom(self, node, zoomscale):
+        try:
+            matrix = node.matrix
+            width_scale = sqrt(abs(matrix.determinant))
+        except AttributeError:
+            width_scale = 1.0
+        try:
+            sw = node.stroke_width
+        except AttributeError:
+            sw = 1000
+        if sw is None:
+            sw = 1000
+        limit = 25 * zoomscale**0.5
+        try:
+            limit /= width_scale
+        except ZeroDivisionError:
+            pass
+        if sw < limit:
+            sw = limit
+        self._set_penwidth_by_width(sw)
+
     def _set_penwidth_by_width(self, width):
         try:
             try:
@@ -419,10 +440,8 @@ class LaserRender:
         """Default draw routine for the shape element."""
         try:
             matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = None
-            width_scale = 1.0
         self._set_linecap_by_node(node)
         self._set_linejoin_by_node(node)
         if not hasattr(node, "fillrule") or node.fillrule is None:
@@ -439,20 +458,7 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        try:
-            sw = node.stroke_width
-        except AttributeError:
-            sw = 1000
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self._set_penwidth_by_width(sw)
+        self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
@@ -469,10 +475,8 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         try:
             matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = None
-            width_scale = 1.0
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, node.path)
             node.cache = cache
@@ -489,20 +493,7 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        try:
-            sw = node.stroke_width
-        except AttributeError:
-            sw = 1000
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self._set_penwidth_by_width(sw)
+        self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
@@ -522,10 +513,8 @@ class LaserRender:
         """Default draw routine for the laser path element."""
         try:
             matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = None
-            width_scale = 1.0
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_numpath(gc, node.path)
             node.cache = cache
@@ -543,21 +532,7 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-
-        try:
-            sw = node.stroke_width
-        except AttributeError:
-            sw = 1000
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self._set_penwidth_by_width(sw)
+        self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
@@ -603,10 +578,8 @@ class LaserRender:
 
         try:
             matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
         except AttributeError:
             matrix = None
-            width_scale = 1.0
 
         svgfont_to_wx(node)
         font = node.wxfont
@@ -614,20 +587,7 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        try:
-            sw = node.stroke_width
-        except AttributeError:
-            sw = 1000
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self._set_penwidth_by_width(sw)
+        self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
