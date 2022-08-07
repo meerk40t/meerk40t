@@ -81,24 +81,21 @@ class LaserRender:
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
+        self.fontdescent_factor, self.fontdescent_delta = self._calc_font_descent_by_os()
+
+    def _calc_font_descent_by_os(self):
         system = platform.system()
         if system == "Darwin":
             # to be verified
-            factor = 2.0
-            delta = 0.5
+            return 2.0, 0.5
         elif system == "Windows":
-            factor = 2.0
-            delta = 0.5
+            return 2.0, 0.5
         elif system == "Linux":
             # Dont ask me why its not 2.0...
             # Might be just my GTK...
-            factor = 1.75
-            delta = 0.45
+            return 1.75, 0.45
         else:
-            factor = 2.0
-            delta = 0.5
-        self.fontdescent_factor = factor
-        self.fontdescent_delta = delta
+            return 2.0, 0.5
 
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
