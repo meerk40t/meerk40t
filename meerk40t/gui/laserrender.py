@@ -81,7 +81,10 @@ class LaserRender:
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
-        self.fontdescent_factor, self.fontdescent_delta = self._calc_font_descent_by_os()
+        (
+            self.fontdescent_factor,
+            self.fontdescent_delta,
+        ) = self._calc_font_descent_by_os()
 
     def _calc_font_descent_by_os(self):
         system = platform.system()
@@ -255,6 +258,7 @@ class LaserRender:
                 self.pen.SetJoin(wx.JOIN_MITER)
             else:
                 self.pen.SetJoin(wx.JOIN_ROUND)
+
     def _get_fillstyle(self, node):
         if not hasattr(node, "fillrule") or node.fillrule is None:
             return wx.WINDING_RULE
@@ -263,7 +267,6 @@ class LaserRender:
                 return wx.ODDEVEN_RULE
             else:
                 return wx.WINDING_RULE
-
 
     def _set_penwidth_by_node_and_zoom(self, node, zoomscale):
         try:
