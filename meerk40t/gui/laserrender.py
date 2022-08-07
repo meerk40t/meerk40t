@@ -149,8 +149,6 @@ class LaserRender:
                     node.draw = self.draw_image_node
                 elif node.type == "elem text":
                     node.draw = self.draw_text_node
-                elif node.type == "group":
-                    node.draw = self.draw_group_node
                 elif node.type == "cutcode":
                     node.draw = self.draw_cutcode_node
                 else:
@@ -420,9 +418,6 @@ class LaserRender:
         if p is not None:
             gc.StrokePath(p)
             del p
-
-    def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        pass
 
     def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the shape element."""
