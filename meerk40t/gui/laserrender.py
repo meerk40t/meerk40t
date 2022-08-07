@@ -289,34 +289,6 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def set_element_pen(
-        self,
-        gc,
-        element,
-        zoomscale=1.0,
-        width_scale=None,
-        alpha=255,
-    ):
-        try:
-            sw = element.stroke_width
-        except AttributeError:
-            sw = 1000
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self._set_penwidth_by_width(sw)
-        self.set_pen(
-            gc,
-            element.stroke,
-            alpha=alpha,
-        )
-
     def draw_cutcode_node(
         self,
         node: Node,
@@ -467,11 +439,23 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(
+        try:
+            sw = node.stroke_width
+        except AttributeError:
+            sw = 1000
+        if sw is None:
+            sw = 1000
+        limit = 25 * zoomscale**0.5
+        try:
+            limit /= width_scale
+        except ZeroDivisionError:
+            pass
+        if sw < limit:
+            sw = limit
+        self._set_penwidth_by_width(sw)
+        self.set_pen(
             gc,
-            node,
-            zoomscale=zoomscale,
-            width_scale=width_scale,
+            node.stroke,
             alpha=alpha,
         )
         self.set_brush(gc, node.fill, alpha=alpha)
@@ -505,11 +489,23 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(
+        try:
+            sw = node.stroke_width
+        except AttributeError:
+            sw = 1000
+        if sw is None:
+            sw = 1000
+        limit = 25 * zoomscale**0.5
+        try:
+            limit /= width_scale
+        except ZeroDivisionError:
+            pass
+        if sw < limit:
+            sw = limit
+        self._set_penwidth_by_width(sw)
+        self.set_pen(
             gc,
-            node,
-            zoomscale=zoomscale,
-            width_scale=width_scale,
+            node.stroke,
             alpha=alpha,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
@@ -547,11 +543,24 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(
+
+        try:
+            sw = node.stroke_width
+        except AttributeError:
+            sw = 1000
+        if sw is None:
+            sw = 1000
+        limit = 25 * zoomscale**0.5
+        try:
+            limit /= width_scale
+        except ZeroDivisionError:
+            pass
+        if sw < limit:
+            sw = limit
+        self._set_penwidth_by_width(sw)
+        self.set_pen(
             gc,
-            node,
-            zoomscale=zoomscale,
-            width_scale=width_scale,
+            node.stroke,
             alpha=alpha,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
@@ -605,7 +614,25 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, node, zoomscale=zoomscale, width_scale=width_scale)
+        try:
+            sw = node.stroke_width
+        except AttributeError:
+            sw = 1000
+        if sw is None:
+            sw = 1000
+        limit = 25 * zoomscale**0.5
+        try:
+            limit /= width_scale
+        except ZeroDivisionError:
+            pass
+        if sw < limit:
+            sw = limit
+        self._set_penwidth_by_width(sw)
+        self.set_pen(
+            gc,
+            node.stroke,
+            alpha=alpha,
+        )
         self.set_brush(gc, node.fill, alpha=255)
 
         if node.fill is None or node.fill == "none":
