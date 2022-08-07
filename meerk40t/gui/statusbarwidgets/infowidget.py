@@ -1,3 +1,4 @@
+import time
 import wx
 
 from ...core.element_types import elem_nodes
@@ -21,6 +22,8 @@ class SimpleInfoWidget(StatusBarWidget):
         self._messages = []
         self._counter = 0
         self.fontsize = None
+        self.priority_for_first_message = True
+        self._percentage = -1
 
     def GenerateControls(self, parent, panelidx, identifier, context):
         super().GenerateControls(parent, panelidx, identifier, context)
@@ -42,14 +45,27 @@ class SimpleInfoWidget(StatusBarWidget):
             size=wx.Size(20, 20),
             style=wx.BORDER_RAISED,
         )
+        self.progress_bar = wx.Gauge(self.parent, range=100, style=wx.GA_HORIZONTAL|wx.GA_SMOOTH)
         infocolor = wx.Colour(128, 128, 128, 128)
         self.btn_next.SetBackgroundColour(infocolor)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
         self.btn_next.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
 
-        self.Add(self.info_text, 1, wx.EXPAND, 0)
+        self.Add(self.info_text, 5, wx.EXPAND, 0)
+        self.Add(self.progress_bar, 1, wx.EXPAND, 0)
         self.Add(self.btn_next, 0, wx.EXPAND, 0)
         self.SetActive(self.btn_next, False)
+        self.SetActive(self.progress_bar, False)
+
+    def SetPercentage(self, newpercentage):
+        self._percentage = newpercentage
+        if newpercentage < 0:
+            self.progress_bar.SetValue(0)
+            self.SetActive(self.progress_bar, False)
+        else:
+            self.SetActive(self.progress_bar, True)
+            self.progress_bar.SetValue(newpercentage)
+        self._percentage = newpercentage
 
     def AppendInformation(self, msg):
         self._messages.append(msg)
@@ -57,6 +73,7 @@ class SimpleInfoWidget(StatusBarWidget):
         self._display_current_line()
 
     def SetInformation(self, msg):
+        lastlen = len(self._messages)
         self._messages = []
         if isinstance(msg, str):
             self._messages = [msg]
@@ -65,7 +82,8 @@ class SimpleInfoWidget(StatusBarWidget):
         flag = len(self._messages) > 1
         self.SetActive(self.btn_next, enableit=flag)
         self.Layout()
-        self._counter = 0
+        if lastlen != len(self._messages) or self.priority_for_first_message:
+            self._counter = 0
         self._display_current_line()
 
     def _display_current_line(self):
@@ -111,7 +129,9 @@ class InformationWidget(SimpleInfoWidget):
         self._info_active = self.context.statusbar_auto_statistic
 
         self.chk_active = wx.CheckBox(parent, wx.ID_ANY, "")
-        self.chk_active.SetToolTip(_("Uncheck if you don't want automatic statistic generation"))
+        self.chk_active.SetToolTip(
+            _("Uncheck if you don't want automatic statistic generation")
+        )
         self.chk_active.SetValue(self._info_active)
         self.chk_active.Bind(wx.EVT_CHECKBOX, self.on_checkbox)
         self.Add(self.chk_active, 0, 0, 0)
@@ -145,7 +165,11 @@ class InformationWidget(SimpleInfoWidget):
             if ct > 0:
                 total_area = total_area / (_mm * _mm)
                 total_length = total_length / _mm
-                msg = "# = %d, A = %.1f mm², D = %.1f mm" % (ct, total_area, total_length)
+                msg = "# = %d, A = %.1f mm², D = %.1f mm" % (
+                    ct,
+                    total_area,
+                    total_length,
+                )
         else:
             msg = "---"
         self.StartPopulation()
@@ -187,4 +211,185 @@ class StatusPanelWidget(SimpleInfoWidget):
             if len(args) > 1:
                 idx = args[1]
             self.status_text[idx] = msg
+            self.GenerateInfos()
+
+
+class BurnProgressPanel(SimpleInfoWidget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.fontsize = 7
+        self.priority_for_first_message = False
+        self._status_text = []
+        self._needs_generation = False
+        self._queue_len = 0
+        self._queue_pos = 0
+        self._queue_elapsed = 0
+        self._queue_remaining = 0
+        self._job_label = ""
+        self._job_len = 0
+        self._job_pos = 0
+        self._job_active = False
+        self._start_time = 0
+        self._remaining = 0.0
+        self._queue_misc = ""
+        self._job_loops = 0
+        self._loops_executed = 0
+        self._job_estimate = 0
+        self._job_elapsed = 0
+        self._job_remaining = 0
+        # How often do i want to have an update?
+        self._last_invokation = 0
+        self._invokation_delta = 2 # Every 2 seconds max
+        self._driver = None
+
+    def Show(self, showit):
+        if self._needs_generation and showit:
+            self.calculate_infos()
+        super().Show(showit)
+
+    def GenerateInfos(self):
+        if self.visible:
+            self.calculate_infos()
+        else:
+            self._needs_generation = True
+
+    def inspect_job_details(self, laserjob):
+        return
+
+    def calculate_infos(self):
+        def timestr(t):
+            hours, remainder = divmod(t, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+            return runtime
+
+        dtime = time.time()
+        if dtime - self._last_invokation < self._invokation_delta:
+            return
+        self._last_invokation = dtime
+
+        self._status_text = []
+        self._queue_elapsed = 0
+        self._queue_len = 0
+        self._queue_pos = 0
+        self._queue_remaining = 0
+        self._job_label = ""
+        self._job_len = 0
+        self._job_pos = 0
+        self._job_active = False
+        self._job_loops = 0
+        self._loops_executed = 0
+        self._job_estimate = 0
+        self._job_elapsed = 0
+        self._job_remaining = 0
+
+        percentage = -1
+
+        spooler = self.context.device.spooler
+        if spooler is None:
+            self.StartPopulation()
+            self.SetPercentage(percentage)
+            self.SetInformation(self._status_text)
+            self.EndPopulation()
+            return
+        self._driver = spooler.driver
+
+        self._queue_len = len(spooler.queue)
+        # Lest establish the start time, as the queue grows and shrinks
+        # we only reset the start_time if the queue became empty.
+        if self._queue_len == 0:
+            self._start_time = 0
+        else:
+            if self._start_time == 0:
+                self._start_time = time.time()
+
+        for idx, spool_obj in enumerate(spooler.queue):
+            # Idx, Status, Type, Passes, Priority, Runtime, Estimate
+            if self._job_active:
+                # We already have one, so these are the jobs still in the queue
+                # So we just add the time to the remaining...
+                self._queue_remaining += spool_obj.estimate_time()
+            elif spool_obj.is_running():
+                self._queue_pos = idx + 1
+                self._job_label = spool_obj.label
+                self._job_active = True
+                self._job_loops = spool_obj.loops
+                self._loops_executed = spool_obj.loops_executed
+                if hasattr(self._driver, "total_steps"):
+                    self._job_len = self._driver.total_steps
+                    self._job_pos = self._driver.current_steps
+                else:
+                    self._job_len = len(spool_obj.items)
+                    self._job_pos = spool_obj.item_index
+                self.inspect_job_details(spool_obj)
+                self._job_elapsed = time.time() - spool_obj.time_started
+                self._job_estimate = spool_obj.estimate_time()
+                self._queue_elapsed += self._job_elapsed
+                if self._job_estimate > self._job_elapsed:
+                    self._job_remaining = self._job_estimate - self._job_elapsed
+                else:
+                    if self._job_pos!=0:
+                        self._job_remaining = (
+                            self._job_elapsed * self._job_len / self._job_pos
+                        )
+                self._queue_remaining += self._job_remaining
+                if self._job_len > 0:
+                    percentage = min(100, 100 * self._job_pos / self._job_len)
+            else:
+                # Already executed jobs
+                self._queue_elapsed += spool_obj.runtime
+
+        if self._queue_pos > 0:
+            msg = _("Burn-Time: {elapsed}, Remaining: {total}, {remaining}").format(
+                elapsed=timestr(time.time() - self._start_time),
+                remaining=timestr(self._queue_remaining),
+                step=str(self._queue_pos),
+                total=str(self._queue_len),
+                togo=str(max(0, self._queue_len - self._queue_pos)),
+            )
+            self._status_text.append(msg)
+        if self._job_pos > 0:
+            msg = _("Job: {steps}/{steptotal}, {elapsed} [{remaining}]").format(
+                steps=str(self._job_pos),
+                steptotal=str(self._job_len),
+                elapsed=timestr(self._job_elapsed),
+                estimate=timestr(self._job_estimate),
+                remaining=timestr(self._job_remaining),
+                # passes=str(self._loops_executed + 1),
+                # passtotal=str(self._job_loops),
+            )
+            self._status_text.append(msg)
+
+        if self._queue_misc is not None and len(self._queue_misc) > 0:
+            self._status_text.append(self._queue_misc)
+
+        self.StartPopulation()
+        self.SetPercentage(percentage)
+        self.SetInformation(self._status_text)
+        self.EndPopulation()
+        self._needs_generation = False
+
+    def Signal(self, signal, *args):
+        if signal == "spooler;queue":
+            if len(args) > 0:
+                if isinstance(args[0], (tuple, list)):
+                    self._queue_len = args[0][0]
+                else:
+                    self._queue_len = args[0]
+            else:
+                self._queue_len = 0
+                self._queue_pos = 0
+            if self._queue_len == 0:
+                self._last_invokation = 0  # Force display
+            self.GenerateInfos()
+        elif signal == "spooler;update":
+            self.GenerateInfos()
+        elif signal == "spooler;thread":
+            if len(args) > 0:
+                value = args[0]
+                msg = self.context.get_text_thread_state(value)
+                self._queue_misc = msg
+            self.GenerateInfos()
+        elif signal == "spooler;completed":
+            self._last_invokation = 0  # Force display
             self.GenerateInfos()
