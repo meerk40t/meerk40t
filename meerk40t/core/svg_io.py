@@ -12,13 +12,10 @@ from ..svgelements import (
     SVG_ATTR_DATA,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
-    # SVG_ATTR_FONT_FACE, no longer supported
     SVG_ATTR_FONT_FAMILY,
     SVG_ATTR_FONT_SIZE,
     SVG_ATTR_FONT_WEIGHT,
-    SVG_ATTR_FONT_STRETCH,
     SVG_ATTR_FONT_STYLE,
-    SVG_ATTR_FONT_VARIANT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_STROKE,
@@ -61,7 +58,7 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .units import DEFAULT_PPI, UNITS_PER_PIXEL
+from .units import DEFAULT_PPI, UNITS_PER_PIXEL, NATIVE_UNIT_PER_INCH
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -73,17 +70,29 @@ def plugin(kernel, lifecycle=None):
         _ = kernel.translation
         choices = [
             {
-                "attr": "uniform_svg",
+                "attr": "svg_viewport_bed",
                 "object": kernel.elements,
-                "default": False,
+                "default": True,
                 "type": bool,
-                "label": _("SVG Uniform Save"),
+                "label": _("SVG Viewport is Bed"),
                 "tip": _(
-                    "Do not treat overwriting SVG differently if they are MeerK40t files"
+                    "SVG Viewport is the size of the current bed rather than absent"
                 ),
                 "page": "Input/Output",
                 "section": "Input",
             },
+            # {
+            #     "attr": "uniform_svg",
+            #     "object": kernel.elements,
+            #     "default": False,
+            #     "type": bool,
+            #     "label": _("SVG Uniform Save"),
+            #     "tip": _(
+            #         "Do not treat overwriting SVG differently if they are MeerK40t files"
+            #     ),
+            #     "page": "Input/Output",
+            #     "section": "Input",
+            # },
         ]
         kernel.register_choices("preferences", choices)
         kernel.register("load/SVGLoader", SVGLoader)
@@ -792,16 +801,22 @@ class SVGLoader:
             ppi = DEFAULT_PPI
         if ppi == 0:
             ppi = DEFAULT_PPI
-        scale_factor = UNITS_PER_PIXEL
+        scale_factor = NATIVE_UNIT_PER_INCH / ppi
         source = pathname
         if pathname.lower().endswith("svgz"):
             source = gzip.open(pathname, "rb")
         try:
+            if context.elements.svg_viewport_bed:
+                width = context.device.length_width.length_mm
+                height = context.device.length_height.length_mm
+            else:
+                width = None
+                height = None
             svg = SVG.parse(
                 source=source,
                 reify=True,
-                width=context.device.length_width.length_mm,
-                height=context.device.length_height.length_mm,
+                width=width,
+                height=height,
                 ppi=ppi,
                 color="none",
                 transform=f"scale({scale_factor})",
