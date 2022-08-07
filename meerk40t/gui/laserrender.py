@@ -227,7 +227,36 @@ class LaserRender:
 
         return p
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None, capstyle=None, joinstyle=None):
+    def _set_linecap_by_node(self, node):
+        if not hasattr(node, "linecap") or node.linecap is None:
+            self.pen.SetCap(wx.CAP_ROUND)
+        else:
+            if node.linecap == Linecap.CAP_BUTT:
+
+                self.pen.SetCap(wx.CAP_BUTT)
+            elif node.linecap == Linecap.CAP_ROUND:
+                self.pen.SetCap(wx.CAP_ROUND)
+            elif node.linecap == Linecap.CAP_SQUARE:
+                self.pen.SetCap(wx.CAP_PROJECTING)
+            else:
+                self.pen.SetCap(wx.CAP_ROUND)
+
+    def _set_linejoin_by_node(self, node):
+        if not hasattr(node, "linejoin") or node.linejoin is None:
+            self.pen.SetJoin(wx.JOIN_MITER)
+        else:
+            if node.linejoin == Linejoin.JOIN_ARCS:
+                self.pen.SetJoin(wx.JOIN_ROUND)
+            elif node.linejoin == Linejoin.JOIN_BEVEL:
+                self.pen.SetJoin(wx.JOIN_BEVEL)
+            elif node.linejoin == Linejoin.JOIN_MITER:
+                self.pen.SetJoin(wx.JOIN_MITER)
+            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
+                self.pen.SetJoin(wx.JOIN_MITER)
+            else:
+                self.pen.SetJoin(wx.JOIN_ROUND)
+
+    def set_pen(self, gc, stroke, width=1.0, alpha=None):
         c = stroke
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
@@ -235,10 +264,6 @@ class LaserRender:
                 alpha = c.alpha
             self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
-            if not capstyle is None:
-                self.pen.SetCap(capstyle)
-            if not joinstyle is None:
-                self.pen.SetJoin(joinstyle)
             try:
                 try:
                     self.pen.SetWidth(width)
@@ -269,8 +294,6 @@ class LaserRender:
         zoomscale=1.0,
         width_scale=None,
         alpha=255,
-        capstyle=None,
-        joinstyle=None,
     ):
         try:
             sw = element.stroke_width
@@ -290,8 +313,6 @@ class LaserRender:
             element.stroke,
             width=sw,
             alpha=alpha,
-            capstyle=capstyle,
-            joinstyle=joinstyle,
         )
 
     def draw_cutcode_node(
@@ -427,30 +448,8 @@ class LaserRender:
         except AttributeError:
             matrix = None
             width_scale = 1.0
-        if not hasattr(node, "linecap") or node.linecap is None:
-            lc = wx.CAP_ROUND
-        else:
-            if node.linecap == Linecap.CAP_BUTT:
-                lc = wx.CAP_BUTT
-            elif node.linecap == Linecap.CAP_ROUND:
-                lc = wx.CAP_ROUND
-            elif node.linecap == Linecap.CAP_SQUARE:
-                lc = wx.CAP_PROJECTING
-            else:
-                lc = wx.CAP_ROUND
-        if not hasattr(node, "linejoin") or node.linejoin is None:
-            lj = wx.JOIN_MITER
-        else:
-            if node.linejoin == Linejoin.JOIN_ARCS:
-                lj = wx.JOIN_ROUND
-            elif node.linejoin == Linejoin.JOIN_BEVEL:
-                lj = wx.JOIN_BEVEL
-            elif node.linejoin == Linejoin.JOIN_MITER:
-                lj = wx.JOIN_MITER
-            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
-                lj = wx.JOIN_MITER
-            else:
-                lj = wx.JOIN_MITER
+        self._set_linecap_by_node(node)
+        self._set_linejoin_by_node(node)
         if not hasattr(node, "fillrule") or node.fillrule is None:
             fr = wx.WINDING_RULE
         else:
@@ -471,8 +470,6 @@ class LaserRender:
             zoomscale=zoomscale,
             width_scale=width_scale,
             alpha=alpha,
-            capstyle=lc,
-            joinstyle=lj,
         )
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
@@ -492,30 +489,9 @@ class LaserRender:
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, node.path)
             node.cache = cache
-        if not hasattr(node, "linecap") or node.linecap is None:
-            lc = wx.CAP_ROUND
-        else:
-            if node.linecap == Linecap.CAP_BUTT:
-                lc = wx.CAP_BUTT
-            elif node.linecap == Linecap.CAP_ROUND:
-                lc = wx.CAP_ROUND
-            elif node.linecap == Linecap.CAP_SQUARE:
-                lc = wx.CAP_PROJECTING
-            else:
-                lc = wx.CAP_ROUND
-        if not hasattr(node, "linejoin") or node.linejoin is None:
-            lj = wx.JOIN_MITER
-        else:
-            if node.linejoin == Linejoin.JOIN_ARCS:
-                lj = wx.JOIN_ROUND
-            elif node.linejoin == Linejoin.JOIN_BEVEL:
-                lj = wx.JOIN_BEVEL
-            elif node.linejoin == Linejoin.JOIN_MITER:
-                lj = wx.JOIN_MITER
-            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
-                lj = wx.JOIN_MITER
-            else:
-                lj = wx.JOIN_ROUND
+        self._set_linecap_by_node(node)
+        self._set_linejoin_by_node(node)
+
         if not hasattr(node, "fillrule") or node.fillrule is None:
             fr = wx.WINDING_RULE
         else:
@@ -532,8 +508,6 @@ class LaserRender:
             zoomscale=zoomscale,
             width_scale=width_scale,
             alpha=alpha,
-            capstyle=lc,
-            joinstyle=lj,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
@@ -555,31 +529,8 @@ class LaserRender:
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_numpath(gc, node.path)
             node.cache = cache
-        if not hasattr(node, "linecap") or node.linecap is None:
-            lc = wx.CAP_ROUND
-        else:
-            if node.linecap == Linecap.CAP_BUTT:
-                lc = wx.CAP_BUTT
-            elif node.linecap == Linecap.CAP_ROUND:
-                lc = wx.CAP_ROUND
-            elif node.linecap == Linecap.CAP_SQUARE:
-                lc = wx.CAP_PROJECTING
-            else:
-                lc = wx.CAP_ROUND
-
-        if not hasattr(node, "linejoin") or node.linejoin is None:
-            lj = wx.JOIN_MITER
-        else:
-            if node.linejoin == Linejoin.JOIN_ARCS:
-                lj = wx.JOIN_ROUND
-            elif node.linejoin == Linejoin.JOIN_BEVEL:
-                lj = wx.JOIN_BEVEL
-            elif node.linejoin == Linejoin.JOIN_MITER:
-                lj = wx.JOIN_MITER
-            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
-                lj = wx.JOIN_MITER
-            else:
-                lj = wx.JOIN_ROUND
+        self._set_linecap_by_node(node)
+        self._set_linejoin_by_node(node)
 
         if not hasattr(node, "fillrule") or node.fillrule is None:
             fr = wx.WINDING_RULE
@@ -598,8 +549,6 @@ class LaserRender:
             zoomscale=zoomscale,
             width_scale=width_scale,
             alpha=alpha,
-            capstyle=lc,
-            joinstyle=lj,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
             self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
