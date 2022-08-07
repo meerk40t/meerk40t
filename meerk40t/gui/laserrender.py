@@ -256,7 +256,16 @@ class LaserRender:
             else:
                 self.pen.SetJoin(wx.JOIN_ROUND)
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None):
+    def _set_penwidth_by_width(self, width):
+        try:
+            try:
+                self.pen.SetWidth(width)
+            except TypeError:
+                self.pen.SetWidth(int(width))
+        except OverflowError:
+            pass  # Exceeds 32 bit signed integer.
+
+    def set_pen(self, gc, stroke, alpha=None):
         c = stroke
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
@@ -264,13 +273,6 @@ class LaserRender:
                 alpha = c.alpha
             self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
-            try:
-                try:
-                    self.pen.SetWidth(width)
-                except TypeError:
-                    self.pen.SetWidth(int(width))
-            except OverflowError:
-                pass  # Exceeds 32 bit signed integer.
             gc.SetPen(self.pen)
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
@@ -308,10 +310,10 @@ class LaserRender:
             pass
         if sw < limit:
             sw = limit
+        self._set_penwidth_by_width(sw)
         self.set_pen(
             gc,
             element.stroke,
-            width=sw,
             alpha=alpha,
         )
 
@@ -356,7 +358,8 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self.set_pen(gc, c, width=7.0, alpha=127)
+                self._set_penwidth_by_width(7.0)
+                self.set_pen(gc, c, alpha=127)
             start = cut.start
             end = cut.end
             if p is None:
@@ -510,7 +513,8 @@ class LaserRender:
             alpha=alpha,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
+            self._set_penwidth_by_width(1000)
+            self.set_pen(gc, node.stroke, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache, fillStyle=fr)
@@ -551,7 +555,8 @@ class LaserRender:
             alpha=alpha,
         )
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
+            self._set_penwidth_by_width(1000)
+            self.set_pen(gc, node.stroke, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache, fillStyle=fr)
