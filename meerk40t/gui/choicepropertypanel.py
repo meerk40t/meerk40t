@@ -11,9 +11,15 @@ _ = wx.GetTranslation
 
 class ChoicePropertyPanel(ScrolledPanel):
     """
-    ChoicePropertyPanel is a generic panel that simply presents a simple list of properties to be viewed and edited.
+    ChoicePropertyPanel is a generic panel that presents a list of properties to be viewed and edited.
     In most cases it can be initialized by passing a choices value which will read the registered choice values
-    and display the given properties, automatically generating an appropriate changer for that property.
+    and display the given properties, automatically generating an appropriate changers for that property.
+
+    In most cases the ChoicePropertyPanel should be used for properties of a dynamic nature. A lot of different
+    relationships can be established and the class should be kept fairly easy to extend. With a set dictionary
+    either registered in the Kernel as a choice or called directly on the ChoicePropertyPanel you can make dynamic
+    controls to set various properties. This avoids needing to create a new static window when a panel is just
+    providing options to change settings.
     """
 
     def __init__(

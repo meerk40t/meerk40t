@@ -1,6 +1,14 @@
 from wx import IMAGE_ALPHA_OPAQUE, Bitmap
 from wx.lib.embeddedimage import PyEmbeddedImage as py_embedded_image
 
+"""
+icons serves as a central repository for icons and other assets. These are all processed as PyEmbeddedImages which is
+extended from the wx.lib utility of the same name. We allow several additional modifications to these assets. For
+example we allow resizing and inverting this allows us to easily reuse the icons and to use the icons for dark themed
+guis. We permit rotation of the icons, so as to permit reusing these icons and coloring the icons to match a particular
+colored object, for example the icons in the tree for operations using color specific matching.
+"""
+
 DARKMODE = False
 
 STD_ICON_SIZE = 50
