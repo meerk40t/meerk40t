@@ -183,6 +183,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
 
         context.elements.setting(float, "svg_ppi", 96.0)
         self.text_svg_ppi.SetValue(str(context.elements.svg_ppi))
+        self.on_text_svg_ppi(None)
 
     def on_combo_svg_ppi(self, event=None):
         elements = self.context.elements
