@@ -7,6 +7,7 @@ from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.device.gui.warningpanel import WarningPanel
 
 _ = wx.GetTranslation
 
@@ -15,7 +16,7 @@ class MoshiConfigurationPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context.device
+        self.context = context
 
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
@@ -143,19 +144,42 @@ class MoshiConfigurationPanel(ScrolledPanel):
 class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(335, 170, *args, **kwds)
-
-        self.panel = MoshiConfigurationPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
+        self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Configuration"))
 
+        self.notebook_main = wx.aui.AuiNotebook(
+            self,
+            -1,
+            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | wx.aui.AUI_NB_SCROLL_BUTTONS
+            | wx.aui.AUI_NB_TAB_SPLIT
+            | wx.aui.AUI_NB_TAB_MOVE,
+        )
+
+        self.ConfigurationPanel = MoshiConfigurationPanel(
+            self.notebook_main, wx.ID_ANY, context=self.context
+        )
+
+        self.notebook_main.AddPage(self.ConfigurationPanel, _("Configuration"))
+
+        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+
+        self.Layout()
+
+        self.add_module_delegate(self.ConfigurationPanel)
+        self.add_module_delegate(self.panel_warn)
+
     def window_open(self):
-        self.panel.pane_show()
+        self.ConfigurationPanel.pane_show()
+        self.panel_warn.pane_show()
 
     def window_close(self):
-        self.panel.pane_hide()
+        self.ConfigurationPanel.pane_hide()
+        self.panel_warn.pane_hide()
 
     def window_preserve(self):
         return False

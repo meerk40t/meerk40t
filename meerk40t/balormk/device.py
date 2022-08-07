@@ -473,14 +473,13 @@ class BalorDevice(Service, ViewPort):
             "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {frequency}kHz {colcode} {opstop}",
         )
         self.register("format/util console", "{enabled}{command}")
-        # Define maxspeed min, need to be adjusted for balor
-        kernel.register("dangerlevel/op cut", (50, 100))
-        kernel.register("dangerlevel/op engrave", (50, 100))
-        kernel.register("dangerlevel/op hatch", (500, 100))
-        kernel.register("dangerlevel/op raster", (500, 100))
-        kernel.register("dangerlevel/op image", (500, 100))
-        kernel.register("dangerlevel/op dots", (500, 100))
-
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0))
         choices = [
             {
                 "attr": "label",

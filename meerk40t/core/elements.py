@@ -64,13 +64,6 @@ def plugin(kernel, lifecycle=None):
         kernel.register(
             "format/op dots", "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {opstop}"
         )
-        # Define maxspeed min
-        kernel.register("dangerlevel/op cut", (50, 100))
-        kernel.register("dangerlevel/op engrave", (50, 100))
-        kernel.register("dangerlevel/op hatch", (500, 100))
-        kernel.register("dangerlevel/op raster", (500, 100))
-        kernel.register("dangerlevel/op image", (500, 100))
-        kernel.register("dangerlevel/op dots", (500, 100))
 
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
