@@ -451,16 +451,19 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-        self._set_linecap_by_node(node)
-        self._set_linejoin_by_node(node)
         if not hasattr(node, "cache") or node.cache is None:
             cache = self.make_path(gc, Path(node.shape))
             node.cache = cache
+        self._set_linecap_by_node(node)
+        self._set_linejoin_by_node(node)
 
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self._set_penwidth_by_node_and_zoom(node, zoomscale)
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth_by_width(1000)
+        else:
+            self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
@@ -488,15 +491,15 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self._set_penwidth_by_node_and_zoom(node, zoomscale)
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth_by_width(1000)
+        else:
+            self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
             alpha=alpha,
         )
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000)
-            self.set_pen(gc, node.stroke, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
@@ -519,15 +522,15 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self._set_penwidth_by_node_and_zoom(node, zoomscale)
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth_by_width(1000)
+        else:
+            self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
             alpha=alpha,
         )
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000)
-            self.set_pen(gc, node.stroke, alpha=alpha)
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
@@ -574,7 +577,10 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self._set_penwidth_by_node_and_zoom(node, zoomscale)
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth_by_width(1000)
+        else:
+            self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
             gc,
             node.stroke,
