@@ -308,7 +308,7 @@ class Bind(Service):
                 action = self.keymap[keyvalue]
                 cmds = (action,) if action[0] in "+-" else action.split(";")
                 for cmd in cmds:
-                    self("%s\n" % cmd)
+                    self(f"{cmd}\n")
                 return True
         return False
 
@@ -448,5 +448,5 @@ def keymap_execute(context, keyvalue, keydown=True):
         if not keydown and action.startswith("+"):
             action = "-" + action[1:]
         for cmd in action.split(";"):
-            context("%s\n" % cmd)
+            context(f"{cmd}\n")
     return True
