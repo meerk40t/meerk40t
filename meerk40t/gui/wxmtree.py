@@ -235,6 +235,10 @@ class TreePanel(wx.Panel):
         """
         self.shadow_tree.freeze_tree(status)
 
+    @signal_listener("updateop_tree")
+    def on_update_op_labels_tree(self, origin, *args):
+        self.shadow_tree.update_op_labels()
+
 
 class ElementsTree(MWindow):
     def __init__(self, *args, **kwds):
@@ -1012,34 +1016,53 @@ class ShadowTree:
         if hasattr(node, "node") and node.node is not None:
             formatter = self.elements.lookup(f"format/{node.node.type}")
             if node.node.type.startswith("op "):
-                maxspeed_minpower = self.elements.lookup(
-                    f"dangerlevel/{node.node.type}"
-                )
-                if not maxspeed_minpower is None:
-                    try:
-                        maxspeed = maxspeed_minpower[0]
-                    except AttributeError:
-                        maxspeed = None
-                    try:
-                        minpower = maxspeed_minpower[1]
-                    except AttributeError:
-                        minpower = None
-                node.node.is_dangerous(maxspeed, minpower)
+                checker = "dangerlevel " + node.node.type
+                checker = checker.replace(" ", "_")
+                if hasattr(self.context.device, checker):
+                    maxspeed_minpower = getattr(self.context.device, checker)
+                    # minpower, maxposer, minspeed, maxspeed
+                    # print ("Yes: ", checker, maxspeed_minpower)
+                    danger = False
+                    if hasattr(node.node, "power"):
+                        value = node.node.power
+                        if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
+                            danger = True
+                        if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
+                            danger = True
+                    if hasattr(node.node, "speed"):
+                        value = node.node.speed
+                        if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
+                            danger = True
+                        if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
+                            danger = True
+                    if hasattr(node.node, "dangerous"):
+                        node.node.dangerous = danger
+                # node.node.is_dangerous(maxspeed, minpower)
             label = "*" + node.node.create_label(formatter)
         else:
             formatter = self.elements.lookup(f"format/{node.type}")
             if node.type.startswith("op "):
-                maxspeed_minpower = self.elements.lookup(f"dangerlevel/{node.type}")
-                if not maxspeed_minpower is None:
-                    try:
-                        maxspeed = maxspeed_minpower[0]
-                    except AttributeError:
-                        maxspeed = None
-                    try:
-                        minpower = maxspeed_minpower[1]
-                    except AttributeError:
-                        minpower = None
-                node.is_dangerous(maxspeed, minpower)
+                checker = "dangerlevel " + node.type
+                checker = checker.replace(" ", "_")
+                if hasattr(self.context.device, checker):
+                    maxspeed_minpower = getattr(self.context.device, checker)
+                    # minpower, maxposer, minspeed, maxspeed
+                    # print ("Yes: ", checker, maxspeed_minpower)
+                    danger = False
+                    if hasattr(node, "power"):
+                        value = node.power
+                        if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
+                            danger = True
+                        if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
+                            danger = True
+                    if hasattr(node, "speed"):
+                        value = node.speed
+                        if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
+                            danger = True
+                        if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
+                            danger = True
+                    if hasattr(node, "dangerous"):
+                        node.dangerous = danger
             label = node.create_label(formatter)
 
         self.wxtree.SetItemText(node.item, label)
