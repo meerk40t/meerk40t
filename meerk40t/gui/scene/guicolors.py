@@ -70,10 +70,11 @@ class GuiColors:
         """
         for key in self.default_color:
             color_key = f"color_{key}"
-            random_color = "#%02X%02X%02X" % (
-                random.randint(0, 255),
-                random.randint(0, 255),
-                random.randint(0, 255),
+            random_color = (
+                f"#"
+                f"{random.randint(0, 255):02X}"
+                f"{random.randint(0, 255):02X}"
+                f"{random.randint(0, 255):02X}"
             )
             setattr(self.context, color_key, random_color)
 

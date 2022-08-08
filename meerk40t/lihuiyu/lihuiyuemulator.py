@@ -33,19 +33,19 @@ class LihuiyuEmulator(Module):
         self._attached_device = None
 
     def __repr__(self):
-        return "LihuiyuEmulator(%s)" % self.name
+        return f"LihuiyuEmulator({self.name})"
 
     def module_open(self, *args, **kwargs):
         context = self.context
         active = self.context.driver.name
         self._attached_device = active
-        send = context.channel("%s/usb_send" % active)
+        send = context.channel(f"{active}/usb_send")
         send.watch(self.parser.write_packet)
 
     def module_close(self, *args, **kwargs):
         context = self.context
         active = self._attached_device
-        send = context.channel("%s/usb_send" % active)
+        send = context.channel(f"{active}/usb_send")
         send.unwatch(self.parser.write_packet)
 
 
@@ -174,7 +174,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 3:
             if self.channel:
-                self.channel("Speedcode B1 = %s" % self.number_value)
+                self.channel(f"Speedcode B1 = {self.number_value}")
             self.number_value = ""
             self.number_consumer = self.speedcode_b2_consumer
 
@@ -182,7 +182,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 3:
             if self.channel:
-                self.channel("Speedcode B2 = %s" % self.number_value)
+                self.channel(f"Speedcode B2 = {self.number_value}")
             self.number_value = ""
             self.number_consumer = self.speedcode_accel_consumer
 
@@ -190,7 +190,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 1:
             if self.channel:
-                self.channel("Speedcode Accel = %s" % self.number_value)
+                self.channel(f"Speedcode Accel = {self.number_value}")
             self.number_value = ""
             self.number_consumer = self.speedcode_mult_consumer
 
@@ -198,7 +198,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 3:
             if self.channel:
-                self.channel("Speedcode Accel = %s" % self.number_value)
+                self.channel(f"Speedcode Accel = {self.number_value}")
             self.number_value = ""
             self.number_consumer = self.speedcode_dratio_b1_consumer
 
@@ -206,7 +206,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 3:
             if self.channel:
-                self.channel("Speedcode Dratio b1 = %s" % self.number_value)
+                self.channel(f"Speedcode Dratio b1 = {self.number_value}")
             self.number_value = ""
             self.number_consumer = self.speedcode_dratio_b2_consumer
 
@@ -214,7 +214,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 3:
             if self.channel:
-                self.channel("Speedcode Dratio b2 = %s" % self.number_value)
+                self.channel(f"Speedcode Dratio b2 = {self.number_value}")
             self.number_value = ""
             self.number_consumer = self.distance_consumer
 
@@ -222,7 +222,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 3:
             if self.channel:
-                self.channel("Raster Step = %s" % self.number_value)
+                self.channel(f"Raster Step = {self.number_value}")
             self.raster_step = int(self.number_value)
             self.number_value = ""
 
@@ -232,7 +232,7 @@ class LihuiyuParser:
         self.number_value += c
         if len(self.number_value) >= 1:
             if self.channel:
-                self.channel("Set Mode = %s" % self.number_value)
+                self.channel(f"Set Mode = {self.number_value}")
             self.mode = int(self.number_value)
             self.number_value = ""
             self.number_consumer = self.speedcode_mult_consumer
@@ -264,7 +264,7 @@ class LihuiyuParser:
                 self.position((ox, oy, self.x, self.y))
 
             if self.channel:
-                self.channel("Moving (%d %d) now at %d %d" % (dx, dy, self.x, self.y))
+                self.channel(f"Moving ({dx} {dy}) now at {self.x} {self.y}")
 
     def process(self, b, c):
         if c == "I":
@@ -453,7 +453,7 @@ class EGVBlob:
         self._cut = None
 
     def __repr__(self):
-        return "EGV(%s, %d bytes)" % (self.name, len(self.data))
+        return f"EGV({self.name}, {len(self.data)} bytes)"
 
     def as_cutobjects(self):
         parser = LihuiyuParser()

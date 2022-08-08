@@ -95,7 +95,7 @@ class DXFProcessor:
                 if w > viewport.unit_width or h > viewport.unit_height:
                     # Cannot fit to bed. Scale.
                     bb = Viewbox(
-                        "%f %f %f %f" % (x, y, w, h), preserve_aspect_ratio="xMidyMid"
+                        f"{x} {y} {w} {h}", preserve_aspect_ratio="xMidyMid"
                     )
                     matrix = bb.transform(Viewbox(bx, by, bw, bh))
                     for node in self.elements_list:

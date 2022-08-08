@@ -263,9 +263,9 @@ class Driver:
         @return:
         """
         parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.get("speed", 0.0))
-        parts.append("power=%d" % self.settings.get("power", 0))
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.settings.get('speed', 0.0)}")
+        parts.append(f"power={self.settings.get('power', 0)}")
         status = ";".join(parts)
         self.context.signal("driver;status", status)

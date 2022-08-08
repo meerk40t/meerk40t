@@ -85,7 +85,7 @@ class Node:
         self.label = None
 
     def __repr__(self):
-        return "Node('%s', %s)" % (self.type, str(self._parent))
+        return f"Node('{self.type}', {str(self._parent)})"
 
     def __str__(self):
         text = self._formatter

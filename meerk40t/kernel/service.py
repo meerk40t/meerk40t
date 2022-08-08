@@ -131,7 +131,7 @@ class Service(Context):
         @param choices: list of choices
         @return:
         """
-        key = "choices/%s" % sheet
+        key = f"choices/{sheet}"
         if key in self._registered:
             others = self._registered[key]
             others.extend(choices)

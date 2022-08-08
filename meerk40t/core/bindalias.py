@@ -257,7 +257,7 @@ class Bind(Service):
                 channel(_("    Key                    Command"))
                 for i, key in enumerate(sorted(self.keymap.keys(), key=keymap_index)):
                     value = self.keymap[key]
-                    channel("%2d: %s %s" % (i, key.ljust(22), value))
+                    channel(f"{i:2d}: {key.ljust(22)} {value}")
                 channel("----------")
                 return
             key = args[0].lower()
@@ -308,7 +308,7 @@ class Bind(Service):
                 action = self.keymap[keyvalue]
                 cmds = (action,) if action[0] in "+-" else action.split(";")
                 for cmd in cmds:
-                    self("%s\n" % cmd)
+                    self(f"{cmd}\n")
                 return True
         return False
 
@@ -374,16 +374,16 @@ class Alias(Service):
                     if last is None or last[0] != "+" or key[0] != "-":
                         i += 1
                     if keystroke and len(key) + len(keystroke) < 18:
-                        key += " (%s)" % keystroke
+                        key += f" ({keystroke})"
                         keystroke = ""
                     if keystroke:
-                        channel("%2d: (%s)" % (i, keystroke))
+                        channel(f"{i:2d}: ({keystroke})")
                     if last and last[0] == "+" and key[0] == "-":
-                        channel("    %s %s" % (key.ljust(22), value))
+                        channel(f"    {key.ljust(22)} {value}")
                     elif keystroke:
-                        channel("    %s %s" % (key.ljust(22), value))
+                        channel(f"    {key.ljust(22)} {value}")
                     else:
-                        channel("%2d: %s %s" % (i, key.ljust(22), value))
+                        channel(f"{i:2d}: {key.ljust(22)} {value}")
                     last = key
 
                 channel("----------")
@@ -448,5 +448,5 @@ def keymap_execute(context, keyvalue, keydown=True):
         if not keydown and action.startswith("+"):
             action = "-" + action[1:]
         for cmd in action.split(";"):
-            context("%s\n" % cmd)
+            context(f"{cmd}\n")
     return True

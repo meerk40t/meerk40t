@@ -223,7 +223,7 @@ class PlotPlanner(Parameters):
 
         def debug(plot, manipulator):
             for q in plot:
-                print("Manipulator: %s, %s" % (str(q), str(manipulator)))
+                print(f"Manipulator: {str(q)}, {str(manipulator)}")
                 yield q
 
         if self.single is not None:
@@ -359,8 +359,7 @@ class Single(PlotManipulation):
             if total_dy * dx != total_dx * dy:
                 # Check for cross-equality.
                 raise ValueError(
-                    "Must be uniformly diagonal or orthogonal: (%d, %d) is not."
-                    % (total_dx, total_dy)
+                    f"Must be uniformly diagonal or orthogonal: ({total_dx}, {total_dy}) is not."
                 )
             cx = self.single_x
             cy = self.single_y
@@ -492,11 +491,7 @@ class PPI(PlotManipulation):
         self.dot_left = 0
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.ppi_total),
-            str(self.dot_left),
-        )
+        return f"{self.__class__.__name__}({str(self.ppi_total)},{str(self.dot_left)})"
 
     def process(self, plot):
         """
@@ -543,11 +538,7 @@ class Shift(PlotManipulation):
         self.shift_pixels = 0
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.shift_buffer),
-            bin(self.shift_pixels),
-        )
+        return f"{self.__class__.__name__}({str(self.shift_buffer)},{bin(self.shift_pixels)})"
 
     def process(self, plot):
         """
@@ -693,7 +684,7 @@ class Group(PlotManipulation):
             if abs(self.group_dx) > 1 or abs(self.group_dy) > 1:
                 # The last step was not valid. Group() requires single step values.
                 raise ValueError(
-                    "dx(%d) or dy(%d) exceeds 1" % (self.group_dx, self.group_dy)
+                    f"dx({self.group_dx}) or dy({self.group_dy}) exceeds 1"
                 )
             # Save our buffered position.
             self.group_x = x
@@ -756,7 +747,7 @@ def grouped(plot):
         group_dy = y - group_y
         if abs(group_dx) > 1 or abs(group_dy) > 1:
             # The last step was not valid.
-            raise ValueError("dx(%d) or dy(%d) exceeds 1" % (group_dx, group_dy))
+            raise ValueError(f"dx({group_dx}) or dy({group_dy}) exceeds 1")
         group_x = x
         group_y = y
     # There are no more plots.

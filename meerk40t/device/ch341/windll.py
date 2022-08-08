@@ -150,7 +150,7 @@ class Handler(CH341Handler):
         try:
             self.driver = windll.LoadLibrary("CH341DLL.dll")
         except FileNotFoundError as e:
-            self.channel("%s: %s" % (str(type(e)), str(e)))
+            self.channel(f"{str(type(e))}: {str(e)}")
             raise ImportError(
                 "FileNotFoundError for misconfigured CH341DLL.dll. See Issue #459"
             )

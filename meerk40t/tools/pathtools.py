@@ -37,12 +37,7 @@ class Segment:
         return 9
 
     def __str__(self):
-        return "Segment(%s,%s,%s,type='%s')" % (
-            str(self.a),
-            str(self.b),
-            str(self.index),
-            self.value,
-        )
+        return f"Segment({str(self.a)},{str(self.b)},{str(self.index)},type='{self.value}')"
 
     def __getitem__(self, item):
         if item == 0:

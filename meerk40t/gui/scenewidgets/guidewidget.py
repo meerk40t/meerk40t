@@ -464,15 +464,11 @@ class GuideWidget(Widget):
                     self.fill_magnets()
             elif is_x:
                 # Get the X coordinate from space_pos [0]
-                value = float(Length("%.1f%s" % (mark_point_x, self.units)))
-                self.scene.toggle_x_magnet(value)
-            elif is_x:
-                # Get the X coordinate from space_pos [0]
-                value = float(Length("%.1f%s" % (mark_point_x, self.units)))
+                value = float(Length(f"{mark_point_x:.1f}{self.units}"))
                 self.scene.toggle_x_magnet(value)
             elif is_y:
                 # Get the Y coordinate from space_pos [1]
-                value = float(Length("%.1f%s" % (mark_point_y, self.units)))
+                value = float(Length(f"{mark_point_y:.1f}{self.units}"))
                 self.scene.toggle_y_magnet(value)
 
             self.scene.request_refresh()
@@ -625,7 +621,7 @@ class GuideWidget(Widget):
                             (x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)
                         )
                     if (x - last_text_pos) >= t_height * 1.25:
-                        gc.DrawText("%g" % mark_point, x, edge_gap, -math.tau / 4)
+                        gc.DrawText(f"{mark_point:g}", x, edge_gap, -math.tau / 4)
                         last_text_pos = x
             x += points_x_primary
 
@@ -656,9 +652,9 @@ class GuideWidget(Widget):
                             (w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary)
                         )
 
-                    # gc.DrawText("%g %s" % (mark_point + 0, p.units_name), 0, y + 0)
                     if (y - last_text_pos) >= t_height * 1.25:
-                        gc.DrawText("%g" % (mark_point + 0), edge_gap, y + 0)
+                        # Adding zero makes -0 into positive 0
+                        gc.DrawText(f"{mark_point + 0}g", edge_gap, y + 0)
                         last_text_pos = y
             y += points_y_primary
         if len(starts) > 0:
@@ -697,7 +693,7 @@ class GuideWidget(Widget):
                                     h - 0.25 * length - edge_gap,
                                 )
                             )
-                        info = "%g" % mark_point
+                        info = f"{mark_point:g}"
                         (t_w, t_h) = gc.GetTextExtent(info)
                         if (x - last_text_pos) >= t_h * 1.25:
                             gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
@@ -728,7 +724,7 @@ class GuideWidget(Widget):
                                 )
                             )
 
-                        info = "%g" % (mark_point + 0)
+                        info = f"{mark_point + 0:g}"  # -0.0 + 0 == 0
                         (t_w, t_h) = gc.GetTextExtent(info)
                         if (y - last_text_pos) >= t_h * 1.25:
                             gc.DrawText(info, w - edge_gap - t_w, y + 0)

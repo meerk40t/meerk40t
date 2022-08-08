@@ -30,11 +30,11 @@ class UsbConnectPanel(wx.Panel):
     def pane_show(self):
         active = self.context.device.active
         self._active_when_loaded = active
-        self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
+        self.context.channel(f"{active}/usb", buffer_size=500).watch(self.update_text)
 
     def pane_hide(self):
         active = self._active_when_loaded
-        self.context.channel("%s/usb" % active).unwatch(self.update_text)
+        self.context.channel(f"{active}/usb").unwatch(self.update_text)
 
     def update_text(self, text):
         if not wx.IsMainThread():

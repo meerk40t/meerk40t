@@ -25,7 +25,7 @@ class Context:
         self.opened = {}
 
     def __repr__(self):
-        return "Context('%s')" % self._path
+        return f"Context('{self._path}')"
 
     def __call__(self, data: str, **kwargs):
         if len(data) and data[-1] != "\n":
@@ -49,7 +49,7 @@ class Context:
             return subpath[1:]
         if self._path is None or self._path == "/":
             return subpath
-        return "%s/%s" % (self._path, subpath)
+        return f"{self._path}/{subpath}"
 
     def derive(self, path: str) -> "Context":
         """

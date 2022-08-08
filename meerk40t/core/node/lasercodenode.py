@@ -20,7 +20,7 @@ class LaserCodeNode(Node):
         self.output = True
 
     def __repr__(self):
-        return "LaserCode('%s', '%s')" % (self.name, str(self.commands))
+        return f"LaserCode('{self.name}', '{str(self.commands)}')"
 
     def __copy__(self):
         return LaserCodeNode(self.commands, name=self.name)

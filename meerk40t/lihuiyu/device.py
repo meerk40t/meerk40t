@@ -496,7 +496,7 @@ class LihuiyuDevice(Service, ViewPort):
                         self.output.write(buffer)
                     self.output.write(b"\n")
             except (PermissionError, IOError, FileNotFoundError):
-                channel(_("Could not load: %s" % filename))
+                channel(_("Could not load: %s") % filename)
 
         @self.console_argument("filename", type=str)
         @self.console_command(
@@ -512,8 +512,7 @@ class LihuiyuDevice(Service, ViewPort):
                     f.write("File version: 1.0.01\n")
                     f.write("Copyright: Unknown\n")
                     f.write(
-                        "Creator-Software: %s v%s\n"
-                        % (self.kernel.name, self.kernel.version)
+                        f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n"
                     )
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
@@ -630,13 +629,13 @@ class LihuiyuDevice(Service, ViewPort):
             channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
         ):
             try:
-                server_name = "lhyserver%s" % self.path
+                server_name = f"lhyserver{self.path}"
                 output = self.controller
                 server = self.open_as("module/TCPServer", server_name, port=port)
                 if quit:
                     self.close(server_name)
                     return
-                channel(_("TCP Server for lihuiyu on port: %d" % port))
+                channel(_("TCP Server for lihuiyu on port: %d") % port)
                 if not silent:
                     console = kernel.channel("console")
                     server.events_channel.watch(console)
@@ -644,7 +643,7 @@ class LihuiyuDevice(Service, ViewPort):
                         server.data_channel.watch(console)
                 channel(_("Watching Channel: %s") % "server")
                 self.channel(f"{server_name}/recv").watch(output.write)
-                channel(_("Attached: %s" % repr(output)))
+                channel(_("Attached: %s") % repr(output))
 
             except OSError:
                 channel(_("Server failed on port: %d") % port)
@@ -656,7 +655,7 @@ class LihuiyuDevice(Service, ViewPort):
         def lhyemulator(channel, _, **kwargs):
             try:
                 self.open_as("emulator/lihuiyu", "lhyemulator")
-                channel(_("Lihuiyu Emulator attached to %s" % str(self)))
+                channel(_("Lihuiyu Emulator attached to %s") % str(self))
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
             return
@@ -838,7 +837,7 @@ class LihuiyuDriver(Parameters):
         self.step_total = 0.0
 
     def __repr__(self):
-        return "LihuiyuDriver(%s)" % self.name
+        return f"LihuiyuDriver({self.name})"
 
     def __call__(self, e):
         self.out_pipe.write(e)
@@ -1802,10 +1801,10 @@ class LihuiyuDriver(Parameters):
 
     def status(self):
         parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.speed)
-        parts.append("power=%d" % self.power)
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.speed}")
+        parts.append(f"power={self.power}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -1895,10 +1894,10 @@ class LihuiyuController:
         self.abort_waiting = False
 
         name = self.context.label
-        self.pipe_channel = context.channel("%s/events" % name)
-        self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
-        self.usb_send_channel = context.channel("%s/usb_send" % name)
-        self.recv_channel = context.channel("%s/recv" % name)
+        self.pipe_channel = context.channel(f"{name}/events")
+        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = context.channel(f"{name}/usb_send")
+        self.recv_channel = context.channel(f"{name}/recv")
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
         self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
@@ -1986,7 +1985,7 @@ class LihuiyuController:
             self.realtime_write(bytes_to_write)
             return self
 
-        self.pipe_channel("write(%s)" % str(bytes_to_write))
+        self.pipe_channel(f"write({str(bytes_to_write)})")
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write
         self._queue_lock.release()
@@ -2017,7 +2016,7 @@ class LihuiyuController:
             if queue_bytes:
                 self.write(queue_bytes)
             return self
-        self.pipe_channel("realtime_write(%s)" % str(bytes_to_write))
+        self.pipe_channel(f"realtime_write({str(bytes_to_write)})")
         self._preempt_lock.acquire(True)
         self._preempt = bytearray(bytes_to_write) + self._preempt
         self._preempt_lock.release()
@@ -2036,7 +2035,7 @@ class LihuiyuController:
         ):
             self._thread = self.context.threaded(
                 self._thread_data_send,
-                thread_name="LhyPipe(%s)" % self.context.path,
+                thread_name=f"LhyPipe({self.context.path})",
                 result=self.stop,
             )
             self._thread.stop = self.stop
@@ -2491,7 +2490,7 @@ class TCPOutput:
             self.service.signal("tcp;status", "address resolve error")
         except socket.herror as e:
             self.disconnect()
-            self.service.signal("tcp;status", "herror: %s" % str(e))
+            self.service.signal("tcp;status", f"herror: {str(e)}")
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
@@ -2550,12 +2549,8 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return "TCPOutput('%s:%s','%s')" % (
-                self.service.address,
-                self.service.port,
-                self.name,
-            )
-        return "TCPOutput('%s:%s')" % (self.service.address, self.service.port)
+            return f"TCPOutput('{self.service.address}:{self.service.port}','{self.name}')"
+        return f"TCPOutput('{self.service.address}:{self.service.port}')"
 
     def __len__(self):
         return len(self.buffer)

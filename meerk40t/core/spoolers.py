@@ -40,11 +40,11 @@ def plugin(kernel, lifecycle):
                 channel(_("----------"))
                 channel(_("Spoolers:"))
                 for d, d_name in enumerate(device.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
+                    channel(f"{d}: {d_name}")
                 channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(device.label)))
+                channel(_("Spooler on device %s:") % str(device.label))
                 for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
+                    channel(f"{s}: {op_name}")
                 channel(_("----------"))
             return "spooler", spooler
 
@@ -81,11 +81,11 @@ def plugin(kernel, lifecycle):
             channel(_("----------"))
             channel(_("Spoolers:"))
             for d, d_name in enumerate(kernel.match("device", suffix=True)):
-                channel("%d: %s" % (d, d_name))
+                channel(f"{d}: {d_name}")
             channel(_("----------"))
             channel(_("Spooler on device %s:" % str(kernel.device.label)))
             for s, op_name in enumerate(spooler.queue):
-                channel("%d: %s" % (s, op_name))
+                channel(f"{s}: {op_name}")
             channel(_("----------"))
             return data_type, spooler
 
@@ -539,7 +539,7 @@ class Spooler:
             self._thread = self.context.threaded(
                 self.run,
                 result=clear_thread,
-                thread_name="Spooler(%s)" % self.context.path,
+                thread_name=f"Spooler({self.context.path})",
             )
             self._thread.stop = clear_thread
 

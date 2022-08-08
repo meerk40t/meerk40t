@@ -642,7 +642,7 @@ class GridWidget(Widget):
                         degang = round(c_angle / tau * 360, 1)
                         if degang == 360:
                             degang = 0
-                        a_text = "%.0f°" % degang
+                        a_text = f"{degang:.0f}°"
                         (t_width, t_height) = gc.GetTextExtent(a_text)
                         # Make sure text remains legible without breaking your neck... ;-)
                         if tau * 1 / 4 < c_angle < tau * 3 / 4:

@@ -142,8 +142,7 @@ class Kernel(Settings):
             original = os.getcwd()
             os.chdir(get_safe_path(self.name, True))
             print(
-                "Changing working directory from %s to %s."
-                % (str(original), str(os.getcwd()))
+                f"Changing working directory from {str(original)} to {str(os.getcwd())}."
             )
             return open(*args)
 
@@ -167,17 +166,13 @@ class Kernel(Settings):
 
                 kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
-                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
+                start = f"Calling {str(obj)}.{func.__name__}({signature})"
                 debug_file.write(start + "\n")
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
-                finish = "    %s returned %s after %fms" % (
-                    func.__name__,
-                    value,
-                    t * 1000,
-                )
+                finish = f"    {func.__name__} returned {value} after {t * 1000}ms"
                 print(finish)
                 debug_file.write(finish + "\n")
                 debug_file.flush()
@@ -1064,7 +1059,7 @@ class Kernel(Settings):
                 try:
                     attr = v[0]
                     value = v[1]
-                    self.console("set %s %s\n" % (attr, value))
+                    self.console(f"set {attr} {value}\n")
                 except IndexError:
                     break
 
@@ -1181,7 +1176,7 @@ class Kernel(Settings):
             if channel:
                 for c in code.split("\n"):
                     if c:
-                        channel(_("Suspended Command: %s" % c))
+                        channel(_("Suspended Command: {c}").format(c=c))
 
         # pylint: disable=method-hidden
         self.console = console  # redefine console signal, hidden by design
@@ -1434,8 +1429,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            "Changed all: %s (%s)"
-            % (str(paths), str(threading.currentThread().getName()))
+            f"Changed all: {str(paths)} ({str(threading.currentThread().getName())})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1472,13 +1466,12 @@ class Kernel(Settings):
         channel = self.channel("lookup")
         if channel:
             channel(
-                "Lookup Change Processing (%s)"
-                % (str(threading.currentThread().getName()))
+                f"Lookup Change Processing ({str(threading.currentThread().getName())})"
             )
         with self._lookup_lock:
             for matchtext in self.lookups:
                 if channel:
-                    channel("Checking: %s" % matchtext)
+                    channel(f"Checking: {matchtext}")
                 listeners = self.lookups[matchtext]
                 try:
                     previous_matches = self.lookup_previous[matchtext]
@@ -1489,18 +1482,18 @@ class Kernel(Settings):
                 ):
                     continue
                 if channel:
-                    channel("Differences for %s" % matchtext)
+                    channel(f"Differences for {matchtext}")
                 new_matches = list(self.find(matchtext))
                 if previous_matches != new_matches:
                     if channel:
-                        channel("Values differ. %s" % matchtext)
+                        channel(f"Values differ. {matchtext}")
                     self.lookup_previous[matchtext] = new_matches
                     for listener in listeners:
                         funct, lso = listener
                         funct(new_matches, previous_matches)
                 else:
                     if channel:
-                        channel("Values identical: %s" % matchtext)
+                        channel(f"Values identical: {matchtext}")
             self._dirty_paths.clear()
 
     def register(self, path: str, obj: Any) -> None:
@@ -1588,29 +1581,29 @@ class Kernel(Settings):
             thread_name = func.__name__
         try:
             old_thread = self.threads[thread_name]
-            channel(_("Thread: %s already exists. Waiting..." % thread_name))
+            channel(_("Thread: %s already exists. Waiting...") % thread_name)
             old_thread.join()
             # We must wait for the old thread to complete before running. Lock.
         except KeyError:
             # No current thread
             pass
         thread = Thread(name=thread_name)
-        channel(_("Thread: %s, Initialized" % thread_name))
+        channel(_("Thread: %s, Initialized") % thread_name)
 
         def run():
             func_result = None
-            channel(_("Thread: %s, Set" % thread_name))
+            channel(_("Thread: %s, Set") % thread_name)
             try:
-                channel(_("Thread: %s, Start" % thread_name))
+                channel(_("Thread: %s, Start") % thread_name)
                 func_result = func(*args)
-                channel(_("Thread: %s, End " % thread_name))
+                channel(_("Thread: %s, End ") % thread_name)
             except Exception:
-                channel(_("Thread: %s, Exception-End" % thread_name))
+                channel(_("Thread: %s, Exception-End") % thread_name)
                 import sys
 
                 channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
-            channel(_("Thread: %s, Unset" % thread_name))
+            channel(_("Thread: %s, Unset") % thread_name)
             del self.threads[thread_name]
             if result is not None:
                 result(func_result)
@@ -1778,9 +1771,9 @@ class Kernel(Settings):
     ):
         if name is None or len(name) == 0:
             i = 1
-            while "timer%d" % i in self.jobs:
+            while f"timer{i}" in self.jobs:
                 i += 1
-            name = "timer%d" % i
+            name = f"timer{i}"
         if not name.startswith("timer"):
             name = "timer" + name
         if times == 0:
@@ -1888,14 +1881,8 @@ class Kernel(Settings):
                     listener(origin, *message)
                     if signal_channel:
                         signal_channel(
-                            "Signal: %s %s: %s:%s%s"
-                            % (
-                                origin,
-                                signal,
-                                listener.__module__,
-                                listener.__name__,
-                                str(message),
-                            )
+                            f"Signal: {origin} {signal}: "
+                            f"{listener.__module__}:{listener.__name__}{str(message)}"
                         )
             self._last_message[signal] = payload
         self._is_queue_processing = False
@@ -2131,7 +2118,7 @@ class Kernel(Settings):
         @param choices: choices being registered
         @return:
         """
-        key = "choices/%s" % sheet
+        key = f"choices/{sheet}"
         if key in self._registered:
             others = self._registered[key]
             others.extend(choices)
@@ -2197,7 +2184,7 @@ class Kernel(Settings):
                     for a in func.arguments:
                         arg_name = a.get("name", "")
                         arg_type = a.get("type", type(None)).__name__
-                        help_args.append("<%s:%s>" % (arg_name, arg_type))
+                        help_args.append(f"<{arg_name}:{arg_type}>")
                     if found:
                         channel("\n")
                     if func.long_help is not None:
@@ -2206,18 +2193,15 @@ class Kernel(Settings):
                         )
                         channel("\n")
 
-                    channel("\t%s %s" % (command_item, " ".join(help_args)))
+                    channel(f"\t{command_item} {' '.join(help_args)}")
                     channel(
-                        "\t(%s) -> %s -> (%s)"
-                        % (input_type, command_item, func.output_type)
+                        f"\t({input_type}) -> {command_item} -> ({func.output_type})"
                     )
                     for a in func.arguments:
                         arg_name = a.get("name", "")
                         arg_type = a.get("type", type(None)).__name__
                         arg_help = a.get("help")
-                        arg_help = (
-                            ":\n\t\t%s" % arg_help if arg_help is not None else ""
-                        )
+                        arg_help = f":\n\t\t{arg_help if arg_help is not None else ''}"
                         channel(
                             _("\tArgument: %s '%s'%s") % (arg_type, arg_name, arg_help)
                         )
@@ -2226,9 +2210,7 @@ class Kernel(Settings):
                         opt_short = b.get("short", "")
                         opt_type = b.get("type", type(None)).__name__
                         opt_help = b.get("help")
-                        opt_help = (
-                            ":\n\t\t%s" % opt_help if opt_help is not None else ""
-                        )
+                        opt_help = f":\n\t\t{opt_help if opt_help is not None else ''}"
                         channel(
                             _("\tOption: %s ('--%s', '-%s')%s")
                             % (opt_type, opt_name, opt_short, opt_help)
@@ -2260,7 +2242,7 @@ class Kernel(Settings):
                 if func.hidden:
                     continue
                 if help_attribute is not None:
-                    channel("%s %s" % (command_item.ljust(15), help_attribute))
+                    channel(f"{command_item.ljust(15)} {help_attribute}")
                 else:
                     channel(command_name.split("/")[-1])
 
@@ -2359,7 +2341,7 @@ class Kernel(Settings):
             for i, job_name in enumerate(self.jobs):
                 job = self.jobs[job_name]
                 parts = list()
-                parts.append("%d:" % (i + 1))
+                parts.append(f"{i + 1}:")
                 parts.append(str(job))
                 if job.times is None:
                     parts.append(_("forever,"))
@@ -2426,9 +2408,9 @@ class Kernel(Settings):
                     i += 1
                     job = self.jobs[job_name]
                     parts = list()
-                    parts.append("%d:" % i)
+                    parts.append(f"{i}:")
                     parts.append(job_name)
-                    parts.append('"%s"' % str(job))
+                    parts.append(f'"{str(job)}"')
                     if job.times is None:
                         parts.append(_("forever,"))
                     else:
@@ -2457,9 +2439,9 @@ class Kernel(Settings):
                     obj = self.jobs[command]
                     obj.cancel()
                     self.unschedule(obj)
-                    channel(_("Timer '%s' canceled." % name))
+                    channel(_("Timer '%s' canceled.") % name)
                 except KeyError:
-                    channel(_("Timer '%s' does not exist." % name))
+                    channel(_("Timer '%s' does not exist.") % name)
                 return
             try:
                 times = int(times)
@@ -2578,7 +2560,7 @@ class Kernel(Settings):
                 channel(_("----------"))
                 channel(_("Modules Registered:"))
                 for i, name in enumerate(self.match("module")):
-                    channel("%d: %s" % (i + 1, name))
+                    channel(f"{i + 1}: {name}")
                 channel(_("----------"))
                 for i, name in enumerate(self.contexts):
                     context = self.contexts[name]
@@ -2733,7 +2715,7 @@ class Kernel(Settings):
                     origin = name[:find]
                     text = name[find + 1 :]
                     if text:
-                        channel("%d - %s: %s" % (i + 1, origin, text))
+                        channel(f"{i + 1} - {origin}: {text}")
                 channel(_("----------"))
             return "batch", batch
 
@@ -2828,11 +2810,10 @@ class Kernel(Settings):
             channel(_("Channels Active:"))
             for i, name in enumerate(self.channels):
                 channel_name = self.channels[name]
-                if self._console_channel in channel_name.watchers:
-                    is_watched = "* "
-                else:
-                    is_watched = "  "
-                channel("%s%d: %s" % (is_watched, i + 1, name))
+                is_watched = (
+                    "* " if self._console_channel in channel_name.watchers else "  "
+                )
+                channel(f"{is_watched}{i + 1}: {name}")
             return "channel", 0
 
         @self.console_argument("channel_name", help=_("name of the channel"))
@@ -2944,7 +2925,7 @@ class Kernel(Settings):
                 )
 
                 def _console_file_write(v):
-                    console_channel_file.write("%s\r\n" % v)
+                    console_channel_file.write(f"{v}\r\n")
                     console_channel_file.flush()
 
                 self.channel(cn).watch(_console_file_write)
@@ -2967,7 +2948,7 @@ class Kernel(Settings):
                         v, (int, float, str, bool)
                     ):
                         continue
-                    channel('"%s" := %s' % (attr, str(v)))
+                    channel(f'"{attr}" := {str(v)}')
                 return
             if len(args) >= 2:
                 attr = args[0]
