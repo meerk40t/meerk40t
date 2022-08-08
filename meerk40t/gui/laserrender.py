@@ -270,27 +270,31 @@ class LaserRender:
 
     def _set_penwidth_by_node_and_zoom(self, node, zoomscale):
         try:
-            matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
-        except AttributeError:
-            width_scale = 1.0
-        try:
             sw = node.stroke_width
         except AttributeError:
             sw = 1000
+
         if sw is None:
             sw = 1000
-        limit = 25 * zoomscale**0.5
+        limit = 25 * zoomscale ** 0.5
         try:
-            limit /= width_scale
-        except ZeroDivisionError:
+            matrix = node.matrix
+            width_scale = sqrt(abs(matrix.determinant))
+            try:
+                sw /= width_scale
+                limit /= width_scale
+            except ZeroDivisionError:
+                pass
+        except AttributeError:
             pass
         if sw < limit:
             sw = limit
         self._set_penwidth_by_width(sw)
 
-    def _set_penwidth_by_width(self, width):
+    def _set_penwidth_by_width(self, width, matrix=None):
         try:
+            if matrix is not None:
+                width /= sqrt(abs(matrix.determinant))
             try:
                 self.pen.SetWidth(width)
             except TypeError:
@@ -464,7 +468,7 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000)
+            self._set_penwidth_by_width(1000, matrix)
         else:
             self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
@@ -495,7 +499,7 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000)
+            self._set_penwidth_by_width(1000, matrix)
         else:
             self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
@@ -526,7 +530,7 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000)
+            self._set_penwidth_by_width(1000, matrix)
         else:
             self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
@@ -581,7 +585,7 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000)
+            self._set_penwidth_by_width(1000, matrix)
         else:
             self._set_penwidth_by_node_and_zoom(node, zoomscale)
         self.set_pen(
