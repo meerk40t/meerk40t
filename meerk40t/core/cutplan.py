@@ -700,9 +700,13 @@ def short_travel_cutcode(
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
+        try:
+            delta = (end_length - start_length) / start_length
+        except ZeroDivisionError:
+            delta = 0
         channel(
             f"Length at end: {end_length:.0f} steps "
-            f"({(end_length - start_length) / start_length:+.0%}), "
+            f"({delta:+.0%}), "
             f"optimized in {time() - start_time:.3f} "
             f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
