@@ -602,12 +602,15 @@ class InfoPanel(wx.Panel):
             _("How many elements does this operation contain")
         )
         self.text_time.SetToolTip(_("Estimated time for execution (hh:mm:ss)"))
+        self.btn_update = wx.Button(self, wx.ID_ANY, _("Calculate"))
+        self.btn_update.Bind(wx.EVT_BUTTON, self.on_button_calculate)
 
         sizer_children.Add(self.text_children, 1, wx.EXPAND, 0)
         sizer_time.Add(self.text_time, 1, wx.EXPAND, 0)
+        sizer_time.Add(self.btn_update, 0, wx.EXPAND, 0)
 
         sizer_info.Add(sizer_children, 1, wx.EXPAND, 0)
-        sizer_info.Add(sizer_time, 1, wx.EXPAND, 0)
+        sizer_info.Add(sizer_time, 2, wx.EXPAND, 0)
 
         self.SetSizer(sizer_info)
 
@@ -621,11 +624,15 @@ class InfoPanel(wx.Panel):
     def pane_show(self):
         pass
 
-    def refresh_display(self):
+    def on_button_calculate(self, event):
         try:
             timestr = self.operation.time_estimate()
         except:
             timestr = "---"
+        self.text_time.SetValue(timestr)
+
+    def refresh_display(self):
+        timestr = "---"
         childs = len(self.operation.children)
 
         self.text_time.SetValue(timestr)
@@ -1181,6 +1188,7 @@ class HatchSettingsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
+        self._Buffer = None
 
         raster_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Hatch:")), wx.VERTICAL
@@ -1334,6 +1342,8 @@ class HatchSettingsPanel(wx.Panel):
         self.refresh_display()
 
     def on_display_paint(self, event=None):
+        if self._Buffer is None:
+            return
         try:
             wx.BufferedPaintDC(self.display_panel, self._Buffer)
         except RuntimeError:
