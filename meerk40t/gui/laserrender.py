@@ -31,7 +31,7 @@ from meerk40t.svgelements import (
     QuadraticBezier,
 )
 
-from ..numpath import TYPE_CUBIC, TYPE_END, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
+from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
 
@@ -734,9 +734,11 @@ class LaserRender:
         @param width: desired width of the resulting raster
         @param height: desired height of the resulting raster
         @param bitmap: bitmap to use rather than provisioning
-        @param step: raster step rate, int scale rate of the image.
-        @param keepratio: get a picture with the same height / width
+        @param step_x: raster step rate, int scale rate of the image.
+        @param step_y: raster step rate, int scale rate of the image.
+        @param keep_ratio: get a picture with the same height / width
                ratio as the original
+        @param recursion: prevent text from happening more than once.
         @return:
         """
         if bounds is None:
