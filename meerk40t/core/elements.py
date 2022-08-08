@@ -2009,8 +2009,8 @@ class Elemental(Service):
         @self.console_command(
             "lock",
             help=_("Lock element (protect from manipulation)"),
-            input_type=("elements"),
-            output_type=("elements"),
+            input_type="elements",
+            output_type="elements",
         )
         def e_lock(data=None, **kwargs):
             if data is None:
@@ -2024,8 +2024,8 @@ class Elemental(Service):
         @self.console_command(
             "unlock",
             help=_("Unlock element (allow manipulation)"),
-            input_type=("elements"),
-            output_type=("elements"),
+            input_type="elements",
+            output_type="elements",
         )
         def e_unlock(data=None, **kwargs):
             if data is None:
@@ -4699,7 +4699,7 @@ class Elemental(Service):
             "area",
             help=_("provides information about/changes the area of a selected element"),
             input_type=(None, "elements"),
-            output_type=("elements"),
+            output_type="elements",
         )
         def element_area(
             command,
@@ -5771,7 +5771,7 @@ class Elemental(Service):
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3]),
                         ]
-                elif method in ("complex"):
+                elif method == "complex":
                     try:
                         path = node.as_path()
                     except AttributeError:
@@ -6257,23 +6257,23 @@ class Elemental(Service):
 
         @self.tree_conditional(
             lambda cond: len(
-                list(self.flat(selected=True, cascade=False, types=("reference")))
+                list(self.flat(selected=True, cascade=False, types="reference"))
             )
             >= 1
         )
         @self.tree_calc(
             "ecount",
             lambda i: len(
-                list(self.flat(selected=True, cascade=False, types=("reference")))
+                list(self.flat(selected=True, cascade=False, types="reference"))
             ),
         )
         @self.tree_operation(
             _("Remove %s selected items from operations") % "{ecount}",
-            node_type=("reference"),
+            node_type="reference",
             help="",
         )
         def remove_multi_references(node, **kwargs):
-            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
+            nodes = list(self.flat(selected=True, cascade=False, types="reference"))
             for node in nodes:
                 if node.parent is not None:  # May have already removed.
                     node.remove_node()
@@ -6394,7 +6394,7 @@ class Elemental(Service):
         )
         @self.tree_operation(
             _("Delete group '%s' and all its child-elements fully") % "{name}",
-            node_type=("group"),
+            node_type="group",
             help="",
         )
         def remove_type_grp(node, **kwargs):
@@ -6410,7 +6410,7 @@ class Elemental(Service):
         )
         @self.tree_operation(
             _("Remove loaded file '%s' and all its child-elements fully") % "{name}",
-            node_type=("file"),
+            node_type="file",
             help="",
         )
         def remove_type_file(node, **kwargs):
@@ -6528,7 +6528,7 @@ class Elemental(Service):
             _("Make %s copies") % "{copies}", node_type=("reference",), help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
-            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
+            nodes = list(self.flat(selected=True, cascade=False, types="reference"))
             for snode in nodes:
                 index = snode.parent.children.index(snode)
                 for i in range(copies):
@@ -6555,7 +6555,7 @@ class Elemental(Service):
         )
         def reverse_layer_order(node, **kwargs):
             node.reverse()
-            self.signal("refresh_tree", list(self.flat(types=("reference"))))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -6564,7 +6564,7 @@ class Elemental(Service):
         def refresh_clasifications(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
-            self.signal("refresh_tree", list(self.flat(types=("reference"))))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
 
         materials = [
             _("Wood"),
@@ -7212,7 +7212,7 @@ class Elemental(Service):
             ),
         )
         @self.tree_operation(
-            _("Rotate %s°") % ("{angle}"), node_type=elem_group_nodes, help=""
+            _("Rotate %s°") % "{angle}", node_type=elem_group_nodes, help=""
         )
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
