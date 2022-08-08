@@ -75,12 +75,13 @@ class Settings:
         except PermissionError:
             return
 
+
     def read_persistent(
         self,
         t: type,
         section: str,
         key: str,
-        default: Union[str, int, float, bool] = None,
+        default: Union[str, int, float, bool, list, tuple] = None,
     ) -> Any:
         """
         Directly read from persistent storage the value of an item.
@@ -91,10 +92,37 @@ class Settings:
         @param default: default value if item does not exist.
         @return: value
         """
+        def listed(str_value):
+            dummy = str_value.split(";")
+            result = []
+            for item in dummy:
+                entry = item.strip()
+                if entry.lower() == "true":
+                    result.append(True)
+                elif entry.lower() == "false":
+                    result.append(False)
+                elif entry.isnumeric():
+                    try:
+                        result.append(int(entry))
+                    except ValueError:
+                        pass
+                elif entry.startswith("'") or entry.startswith('"'):
+                    result.append(entry[1:-1])
+                else:
+                    # Lets first try a float
+                    try:
+                        value = float(entry)
+                        result.append(value)
+                    except ValueError:
+                        result.append(entry)
+            return result
+
         try:
             value = self._config_dict[section][key]
             if t == bool:
                 return value == "True"
+            elif t in (list, tuple):
+                return t(listed(value))
 
             return t(value)
         except (KeyError, ValueError):
@@ -150,7 +178,7 @@ class Settings:
     load_persistent_string_dict = read_persistent_string_dict
 
     def write_persistent(
-        self, section: str, key: str, value: Union[str, int, float, bool]
+        self, section: str, key: str, value: Union[str, int, float, bool, list, tuple]
     ):
         """
         Directly write the value to persistent storage.
@@ -167,6 +195,10 @@ class Settings:
 
         if isinstance(value, (str, int, float, bool)):
             config_section[str(key)] = str(value)
+        elif isinstance(value, (list, tuple)):
+            s = str(value)[1:-1]
+            s = s.replace(", ", ";")
+            config_section[str(key)] = s
 
     def write_persistent_dict(self, section, write_dict):
         """
@@ -200,7 +232,7 @@ class Settings:
             value = getattr(obj, attr)
             if value is None:
                 continue
-            if isinstance(value, (int, bool, str, float)):
+            if isinstance(value, (int, bool, str, float, list, tuple)):
                 self.write_persistent(section, attr, value)
 
     def clear_persistent(self, section: str):

@@ -5,8 +5,10 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.gui.wxutils import TextCtrl
 from meerk40t.kernel import signal_listener
+from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.device.gui.warningpanel import WarningPanel
+
 
 _ = wx.GetTranslation
 
@@ -1205,18 +1207,25 @@ class LihuiyuDriverGui(MWindow):
             self.notebook_main, wx.ID_ANY, context=self.context
         )
         self.notebook_main.AddPage(self.SetupPanel, _("Setup"))
+
+        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+
         self.Layout()
 
         self.add_module_delegate(self.ConfigurationPanel)
         self.add_module_delegate(self.SetupPanel)
+        self.add_module_delegate(self.panel_warn)
 
     def window_open(self):
         self.SetupPanel.pane_show()
         self.ConfigurationPanel.pane_show()
+        self.panel_warn.pane_show()
 
     def window_close(self):
         self.SetupPanel.pane_hide()
         self.ConfigurationPanel.pane_hide()
+        self.panel_warn.pane_hide()
 
     def window_preserve(self):
         return False

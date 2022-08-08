@@ -141,7 +141,13 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "flip_y", False)
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
-
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0))
         ViewPort.__init__(
             self,
             self.bedwidth,
