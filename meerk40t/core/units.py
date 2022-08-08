@@ -191,17 +191,9 @@ class ViewPort:
     def scene_to_device_matrix(self):
         ops = []
         if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append(
-                "scale({sx:.13f}, {sy:.13f})".format(
-                    sx=1.0 / self._scale_x, sy=1.0 / self._scale_y
-                )
-            )
+            ops.append(f"scale({1.0 / self._scale_x:.13f}, {1.0 / self._scale_y:.13f})")
         if self._offset_x != 0 or self._offset_y != 0:
-            ops.append(
-                "translate({dx:.13f}, {dy:.13f})".format(
-                    dx=self._offset_x, dy=self._offset_y
-                )
-            )
+            ops.append(f"translate({self._offset_x:.13f}, {self._offset_y:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
@@ -446,7 +438,7 @@ class ViewPort:
 
     @staticmethod
     def conversion(units, amount=1):
-        return Length("{amount}{units}".format(units=units, amount=amount)).preferred
+        return Length(f"{amount}{units}").preferred
 
 
 ACCEPTED_UNITS = ("", "cm", "mm", "in", "mil", "pt", "pc", "px", "%")

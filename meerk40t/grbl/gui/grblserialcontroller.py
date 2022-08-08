@@ -72,7 +72,7 @@ class SerialControllerPanel(wx.Panel):
             self.service.controller.start()
 
     def on_gcode_enter(self, event):  # wxGlade: SerialControllerPanel.<event_handler>
-        self.service("gcode {code}".format(code=self.gcode_text.GetValue()))
+        self.service(f"gcode {self.gcode_text.GetValue()}")
         self.gcode_text.Clear()
 
     def update_sent(self, text):
@@ -128,18 +128,18 @@ class SerialController(MWindow):
         self.serial_panel.on_serial_status(origin, state)
 
     def window_open(self):
-        self.context.channel(
-            "send-{name}".format(name=self.service.com_port.lower())
-        ).watch(self.serial_panel.update_sent)
-        self.context.channel(
-            "recv-{name}".format(name=self.service.com_port.lower())
-        ).watch(self.serial_panel.update_recv)
+        self.context.channel(f"send-{self.service.com_port.lower()}").watch(
+            self.serial_panel.update_sent
+        )
+        self.context.channel(f"recv-{self.service.com_port.lower()}").watch(
+            self.serial_panel.update_recv
+        )
 
     def window_close(self):
         # TODO: Can be wrong if we start the window then change com ports.
-        self.context.channel(
-            "send-{name}".format(name=self.service.com_port.lower())
-        ).unwatch(self.serial_panel.update_sent)
-        self.context.channel(
-            "recv-{name}".format(name=self.service.com_port.lower())
-        ).unwatch(self.serial_panel.update_recv)
+        self.context.channel(f"send-{self.service.com_port.lower()}").unwatch(
+            self.serial_panel.update_sent
+        )
+        self.context.channel(f"recv-{self.service.com_port.lower()}").unwatch(
+            self.serial_panel.update_recv
+        )

@@ -771,7 +771,7 @@ class GRBLDriver(Parameters):
         @param t:
         @return:
         """
-        self.grbl("G04 S{time}\r".format(time=t))
+        self.grbl(f"G04 S{t}\r")
 
     def wait_finish(self, *values):
         """

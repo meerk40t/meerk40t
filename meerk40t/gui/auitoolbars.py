@@ -22,7 +22,7 @@ def register_toolbars(gui, context):
     i = 0
     for tb in tbm.toolbars:
         toolbar, caption = tbm.toolbars[tb]
-        name = "{toolbar}_toolbar".format(toolbar=tb)
+        name = f"{tb}_toolbar"
         width = toolbar.ToolCount * 58
         pane = (
             aui.AuiPaneInfo()
@@ -42,7 +42,7 @@ def register_toolbars(gui, context):
         toolbar.pane = pane
         pane.submenu = _("Toolbars")
         gui.on_pane_add(pane)
-        context.register("pane/{name}".format(name=name), pane)
+        context.register(f"pane/{name}", pane)
 
 
 class ToolbarManager:

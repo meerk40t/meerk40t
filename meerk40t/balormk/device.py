@@ -1629,9 +1629,7 @@ class BalorDevice(Service, ViewPort):
                 if file is None:
                     channel("No correction file set.")
                 else:
-                    channel(
-                        "Correction file is set to: {file}".format(file=self.corfile)
-                    )
+                    channel(f"Correction file is set to: {self.corfile}")
                     from os.path import exists
 
                     if exists(file):
@@ -1645,11 +1643,7 @@ class BalorDevice(Service, ViewPort):
                     self.corfile = filename
                     self.signal("corfile", filename)
                 else:
-                    channel(
-                        "The file at {filename} does not exist.".format(
-                            filename=os.path.realpath(filename)
-                        )
-                    )
+                    channel(f"The file at {os.path.realpath(filename)} does not exist.")
                     channel("Correction file was not set.")
 
         @self.console_command(
@@ -1686,11 +1680,7 @@ class BalorDevice(Service, ViewPort):
             self.bedwidth = lens_size
             self.bedheight = lens_size
 
-            channel(
-                "Set Bed Size : ({sx}, {sy}).".format(
-                    sx=self.bedwidth, sy=self.bedheight
-                )
-            )
+            channel(f"Set Bed Size : ({self.bedwidth}, {self.bedheight}).")
 
             self.signal("bed_size")
 
@@ -1717,7 +1707,7 @@ class BalorDevice(Service, ViewPort):
                 channel(_("Nothing Selected"))
                 return
             xmin, ymin, xmax, ymax = bounds
-            channel("Element bounds: {bounds}".format(bounds=str(bounds)))
+            channel(_("Element bounds: {bounds}").format(bounds=str(bounds)))
             points = [
                 (xmin, ymin),
                 (xmax, ymin),

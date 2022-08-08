@@ -543,10 +543,7 @@ class Drag(wx.Panel):
                 dlg.Destroy()
                 return
         self.context(
-            "move_absolute {x} {y}\n".format(
-                x=Length(amount=x).length_mm,
-                y=Length(amount=y).length_mm,
-            )
+            f"move_absolute {Length(amount=x).length_mm} {Length(amount=y).length_mm}\n"
         )
         self.drag_ready(True)
 
@@ -572,9 +569,7 @@ class Drag(wx.Panel):
 
     def drag_relative(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
-        self.context(
-            "move_relative {dx} {dy}\ntranslate {dx} {dy}\n".format(dx=nx, dy=ny)
-        )
+        self.context(f"move_relative {nx} {ny}\ntranslate {nx} {ny}\n")
 
     def on_button_align_drag_down(
         self, event=None
@@ -616,10 +611,7 @@ class Drag(wx.Panel):
         else:
             return
         self.context(
-            "move_absolute {x} {y}\n".format(
-                x=Length(amount=pos[0]).length_mm,
-                y=Length(amount=pos[1]).length_mm,
-            )
+            f"move_absolute {Length(amount=pos[0]).length_mm} {Length(amount=pos[1]).length_mm}\n"
         )
         self.drag_ready(True)
 
@@ -674,10 +666,7 @@ class Drag(wx.Panel):
         dy = pos[3] - orgy
 
         self.context(
-            "translate {dx} {dy}\n".format(
-                dx=Length(amount=dx).length_mm,
-                dy=Length(amount=dy).length_mm,
-            )
+            f"translate {Length(amount=dx).length_mm} {Length(amount=dy).length_mm}\n"
         )
         self.drag_ready(True)
 
@@ -876,38 +865,38 @@ class Jog(wx.Panel):
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "-{jog}".format(jog=self.context.jog_amount),
-            "-{jog}".format(jog=self.context.jog_amount),
+            f"-{self.context.jog_amount}",
+            f"-{self.context.jog_amount}",
         )
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", "-{jog}".format(jog=self.context.jog_amount))
+        self.move_rel("0", f"-{self.context.jog_amount}")
 
     def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "{jog}".format(jog=self.context.jog_amount),
-            "-{jog}".format(jog=self.context.jog_amount),
+            f"{self.context.jog_amount}",
+            f"-{self.context.jog_amount}",
         )
 
     def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("-{jog}".format(jog=self.context.jog_amount), "0")
+        self.move_rel(f"-{self.context.jog_amount}", "0")
 
     def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("{jog}".format(jog=self.context.jog_amount), "0")
+        self.move_rel(f"{self.context.jog_amount}", "0")
 
     def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "-{jog}".format(jog=self.context.jog_amount),
-            "{jog}".format(jog=self.context.jog_amount),
+            f"-{self.context.jog_amount}",
+            f"{self.context.jog_amount}",
         )
 
     def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", "{jog}".format(jog=self.context.jog_amount))
+        self.move_rel("0", f"{self.context.jog_amount}")
 
     def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "{jog}".format(jog=self.context.jog_amount),
-            "{jog}".format(jog=self.context.jog_amount),
+            f"{self.context.jog_amount}",
+            f"{self.context.jog_amount}",
         )
 
     def on_button_navigate_unlock(

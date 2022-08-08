@@ -468,7 +468,7 @@ class Elemental(Service):
         if "%" in v:
             lly = Length(v, relative_length=self.device.height)
         else:
-            lly = Length("1{unit}".format(unit=llx._preferred_units))
+            lly = Length(f"1{llx._preferred_units}")
         ly = float(lly)
         return lx * ly
 
@@ -1097,11 +1097,7 @@ class Elemental(Service):
             for section in self.op_data.section_set():
                 for subsect in self.op_data.derivable(section):
                     label = self.op_data.read_persistent(str, subsect, "label", "-")
-                    channel(
-                        "{subsection}: {label}".format(
-                            section=section, subsection=subsect, label=label
-                        )
-                    )
+                    channel(f"{subsect}: {label}")
             channel("----------")
 
         # ==========
@@ -2072,9 +2068,7 @@ class Elemental(Service):
                     y_pos = dy
                 add_elem = list(map(copy, data))
                 if x_pos != 0 or y_pos != 0:
-                    matrix = Matrix(
-                        "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
-                    )
+                    matrix = Matrix.translate(dx, dy)
                 for e in add_elem:
                     if x_pos != 0 or y_pos != 0:
                         e.matrix *= matrix
@@ -3886,7 +3880,7 @@ class Elemental(Service):
             svg_text = SVGText(text)
             if size is not None:
                 svg_text.font_size = size
-            svg_text *= "scale({scale})".format(scale=UNITS_PER_PIXEL)
+            svg_text *= f"scale({UNITS_PER_PIXEL})"
             node = self.elem_branch.add(
                 text=svg_text, matrix=svg_text.transform, type="elem text"
             )
@@ -4036,7 +4030,7 @@ class Elemental(Service):
                 raise CommandSyntaxError(_("Not a valid path_d string"))
             try:
                 path = Path(path_d)
-                path *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
+                path *= f"Scale({UNITS_PER_PIXEL})"
             except ValueError:
                 raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
 
@@ -4732,7 +4726,7 @@ class Elemental(Service):
             units = ("mm", "cm", "in")
             square_unit = [0] * len(units)
             for idx, u in enumerate(units):
-                value = float(Length("1{unit}".format(unit=u)))
+                value = float(Length(f"1{u}"))
                 square_unit[idx] = value * value
 
             i = 0
@@ -5525,9 +5519,7 @@ class Elemental(Service):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                matrix = Matrix(
-                    "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
-                )
+                matrix = Matrix.translate(float(dx), float(dy))
                 for node in pasted:
                     node.matrix *= matrix
             group = self.elem_branch.add(type="group", label="Group", id="Copy")
@@ -6992,15 +6984,15 @@ class Elemental(Service):
             if system == "Darwin":
                 from os import system as open_in_shell
 
-                open_in_shell("open '{file}'".format(file=normalized))
+                open_in_shell(f"open '{normalized}'")
             elif system == "Windows":
                 from os import startfile as open_in_shell
 
-                open_in_shell('"{file}"'.format(file=normalized))
+                open_in_shell(f'"{normalized}"')
             else:
                 from os import system as open_in_shell
 
-                open_in_shell("xdg-open '{file}'".format(file=normalized))
+                open_in_shell(f"xdg-open '{normalized}'")
 
         def get_values():
             return [o for o in self.ops() if o.type.startswith("op")]
@@ -9102,7 +9094,7 @@ class Elemental(Service):
         if element.node is None:
             if short:
                 return element.id
-            return "{id}: {path}".format(id=element.id, path=str(element))
+            return f"{element.id}: {str(element)}"
         elif ":" in element.node.label and short:
             return element.node.label.split(":", 1)[0]
         else:

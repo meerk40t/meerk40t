@@ -760,7 +760,7 @@ class CameraInterface(MWindow):
                     kernel.console("camera%d --uri %s stop start\n" % (index, testuri))
                     kernel.root.camera_default = index
                 v = kernel.root.camera_default
-                kernel.console("window toggle -m {v} CameraInterface {v}\n".format(v=v))
+                kernel.console(f"window toggle -m {v} CameraInterface {v}\n")
 
             return specific
 
@@ -860,7 +860,7 @@ class CameraInterface(MWindow):
             "camwin", help=_("camwin <index>: Open camera window at index")
         )
         def camera_win(index=None, **kwargs):
-            kernel.console("window open -m {v} CameraInterface {v}\n".format(v=index))
+            kernel.console(f"window open -m {index} CameraInterface {index}\n")
 
 
 class CameraURIPanel(wx.Panel):
