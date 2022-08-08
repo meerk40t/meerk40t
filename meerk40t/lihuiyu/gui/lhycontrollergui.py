@@ -236,15 +236,13 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.pane_hide()
 
     def pane_show(self):
-        self.context.channel(
-            "{name}/usb".format(name=self.context.label), buffer_size=500
-        ).watch(self.update_text)
+        self.context.channel(f"{self.context.label}/usb", buffer_size=500).watch(
+            self.update_text
+        )
         self.on_network_update()
 
     def pane_hide(self):
-        self.context.channel("{name}/usb".format(name=self.context.label)).unwatch(
-            self.update_text
-        )
+        self.context.channel(f"{self.context.label}/usb").unwatch(self.update_text)
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):

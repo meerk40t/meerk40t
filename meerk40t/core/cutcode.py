@@ -1022,11 +1022,11 @@ class PlotCut(CutObject):
 
     def __str__(self):
         parts = list()
-        parts.append("{points} points".format(points=len(self.plot)))
-        parts.append("xmin: {v}".format(v=self.min_x))
-        parts.append("ymin: {v}".format(v=self.min_y))
-        parts.append("xmax: {v}".format(v=self.max_x))
-        parts.append("ymax: {v}".format(v=self.max_y))
+        parts.append(f"{len(self.plot)} points")
+        parts.append(f"xmin: {self.min_x}")
+        parts.append(f"ymin: {self.min_y}")
+        parts.append(f"xmax: {self.max_x}")
+        parts.append(f"ymax: {self.max_y}")
         return "PlotCut(%s)" % ", ".join(parts)
 
     def check_if_rasterable(self):

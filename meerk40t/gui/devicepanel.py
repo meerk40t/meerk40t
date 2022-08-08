@@ -298,12 +298,7 @@ class DevicePanel(wx.Panel):
                 label = self.get_new_label_for_device(device_type)
                 if label != "":
                     label = ' -l "' + label + '"'
-                self.context(
-                    "service device start -i {device_type}{label}\n".format(
-                        device_type=device_type,
-                        label=label,
-                    )
-                )
+                self.context(f"service device start -i {device_type}{label}\n")
         self.refresh_device_tree()
         self.context.signal("device;modified")
 

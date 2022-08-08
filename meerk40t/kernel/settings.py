@@ -75,7 +75,6 @@ class Settings:
         except PermissionError:
             return
 
-
     def read_persistent(
         self,
         t: type,
@@ -92,6 +91,7 @@ class Settings:
         @param default: default value if item does not exist.
         @return: value
         """
+
         def listed(str_value):
             dummy = str_value.split(";")
             result = []
@@ -171,7 +171,7 @@ class Settings:
         for k in list(self.keylist(section)):
             item = self._config_dict[section][k]
             if not suffix:
-                k = "{section}/{key}".format(section=section, key=k)
+                k = f"{section}/{k}"
             dictionary[k] = item
         return dictionary
 

@@ -1220,7 +1220,7 @@ class MeerK40t(MWindow):
             dlg.Destroy()
 
         @context.console_command("dialog_path", hidden=True)
-        def path(**kwargs):
+        def dialog_path(**kwargs):
             dlg = wx.TextEntryDialog(gui, _("Enter SVG Path Data"), _("Path Entry"), "")
             dlg.SetValue("")
 
@@ -1773,9 +1773,9 @@ class MeerK40t(MWindow):
 
     @lookup_listener("window")
     def dynamic_fill_window_menu(self, new=None, old=None):
-        def toggle_window(window):
+        def toggle_window(_window):
             def toggle(event=None):
-                self.context("window toggle {window}\n".format(window=window))
+                self.context(f"window toggle {window}\n")
 
             return toggle
 
@@ -2061,14 +2061,14 @@ class MeerK40t(MWindow):
                 try:  # pyinstaller internal location
                     # pylint: disable=no-member
                     _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
-                except Exception:
+                except AttributeError:
                     pass
             if not os.path.exists(_resource_path):
                 try:  # Mac py2app resource
                     _resource_path = os.path.join(
                         os.environ["RESOURCEPATH"], "help/meerk40t.help"
                     )
-                except Exception:
+                except KeyError:
                     pass
             if os.path.exists(_resource_path):
                 os.system("open %s" % _resource_path)
@@ -2740,12 +2740,8 @@ class MeerK40t(MWindow):
             return False
         else:
             if results:
-                self.context(
-                    "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
-                        zoom=self.context.zoom_level,
-                        zoom100=100 + self.context.zoom_level,
-                    )
-                )
+                zl = self.context.zoom_level
+                self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
                 self.set_file_as_recently_used(pathname)
                 if n != self.context.elements.note and self.context.elements.auto_note:
@@ -2782,11 +2778,8 @@ class MeerK40t(MWindow):
             return
         self.Layout()
         if not self.context.disable_auto_zoom:
-            self.context(
-                "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
-                    zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level
-                )
-            )
+            zl = self.context.zoom_level
+            self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def on_focus_lost(self, event):
         self.context("-laser\nend\n")
@@ -2868,11 +2861,8 @@ class MeerK40t(MWindow):
 
     def on_click_toggle_ui(self, event=None):
         self.context("pane toggleui\n")
-        self.context(
-            "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
-                zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level
-            )
-        )
+        zl = self.context.zoom_level
+        self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
@@ -2953,8 +2943,5 @@ class MeerK40t(MWindow):
             return
         helptext = menuitem.GetHelp()
         if not helptext:
-            helptext = "{m} ({s})".format(
-                m=menuitem.GetItemLabelText(),
-                s=_("No help text"),
-            )
+            helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
         self.update_statusbar(helptext)

@@ -253,17 +253,15 @@ class TextEntry(wx.Dialog):
             self.history[i] = self.history[i - 1]
         self.history[0] = fontdesc
         for i in range(self.FONTHISTORY):
-            setattr(self.context, "fonthistory_{num}".format(num=i), self.history[i])
+            setattr(self.context, f"fonthistory_{i}", self.history[i])
         self.context.flush()
 
     def load_font_history(self):
         self.history = []
         defaultfontdesc = self.default_font.GetNativeFontInfoUserDesc()
         for i in range(self.FONTHISTORY):
-            self.context.setting(
-                str, "fonthistory_{num}".format(num=i), defaultfontdesc
-            )
-            fontdesc = getattr(self.context, "fonthistory_{num}".format(num=i))
+            self.context.setting(str, f"fonthistory_{i}", defaultfontdesc)
+            fontdesc = getattr(self.context, f"fonthistory_{i}")
             self.history.append(fontdesc)
             font = wx.Font(fontdesc)
             self.last_font[i].SetFont(font)
@@ -314,9 +312,7 @@ class TextTool(ToolWidget):
                 y = nearest_snap[1]
             self.x = x
             self.y = y
-            self.text *= "translate({x}, {y}) scale({scale})".format(
-                x=x, y=y, scale=UNITS_PER_PIXEL
-            )
+            self.text *= f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"
             dlg = TextEntry(self.scene.context, "", None, wx.ID_ANY, "")
             if dlg.ShowModal() == wx.ID_OK:
                 self.text.text = dlg.result_text

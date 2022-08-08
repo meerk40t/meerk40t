@@ -205,7 +205,9 @@ class Context:
         """
         self._kernel.clear_persistent(self._path)
 
-    def write_persistent(self, key: str, value: Union[int, float, str, bool, list, tuple]) -> None:
+    def write_persistent(
+        self, key: str, value: Union[int, float, str, bool, list, tuple]
+    ) -> None:
         """
         Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
         shutdown but there are a variety of reasons to force this call early.

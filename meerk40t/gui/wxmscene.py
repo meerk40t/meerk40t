@@ -128,7 +128,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/ribbon", RibbonTool)
 
         @context.console_command("dialog_fps", hidden=True)
-        def fps(**kwargs):
+        def dialog_fps(**kwgs):
             dlg = wx.TextEntryDialog(
                 None, _("Enter FPS Limit"), _("FPS Limit Entry"), ""
             )
@@ -143,7 +143,7 @@ class MeerK40tScenePanel(wx.Panel):
             dlg.Destroy()
 
         @context.console_command("tool_menu", hidden=True)
-        def tool_menu(channel, _, **kwargs):
+        def tool_menu(channel, _, **kwgs):
             orgx = 5
             orgy = 5
             # Are guides drawn?
@@ -172,7 +172,7 @@ class MeerK40tScenePanel(wx.Panel):
             channel(_("Added tool widget to interface"))
 
         @context.console_command("seek_bar", hidden=True)
-        def seek_bar(channel, _, **kwargs):
+        def seek_bar(channel, _, **kwgs):
             def changed(values, seeker):
                 print(values)
 
@@ -193,7 +193,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.request_refresh()
 
         @context.console_command("checkbox", hidden=True)
-        def checkbox(channel, _, **kwargs):
+        def checkbox(channel, _, **kwgs):
             def checked(value):
                 print(value)
 
@@ -210,19 +210,19 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene.request_refresh()
 
         @context.console_command("cyclocycloid", hidden=True)
-        def cyclocycloid(channel, _, **kwargs):
+        def cyclocycloid(channel, _, **kwgs):
             self.widget_scene.widget_root.scene_widget.add_widget(
                 0, CyclocycloidWidget(self.widget_scene)
             )
             channel(_("Added cyclocycloid widget to scene."))
 
         @context.console_command("toast", hidden=True)
-        def toast_scene(remainder, **kwargs):
+        def toast_scene(remainder, **kwgs):
             self.widget_scene.toast(remainder)
 
         @context.console_argument("tool", help=_("tool to use."))
         @context.console_command("tool", help=_("sets a particular tool for the scene"))
-        def tool_base(command, channel, _, tool=None, **kwargs):
+        def tool_base(command, channel, _, tool=None, **kwgs):
             if tool is None:
                 channel(_("Tools:"))
                 channel("none")
@@ -239,12 +239,12 @@ class MeerK40tScenePanel(wx.Panel):
                 raise CommandSyntaxError
 
         @context.console_command("laserpath_clear", hidden=True)
-        def clear_laser_path(**kwargs):
+        def clear_laser_path(**kwgs):
             self.laserpath_widget.clear_laserpath()
             self.request_refresh()
 
         @self.context.console_command("scene", output_type="scene")
-        def scene(command, _, channel, **kwargs):
+        def scene(command, _, channel, **kwgs):
             channel("scene: %s" % str(self.widget_scene))
             return "scene", self.widget_scene
 
@@ -255,7 +255,7 @@ class MeerK40tScenePanel(wx.Panel):
             "color", type=str, help="color to apply to scene"
         )
         @self.context.console_command("color", input_type="scene")
-        def scene_color(command, _, channel, data, aspect=None, color=None, **kwargs):
+        def scene_color(command, _, channel, data, aspect=None, color=None, **kwgs):
             """
             Sets the scene colors. This is usually done with `scene color <aspect> <color>` which
             sets the aspect to the color specified. `scene color unset` unsets all colors and returns
@@ -313,7 +313,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoom_y", type=float, help="zoom amount from current"
         )
         @self.context.console_command("aspect", input_type="scene")
-        def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwargs):
+        def scene_aspect(command, _, channel, data, zoom_x=1.0, zoom_y=1.0, **kwgs):
             if zoom_x is None or zoom_y is None:
                 raise CommandSyntaxError
             matrix = data.widget_root.scene_widget.matrix
@@ -326,7 +326,7 @@ class MeerK40tScenePanel(wx.Panel):
             "zoomfactor", type=float, help="zoom amount from current"
         )
         @self.context.console_command("zoom", input_type="scene")
-        def scene_zoomfactor(command, _, channel, data, zoomfactor=1.0, **kwargs):
+        def scene_zoomfactor(command, _, channel, data, zoomfactor=1.0, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             if zoomfactor is None:
                 zoomfactor = 1.0
@@ -342,7 +342,7 @@ class MeerK40tScenePanel(wx.Panel):
             "pan_y", type=float, default=0, help="pan from current position y"
         )
         @self.context.console_command("pan", input_type="scene")
-        def scene_pan(command, _, channel, data, pan_x, pan_y, **kwargs):
+        def scene_pan(command, _, channel, data, pan_x, pan_y, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             if pan_x is None or pan_y is None:
                 return
@@ -355,7 +355,7 @@ class MeerK40tScenePanel(wx.Panel):
             "angle", type=Angle.parse, default=0, help="Rotate scene"
         )
         @self.context.console_command("rotate", input_type="scene")
-        def scene_rotate(command, _, channel, data, angle, **kwargs):
+        def scene_rotate(command, _, channel, data, angle, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.post_rotate(angle)
             data.request_refresh()
@@ -363,7 +363,7 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", data
 
         @self.context.console_command("reset", input_type="scene")
-        def scene_reset(command, _, channel, data, **kwargs):
+        def scene_reset(command, _, channel, data, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
             matrix.reset()
             data.request_refresh()
@@ -383,7 +383,7 @@ class MeerK40tScenePanel(wx.Panel):
         )
         @self.context.console_command("focus", input_type="scene")
         def scene_focus(
-            command, _, channel, data, x, y, width, height, animate=False, **kwargs
+            command, _, channel, data, x, y, width, height, animate=False, **kwgs
         ):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
@@ -402,7 +402,7 @@ class MeerK40tScenePanel(wx.Panel):
             return "scene", data
 
         @context.console_command("reference")
-        def make_reference(**kwargs):
+        def make_reference(**kwgs):
             # Take first emphasized element
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 self.widget_scene.reference_object = e
@@ -434,7 +434,7 @@ class MeerK40tScenePanel(wx.Panel):
             oy=None,
             scalex=None,
             scaley=None,
-            **kwargs,
+            **kwgs,
         ):
             if target is None:
                 channel(_("Grid-Parameters:"))
@@ -614,11 +614,8 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
-        self.context(
-            "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
-                zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level
-            )
-        )
+        zl = self.context.zoom_level
+        self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def pane_hide(self, *args):
         pass

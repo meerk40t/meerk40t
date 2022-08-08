@@ -79,8 +79,7 @@ class DXFProcessor:
         file_node.focus()
         for entity in entities:
             self.parse(entity, file_node, self.elements_list)
-
-        dxf_center = self.elements.root.setting(bool, "dxf_center", True)
+        dxf_center = self.elements.setting(bool, "dxf_center", True)
         if dxf_center:
             bbox = file_node.bounds
             if bbox is not None:

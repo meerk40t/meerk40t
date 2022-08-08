@@ -58,7 +58,7 @@ class Kernel(Settings):
         Settings.__init__(
             self,
             self.name,
-            "{profile}.cfg".format(name=name, profile=profile, version=version),
+            f"{profile}.cfg",
         )
         self.settings = self
 
@@ -156,9 +156,7 @@ class Kernel(Settings):
         """
         import types
 
-        filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            name=self.name, date=datetime.now()
-        )
+        filename = f"{self.name}-debug-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
         debug_file = self.open_safe(filename, "a")
         debug_file.write("\n\n\n")
 
@@ -252,14 +250,12 @@ class Kernel(Settings):
         """
         if active:
             try:
-                return self._registered["service/{domain}/active".format(domain=domain)]
+                return self._registered[f"service/{domain}/active"]
             except KeyError:
                 return None
         else:
             try:
-                return self._registered[
-                    "service/{domain}/available".format(domain=domain)
-                ]
+                return self._registered[f"service/{domain}/available"]
             except KeyError:
                 return []
 
@@ -317,7 +313,7 @@ class Kernel(Settings):
 
         services.append(service)
         service.registered_path = registered_path
-        self.register("service/{domain}/available".format(domain=domain), services)
+        self.register(f"service/{domain}/available", services)
         self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ADDED)
         if activate:
             self.activate(domain, service)
@@ -380,7 +376,7 @@ class Kernel(Settings):
         self.deactivate(domain)
 
         # Set service and attach.
-        self.register("service/{domain}/active".format(domain=domain), service)
+        self.register(f"service/{domain}/active", service)
 
         self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ATTACHED)
 
@@ -395,7 +391,7 @@ class Kernel(Settings):
         self.lookup_changes(list(service._registered))
 
         # Signal activation
-        self.signal("activate;{domain}".format(domain=domain), "/", service)
+        self.signal(f"activate;{domain}", "/", service)
 
         if assigned:
             self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ASSIGNED)
@@ -419,9 +415,7 @@ class Kernel(Settings):
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
-            self.signal(
-                "deactivate;{domain}".format(domain=domain), "/", previous_active
-            )
+            self.signal(f"deactivate;{domain}", "/", previous_active)
 
     # ==========
     # DELEGATES API
@@ -525,7 +519,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PRECLI <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRECLI
                 if channel:
-                    channel("kernel-precli: {object}".format(object=str(k)))
+                    channel(f"kernel-precli: {str(k)}")
                 if hasattr(k, "precli"):
                     k.precli()
         if start < LIFECYCLE_KERNEL_PRECLI <= end:
@@ -538,7 +532,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_CLI <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CLI
                 if channel:
-                    channel("kernel-cli: {object}".format(object=str(k)))
+                    channel(f"kernel-cli: {str(k)}")
                 if hasattr(k, "cli"):
                     k.cli()
         if start < LIFECYCLE_KERNEL_CLI <= end:
@@ -552,7 +546,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_INVALIDATE <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_INVALIDATE
                 if channel:
-                    channel("kernel-invalidate: {object}".format(object=str(k)))
+                    channel(f"kernel-invalidate: {str(k)}")
                 if hasattr(k, "invalidate"):
                     k.invalidate()
         if start < LIFECYCLE_KERNEL_INVALIDATE <= end:
@@ -581,7 +575,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PREREGISTER <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREREGISTER
                 if channel:
-                    channel("kernel-preregister: {object}".format(object=str(k)))
+                    channel(f"kernel-preregister: {str(k)}")
                 if hasattr(k, "preregister"):
                     k.preregister()
         if start < LIFECYCLE_KERNEL_PREREGISTER <= end:
@@ -594,7 +588,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_REGISTER <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_REGISTER
                 if channel:
-                    channel("kernel-registration: {object}".format(object=str(k)))
+                    channel(f"kernel-registration: {str(k)}")
                 if hasattr(k, "registration"):
                     k.registration()
         if start < LIFECYCLE_KERNEL_REGISTER <= end:
@@ -607,7 +601,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_CONFIGURE <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CONFIGURE
                 if channel:
-                    channel("kernel-configure: {object}".format(object=str(k)))
+                    channel(f"kernel-configure: {str(k)}")
                 if hasattr(k, "configure"):
                     k.configure()
         if start < LIFECYCLE_KERNEL_CONFIGURE <= end:
@@ -620,7 +614,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PREBOOT <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREBOOT
                 if channel:
-                    channel("kernel-preboot: {object}".format(object=str(k)))
+                    channel(f"kernel-preboot: {str(k)}")
                 if hasattr(k, "preboot"):
                     k.preboot()
         if start < LIFECYCLE_KERNEL_PREBOOT <= end:
@@ -633,7 +627,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_BOOT <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_BOOT
                 if channel:
-                    channel("kernel-boot: {object} boot".format(object=str(k)))
+                    channel(f"kernel-boot: {str(k)} boot")
                 if hasattr(k, "boot"):
                     k.boot()
                 self._signal_attach(k)
@@ -648,7 +642,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_POSTBOOT <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTBOOT
                 if channel:
-                    channel("kernel-postboot: {object}".format(object=str(k)))
+                    channel(f"kernel-postboot: {str(k)}")
                 if hasattr(k, "postboot"):
                     k.postboot()
         if start < LIFECYCLE_KERNEL_POSTBOOT <= end:
@@ -661,7 +655,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PRESTART <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESTART
                 if channel:
-                    channel("kernel-prestart: {object}".format(object=str(k)))
+                    channel(f"kernel-prestart: {str(k)}")
                 if hasattr(k, "prestart"):
                     k.prestart()
         if start < LIFECYCLE_KERNEL_PRESTART <= end:
@@ -674,7 +668,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_START <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_START
                 if channel:
-                    channel("kernel-start: {object}".format(object=str(k)))
+                    channel(f"kernel-start: {str(k)}")
                 if hasattr(k, "start"):
                     k.start()
         if start < LIFECYCLE_KERNEL_START <= end:
@@ -687,7 +681,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_POSTSTART <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTSTART
                 if channel:
-                    channel("kernel-poststart: {object}".format(object=str(k)))
+                    channel(f"kernel-poststart: {str(k)}")
                 if hasattr(k, "poststart"):
                     k.poststart()
         if start < LIFECYCLE_KERNEL_POSTSTART <= end:
@@ -700,7 +694,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_READY <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_READY
                 if channel:
-                    channel("kernel-ready: {object}".format(object=str(k)))
+                    channel(f"kernel-ready: {str(k)}")
                 if hasattr(k, "ready"):
                     k.ready()
         if start < LIFECYCLE_KERNEL_READY <= end:
@@ -713,7 +707,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_FINISHED <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_FINISHED
                 if channel:
-                    channel("kernel-finished: {object}".format(object=str(k)))
+                    channel(f"kernel-finished: {str(k)}")
                 if hasattr(k, "finished"):
                     k.finished()
         if start < LIFECYCLE_KERNEL_FINISHED <= end:
@@ -726,7 +720,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PREMAIN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREMAIN
                 if channel:
-                    channel("kernel-premain: {object}".format(object=str(k)))
+                    channel(f"kernel-premain: {str(k)}")
                 if hasattr(k, "premain"):
                     k.premain()
         if start < LIFECYCLE_KERNEL_PREMAIN <= end:
@@ -739,7 +733,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_MAINLOOP <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_MAINLOOP
                 if channel:
-                    channel("kernel-mainloop: {object}".format(object=str(k)))
+                    channel(f"kernel-mainloop: {str(k)}")
                 if hasattr(k, "mainloop"):
                     k.mainloop()
         if start < LIFECYCLE_KERNEL_MAINLOOP <= end:
@@ -752,7 +746,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_POSTMAIN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTMAIN
                 if channel:
-                    channel("kernel-postmain: {object}".format(object=str(k)))
+                    channel(f"kernel-postmain: {str(k)}")
                 if hasattr(k, "postmain"):
                     k.postmain()
         if start < LIFECYCLE_KERNEL_POSTMAIN <= end:
@@ -770,7 +764,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PRESHUTDOWN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESHUTDOWN
                 if channel:
-                    channel("kernel-preshutdown: {object}".format(object=str(k)))
+                    channel(f"kernel-preshutdown: {str(k)}")
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "preshutdown"):
@@ -785,7 +779,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
-                    channel("kernel-shutdown: {object}".format(object=str(k)))
+                    channel(f"kernel-shutdown: {str(k)}")
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "shutdown"):
@@ -818,7 +812,7 @@ class Kernel(Settings):
             if slp(s) < LIFECYCLE_SERVICE_ADDED <= end:
                 s._service_lifecycle = LIFECYCLE_SERVICE_ADDED
                 if channel:
-                    channel("service-added: {object}".format(object=str(s)))
+                    channel(f"service-added: {str(s)}")
                 if hasattr(s, "added"):
                     s.added(*args, **kwargs)
 
@@ -826,7 +820,7 @@ class Kernel(Settings):
         if start < LIFECYCLE_SERVICE_ADDED <= end:
             start = LIFECYCLE_SERVICE_ADDED
             if channel:
-                channel("(plugin) service-added: {object}".format(object=str(service)))
+                channel(f"(plugin) service-added: {str(service)}")
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "added")
@@ -844,7 +838,7 @@ class Kernel(Settings):
             ):  # starting attached
                 s._service_lifecycle = LIFECYCLE_SERVICE_DETACHED
                 if channel:
-                    channel("service-service_detach: {object}".format(object=str(s)))
+                    channel(f"service-service_detach: {str(s)}")
                 if hasattr(s, "service_detach"):
                     s.service_detach(*args, **kwargs)
                 self._signal_detach(s)
@@ -853,11 +847,7 @@ class Kernel(Settings):
         # Update plugin: service_detach
         if start in attached_positions and end not in attached_positions:
             if channel:
-                channel(
-                    "(plugin) service-service_detach: {object}".format(
-                        object=str(service)
-                    )
-                )
+                channel(f"(plugin) service-service_detach: {str(service)}")
             start = LIFECYCLE_SERVICE_DETACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
@@ -872,7 +862,7 @@ class Kernel(Settings):
             ):  # ending attached
                 s._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
                 if channel:
-                    channel("service-service_attach: {object}".format(object=str(s)))
+                    channel(f"service-service_attach: {str(s)}")
                 if hasattr(s, "service_attach"):
                     s.service_attach(*args, **kwargs)
                 self._signal_attach(s)
@@ -881,11 +871,7 @@ class Kernel(Settings):
         # Update plugin: service_attach
         if start not in attached_positions and end in attached_positions:
             if channel:
-                channel(
-                    "(plugin) service-service_attach: {object}".format(
-                        object=str(service)
-                    )
-                )
+                channel(f"(plugin) service-service_attach: {str(service)}")
             start = LIFECYCLE_SERVICE_ATTACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
@@ -901,7 +887,7 @@ class Kernel(Settings):
             ):
                 s._service_lifecycle = LIFECYCLE_SERVICE_ASSIGNED
                 if channel:
-                    channel("service-assigned: {object}".format(object=str(s)))
+                    channel(f"service-assigned: {str(s)}")
                 if hasattr(s, "assigned"):
                     s.assigned(*args, **kwargs)
 
@@ -909,9 +895,7 @@ class Kernel(Settings):
         if start == LIFECYCLE_SERVICE_ATTACHED and end == LIFECYCLE_SERVICE_ASSIGNED:
             start = LIFECYCLE_SERVICE_ASSIGNED
             if channel:
-                channel(
-                    "(plugin) service-assigned: {object}".format(object=str(service))
-                )
+                channel(f"(plugin) service-assigned: {str(service)}")
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "assigned")
@@ -923,16 +907,14 @@ class Kernel(Settings):
             if slp(s) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
                 s._service_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
-                    channel("service-shutdown: {object}".format(object=str(s)))
+                    channel(f"service-shutdown: {str(s)}")
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
 
         # Update plugin: shutdown
         if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
             if channel:
-                channel(
-                    "(plugin) service-shutdown: {object}".format(object=str(service))
-                )
+                channel(f"(plugin) service-shutdown: {str(service)}")
             start = LIFECYCLE_KERNEL_SHUTDOWN
             self.remove_service(service)
             try:
@@ -968,7 +950,7 @@ class Kernel(Settings):
             if mlp(m) < LIFECYCLE_MODULE_OPENED <= end:
                 m._module_lifecycle = LIFECYCLE_MODULE_OPENED
                 if channel:
-                    channel("module-module_open: {object}".format(object=str(m)))
+                    channel(f"module-module_open: {str(m)}")
                 if hasattr(m, "module_open"):
                     m.module_open(*args, **kwargs)
                 self._signal_attach(m)
@@ -977,9 +959,7 @@ class Kernel(Settings):
         # Update plugin: opened
         if start < LIFECYCLE_MODULE_OPENED <= end:
             if channel:
-                channel(
-                    "(plugin) module-module_open: {object}".format(object=str(module))
-                )
+                channel(f"(plugin) module-module_open: {str(module)})")
             module.context.opened[module.name] = module
             try:
                 for plugin in self._module_plugins[module.registered_path]:
@@ -992,7 +972,7 @@ class Kernel(Settings):
             if mlp(m) < LIFECYCLE_MODULE_CLOSED <= end:
                 m._module_lifecycle = LIFECYCLE_MODULE_CLOSED
                 if channel:
-                    channel("module-module_closed: {object}".format(object=str(m)))
+                    channel(f"module-module_closed: {str(m)}")
                 if hasattr(m, "module_close"):
                     m.module_close(*args, **kwargs)
                 self._signal_detach(m)
@@ -1001,9 +981,7 @@ class Kernel(Settings):
         # Update plugin: closed
         if start < LIFECYCLE_MODULE_CLOSED <= end:
             if channel:
-                channel(
-                    "(plugin) module-module_close: {object}".format(object=str(module))
-                )
+                channel(f"(plugin) module-module_close: {str(module)}")
             try:
                 # If this is a module, we remove it from opened.
                 del module.context.opened[module.name]
@@ -1020,14 +998,14 @@ class Kernel(Settings):
             if mlp(m) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
                 m._module_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
-                    channel("module-shutdown: {object}".format(object=str(m)))
+                    channel(f"module-shutdown: {str(m)}")
                 if hasattr(m, "shutdown"):
                     m.shutdown()
 
         # Update plugin: shutdown
         if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
             if channel:
-                channel("(plugin) module-shutdown: {object}".format(object=str(module)))
+                channel(f"(plugin) module-shutdown: {str(module)}")
             try:
                 for plugin in self._module_plugins[module.registered_path]:
                     plugin(module, "shutdown")
@@ -1361,9 +1339,9 @@ class Kernel(Settings):
             return None
 
     def has_feature(self, *args):
-        for a in args:
+        for feature in args:
             try:
-                v = self._registered["feature/{feature}".format(feature=a)]
+                v = self._registered[f"feature/{feature}"]
             except KeyError:
                 return False
             if not v:
@@ -1371,7 +1349,7 @@ class Kernel(Settings):
         return True
 
     def set_feature(self, feature):
-        self._registered["feature/{feature}".format(feature=feature)] = True
+        self._registered[f"feature/{feature}"] = True
 
     def lookup_all(self, *args):
         """
@@ -2578,27 +2556,17 @@ class Kernel(Settings):
                 plugins = self._kernel_plugins
                 channel(_("Kernel Plugins:"))
                 for name in plugins:
-                    channel(
-                        "{path}: {value}".format(path="kernel", value=name.__module__)
-                    )
+                    channel(f"kernel: {name.__module__}")
                 channel(_("Service Plugins:"))
                 for path in self._service_plugins:
                     plugins = self._service_plugins[path]
                     for name in plugins:
-                        channel(
-                            "{path}: {value}".format(
-                                path=str(path), value=name.__module__
-                            )
-                        )
+                        channel(f"{str(path)}: {name.__module__}")
                 channel(_("Module Plugins:"))
                 for path in self._module_plugins:
                     plugins = self._module_plugins[path]
                     for name in plugins:
-                        channel(
-                            "{path}: {value}".format(
-                                path=str(path), value=name.__module__
-                            )
-                        )
+                        channel(f"{str(path)}: {name.__module__}")
             return
 
         @self.console_option(
@@ -2726,7 +2694,7 @@ class Kernel(Settings):
             domain, available, active = data
             if name is None:
                 raise CommandSyntaxError
-            provider_path = "provider/{domain}/{name}".format(domain=domain, name=name)
+            provider_path = f"provider/{domain}/{name}"
             provider = self.lookup(provider_path)
             if provider is None:
                 raise CommandSyntaxError("Bad provider.")
@@ -2797,9 +2765,7 @@ class Kernel(Settings):
             try:
                 self.batch_remove(index - 1)
             except IndexError:
-                raise CommandSyntaxError(
-                    "Index out of bounds (1-{length})".format(length=len(data))
-                )
+                raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
         @self.console_argument("index", type=int, help="line to delete")
         @self.console_command(
@@ -2812,9 +2778,7 @@ class Kernel(Settings):
             try:
                 self.batch_execute(index - 1)
             except IndexError:
-                raise CommandSyntaxError(
-                    "Index out of bounds (1-{length})".format(length=len(data))
-                )
+                raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
         @self.console_argument("index", type=int, help="line to delete")
         @self.console_command(
@@ -2829,9 +2793,7 @@ class Kernel(Settings):
                     index - 1, "disable" if command == "disable" else "cmd"
                 )
             except IndexError:
-                raise CommandSyntaxError(
-                    "Index out of bounds (1-{length})".format(length=len(data))
-                )
+                raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
         # ==========
         # CHANNEL COMMANDS
@@ -2973,9 +2935,7 @@ class Kernel(Settings):
             except ValueError:
                 pass
             if filename is None:
-                filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-                    date=datetime.now()
-                )
+                filename = f"MeerK40t-channel-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
             channel(_("Opening file: %s") % filename)
             console_channel_file = self.open_safe(filename, "a")
             for cn in channel_name.split(","):

@@ -56,6 +56,8 @@ class PyEmbeddedImage(py_embedded_image):
         @param resize:
         @param color:
         @param rotate:
+        @param noadjustment: Disables size adjustment based on global factor
+        @param keepalpha: maintain the alpha from the original asset
         @return:
         """
 
@@ -66,14 +68,14 @@ class PyEmbeddedImage(py_embedded_image):
             if resize is not None:
                 if isinstance(resize, int) or isinstance(resize, float):
                     resize *= _GLOBAL_FACTOR
-                    if _MIN_ICON_SIZE > 0 and oldresize > _MIN_ICON_SIZE:
+                    if 0 < _MIN_ICON_SIZE < oldresize:
                         if resize < _MIN_ICON_SIZE:
                             resize = _MIN_ICON_SIZE
                 elif isinstance(resize, tuple):  # (tuple wd ht)
                     resize = [oldresize[0], oldresize[1]]
                     for i in range(2):
                         resize[i] *= _GLOBAL_FACTOR
-                        if _MIN_ICON_SIZE > 0 and oldresize[i] > _MIN_ICON_SIZE:
+                        if 0 < _MIN_ICON_SIZE < oldresize[i]:
                             if resize[i] < _MIN_ICON_SIZE:
                                 resize[i] = _MIN_ICON_SIZE
             else:
@@ -81,7 +83,7 @@ class PyEmbeddedImage(py_embedded_image):
                 oldresize = (wd, ht)
                 for i in range(2):
                     resize[i] *= _GLOBAL_FACTOR
-                    if _MIN_ICON_SIZE > 0 and oldresize[i] > _MIN_ICON_SIZE:
+                    if 0 < _MIN_ICON_SIZE < oldresize[i]:
                         if resize[i] < _MIN_ICON_SIZE:
                             resize[i] = _MIN_ICON_SIZE
             # print ("Will adjust from %s to %s (was: %s)" % ((wd, ht), resize, oldresize))

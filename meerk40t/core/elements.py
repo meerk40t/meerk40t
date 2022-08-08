@@ -461,7 +461,7 @@ class Elemental(Service):
         if "%" in v:
             lly = Length(v, relative_length=self.device.height)
         else:
-            lly = Length("1{unit}".format(unit=llx._preferred_units))
+            lly = Length(f"1{llx._preferred_units}")
         ly = float(lly)
         return lx * ly
 
@@ -713,7 +713,7 @@ class Elemental(Service):
             help=_("Wordlist base operation"),
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, remainder=None, **kwargs):
+        def wordlist_base(command, channel, _, remainder=None, **kwargs):
             return "wordlist", ""
 
         @self.console_argument("key", help=_("Wordlist value"))
@@ -1090,11 +1090,7 @@ class Elemental(Service):
             for section in self.op_data.section_set():
                 for subsect in self.op_data.derivable(section):
                     label = self.op_data.read_persistent(str, subsect, "label", "-")
-                    channel(
-                        "{subsection}: {label}".format(
-                            section=section, subsection=subsect, label=label
-                        )
-                    )
+                    channel(f"{subsect}: {label}")
             channel("----------")
 
         # ==========
@@ -1344,19 +1340,19 @@ class Elemental(Service):
             operand = list()
 
             def filter_parser(text: str):
-                pos = 0
+                p = 0
                 limit = len(text)
-                while pos < limit:
-                    match = filter_re.match(text, pos)
+                while p < limit:
+                    match = filter_re.match(text, p)
                     if match is None:
                         break  # No more matches.
-                    kind = match.lastgroup
-                    start = pos
-                    pos = match.end()
-                    if kind == "SKIP":
+                    _kind = match.lastgroup
+                    _start = p
+                    p = match.end()
+                    if _kind == "SKIP":
                         continue
-                    value = match.group()
-                    yield kind, value, start, pos
+                    _value = match.group()
+                    yield _kind, _value, _start, p
 
             def solve_to(order: int):
                 try:
@@ -2002,8 +1998,8 @@ class Elemental(Service):
         @self.console_command(
             "lock",
             help=_("Lock element (protect from manipulation)"),
-            input_type=("elements"),
-            output_type=("elements"),
+            input_type="elements",
+            output_type="elements",
         )
         def e_lock(data=None, **kwargs):
             if data is None:
@@ -2017,8 +2013,8 @@ class Elemental(Service):
         @self.console_command(
             "unlock",
             help=_("Unlock element (allow manipulation)"),
-            input_type=("elements"),
-            output_type=("elements"),
+            input_type="elements",
+            output_type="elements",
         )
         def e_unlock(data=None, **kwargs):
             if data is None:
@@ -2065,9 +2061,7 @@ class Elemental(Service):
                     y_pos = dy
                 add_elem = list(map(copy, data))
                 if x_pos != 0 or y_pos != 0:
-                    matrix = Matrix(
-                        "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
-                    )
+                    matrix = Matrix.translate(dx, dy)
                 for e in add_elem:
                     if x_pos != 0 or y_pos != 0:
                         e.matrix *= matrix
@@ -3879,7 +3873,7 @@ class Elemental(Service):
             svg_text = SVGText(text)
             if size is not None:
                 svg_text.font_size = size
-            svg_text *= "scale({scale})".format(scale=UNITS_PER_PIXEL)
+            svg_text *= f"scale({UNITS_PER_PIXEL})"
             node = self.elem_branch.add(
                 text=svg_text, matrix=svg_text.transform, type="elem text"
             )
@@ -4029,7 +4023,7 @@ class Elemental(Service):
                 raise CommandSyntaxError(_("Not a valid path_d string"))
             try:
                 path = Path(path_d)
-                path *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
+                path *= f"Scale({UNITS_PER_PIXEL})"
             except ValueError:
                 raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
 
@@ -4495,8 +4489,8 @@ class Elemental(Service):
             width += x_offset * 2
             height += y_offset * 2
 
-            element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            node = self.elem_branch.add(shape=element, type="elem ellipse")
+            _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
+            node = self.elem_branch.add(shape=_element, type="elem ellipse")
             node.stroke = Color("red")
             self.set_emphasis([node])
             node.focus()
@@ -4505,7 +4499,7 @@ class Elemental(Service):
 
             if data is None:
                 data = list()
-            data.append(element)
+            data.append(_element)
             return "elements", data
 
         @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
@@ -4692,7 +4686,7 @@ class Elemental(Service):
             "area",
             help=_("provides information about/changes the area of a selected element"),
             input_type=(None, "elements"),
-            output_type=("elements"),
+            output_type="elements",
         )
         def element_area(
             command,
@@ -4725,7 +4719,7 @@ class Elemental(Service):
             units = ("mm", "cm", "in")
             square_unit = [0] * len(units)
             for idx, u in enumerate(units):
-                value = float(Length("1{unit}".format(unit=u)))
+                value = float(Length(f"1{u}"))
                 square_unit[idx] = value * value
 
             i = 0
@@ -5248,14 +5242,14 @@ class Elemental(Service):
                     raise CommandSyntaxError
             else:
 
-                def m_list(path, menu):
-                    for i, n in enumerate(menu):
+                def m_list(path, _menu):
+                    for i, _n in enumerate(_menu):
                         p = list(path)
                         p.append(str(i))
-                        name, submenu = n
-                        channel("%s: %s" % (".".join(p).ljust(10), str(name)))
-                        if isinstance(submenu, list):
-                            m_list(p, submenu)
+                        _name, _submenu = _n
+                        channel("%s: %s" % (".".join(p).ljust(10), str(_name)))
+                        if isinstance(_submenu, list):
+                            m_list(p, _submenu)
 
                 m_list([], menu)
 
@@ -5518,9 +5512,7 @@ class Elemental(Service):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                matrix = Matrix(
-                    "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
-                )
+                matrix = Matrix.translate(float(dx), float(dy))
                 for node in pasted:
                     node.matrix *= matrix
             group = self.elem_branch.add(type="group", label="Group", id="Copy")
@@ -5587,17 +5579,17 @@ class Elemental(Service):
         )
         @self.console_command("note", help=_("note <note>"))
         def note(command, channel, _, append=False, remainder=None, **kwargs):
-            note = remainder
-            if note is None:
+            _note = remainder
+            if _note is None:
                 if self.note is None:
                     channel(_("No Note."))
                 else:
                     channel(str(self.note))
             else:
                 if append:
-                    self.note += "\n" + note
+                    self.note += "\n" + _note
                 else:
-                    self.note = note
+                    self.note = _note
                 channel(_("Note Set."))
                 channel(str(self.note))
 
@@ -5764,7 +5756,7 @@ class Elemental(Service):
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3]),
                         ]
-                elif method in ("complex"):
+                elif method == "complex":
                     try:
                         path = node.as_path()
                     except AttributeError:
@@ -5864,12 +5856,12 @@ class Elemental(Service):
                 channel(_("No elements bounds to trace."))
                 return
 
-            def run_shape(spooler, hull):
+            def run_shape(_spooler, _hull):
                 def trace_hull():
                     yield "wait_finish"
                     yield "rapid_mode"
                     idx = 0
-                    for p in hull:
+                    for p in _hull:
                         idx += 1
                         yield (
                             "move_abs",
@@ -5877,7 +5869,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                spooler.laserjob(list(trace_hull()))
+                _spooler.laserjob(list(trace_hull()))
 
             run_shape(spooler, hull)
 
@@ -5931,6 +5923,7 @@ class Elemental(Service):
     def _init_tree(self, kernel):
 
         _ = kernel.translation
+
         # --------------------------- TREE OPERATIONS ---------------------------
 
         def is_regmark(node):
@@ -6250,23 +6243,23 @@ class Elemental(Service):
 
         @self.tree_conditional(
             lambda cond: len(
-                list(self.flat(selected=True, cascade=False, types=("reference")))
+                list(self.flat(selected=True, cascade=False, types="reference"))
             )
             >= 1
         )
         @self.tree_calc(
             "ecount",
             lambda i: len(
-                list(self.flat(selected=True, cascade=False, types=("reference")))
+                list(self.flat(selected=True, cascade=False, types="reference"))
             ),
         )
         @self.tree_operation(
             _("Remove %s selected items from operations") % "{ecount}",
-            node_type=("reference"),
+            node_type="reference",
             help="",
         )
         def remove_multi_references(node, **kwargs):
-            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
+            nodes = list(self.flat(selected=True, cascade=False, types="reference"))
             for node in nodes:
                 if node.parent is not None:  # May have already removed.
                     node.remove_node()
@@ -6387,7 +6380,7 @@ class Elemental(Service):
         )
         @self.tree_operation(
             _("Delete group '%s' and all its child-elements fully") % "{name}",
-            node_type=("group"),
+            node_type="group",
             help="",
         )
         def remove_type_grp(node, **kwargs):
@@ -6403,7 +6396,7 @@ class Elemental(Service):
         )
         @self.tree_operation(
             _("Remove loaded file '%s' and all its child-elements fully") % "{name}",
-            node_type=("file"),
+            node_type="file",
             help="",
         )
         def remove_type_file(node, **kwargs):
@@ -6521,7 +6514,7 @@ class Elemental(Service):
             _("Make %s copies") % "{copies}", node_type=("reference",), help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
-            nodes = list(self.flat(selected=True, cascade=False, types=("reference")))
+            nodes = list(self.flat(selected=True, cascade=False, types="reference"))
             for snode in nodes:
                 index = snode.parent.children.index(snode)
                 for i in range(copies):
@@ -6548,7 +6541,7 @@ class Elemental(Service):
         )
         def reverse_layer_order(node, **kwargs):
             node.reverse()
-            self.signal("refresh_tree", list(self.flat(types=("reference"))))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -6557,7 +6550,7 @@ class Elemental(Service):
         def refresh_clasifications(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
-            self.signal("refresh_tree", list(self.flat(types=("reference"))))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
 
         materials = [
             _("Wood"),
@@ -6874,7 +6867,7 @@ class Elemental(Service):
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
 
-        def add_after_index(self, node=None):
+        def add_after_index(node=None):
             try:
                 if node is None:
                     node = list(self.ops(emphasized=True))[-1]
@@ -6887,72 +6880,72 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Image"), node_type=op_nodes, help="")
         def add_operation_image(node, **kwargs):
-            append_operation_image(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_image(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Raster"), node_type=op_nodes, help="")
         def add_operation_raster(node, **kwargs):
-            append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_raster(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Engrave"), node_type=op_nodes, help="")
         def add_operation_engrave(node, **kwargs):
-            append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_engrave(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Cut"), node_type=op_nodes, help="")
         def add_operation_cut(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_cut(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Hatch"), node_type=op_nodes, help="")
         def add_operation_hatch(node, **kwargs):
-            append_operation_hatch(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_hatch(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Dots"), node_type=op_nodes, help="")
         def add_operation_dots(node, **kwargs):
-            append_operation_dots(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_dots(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
-            append_operation_home(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_home(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
-            append_operation_origin(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_origin(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
-            append_operation_beep(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_beep(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
-            append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_interrupt(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
         def add_operation_wait(node, **kwargs):
-            append_operation_wait(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_wait(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")
         def add_operation_output(node, **kwargs):
-            append_operation_output(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_output(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Input"), node_type=op_nodes, help="")
         def add_operation_input(node, **kwargs):
-            append_operation_input(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_input(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
-            pos = add_after_index(self, node)
+            pos = add_after_index(node)
             append_operation_home(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
@@ -6984,15 +6977,15 @@ class Elemental(Service):
             if system == "Darwin":
                 from os import system as open_in_shell
 
-                open_in_shell("open '{file}'".format(file=normalized))
+                open_in_shell(f"open '{normalized}'")
             elif system == "Windows":
                 from os import startfile as open_in_shell
 
-                open_in_shell('"{file}"'.format(file=normalized))
+                open_in_shell(f'"{normalized}"')
             else:
                 from os import system as open_in_shell
 
-                open_in_shell("xdg-open '{file}'".format(file=normalized))
+                open_in_shell(f"xdg-open '{normalized}'")
 
         def get_values():
             return [o for o in self.ops() if o.type.startswith("op")]
@@ -7205,7 +7198,7 @@ class Elemental(Service):
             ),
         )
         @self.tree_operation(
-            _("Rotate %s°") % ("{angle}"), node_type=elem_group_nodes, help=""
+            _("Rotate %s°") % "{angle}", node_type=elem_group_nodes, help=""
         )
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
@@ -9094,7 +9087,7 @@ class Elemental(Service):
         if element.node is None:
             if short:
                 return element.id
-            return "{id}: {path}".format(id=element.id, path=str(element))
+            return f"{element.id}: {str(element)}"
         elif ":" in element.node.label and short:
             return element.node.label.split(":", 1)[0]
         else:

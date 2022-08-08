@@ -68,11 +68,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         suffix = "moshi"
         for d in kernel.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")
 
 
 def get_code_string_from_moshicode(code):
@@ -189,12 +185,24 @@ class MoshiDevice(Service, ViewPort):
         ]
         self.register_choices("bed_dim", choices)
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
-        self.setting(list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
         ViewPort.__init__(
             self,
             self.bedwidth,

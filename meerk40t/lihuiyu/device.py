@@ -83,11 +83,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         suffix = "lhystudios"
         for d in kernel.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")
 
 
 class LihuiyuDevice(Service, ViewPort):
@@ -146,12 +142,24 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
         # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
-        self.setting(list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0))
-        self.setting(list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0))
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
         ViewPort.__init__(
             self,
             self.bedwidth,
@@ -635,9 +643,7 @@ class LihuiyuDevice(Service, ViewPort):
                     if watch:
                         server.data_channel.watch(console)
                 channel(_("Watching Channel: %s") % "server")
-                self.channel(
-                    "{server_name}/recv".format(server_name=server_name)
-                ).watch(output.write)
+                self.channel(f"{server_name}/recv").watch(output.write)
                 channel(_("Attached: %s" % repr(output)))
 
             except OSError:
@@ -2509,7 +2515,7 @@ class TCPOutput:
         if self.thread is None:
             self.thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-{port}".format(port=self.service.port),
+                thread_name=f"sender-{self.service.port}",
                 result=self._stop,
             )
 

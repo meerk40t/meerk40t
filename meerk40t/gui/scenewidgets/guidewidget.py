@@ -120,13 +120,7 @@ class GuideWidget(Widget):
         # Let's set the full grid
         p = self.scene.context
         if self.scene.draw_grid_primary:
-            tlen = float(
-                Length(
-                    "{value}{units}".format(
-                        value=self.scene.tick_distance, units=p.units_name
-                    )
-                )
-            )
+            tlen = float(Length(f"{self.scene.tick_distance}{p.units_name}"))
             amount = (
                 round(
                     (p.device.unit_width / tlen) * (p.device.unit_height / tlen) / 1000,
@@ -197,7 +191,7 @@ class GuideWidget(Widget):
             )
             item = menu.Append(
                 wx.ID_ANY,
-                "{amount:.2f}{units}".format(amount=self.options[0], units=units),
+                f"{self.options[0]:.2f}{units}",
                 "",
                 kind,
             )
@@ -216,7 +210,7 @@ class GuideWidget(Widget):
             )
             item = menu.Append(
                 wx.ID_ANY,
-                "{amount:.2f}{units}".format(amount=self.options[1], units=units),
+                f"{self.options[1]:.2f}{units}",
                 "",
                 kind,
             )
@@ -235,7 +229,7 @@ class GuideWidget(Widget):
             )
             item = menu.Append(
                 wx.ID_ANY,
-                "{amount:.2f}{units}".format(amount=self.options[2], units=units),
+                f"{self.options[2]:.2f}{units}",
                 "",
                 kind,
             )
@@ -254,7 +248,7 @@ class GuideWidget(Widget):
             )
             item = menu.Append(
                 wx.ID_ANY,
-                "{amount:.2f}{units}".format(amount=self.options[3], units=units),
+                f"{self.options[3]:.2f}{units}",
                 "",
                 kind,
             )

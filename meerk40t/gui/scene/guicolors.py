@@ -34,9 +34,7 @@ class GuiColors:
             "guide3": "#A0A0A080",
         }
         for key in self.default_color:
-            self.context.setting(
-                str, "color_{key}".format(key=key), self.default_color[key]
-            )
+            self.context.setting(str, f"color_{key}", self.default_color[key])
         self.sanity_check()
 
     def sanity_check(self):

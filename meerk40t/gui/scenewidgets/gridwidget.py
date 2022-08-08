@@ -273,11 +273,7 @@ class GridWidget(Widget):
         self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
         self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
         tlen = float(
-            Length(
-                "{value}{units}".format(
-                    value=self.scene.tick_distance, units=self.scene.context.units_name
-                )
-            )
+            Length(f"{self.scene.tick_distance}{self.scene.context.units_name}")
         )
         if tlen == 0:
             tlen = float(Length("10mm"))
