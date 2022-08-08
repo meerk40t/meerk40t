@@ -74,6 +74,7 @@ class WarningPanel(wx.Panel):
             entry["checkbox_min"] = chk1
 
             ctrl1 = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_PROCESS_ENTER, limited=True, check="float")
+            ctrl1.SetMinSize(wx.Size(60, -1))
             ctrl1.SetToolTip(_("Warn level for minimum {unit}").format(unit=_(entry["attr"])))
             ctrl1.Enable(False)
             entry["textcontrol_min"] = ctrl1
@@ -87,6 +88,7 @@ class WarningPanel(wx.Panel):
             entry["checkbox_max"] = chk2
 
             ctrl2 = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_PROCESS_ENTER, limited=True, check="float")
+            ctrl2.SetMinSize(wx.Size(60, -1))
             ctrl2.SetToolTip(_("Warn level for maximum {unit}").format(unit=_(entry["attr"])))
             ctrl2.Enable(False)
             entry["textcontrol_max"] = ctrl2
@@ -178,11 +180,11 @@ class WarningPanel(wx.Panel):
             else:
                 index = 6
         label = "dangerlevel_op_" + operation
-        warning = (False, 0, False, 0, False, 0, False, 0)
+        warning = [False, 0, False, 0, False, 0, False, 0]
         if hasattr(self.context, label):
             dummy = getattr(self.context, label)
             if isinstance(dummy, (tuple, list)) and len(dummy) == len(warning):
-                warning = dummy
+                warning = list(dummy)
         # print ("old[%s]: %s" % (label, warning))
         anychanges = False
         if warning[index] != active:
@@ -200,7 +202,7 @@ class WarningPanel(wx.Panel):
     def update_widgets(self):
         for op in self.op_id:
             label = "dangerlevel_op_" + op
-            warning = (False, 0, False, 0, False, 0, False, 0)
+            warning = [False, 0, False, 0, False, 0, False, 0]
             if hasattr(self.context, label):
                 dummy = getattr(self.context, label)
                 if isinstance(dummy, (tuple, list)) and len(dummy) == len(warning):
