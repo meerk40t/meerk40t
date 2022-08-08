@@ -471,21 +471,21 @@ class SimulationPanel(wx.Panel, Job):
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
             self.text_time_travel_step.SetValue(
-                f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
+                f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
             time_cuts = self.cutcode.duration_cut(stop_at=step)
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
             self.text_time_laser_step.SetValue(
-                f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
+                f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
             time_total = time_travel + time_cuts + extra
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
             t_seconds = int(time_total % 60)
             self.text_time_total_step.SetValue(
-                f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
+                f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
         except ZeroDivisionError:
             pass
