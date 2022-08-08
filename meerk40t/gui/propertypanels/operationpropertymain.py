@@ -189,26 +189,38 @@ class LayerSettingPanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def accepts(self, node):
+        return node.type in (
+            "op cut",
+            "op engrave",
+            "op raster",
+            "op image",
+            "op dots",
+            "op hatch",
+        )
+
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is not None:
-            op = self.operation.type
-            # if op == "op engrave":
-            #     self.combo_type.SetSelection(0)
-            # elif op == "op cut":
-            #     self.combo_type.SetSelection(1)
-            # elif op == "op raster":
-            #     self.combo_type.SetSelection(2)
-            # elif op == "op image":
-            #     self.combo_type.SetSelection(3)
-            # elif op == "op hatch":
-            #     self.combo_type.SetSelection(4)
-            # elif op == "op dots":
-            #     self.combo_type.SetSelection(5)
-            #     for m in self.GetParent().Children:
-            #         if isinstance(m, wx.Window):
-            #             m.Hide()
-            #     return
+        if self.operation is  None or not self.accepts(node):
+            self.Hide()
+            return
+        op = self.operation.type
+        # if op == "op engrave":
+        #     self.combo_type.SetSelection(0)
+        # elif op == "op cut":
+        #     self.combo_type.SetSelection(1)
+        # elif op == "op raster":
+        #     self.combo_type.SetSelection(2)
+        # elif op == "op image":
+        #     self.combo_type.SetSelection(3)
+        # elif op == "op hatch":
+        #     self.combo_type.SetSelection(4)
+        # elif op == "op dots":
+        #     self.combo_type.SetSelection(5)
+        #     for m in self.GetParent().Children:
+        #         if isinstance(m, wx.Window):
+        #             m.Hide()
+        #     return
         self.button_layer_color.SetBackgroundColour(
             wx.Colour(swizzlecolor(self.operation.color))
         )
@@ -236,6 +248,7 @@ class LayerSettingPanel(wx.Panel):
         except AttributeError:
             pass
         self.Layout()
+        self.Show()
 
     def on_button_layer(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         data = wx.ColourData()
@@ -400,8 +413,21 @@ class SpeedPpiPanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def accepts(self, node):
+        return node.type in (
+            "op cut",
+            "op engrave",
+            "op raster",
+            "op image",
+            "op dots",
+            "op hatch",
+        )
+
     def set_widgets(self, node):
         self.operation = node
+        if self.operation is None or not self.accepts(node):
+            self.Hide()
+            return
         if self.operation.speed is not None:
             set_ctrl_value(self.text_speed, str(self.operation.speed))
         if self.operation.power is not None:
@@ -409,6 +435,7 @@ class SpeedPpiPanel(wx.Panel):
             set_ctrl_value(self.text_power, str(self.operation.power))
         if self.operation.frequency is not None:
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
+        self.Show()
 
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
@@ -498,14 +525,28 @@ class PassesPanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def accepts(self, node):
+        return node.type in (
+            "op cut",
+            "op engrave",
+            "op raster",
+            "op image",
+            "op dots",
+            "op hatch",
+        )
+
     def set_widgets(self, node):
         self.operation = node
+        if self.operation is  None or not self.accepts(node):
+            self.Hide()
+            return
         if self.operation.passes_custom is not None:
             self.check_passes.SetValue(self.operation.passes_custom)
         if self.operation.passes is not None:
             set_ctrl_value(self.text_passes, str(self.operation.passes))
         on = self.check_passes.GetValue()
         self.text_passes.Enable(on)
+        self.Show()
 
     def on_check_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         on = self.check_passes.GetValue()
@@ -561,12 +602,15 @@ class InfoPanel(wx.Panel):
             _("How many elements does this operation contain")
         )
         self.text_time.SetToolTip(_("Estimated time for execution (hh:mm:ss)"))
+        self.btn_update = wx.Button(self, wx.ID_ANY, _("Calculate"))
+        self.btn_update.Bind(wx.EVT_BUTTON, self.on_button_calculate)
 
         sizer_children.Add(self.text_children, 1, wx.EXPAND, 0)
         sizer_time.Add(self.text_time, 1, wx.EXPAND, 0)
+        sizer_time.Add(self.btn_update, 0, wx.EXPAND, 0)
 
         sizer_info.Add(sizer_children, 1, wx.EXPAND, 0)
-        sizer_info.Add(sizer_time, 1, wx.EXPAND, 0)
+        sizer_info.Add(sizer_time, 2, wx.EXPAND, 0)
 
         self.SetSizer(sizer_info)
 
@@ -580,19 +624,37 @@ class InfoPanel(wx.Panel):
     def pane_show(self):
         pass
 
-    def refresh_display(self):
+    def on_button_calculate(self, event):
         try:
             timestr = self.operation.time_estimate()
         except:
             timestr = "---"
+        self.text_time.SetValue(timestr)
+
+    def refresh_display(self):
+        timestr = "---"
         childs = len(self.operation.children)
 
         self.text_time.SetValue(timestr)
         self.text_children.SetValue(str(childs))
 
+    def accepts(self, node):
+        return node.type in (
+            "op cut",
+            "op engrave",
+            "op raster",
+            "op image",
+            "op dots",
+            "op hatch",
+        )
+
     def set_widgets(self, node):
         self.operation = node
+        if self.operation is  None or not self.accepts(node):
+            self.Hide()
+            return
         self.refresh_display()
+        self.Show()
 
 
 # end of class InfoPanel
@@ -684,8 +746,17 @@ class PanelStartPreference(wx.Panel):
         self.travel_lines = None
         self.refresh_display()
 
+    def accepts(self, node):
+        return node.type in (
+            "op raster",
+            "op image",
+        )
+
     def set_widgets(self, node):
         self.operation = node
+        if self.operation is  None or not self.accepts(node):
+            self.Hide()
+            return
         if self.operation.raster_preference_top is not None:
             self.slider_top.SetValue(self.operation.raster_preference_top + 1)
         if self.operation.raster_preference_left is not None:
@@ -694,6 +765,7 @@ class PanelStartPreference(wx.Panel):
             self.slider_right.SetValue(self.operation.raster_preference_right + 1)
         if self.operation.raster_preference_bottom is not None:
             self.slider_bottom.SetValue(self.operation.raster_preference_bottom + 1)
+        self.Show()
 
     def on_display_paint(self, event=None):
         try:
@@ -1032,8 +1104,17 @@ class RasterSettingsPanel(wx.Panel):
     def pane_show(self):
         self.panel_start.pane_show()
 
+    def accepts(self, node):
+        return node.type in (
+            "op raster",
+            "op image",
+        )
+
     def set_widgets(self, node):
         self.operation = node
+        if self.operation is  None or not self.accepts(node):
+            self.Hide()
+            return
         if self.operation.dpi is not None:
             set_ctrl_value(self.text_dpi, str(self.operation.dpi))
         if self.operation.overscan is not None:
@@ -1042,6 +1123,7 @@ class RasterSettingsPanel(wx.Panel):
             self.combo_raster_direction.SetSelection(self.operation.raster_direction)
         if self.operation.raster_swing is not None:
             self.radio_directional_raster.SetSelection(self.operation.raster_swing)
+        self.Show()
 
     def on_text_dpi(self, event=None):  # wxGlade: OperationProperty.<event_handler>
         try:
@@ -1106,6 +1188,7 @@ class HatchSettingsPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
+        self._Buffer = None
 
         raster_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Hatch:")), wx.VERTICAL
@@ -1195,8 +1278,16 @@ class HatchSettingsPanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def accepts(self, node):
+        return node.type in (
+            "op hatch",
+        )
+
     def set_widgets(self, node):
         self.operation = node
+        if self.operation is  None or not self.accepts(node):
+            self.Hide()
+            return
         i = 0
         for ht in self.fills:
             if ht == self.operation.hatch_type:
@@ -1212,6 +1303,7 @@ class HatchSettingsPanel(wx.Panel):
             self.slider_angle.SetValue(int(h_angle))
         except ValueError:
             pass
+        self.Show()
 
     def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         try:
@@ -1250,6 +1342,8 @@ class HatchSettingsPanel(wx.Panel):
         self.refresh_display()
 
     def on_display_paint(self, event=None):
+        if self._Buffer is None:
+            return
         try:
             wx.BufferedPaintDC(self.display_panel, self._Buffer)
         except RuntimeError:
@@ -1431,9 +1525,18 @@ class DwellSettingsPanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def accepts(self, node):
+        return node.type in (
+            "op dots",
+        )
+
     def set_widgets(self, node):
         self.operation = node
+        if self.operation is  None or not self.accepts(node):
+            self.Hide()
+            return
         set_ctrl_value(self.text_dwelltime, str(self.operation.dwell_time))
+        self.Show()
 
     def on_text_dwelltime(
         self, event=None
@@ -1506,29 +1609,28 @@ class ParameterPanel(ScrolledPanel):
         #     print ("EPR called with no origin")
         # else:
         #     print ("EPR called from:", args)
-
         try:
             self.raster_panel.panel_start.on_element_property_reload(*args)
         except AttributeError:
             pass
-        if self.operation.type != "op hatch":
-            if self.hatch_panel.Shown:
-                self.hatch_panel.Hide()
-        else:
-            if not self.hatch_panel.Shown:
-                self.hatch_panel.Show()
-        if self.operation.type not in ("op raster", "op image"):
-            if self.raster_panel.Shown:
-                self.raster_panel.Hide()
-        else:
-            if not self.raster_panel.Shown:
-                self.raster_panel.Show()
-        if self.operation.type != "op dots":
-            if self.dwell_panel.Shown:
-                self.dwell_panel.Hide()
-        else:
-            if not self.dwell_panel.Shown:
-                self.dwell_panel.Show()
+        # if self.operation.type != "op hatch":
+        #     if self.hatch_panel.Shown:
+        #         self.hatch_panel.Hide()
+        # else:
+        #     if not self.hatch_panel.Shown:
+        #         self.hatch_panel.Show()
+        # if self.operation.type not in ("op raster", "op image"):
+        #     if self.raster_panel.Shown:
+        #         self.raster_panel.Hide()
+        # else:
+        #     if not self.raster_panel.Shown:
+        #         self.raster_panel.Show()
+        # if self.operation.type != "op dots":
+        #     if self.dwell_panel.Shown:
+        #         self.dwell_panel.Hide()
+        # else:
+        #     if not self.dwell_panel.Shown:
+        #         self.dwell_panel.Show()
         self.set_widgets(self.operation)
         self.Layout()
 

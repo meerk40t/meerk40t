@@ -25,14 +25,14 @@ class WarningPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.op_id = ("cut", "engrave", "raster", "imageop", "dots", "hatch")
+        self.op_id = ("cut", "engrave", "raster", "image", "dots", "hatch")
         self.data = {}
 
         self.images = {
             "cut": icons8_laser_beam_20,
             "engrave": icons8_small_beam_20,
             "raster": icons8_direction_20,
-            "imageop": icons8_image_20,
+            "image": icons8_image_20,
             "dots": icons8_scatter_plot_20,
             "hatch": icons8_diagonal_20,
         }
