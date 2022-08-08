@@ -2061,14 +2061,14 @@ class MeerK40t(MWindow):
                 try:  # pyinstaller internal location
                     # pylint: disable=no-member
                     _resource_path = os.path.join(sys._MEIPASS, "help/meerk40t.help")
-                except Exception:
+                except AttributeError:
                     pass
             if not os.path.exists(_resource_path):
                 try:  # Mac py2app resource
                     _resource_path = os.path.join(
                         os.environ["RESOURCEPATH"], "help/meerk40t.help"
                     )
-                except Exception:
+                except KeyError:
                     pass
             if os.path.exists(_resource_path):
                 os.system("open %s" % _resource_path)

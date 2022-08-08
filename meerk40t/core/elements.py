@@ -5938,6 +5938,7 @@ class Elemental(Service):
     def _init_tree(self, kernel):
 
         _ = kernel.translation
+
         # --------------------------- TREE OPERATIONS ---------------------------
 
         def is_regmark(node):
@@ -6904,27 +6905,27 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Engrave"), node_type=op_nodes, help="")
         def add_operation_engrave(node, **kwargs):
-            append_operation_engrave(node, pos=add_after_index( node), **kwargs)
+            append_operation_engrave(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Cut"), node_type=op_nodes, help="")
         def add_operation_cut(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index( node), **kwargs)
+            append_operation_cut(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Hatch"), node_type=op_nodes, help="")
         def add_operation_hatch(node, **kwargs):
-            append_operation_hatch(node, pos=add_after_index( node), **kwargs)
+            append_operation_hatch(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Dots"), node_type=op_nodes, help="")
         def add_operation_dots(node, **kwargs):
-            append_operation_dots(node, pos=add_after_index( node), **kwargs)
+            append_operation_dots(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
-            append_operation_home(node, pos=add_after_index( node), **kwargs)
+            append_operation_home(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
@@ -6934,27 +6935,27 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
-            append_operation_beep(node, pos=add_after_index( node), **kwargs)
+            append_operation_beep(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
-            append_operation_interrupt(node, pos=add_after_index( node), **kwargs)
+            append_operation_interrupt(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
         def add_operation_wait(node, **kwargs):
-            append_operation_wait(node, pos=add_after_index( node), **kwargs)
+            append_operation_wait(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")
         def add_operation_output(node, **kwargs):
-            append_operation_output(node, pos=add_after_index( node), **kwargs)
+            append_operation_output(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Input"), node_type=op_nodes, help="")
         def add_operation_input(node, **kwargs):
-            append_operation_input(node, pos=add_after_index( node), **kwargs)
+            append_operation_input(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
