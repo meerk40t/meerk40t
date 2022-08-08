@@ -128,7 +128,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/ribbon", RibbonTool)
 
         @context.console_command("dialog_fps", hidden=True)
-        def fps(**kwgs):
+        def dialog_fps(**kwgs):
             dlg = wx.TextEntryDialog(
                 None, _("Enter FPS Limit"), _("FPS Limit Entry"), ""
             )
