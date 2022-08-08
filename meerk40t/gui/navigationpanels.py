@@ -237,9 +237,8 @@ def get_movement(device, dx, dy):
             newy = tmp
         sx = Length(newx, unitless=1)
         sy = Length(newy, unitless=1)
-        # print ("sx, sy", sx, sx.mm, sy, sy.mm)
-        nx = "%.4fmm" % sx.mm
-        ny = "%.4fmm" % sy.mm
+        nx = f"{sx.mm:.4f}mm"
+        ny = f"{sy.mm:.4f}mm"
     else:
         nx = dx
         ny = dy
@@ -849,14 +848,12 @@ class Jog(wx.Panel):
             new_y = min(max_y, max(min_y, current_y))
             if new_x != current_x or new_y != current_y:
                 self.context(
-                    "move_absolute %.3fmm %.3fmm\n"
-                    % (Length(amount=new_x).mm, Length(amount=new_y).mm)
+                    f"move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
                 )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
-        cmd = "move_relative %s %s\n" % (nx, ny)
-        self.context(cmd)
+        self.context(f"move_relative {nx} {ny}\n")
 
     def on_button_navigate_home(
         self, event=None
@@ -1065,7 +1062,7 @@ class PulsePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         value = self.spin_pulse_duration.GetValue()
-        self.context("pulse %f\n" % value)
+        self.context(f"pulse {value}\n")
 
     def on_spin_pulse_duration(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
@@ -1560,13 +1557,13 @@ class Transform(wx.Panel):
             # You will get sometimes slightly different numbers thean you would expect due to arithmetic operations
             # we will therefore 'adjust' those figures slightly to avoid confusion by rounding them to the sixth decimal (arbitrary)
             # that should be good enough...
-            self.text_a.SetValue("%.5f" % matrix.a)  # Scale X
-            self.text_b.SetValue("%.5f" % matrix.b)  # Skew Y
-            self.text_c.SetValue("%.5f" % matrix.c)  # Skew X
-            self.text_d.SetValue("%.5f" % matrix.d)  # Scale Y
+            self.text_a.SetValue(f"{matrix.a:.5f}")  # Scale X
+            self.text_b.SetValue(f"{matrix.b:.5f}")  # Skew Y
+            self.text_c.SetValue(f"{matrix.c:.5f}")  # Skew X
+            self.text_d.SetValue(f"{matrix.e:.5f}")  # Scale Y
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
-            self.text_e.SetValue("%.1f" % matrix.e)  # Translate X
-            self.text_f.SetValue("%.1f" % matrix.f)  # Translate Y
+            self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
+            self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
 
     def select_ready(self, v):
         """
@@ -1589,12 +1586,12 @@ class Transform(wx.Panel):
         self.update_matrix_text()
 
     def _scale(self, scale):
-        self.context("scale %f %f \n" % (scale, scale))
+        self.context(f"scale {scale} {scale} \n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
     def _rotate(self, angle):
-        self.context("rotate %fdeg \n" % (angle))
+        self.context(f"rotate {angle}deg \n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
@@ -1700,36 +1697,28 @@ class Transform(wx.Panel):
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
             event.Skip()
-            sc_x = self.scaled_value(self.text_a.GetValue())
-            sk_x = self.skewed_value(self.text_c.GetValue())
-            sc_y = self.scaled_value(self.text_d.GetValue())
-            sk_y = self.skewed_value(self.text_b.GetValue())
-            tl_x = float(self.text_e.GetValue())
-            tl_y = float(self.text_f.GetValue())
+            scale_x = self.scaled_value(self.text_a.GetValue())
+            skew_x = self.skewed_value(self.text_c.GetValue())
+            scale_y = self.scaled_value(self.text_d.GetValue())
+            skew_y = self.skewed_value(self.text_b.GetValue())
+            translate_x = float(self.text_e.GetValue())
+            translate_y = float(self.text_f.GetValue())
             f = self.context.elements.first_element(emphasized=True)
             matrix = f.matrix
             if (
-                sc_x == matrix.a
-                and sk_y == matrix.b
-                and sk_x == matrix.c
-                and sc_y == matrix.d
-                and tl_x == matrix.e
-                and tl_y == matrix.f
+                scale_x == matrix.a
+                and skew_y == matrix.b
+                and skew_x == matrix.c
+                and scale_y == matrix.d
+                and translate_x == matrix.e
+                and translate_y == matrix.f
             ):
                 return
             # SVG defines the transformation Matrix as  - Matrix parameters are
             #  Scale X  - Skew X  - Translate X            1 - 3 - 5
             #  Skew Y   - Scale Y - Translate Y            2 - 4 - 6
             self.context(
-                "matrix %f %f %f %f %s %s\n"
-                % (
-                    sc_x,  # Scale X
-                    sk_y,  # Skew Y
-                    sk_x,  # Skew X
-                    sc_y,  # Scale Y
-                    tl_x,  # Translate X
-                    tl_y,  # Translate Y
-                )
+                f"matrix {scale_x} {skew_y} {skew_x} {scale_y} {translate_x} {translate_y}\n"
             )
             self.context.signal("refresh_scene")
         except ValueError:

@@ -388,7 +388,7 @@ class GRBLDriver(Parameters):
         self.elements = None
 
     def __repr__(self):
-        return "GRBLDriver(%s)" % self.name
+        return f"GRBLDriver({self.name})"
 
     def hold_work(self, priority):
         """
@@ -414,14 +414,14 @@ class GRBLDriver(Parameters):
             line.append("G1")
         x /= self.unit_scale
         y /= self.unit_scale
-        line.append("X%.3f" % x)
-        line.append("Y%.3f" % y)
+        line.append(f"X{x:.3f}")
+        line.append(f"Y{y:.3f}")
         if self.power_dirty:
             if self.power is not None:
-                line.append("S%.1f" % (self.power * self.on_value))
+                line.append(f"S{self.power * self.on_value:.1f}")
             self.power_dirty = False
         if self.speed_dirty:
-            line.append("F%.1f" % self.feed_convert(self.speed))
+            line.append(f"F{self.feed_convert(self.speed):.1f}")
             self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
 
@@ -863,10 +863,10 @@ class GRBLDriver(Parameters):
         self.grbl("?")
 
         parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.get("speed", 0.0))
-        parts.append("power=%d" % self.settings.get("power", 0))
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.settings.get('speed', 0.0)}")
+        parts.append(f"power={self.settings.get('power', 0)}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -1268,8 +1268,8 @@ class GrblController:
         self.com_port = self.service.com_port
         self.baud_rate = self.service.baud_rate
         self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel("send-%s" % self.com_port.lower())
-        self.recv = self.service.channel("recv-%s" % self.com_port.lower())
+        self.send = self.service.channel(f"send-{self.com_port.lower()}")
+        self.recv = self.service.channel(f"recv-{self.com_port.lower()}")
         if not self.service.mock:
             self.connection = SerialConnection(self.service)
         else:
@@ -1359,7 +1359,7 @@ class GrblController:
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-%s" % self.com_port.lower(),
+                thread_name=f"sender-{self.com_port.lower()}",
                 result=self.stop,
                 daemon=True,
             )
@@ -1398,24 +1398,21 @@ class GrblController:
                         line = self.commands_in_device_buffer.pop(0)
                         self.buffered_characters -= len(line)
                     except IndexError:
-                        self.channel("Response: %s, but this was unexpected" % response)
+                        self.channel(f"Response: {response}, but this was unexpected")
                         continue
-                    self.channel("Response: %s" % response)
+                    self.channel(f"Response: {response}")
                 if response.startswith("echo:"):
                     self.service.channel("console")(response[5:])
                 if response.startswith("error"):
-                    self.channel("ERROR: %s" % response)
+                    self.channel(f"ERROR: {response}")
                 else:
-                    self.channel("Data: %s" % response)
+                    self.channel(f"Data: {response}")
                 read += 1
             if read == 0 and write == 0:
                 time.sleep(0.05)
 
     def __repr__(self):
-        return "GRBLSerial('%s:%s')" % (
-            self.service.com_port,
-            str(self.service.serial_baud_rate),
-        )
+        return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
 
     def __len__(self):
         return len(self.sending_queue)
@@ -1562,7 +1559,7 @@ class TCPOutput:
         if self.thread is None:
             self.thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-%d" % self.service.port,
+                thread_name=f"sender-{self.service.port}",
                 result=self._stop,
             )
 
@@ -1596,10 +1593,7 @@ class TCPOutput:
                         break
 
     def __repr__(self):
-        return "TCPOutput('%s:%s')" % (
-            self.service.address,
-            self.service.port,
-        )
+        return f"TCPOutput('{self.service.address}:{self.service.port}')"
 
     def __len__(self):
         return len(self.buffer)
@@ -1611,7 +1605,7 @@ class GcodeBlob(list):
         self.name = name
 
     def __repr__(self):
-        return "Gcode(%s, %d lines)" % (self.name, len(self))
+        return f"Gcode({self.name}, {len(self)} lines)"
 
     def as_svg(self):
         pass

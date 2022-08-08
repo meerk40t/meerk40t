@@ -319,7 +319,7 @@ class Elemental(Service):
 
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(
-            self, kernel, "elements" if index is None else "elements%d" % index
+            self, kernel, "elements" if index is None else f"elements{index}"
         )
         self._clipboard = {}
         self._clipboard_default = "0"
@@ -865,7 +865,7 @@ class Elemental(Service):
                         % (key, wordlist[0], wordlist[1] - 2)
                     )
                     for idx, value in enumerate(wordlist[2:]):
-                        channel("#%d: %s" % (idx, str(value)))
+                        channel(f"#{idx}: {str(value)}")
                 else:
                     channel(_("There is no such pattern %s") % key)
             channel("----------")
@@ -1439,7 +1439,7 @@ class Elemental(Service):
             for op_obj in data:
                 i = index_ops.index(op_obj)
                 select_piece = "*" if op_obj.emphasized else " "
-                name = "%s %d: %s" % (select_piece, i, str(op_obj))
+                name = f"{select_piece} {i}: {str(op_obj)}"
                 channel(name)
                 if isinstance(op_obj, list):
                     for q, oe in enumerate(op_obj):
@@ -2291,9 +2291,9 @@ class Elemental(Service):
                 if len(name) > 50:
                     name = name[:50] + "…"
                 if e.emphasized:
-                    channel("%d: * %s" % (i, name))
+                    channel(f"{i}: * {name}")
                 else:
-                    channel("%d: %s" % (i, name))
+                    channel(f"{i}: {name}")
             channel("----------")
             return "elements", data
 
@@ -2474,7 +2474,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 bottom = subbox[3] - bottom_edge
-                matrix = "translate(0, %f)" % -bottom
+                matrix = f"translate(0, {-bottom})"
                 if bottom != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -2511,7 +2511,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 left = subbox[0] - left_edge
-                matrix = "translate(%f, 0)" % -left
+                matrix = f"translate({-left}, 0)"
                 if left != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -2548,7 +2548,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 right = subbox[2] - right_edge
-                matrix = "translate(%f, 0)" % -right
+                matrix = f"translate({-right}, 0)"
                 if right != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -2589,7 +2589,7 @@ class Elemental(Service):
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = "translate(%f, %f)" % (-dx, -dy)
+                matrix = f"translate({-dx}, {-dy})"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -2618,7 +2618,7 @@ class Elemental(Service):
             device_height = self.length_y("100%")
             dx = 0
             dy = -1.0 * top_edge
-            matrix = "translate(%f, %f)" % (dx, dy)
+            matrix = f"translate({dx}, {dy})"
 
             haslock = False
             for node in data:
@@ -2671,7 +2671,7 @@ class Elemental(Service):
                     _("Your selection contains a locked element, that cannot be moved")
                 )
                 return
-            matrix = "translate(%f, %f)" % (dx, dy)
+            matrix = f"translate({dx}, {dy})"
             for node in data:
                 for q in node.flat(types=elem_nodes):
                     try:
@@ -2713,7 +2713,7 @@ class Elemental(Service):
                     _("Your selection contains a locked element, that cannot be moved")
                 )
                 return
-            matrix = "translate(%f, %f)" % (dx, dy)
+            matrix = f"translate({dx}, {dy})"
             for node in data:
                 for q in node.flat(types=elem_nodes):
                     try:
@@ -2755,7 +2755,7 @@ class Elemental(Service):
                     _("Your selection contains a locked element, that cannot be moved")
                 )
                 return
-            matrix = "translate(%f, %f)" % (dx, dy)
+            matrix = f"translate({dx}, {dy})"
             for node in data:
                 for q in node.flat(types=elem_nodes):
                     try:
@@ -2797,7 +2797,7 @@ class Elemental(Service):
                     _("Your selection contains a locked element, that cannot be moved")
                 )
                 return
-            matrix = "translate(%f, %f)" % (dx, dy)
+            matrix = f"translate({dx}, {dy})"
             for node in data:
                 for q in node.flat(types=elem_nodes):
                     try:
@@ -2836,7 +2836,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                matrix = "translate(%f, 0)" % -dx
+                matrix = f"translate({-dx}, 0)"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -2873,7 +2873,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = "translate(0, %f)" % -dy
+                matrix = f"translate(0, {-dy})"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -2920,7 +2920,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 delta = subbox[0] - dim_pos
-                matrix = "translate(%f, 0)" % -delta
+                matrix = f"translate({-delta}, 0)"
                 if delta != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -2969,7 +2969,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 delta = subbox[1] - dim_pos
-                matrix = "translate(0, %f)" % -delta
+                matrix = f"translate(0, {-delta})"
                 if delta != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -3013,7 +3013,7 @@ class Elemental(Service):
                 device_height = self.length_y("100%")
                 dx = (device_width - left_edge - right_edge) / 2.0
                 dy = (device_height - top_edge - bottom_edge) / 2.0
-                matrix = "translate(%f, %f)" % (dx, dy)
+                matrix = f"translate({dx}, {dy})"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -3307,15 +3307,11 @@ class Elemental(Service):
                         x_pos = -1 * radius
                         y_pos = 0
                         # e *= "translate(%f, %f)" % (x_pos, y_pos)
-                        e *= "rotate(%frad, %f, %f)" % (
-                            currentangle,
-                            center_x,
-                            center_y,
-                        )
+                        e *= f"rotate({currentangle}rad, {center_x}, {center_y})"
                     else:
                         x_pos = -1 * radius + radius * cos(currentangle)
                         y_pos = radius * sin(currentangle)
-                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= f"translate({x_pos}, {y_pos})"
 
                 self.add_elems(add_elem)
                 data_out.extend(add_elem)
@@ -3405,16 +3401,12 @@ class Elemental(Service):
                     if rotate:
                         x_pos = radius
                         y_pos = 0
-                        e *= "translate(%f, %f)" % (x_pos, y_pos)
-                        e *= "rotate(%frad, %f, %f)" % (
-                            currentangle,
-                            center_x,
-                            center_y,
-                        )
+                        e *= f"translate({x_pos}, {y_pos})"
+                        e *= f"rotate({currentangle}rad, {center_x}, {center_y})"
                     else:
                         x_pos = radius * cos(currentangle)
                         y_pos = radius * sin(currentangle)
-                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= f"translate({x_pos}, {y_pos})"
 
                 self.add_elems(add_elem)
                 data_out.extend(add_elem)
@@ -3619,14 +3611,12 @@ class Elemental(Service):
                         j = i + 2
                         if gcd(j, corners) == 1:
                             if ct % 3 == 0:
-                                possible_combinations += "\n shape %d ... -d %d" % (
-                                    corners,
-                                    j,
+                                possible_combinations += (
+                                    f"\n shape {corners} ... -d {j}"
                                 )
                             else:
-                                possible_combinations += ", shape %d ... -d %d " % (
-                                    corners,
-                                    j,
+                                possible_combinations += (
+                                    f", shape {corners} ... -d {j} "
                                 )
                             ct += 1
                     channel(
@@ -4563,7 +4553,7 @@ class Elemental(Service):
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is None:
                 cy = (bounds[3] + bounds[1]) / 2.0
-            matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
+            matrix = Matrix(f"rotate({rot}deg,{cx},{cy})")
             try:
                 if not absolute:
                     for node in data:
@@ -4627,13 +4617,7 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        "%d: scale(%f, %f) - %s"
-                        % (
-                            i,
-                            node.matrix.value_scale_x(),
-                            node.matrix.value_scale_x(),
-                            name,
-                        )
+                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_x()}) - {name}"
                     )
                     i += 1
                 channel("----------")
@@ -4669,7 +4653,7 @@ class Elemental(Service):
                         osy = node.matrix.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        matrix = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
+                        matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
                         node.matrix *= matrix
                         node.modified()
             except ValueError:
@@ -4748,7 +4732,7 @@ class Elemental(Service):
                     return
 
                 ratio = sqrt(new_area / total_area)
-                self("scale %f\n" % ratio)
+                self(f"scale {ratio}\n")
 
             return "elements", data
             # Do we have a new value to set? If yes scale by sqrt(of the fraction)
@@ -4905,8 +4889,7 @@ class Elemental(Service):
                     return
 
                 matrix = Matrix(
-                    "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
-                    % (x_pos, y_pos, sx, sy, -x, -y)
+                    f"translate({x_pos},{y_pos}) scale({sx},{sy}) translate({-x},{-y})"
                 )
                 if data is None:
                     data = list(self.elems(emphasized=True))
@@ -5082,14 +5065,7 @@ class Elemental(Service):
                     p = list(path)
                     p.append(str(i))
                     channel(
-                        "%s: %s - %s %s - %s"
-                        % (
-                            ".".join(p).ljust(10),
-                            str(n._bounds),
-                            str(n._bounds_dirty),
-                            str(n.type),
-                            str(str(n)[:16]),
-                        )
+                        f"{'.'.join(p).ljust(10)}: {str(n._bounds)} - {str(n._bounds_dirty)} {str(n.type)} - {str(str(n)[:16])}"
                     )
                     b_list(p, n)
 
@@ -5124,8 +5100,7 @@ class Elemental(Service):
                     else:
                         j = ":"
                     channel(
-                        "%s%s %s - %s"
-                        % (".".join(p).ljust(10), j, str(n.type), str(n.label))
+                        f"{'.'.join(p).ljust(10)}{j} {str(n.type)} - {str(n.label)}"
                     )
                     t_list(p, n)
 
@@ -5236,7 +5211,7 @@ class Elemental(Service):
                         name, cmd = execute_command
                         execute_command = cmd[int(n)]
                     name, cmd = execute_command
-                    channel("Executing %s: %s" % (name, str(cmd)))
+                    channel(f"Executing {name}: {str(cmd)}")
                     cmd()
                 except (IndexError, AttributeError, ValueError, TypeError):
                     raise CommandSyntaxError
@@ -5567,7 +5542,7 @@ class Elemental(Service):
         def clipboard_list(command, channel, _, **kwargs):
             for v in self._clipboard:
                 k = self._clipboard[v]
-                channel("%s: %s" % (str(v).ljust(5), str(k)))
+                channel(f"{str(v).ljust(5)}: {str(k)}")
             num = self.has_clipboard()
             channel(_("Clipboard-Entries: %d") % num)
 
@@ -6602,7 +6577,7 @@ class Elemental(Service):
         @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation("{opname}", node_type="branch ops", help="")
         def save_materials(node, opname="saved", **kwargs):
-            self("material save %s\n" % opname)
+            self(f"material save {opname}\n")
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Save"))
@@ -6610,13 +6585,13 @@ class Elemental(Service):
         @self.tree_operation("New", node_type="branch ops", help="")
         def save_material_custom(node, opname, **kwargs):
             if opname is not None:
-                self("material save %s\n" % opname.replace(" ", "_"))
+                self(f"material save {opname.replace(' ', '_')}\n")
 
         @self.tree_submenu(_("Delete"))
         @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation("{opname}", node_type="branch ops", help="")
         def remove_ops(node, opname="saved", **kwargs):
-            self("material delete %s\n" % opname)
+            self(f"material delete {opname}\n")
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Append operation"))
@@ -7125,7 +7100,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("scale -1 1 %f %f\n" % (center_x, center_y))
+            self(f"scale -1 1 {center_x} {center_y}\n")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Flip"))
@@ -7147,7 +7122,7 @@ class Elemental(Service):
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 25, 1, -1)
-        @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
+        @self.tree_calc("scale_percent", lambda i: f"{(600.0 / float(i)):.2f}")
         @self.tree_operation(
             _("Scale %s%%") % "{scale_percent}",
             node_type=elem_group_nodes,
@@ -7160,7 +7135,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
+            self(f"scale {scale} {scale} {center_x} {center_y}\n")
 
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional(lambda node: not is_regmark(node))
@@ -7320,7 +7295,7 @@ class Elemental(Service):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self("image threshold %f %f\n" % (threshold_min, threshold_max))
+                self(f"image threshold {threshold_min} {threshold_max}\n")
 
         @self.tree_conditional(lambda node: node.lock)
         @self.tree_submenu(_("Image"))
@@ -7441,7 +7416,7 @@ class Elemental(Service):
             if hasattr(op, "allow_save"):
                 if not op.allow_save():
                     continue
-            section = "%s %06i" % (name, i)
+            section = f"{name} {i:06d}"
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
 
@@ -7721,7 +7696,7 @@ class Elemental(Service):
             registered_name = inner.__name__
 
             for _in in ins:
-                p = "tree/%s/%s" % (_in, registered_name)
+                p = f"tree/{_in}/{registered_name}"
                 if p in self._registered:
                     raise NameError(
                         "A function of this name was already registered: %s" % p
@@ -9145,14 +9120,14 @@ class Elemental(Service):
             for loader, loader_name, sname in kernel.find("load"):
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
-                        exts.append("*.%s" % ext)
+                        exts.append(f"*.{ext}")
             filetypes.append(";".join(exts))
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
-                    exts.append("*.%s" % ext)
-                filetypes.append("%s (%s)" % (description, extensions[0]))
+                    exts.append(f"*.{ext}")
+                filetypes.append(f"{description} ({extensions[0]})")
                 filetypes.append(";".join(exts))
         return "|".join(filetypes)
 
@@ -9170,6 +9145,6 @@ class Elemental(Service):
         filetypes = []
         for saver, save_name, sname in kernel.find("save"):
             for description, extension, mimetype in saver.save_types():
-                filetypes.append("%s (%s)" % (description, extension))
-                filetypes.append("*.%s" % extension)
+                filetypes.append(f"{description} ({extension})")
+                filetypes.append(f"*.{extension}")
         return "|".join(filetypes)

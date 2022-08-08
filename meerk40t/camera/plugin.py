@@ -63,7 +63,7 @@ def plugin(kernel, lifecycle=None):
         ):
             if len(command) > 6:
                 current_camera = command[6:]
-                camera_path = "camera/%s" % current_camera
+                camera_path = f"camera/{current_camera}"
                 if camera_path not in kernel.contexts:
                     kernel.add_service("camera", Camera(kernel, camera_path))
                 kernel.activate_service_path("camera", camera_path)
@@ -219,6 +219,6 @@ def plugin(kernel, lifecycle=None):
                             break
                     if prop is None:
                         continue
-                    channel("%d: %s -- %s" % (i, str(prop), str(v)))
+                    channel(f"{i}: {str(prop)} -- {str(v)}")
                 except:
                     pass

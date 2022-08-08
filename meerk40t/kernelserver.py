@@ -49,8 +49,9 @@ def plugin(kernel, lifecycle=None):
                 recv.watch(root.console)
                 channel(
                     _(
-                        "%s %s console server on port: %d"
-                        % (kernel.name, kernel.version, port)
+                        "{name} {version} console server on port: {port}".format(
+                            name=kernel.name, version=kernel.version, port=port
+                        )
                     )
                 )
 
@@ -85,8 +86,8 @@ class UDPServer(Module):
         self.events_channel = self.context.channel("server-udp-%d" % port)
 
         self.udp_address = udp_address
-        self.context.channel("%s/send" % name).watch(self.send)
-        self.recv = self.context.channel("%s/recv" % name)
+        self.context.channel(f"{name}/send").watch(self.send)
+        self.recv = self.context.channel(f"{name}/recv")
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(2)
@@ -95,9 +96,8 @@ class UDPServer(Module):
 
     def module_close(self, *args, **kwargs):
         _ = self.context._
-        self.context.channel("%s/send" % self.name).unwatch(
-            self.send
-        )  # We stop watching the `send channel`
+        self.context.channel(f"{self.name}/send").unwatch(self.send)
+        # We stop watching the `send channel`
         self.events_channel(_("Shutting down server."))
         if self.socket is not None:
             self.socket.close()
@@ -148,10 +148,10 @@ class TCPServer(Module):
         self.port = port
 
         self.socket = None
-        self.events_channel = self.context.channel("server-tcp-%d" % port)
-        self.data_channel = self.context.channel("data-tcp-%d" % port)
+        self.events_channel = self.context.channel(f"server-tcp-{port}")
+        self.data_channel = self.context.channel(f"data-tcp-{port}")
         self.context.threaded(
-            self.run_tcp_delegater, thread_name="tcp-%d" % port, daemon=True
+            self.run_tcp_delegater, thread_name=f"tcp-{port}", daemon=True
         )
 
     def stop(self):
@@ -220,12 +220,12 @@ class TCPServer(Module):
                 if connection is not None:
                     try:
                         connection.send(bytes(e, "utf-8"))
-                        self.data_channel("<-- %s" % str(e))
+                        self.data_channel(f"<-- {str(e)}")
                     except (ConnectionAbortedError, ConnectionResetError):
                         connection.close()
 
-            recv = self.context.channel("%s/recv" % self.name)
-            send_channel_name = "%s/send" % self.name
+            recv = self.context.channel(f"{self.name}/recv")
+            send_channel_name = f"{self.name}/send"
             self.context.channel(send_channel_name).watch(send)
             while self.state != STATE_TERMINATE:
                 try:

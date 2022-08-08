@@ -1371,7 +1371,7 @@ class MeerK40t(MWindow):
             if pathname is None:
                 return
             with wx.BusyInfo(_("Loading File...")):
-                context("egv_import %s\n" % pathname)
+                context(f"egv_import {pathname}\n")
                 return
 
         @context.console_command("dialog_export_egv", hidden=True)
@@ -1386,7 +1386,7 @@ class MeerK40t(MWindow):
             if pathname is None:
                 return
             with wx.BusyInfo(_("Saving File...")):
-                context("egv_export %s\n" % pathname)
+                context(f"egv_export {pathname}\n")
                 return
 
     def __set_panes(self):
@@ -2071,7 +2071,7 @@ class MeerK40t(MWindow):
                 except KeyError:
                     pass
             if os.path.exists(_resource_path):
-                os.system("open %s" % _resource_path)
+                os.system(f"open {_resource_path}")
             else:
                 dlg = wx.MessageDialog(
                     None,
@@ -2557,11 +2557,10 @@ class MeerK40t(MWindow):
     def __set_titlebar(self):
         device_name = ""
         device_version = ""
-        title = _("%s v%s") % (
-            str(self.context.kernel.name),
-            self.context.kernel.version,
+        title = (
+            f"{str(self.context.kernel.name)} v{self.context.kernel.version}      "
+            f"{self.context.device.label}"
         )
-        title += "      %s" % self.context.device.label
         self.SetTitle(title)
 
     def __set_properties(self):
@@ -2825,13 +2824,13 @@ class MeerK40t(MWindow):
         """
         Zoomout button press
         """
-        self.context("scene zoom %f\n" % (1.0 / 1.5))
+        self.context(f"scene zoom {1.0 / 1.5}\n")
 
     def on_click_zoom_in(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoomin button press
         """
-        self.context("scene zoom %f\n" % 1.5)
+        self.context(f"scene zoom {1.5}\n")
 
     def on_click_zoom_selected(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """

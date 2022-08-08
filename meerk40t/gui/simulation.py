@@ -311,7 +311,7 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context(
-                "plan%s sublist %d -1\n" % (self.plan_name, self.progress)
+                f"plan{self.plan_name} sublist {self.progress} -1\n"
             ),
             menu.Append(
                 wx.ID_ANY,
@@ -321,9 +321,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context(
-                "plan%s sublist 0 %d\n" % (self.plan_name, self.progress)
-            ),
+            lambda e: self.context(f"plan{self.plan_name} sublist 0 {self.progress}\n"),
             menu.Append(
                 wx.ID_ANY,
                 _("Delete cuts after"),
@@ -398,9 +396,9 @@ class SimulationPanel(wx.Panel, Job):
         cuts = self.cutcode.length_cut(stop_at=step)
         travel /= MILS_IN_MM
         cuts /= MILS_IN_MM
-        self.text_distance_travel_step.SetValue("%.2fmm" % travel)
-        self.text_distance_laser_step.SetValue("%.2fmm" % cuts)
-        self.text_distance_total_step.SetValue("%.2fmm" % (travel + cuts))
+        self.text_distance_travel_step.SetValue(f"{travel:.2f}mm")
+        self.text_distance_laser_step.SetValue(f"{cuts:.2f}mm")
+        self.text_distance_total_step.SetValue(f"{travel + cuts:.2f}mm")
 
         extra = self.cutcode.extra_time(stop_at=step)
 
@@ -410,21 +408,21 @@ class SimulationPanel(wx.Panel, Job):
             t_mins = (time_travel % 3600) // 60
             t_seconds = time_travel % 60
             self.text_time_travel_step.SetValue(
-                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
+                f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
             )
             time_cuts = self.cutcode.duration_cut(stop_at=step)
             t_hours = time_cuts // 3600
             t_mins = (time_cuts % 3600) // 60
             t_seconds = time_cuts % 60
             self.text_time_laser_step.SetValue(
-                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
+                f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
             )
             time_total = time_travel + time_cuts + extra
             t_hours = time_total // 3600
             t_mins = (time_total % 3600) // 60
             t_seconds = time_total % 60
             self.text_time_total_step.SetValue(
-                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
+                f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
             )
         except ZeroDivisionError:
             pass
@@ -433,9 +431,9 @@ class SimulationPanel(wx.Panel, Job):
         cuts = self.cutcode.length_cut()
         travel /= MILS_IN_MM
         cuts /= MILS_IN_MM
-        self.text_distance_travel.SetValue("%.2fmm" % travel)
-        self.text_distance_laser.SetValue("%.2fmm" % cuts)
-        self.text_distance_total.SetValue("%.2fmm" % (travel + cuts))
+        self.text_distance_travel.SetValue(f"{travel:.2f}mm")
+        self.text_distance_laser.SetValue(f"{cuts:.2f}mm")
+        self.text_distance_total.SetValue(f"{travel + cuts:.2f}mm")
 
         extra = self.cutcode.extra_time()
 
@@ -444,19 +442,17 @@ class SimulationPanel(wx.Panel, Job):
             t_hours = time_travel // 3600
             t_mins = (time_travel % 3600) // 60
             t_seconds = time_travel % 60
-            self.text_time_travel.SetValue(
-                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
-            )
+            self.text_time_travel.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
             time_cuts = self.cutcode.duration_cut()
             t_hours = time_cuts // 3600
             t_mins = (time_cuts % 3600) // 60
             t_seconds = time_cuts % 60
-            self.text_time_laser.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+            self.text_time_laser.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
             time_total = time_travel + time_cuts + extra
             t_hours = time_total // 3600
             t_mins = (time_total % 3600) // 60
             t_seconds = time_total % 60
-            self.text_time_total.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+            self.text_time_total.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
         except ZeroDivisionError:
             pass
 
@@ -534,14 +530,14 @@ class SimulationPanel(wx.Panel, Job):
         value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
         self.interval = 0.1 * 100.0 / float(value)
 
-        self.text_playback_speed.SetValue("%d%%" % value)
+        self.text_playback_speed.SetValue(f"{value}%")
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         index = self.combo_device.GetSelection()
         self.selected_device = self.available_devices[index]
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.context("plan%s spool\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} spool\n")
         self.context("window close Simulation\n")
 
 

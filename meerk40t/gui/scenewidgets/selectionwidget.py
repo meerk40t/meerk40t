@@ -235,7 +235,7 @@ class BorderWidget(Widget):
                     int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
                 )
             gc.SetFont(font, self.scene.colors.color_manipulation)
-            symbol = "%.0f°" % (360 * self.master.rotated_angle / math.tau)
+            symbol = f"{360 * self.master.rotated_angle / math.tau:.0f}°"
             pen = wx.Pen()
             pen.SetColour(self.scene.colors.color_manipulation)
             pen.SetStyle(wx.PENSTYLE_SOLID)
@@ -917,9 +917,8 @@ class SideWidget(Widget):
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "side"
-        s_help = "Size element in %s-direction (with Ctrl+shift from center)" % (
-            "Y" if self.index in (0, 2) else "X"
-        )
+        s_coord = "Y" if self.index in (0, 2) else "X"
+        s_help = f"Size element in {s_coord}-direction (with Ctrl+shift from center)"
 
         response = process_event(
             widget=self,

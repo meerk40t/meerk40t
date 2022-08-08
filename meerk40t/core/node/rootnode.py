@@ -80,7 +80,7 @@ class RootNode(Node):
         self.add(type="branch reg", label=_("Regmarks"))
 
     def __repr__(self):
-        return "RootNode(%s)" % (str(self.context))
+        return f"RootNode({str(self.context)})"
 
     def is_movable(self):
         return False

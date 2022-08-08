@@ -422,8 +422,8 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_home_y.SetValue(self.context.home_y)
         self.text_bedwidth.SetValue(self.context.bedwidth)
         self.text_bedheight.SetValue(self.context.bedheight)
-        self.text_scale_x.SetValue("%.4f" % self.context.scale_x)
-        self.text_scale_y.SetValue("%.4f" % self.context.scale_y)
+        self.text_scale_x.SetValue(f"{self.context.scale_x:.4f}")
+        self.text_scale_y.SetValue(f"{self.context.scale_y:.4f}")
 
         self.Layout()
 
@@ -467,8 +467,8 @@ class ConfigurationLaserPanel(wx.Panel):
 
     def on_button_set_home_current(self, event=None):
         current_x, current_y = self.context.device.current
-        self.context.home_x = "%.1fmm" % Length(amount=current_x).mm
-        self.context.home_y = "%.1fmm" % Length(amount=current_y).mm
+        self.context.home_x = f"{Length(amount=current_x).mm}.1fmm"
+        self.context.home_y = f"{Length(amount=current_y).mm}.1fmm"
         self.text_home_x.SetValue(self.context.home_x)
         self.text_home_y.SetValue(self.context.home_y)
 

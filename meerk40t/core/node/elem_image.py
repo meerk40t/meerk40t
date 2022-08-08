@@ -98,12 +98,7 @@ class ImageNode(Node):
         )
 
     def __repr__(self):
-        return "%s('%s', %s, %s)" % (
-            self.__class__.__name__,
-            self.type,
-            str(self.image),
-            str(self._parent),
-        )
+        return f"{self.__class__.__name__}('{self.type}', {str(self.image)}, {str(self._parent)})"
 
     @property
     def active_image(self):

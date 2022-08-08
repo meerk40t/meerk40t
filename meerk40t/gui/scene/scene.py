@@ -180,7 +180,7 @@ class Scene(Module, Job):
         Module.__init__(self, context, path)
         Job.__init__(
             self,
-            job_name="Scene-%s" % path,
+            job_name=f"Scene-{path}",
             process=self.refresh_scene,
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
@@ -820,9 +820,7 @@ class Scene(Module, Job):
             ):
                 if previous_top_element is not None:
                     if self.log_events:
-                        self.log_events(
-                            "Converted %s: %s" % ("hover_end", str(window_pos))
-                        )
+                        self.log_events(f"Converted hover_end: {str(window_pos)}")
                     previous_top_element.event(
                         window_pos=window_pos,
                         space_pos=space_pos,
@@ -856,7 +854,7 @@ class Scene(Module, Job):
                     modifiers=modifiers,
                 )
                 if self.log_events:
-                    self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
+                    self.log_events(f"Converted leftclick: {str(window_pos)}")
             elif event_type == "leftup":
                 if self.log_events:
                     self.log_events(
@@ -982,7 +980,7 @@ class Scene(Module, Job):
         if new_cursor != self._cursor or always:
             self._cursor = new_cursor
             self.gui.scene_panel.SetCursor(wx.Cursor(self._cursor))
-            self.log("Cursor changed to %s" % cursor)
+            self.log(f"Cursor changed to {cursor}")
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
         """

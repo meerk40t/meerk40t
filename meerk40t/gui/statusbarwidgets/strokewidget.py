@@ -52,10 +52,10 @@ class ColorWidget(StatusBarWidget):
             color = button.GetBackgroundColour()
             rgb = [color.Red(), color.Green(), color.Blue()]
             if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
-                colstr = "none"
+                color_str = "none"
             else:
-                colstr = "#%02x%02x%02x" % (rgb[0], rgb[1], rgb[2])
-            self.context("stroke %s --classify\n" % colstr)
+                color_str = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+            self.context(f"stroke {color_str} --classify\n")
             self.context.signal("selstroke", rgb)
 
     def on_button_color_right(self, event):
@@ -65,10 +65,10 @@ class ColorWidget(StatusBarWidget):
             color = button.GetBackgroundColour()
             rgb = [color.Red(), color.Green(), color.Blue()]
             if rgb[0] == 255 and rgb[1] == 255 and rgb[2] == 255:
-                colstr = "none"
+                color_str = "none"
             else:
-                colstr = "#%02x%02x%02x" % (rgb[0], rgb[1], rgb[2])
-            self.context("fill %s --classify\n" % colstr)
+                color_str = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+            self.context(f"fill {color_str} --classify\n")
             self.context.signal("selfill", rgb)
 
 
@@ -160,7 +160,7 @@ class StrokeWidget(StatusBarWidget):
                 # Set Values
                 self.startup = True
                 stdlen = float(Length("1mm"))
-                value = "%.2f" % (sw_default / stdlen)
+                value = f"{sw_default / stdlen:.2f}"
                 self.spin_width.SetValue(value)
                 self.combo_units.SetSelection(self.choices.index("mm"))
                 self.startup = False

@@ -228,16 +228,10 @@ class CutGroup(list, CutObject, ABC):
         return CutGroup(self.parent, self)
 
     def __str__(self):
-        return "CutGroup(children=%s, parent=%s)" % (
-            list.__str__(self),
-            str(self.parent),
-        )
+        return f"CutGroup(children={list.__str__(self)}, parent={str(self.parent)})"
 
     def __repr__(self):
-        return "CutGroup(children=%s, parent=%s)" % (
-            list.__repr__(self),
-            str(self.parent),
-        )
+        return f"CutGroup(children={list.__repr__(self)}, parent={str(self.parent)})"
 
     def reversible(self):
         return False
@@ -348,8 +342,8 @@ class CutCode(CutGroup):
 
     def __str__(self):
         parts = list()
-        parts.append("%d items" % len(self))
-        return "CutCode(%s)" % " ".join(parts)
+        parts.append(f"{len(self)} items")
+        return f"CutCode({' '.join(parts)})"
 
     def __copy__(self):
         return CutCode(self)
@@ -1027,7 +1021,7 @@ class PlotCut(CutObject):
         parts.append(f"ymin: {self.min_y}")
         parts.append(f"xmax: {self.max_x}")
         parts.append(f"ymax: {self.max_y}")
-        return "PlotCut(%s)" % ", ".join(parts)
+        return f"PlotCut({', '.join(parts)})"
 
     def check_if_rasterable(self):
         """

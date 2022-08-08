@@ -301,7 +301,7 @@ class AttractionWidget(Widget):
                     try:
                         pt_type = translation_table[pt[2]]
                     except:
-                        print("Unknown type: %s" % pt[2])
+                        print(f"Unknown type: {pt[2]}")
                         pt_type = TYPE_POINT
                     self.attraction_points.append([pt[0], pt[1], pt_type, emph])
 

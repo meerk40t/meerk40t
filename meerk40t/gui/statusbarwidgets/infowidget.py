@@ -168,11 +168,7 @@ class InformationWidget(SimpleInfoWidget):
             if ct > 0:
                 total_area = total_area / (_mm * _mm)
                 total_length = total_length / _mm
-                msg = "# = %d, A = %.1f mm², D = %.1f mm" % (
-                    ct,
-                    total_area,
-                    total_length,
-                )
+                msg = f"# = {ct}, A = {total_area:.1f} mm², D = {total_length:.1f} mm"
         else:
             msg = "---"
         self.StartPopulation()

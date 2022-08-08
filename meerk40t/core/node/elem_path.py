@@ -52,12 +52,7 @@ class PathNode(Node):
         )
 
     def __repr__(self):
-        return "%s('%s', %s, %s)" % (
-            self.__class__.__name__,
-            self.type,
-            str(len(self.path)),
-            str(self._parent),
-        )
+        return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
 
     @property
     def stroke_scaled(self):

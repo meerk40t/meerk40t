@@ -86,7 +86,7 @@ def get_code_string_from_moshicode(code):
     elif code == 0:
         return "USB Failed"
     else:
-        return "UNK %02x" % code
+        return f"UNK {code:02x}"
 
 
 class MoshiDevice(Service, ViewPort):
@@ -360,10 +360,10 @@ class MoshiDriver(Parameters):
         self.preferred_offset_y = 0
 
         name = self.service.label
-        self.pipe_channel = service.channel("%s/events" % name)
+        self.pipe_channel = service.channel(f"{name}/events")
 
     def __repr__(self):
-        return "MoshiDriver(%s)" % self.name
+        return f"MoshiDriver({self.name})"
 
     def hold_work(self, priority):
         """
@@ -1018,10 +1018,10 @@ class MoshiController:
         self.abort_waiting = False
 
         name = self.context.label
-        self.pipe_channel = context.channel("%s/events" % name)
-        self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
-        self.usb_send_channel = context.channel("%s/usb_send" % name)
-        self.recv_channel = context.channel("%s/recv" % name)
+        self.pipe_channel = context.channel(f"{name}/events")
+        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = context.channel(f"{name}/usb_send")
+        self.recv_channel = context.channel(f"{name}/recv")
 
         self.ch341 = context.open("module/ch341", log=self.usb_log)
 
@@ -1033,9 +1033,9 @@ class MoshiController:
         buffered data. Without this class the BufferView displays nothing. This is optional for any output
         device.
         """
-        buffer = "Current Working Buffer: %s\n" % str(self._buffer)
+        buffer = f"Current Working Buffer: {str(self._buffer)}\n"
         for p in self._programs:
-            buffer += "%s\n" % str(p.data)
+            buffer += f"{str(p.data)}\n"
         return buffer
 
     def added(self, *args, **kwargs):
@@ -1142,7 +1142,7 @@ class MoshiController:
             raise ConnectionError
 
     def push_program(self, program):
-        self.pipe_channel("Pushed: %s" % str(program.data))
+        self.pipe_channel(f"Pushed: {str(program.data)}")
         self._programs.append(program)
         self.start()
 
@@ -1161,7 +1161,7 @@ class MoshiController:
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
                 self._thread_data_send,
-                thread_name="MoshiPipe(%s)" % self.context.path,
+                thread_name=f"MoshiPipe({self.context.path})",
                 result=self.stop,
             )
             self.update_state(STATE_INITIALIZE)
@@ -1272,7 +1272,7 @@ class MoshiController:
         Main threaded function to send data. While the controller is working the thread
         will be doing work in this function.
         """
-        self.pipe_channel("Send Thread Start... %d" % len(self._programs))
+        self.pipe_channel(f"Send Thread Start... {len(self._programs)}")
         self._main_lock.acquire(True)
         self.count = 0
         self.is_shutdown = False
@@ -1301,7 +1301,7 @@ class MoshiController:
 
                 # Stage 1: Send Program.
                 self.context.signal("pipe;running", True)
-                self.pipe_channel("Sending Data... %d bytes" % len(self._buffer))
+                self.pipe_channel(f"Sending Data... {len(self._buffer)} bytes")
                 self._send_buffer()
                 self.update_status()
                 self.realtime_epilogue()

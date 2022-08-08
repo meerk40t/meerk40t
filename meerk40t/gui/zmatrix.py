@@ -18,16 +18,12 @@ class ZMatrix(AffineMatrix2D):
     def __str__(self):
         m = self.Get()[0]
         p = self.Get()[1]
-        return "[%3f, %3f, %3f,\n %3f, %3f, %3f,\n %3f, %3f, %3f]" % (
-            m.m_11,
-            m.m_12,
-            0,
-            m.m_21,
-            m.m_22,
-            0,
-            p.x,
-            p.y,
-            1,
+        return (
+            f"["
+            f"{m.m_11:3f}, {m.m_12:3f}, {0:3f},\n "
+            f"{m.m_21:3f}, {m.m_22:3f}, {0:3f},\n "
+            f"{p.x:3f}, {p.y:3f}, {1:3f}"
+            f"]"
         )
 
     def Reset(self):

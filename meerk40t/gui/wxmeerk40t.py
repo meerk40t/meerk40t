@@ -475,7 +475,7 @@ class wxMeerK40t(wx.App, Module):
             channel(_("Windows Registered:"))
             for i, name in enumerate(context.match("window")):
                 name = name[7:]
-                channel("%d: %s" % (i + 1, name))
+                channel(f"{i + 1}: {name}")
             return "window", data
 
         @kernel.console_command(
@@ -521,7 +521,7 @@ class wxMeerK40t(wx.App, Module):
                 parent = context.gui
             except AttributeError:
                 parent = None
-            window_uri = "window/%s" % window
+            window_uri = f"window/{window}"
             window_class = context.lookup(window_uri)
             if isinstance(window_class, str):
                 window_uri = window_class
@@ -548,7 +548,7 @@ class wxMeerK40t(wx.App, Module):
                         wx.CallAfter(window_open, None)
                     # kernel.run_later(window_open, None)
                 else:
-                    channel(_("No such window as %s" % window))
+                    channel(_("No such window as {window}").format(window=window))
                     raise CommandSyntaxError
             else:  # Toggle.
                 if window_class is not None:
@@ -584,7 +584,7 @@ class wxMeerK40t(wx.App, Module):
                 )
                 channel(_("Window closed."))
             except (KeyError, ValueError):
-                channel(_("No such window as %s" % window))
+                channel(_("No such window as {window}").format(window=window))
             except IndexError:
                 raise CommandSyntaxError
 
@@ -725,7 +725,7 @@ def send_data_to_developers(filename, data):
     file_head = list()
     file_head.append("--" + boundary)
     file_head.append(
-        'Content-Disposition: form-data; name="file"; filename="%s"' % filename
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"'
     )
     file_head.append("Content-Type: text/plain")
     file_head.append("")
@@ -738,7 +738,7 @@ def send_data_to_developers(filename, data):
     http_req.append("User-Agent: meerk40t/0.0.1")
     http_req.append("Accept: */*")
     http_req.append("Content-Length: %d" % (len(payload)))
-    http_req.append("Content-Type: multipart/form-data; boundary=%s" % boundary)
+    http_req.append(f"Content-Type: multipart/form-data; boundary={boundary}")
     http_req.append("")
     header = "\x0D\x0A".join(http_req)
     request = "\x0D\x0A".join((header, payload))
@@ -769,7 +769,8 @@ def send_data_to_developers(filename, data):
         dlg = wx.MessageDialog(
             None,
             _(
-                "We're sorry, that didn't work. Raise an issue on the github please.\n\n The log file will be in your working directory.\n"
+                "We're sorry, that didn't work. Raise an issue on the github please.\n\n "
+                "The log file will be in your working directory.\n"
             )
             + MEERK40T_ISSUES
             + "\n\n"
@@ -797,20 +798,14 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
         pass
 
     error_log = (
-        "MeerK40t crash log. Version: %s on %s: Python %s: %s - wxPython: %s\n"
-        % (
-            APPLICATION_VERSION,
-            platform.system(),
-            platform.python_version(),
-            platform.machine(),
-            wxversion,
-        )
+        f"MeerK40t crash log. Version: {APPLICATION_VERSION} on {platform.system()}: "
+        f"Python {platform.python_version()}: {platform.machine()} - wxPython: {wxversion}\n"
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     print("\n")
     print(error_log)
     try:
-        filename = "MeerK40t-{date:%Y-%m-%d_%H_%M_%S}.txt".format(date=datetime.now())
+        filename = f"MeerK40t-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
     except Exception:  # I already crashed once, if there's another here just ignore it.
         filename = "MeerK40t-Crash.txt"
 

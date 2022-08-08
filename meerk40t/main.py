@@ -224,6 +224,7 @@ def run():
     argv = sys.argv[1:]
     args = parser.parse_args(argv)
 
+    # Old python version checks. 2/3 compat code.
     if args.version:
         print("%s %s" % (APPLICATION_NAME, APPLICATION_VERSION))
         return

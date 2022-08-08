@@ -39,12 +39,7 @@ class EllipseNode(Node):
         self.lock = False
 
     def __repr__(self):
-        return "%s('%s', %s, %s)" % (
-            self.__class__.__name__,
-            self.type,
-            str(self.shape),
-            str(self._parent),
-        )
+        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
 
     def __copy__(self):
         return EllipseNode(
