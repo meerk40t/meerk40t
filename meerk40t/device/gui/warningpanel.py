@@ -210,7 +210,7 @@ class WarningPanel(wx.Panel):
                 entry = self.data[ident]
                 entry["checkbox_min"].SetValue(warning[0])
                 entry["textcontrol_min"].SetValue(str(warning[1]))
-                entry["textcontrol_min"].Enable(warning[1])
+                entry["textcontrol_min"].Enable(warning[0])
 
                 entry["checkbox_max"].SetValue(warning[2])
                 entry["textcontrol_max"].SetValue(str(warning[3]))
