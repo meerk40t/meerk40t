@@ -1,5 +1,6 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
+
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 from ...core.units import Length

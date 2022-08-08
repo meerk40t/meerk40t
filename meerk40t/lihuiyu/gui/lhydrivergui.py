@@ -5,8 +5,8 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import signal_listener
 from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 

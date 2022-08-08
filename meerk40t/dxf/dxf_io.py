@@ -1,4 +1,3 @@
-
 import ezdxf
 from ezdxf import units
 
@@ -222,7 +221,9 @@ class DXFProcessor:
                         element = Polygon([(p[0], p[1]) for p in entity.points()])
                     else:
                         element = Polyline([(p[0], p[1]) for p in entity.points()])
-                    element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[
+                        SVG_ATTR_VECTOR_EFFECT
+                    ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(self.elements.device.unit_height)
                     node = context_node.add(shape=element, type="elem polyline")
@@ -253,7 +254,9 @@ class DXFProcessor:
                                 bulge=bulge,
                             )
                             element.closed()
-                    element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
+                    element.values[
+                        SVG_ATTR_VECTOR_EFFECT
+                    ] = SVG_VALUE_NON_SCALING_STROKE
                     element.transform.post_scale(self.scale, -self.scale)
                     element.transform.post_translate_y(self.elements.device.unit_height)
                     path = abs(Path(element))

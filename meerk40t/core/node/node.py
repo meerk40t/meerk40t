@@ -181,7 +181,7 @@ class Node:
         # lets replace some of the more obvious ones...
         mymap = self.default_map()
         for key in mymap:
-            if hasattr(self, key) and mymap[key]=="None":
+            if hasattr(self, key) and mymap[key] == "None":
                 if getattr(self, key) is None:
                     mymap[key] = "-"
         # slist = text.split("{")
@@ -648,7 +648,7 @@ class Node:
         new_sibling._parent = reference_sibling._parent
         new_sibling.notify_attached(new_sibling, pos=reference_position)
 
-    def replace_node(self, keep_children = None, *args, **kwargs):
+    def replace_node(self, keep_children=None, *args, **kwargs):
         """
         Replace this current node with a bootstrapped replacement node.
         """

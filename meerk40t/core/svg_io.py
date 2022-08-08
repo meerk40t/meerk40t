@@ -14,8 +14,8 @@ from ..svgelements import (
     SVG_ATTR_FILL_OPACITY,
     SVG_ATTR_FONT_FAMILY,
     SVG_ATTR_FONT_SIZE,
-    SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_FONT_STYLE,
+    SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
     SVG_ATTR_STROKE,
@@ -58,7 +58,7 @@ from ..svgelements import (
     SVGImage,
     SVGText,
 )
-from .units import DEFAULT_PPI, UNITS_PER_PIXEL, NATIVE_UNIT_PER_INCH
+from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -102,6 +102,7 @@ def plugin(kernel, lifecycle=None):
 MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
 MEERK40T_XMLS_ID = "meerk40t"
 
+
 class SVGWriter:
     @staticmethod
     def save_types():
@@ -118,7 +119,10 @@ class SVGWriter:
         root.set(SVG_ATTR_XMLNS, SVG_VALUE_XMLNS)
         root.set(SVG_ATTR_XMLNS_LINK, SVG_VALUE_XLINK)
         root.set(SVG_ATTR_XMLNS_EV, SVG_VALUE_XMLNS_EV)
-        root.set("xmlns:" + MEERK40T_XMLS_ID, MEERK40T_NAMESPACE,)
+        root.set(
+            "xmlns:" + MEERK40T_XMLS_ID,
+            MEERK40T_NAMESPACE,
+        )
         scene_width = context.device.length_width
         scene_height = context.device.length_height
         root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
@@ -142,7 +146,10 @@ class SVGWriter:
                     has_labels = True
                     break
         if has_labels:
-            root.set("xmlns:inkscape", "http://www.inkscape.org/namespaces/inkscape",)
+            root.set(
+                "xmlns:inkscape",
+                "http://www.inkscape.org/namespaces/inkscape",
+            )
 
         # If there is a note set then we save the note with the project.
         if elements.note is not None:
@@ -725,7 +732,10 @@ class SVGProcessor:
                 if torepl in tag:
                     oldval = element.values.get(tag)
                     replacer = MEERK40T_XMLS_ID.lower() + ":"
-                    tag = tag.replace(torepl, replacer, )
+                    tag = tag.replace(
+                        torepl,
+                        replacer,
+                    )
                     element.values[tag] = oldval
                     element.values[SVG_ATTR_TAG] = tag
             if tag in (MEERK40T_XMLS_ID + ":note", "note"):
@@ -741,7 +751,7 @@ class SVGProcessor:
                     if op_type is None:
                         return
                 node_type = f"op {op_type.lower()}"
-                element.values['attributes']['type'] = node_type
+                element.values["attributes"]["type"] = node_type
 
             if node_type is not None:
                 node_id = element.values.get("id")

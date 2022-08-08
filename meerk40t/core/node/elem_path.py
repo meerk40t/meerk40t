@@ -33,7 +33,9 @@ class PathNode(Node):
         self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
-        self._stroke_scaled = path.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        self._stroke_scaled = (
+            path.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        )
         self.lock = False
 
     def __copy__(self):

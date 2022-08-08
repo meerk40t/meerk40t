@@ -366,9 +366,9 @@ class CutPlan:
         Merge all adjacent optimized cutcode into single cutcode objects.
         @return:
         """
-        for i in range(len(self.plan)-1, 0, -1):
+        for i in range(len(self.plan) - 1, 0, -1):
             cur = self.plan[i]
-            prev = self.plan[i-1]
+            prev = self.plan[i - 1]
             if isinstance(cur, CutCode) and isinstance(prev, CutCode):
                 prev.extend(cur)
                 del self.plan[i]

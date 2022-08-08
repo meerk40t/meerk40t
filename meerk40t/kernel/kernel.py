@@ -1732,7 +1732,10 @@ class Kernel(Settings):
                 time.sleep(0.1)
             if self.state == STATE_TERMINATE:
                 break
-            self.schedule_run(self.scheduler_handles_default_thread_jobs, self.scheduler_handles_main_thread_jobs)
+            self.schedule_run(
+                self.scheduler_handles_default_thread_jobs,
+                self.scheduler_handles_main_thread_jobs,
+            )
         self.state = STATE_END
 
     def schedule(self, job: "Job") -> "Job":
@@ -1892,7 +1895,7 @@ class Kernel(Settings):
                             del listeners[i]
                             removed = True
                             break
-                    if not removed and ct>0:
+                    if not removed and ct > 0:
                         # print ("Was trying to remove: %s, %s for signal %s" % (str(remove_funct), str(remove_lso), signal))
                         # print ("But wasn't present in : %s" % str(listeners))
                         pass
@@ -2176,7 +2179,7 @@ class Kernel(Settings):
                 "type": bool,
                 "label": _("Print Shutdown"),
                 "tip": _("Print shutdown log when closed."),
-                "page": "Options"
+                "page": "Options",
             },
         ]
         self.register_choices("preferences", choices)
@@ -2318,23 +2321,37 @@ class Kernel(Settings):
                         allparams.append(s)
                         found = True
                 if found:
-                    if len(allcommands)>0:
+                    if len(allcommands) > 0:
                         s = "Commands:\n"
                         for entry in allcommands:
-                            s = s + entry.replace(substr, "[red]" + substr + "[normal]") + "\n"
+                            s = (
+                                s
+                                + entry.replace(substr, "[red]" + substr + "[normal]")
+                                + "\n"
+                            )
                         channel(s, ansi=True)
-                    if len(allparams)>0:
+                    if len(allparams) > 0:
                         s = "Params:\n"
                         for entry in allparams:
-                            s = s + entry.replace(substr, "[red]" + substr + "[normal]") + "\n"
+                            s = (
+                                s
+                                + entry.replace(substr, "[red]" + substr + "[normal]")
+                                + "\n"
+                            )
                         channel(s, ansi=True)
 
                 else:
-                    channel(_("No commands found that contained: [red]%s[normal]") % substr, ansi=True)
+                    channel(
+                        _("No commands found that contained: [red]%s[normal]") % substr,
+                        ansi=True,
+                    )
                 return
             else:
-                channel(_("If you want to have a list of all available commands, just type 'help'"))
-
+                channel(
+                    _(
+                        "If you want to have a list of all available commands, just type 'help'"
+                    )
+                )
 
         # ==========
         # THREADS SCHEDULER
@@ -2437,7 +2454,9 @@ class Kernel(Settings):
                     if job.times is None:
                         parts.append(_("forever,"))
                     else:
-                        parts.append(_("%d/%d times,") % (job.times - job.remaining, job.times))
+                        parts.append(
+                            _("%d/%d times,") % (job.times - job.remaining, job.times)
+                        )
                     if job.interval is None:
                         parts.append(_("never"))
                     else:
@@ -2806,7 +2825,9 @@ class Kernel(Settings):
         )
         def batch_disable_enable(command, channel, _, data=None, index=None, **kwargs):
             try:
-                self.batch_set_origin(index - 1, "disable" if command == "disable" else "cmd")
+                self.batch_set_origin(
+                    index - 1, "disable" if command == "disable" else "cmd"
+                )
             except IndexError:
                 raise CommandSyntaxError(
                     "Index out of bounds (1-{length})".format(length=len(data))
@@ -3108,7 +3129,7 @@ class Kernel(Settings):
         batch = [b for b in root.setting(str, "batch", "").split(";") if b]
         b = batch[index]
         find = b.find(" ")
-        command = b[find + 1:]
+        command = b[find + 1 :]
         batch[index] = f"{new_origin} {command}"
         self.root.batch = ";".join(batch)
 
@@ -3117,7 +3138,7 @@ class Kernel(Settings):
         batch = [b for b in root.setting(str, "batch", "").split(";") if b]
         b = batch[index]
         find = b.find(" ")
-        command = b[find + 1:]
+        command = b[find + 1 :]
         root(f"{command}\n")
 
     def batch_boot(self):

@@ -31,13 +31,16 @@ class PropertyColor(wx.Panel):
         self.context = context
         self.attribute = attribute
 
+
 class PropertyStroke(PropertyColor):
     def __init__(self, *args, context=None, **kwds):
         super().__init__(context=context, attribute="stroke")
 
+
 class PropertyFill(PropertyColor):
     def __init__(self, *args, context=None, **kwds):
         super().__init__(context=context, attribute="fill")
+
 
 class ElementpropertyPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

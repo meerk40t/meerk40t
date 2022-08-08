@@ -2,6 +2,7 @@ import math
 
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
@@ -9,7 +10,6 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path, Point
-from meerk40t.gui.laserrender import swizzlecolor
 
 
 class RibbonTool(ToolWidget):
@@ -31,7 +31,9 @@ class RibbonTool(ToolWidget):
         if self.scene.context.elements.default_stroke is None:
             self.pen.SetColour(wx.BLUE)
         else:
-            self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke)))
+            self.pen.SetColour(
+                wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+            )
         gc.SetPen(self.pen)
         gc.SetBrush(wx.RED_BRUSH)
         gc.DrawEllipse(self.track_object[0], self.track_object[1], 5000, 5000)

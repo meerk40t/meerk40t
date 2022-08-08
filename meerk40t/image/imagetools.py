@@ -207,7 +207,9 @@ def plugin(kernel, lifecycle=None):
     @context.console_command(
         "threshold", help="", input_type="image", output_type="image"
     )
-    def image_threshold(command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs):
+    def image_threshold(
+        command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs
+    ):
         if threshold_min is None:
             raise CommandSyntaxError
         divide = (threshold_max - threshold_min) / 255.0
@@ -714,6 +716,7 @@ def plugin(kernel, lifecycle=None):
     )
     def image_invert(command, channel, _, data, **kwargs):
         from PIL import ImageOps
+
         for inode in data:
             if inode.lock:
                 channel(_("Can't modify a locked image: %s") % str(inode))
@@ -1098,7 +1101,15 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_halftone(
-        command, channel, _, data, oversample, sample=10, scale=1, angle=Angle.degrees(22), **kwargs
+        command,
+        channel,
+        _,
+        data,
+        oversample,
+        sample=10,
+        scale=1,
+        angle=Angle.degrees(22),
+        **kwargs,
     ):
         """
         Returns halftone image for image.

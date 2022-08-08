@@ -2,7 +2,11 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Node
-from meerk40t.svgelements import Path, SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
+from meerk40t.svgelements import (
+    SVG_ATTR_VECTOR_EFFECT,
+    SVG_VALUE_NON_SCALING_STROKE,
+    Path,
+)
 
 
 class EllipseNode(Node):
@@ -29,7 +33,9 @@ class EllipseNode(Node):
         self.stroke = shape.stroke if stroke is None else stroke
         self.stroke_width = shape.stroke_width if stroke_width is None else stroke_width
         self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
-        self._stroke_scaled = shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        self._stroke_scaled = (
+            shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        )
         self.lock = False
 
     def __repr__(self):

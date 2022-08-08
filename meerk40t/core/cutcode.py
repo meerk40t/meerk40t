@@ -408,13 +408,13 @@ class CutCode(CutGroup):
             yield "plot", cutobject
         yield "plot_start"
 
-    def length_travel(self, include_start=False, stop_at = -1):
+    def length_travel(self, include_start=False, stop_at=-1):
         cutcode = list(self.flat())
         if len(cutcode) == 0:
             return 0
         if stop_at < 0:
             stop_at = len(cutcode)
-        if stop_at>len(cutcode):
+        if stop_at > len(cutcode):
             stop_at = len(cutcode)
         distance = 0
         if include_start:
@@ -429,31 +429,31 @@ class CutCode(CutGroup):
             distance += delta
         return distance
 
-    def length_cut(self, stop_at = -1):
+    def length_cut(self, stop_at=-1):
         cutcode = list(self.flat())
         distance = 0
         if stop_at < 0:
             stop_at = len(cutcode)
-        if stop_at>len(cutcode):
+        if stop_at > len(cutcode):
             stop_at = len(cutcode)
         for i in range(0, stop_at):
             curr = cutcode[i]
             distance += curr.length()
         return distance
 
-    def extra_time(self, stop_at = -1):
+    def extra_time(self, stop_at=-1):
         cutcode = list(self.flat())
         extra = 0
         if stop_at < 0:
             stop_at = len(cutcode)
-        if stop_at>len(cutcode):
+        if stop_at > len(cutcode):
             stop_at = len(cutcode)
         for i in range(0, stop_at):
             curr = cutcode[i]
             extra += curr.extra()
         return extra
 
-    def duration_cut(self, stop_at = None):
+    def duration_cut(self, stop_at=None):
         cutcode = list(self.flat())
         distance = 0
         if stop_at is None:

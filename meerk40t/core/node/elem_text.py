@@ -36,7 +36,9 @@ class TextNode(Node):
         # For sake of completeness, afaik there is no way to display it with wxpython
         self.overline = False if overline is None else overline
         self.texttransform = "" if texttransform is None else texttransform
-        self._stroke_scaled = text.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        self._stroke_scaled = (
+            text.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        )
         self.lock = False
 
     def __copy__(self):

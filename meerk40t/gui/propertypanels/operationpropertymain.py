@@ -1,8 +1,9 @@
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
+
 from meerk40t.kernel import signal_listener
 
-from ...core.units import Length, UNITS_PER_MM
+from ...core.units import UNITS_PER_MM, Length
 from ...svgelements import Angle, Color, Matrix
 from ..laserrender import swizzlecolor
 from ..wxutils import TextCtrl, set_ctrl_value

@@ -115,9 +115,7 @@ class PositionPanel(wx.Panel):
             )
         )
         self.chk_lock.SetToolTip(
-            _(
-                "If checked then the aspect ratio (width / height) will be maintained"
-            )
+            _("If checked then the aspect ratio (width / height) will be maintained")
         )
         self.button_execute.SetSize(self.button_execute.GetBestSize())
         self.combo_box_units.SetSelection(0)
@@ -126,8 +124,12 @@ class PositionPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_h = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.HORIZONTAL)
-        sizer_w = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.HORIZONTAL)
+        sizer_h = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Height:")), wx.HORIZONTAL
+        )
+        sizer_w = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Width:")), wx.HORIZONTAL
+        )
         sizer_y = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Y:"), wx.HORIZONTAL)
         sizer_x = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "X:"), wx.HORIZONTAL)
 
@@ -256,7 +258,6 @@ class PositionPanel(wx.Panel):
             elif do_xy:
                 self.execute_xy_changes(False)
 
-
         self.update_position(True)
 
     def on_chk_lock(self, event):
@@ -294,7 +295,7 @@ class PositionPanel(wx.Panel):
         event.Skip()
         self.on_text_y_action(False)
 
-    def execute_wh_changes(self, refresh_after = True):
+    def execute_wh_changes(self, refresh_after=True):
         if self.position_w == self.org_w and self.position_h == self.org_h:
             return
         if self.chk_indivdually.GetValue():
@@ -322,9 +323,9 @@ class PositionPanel(wx.Panel):
                 except ZeroDivisionError:
                     continue
                 # print("Old=%.1f, new=%.1f, sx=%.1f" % ((bb[2]-bb[0]), new_w, scalex))
-                if abs(scalex - 1)<0.000001:
+                if abs(scalex - 1) < 0.000001:
                     scalex = 1
-                if abs(scaley - 1)<0.000001:
+                if abs(scaley - 1) < 0.000001:
                     scaley = 1
                 if scalex == 1 and scaley == 1:
                     continue
@@ -351,7 +352,7 @@ class PositionPanel(wx.Panel):
         if refresh_after:
             self.update_position(True)
 
-    def execute_xy_changes(self, refresh_after = True):
+    def execute_xy_changes(self, refresh_after=True):
         if self.position_x == self.org_x and self.position_y == self.org_y:
             return
         if self.chk_indivdually.GetValue():
@@ -442,7 +443,6 @@ class PositionPanel(wx.Panel):
         if force:
             self.execute_wh_changes()
 
-
     def on_text_h_action(self, force):
         original = self.position_h
         if self.position_units == "%":
@@ -486,7 +486,6 @@ class PositionPanel(wx.Panel):
 
         if force:
             self.execute_xy_changes()
-
 
     def on_text_y_action(self, force):
         try:

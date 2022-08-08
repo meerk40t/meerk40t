@@ -1,10 +1,12 @@
 import platform
+
 import wx
 from wx import aui
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
+    get_default_icon_size,
     icon_corner1,
     icon_corner2,
     icon_corner3,
@@ -38,11 +40,10 @@ from meerk40t.gui.icons import (
     icons8_up_left_50,
     icons8_up_right_50,
     icons8up,
-    get_default_icon_size,
 )
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.svgelements import Angle
 from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
 

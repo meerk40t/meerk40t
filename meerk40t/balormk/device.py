@@ -6,7 +6,7 @@ from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
 from meerk40t.core.units import Angle, Length, ViewPort
 from meerk40t.kernel import Service
-from meerk40t.svgelements import Path, Point, Polygon, Matrix, Polyline
+from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
 
 
 class ElementLightJob:
@@ -1220,7 +1220,10 @@ class BalorDevice(Service, ViewPort):
             There are methods for reading and writing raw info from files in order to send that
             data. You can also use shorthand commands.
             """
-            from meerk40t.balormk.lmc_controller import list_command_lookup, single_command_lookup
+            from meerk40t.balormk.lmc_controller import (
+                list_command_lookup,
+                single_command_lookup,
+            )
 
             reverse_lookup = {}
             for k in list_command_lookup:
@@ -1297,7 +1300,9 @@ class BalorDevice(Service, ViewPort):
                 byte_i = 0
                 split_bytes = [b for b in cmd.split(" ") if b.strip()]
                 if len(split_bytes) > 6:
-                    channel(f"Invalid command line {cmd_i}: {split_bytes} has more than six entries.")
+                    channel(
+                        f"Invalid command line {cmd_i}: {split_bytes} has more than six entries."
+                    )
                     return
                 for b in split_bytes:
                     v = None

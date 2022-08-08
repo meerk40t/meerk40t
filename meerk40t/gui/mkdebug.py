@@ -59,8 +59,12 @@ class DebugTreePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: PositionPanel.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_1 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Selected:")), wx.VERTICAL)
-        sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Emphasized:")), wx.VERTICAL)
+        sizer_1 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Selected:")), wx.VERTICAL
+        )
+        sizer_2 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Emphasized:")), wx.VERTICAL
+        )
         sizer_1.Add(self.lb_selected, 1, wx.EXPAND, 0)
         sizer_2.Add(self.lb_emphasized, 1, wx.EXPAND, 0)
 
@@ -85,4 +89,3 @@ class DebugTreePanel(wx.Panel):
 
         self.lb_selected.SetValue(txt1)
         self.lb_emphasized.SetValue(txt2)
-

@@ -1,11 +1,13 @@
 import wx
 
-class BasicHSizer():
+
+class BasicHSizer:
     """
     A mockup (although working) of a horizontal wx.BoxSizer
     No nested functionality, just something simple - and which
     you have fully under control... (required for a Linux environment)
     """
+
     def __init__(self, *args):
         self.windows = []
         self.proportions = []
@@ -19,7 +21,7 @@ class BasicHSizer():
         self.start_x = 0
 
     def PrependSpacer(self, newx):
-        if newx>=0:
+        if newx >= 0:
             self.start_x = newx
 
     def GetItemCount(self):
@@ -27,9 +29,9 @@ class BasicHSizer():
 
     def Add(self, window, proportion=0, flag=0, border=0):
         min_size = window.GetMinSize()
-        if min_size[1]<10 or min_size[0]<10:
-            min_size [0] = max(min_size[0], 10)
-            min_size [1] = max(min_size[1], 10)
+        if min_size[1] < 10 or min_size[0] < 10:
+            min_size[0] = max(min_size[0], 10)
+            min_size[1] = max(min_size[1], 10)
             window.SetMinSize(min_size)
 
         self.windows.append(window)
@@ -38,27 +40,27 @@ class BasicHSizer():
         self.activectrl.append(True)
         window.Show(False)
 
-    def SetActive(self, control, enableit = True):
+    def SetActive(self, control, enableit=True):
         cid = control.GetId()
         for idx, wind in enumerate(self.windows):
             if cid == wind.GetId():
                 self.activectrl[idx] = enableit
                 break
 
-    def Enable(self, enableit = True):
+    def Enable(self, enableit=True):
         for wind in self.windows:
             wind.Enable(enableit)
 
-    def ShowItems(self, showit = True):
+    def ShowItems(self, showit=True):
         self.visible = showit
         for idx, wind in enumerate(self.windows):
             flag = showit and self.activectrl[idx]
             wind.Show(flag)
 
-    def Show(self, showit = True):
+    def Show(self, showit=True):
         self.ShowItems(showit)
 
-    def Hide(self, hideit = True):
+    def Hide(self, hideit=True):
         self.ShowItems(not hideit)
 
     def Layout(self):
@@ -82,8 +84,8 @@ class BasicHSizer():
                 new_h = self.height - 2
             if min_size[1] > 0 and min_size[1] > new_h:
                 new_h = min_size[1]
-            self.myh [idx] = new_h
-            self.myy [idx] = self.y + max( 0, (self.height - new_h) / 2 ) + 1
+            self.myh[idx] = new_h
+            self.myy[idx] = self.y + max(0, (self.height - new_h) / 2) + 1
             # print ("Setting values for %s: h=%.1f, y=%.1f" % (type(wind).__name__, new_h, self.myy[idx]))
             total_proportions += self.proportions[idx]
             if self.proportions[idx] <= 0:
@@ -94,14 +96,16 @@ class BasicHSizer():
         # print ("Total proportions: %.1f, width=%.1f, remaining=%.1f" % (total_proportions, self.width, availw ))
         # Now that we have established the minsize lets see what we have left
         # First iteration, check for maxSize
-        if total_proportions>0:
+        if total_proportions > 0:
             for idx, wind in enumerate(self.windows):
                 if self.proportions[idx] > 0 and self.activectrl[idx]:
                     max_size = wind.GetMaxSize()
                     min_size = wind.GetMinSize()
                     if min_size[0] < 10:
                         min_size[0] = 10
-                    testsize = max(min_size[0], self.proportions[idx] * availw / total_proportions)
+                    testsize = max(
+                        min_size[0], self.proportions[idx] * availw / total_proportions
+                    )
                     if 0 < max_size[0] < testsize:
                         # too big
                         self.myw[idx] = max_size[0]
@@ -109,14 +113,20 @@ class BasicHSizer():
                         total_proportions -= self.proportions[idx]
                         availw -= max_size[0]
         # Second iteration, assign remaining space
-        if total_proportions>0:
+        if total_proportions > 0:
             for idx, wind in enumerate(self.windows):
                 # Dont touch already assigned ones...
-                if self.proportions[idx] > 0 and self.activectrl[idx] and self.myw[idx]<0:
+                if (
+                    self.proportions[idx] > 0
+                    and self.activectrl[idx]
+                    and self.myw[idx] < 0
+                ):
                     min_size = wind.GetMinSize()
                     if min_size[0] < 10:
                         min_size[0] = 10
-                    testsize = max(min_size[0], self.proportions[idx] * availw / total_proportions)
+                    testsize = max(
+                        min_size[0], self.proportions[idx] * availw / total_proportions
+                    )
                     self.myw[idx] = testsize
 
         # And now lets move the windows...
@@ -132,7 +142,12 @@ class BasicHSizer():
                 flag = False
             else:
                 # cast everything to int, just to be on the safe side
-                rect = wx.Rect(int(self.myx[idx]), int(self.myy[idx]), int(self.myw[idx]), int(self.myh[idx]))
+                rect = wx.Rect(
+                    int(self.myx[idx]),
+                    int(self.myy[idx]),
+                    int(self.myw[idx]),
+                    int(self.myh[idx]),
+                )
                 wind.SetRect(rect)
                 # flag = flag and True
             wind.Show(flag)
@@ -151,8 +166,9 @@ class BasicHSizer():
             if wind is not None:
                 wind.Reparent(new_parent)
 
+
 class StatusBarWidget(BasicHSizer):
-# class StatusBarWidget(wx.BoxSizer):
+    # class StatusBarWidget(wx.BoxSizer):
     """
     General class to be added to a CustomStatusBar,
     defines some general routines that can be overloaded
@@ -170,7 +186,7 @@ class StatusBarWidget(BasicHSizer):
         self.startup = None
         self.parent = None
 
-    def SetActive(self, control, enableit = True):
+    def SetActive(self, control, enableit=True):
 
         # Logic to use own hsizer or wx.BoxSizer
         if hasattr(super(), "SetActive"):
@@ -199,7 +215,6 @@ class StatusBarWidget(BasicHSizer):
         #   self.btn = wx.Button(self.parent, wx.ID_ANY...)
         #   self.add(self.btn, 1, wx.EXPAND, 0)
 
-
     def StartPopulation(self):
         """
         If you want to update controls with values, then you should
@@ -210,7 +225,6 @@ class StatusBarWidget(BasicHSizer):
 
     def EndPopulation(self):
         self.startup = False
-
 
     def Show(self, showit):
         # print ("Called %s - show with %s" % (self.identifier, showit))

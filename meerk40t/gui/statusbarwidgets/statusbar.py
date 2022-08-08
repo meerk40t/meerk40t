@@ -3,6 +3,7 @@ import wx
 from meerk40t.gui.icons import icons8_next_page_20
 from meerk40t.svgelements import Color
 
+
 class CustomStatusBar(wx.StatusBar):
     """
     Overloading of wx.Statusbar to allow some elements on it
@@ -63,7 +64,6 @@ class CustomStatusBar(wx.StatusBar):
         self.activesizer = [None] * self.panelct
         for idx in range(self.panelct):
             super().SetStatusText(self.status_text[idx], idx)
-
 
     def SetStatusText(self, message="", panel=0):
         if panel >= 0 and panel < self.panelct:

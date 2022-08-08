@@ -1,13 +1,21 @@
 import wx
 from wx import aui
 
-from ..kernel import signal_listener
-
 from meerk40t.core.element_types import elem_nodes, op_nodes
 from meerk40t.core.elements import Elemental
-from meerk40t.gui.icons import icons8_direction_20, icons8_laser_beam_20, icons8_scatter_plot_20, icons8_padlock_50, icons8_diagonal_20, icons8_image_20, icons8_small_beam_20
-from meerk40t.svgelements import Color
+from meerk40t.gui.icons import (
+    icons8_diagonal_20,
+    icons8_direction_20,
+    icons8_image_20,
+    icons8_laser_beam_20,
+    icons8_padlock_50,
+    icons8_scatter_plot_20,
+    icons8_small_beam_20,
+)
 from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.svgelements import Color
+
+from ..kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -31,7 +39,6 @@ def register_panel_operation_assign(window, context):
 
 
 class OperationAssignPanel(wx.Panel):
-
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: OperationAssignPanel.__init__
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -42,7 +49,7 @@ class OperationAssignPanel(wx.Panel):
         self.MAXBUTTONS = 24
         self.hover = 0
         self.buttons = []
-        self.op_nodes= []
+        self.op_nodes = []
         for idx in range(self.MAXBUTTONS):
             btn = wx.Button(self, id=wx.ID_ANY, size=(self.buttonsize, self.buttonsize))
             self.buttons.append(btn)
@@ -53,19 +60,34 @@ class OperationAssignPanel(wx.Panel):
             _("-> OP"),
             _("-> Elem"),
         ]
-        self.cbo_apply_color = wx.ComboBox(self, wx.ID_ANY, choices=choices, value=choices[0], style=wx.CB_READONLY | wx.CB_DROPDOWN)
+        self.cbo_apply_color = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=choices,
+            value=choices[0],
+            style=wx.CB_READONLY | wx.CB_DROPDOWN,
+        )
         self.chk_all_similar = wx.CheckBox(self, wx.ID_ANY, _("Similar"))
         self.chk_exclusive = wx.CheckBox(self, wx.ID_ANY, _("Exclusive"))
         self.cbo_apply_color.SetToolTip(
-            _("Leave - neither the color of the operation nor of the elements will be changed") + "\n" +
-            _("-> OP - the assigned operation will adopt the color of the element") + "\n" +
-            _("-> Elem - the elements will adopt the color of the assigned operation")
+            _(
+                "Leave - neither the color of the operation nor of the elements will be changed"
+            )
+            + "\n"
+            + _("-> OP - the assigned operation will adopt the color of the element")
+            + "\n"
+            + _("-> Elem - the elements will adopt the color of the assigned operation")
         )
         self.chk_all_similar.SetToolTip(
-            _("Assign as well all other elements with the same stroke-color,") +"\n" +
-            _("respectively with the same fill-color if you right-click the button")
+            _("Assign as well all other elements with the same stroke-color,")
+            + "\n"
+            + _("respectively with the same fill-color if you right-click the button")
         )
-        self.chk_exclusive.SetToolTip(_("When assigning to an operation remove all assignments of the elements to other operations"))
+        self.chk_exclusive.SetToolTip(
+            _(
+                "When assigning to an operation remove all assignments of the elements to other operations"
+            )
+        )
         self.lastsize = None
         self.lastcolcount = None
         self._set_layout()
@@ -94,7 +116,7 @@ class OperationAssignPanel(wx.Panel):
         self.SetSizer(self.sizer_main)
         self.Layout()
 
-    def _set_grid_layout(self, width = None):
+    def _set_grid_layout(self, width=None):
         # Compute the columns
         if width is None:
             cols = 6
@@ -117,7 +139,7 @@ class OperationAssignPanel(wx.Panel):
             self.op_nodes[idx] = None
             self.buttons[idx].SetBitmap(wx.NullBitmap)
             self.buttons[idx].Show(False)
-        if self.hover>0:
+        if self.hover > 0:
             self.context.signal("statusmsg", "")
             self.hover = 0
 
@@ -129,7 +151,7 @@ class OperationAssignPanel(wx.Panel):
                 if background is not None:
                     c1 = Color("Black")
                     c2 = Color("White")
-                    if Color.distance(background, c1)> Color.distance(background, c2):
+                    if Color.distance(background, c1) > Color.distance(background, c2):
                         iconcolor = c1
                     else:
                         iconcolor = c2
@@ -140,22 +162,52 @@ class OperationAssignPanel(wx.Panel):
             d = None
             if node.type == "op raster":
                 c, d = get_color()
-                result = icons8_direction_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+                result = icons8_direction_20.GetBitmap(
+                    color=c,
+                    resize=(iconsize, iconsize),
+                    noadjustment=True,
+                    keepalpha=True,
+                )
             elif node.type == "op image":
                 c, d = get_color()
-                result = icons8_image_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+                result = icons8_image_20.GetBitmap(
+                    color=c,
+                    resize=(iconsize, iconsize),
+                    noadjustment=True,
+                    keepalpha=True,
+                )
             elif node.type == "op engrave":
                 c, d = get_color()
-                result = icons8_small_beam_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+                result = icons8_small_beam_20.GetBitmap(
+                    color=c,
+                    resize=(iconsize, iconsize),
+                    noadjustment=True,
+                    keepalpha=True,
+                )
             elif node.type == "op cut":
                 c, d = get_color()
-                result = icons8_laser_beam_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+                result = icons8_laser_beam_20.GetBitmap(
+                    color=c,
+                    resize=(iconsize, iconsize),
+                    noadjustment=True,
+                    keepalpha=True,
+                )
             elif node.type == "op hatch":
                 c, d = get_color()
-                result = icons8_diagonal_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+                result = icons8_diagonal_20.GetBitmap(
+                    color=c,
+                    resize=(iconsize, iconsize),
+                    noadjustment=True,
+                    keepalpha=True,
+                )
             elif node.type == "op dots":
                 c, d = get_color()
-                result = icons8_scatter_plot_20.GetBitmap(color=c, resize=(iconsize, iconsize), noadjustment=True, keepalpha=True)
+                result = icons8_scatter_plot_20.GetBitmap(
+                    color=c,
+                    resize=(iconsize, iconsize),
+                    noadjustment=True,
+                    keepalpha=True,
+                )
             return d, result
 
         def process_button(myidx):
@@ -172,11 +224,11 @@ class OperationAssignPanel(wx.Panel):
                 self.buttons[myidx].SetBitmap(image)
                 # self.buttons[myidx].SetBitmapDisabled(icons8_padlock_50.GetBitmap(color=Color("Grey"), resize=(self.iconsize, self.iconsize), noadjustment=True, keepalpha=True))
             self.buttons[myidx].SetToolTip(
-                str(node) +
-                "\n" +
-                _("Assign the selected elements to the operation.") +
-                "\n" +
-                _("Left click: consider stroke as main color, right click: use fill")
+                str(node)
+                + "\n"
+                + _("Assign the selected elements to the operation.")
+                + "\n"
+                + _("Left click: consider stroke as main color, right click: use fill")
             )
             self.buttons[myidx].Show()
 
@@ -188,14 +240,14 @@ class OperationAssignPanel(wx.Panel):
                 found = True
                 break
             else:
-                if lastfree<0 and self.op_nodes[idx] is None:
+                if lastfree < 0 and self.op_nodes[idx] is None:
                     lastfree = idx
         if not found:
-            if lastfree>=0:
+            if lastfree >= 0:
                 self.op_nodes[lastfree] = node
                 process_button(lastfree)
 
-    def set_buttons(self, skip_layout = False):
+    def set_buttons(self, skip_layout=False):
         self._clear_old()
         idx = 0
         for node in list(self.context.elements.flat(types=op_nodes)):
@@ -203,7 +255,7 @@ class OperationAssignPanel(wx.Panel):
                 self.op_nodes[idx] = node
                 self._set_button(node)
                 idx += 1
-                if idx>=self.MAXBUTTONS:
+                if idx >= self.MAXBUTTONS:
                     # too many...
                     break
         self._set_grid_layout()
@@ -222,11 +274,13 @@ class OperationAssignPanel(wx.Panel):
             self.buttons[idx].Enable(myflag)
             self.buttons[idx].Enable(myflag)
         if not flag:
-            if self.hover>0:
+            if self.hover > 0:
                 self.context.signal("statusmsg", "")
                 self.hover = 0
         else:
-             self.chk_exclusive.SetValue(self.context.elements.classify_inherit_exclusive)
+            self.chk_exclusive.SetValue(
+                self.context.elements.classify_inherit_exclusive
+            )
         siz = self.GetSize()
         self._set_grid_layout(siz[0])
         self.sizer_options.Layout()
@@ -276,7 +330,7 @@ class OperationAssignPanel(wx.Panel):
         # nothing yet
         return
 
-    def on_resize (self, event):
+    def on_resize(self, event):
         if self.lastsize != event.Size:
             self.lastsize = event.Size
             # print ("Size: wd=%d ht=%d" % (self.lastsize[0], self.lastsize[1]))
@@ -287,7 +341,7 @@ class OperationAssignPanel(wx.Panel):
     def on_mouse_leave(self, event):
         # Leave events of one tool may come later than the enter events of the next
         self.hover -= 1
-        if self.hover<0:
+        if self.hover < 0:
             self.hover = 0
         if self.hover == 0:
             self.context.signal("statusmsg", "")
@@ -304,11 +358,11 @@ class OperationAssignPanel(wx.Panel):
         event.Skip()
 
     def execute_on(self, targetop, attrib):
-        data = list(self.context.elements.flat(emphasized = True))
+        data = list(self.context.elements.flat(emphasized=True))
         idx = self.cbo_apply_color.GetCurrentSelection()
-        if idx==1:
+        if idx == 1:
             impose = "to_op"
-        elif idx==2:
+        elif idx == 2:
             impose = "to_elem"
         else:
             impose = None
@@ -317,8 +371,13 @@ class OperationAssignPanel(wx.Panel):
         if len(data) == 0:
             return
         self.context.elements.assign_operation(
-            op_assign=targetop, data=data, impose=impose,
-            attrib = attrib, similar=similar, exclusive = exclusive)
+            op_assign=targetop,
+            data=data,
+            impose=impose,
+            attrib=attrib,
+            similar=similar,
+            exclusive=exclusive,
+        )
 
     def on_button_left(self, event):
         button = event.GetEventObject()

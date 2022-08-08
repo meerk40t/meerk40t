@@ -11,6 +11,7 @@ class ColorWidget(StatusBarWidget):
     """
     Displays the 8 'main' colors and allows assignment to stroke and fill
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -30,7 +31,10 @@ class ColorWidget(StatusBarWidget):
         self.button_color = []
         for idx in range(len(colors)):
             wx_button = wx.StaticBitmap(
-                self.parent, id=wx.ID_ANY, size=wx.Size(20, -1), style=wx.BORDER_RAISED,
+                self.parent,
+                id=wx.ID_ANY,
+                size=wx.Size(20, -1),
+                style=wx.BORDER_RAISED,
             )
             wx_button.SetBackgroundColour(wx.Colour(colors[idx]))
             wx_button.SetMinSize(wx.Size(10, -1))
@@ -72,6 +76,7 @@ class StrokeWidget(StatusBarWidget):
     """
     Allows manipulation of the strokewidth properties
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

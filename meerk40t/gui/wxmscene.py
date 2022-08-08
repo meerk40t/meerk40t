@@ -6,13 +6,11 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icon_meerk40t, icons8_menu_50
-from meerk40t.gui.laserrender import LaserRender, DRAW_MODE_GUIDES
+from meerk40t.gui.laserrender import DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
 from meerk40t.gui.scenewidgets.bedwidget import BedWidget
-from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
-from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
@@ -33,6 +31,8 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
+from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
 from meerk40t.gui.wxutils import get_key_name
@@ -198,7 +198,12 @@ class MeerK40tScenePanel(wx.Panel):
                 print(value)
 
             widget = CheckboxWidget(
-                self.widget_scene, 25, 25, text="Example", tool_tip="Example's tool tip", checked=checked
+                self.widget_scene,
+                25,
+                25,
+                text="Example",
+                tool_tip="Example's tool tip",
+                checked=checked,
             )
             self.widget_scene.widget_root.interface_widget.add_widget(-1, widget)
             channel(_("Added example_checkbox to interface"))
@@ -369,9 +374,17 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_argument("y", type=str, help="y position")
         @self.context.console_argument("width", type=str, help="width of view")
         @self.context.console_argument("height", type=str, help="height of view")
-        @self.context.console_option("animate", "a", type=bool, action="store_true", help="perform focus with animation")
+        @self.context.console_option(
+            "animate",
+            "a",
+            type=bool,
+            action="store_true",
+            help="perform focus with animation",
+        )
         @self.context.console_command("focus", input_type="scene")
-        def scene_focus(command, _, channel, data, x, y, width, height, animate=False, **kwargs):
+        def scene_focus(
+            command, _, channel, data, x, y, width, height, animate=False, **kwargs
+        ):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:

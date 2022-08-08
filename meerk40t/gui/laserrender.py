@@ -276,7 +276,7 @@ class LaserRender:
 
         if sw is None:
             sw = 1000
-        limit = 25 * zoomscale ** 0.5
+        limit = 25 * zoomscale**0.5
         try:
             matrix = node.matrix
             width_scale = sqrt(abs(matrix.determinant))

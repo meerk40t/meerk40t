@@ -14,10 +14,10 @@ def plugin(service, lifecycle):
         from meerk40t.gui.icons import (
             icons8_computer_support_50,
             icons8_connected_50,
+            icons8_flash_off_50,
             icons8_light_off_50,
             icons8_light_on_50,
             icons8_quick_mode_on_50,
-            icons8_flash_off_50,
         )
 
         from .balorconfig import BalorConfiguration
@@ -65,41 +65,41 @@ def plugin(service, lifecycle):
                     {
                         "identifier": "live",
                         "label": _("Live Bounds"),
-                        "action": lambda e: service("select-light\n")
+                        "action": lambda e: service("select-light\n"),
                     },
                     {
                         "identifier": "live-full",
                         "label": _("Live Full"),
                         "icon": icons8_computer_support_50,
-                        "action": lambda e: service("full-light\n")
+                        "action": lambda e: service("full-light\n"),
                     },
                     {
                         "identifier": "hull",
                         "label": _("Trace Hull"),
-                        "action": lambda e: service("element* hull light\n")
+                        "action": lambda e: service("element* hull light\n"),
                     },
                     {
                         "identifier": "box",
                         "label": _("Trace Bounds"),
-                        "action": lambda e: service("box light\n")
+                        "action": lambda e: service("box light\n"),
                     },
                     {
                         "identifier": "ants",
                         "label": _("Trace Ants"),
-                        "action": lambda e: service("element* ants light\n")
+                        "action": lambda e: service("element* ants light\n"),
                     },
                     {
                         "identifier": "full",
                         "label": _("Trace Full"),
-                        "action": lambda e: service("element* path light\n")
+                        "action": lambda e: service("element* path light\n"),
                     },
                 ],
                 "toggle": {
-                        "label": _("Stop Tracing..."),
-                        "icon": icons8_light_off_50,
-                        "tip": _("Turn light off"),
-                        "action": lambda v: service("stop\n"),
-                    },
+                    "label": _("Stop Tracing..."),
+                    "icon": icons8_light_off_50,
+                    "tip": _("Turn light off"),
+                    "action": lambda v: service("stop\n"),
+                },
             },
         )
         service.register(
@@ -113,7 +113,7 @@ def plugin(service, lifecycle):
                     "label": _("Red Dot Off"),
                     "action": lambda v: service("red off\n"),
                     "icon": icons8_flash_off_50,
-                }
+                },
             },
         )
         service.add_service_delegate(BalorGui(service))

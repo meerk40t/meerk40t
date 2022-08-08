@@ -118,11 +118,13 @@ class Widget(list):
         if y is None:
             y = x.y
             x = x.x
-        return self.visible and self.left <= x <= self.right and self.top <= y <= self.bottom
+        return (
+            self.visible
+            and self.left <= x <= self.right
+            and self.top <= y <= self.bottom
+        )
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
         Default event which simply chains the event to the next hittable object.
         """
@@ -474,7 +476,7 @@ class Widget(list):
         """
         return self.matrix.value_trans_y()
 
-    def show(self, flag = None):
+    def show(self, flag=None):
         """
         This does not automically display the widget (yet)
         """
@@ -482,7 +484,7 @@ class Widget(list):
             flag = True
         self.visible = flag
 
-    def hide(self, flag = None):
+    def hide(self, flag=None):
         """
         This does not automically display the widget (yet)
         """

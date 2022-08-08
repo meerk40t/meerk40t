@@ -1,4 +1,5 @@
 import time
+
 import wx
 
 from ...core.element_types import elem_nodes
@@ -45,7 +46,9 @@ class SimpleInfoWidget(StatusBarWidget):
             size=wx.Size(20, 20),
             style=wx.BORDER_RAISED,
         )
-        self.progress_bar = wx.Gauge(self.parent, range=100, style=wx.GA_HORIZONTAL|wx.GA_SMOOTH)
+        self.progress_bar = wx.Gauge(
+            self.parent, range=100, style=wx.GA_HORIZONTAL | wx.GA_SMOOTH
+        )
         infocolor = wx.Colour(128, 128, 128, 128)
         self.btn_next.SetBackgroundColour(infocolor)
         self.btn_next.Bind(wx.EVT_LEFT_DOWN, self.on_button_next)
@@ -239,7 +242,7 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._job_remaining = 0
         # How often do i want to have an update?
         self._last_invokation = 0
-        self._invokation_delta = 2 # Every 2 seconds max
+        self._invokation_delta = 2  # Every 2 seconds max
         self._driver = None
 
     def Show(self, showit):
@@ -328,7 +331,7 @@ class BurnProgressPanel(SimpleInfoWidget):
                 if self._job_estimate > self._job_elapsed:
                     self._job_remaining = self._job_estimate - self._job_elapsed
                 else:
-                    if self._job_pos!=0:
+                    if self._job_pos != 0:
                         self._job_remaining = (
                             self._job_elapsed * self._job_len / self._job_pos
                         )

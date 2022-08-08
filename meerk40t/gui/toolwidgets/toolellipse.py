@@ -32,21 +32,31 @@ class EllipseTool(ToolWidget):
             if self.scene.context.elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
             else:
-                self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke)))
+                self.pen.SetColour(
+                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+                )
             gc.SetPen(self.pen)
             if self.scene.context.elements.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
                 gc.SetBrush(
                     wx.Brush(
-                        wx.Colour(swizzlecolor(self.scene.context.elements.default_fill)),
+                        wx.Colour(
+                            swizzlecolor(self.scene.context.elements.default_fill)
+                        ),
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
             gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":

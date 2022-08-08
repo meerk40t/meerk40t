@@ -1,16 +1,17 @@
 import wx
 
 from meerk40t.gui.scene.sceneconst import (
-    RESPONSE_ABORT,
-    ORIENTATION_GRID,
-    ORIENTATION_VERTICAL,
-    ORIENTATION_HORIZONTAL,
     HITCHAIN_DELEGATE_AND_HIT,
+    ORIENTATION_GRID,
+    ORIENTATION_HORIZONTAL,
+    ORIENTATION_VERTICAL,
+    RESPONSE_ABORT,
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.utilitywidgets.buttonwidget import ButtonWidget
 
 _ = wx.GetTranslation
+
 
 class ToggleWidget(Widget):
     def __init__(self, scene, left, top, right, bottom, bitmap, buttons):

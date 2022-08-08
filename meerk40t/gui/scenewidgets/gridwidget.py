@@ -111,9 +111,7 @@ class GridWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
         Capture and deal with events.
         """
