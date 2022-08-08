@@ -58,8 +58,8 @@ class WarningPanel(wx.Panel):
         hsizer = wx.FlexGridSizer(cols=9, gap=wx.Size(2, 0))
         # hsizer.SetCols(9)
         idx = -1
-        for key in self.data:
-            entry = self.data[key]
+        for key, entry in self.data:
+            # entry = self.data[key]
             idx += 1
             image = wx.StaticBitmap(self, id=wx.ID_ANY)
             image.SetBitmap(entry["image"].GetBitmap(resize=20))
@@ -212,7 +212,7 @@ class WarningPanel(wx.Panel):
                 entry = self.data[ident]
                 entry["checkbox_min"].SetValue(warning[0])
                 entry["textcontrol_min"].SetValue(str(warning[1]))
-                entry["textcontrol_min"].Enable(warning[1])
+                entry["textcontrol_min"].Enable(warning[0])
 
                 entry["checkbox_max"].SetValue(warning[2])
                 entry["textcontrol_max"].SetValue(str(warning[3]))
