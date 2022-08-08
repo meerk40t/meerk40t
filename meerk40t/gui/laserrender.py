@@ -1,5 +1,5 @@
 import platform
-from math import ceil, floor, sqrt
+from math import ceil, floor, sqrt, isnan
 
 import wx
 from PIL import Image
@@ -295,6 +295,8 @@ class LaserRender:
         try:
             if matrix is not None:
                 width /= sqrt(abs(matrix.determinant))
+            if isnan(width):
+                width = 1.0
             try:
                 self.pen.SetWidth(width)
             except TypeError:
