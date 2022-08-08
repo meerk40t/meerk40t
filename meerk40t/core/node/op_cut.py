@@ -72,13 +72,13 @@ class CutOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
-    def is_dangerous(self, minpower, maxspeed):
-        result = False
-        if maxspeed is not None and self.speed > maxspeed:
-            result = True
-        if minpower is not None and self.power < minpower:
-            result = True
-        self.dangerous = result
+    # def is_dangerous(self, minpower, maxspeed):
+    #     result = False
+    #     if maxspeed is not None and self.speed > maxspeed:
+    #         result = True
+    #     if minpower is not None and self.power < minpower:
+    #         result = True
+    #     self.dangerous = result
 
     def default_map(self, default_map=None):
         default_map = super(CutOpNode, self).default_map(default_map=default_map)
