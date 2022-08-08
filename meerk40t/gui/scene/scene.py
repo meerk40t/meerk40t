@@ -38,7 +38,7 @@ YCELLS = 15
 
 class SceneToast:
     """
-    SceneToast is drawn directly by the Scene. It creates an text message in a box that animates a fade.
+    SceneToast is drawn directly by the Scene. It creates a text message in a box that animates a fade.
     """
 
     def __init__(self, scene, left, top, right, bottom):

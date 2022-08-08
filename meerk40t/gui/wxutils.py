@@ -530,7 +530,7 @@ def disable_window(window):
 
 
 def set_ctrl_value(ctrl, value):
-    # Lets try to save the caret position
+    # Let's try to save the caret position
     cursor = ctrl.GetLastPosition()
     if ctrl.GetValue() != value:
         ctrl.SetValue(value)

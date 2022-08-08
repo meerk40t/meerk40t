@@ -566,7 +566,7 @@ class Length(object):
 
     Length class is lazy when solving values. Several conversion values are unknown by default and length simply
     stores that ambiguity. So we can have a length of 50% and without calling .value(relative_length=3000) it will
-    simply store as 50%. Likewise you can have absolute values like 30cm or 20in which are not knowable in pixels
+    simply store as 50%. Likewise, you can have absolute values like 30cm or 20in which are not knowable in pixels
     unless a PPI value is supplied. We can say .value(relative_length=30cm, PPI=96) and solve this for a value like
     12%. We can also convert values between knowable lengths. So 30cm is 300mm regardless whether we know how to
     convert this to pixels. 0% is 0 in any units or relative values. We can convert pixels to pc and pt without issue.
