@@ -1,6 +1,8 @@
 from copy import copy
+from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
 
 
 class PathNode(Node):
@@ -24,35 +26,14 @@ class PathNode(Node):
         self._formatter = "{element_type} {id} {stroke}"
         self.path = path
         self.settings = kwargs
-        if matrix is None:
-            self.matrix = path.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = path.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = path.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = path.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if linecap is None:
-            self.linecap = Linecap.CAP_BUTT
-        else:
-            self.linecap = linecap
-        if linejoin is None:
-            self.linejoin = Linejoin.JOIN_MITER
-        else:
-            self.linejoin = linejoin
-        if fillrule is None:
-            self.fillrule = Fillrule.FILLRULE_NONZERO
-        else:
-            self.fillrule = fillrule
-
+        self.matrix = path.transform if matrix is None else matrix
+        self.fill = path.fill if fill is None else fill
+        self.stroke = path.stroke if stroke is None else stroke
+        self.stroke_width = path.stroke_width if stroke_width is None else stroke_width
+        self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
+        self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
+        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
+        self._stroke_scaled = path.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
         self.lock = False
 
     def __copy__(self):
@@ -75,6 +56,20 @@ class PathNode(Node):
             str(len(self.path)),
             str(self._parent),
         )
+
+    @property
+    def stroke_scaled(self):
+        return self._stroke_scaled
+
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        if not v and self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width *= sqrt(abs(matrix.determinant))
+        if v and not self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width /= sqrt(abs(matrix.determinant))
+        self._stroke_scaled = v
 
     @property
     def bounds(self):

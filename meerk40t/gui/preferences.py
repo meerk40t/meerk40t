@@ -29,12 +29,11 @@ class PreferencesUnitsPanel(wx.Panel):
             self,
             wx.ID_ANY,
             _("Units"),
-            choices=[_("mm"), _("cm"), _("inch"), _("steps")],
+            choices=[_("mm"), _("cm"), _("inch"), _("mils")],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
         self.radio_units.SetToolTip(_("Set default units for guides"))
-        self.radio_units.SetSelection(0)
         sizer_1.Add(self.radio_units, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_1)
@@ -42,10 +41,8 @@ class PreferencesUnitsPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_units, self.radio_units)
-        # end wxGlade
 
-        self.context.setting(int, "units_index", 0)
-        self.radio_units.SetSelection(self.context.units_index)
+        self.radio_units.SetSelection(self._get_units_index())
 
     def on_radio_units(self, event):
         if event.Int == 0:
@@ -57,27 +54,36 @@ class PreferencesUnitsPanel(wx.Panel):
         elif event.Int == 3:
             self.set_mil()
 
+    def _get_units_index(self):
+        p = self.context.root
+        units = p.units_name
+        if units == "mm":
+            return 0
+        if units == "cm":
+            return 1
+        if units == "inch":
+            return 2
+        if units == "mil":
+            return 3
+        return 0
+
     def set_inch(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "inch"
         p.signal("units", p.units_name)
 
     def set_mil(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "mil"
         p.signal("mil", p.units_name)
 
     def set_cm(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "cm"
         p.signal("cm", p.units_name)
 
     def set_mm(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "mm"
         p.signal("mm", p.units_name)
 
@@ -177,6 +183,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
 
         context.elements.setting(float, "svg_ppi", 96.0)
         self.text_svg_ppi.SetValue(str(context.elements.svg_ppi))
+        self.on_text_svg_ppi(None)
 
     def on_combo_svg_ppi(self, event=None):
         elements = self.context.elements
