@@ -102,6 +102,7 @@ class DXFProcessor:
                     matrix = bb.transform(Viewbox(bx, by, bw, bh))
                     for node in self.elements_list:
                         node.matrix *= matrix
+                        node.modified()
                 elif x < bx or y < by or x + w > bw or y + h > bh:
                     # Is outside the bed but sized correctly, center
                     bcx = bw / 2.0
@@ -111,6 +112,7 @@ class DXFProcessor:
                     matrix = Matrix.translate(bcx - cx, bcy - cy)
                     for node in self.elements_list:
                         node.matrix *= matrix
+                        node.modified()
                 # else, is within the bed dimensions correctly, change nothing.
 
         self.elements.classify(self.elements_list)
