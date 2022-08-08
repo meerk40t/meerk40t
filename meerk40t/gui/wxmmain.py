@@ -1773,9 +1773,9 @@ class MeerK40t(MWindow):
 
     @lookup_listener("window")
     def dynamic_fill_window_menu(self, new=None, old=None):
-        def toggle_window(window):
+        def toggle_window(_window):
             def toggle(event=None):
-                self.context("window toggle {window}\n".format(window=window))
+                self.context("window toggle {window}\n".format(window=_window))
 
             return toggle
 
