@@ -74,7 +74,7 @@ class ElementpropertyPanel(wx.Panel):
         self.panel_text.fill_widgets(selection)
 
     def _update_position(self):
-        elems = list(self.context.elements.flat(types=elem_nodes, emphasized=True)
+        elems = list(self.context.elements.flat(types=elem_nodes, emphasized=True))
         self.fill_widgets(elems)
 
     def pane_show(self, *args):
