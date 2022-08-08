@@ -75,7 +75,6 @@ class Settings:
         except PermissionError:
             return
 
-
     def read_persistent(
         self,
         t: type,
@@ -92,6 +91,7 @@ class Settings:
         @param default: default value if item does not exist.
         @return: value
         """
+
         def listed(str_value):
             dummy = str_value.split(";")
             result = []
