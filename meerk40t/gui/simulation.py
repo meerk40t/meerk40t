@@ -404,23 +404,23 @@ class SimulationPanel(wx.Panel, Job):
 
         try:
             time_travel = travel / self.cutcode.travel_speed
-            t_hours = time_travel // 3600
-            t_mins = (time_travel % 3600) // 60
-            t_seconds = time_travel % 60
+            t_hours = int(time_travel // 3600)
+            t_mins = int((time_travel % 3600) // 60)
+            t_seconds = int(time_travel % 60)
             self.text_time_travel_step.SetValue(
                 f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
             )
             time_cuts = self.cutcode.duration_cut(stop_at=step)
-            t_hours = time_cuts // 3600
-            t_mins = (time_cuts % 3600) // 60
-            t_seconds = time_cuts % 60
+            t_hours = int(time_cuts // 3600)
+            t_mins = int((time_cuts % 3600) // 60)
+            t_seconds = int(time_cuts % 60)
             self.text_time_laser_step.SetValue(
                 f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
             )
             time_total = time_travel + time_cuts + extra
-            t_hours = time_total // 3600
-            t_mins = (time_total % 3600) // 60
-            t_seconds = time_total % 60
+            t_hours = int(time_total // 3600)
+            t_mins = int((time_total % 3600) // 60)
+            t_seconds = int(time_total % 60)
             self.text_time_total_step.SetValue(
                 f"{t_hours}:{t_mins:02d}:{t_seconds:02d}"
             )
@@ -439,19 +439,19 @@ class SimulationPanel(wx.Panel, Job):
 
         try:
             time_travel = travel / self.cutcode.travel_speed
-            t_hours = time_travel // 3600
-            t_mins = (time_travel % 3600) // 60
-            t_seconds = time_travel % 60
+            t_hours = int(time_travel // 3600)
+            t_mins = int((time_travel % 3600) // 60)
+            t_seconds = int(time_travel % 60)
             self.text_time_travel.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
             time_cuts = self.cutcode.duration_cut()
-            t_hours = time_cuts // 3600
-            t_mins = (time_cuts % 3600) // 60
-            t_seconds = time_cuts % 60
+            t_hours = int(time_cuts // 3600)
+            t_mins = int((time_cuts % 3600) // 60)
+            t_seconds = int(time_cuts % 60)
             self.text_time_laser.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
             time_total = time_travel + time_cuts + extra
-            t_hours = time_total // 3600
-            t_mins = (time_total % 3600) // 60
-            t_seconds = time_total % 60
+            t_hours = int(time_total // 3600)
+            t_mins = int((time_total % 3600) // 60)
+            t_seconds = int(time_total % 60)
             self.text_time_total.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
         except ZeroDivisionError:
             pass
