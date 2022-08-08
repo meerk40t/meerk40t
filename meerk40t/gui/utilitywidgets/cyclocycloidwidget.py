@@ -4,10 +4,10 @@ import wx
 
 from meerk40t.gui import icons
 from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_DELEGATE_AND_HIT,
     HITCHAIN_HIT,
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
-    HITCHAIN_DELEGATE_AND_HIT,
 )
 from meerk40t.gui.scene.widget import Widget
 from meerk40t.gui.scenewidgets.relocatewidget import RelocateWidget
@@ -21,6 +21,7 @@ class CyclocycloidWidget(Widget):
     widget with some advanced controls. It contains a relocation widget and several button widgets. It shows how to
     use animations to better implement subtle changes to a particular parameter.
     """
+
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         self.pen = wx.Pen()
@@ -42,7 +43,13 @@ class CyclocycloidWidget(Widget):
         self.add_widget(
             -1,
             ButtonWidget(
-                scene, 0, 0, size, size, icons.icon_corner1.GetBitmap(use_theme=False), self.confirm
+                scene,
+                0,
+                0,
+                size,
+                size,
+                icons.icon_corner1.GetBitmap(use_theme=False),
+                self.confirm,
             ),
         )
         self.add_widget(
@@ -173,9 +180,7 @@ class CyclocycloidWidget(Widget):
             t += radian_step
         self.scene.request_refresh_for_animation()
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         response = RESPONSE_CHAIN
         if self.series is None:
             self.series = []
@@ -193,6 +198,7 @@ class MajorHandleWidget(Widget):
     """
     Widget to adjust the radius major of the shape. Performs this adjustment within an animation.
     """
+
     def __init__(self, scene, cyclowidget):
         self.size = 20000
         Widget.__init__(self, scene, 0, 0, self.size, self.size)
@@ -217,7 +223,7 @@ class MajorHandleWidget(Widget):
         """
         if self._current_x is None or self._current_y is None:
             return False
-        diff = (self._current_x - self._start_x)
+        diff = self._current_x - self._start_x
         self._start_value += diff * 0.01
         self.widget.r_major = self._start_value
         self.widget.update_shape()
@@ -229,18 +235,18 @@ class MajorHandleWidget(Widget):
         @param gc:
         @return:
         """
-        self.left = self.widget.x + self.widget.r_major - self.width/2
-        self.top = self.widget.y - self.height/2
+        self.left = self.widget.x + self.widget.r_major - self.width / 2
+        self.top = self.widget.y - self.height / 2
         self.right = self.left + self.size
         self.bottom = self.top + self.size
-        gc.DrawBitmap(self.bitmap, self.left, self.top , self.width, self.height)
+        gc.DrawBitmap(self.bitmap, self.left, self.top, self.width, self.height)
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
-            self.scene.animate(self)  # Starts the animation. This will stop when tick() returns false.
+            self.scene.animate(
+                self
+            )  # Starts the animation. This will stop when tick() returns false.
             self._start_x = self.left
             self._start_y = self.top
             self._current_x = space_pos[0]
@@ -286,22 +292,25 @@ class MinorHandleWidget(Widget):
     def tick(self):
         if self._current_x is None or self._current_y is None:
             return False
-        diff = (self._current_x - self._start_x)
+        diff = self._current_x - self._start_x
         self._start_value += diff * 0.01
         self.widget.r_minor = self._start_value
         self.widget.update_shape()
         return True
 
     def process_draw(self, gc: wx.GraphicsContext):
-        self.left = self.widget.x + self.widget.r_major + (self.widget.r_minor * 2) - self.width/2
-        self.top = self.widget.y - self.height/2
+        self.left = (
+            self.widget.x
+            + self.widget.r_major
+            + (self.widget.r_minor * 2)
+            - self.width / 2
+        )
+        self.top = self.widget.y - self.height / 2
         self.right = self.left + self.size
         self.bottom = self.top + self.size
-        gc.DrawBitmap(self.bitmap, self.left, self.top , self.width, self.height)
+        gc.DrawBitmap(self.bitmap, self.left, self.top, self.width, self.height)
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.animate(self)

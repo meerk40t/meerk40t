@@ -266,7 +266,6 @@ class RuidaDevice(Service, ViewPort):
         _ = self.kernel.translation
 
 
-
 class RuidaParser:
     def __init__(self):
         pass

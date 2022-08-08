@@ -44,10 +44,12 @@ def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "preregister":
         kernel.register(
-            "format/op cut", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}"
+            "format/op cut",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
-            "format/op engrave", "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}"
+            "format/op engrave",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op hatch",
@@ -62,7 +64,8 @@ def plugin(kernel, lifecycle=None):
             "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {opstop}",
         )
         kernel.register(
-            "format/op dots", "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {opstop}"
+            "format/op dots",
+            "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {opstop}",
         )
 
         kernel.register("format/util console", "{enabled}{command}")
@@ -133,8 +136,13 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Classify newly created elements"),
-                "tip":  _("MK will immediately try to classify an element as soon as it is created,") + "\n" +
-                        _("if you want to defer this to apply manual classification, then untick this option."),
+                "tip": _(
+                    "MK will immediately try to classify an element as soon as it is created,"
+                )
+                + "\n"
+                + _(
+                    "if you want to defer this to apply manual classification, then untick this option."
+                ),
                 "page": "Classification",
                 "section": "",
             },
@@ -144,11 +152,11 @@ def plugin(kernel, lifecycle=None):
                 "default": False,
                 "type": bool,
                 "label": _("Fuzzy color-logic"),
-                "tip":
-                    _("Unticked: Classify elements into operations with an *exact* color match") +
-                    "\n" +
-                    _("Ticked: Allow a certain color-distance for classification")
-                ,
+                "tip": _(
+                    "Unticked: Classify elements into operations with an *exact* color match"
+                )
+                + "\n"
+                + _("Ticked: Allow a certain color-distance for classification"),
                 "page": "Classification",
                 "section": "",
             },
@@ -166,11 +174,13 @@ def plugin(kernel, lifecycle=None):
                     400,
                 ],
                 "conditional": (elements, "classify_fuzzy"),
-                "tip":
-                    _("The color distance of an element to an operations that will still allow classifiation") +
-                    "\n" +
-                    _("Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind")
-                    ,
+                "tip": _(
+                    "The color distance of an element to an operations that will still allow classifiation"
+                )
+                + "\n"
+                + _(
+                    "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
+                ),
                 "page": "Classification",
                 "section": "",
             },
@@ -180,13 +190,11 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Assign to default operations"),
-                "tip":
-                    _("If classification did not find a match,") +
-                    "\n" +
-                    _("either with color matching (exact or fuzzy, see above)") +
-                    "\n" +
-                    _("then it will try to assign it to matching 'default' operation")
-                ,
+                "tip": _("If classification did not find a match,")
+                + "\n"
+                + _("either with color matching (exact or fuzzy, see above)")
+                + "\n"
+                + _("then it will try to assign it to matching 'default' operation"),
                 "page": "Classification",
                 "section": "",
             },
@@ -196,15 +204,13 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Autogenerate Operations"),
-                "tip":
-                    _("If classification did not find a match,") +
-                    "\n" +
-                    _("either with color matching (exact or fuzzy, see above)") +
-                    "\n" +
-                    _("or by assigning to a default operation (see above),") +
-                    "\n" +
-                    _("then MeerK40t can create a matching operation for you.")
-                ,
+                "tip": _("If classification did not find a match,")
+                + "\n"
+                + _("either with color matching (exact or fuzzy, see above)")
+                + "\n"
+                + _("or by assigning to a default operation (see above),")
+                + "\n"
+                + _("then MeerK40t can create a matching operation for you."),
                 "page": "Classification",
                 "section": "",
             },
@@ -214,15 +220,21 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Autoinherit for empty operation"),
-                "tip":
-                    _("If you drag and drop an element into an operation to assign it there,") +
-                    "\n" +
-                    _("then the op can (if this option is ticked) inherit the color from the element") +
-                    "\n" +
-                    _("and adopt not only the dragged element but all elements with the same color") +
-                    "\n" +
-                    _("- provided no elements are assigned to it yet (ie works only for an empty op)!")
-                ,
+                "tip": _(
+                    "If you drag and drop an element into an operation to assign it there,"
+                )
+                + "\n"
+                + _(
+                    "then the op can (if this option is ticked) inherit the color from the element"
+                )
+                + "\n"
+                + _(
+                    "and adopt not only the dragged element but all elements with the same color"
+                )
+                + "\n"
+                + _(
+                    "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+                ),
                 "page": "Classification",
                 "section": "",
             },
@@ -232,9 +244,9 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Locked element may move"),
-                "tip":
-                    _("Locked elements cannot be modified, but can still be moved if this option is checked.")
-                ,
+                "tip": _(
+                    "Locked elements cannot be modified, but can still be moved if this option is checked."
+                ),
                 "page": "Scene",
                 "section": "General",
             },
@@ -378,7 +390,6 @@ class Elemental(Service):
     def default_fill(self, color):
         self._default_fill = color
 
-
     def load_persistent_penbox(self):
         settings = self.pen_data
         pens = settings.read_persistent_string_dict("pens", suffix=True)
@@ -464,9 +475,18 @@ class Elemental(Service):
         except (TypeError, KeyError):
             num = 0
         return num
+
     ### Operation tools
 
-    def assign_operation(self, op_assign, data, impose="none", attrib = None, similar=False, exclusive = False):
+    def assign_operation(
+        self,
+        op_assign,
+        data,
+        impose="none",
+        attrib=None,
+        similar=False,
+        exclusive=False,
+    ):
         # op_assign:    operation to assign to
         # data:         nodes to assign to as minimum (will be extened is similar=True, see below)
         # impose:       - if "to_op" will use attrib-color (see below),
@@ -498,10 +518,10 @@ class Elemental(Service):
         target_color = None
         has_a_color = False
         # No need to check, if no one needs it...
-        if impose=="to_elem":
+        if impose == "to_elem":
             target_color = op_assign.color
 
-        if impose=="to_op" or similar:
+        if impose == "to_op" or similar:
             # Let's establish the color first
             # Look for the first element that has stroke/fill
             for n in data:
@@ -521,9 +541,9 @@ class Elemental(Service):
             if impose == "to_op":
                 target_color = first_color
 
-        if impose=="to_op" and target_color is not None:
+        if impose == "to_op" and target_color is not None:
             op_assign.color = target_color
-            if hasattr(op_assign, "add_color_attribute"): # not true for image
+            if hasattr(op_assign, "add_color_attribute"):  # not true for image
                 op_assign.remove_color_attribute("stroke")
                 op_assign.remove_color_attribute("fill")
                 op_assign.add_color_attribute(attrib)
@@ -579,7 +599,7 @@ class Elemental(Service):
             self.signal("element_property_update", data)
             self.signal("refresh_scene", "Scene")
 
-    def get_information(self, elem, density = None):
+    def get_information(self, elem, density=None):
         this_area = 0
         this_length = 0
         if elem is None:
@@ -638,14 +658,14 @@ class Elemental(Service):
             for pt in subject_polygons[0]:
                 if pt is None or pt.x is None or pt.y is None:
                     continue
-                if abs(pt.x) > 1.0E8 or abs(pt.y) > 1.0E8:
+                if abs(pt.x) > 1.0e8 or abs(pt.y) > 1.0e8:
                     # this does not seem to be a valid coord...
                     continue
                 idx += 1
                 if idx > 0:
                     dx = pt.x - last_x
                     dy = pt.y - last_y
-                    this_length += sqrt(dx*dx + dy*dy)
+                    this_length += sqrt(dx * dx + dy * dy)
                     area_x_y += last_x * pt.y
                     area_y_x += last_y * pt.x
                 last_x = pt.x
@@ -2025,12 +2045,12 @@ class Elemental(Service):
         def e_copy(data=None, data_type=None, dx=None, dy=None, **kwargs):
             if data is None:
                 # Take tree selection for ops, scene selection for elements
-                if data_type=="ops":
+                if data_type == "ops":
                     data = list(self.ops(selected=True))
                 else:
                     data = list(self.elems(emphasized=True))
 
-            if data_type=="ops":
+            if data_type == "ops":
                 add_elem = list(map(copy, data))
                 self.add_ops(add_elem)
                 return "ops", add_elem
@@ -2044,12 +2064,12 @@ class Elemental(Service):
                 else:
                     y_pos = dy
                 add_elem = list(map(copy, data))
-                if x_pos!=0 or y_pos!=0:
+                if x_pos != 0 or y_pos != 0:
                     matrix = Matrix(
                         "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
                     )
                 for e in add_elem:
-                    if x_pos!=0 or y_pos!=0:
+                    if x_pos != 0 or y_pos != 0:
                         e.matrix *= matrix
                     self.elem_branch.add_node(e)
                 self.signal("refresh_scene", "Scene")
@@ -2415,7 +2435,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
 
             for node in data:
@@ -2451,7 +2473,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2486,7 +2510,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2521,7 +2547,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2559,7 +2587,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2602,7 +2632,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 for q in node.flat(types=elem_nodes):
@@ -2641,7 +2673,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
@@ -2681,7 +2715,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
@@ -2721,7 +2757,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
@@ -2761,7 +2799,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             matrix = "translate(%f, %f)" % (dx, dy)
             for node in data:
@@ -2795,7 +2835,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2830,7 +2872,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2875,7 +2919,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2922,7 +2968,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 subbox = node.bounds
@@ -2962,7 +3010,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             for node in data:
                 device_width = self.length_x("100%")
@@ -3039,7 +3089,9 @@ class Elemental(Service):
                     haslock = True
                     break
             if haslock:
-                channel(_("Your selection contains a locked element, that cannot be moved"))
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             left_edge = min([e[0] for e in boundary_points])
             top_edge = min([e[1] for e in boundary_points])
@@ -3662,7 +3714,10 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(
-                shape=circ, type="elem ellipse", stroke=self.default_stroke, fill = self.default_fill,
+                shape=circ,
+                type="elem ellipse",
+                stroke=self.default_stroke,
+                fill=self.default_fill,
             )
             self.set_emphasis([node])
             node.focus()
@@ -4755,14 +4810,22 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
-                        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                        if (
+                            hasattr(node, "lock")
+                            and node.lock
+                            and not self.lock_allows_move
+                        ):
                             continue
 
                         node.matrix *= matrix
                         node.modified()
                 else:
                     for node in data:
-                        if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                        if (
+                            hasattr(node, "lock")
+                            and node.lock
+                            and not self.lock_allows_move
+                        ):
                             continue
                         otx = node.matrix.value_trans_x()
                         oty = node.matrix.value_trans_y()
@@ -4795,7 +4858,11 @@ class Elemental(Service):
                 ntx = tx - otx
                 nty = ty - oty
                 for node in data:
-                    if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    if (
+                        hasattr(node, "lock")
+                        and node.lock
+                        and not self.lock_allows_move
+                    ):
                         continue
                     node.matrix.post_translate(ntx, nty)
                     node.modified()
@@ -5165,9 +5232,7 @@ class Elemental(Service):
                     n = func.real_name
                     if hasattr(func, "check_state") and func.check_state:
                         n = "✓" + n
-                    menu_context.append(
-                        (n, menu_functions(func, menu_node))
-                    )
+                    menu_context.append((n, menu_functions(func, menu_node)))
                 if func.separate_after:
                     menu_context.append(("------", None))
             if execute is not None:
@@ -5266,7 +5331,7 @@ class Elemental(Service):
             # print ("Delete called with data:")
             # for n in data:
             #     print ("Node: %s, sel=%s, emp=%s" % (n.type, n.selected, n.emphasized))
-            typecount = [0,0,0,0,0]
+            typecount = [0, 0, 0, 0, 0]
             todelete = [[], [], [], [], []]
             nodetypes = ("Operations", "References", "Elements", "Regmarks", "Branches")
             regmk = list(self.regmarks())
@@ -5287,42 +5352,73 @@ class Elemental(Service):
                             continue
                         typecount[2] += 1
                         todelete[2].append(node)
-                else: # branches etc...
+                else:  # branches etc...
                     typecount[4] += 1
             # print ("Types: ops=%d, refs=%d, elems=%d, regmarks=%d, branches=%d" %
             #     (typecount[0], typecount[1], typecount[2], typecount[3], typecount[4]))
             single = False
-            if typecount[0]>0 and typecount[1]==0 and typecount[2]==0 and typecount[3]==0:
+            if (
+                typecount[0] > 0
+                and typecount[1] == 0
+                and typecount[2] == 0
+                and typecount[3] == 0
+            ):
                 single = True
                 entry = 0
-            elif typecount[1]>0 and typecount[0]==0 and typecount[2]==0 and typecount[3]==0:
+            elif (
+                typecount[1] > 0
+                and typecount[0] == 0
+                and typecount[2] == 0
+                and typecount[3] == 0
+            ):
                 single = True
                 entry = 1
-            elif typecount[2]>0 and typecount[0]==0 and typecount[1]==0 and typecount[3]==0:
+            elif (
+                typecount[2] > 0
+                and typecount[0] == 0
+                and typecount[1] == 0
+                and typecount[3] == 0
+            ):
                 single = True
                 entry = 2
-            elif typecount[3]>0 and typecount[0]==0 and typecount[1]==0 and typecount[2]==0:
+            elif (
+                typecount[3] > 0
+                and typecount[0] == 0
+                and typecount[1] == 0
+                and typecount[2] == 0
+            ):
                 single = True
                 entry = 3
             if not single:
-                if typecount[3]>0:
+                if typecount[3] > 0:
                     # regmarks take precedence, the least dangereous delete
                     entry = 3
-                elif typecount[1]>0:
+                elif typecount[1] > 0:
                     # refs next
                     entry = 1
-                elif typecount[0]>0:
+                elif typecount[0] > 0:
                     # ops next
                     entry = 0
                 else:
                     # Not sure why and when this suposed to happen?
                     entry = 2
                 channel(
-                    _("There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4}).").format(
-                            c1=typecount[0], c2=typecount[1], c3=typecount[2], c4=typecount[3]
-                    ) + "\n" +
-                    _("Only nodes of type {nodetype} were deleted.").format(nodetype=nodetypes[entry]) + "\n" +
-                    _("If you want to remove all nodes regardless of their type, consider: 'tree selected remove'")
+                    _(
+                        "There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4})."
+                    ).format(
+                        c1=typecount[0],
+                        c2=typecount[1],
+                        c3=typecount[2],
+                        c4=typecount[3],
+                    )
+                    + "\n"
+                    + _("Only nodes of type {nodetype} were deleted.").format(
+                        nodetype=nodetypes[entry]
+                    )
+                    + "\n"
+                    + _(
+                        "If you want to remove all nodes regardless of their type, consider: 'tree selected remove'"
+                    )
                 )
             # print ("Want to delete %d" % entry)
             # for n in todelete[entry]:
@@ -5481,7 +5577,7 @@ class Elemental(Service):
                 k = self._clipboard[v]
                 channel("%s: %s" % (str(v).ljust(5), str(k)))
             num = self.has_clipboard()
-            channel (_("Clipboard-Entries: %d") % num)
+            channel(_("Clipboard-Entries: %d") % num)
 
         # ==========
         # NOTES COMMANDS
@@ -6297,8 +6393,8 @@ class Elemental(Service):
         def remove_type_grp(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
-        @self.tree_conditional(lambda cond: contains_no_locked_items())
 
+        @self.tree_conditional(lambda cond: contains_no_locked_items())
         @self.tree_conditional(
             lambda cond: len(
                 list(self.flat(selected=True, cascade=False, types=("file", "group")))
@@ -6931,26 +7027,30 @@ class Elemental(Service):
 
         def exclusive_match(node, **kwargs):
             return self.classify_inherit_exclusive
+
         @self.tree_separator_before()
         @self.tree_submenu(_("Assign Operation"))
         @self.tree_check(exclusive_match)
         @self.tree_operation(
             _("Exclusive assignment"),
             node_type=elem_nodes,
-            help=_("An assignment will remove all other classifications of this element if checked")
+            help=_(
+                "An assignment will remove all other classifications of this element if checked"
+            ),
         )
         def set_assign_option_exclusive(node, **kwargs):
             self.classify_inherit_exclusive = not self.classify_inherit_exclusive
 
         def stroke_match(node, **kwargs):
             return self.classify_inherit_stroke
+
         @self.tree_separator_before()
         @self.tree_submenu(_("Assign Operation"))
         @self.tree_check(stroke_match)
         @self.tree_operation(
             _("Inherit stroke and classify similar"),
             node_type=elem_nodes,
-            help=_("Operation will inherit element stroke color")
+            help=_("Operation will inherit element stroke color"),
         )
         def set_assign_option_stroke(node, **kwargs):
             self.classify_inherit_stroke = not self.classify_inherit_stroke
@@ -6960,12 +7060,13 @@ class Elemental(Service):
 
         def fill_match(node, **kwargs):
             return self.classify_inherit_fill
+
         @self.tree_submenu(_("Assign Operation"))
         @self.tree_check(fill_match)
         @self.tree_operation(
             _("Inherit fill and classify similar"),
             node_type=elem_nodes,
-            help=_("Operation will inherit element fill color")
+            help=_("Operation will inherit element fill color"),
         )
         def set_assign_option_fill(node, **kwargs):
             self.classify_inherit_fill = not self.classify_inherit_fill
@@ -7152,13 +7253,17 @@ class Elemental(Service):
 
         @self.tree_conditional(lambda node: node.lock)
         @self.tree_separator_before()
-        @self.tree_operation(_("Unlock element, allows manipulation"), node_type=elem_nodes, help="")
+        @self.tree_operation(
+            _("Unlock element, allows manipulation"), node_type=elem_nodes, help=""
+        )
         def element_unlock_manipulations(node, **kwargs):
             self("element unlock\n")
 
         @self.tree_conditional(lambda node: not node.lock)
         @self.tree_separator_before()
-        @self.tree_operation(_("Lock elements, prevents manipulations"), node_type=elem_nodes, help="")
+        @self.tree_operation(
+            _("Lock elements, prevents manipulations"), node_type=elem_nodes, help=""
+        )
         def element_lock_manipulations(node, **kwargs):
             self("element lock\n")
 
@@ -7384,7 +7489,7 @@ class Elemental(Service):
     def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
-    def load_default(self, performclassify = True):
+    def load_default(self, performclassify=True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -7400,7 +7505,7 @@ class Elemental(Service):
         if performclassify:
             self.classify(list(self.elems()))
 
-    def load_default2(self, performclassify = True):
+    def load_default2(self, performclassify=True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -7439,8 +7544,12 @@ class Elemental(Service):
             if reject:
                 continue
             func_dict = {
-                "name": str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label),
-                "label": str(node.name) if (hasattr(node, "name") and node.name is not None) else str(node.label),
+                "name": str(node.name)
+                if (hasattr(node, "name") and node.name is not None)
+                else str(node.label),
+                "label": str(node.name)
+                if (hasattr(node, "name") and node.name is not None)
+                else str(node.label),
             }
 
             iterator = func.values
@@ -8187,7 +8296,9 @@ class Elemental(Service):
             was_classified = False
             for op in operations:
                 if hasattr(op, "classify"):
-                    classified, should_break = op.classify(node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=False)
+                    classified, should_break = op.classify(
+                        node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=False
+                    )
                 else:
                     continue
                 if classified:
@@ -8202,7 +8313,12 @@ class Elemental(Service):
                 # let's iterate through the default ops and add them
                 for op in operations:
                     if hasattr(op, "classify"):
-                        classified, should_break = op.classify(node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=True)
+                        classified, should_break = op.classify(
+                            node,
+                            fuzzy=fuzzy,
+                            fuzzydistance=fuzzydistance,
+                            usedefault=True,
+                        )
                     else:
                         continue
                     if classified:
@@ -8216,7 +8332,11 @@ class Elemental(Service):
                     op = ImageOpNode(output=False)
                 elif node.type == "elem point":
                     op = DotsOpNode(output=False)
-                elif hasattr(node, "stroke") and node.stroke is not None and node.stroke.argb is not None:
+                elif (
+                    hasattr(node, "stroke")
+                    and node.stroke is not None
+                    and node.stroke.argb is not None
+                ):
                     if fuzzy:
                         is_cut = Color.distance("red", node.stroke) <= fuzzydistance
                     else:
@@ -8225,7 +8345,8 @@ class Elemental(Service):
                         op = CutOpNode(color=Color("red"), speed=5.0)
                     else:
                         op = EngraveOpNode(color=node.stroke, speed=35.0)
-                elif (hasattr(node, "fill")
+                elif (
+                    hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):

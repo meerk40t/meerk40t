@@ -349,9 +349,7 @@ class CamInterfaceWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "rightdown":
 
             def enable_aspect(*args):
@@ -584,9 +582,7 @@ class CamPerspectiveWidget(Widget):
             )
             gc.DrawEllipse(self.left, self.top, self.width, self.height)
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
@@ -749,7 +745,7 @@ class CameraInterface(MWindow):
                 if index is not None:
                     ukey = CAM_INDEX % index
                     testuri = getattr(kernel.root, ukey)
-                    if testuri is None or testuri < 0 or testuri == '':
+                    if testuri is None or testuri < 0 or testuri == "":
                         foundstr = getattr(kernel.root, CAM_FOUND)
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):

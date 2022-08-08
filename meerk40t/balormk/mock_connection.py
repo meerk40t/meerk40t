@@ -40,7 +40,7 @@ class MockConnection:
 
     def write(self, index=0, packet=None):
         packet_length = len(packet)
-        assert(packet_length == 0xC or packet_length == 0xC00)
+        assert packet_length == 0xC or packet_length == 0xC00
         if packet is not None:
             device = self.devices[index]
             if not device:
@@ -54,10 +54,11 @@ class MockConnection:
     def _parse_list(self, packet):
         commands = []
         from meerk40t.balormk.lmc_controller import list_command_lookup
+
         last_cmd = None
         repeats = 0
         for i in range(0, len(packet), 12):
-            b = struct.unpack("<6H", packet[i:i+12])
+            b = struct.unpack("<6H", packet[i : i + 12])
             string_value = list_command_lookup.get(b[0], "Unknown")
             cmd = f"{b[0]:04x}:{b[1]:04x}:{b[2]:04x}:{b[3]:04x}:{b[4]:04x}:{b[5]:04x} {string_value}"
             if cmd == last_cmd:
@@ -75,6 +76,7 @@ class MockConnection:
 
     def _parse_single(self, packet):
         from meerk40t.balormk.lmc_controller import single_command_lookup
+
         b0 = packet[1] << 8 | packet[0]
         b1 = packet[3] << 8 | packet[2]
         b2 = packet[5] << 8 | packet[4]
@@ -93,6 +95,8 @@ class MockConnection:
         if not device:
             raise ConnectionError
         if self.recv:
-            self.recv(f"{read[0]:02x}:{read[1]:02x}:{read[2]:02x}:{read[3]:02x}"
-                      f"{read[4]:02x}:{read[5]:02x}:{read[6]:02x}:{read[7]:02x}")
+            self.recv(
+                f"{read[0]:02x}:{read[1]:02x}:{read[2]:02x}:{read[3]:02x}"
+                f"{read[4]:02x}:{read[5]:02x}:{read[6]:02x}:{read[7]:02x}"
+            )
         return read

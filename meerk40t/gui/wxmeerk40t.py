@@ -413,6 +413,7 @@ class wxMeerK40t(wx.App, Module):
         context.setting(bool, "developer_mode", False)
         if context.developer_mode:
             from meerk40t.gui.mkdebug import register_panel_debugger
+
             kernel.register("wxpane/debug_tree", register_panel_debugger)
 
         #################
@@ -495,7 +496,9 @@ class wxMeerK40t(wx.App, Module):
                     display = wx.Display.GetFromWindow(window)
                     if display == wx.NOT_FOUND:
                         display = "Display Not Found"
-                    channel(f"Window {opened} with bounds {window.GetRect()} is located on display: {display})")
+                    channel(
+                        f"Window {opened} with bounds {window.GetRect()} is located on display: {display})"
+                    )
             return "window", data
 
         @kernel.console_option(
@@ -797,12 +800,15 @@ def handleGUIException(exc_type, exc_value, exc_traceback):
     except:
         pass
 
-    error_log = "MeerK40t crash log. Version: %s on %s: Python %s: %s - wxPython: %s\n" % (
-        APPLICATION_VERSION,
-        platform.system(),
-        platform.python_version(),
-        platform.machine(),
-        wxversion,
+    error_log = (
+        "MeerK40t crash log. Version: %s on %s: Python %s: %s - wxPython: %s\n"
+        % (
+            APPLICATION_VERSION,
+            platform.system(),
+            platform.python_version(),
+            platform.machine(),
+            wxversion,
+        )
     )
     error_log += "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     print("\n")
@@ -888,14 +894,14 @@ Send the following data to the MeerK40t team?
     error_log_list = error_log.split("\n")
     max_error_lines = 15
     header_lines = 4
-    if len(error_log_list)> max_error_lines:
+    if len(error_log_list) > max_error_lines:
         error_log_short = ""
         for idx in range(header_lines):
             error_log_short += error_log_list[idx]
-            if idx>0:
+            if idx > 0:
                 error_log_short += "\n"
         error_log_short += "[...]"
-        for idx in range(header_lines-max_error_lines, 0):
+        for idx in range(header_lines - max_error_lines, 0):
             error_log_short += "\n"
             error_log_short += error_log_list[idx]
 

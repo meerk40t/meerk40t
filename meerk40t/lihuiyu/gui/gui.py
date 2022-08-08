@@ -18,10 +18,10 @@ def plugin(service, lifecycle):
             icons8_emergency_stop_button_50,
             icons8_pause_50,
         )
-        from meerk40t.lihuiyu.gui.lhyoperationproperties import LhyAdvancedPanel
         from meerk40t.lihuiyu.gui.lhyaccelgui import LihuiyuAccelerationChart
         from meerk40t.lihuiyu.gui.lhycontrollergui import LihuiyuControllerGui
         from meerk40t.lihuiyu.gui.lhydrivergui import LihuiyuDriverGui
+        from meerk40t.lihuiyu.gui.lhyoperationproperties import LhyAdvancedPanel
         from meerk40t.lihuiyu.gui.tcpcontroller import TCPController
 
         service.register("window/Controller", LihuiyuControllerGui)

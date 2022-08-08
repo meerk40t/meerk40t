@@ -27,7 +27,9 @@ class RasterOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op raster", **kwargs)
         Parameters.__init__(self, None, **kwargs)
-        self._formatter = "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
+        self._formatter = (
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
+        )
         self.settings.update(kwargs)
 
         if len(args) == 1:
@@ -58,7 +60,9 @@ class RasterOpNode(Node, Parameters):
         )
         # To which attributes does the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
-        self.allowed_attributes = ["fill", ] # comma is relevant
+        self.allowed_attributes = [
+            "fill",
+        ]  # comma is relevant
         # Is this op out of useful bounds?
         self.dangerous = False
 
@@ -120,10 +124,10 @@ class RasterOpNode(Node, Parameters):
         t = ""
         s = ""
         for cc in self.allowed_attributes:
-            if len(cc)>0:
+            if len(cc) > 0:
                 t += cc[0].upper()
                 ct += 1
-        if ct>0:
+        if ct > 0:
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
         default_map["opstop"] = "❌" if self.stopop else ""
@@ -185,7 +189,12 @@ class RasterOpNode(Node, Parameters):
             result = False
             if col1 is None and col2 is None:
                 result = True
-            elif col1 is not None and col1.argb is not None and col2 is not None and col2.argb is not None:
+            elif (
+                col1 is not None
+                and col1.argb is not None
+                and col2 is not None
+                and col2.argb is not None
+            ):
                 if fuzzy:
                     distance = Color.distance(col1, col2)
                     result = distance < fuzzydistance
@@ -195,9 +204,12 @@ class RasterOpNode(Node, Parameters):
 
         if node.type in self.allowed_elements:
             if not self.default:
-                if len(self.allowed_attributes)>0:
+                if len(self.allowed_attributes) > 0:
                     for attribute in self.allowed_attributes:
-                        if hasattr(node, attribute) and getattr(node, attribute) is not None:
+                        if (
+                            hasattr(node, attribute)
+                            and getattr(node, attribute) is not None
+                        ):
                             plain_color_op = abs(self.color)
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
@@ -205,7 +217,7 @@ class RasterOpNode(Node, Parameters):
                                     self.add_reference(node)
                                 # Have classified but more classification might be needed
                                 return True, self.stopop
-                else: # empty ? Anything goes
+                else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
                     # Have classified but more classification might be needed

@@ -35,9 +35,7 @@ class ButtonWidget(Widget):
         gc.DrawBitmap(self.bitmap, self.left, self.top, self.width, self.height)
         gc.PopState()
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "leftdown":
             self.clicked(window_pos=window_pos, space_pos=space_pos)
         return RESPONSE_ABORT

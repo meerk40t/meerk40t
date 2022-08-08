@@ -31,13 +31,16 @@ class PropertyColor(wx.Panel):
         self.context = context
         self.attribute = attribute
 
+
 class PropertyStroke(PropertyColor):
     def __init__(self, *args, context=None, **kwds):
         super().__init__(context=context, attribute="stroke")
 
+
 class PropertyFill(PropertyColor):
     def __init__(self, *args, context=None, **kwds):
         super().__init__(context=context, attribute="fill")
+
 
 class ElementpropertyPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -74,7 +77,7 @@ class ElementpropertyPanel(wx.Panel):
         self.panel_text.fill_widgets(selection)
 
     def _update_position(self):
-        elems = list(self.context.elements.flat(types=elem_nodes, emphasized=True)
+        elems = list(self.context.elements.flat(types=elem_nodes, emphasized=True))
         self.fill_widgets(elems)
 
     def pane_show(self, *args):

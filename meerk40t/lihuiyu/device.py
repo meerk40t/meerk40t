@@ -281,6 +281,7 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "program_mode"
                 yield "move_relative", dx.mil, dy.mil
                 yield "rapid_mode"
+
             if self.spooler.is_idle:
                 self.spooler.laserjob(list(move_at_speed()))
             else:
@@ -1741,7 +1742,6 @@ class LihuiyuDriver(Parameters):
             self.total_steps += len(dummy_data)
             self.dummy_planner.clear()
             # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
-
 
         self.current_steps = 0
 

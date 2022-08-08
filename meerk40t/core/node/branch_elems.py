@@ -12,7 +12,9 @@ class BranchElementsNode(Node):
         self._formatter = "{element_type}"
 
     def default_map(self, default_map=None):
-        default_map = super(BranchElementsNode, self).default_map(default_map=default_map)
+        default_map = super(BranchElementsNode, self).default_map(
+            default_map=default_map
+        )
         default_map["element_type"] = "Elements"
         return default_map
 

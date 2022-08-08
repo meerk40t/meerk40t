@@ -331,12 +331,24 @@ class SceneAnimateMatrix:
             self.widget.scene.request_refresh()
             return False  # Animation was complete.
         amount = self.tick_index / self.tick_max
-        self.widget.matrix.a = amount * (self._to_matrix.a - self._from_matrix.a) + self._from_matrix.a
-        self.widget.matrix.b = amount * (self._to_matrix.b - self._from_matrix.b) + self._from_matrix.b
-        self.widget.matrix.c = amount * (self._to_matrix.c - self._from_matrix.c) + self._from_matrix.c
-        self.widget.matrix.d = amount * (self._to_matrix.d - self._from_matrix.d) + self._from_matrix.d
-        self.widget.matrix.e = amount * (self._to_matrix.e - self._from_matrix.e) + self._from_matrix.e
-        self.widget.matrix.f = amount * (self._to_matrix.f - self._from_matrix.f) + self._from_matrix.f
+        self.widget.matrix.a = (
+            amount * (self._to_matrix.a - self._from_matrix.a) + self._from_matrix.a
+        )
+        self.widget.matrix.b = (
+            amount * (self._to_matrix.b - self._from_matrix.b) + self._from_matrix.b
+        )
+        self.widget.matrix.c = (
+            amount * (self._to_matrix.c - self._from_matrix.c) + self._from_matrix.c
+        )
+        self.widget.matrix.d = (
+            amount * (self._to_matrix.d - self._from_matrix.d) + self._from_matrix.d
+        )
+        self.widget.matrix.e = (
+            amount * (self._to_matrix.e - self._from_matrix.e) + self._from_matrix.e
+        )
+        self.widget.matrix.f = (
+            amount * (self._to_matrix.f - self._from_matrix.f) + self._from_matrix.f
+        )
         self.widget.scene.request_refresh_for_animation()
         self.widget.on_matrix_change()
         self.tick_index += 1

@@ -161,9 +161,7 @@ class BorderWidget(Widget):
     def hit(self):
         return HITCHAIN_DELEGATE
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         return RESPONSE_CHAIN
 
     def process_draw(self, gc):
@@ -1397,6 +1395,7 @@ class ReferenceWidget(Widget):
         )
         return response
 
+
 class LockWidget(Widget):
     """
     Lock Widget is tasked with drawing the lock box and managing the events
@@ -1497,6 +1496,7 @@ class LockWidget(Widget):
             optimize_drawing=False,
         )
         return response
+
 
 class RefAlign(wx.Dialog):
     """
@@ -1986,7 +1986,9 @@ class SelectionWidget(Widget):
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
-            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
+            smallest = bool(self.scene.context.select_smallest) != bool(
+                "ctrl" in modifiers
+            )
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,
@@ -2003,7 +2005,9 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
-            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
+            smallest = bool(self.scene.context.select_smallest) != bool(
+                "ctrl" in modifiers
+            )
             elements.set_emphasized_by_position(
                 space_pos,
                 keep_old_selection=False,
@@ -2106,9 +2110,7 @@ class SelectionWidget(Widget):
             self.is_ref = False
             self.single_element = True
             is_locked = True
-            for idx, e in enumerate(
-                elements.flat(types=elem_nodes, emphasized=True)
-            ):
+            for idx, e in enumerate(elements.flat(types=elem_nodes, emphasized=True)):
                 if e is self.scene.reference_object:
                     self.is_ref = True
                 # Is one of the elements locked?
@@ -2203,6 +2205,6 @@ class SelectionWidget(Widget):
                     LockWidget(
                         master=self,
                         scene=self.scene,
-                        size=1.5*msize,
+                        size=1.5 * msize,
                     ),
                 )

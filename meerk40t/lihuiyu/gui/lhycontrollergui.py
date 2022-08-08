@@ -482,15 +482,11 @@ class LihuiyuControllerPanel(ScrolledPanel):
     def on_usb_failing(self, origin, count):
         self.retries = count
 
-    def on_button_start_controller(
-        self, event=None
-    ):
+    def on_button_start_controller(self, event=None):
         print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
 
-    def on_check_show_usb_log(
-        self, event=None
-    ):
+    def on_check_show_usb_log(self, event=None):
         on = self.checkbox_show_usb_log.GetValue()
         self.text_usb_log.Show(on)
         self.context.show_usb_log = bool(on)
@@ -557,17 +553,13 @@ class LihuiyuControllerGui(MWindow):
         except AttributeError:
             pass
 
-    def on_menu_usb_release(
-        self, event
-    ):
+    def on_menu_usb_release(self, event):
         try:
             self.context("usb_release\n")
         except AttributeError:
             pass
 
-    def on_menu_pause(
-        self, event=None
-    ):
+    def on_menu_pause(self, event=None):
         try:
             self.context("pause\n")
         except AttributeError:
@@ -579,7 +571,5 @@ class LihuiyuControllerGui(MWindow):
         except AttributeError:
             pass
 
-    def on_menu_bufferview(
-        self, event=None
-    ):
+    def on_menu_bufferview(self, event=None):
         self.context("window open BufferView\n")

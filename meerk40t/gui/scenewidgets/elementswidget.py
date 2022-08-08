@@ -1,5 +1,10 @@
 from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP, RESPONSE_CHAIN
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_HIT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
+)
 from meerk40t.gui.scene.widget import Widget
 
 
@@ -67,7 +72,9 @@ class ElementsWidget(Widget):
         elif event_type == "leftclick":
             elements = self.scene.context.elements
             keep_old = "shift" in modifiers
-            smallest = bool(self.scene.context.select_smallest) != bool("ctrl" in modifiers)
+            smallest = bool(self.scene.context.select_smallest) != bool(
+                "ctrl" in modifiers
+            )
             elements.set_emphasized_by_position(space_pos, keep_old, smallest)
             elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME

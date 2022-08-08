@@ -1,4 +1,5 @@
 import wx
+
 from meerk40t.gui.wxutils import TextCtrl
 
 _ = wx.GetTranslation

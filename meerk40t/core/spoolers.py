@@ -28,7 +28,7 @@ def plugin(kernel, lifecycle):
                 e = elements.op_branch
 
                 if e.loop_continuous:
-                    loops = float('inf')
+                    loops = float("inf")
                 else:
                     if e.loop_enabled:
                         loops = e.loop_n

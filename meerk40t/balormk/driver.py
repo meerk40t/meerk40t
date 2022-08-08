@@ -1,5 +1,6 @@
 import time
 
+from meerk40t.balormk.lmc_controller import GalvoController
 from meerk40t.core.cutcode import (
     CubicCut,
     DwellCut,
@@ -12,7 +13,6 @@ from meerk40t.core.cutcode import (
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
-from meerk40t.balormk.lmc_controller import GalvoController
 
 
 class BalorDriver:
@@ -93,7 +93,6 @@ class BalorDriver:
         @return:
         """
         self.laser = True
-
 
     def plot(self, plot):
         """

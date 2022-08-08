@@ -20,7 +20,13 @@ class PointTool(ToolWidget):
         pass
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":

@@ -6,7 +6,7 @@ from PIL.Image import DecompressionBombError
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.image.imagetools import RasterScripts
-from meerk40t.svgelements import Matrix, Polygon, Path
+from meerk40t.svgelements import Matrix, Path, Polygon
 
 
 class ImageNode(Node):
@@ -492,4 +492,4 @@ class ImageNode(Node):
         x1, y1 = matrix.point_in_matrix_space((0, image_height))
         x2, y2 = matrix.point_in_matrix_space((image_width, image_height))
         x3, y3 = matrix.point_in_matrix_space((image_width, 0))
-        return abs(Path(Polygon((x0,y0), (x1,y1), (x2,y2), (x3,y3), (x0,y0))))
+        return abs(Path(Polygon((x0, y0), (x1, y1), (x2, y2), (x3, y3), (x0, y0))))

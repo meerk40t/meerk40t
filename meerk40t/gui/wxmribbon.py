@@ -4,13 +4,16 @@ import threading
 
 import wx
 import wx.lib.agw.ribbon as RB
-
 from wx import aui
 
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import icons8_opened_folder_50, get_default_scale_factor, get_default_icon_size
+from .icons import (
+    get_default_icon_size,
+    get_default_scale_factor,
+    icons8_opened_folder_50,
+)
 
 _ = wx.GetTranslation
 
@@ -83,12 +86,28 @@ class RibbonButtonBar(RB.RibbonButtonBar):
 
 
 class MyRibbonPanel(RB.RibbonPanel):
-
-    def __init__(self, parent, id=wx.ID_ANY, label="", minimised_icon=wx.NullBitmap,
-                 pos=wx.DefaultPosition, size=wx.DefaultSize, agwStyle=RB.RIBBON_PANEL_DEFAULT_STYLE,
-                 name="RibbonPanel", recurse=False):
-        super().__init__(parent=parent, id=id, label=label, minimised_icon=minimised_icon,
-                 pos=pos, size=size, agwStyle=agwStyle, name=name)
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        label="",
+        minimised_icon=wx.NullBitmap,
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        agwStyle=RB.RIBBON_PANEL_DEFAULT_STYLE,
+        name="RibbonPanel",
+        recurse=False,
+    ):
+        super().__init__(
+            parent=parent,
+            id=id,
+            label=label,
+            minimised_icon=minimised_icon,
+            pos=pos,
+            size=size,
+            agwStyle=agwStyle,
+            name=name,
+        )
         self.recurse = recurse
 
     def GetBestSize(self):
@@ -101,7 +120,7 @@ class MyRibbonPanel(RB.RibbonPanel):
         # Set default values
         wd = oldw
         ht = oldh
-        if size[0]<50: # There's something wrong here
+        if size[0] < 50:  # There's something wrong here
             # print ("Wrong best size for %s = %s" % (self.GetLabel(), size))
             for bar in self.GetChildren():
                 if isinstance(bar, RB.RibbonButtonBar):
@@ -141,7 +160,6 @@ class MyRibbonPanel(RB.RibbonPanel):
         # size = size2
         return size
 
-
     def IsMinimised(self, at_size=None):
         # Very much simplified version..
         if self.recurse:
@@ -175,19 +193,32 @@ class MyRibbonPanel(RB.RibbonPanel):
             return False
 
         size = self.GetBestSize()
-        pos = self.GetExpandedPosition(wx.Rect(self.GetScreenPosition(), self.GetSize()), size, self._preferred_expand_direction).GetTopLeft()
+        pos = self.GetExpandedPosition(
+            wx.Rect(self.GetScreenPosition(), self.GetSize()),
+            size,
+            self._preferred_expand_direction,
+        ).GetTopLeft()
 
         # Need a top-level frame to contain the expanded panel
-        container = wx.Frame(None, wx.ID_ANY, self.GetLabel(), pos, size, wx.FRAME_NO_TASKBAR | wx.BORDER_NONE)
+        container = wx.Frame(
+            None,
+            wx.ID_ANY,
+            self.GetLabel(),
+            pos,
+            size,
+            wx.FRAME_NO_TASKBAR | wx.BORDER_NONE,
+        )
 
-        self._expanded_panel = MyRibbonPanel(parent = container,
-                                             id = wx.ID_ANY,
-                                             label = self.GetLabel(),
-                                             minimised_icon=self._minimised_icon,
-                                             pos=wx.Point(0, 0),
-                                             size=size,
-                                             agwStyle=self._flags,
-                                             recurse=True)
+        self._expanded_panel = MyRibbonPanel(
+            parent=container,
+            id=wx.ID_ANY,
+            label=self.GetLabel(),
+            minimised_icon=self._minimised_icon,
+            pos=wx.Point(0, 0),
+            size=size,
+            agwStyle=self._flags,
+            recurse=True,
+        )
         self._expanded_panel.SetArtProvider(self._art)
         self._expanded_panel._expanded_dummy = self
 
@@ -203,7 +234,6 @@ class MyRibbonPanel(RB.RibbonPanel):
         for child in self.GetChildren():
             child.Reparent(self._expanded_panel)
             child.Show()
-
 
         # Move sizer to new panel
         if self.GetSizer():
@@ -389,6 +419,7 @@ class RibbonPanel(wx.Panel):
         @param v:
         @return:
         """
+
         def menu_item_click(event):
             """
             Process menu item click.
@@ -466,6 +497,7 @@ class RibbonPanel(wx.Panel):
 
         def sort_priority(elem):
             return elem.get("priority", 0)
+
         buttons.sort(key=sort_priority)  # Sort buttons by priority
 
         for button in buttons:
@@ -566,11 +598,7 @@ class RibbonPanel(wx.Panel):
 
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
-                self._store_button_aspect(
-                    b,
-                    key,
-                    **toggle_action
-                )
+                self._store_button_aspect(b, key, **toggle_action)
                 if "icon" in toggle_action:
                     toggle_icon = toggle_action.get("icon")
                     self._update_button_aspect(

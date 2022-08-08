@@ -141,9 +141,13 @@ class ScenePanel(wx.Panel):
         if self.context.mouse_zoom_invert:
             rotation = -rotation
         if rotation > 1:
-            self.scene.event(event.GetPosition(), "wheelup", None, self.event_modifiers(event))
+            self.scene.event(
+                event.GetPosition(), "wheelup", None, self.event_modifiers(event)
+            )
         elif rotation < -1:
-            self.scene.event(event.GetPosition(), "wheeldown", None, self.event_modifiers(event))
+            self.scene.event(
+                event.GetPosition(), "wheeldown", None, self.event_modifiers(event)
+            )
 
     def on_mouse_capture_lost(self, event):
         self.scene.event(None, "lost", None)
@@ -155,7 +159,9 @@ class ScenePanel(wx.Panel):
         self.SetFocus()
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
-        self.scene.event(event.GetPosition(), "middledown", None, self.event_modifiers(event))
+        self.scene.event(
+            event.GetPosition(), "middledown", None, self.event_modifiers(event)
+        )
 
     def on_mouse_middle_up(self, event):
         """
@@ -163,7 +169,9 @@ class ScenePanel(wx.Panel):
         """
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
-        self.scene.event(event.GetPosition(), "middleup", None, self.event_modifiers(event))
+        self.scene.event(
+            event.GetPosition(), "middleup", None, self.event_modifiers(event)
+        )
 
     def on_left_mouse_down(self, event: wx.MouseEvent):
         """
@@ -177,7 +185,9 @@ class ScenePanel(wx.Panel):
 
         if not self.scene_panel.HasCapture():
             self.scene_panel.CaptureMouse()
-        self.scene.event(event.GetPosition(), "leftdown", None, self.event_modifiers(event))
+        self.scene.event(
+            event.GetPosition(), "leftdown", None, self.event_modifiers(event)
+        )
 
     def on_left_mouse_up(self, event: wx.MouseEvent):
         """
@@ -189,7 +199,9 @@ class ScenePanel(wx.Panel):
             return
         if self.scene_panel.HasCapture():
             self.scene_panel.ReleaseMouse()
-        self.scene.event(event.GetPosition(), "leftup", None, self.event_modifiers(event))
+        self.scene.event(
+            event.GetPosition(), "leftup", None, self.event_modifiers(event)
+        )
 
     def on_mouse_double_click(self, event: wx.MouseEvent):
         """
@@ -197,7 +209,9 @@ class ScenePanel(wx.Panel):
         """
         if self.scene_panel.HasCapture():
             return
-        self.scene.event(event.GetPosition(), "doubleclick", None, self.event_modifiers(event))
+        self.scene.event(
+            event.GetPosition(), "doubleclick", None, self.event_modifiers(event)
+        )
 
     last_mode = None
 
@@ -207,9 +221,13 @@ class ScenePanel(wx.Panel):
         Calls move if the mouse is currently dragging.
         """
         if event.Moving():
-            self.scene.event(event.GetPosition(), "hover", None, self.event_modifiers(event))
+            self.scene.event(
+                event.GetPosition(), "hover", None, self.event_modifiers(event)
+            )
         else:
-            self.scene.event(event.GetPosition(), "move", None, self.event_modifiers(event))
+            self.scene.event(
+                event.GetPosition(), "move", None, self.event_modifiers(event)
+            )
 
     def on_right_mouse_down(self, event: wx.MouseEvent):
         """
@@ -218,14 +236,18 @@ class ScenePanel(wx.Panel):
         Offers alternative events if Alt or control is currently pressed.
         """
         self.SetFocus()
-        self.scene.event(event.GetPosition(), "rightdown", None, self.event_modifiers(event))
+        self.scene.event(
+            event.GetPosition(), "rightdown", None, self.event_modifiers(event)
+        )
         event.Skip()
 
     def on_right_mouse_up(self, event: wx.MouseEvent):
         """
         Scene Panel right mouse up event.
         """
-        self.scene.event(event.GetPosition(), "rightup", None, self.event_modifiers(event))
+        self.scene.event(
+            event.GetPosition(), "rightup", None, self.event_modifiers(event)
+        )
 
     def on_magnify_mouse(self, event: wx.MouseEvent):
         """

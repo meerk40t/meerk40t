@@ -40,6 +40,7 @@ class SceneToast:
     """
     SceneToast is drawn directly by the Scene. It creates an text message in a box that animates a fade.
     """
+
     def __init__(self, scene, left, top, right, bottom):
         self.scene = scene
         self.left = left
@@ -58,8 +59,8 @@ class SceneToast:
         self.font_color = wx.Colour()
 
         self.pen.SetWidth(10)
-        self.text_height = float('inf')
-        self.text_width = float('inf')
+        self.text_height = float("inf")
+        self.text_width = float("inf")
 
         self.alpha = None
         self.set_alpha(255)
@@ -118,7 +119,9 @@ class SceneToast:
             gc.SetFont(self.font, self.font_color)
         gc.SetPen(self.pen)
         gc.SetBrush(self.brush)
-        gc.DrawRectangle(self.left, self.top, self.right-self.left, self.bottom-self.top)
+        gc.DrawRectangle(
+            self.left, self.top, self.right - self.left, self.bottom - self.top
+        )
 
         toast_x = self.left + (width - self.text_width) / 2.0
         toast_y = self.top
@@ -137,8 +140,8 @@ class SceneToast:
         @return:
         """
         self.scene._toast = None
-        self.text_height = float('inf')
-        self.text_width = float('inf')
+        self.text_height = float("inf")
+        self.text_width = float("inf")
 
     def set_message(self, message, token=-1, duration=100):
         """
@@ -152,8 +155,8 @@ class SceneToast:
         @return:
         """
         if token != self.token or token == -1:
-            self.text_height = float('inf')
-            self.text_width = float('inf')
+            self.text_height = float("inf")
+            self.text_width = float("inf")
         self.message = message
         self.token = token
         self.countdown = duration
@@ -453,7 +456,7 @@ class Scene(Module, Job):
                         pass
                 self._adding_widgets.clear()
         if self._animating:
-            for idx in range(len(self._animating) -1, -1, -1):
+            for idx in range(len(self._animating) - 1, -1, -1):
                 widget = self._animating[idx]
                 try:
                     more = widget.tick()
@@ -518,7 +521,9 @@ class Scene(Module, Job):
 
     def toast(self, message, token=-1):
         if self._toast is None:
-            self._toast = SceneToast(self, self.x(0.1), self.y(0.8), self.x(0.9), self.y(0.9))
+            self._toast = SceneToast(
+                self, self.x(0.1), self.y(0.8), self.x(0.9), self.y(0.9)
+            )
             self._toast.set_message(message, token)
             self.animate(self._toast)
         else:

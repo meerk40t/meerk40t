@@ -1,6 +1,7 @@
 from copy import copy
 
 from meerk40t.core.node.node import Node
+from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
 
 
 class TextNode(Node):
@@ -25,39 +26,19 @@ class TextNode(Node):
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
         self.settings = kwargs
-        if matrix is None:
-            self.matrix = text.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = text.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = text.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = text.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if underline is None:
-            self.underline = False
-        else:
-            self.underline = underline
-        if strikethrough is None:
-            self.strikethrough = False
-        else:
-            self.strikethrough = strikethrough
+        self.matrix = text.transform if matrix is None else matrix
+        self.fill = text.fill if fill is None else fill
+        self.stroke = text.stroke if stroke is None else stroke
+        self.stroke_width = text.stroke_width if stroke_width is None else stroke_width
+        self.underline = False if underline is None else underline
+        self.strikethrough = False if strikethrough is None else strikethrough
+
         # For sake of completeness, afaik there is no way to display it with wxpython
-        if overline is None:
-            self.overline = False
-        else:
-            self.overline = overline
-        if texttransform is None:
-            self.texttransform = ""
-        else:
-            self.texttransform = texttransform
+        self.overline = False if overline is None else overline
+        self.texttransform = "" if texttransform is None else texttransform
+        self._stroke_scaled = (
+            text.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        )
         self.lock = False
 
     def __copy__(self):

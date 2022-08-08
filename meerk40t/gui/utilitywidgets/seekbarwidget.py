@@ -1,9 +1,6 @@
 import wx
 
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_HIT,
-    RESPONSE_CONSUME,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME
 from meerk40t.gui.scene.widget import Widget
 
 BLIP_RADIUS = 20
@@ -90,13 +87,13 @@ class SeekbarWidget(Widget):
             gc.SetPen(self.selected_pen)
             gc.DrawLines([(self.start_x, self.start_y), (tx, ty)])
             gc.DrawEllipse(
-                tx - BLIP_RADIUS/2, ty - BLIP_RADIUS/2, BLIP_RADIUS, BLIP_RADIUS
+                tx - BLIP_RADIUS / 2, ty - BLIP_RADIUS / 2, BLIP_RADIUS, BLIP_RADIUS
             )
             if self.moving and self.seeker == idx:
                 gc.SetBrush(self.moving_brush)
                 gc.DrawEllipse(
-                    tx - MOVE_RADIUS/2,
-                    ty - MOVE_RADIUS/2,
+                    tx - MOVE_RADIUS / 2,
+                    ty - MOVE_RADIUS / 2,
                     MOVE_RADIUS,
                     MOVE_RADIUS,
                 )
@@ -110,9 +107,7 @@ class SeekbarWidget(Widget):
             except IndexError:
                 pass
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type in ("hover", "hover_start", "hover_end"):
             return
         ax = self.start_x

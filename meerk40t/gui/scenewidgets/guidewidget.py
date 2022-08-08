@@ -161,9 +161,7 @@ class GuideWidget(Widget):
             # Placeholder for a use case, as you can define them manually...
             pass
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
         Capture and deal with the double click event.
         Doubleclick in the grid loads a menu to remove the background.

@@ -38,7 +38,11 @@ def plugin(kernel, lifecycle):
                 ct = ClipType.Union
             else:  # difference
                 ct = ClipType.Difference
-            solution_path = Path(stroke=context.elements.default_stroke, fill=context.elements.default_fill, stroke_width=1000)
+            solution_path = Path(
+                stroke=context.elements.default_stroke,
+                fill=context.elements.default_fill,
+                stroke_width=1000,
+            )
             last_polygon = None
             node = None
             for i in range(len(data)):

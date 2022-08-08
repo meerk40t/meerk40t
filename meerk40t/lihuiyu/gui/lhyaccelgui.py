@@ -276,18 +276,14 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         # self.Close()
         pass
 
-    def on_check_vector_accel_enable(
-        self, event=None
-    ):
+    def on_check_vector_accel_enable(self, event=None):
 
         self.context.vector_accel_table = self.checkbox_vector_accel_enable.GetValue()
 
     def on_text_vector_accel(self, event):
         pass
 
-    def on_check_raster_accel_enable(
-        self, event=None
-    ):
+    def on_check_raster_accel_enable(self, event=None):
         self.context.raster_accel_table = self.checkbox_raster_accel_enable.GetValue()
 
     def on_text_raster_accel(self, event):

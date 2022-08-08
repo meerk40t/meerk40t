@@ -89,9 +89,15 @@ class SimulationPanel(wx.Panel, Job):
         self.text_distance_total_step = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
-        self.text_time_laser_step = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_travel_step = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.text_time_total_step = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_laser_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_time_travel_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_time_total_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
         self.button_play = wx.Button(self, wx.ID_ANY, "")
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.text_playback_speed = wx.TextCtrl(
@@ -410,12 +416,16 @@ class SimulationPanel(wx.Panel, Job):
             t_hours = time_cuts // 3600
             t_mins = (time_cuts % 3600) // 60
             t_seconds = time_cuts % 60
-            self.text_time_laser_step.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+            self.text_time_laser_step.SetValue(
+                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
+            )
             time_total = time_travel + time_cuts + extra
             t_hours = time_total // 3600
             t_mins = (time_total % 3600) // 60
             t_seconds = time_total % 60
-            self.text_time_total_step.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
+            self.text_time_total_step.SetValue(
+                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
+            )
         except ZeroDivisionError:
             pass
 

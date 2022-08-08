@@ -1,11 +1,7 @@
-
 import wx
 
 from meerk40t.gui import icons
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_HIT,
-    RESPONSE_CONSUME,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME
 from meerk40t.gui.scene.widget import Widget
 
 
@@ -21,9 +17,7 @@ class RelocateWidget(Widget):
     def process_draw(self, gc: wx.GraphicsContext):
         gc.DrawBitmap(self.bitmap, self.left, self.top, self.width, self.height)
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type == "move":
             dx = space_pos[4]
             dy = space_pos[5]

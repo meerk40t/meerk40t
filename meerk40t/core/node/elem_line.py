@@ -1,7 +1,12 @@
 from copy import copy
+from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.svgelements import Path
+from meerk40t.svgelements import (
+    SVG_ATTR_VECTOR_EFFECT,
+    SVG_VALUE_NON_SCALING_STROKE,
+    Path,
+)
 
 
 class LineNode(Node):
@@ -25,34 +30,16 @@ class LineNode(Node):
         self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
-        if matrix is None:
-            self.matrix = shape.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = shape.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = shape.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = shape.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if linecap is None:
-            self.linecap = Linecap.CAP_BUTT
-        else:
-            self.linecap = linecap
-        if linejoin is None:
-            self.linejoin = Linejoin.JOIN_MITER
-        else:
-            self.linejoin = linejoin
-        if fillrule is None:
-            self.fillrule = Fillrule.FILLRULE_NONZERO
-        else:
-            self.fillrule = fillrule
+        self.matrix = shape.transform if matrix is None else matrix
+        self.fill = shape.fill if fill is None else fill
+        self.stroke = shape.stroke if stroke is None else stroke
+        self.stroke_width = shape.stroke_width if stroke_width is None else stroke_width
+        self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
+        self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
+        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
+        self._stroke_scaled = (
+            shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+        )
         self.lock = False
 
     def __copy__(self):
@@ -75,6 +62,20 @@ class LineNode(Node):
             str(self.shape),
             str(self._parent),
         )
+
+    @property
+    def stroke_scaled(self):
+        return self._stroke_scaled
+
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        if not v and self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width *= sqrt(abs(matrix.determinant))
+        if v and not self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width /= sqrt(abs(matrix.determinant))
+        self._stroke_scaled = v
 
     @property
     def bounds(self):
@@ -126,7 +127,7 @@ class LineNode(Node):
         self._points[6] = [cx, bounds[3], "bounds bottom_center"]
         self._points[7] = [bounds[0], cy, "bounds center_left"]
         self._points[8] = [bounds[2], cy, "bounds center_right"]
-        obj = self.object
+        obj = self.shape
         if hasattr(obj, "point"):
             if len(self._points) <= 11:
                 self._points.extend([None] * (11 - len(self._points)))

@@ -9,9 +9,9 @@ from wx import aui
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.gui.statusbarwidgets.infowidget import (
+    BurnProgressPanel,
     InformationWidget,
     StatusPanelWidget,
-    BurnProgressPanel,
 )
 from meerk40t.gui.statusbarwidgets.opassignwidget import (
     OperationAssignOptionWidget,
@@ -272,9 +272,7 @@ class MeerK40t(MWindow):
         self.idx_assign = self.main_statusbar.panelct - 3
 
         self.status_panel = StatusPanelWidget(self.main_statusbar.panelct)
-        self.main_statusbar.add_panel_widget(
-            self.status_panel, 0, "status", True
-        )
+        self.main_statusbar.add_panel_widget(self.status_panel, 0, "status", True)
 
         self.select_panel = SelectionWidget()
         self.info_panel = InformationWidget()
@@ -328,7 +326,7 @@ class MeerK40t(MWindow):
     # --- Listen to external events to update the bar
     @signal_listener("show_colorbar")
     def on_colobar_signal(self, origin, *args):
-        if len(args)>0:
+        if len(args) > 0:
             showem = args[0]
         else:
             showem = True
@@ -2521,7 +2519,7 @@ class MeerK40t(MWindow):
         if not self.context.show_colorbar or not self.widgets_created:
             return
         # Queue Len
-        if len(args)>0:
+        if len(args) > 0:
             value = args[0]
         else:
             value = 0

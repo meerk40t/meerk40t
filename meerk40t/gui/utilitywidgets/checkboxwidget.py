@@ -1,9 +1,6 @@
 import wx
 
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_HIT,
-    RESPONSE_CONSUME, RESPONSE_DROP,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP
 from meerk40t.gui.scene.widget import Widget
 
 
@@ -80,9 +77,7 @@ class CheckboxWidget(Widget):
             gc.SetFont(self.font, self.font_color)
             gc.DrawText(self.text, self.right + width * self._text_gap, self.top)
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None,**kwargs
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         if event_type in ("hover", "hover_start", "hover_end"):
             if self.tool_tip:
                 self.scene.toast(self.tool_tip)

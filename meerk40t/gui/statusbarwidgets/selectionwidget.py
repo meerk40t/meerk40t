@@ -56,7 +56,7 @@ class SelectionWidget(StatusBarWidget):
                 wx.FONTWEIGHT_NORMAL,
             )
         )
-        
+
         self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_move, self.cb_move)
         self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_handle, self.cb_handle)
         self.parent.Bind(wx.EVT_CHECKBOX, self.on_toggle_rotate, self.cb_rotate)
