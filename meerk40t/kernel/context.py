@@ -128,7 +128,7 @@ class Context:
         If the setting exists in the persistent storage that value is used.
         If there is no settings value, the default will be used.
 
-        @param setting_type: int, float, str, or bool value
+        @param setting_type: int, float, str, bool, list or tuple value
         @param key: name of the setting
         @param default: default value for the setting to have.
         @return: load_value
@@ -205,7 +205,7 @@ class Context:
         """
         self._kernel.clear_persistent(self._path)
 
-    def write_persistent(self, key: str, value: Union[int, float, str, bool]) -> None:
+    def write_persistent(self, key: str, value: Union[int, float, str, bool, list, tuple]) -> None:
         """
         Delegate to Kernel to write the given key at this context to persistent settings. This is typically done during
         shutdown but there are a variety of reasons to force this call early.
