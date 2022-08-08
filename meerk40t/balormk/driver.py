@@ -42,7 +42,7 @@ class BalorDriver:
         self._list_bits = None
 
     def __repr__(self):
-        return "BalorDriver(%s)" % self.name
+        return f"BalorDriver({self.name})"
 
     @property
     def connected(self):

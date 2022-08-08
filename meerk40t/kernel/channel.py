@@ -94,11 +94,7 @@ class Channel:
         self.ansi = ansi
 
     def __repr__(self):
-        return "Channel(%s, buffer_size=%s, line_end=%s)" % (
-            repr(self.name),
-            str(self.buffer_size),
-            repr(self.line_end),
-        )
+        return f"Channel({repr(self.name)}, buffer_size={str(self.buffer_size)}, line_end={repr(self.line_end)})"
 
     def _call_raw(
         self,

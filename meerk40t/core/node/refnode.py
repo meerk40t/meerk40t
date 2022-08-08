@@ -15,11 +15,7 @@ class ReferenceNode(Node):
         self.node = node
 
     def __repr__(self):
-        return "ReferenceNode('%s', %s, %s)" % (
-            self.type,
-            str(self.node),
-            str(self._parent),
-        )
+        return f"ReferenceNode('{self.type}', {str(self.node)}, {str(self._parent)})"
 
     @property
     def bounds(self):

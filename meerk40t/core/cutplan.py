@@ -46,7 +46,7 @@ class CutPlan:
         parts = list()
         parts.append(self.name)
         if len(self.plan):
-            parts.append("#%d" % len(self.plan))
+            parts.append(f"#{len(self.plan)}")
             for p in self.plan:
                 try:
                     parts.append(p.__name__)
@@ -769,8 +769,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         dists = np.abs(starts - ends)
         dist_sum = dists.sum() + abs(curr - endpoints[0][0])
         channel(
-            "optimize: laser-off distance is %f. %.02f%% done with pass %d/%d"
-            % (dist_sum, 100 * pos / length, current_pass, passes)
+            f"optimize: laser-off distance is {dist_sum}. {100 * pos / length:.02f}% done with pass {current_pass}/{passes}"
         )
 
     improved = True

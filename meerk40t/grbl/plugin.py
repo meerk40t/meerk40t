@@ -96,9 +96,9 @@ def plugin(kernel, lifecycle=None):
 
                 ctx.channel("grbl/recv").watch(emulator.write)
                 emulator.recv = ctx.channel("grbl/send")
-                channel(_("TCP Server for GRBL Emulator on port: %d" % port))
+                channel(_("TCP Server for GRBL Emulator on port: {port}").format(port=port))
             except OSError:
-                channel(_("Server failed on port: %d") % port)
+                channel(_("Server failed on port: {port}").format(port=port))
             return
 
     elif lifecycle == "preboot":

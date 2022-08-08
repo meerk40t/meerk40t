@@ -221,15 +221,15 @@ class PositionPanel(wx.Panel):
             self.org_h = self.position_h
 
         if self.position_units == "%":
-            self.text_x.SetValue("%.2f" % 100)
-            self.text_y.SetValue("%.2f" % 100)
-            self.text_w.SetValue("%.2f" % 100)
-            self.text_h.SetValue("%.2f" % 100)
+            self.text_x.SetValue(f"{100:.2f}")
+            self.text_y.SetValue(f"{100:.2f}")
+            self.text_w.SetValue(f"{100:.2f}")
+            self.text_h.SetValue(f"{100:.2f}")
         else:
-            self.text_x.SetValue("%.2f" % self.position_x)
-            self.text_y.SetValue("%.2f" % self.position_y)
-            self.text_w.SetValue("%.2f" % self.position_w)
-            self.text_h.SetValue("%.2f" % self.position_h)
+            self.text_x.SetValue(f"{self.position_x:.2f}")
+            self.text_y.SetValue(f"{self.position_y:.2f}")
+            self.text_w.SetValue(f"{self.position_w:.2f}")
+            self.text_h.SetValue(f"{self.position_h:.2f}")
         self.combo_box_units.SetSelection(self.choices.index(self.position_units))
 
     def space_changed(self, origin, *args):
@@ -324,16 +324,8 @@ class PositionPanel(wx.Panel):
                 elem._bounds = bb
                 elem.modified()
         else:
-            cmd = "resize %f%s %f%s %f%s %f%s\n" % (
-                self.position_x,
-                self.position_units,
-                self.position_y,
-                self.position_units,
-                self.position_w,
-                self.position_units,
-                self.position_h,
-                self.position_units,
-            )
+            u = self.position_units
+            cmd = f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n"
             self.context(cmd)
         if refresh_after:
             self.update_position(True)
@@ -370,18 +362,9 @@ class PositionPanel(wx.Panel):
                 elem._bounds = bb
                 elem.modified()
         else:
+            u = self.position_units
             self.context(
-                "resize %f%s %f%s %f%s %f%s\n"
-                % (
-                    self.position_x,
-                    self.position_units,
-                    self.position_y,
-                    self.position_units,
-                    self.position_w,
-                    self.position_units,
-                    self.position_h,
-                    self.position_units,
-                )
+                f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n"
             )
         if refresh_after:
             self.update_position(True)

@@ -79,14 +79,7 @@ def plugin(kernel, lifecycle=None):
                 if len(name) > 50:
                     name = name[:50] + "..."
                 channel(
-                    "%d: (%d, %d) %s, %s"
-                    % (
-                        i,
-                        node.image.width,
-                        node.image.height,
-                        node.image.mode,
-                        name,
-                    )
+                    f"{i}: ({node.image.width}, {node.image.height}) {node.image.mode}, {name}"
                 )
                 i += 1
             channel(_("----------"))
@@ -193,7 +186,7 @@ def plugin(kernel, lifecycle=None):
         for inode in data:
             try:
                 if not inode.lock:
-                    channel("Locked: %s" % str(inode))
+                    channel(f"Locked: {str(inode)}")
                     inode.lock = True
                 else:
                     channel(_("Element was not unlocked: %s") % str(inode))
@@ -923,7 +916,7 @@ def plugin(kernel, lifecycle=None):
             node1 = elements.elem_branch.add_node(inode_left)
             node2 = elements.elem_branch.add(inode_right)
             elements.classify([node1, node2])
-            channel(_("Image sliced at position %d" % x))
+            channel(_("Image sliced at position %d") % x)
             return "image", [node1, node2]
 
         return "image", data
@@ -959,7 +952,7 @@ def plugin(kernel, lifecycle=None):
             node1 = elements.elem_branch.add_node(inode_top)
             node2 = elements.elem_branch.add_node(inode_bottom)
             elements.classify([node1, node2])
-            channel(_("Image slashed at position %d" % y))
+            channel(_("Image slashed at position %d") % y)
             return "image", [node1, node2]
 
         return "image", data

@@ -130,7 +130,7 @@ class SVGWriter:
         px_width = scene_width.pixels
         px_height = scene_height.pixels
 
-        viewbox = "%d %d %d %d" % (0, 0, round(px_width), round(px_height))
+        viewbox = f"{0} {0} {round(px_width)} {round(px_height)}"
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         elements.validate_ids()
@@ -243,7 +243,7 @@ class SVGWriter:
                 t *= scale
                 subelement.set(
                     "transform",
-                    "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
                 if hasattr(c, "label") and c.label is not None and c.label != "":
                     subelement.set("inkscape:label", c.label)
@@ -307,7 +307,7 @@ class SVGWriter:
                 t *= scale
                 subelement.set(
                     "transform",
-                    "matrix(%f, %f, %f, %f, %f, %f)" % (t.a, t.b, t.c, t.d, t.e, t.f),
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
                 # Maybe there are some inherited font-features from an import
                 for key, val in element.values.items():

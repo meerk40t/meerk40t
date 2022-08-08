@@ -107,7 +107,7 @@ def plugin(kernel, lifecycle):
                     "--export-area-drawing",
                     "--export-type=png",
                     "--export-filename=temp.png",
-                    "--export-dpi=%d" % dpi,
+                    f"--export-dpi={dpi}",
                     filename,
                 ],
                 stdout=PIPE,

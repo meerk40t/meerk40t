@@ -22,7 +22,7 @@ class AboutPanel(wx.Panel):
 
         name = self.context.kernel.name
         version = self.context.kernel.version
-        self.meerk40t_about_version_text.SetLabelText("%s v%s" % (name, version))
+        self.meerk40t_about_version_text.SetLabelText(f"{name} v{version}")
 
     def __set_properties(self):
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())

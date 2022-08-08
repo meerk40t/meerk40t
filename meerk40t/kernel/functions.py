@@ -174,8 +174,7 @@ def console_command(
                                 pos = start
                                 break
                             raise CommandSyntaxError(
-                                "'%s' does not cast to %s"
-                                % (str(value), str(k["type"]))
+                                f"'{str(value)}' does not cast to {str(k['type'])}"
                             )
 
                     kwargs[key].append(value)
@@ -321,7 +320,7 @@ def console_command_remove(
     ins = input_type if isinstance(input_type, tuple) else (input_type,)
     for cmd in cmds:
         for i in ins:
-            p = "command/%s/%s" % (i, cmd)
+            p = f"command/{i}/{cmd}"
             registration.unregister(p)
 
 

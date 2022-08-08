@@ -15,11 +15,7 @@ class CutNode(Node):
         self._formatter = "{element_type}"
 
     def __repr__(self):
-        return "CutNode('%s', %s, %s)" % (
-            self.type,
-            str(self.cutcode),
-            str(self._parent),
-        )
+        return f"CutNode('{self.type}', {str(self.cutcode)}, {str(self._parent)})"
 
     def __copy__(self):
         return CutNode(self.cutcode)

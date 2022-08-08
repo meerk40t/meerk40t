@@ -12,10 +12,7 @@ class GroupNode(Node):
         self._formatter = "{element_type} {id} ({children} elems)"
 
     def __repr__(self):
-        return "GroupNode('%s', %s)" % (
-            self.type,
-            str(self._parent),
-        )
+        return f"GroupNode('{self.type}', {str(self._parent)})"
 
     @property
     def bounds(self):
@@ -57,4 +54,4 @@ class GroupNode(Node):
     def name(self):
         if self.id is None:
             return f"Group ({len(self.children)} elems)"
-        return f"Group ({len(self.children)} elems): %s" % self.id
+        return f"Group ({len(self.children)} elems): {self.id}"

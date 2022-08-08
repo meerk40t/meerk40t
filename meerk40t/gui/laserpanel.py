@@ -237,7 +237,7 @@ class LaserPanel(wx.Panel):
             if not len(plan.plan):
                 self.text_plan.SetValue(_("--- Empty ---"))
             else:
-                self.text_plan.SetValue("%s: %s" % (str(stage), str(plan)))
+                self.text_plan.SetValue(f"{str(stage)}: {str(plan)}")
 
     @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):

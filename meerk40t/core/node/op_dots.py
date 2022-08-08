@@ -214,11 +214,7 @@ class DotsOpNode(Node, Parameters):
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        return "%s:%s:%s" % (
-            int(hours),
-            str(int(minutes)).zfill(2),
-            str(int(seconds)).zfill(2),
-        )
+        return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""

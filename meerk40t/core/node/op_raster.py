@@ -266,11 +266,7 @@ class RasterOpNode(Node, Parameters):
             estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
-        return "%s:%s:%s" % (
-            int(hours),
-            str(int(minutes)).zfill(2),
-            str(int(seconds)).zfill(2),
-        )
+        return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
     def preprocess(self, context, matrix, commands):
         """

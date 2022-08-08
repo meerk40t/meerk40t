@@ -617,17 +617,15 @@ class ShadowTree:
 
     def was_expanded(self, node, level):
         txt = self.wxtree.GetItemText(node)
-        chk = "%d-%s" % (level, txt)
-        result = False
+        chk = f"{level}-{txt}"
         for elem in self.was_already_expanded:
             if chk == elem:
-                result = True
-                break
-        return result
+                return True
+        return False
 
     def set_expanded(self, node, level):
         txt = self.wxtree.GetItemText(node)
-        chk = "%d-%s" % (level, txt)
+        chk = f"{level}-{txt}"
         result = self.was_expanded(node, level)
         if not result:
             self.was_already_expanded.append(chk)
@@ -658,7 +656,7 @@ class ShadowTree:
             return
         while pnode.IsOk():
             txt = self.wxtree.GetItemText(pnode)
-            chk = "%d-%s" % (level, txt)
+            chk = f"{level}-{txt}"
             for elem in self.was_already_expanded:
                 if chk == elem:
                     self.wxtree.ExpandAllChildren(pnode)

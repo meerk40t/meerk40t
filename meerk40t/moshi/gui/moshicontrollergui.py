@@ -229,7 +229,7 @@ class MoshiControllerPanel(wx.Panel):
 
     def pane_show(self):
         active = self.context.path.split("/")[-1]
-        self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
+        self.context.channel(f"{active}/usb", buffer_size=500).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
@@ -237,7 +237,7 @@ class MoshiControllerPanel(wx.Panel):
 
     def pane_hide(self):
         active = self.context.path.split("/")[-1]
-        self.context.channel("%s/usb" % active).unwatch(self.update_text)
+        self.context.channel(f"{active}/usb").unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)

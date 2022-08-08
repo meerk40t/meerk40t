@@ -220,10 +220,7 @@ class SceneSpaceWidget(Widget):
         return RESPONSE_CONSUME
 
     def set_view(self, x, y, w, h, preserve_aspect=None):
-        self._view = Viewbox(
-            "%d %d %d %d" % (x, y, w, h),
-            preserve_aspect,
-        )
+        self._view = Viewbox(f"{x} {y} {w} {h}", preserve_aspect)
         self.aspect_matrix()
 
     def set_frame(self, x, y, w, h):
