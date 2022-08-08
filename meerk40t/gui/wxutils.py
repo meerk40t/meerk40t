@@ -303,6 +303,7 @@ def create_menu(gui, node, elements):
 
     @param gui: Gui used to create menu items.
     @param node: The Node clicked on for the generated menu.
+    @param elements: elements service for use with node creation
     @return:
     """
     if node is None:

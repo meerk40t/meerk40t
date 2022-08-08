@@ -56,6 +56,8 @@ class PyEmbeddedImage(py_embedded_image):
         @param resize:
         @param color:
         @param rotate:
+        @param noadjustment: Disables size adjustment based on global factor
+        @param keepalpha: maintain the alpha from the original asset
         @return:
         """
 

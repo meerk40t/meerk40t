@@ -7575,6 +7575,7 @@ class Group(SVGElement, Transformable, list):
         """
         Returns the union of the bounding boxes for the elements within the iterator.
 
+        :param elements: elements to be unioned to determine bounding box
         :param transformed: Should the children of this object be properly transformed.
         :param with_stroke: should the stroke-width be included in the bounds of the elements
         :return: union of all bounding boxes of elements within the iterable.
