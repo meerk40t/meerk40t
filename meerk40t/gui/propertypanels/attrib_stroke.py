@@ -185,9 +185,7 @@ class ElementpropertyPanel(wx.Panel):
         if reset:
             x0, y0, x1, y1 = bounds
             # conversion = ViewPort.conversion(self.position_units)
-            conversion = float(
-                Length("{amount}{units}".format(units=self.position_units, amount=1))
-            )
+            conversion = float(Length(f"1{self.position_units}"))
             # print ("Size: x0 = %.2f, conversion=%.5f, new=%.2f (units %s)" % (x0, conversion, x0/conversion, self.position_units))
             self.position_x = x0 / conversion
             self.position_y = y0 / conversion
@@ -284,13 +282,7 @@ class ElementpropertyPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                new_w = float(
-                    Length(
-                        "{value}{unit}".format(
-                            value=self.position_w, unit=self.position_units
-                        )
-                    )
-                )
+                new_w = float(Length(f"{self.position_w}{self.position_units}"))
 
                 try:
                     scalex = new_w / (bb[2] - bb[0])
@@ -352,13 +344,7 @@ class ElementpropertyPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                new_h = float(
-                    Length(
-                        "{value}{unit}".format(
-                            value=self.position_h, unit=self.position_units
-                        )
-                    )
-                )
+                new_h = float(Length(f"{self.position_h}{self.position_units}"))
 
                 try:
                     scalex = 1.0
@@ -405,13 +391,7 @@ class ElementpropertyPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                newx = float(
-                    Length(
-                        "{value}{unit}".format(
-                            value=self.position_x, unit=self.position_units
-                        )
-                    )
-                )
+                newx = float(Length(f"{self.position_x}{self.position_units}"))
                 dx = newx - bb[0]
                 dy = 0
                 # print("Old=%.1f, new=%.1f, dx=%.1f" % (bb[0], newx, dx))
@@ -456,13 +436,7 @@ class ElementpropertyPanel(wx.Panel):
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                newy = float(
-                    Length(
-                        "{value}{unit}".format(
-                            value=self.position_y, unit=self.position_units
-                        )
-                    )
-                )
+                newy = float(Length(f"{self.position_y}{self.position_units}"))
                 dy = newy - bb[1]
                 dx = 0
                 # print("Old=%.1f, new=%.1f, dy=%.1f" % (bb[1], newy, dy))

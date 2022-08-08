@@ -59,7 +59,7 @@ class RelocateTool(ToolWidget):
                 y = 0
             x /= UNITS_PER_MM
             y /= UNITS_PER_MM
-            self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
+            self.scene.context(f"move_absolute {x}mm {y}mm\n")
             response = RESPONSE_CONSUME
             self.scene.tool_active = False
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):

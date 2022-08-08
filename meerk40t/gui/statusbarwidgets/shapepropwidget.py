@@ -65,7 +65,7 @@ class LinecapWidget(StatusBarWidget):
         self.Add(self.btn_cap_square, 1, wx.EXPAND, 0)
 
     def assign_cap(self, captype):
-        self.context("linecap {cap}".format(cap=captype))
+        self.context(f"linecap {captype}")
 
     def on_cap_square(self, event):
         self.assign_cap("square")
@@ -141,7 +141,7 @@ class LinejoinWidget(StatusBarWidget):
         # self.parent.Add(self.btn_join_miterclip, 1, wx.EXPAND, 0)
 
     def assign_join(self, jointype):
-        self.context("linejoin {join}".format(join=jointype))
+        self.context(f"linejoin {jointype}")
 
     def on_join_miter(self, event):
         self.assign_join("miter")
@@ -200,7 +200,7 @@ class FillruleWidget(StatusBarWidget):
         self.Add(self.btn_fill_evenodd, 1, wx.EXPAND, 0)
 
     def assign_fill(self, filltype):
-        self.context("fillrule {fill}".format(fill=filltype))
+        self.context(f"fillrule {filltype}")
 
     def on_fill_evenodd(self, event):
         self.assign_fill("evenodd")

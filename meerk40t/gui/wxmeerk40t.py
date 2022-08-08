@@ -530,11 +530,7 @@ class wxMeerK40t(wx.App, Module):
             if hasattr(window_class, "required_path"):
                 path = context.get_context(window_class.required_path)
 
-            window_name = (
-                "{window}:{multi}".format(window=window_uri, multi=multi)
-                if multi is not None
-                else window_uri
-            )
+            window_name = f"{window_uri}:{multi}" if multi is not None else window_uri
 
             def window_open(*a, **k):
                 path.open_as(window_uri, window_name, parent, *args)

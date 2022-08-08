@@ -136,19 +136,16 @@ class StrokeWidget(StatusBarWidget):
         self.Add(self.combo_units, 1, wx.EXPAND, 0)
 
     def on_stroke_width(self, event):
-        if not self.startup:
-            chg = False
-            if self.combo_units.GetSelection() >= 0:
-                newunit = self.choices[self.combo_units.GetSelection()]
-                try:
-                    newval = float(self.spin_width.GetValue())
-                    chg = True
-                except ValueError:
-                    chg = False
-            if chg:
-                value = "{wd:.2f}{unit}".format(wd=newval, unit=newunit)
-                mysignal = "selstrokewidth"
-                self.context.signal(mysignal, value)
+        if self.startup or self.combo_units.GetSelection() < 0:
+            return
+        try:
+            self.context.signal(
+                "selstrokewidth",
+                f"{float(self.spin_width.GetValue()):.2f}"
+                f"{self.choices[self.combo_units.GetSelection()]}",
+            )
+        except ValueError:
+            pass
 
     def Signal(self, signal, *args):
         if signal == "emphasized":

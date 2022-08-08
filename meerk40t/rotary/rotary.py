@@ -56,7 +56,7 @@ class Rotary(Service):
     """
 
     def __init__(self, kernel, index=0, *args, **kwargs):
-        Service.__init__(self, kernel, "rotary/{index}".format(index=index))
+        Service.__init__(self, kernel, f"rotary/{index}")
         self.index = index
         _ = kernel.translation
 
@@ -67,9 +67,7 @@ class Rotary(Service):
         )
         def rotary(command, channel, _, data=None, **kwargs):
             channel(
-                "Rotary {index} set to scale: {x}, scale:{y}".format(
-                    index=self.index, x=self.scale_x, y=self.scale_y
-                )
+                f"Rotary {self.index} set to scale: {self.scale_x}, scale:{self.scale_y}"
             )
             return "rotary", None
 

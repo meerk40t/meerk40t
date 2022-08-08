@@ -158,7 +158,7 @@ class InformationWidget(SimpleInfoWidget):
             ct = 0
             total_area = 0
             total_length = 0
-            _mm = float(Length("1{unit}".format(unit="mm")))
+            _mm = float(Length("1mm"))
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 ct += 1
                 this_area, this_length = elements.get_information(e, density=50)
@@ -358,8 +358,6 @@ class BurnProgressPanel(SimpleInfoWidget):
                 elapsed=timestr(self._job_elapsed),
                 estimate=timestr(self._job_estimate),
                 remaining=timestr(self._job_remaining),
-                # passes=str(self._loops_executed + 1),
-                # passtotal=str(self._job_loops),
             )
             self._status_text.append(msg)
 

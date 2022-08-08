@@ -28,11 +28,7 @@ class Module:
         self.state = STATE_INITIALIZE
 
     def __repr__(self):
-        return '{class_name}({context}, name="{name}")'.format(
-            class_name=self.__class__.__name__,
-            context=repr(self.context),
-            name=self.name,
-        )
+        return f'{self.__class__.__name__}({repr(self.context)}, name="{self.name}")'
 
     def restore(self, *args, **kwargs):
         """Called with the same values of __init()__ on an attempt to reopen of a module with the same name at the

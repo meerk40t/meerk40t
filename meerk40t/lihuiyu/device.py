@@ -83,11 +83,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         suffix = "lhystudios"
         for d in kernel.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")
 
 
 class LihuiyuDevice(Service, ViewPort):
@@ -629,9 +625,7 @@ class LihuiyuDevice(Service, ViewPort):
                     if watch:
                         server.data_channel.watch(console)
                 channel(_("Watching Channel: %s") % "server")
-                self.channel(
-                    "{server_name}/recv".format(server_name=server_name)
-                ).watch(output.write)
+                self.channel(f"{server_name}/recv").watch(output.write)
                 channel(_("Attached: %s" % repr(output)))
 
             except OSError:
@@ -2503,7 +2497,7 @@ class TCPOutput:
         if self.thread is None:
             self.thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-{port}".format(port=self.service.port),
+                thread_name=f"sender-{self.service.port}",
                 result=self._stop,
             )
 

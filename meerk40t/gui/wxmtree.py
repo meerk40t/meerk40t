@@ -194,7 +194,7 @@ class TreePanel(wx.Panel):
         @param args:
         @return:
         """
-        self.shadow_tree.refresh_tree(source="signal_{org}".format(org=origin))
+        self.shadow_tree.refresh_tree(source=f"signal_{origin}")
         if nodes is not None:
             if isinstance(nodes, (tuple, list)):
                 # All Standard nodes first

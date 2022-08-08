@@ -30,15 +30,11 @@ def plugin(kernel, lifecycle):
             global ROTARY_VIEW
             rotary = kernel.rotary
             if ROTARY_VIEW:
-                rotary(
-                    "scene aspect {x} {y}\n".format(x=rotary.scale_x, y=rotary.scale_y)
-                )
+                rotary(f"scene aspect {rotary.scale_x} {rotary.scale_y}\n")
             else:
                 try:
                     rotary(
-                        "scene aspect {ix} {iy}\n".format(
-                            ix=1.0 / rotary.scale_x, iy=1.0 / rotary.scale_y
-                        )
+                        f"scene aspect {1.0 / rotary.scale_x} {1.0 / rotary.scale_y}\n"
                     )
                 except ZeroDivisionError:
                     pass

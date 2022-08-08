@@ -254,9 +254,7 @@ class ScenePanel(wx.Panel):
         Magnify Mouse is a Mac-only Event called with pinch to zoom on a trackpad.
         """
         magnification = event.GetMagnification()
-        self.scene.event(
-            event.GetPosition(), "magnify {mag}".format(mag=(1.0 + magnification))
-        )
+        self.scene.event(event.GetPosition(), f"magnify {1.0 + magnification}")
 
     def on_gesture(self, event):
         """
@@ -273,7 +271,7 @@ class ScenePanel(wx.Panel):
                 zoom = event.GetZoomFactor()
             except AttributeError:
                 zoom = 1.0
-            self.scene.event(event.GetPosition(), "zoom {zoom}".format(zoom=zoom), None)
+            self.scene.event(event.GetPosition(), f"zoom {zoom}", None)
 
     def on_paint(self, event=None):
         """

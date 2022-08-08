@@ -178,11 +178,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         suffix = "ruida"
         for d in kernel.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")
 
 
 class RuidaCommandError(Exception):

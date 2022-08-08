@@ -143,7 +143,7 @@ class Settings:
         for k in list(self.keylist(section)):
             item = self._config_dict[section][k]
             if not suffix:
-                k = "{section}/{key}".format(section=section, key=k)
+                k = f"{section}/{k}"
             dictionary[k] = item
         return dictionary
 

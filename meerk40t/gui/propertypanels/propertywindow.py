@@ -43,7 +43,7 @@ class PropertyWindow(MWindow):
         pages_to_instance = []
         for node in nodes:
             for property_sheet in self.context.lookup_all(
-                "property/{class_name}/.*".format(class_name=node.__class__.__name__)
+                f"property/{node.__class__.__name__}/.*"
             ):
                 if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
                     node

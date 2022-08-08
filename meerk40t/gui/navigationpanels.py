@@ -1232,12 +1232,7 @@ class SizePanel(wx.Panel):
         new_width = Length(self.text_width.Value, relative_length=self.object_width)
         new_height = Length(self.text_height.Value, relative_length=self.object_height)
         self.context(
-            "resize {x} {y} {width} {height}".format(
-                x=repr(self.object_x),
-                y=repr(self.object_y),
-                width=new_width,
-                height=new_height,
-            )
+            f"resize {repr(self.object_x)} {repr(self.object_y)} {new_width} {new_height}"
         )
 
     def on_textenter_width(self, event):  # wxGlade: SizePanel.<event_handler>
@@ -1610,7 +1605,7 @@ class Transform(wx.Panel):
         dy = self.context.device.length(
             dy, 1, scale=scale, new_units=self.context.units_name
         )
-        self.context("translate {dx} {dy}\n".format(dx=dx, dy=dy))
+        self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
 

@@ -614,11 +614,8 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
-        self.context(
-            "scene focus -{zoom}% -{zoom}% {zoom100}% {zoom100}%\n".format(
-                zoom=self.context.zoom_level, zoom100=100 + self.context.zoom_level
-            )
-        )
+        zl = self.context.zoom_level
+        self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def pane_hide(self, *args):
         pass

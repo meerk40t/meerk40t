@@ -116,18 +116,15 @@ class MeasureTool(ToolWidget):
                 all_cy = all_cy / pt_count
                 # area is in base units^2, so back to units
 
-                base_square = float(Length("1{units}".format(units=units)))
+                base_square = float(Length(f"1{units}"))
                 base_square *= base_square
                 area = area / base_square
 
-                s_txt = "Area={area:.1f}{units}²\nPerimeter: {perim}".format(
-                    area=area,
-                    units=units,
-                    perim=str(
-                        Length(amount=perimeter, digits=1, preferred_units=units)
-                    ),
+                s_txt = (
+                    f"Area={area:.1f}{units}²\nPerimeter: "
+                    f"{str(Length(amount=perimeter, digits=1, preferred_units=units))}"
                 )
-                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                t_width, t_height = gc.GetTextExtent(s_txt)
                 gc.DrawText(
                     s_txt,
                     all_cx - 0.5 * t_width,
