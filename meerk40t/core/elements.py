@@ -5255,8 +5255,8 @@ class Elemental(Service):
                     raise CommandSyntaxError
             else:
 
-                def m_list(path, menu):
-                    for i, _n in enumerate(menu):
+                def m_list(path, _menu):
+                    for i, _n in enumerate(_menu):
                         p = list(path)
                         p.append(str(i))
                         _name, _submenu = _n
@@ -5871,12 +5871,12 @@ class Elemental(Service):
                 channel(_("No elements bounds to trace."))
                 return
 
-            def run_shape(spooler, hull):
+            def run_shape(_spooler, _hull):
                 def trace_hull():
                     yield "wait_finish"
                     yield "rapid_mode"
                     idx = 0
-                    for p in hull:
+                    for p in _hull:
                         idx += 1
                         yield (
                             "move_abs",
@@ -5884,7 +5884,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                spooler.laserjob(list(trace_hull()))
+                _spooler.laserjob(list(trace_hull()))
 
             run_shape(spooler, hull)
 
