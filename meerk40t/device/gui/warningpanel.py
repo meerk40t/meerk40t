@@ -13,11 +13,13 @@ from meerk40t.gui.wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
+
 class WarningPanel(wx.Panel):
     """
     WarningPanel is a panel that should work for all devices (hence in its own directory)
     It allows to define Min and Max Values for Speed and Power per operation
     """
+
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: PassesPanel.__init__
         kwds["style"] = kwds.get("style", 0)
@@ -26,7 +28,7 @@ class WarningPanel(wx.Panel):
         self.op_id = ("cut", "engrave", "raster", "imageop", "dots", "hatch")
         self.data = {}
 
-        self.images= {
+        self.images = {
             "cut": icons8_laser_beam_20,
             "engrave": icons8_small_beam_20,
             "raster": icons8_direction_20,
@@ -58,24 +60,36 @@ class WarningPanel(wx.Panel):
         hsizer = wx.FlexGridSizer(cols=9, gap=wx.Size(2, 0))
         # hsizer.SetCols(9)
         idx = -1
-        for key, entry in self.data:
-            # entry = self.data[key]
+        for key in self.data:
+            entry = self.data[key]
             idx += 1
             image = wx.StaticBitmap(self, id=wx.ID_ANY)
             image.SetBitmap(entry["image"].GetBitmap(resize=20))
 
-            label1 = wx.StaticText(self, id=wx.ID_ANY, label=_(entry["op"].capitalize()))
+            label1 = wx.StaticText(
+                self, id=wx.ID_ANY, label=_(entry["op"].capitalize())
+            )
 
-            label2 = wx.StaticText(self, id=wx.ID_ANY, label=_(entry["attr"].capitalize()))
+            label2 = wx.StaticText(
+                self, id=wx.ID_ANY, label=_(entry["attr"].capitalize())
+            )
 
             label3 = wx.StaticText(self, id=wx.ID_ANY, label="<")
             chk1 = wx.CheckBox(self, id=wx.ID_ANY, label="")
             chk1.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_min"] = chk1
 
-            ctrl1 = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_PROCESS_ENTER, limited=True, check="float")
+            ctrl1 = TextCtrl(
+                self,
+                id=wx.ID_ANY,
+                style=wx.TE_PROCESS_ENTER,
+                limited=True,
+                check="float",
+            )
             ctrl1.SetMinSize(wx.Size(60, -1))
-            ctrl1.SetToolTip(_("Warn level for minimum {unit}").format(unit=_(entry["attr"])))
+            ctrl1.SetToolTip(
+                _("Warn level for minimum {unit}").format(unit=_(entry["attr"]))
+            )
             ctrl1.Enable(False)
             entry["textcontrol_min"] = ctrl1
             chk1.Bind(wx.EVT_CHECKBOX, self.on_checkbox_check(entry, False))
@@ -87,9 +101,17 @@ class WarningPanel(wx.Panel):
             chk2.SetToolTip(_("Enable/Disable the warning level"))
             entry["checkbox_max"] = chk2
 
-            ctrl2 = TextCtrl(self, id=wx.ID_ANY, style=wx.TE_PROCESS_ENTER, limited=True, check="float")
+            ctrl2 = TextCtrl(
+                self,
+                id=wx.ID_ANY,
+                style=wx.TE_PROCESS_ENTER,
+                limited=True,
+                check="float",
+            )
             ctrl2.SetMinSize(wx.Size(60, -1))
-            ctrl2.SetToolTip(_("Warn level for maximum {unit}").format(unit=_(entry["attr"])))
+            ctrl2.SetToolTip(
+                _("Warn level for maximum {unit}").format(unit=_(entry["attr"]))
+            )
             ctrl2.Enable(False)
             entry["textcontrol_max"] = ctrl2
             chk2.Bind(wx.EVT_CHECKBOX, self.on_checkbox_check(entry, True))
@@ -110,12 +132,17 @@ class WarningPanel(wx.Panel):
 
         hsizer.Layout()
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        infolabel = wx.StaticText(self, id=wx.ID_ANY,
-            label=
-            _("Meerk40t can warn you if it believes the values for") + "\n" +
-            _("power and speed are too ambitious for your machine.") + "\n" +
-            _("It will display a warning indicator:") + " '❌'" + "\n" +
-            _("in the label of the associated operation-node")
+        infolabel = wx.StaticText(
+            self,
+            id=wx.ID_ANY,
+            label=_("Meerk40t can warn you if it believes the values for")
+            + "\n"
+            + _("power and speed are too ambitious for your machine.")
+            + "\n"
+            + _("It will display a warning indicator:")
+            + " '❌'"
+            + "\n"
+            + _("in the label of the associated operation-node"),
         )
 
         sizer_main.Add(infolabel, 0, 0, 0)
@@ -142,7 +169,7 @@ class WarningPanel(wx.Panel):
             try:
                 value = float(textctrl.GetValue())
             except ValueError:
-                return # We don't update it (yet)
+                return  # We don't update it (yet)
 
             self.update_settings(entry["op"], entry["attr"], flag, active, value)
 
@@ -162,7 +189,7 @@ class WarningPanel(wx.Panel):
             try:
                 value = float(textctrl.GetValue())
             except ValueError:
-                return # We don't update it (yet)
+                return  # We don't update it (yet)
 
             self.update_settings(entry["op"], entry["attr"], flag, active, value)
 
@@ -190,14 +217,13 @@ class WarningPanel(wx.Panel):
         if warning[index] != active:
             warning[index] = active
             anychanges = True
-        if warning[index+1] != value:
-            warning[index+1] = value
+        if warning[index + 1] != value:
+            warning[index + 1] = value
             anychanges = True
         # print ("new[%s]: %s" % (label, warning))
         if anychanges:
             setattr(self.context, label, warning)
             self.context.signal("updateop_tree")
-
 
     def update_widgets(self):
         for op in self.op_id:
