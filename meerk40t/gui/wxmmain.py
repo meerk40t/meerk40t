@@ -1220,7 +1220,7 @@ class MeerK40t(MWindow):
             dlg.Destroy()
 
         @context.console_command("dialog_path", hidden=True)
-        def path(**kwargs):
+        def dialog_path(**kwargs):
             dlg = wx.TextEntryDialog(gui, _("Enter SVG Path Data"), _("Path Entry"), "")
             dlg.SetValue("")
 

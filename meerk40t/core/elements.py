@@ -720,7 +720,7 @@ class Elemental(Service):
             help=_("Wordlist base operation"),
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, remainder=None, **kwargs):
+        def wordlist_base(command, channel, _, remainder=None, **kwargs):
             return "wordlist", ""
 
         @self.console_argument("key", help=_("Wordlist value"))
@@ -1351,19 +1351,19 @@ class Elemental(Service):
             operand = list()
 
             def filter_parser(text: str):
-                pos = 0
+                p = 0
                 limit = len(text)
-                while pos < limit:
-                    match = filter_re.match(text, pos)
+                while p < limit:
+                    match = filter_re.match(text, p)
                     if match is None:
                         break  # No more matches.
-                    kind = match.lastgroup
-                    start = pos
-                    pos = match.end()
-                    if kind == "SKIP":
+                    _kind = match.lastgroup
+                    _start = p
+                    p = match.end()
+                    if _kind == "SKIP":
                         continue
-                    value = match.group()
-                    yield kind, value, start, pos
+                    _value = match.group()
+                    yield _kind, _value, _start, p
 
             def solve_to(order: int):
                 try:
@@ -4502,8 +4502,8 @@ class Elemental(Service):
             width += x_offset * 2
             height += y_offset * 2
 
-            element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            node = self.elem_branch.add(shape=element, type="elem ellipse")
+            _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
+            node = self.elem_branch.add(shape=_element, type="elem ellipse")
             node.stroke = Color("red")
             self.set_emphasis([node])
             node.focus()
@@ -4512,7 +4512,7 @@ class Elemental(Service):
 
             if data is None:
                 data = list()
-            data.append(element)
+            data.append(_element)
             return "elements", data
 
         @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
@@ -5256,13 +5256,13 @@ class Elemental(Service):
             else:
 
                 def m_list(path, menu):
-                    for i, n in enumerate(menu):
+                    for i, _n in enumerate(menu):
                         p = list(path)
                         p.append(str(i))
-                        name, submenu = n
-                        channel("%s: %s" % (".".join(p).ljust(10), str(name)))
-                        if isinstance(submenu, list):
-                            m_list(p, submenu)
+                        _name, _submenu = _n
+                        channel("%s: %s" % (".".join(p).ljust(10), str(_name)))
+                        if isinstance(_submenu, list):
+                            m_list(p, _submenu)
 
                 m_list([], menu)
 
@@ -5594,17 +5594,17 @@ class Elemental(Service):
         )
         @self.console_command("note", help=_("note <note>"))
         def note(command, channel, _, append=False, remainder=None, **kwargs):
-            note = remainder
-            if note is None:
+            _note = remainder
+            if _note is None:
                 if self.note is None:
                     channel(_("No Note."))
                 else:
                     channel(str(self.note))
             else:
                 if append:
-                    self.note += "\n" + note
+                    self.note += "\n" + _note
                 else:
-                    self.note = note
+                    self.note = _note
                 channel(_("Note Set."))
                 channel(str(self.note))
 
@@ -6881,7 +6881,7 @@ class Elemental(Service):
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
 
-        def add_after_index(self, node=None):
+        def add_after_index(node=None):
             try:
                 if node is None:
                     node = list(self.ops(emphasized=True))[-1]
@@ -6894,72 +6894,72 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Image"), node_type=op_nodes, help="")
         def add_operation_image(node, **kwargs):
-            append_operation_image(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_image(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Raster"), node_type=op_nodes, help="")
         def add_operation_raster(node, **kwargs):
-            append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_raster(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Engrave"), node_type=op_nodes, help="")
         def add_operation_engrave(node, **kwargs):
-            append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_engrave(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Cut"), node_type=op_nodes, help="")
         def add_operation_cut(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_cut(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Hatch"), node_type=op_nodes, help="")
         def add_operation_hatch(node, **kwargs):
-            append_operation_hatch(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_hatch(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert operation"))
         @self.tree_operation(_("Add Dots"), node_type=op_nodes, help="")
         def add_operation_dots(node, **kwargs):
-            append_operation_dots(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_dots(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
-            append_operation_home(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_home(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
-            append_operation_origin(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_origin(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
-            append_operation_beep(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_beep(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
-            append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_interrupt(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
         def add_operation_wait(node, **kwargs):
-            append_operation_wait(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_wait(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")
         def add_operation_output(node, **kwargs):
-            append_operation_output(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_output(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Input"), node_type=op_nodes, help="")
         def add_operation_input(node, **kwargs):
-            append_operation_input(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_input(node, pos=add_after_index( node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
-            pos = add_after_index(self, node)
+            pos = add_after_index(node)
             append_operation_home(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
