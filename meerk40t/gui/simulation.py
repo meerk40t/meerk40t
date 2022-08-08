@@ -15,6 +15,7 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from .mwindow import MWindow
+from .choicepropertypanel import ChoicePropertyPanel
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
@@ -65,6 +66,16 @@ class SimulationPanel(wx.Panel, Job):
         if self.widget_scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
             # Was set...
             self.widget_scene.context.draw_mode ^= DRAW_MODE_GUIDES
+
+        # poor mans slide out
+        self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
+        choices = self.context.lookup("choices/optimize")[:7]
+        self.panel_optimize = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
+        )
+        self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
+        self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
 
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
@@ -118,6 +129,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.combo_device.SetSelection(index)
         self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
+        self._slided_in = None
 
         self.__set_properties()
         self.__do_layout()
@@ -138,9 +150,8 @@ class SimulationPanel(wx.Panel, Job):
         # end wxGlade
 
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
-        self.widget_scene.add_scenewidget(
-            SimulationTravelWidget(self.widget_scene, self)
-        )
+        self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
+        self.widget_scene.add_scenewidget(self.sim_travel)
         # Don't let grid resize itself
         self.widget_scene.auto_tick = False
         self.widget_scene.tick_distance = 10  # mm
@@ -221,7 +232,26 @@ class SimulationPanel(wx.Panel, Job):
         sizer_laser_distance = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Laser Distance")), wx.HORIZONTAL
         )
-        v_sizer_main.Add(self.view_pane, 3, wx.EXPAND, 0)
+        # +--------+---+-------+
+        # |   P    |   | Optim |
+        # |   R    |   |       |
+        # |   E    |   |Options|
+        # |   V    | > |       |
+        # |   I    |   |       |
+        # |   E    |   +-------+
+        # |   W    |   |Refresh|
+        # +--------+---+-------+
+        self.btn_slide_options.SetMinSize(wx.Size(20, -1))
+        self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
+        self.voption_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
+
+        self.hscene_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.hscene_sizer.Add(self.view_pane, 2, wx.EXPAND, 0)
+        self.hscene_sizer.Add(self.btn_slide_options, 0, wx.EXPAND, 0)
+        self.hscene_sizer.Add(self.voption_sizer, 1, wx.EXPAND, 0)
+
+        v_sizer_main.Add(self.hscene_sizer, 3, wx.EXPAND, 0)
 
         h_sizer_scroll.Add(self.slider_progress, 1, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
@@ -265,8 +295,32 @@ class SimulationPanel(wx.Panel, Job):
         v_sizer_main.Add(h_sizer_text_2, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_buttons, 1, wx.EXPAND, 0)
         self.SetSizer(v_sizer_main)
+        self.slided_in = True  # Hide initially
         self.Layout()
         # end wxGlade
+
+    # Manages the display, non-display of the optimisation-options
+    @property
+    def slided_in(self):
+        return self._slided_in
+
+    @slided_in.setter
+    def slided_in(self, newvalue):
+        self._slided_in = newvalue
+        if newvalue:
+            # Slided in ->
+            self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
+            self.voption_sizer.Layout()
+            self.btn_slide_options.SetLabel("<")
+            self.hscene_sizer.Layout()
+            self.Layout()
+        else:
+            # Slided out ->
+            self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
+            self.voption_sizer.Layout()
+            self.btn_slide_options.SetLabel(">")
+            self.hscene_sizer.Layout()
+            self.Layout()
 
     def toggle_background(self, event):
         """
@@ -373,22 +427,31 @@ class SimulationPanel(wx.Panel, Job):
             gui.PopupMenu(menu)
             menu.Destroy()
 
+    def refresh_my_plan(self):
+        # Stop animation
+        if self.running:
+            self._stop()
+            return
+        # Refresh cutcode
+        self.cutcode = CutCode()
+
+        for c in self.operations:
+            if isinstance(c, CutCode):
+                self.cutcode.extend(c)
+        self.cutcode = CutCode(self.cutcode.flat())
+        self.max = max(len(self.cutcode), 0) + 1
+        self.progress = self.max
+        self.slider_progress.SetMin(0)
+        self.slider_progress.SetMax(self.max)
+        self.slider_progress.SetValue(self.max)
+        self.sim_travel.initvars()
+        self.update_fields()
+        self.request_refresh()
+
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         if plan_name == self.plan_name:
-            # Refresh cutcode
-            self.cutcode = CutCode()
-
-            for c in self.operations:
-                if isinstance(c, CutCode):
-                    self.cutcode.extend(c)
-            self.cutcode = CutCode(self.cutcode.flat())
-            self.max = max(len(self.cutcode), 0) + 1
-            self.progress = self.max
-            self.slider_progress.SetMin(0)
-            self.slider_progress.SetMax(self.max)
-            self.slider_progress.SetValue(self.max)
-            self.request_refresh()
+            self.refresh_my_plan()
 
     def update_fields(self):
         step = self.progress
@@ -404,23 +467,23 @@ class SimulationPanel(wx.Panel, Job):
 
         try:
             time_travel = travel / self.cutcode.travel_speed
-            t_hours = time_travel // 3600
-            t_mins = (time_travel % 3600) // 60
-            t_seconds = time_travel % 60
+            t_hours = int(time_travel // 3600)
+            t_mins = int((time_travel % 3600) // 60)
+            t_seconds = int(time_travel % 60)
             self.text_time_travel_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
             time_cuts = self.cutcode.duration_cut(stop_at=step)
-            t_hours = time_cuts // 3600
-            t_mins = (time_cuts % 3600) // 60
-            t_seconds = time_cuts % 60
+            t_hours = int(time_cuts // 3600)
+            t_mins = int((time_cuts % 3600) // 60)
+            t_seconds = int(time_cuts % 60)
             self.text_time_laser_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
             time_total = time_travel + time_cuts + extra
-            t_hours = time_total // 3600
-            t_mins = (time_total % 3600) // 60
-            t_seconds = time_total % 60
+            t_hours = int(time_total // 3600)
+            t_mins = int((time_total % 3600) // 60)
+            t_seconds = int(time_total % 60)
             self.text_time_total_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
@@ -439,22 +502,31 @@ class SimulationPanel(wx.Panel, Job):
 
         try:
             time_travel = travel / self.cutcode.travel_speed
-            t_hours = time_travel // 3600
-            t_mins = (time_travel % 3600) // 60
-            t_seconds = time_travel % 60
-            self.text_time_travel.SetValue(f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}")
+            t_hours = int(time_travel // 3600)
+            t_mins = int((time_travel % 3600) // 60)
+            t_seconds = int(time_travel % 60)
+            self.text_time_travel.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
             time_cuts = self.cutcode.duration_cut()
-            t_hours = time_cuts // 3600
-            t_mins = (time_cuts % 3600) // 60
-            t_seconds = time_cuts % 60
-            self.text_time_laser.SetValue(f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}")
+            t_hours = int(time_cuts // 3600)
+            t_mins = int((time_cuts % 3600) // 60)
+            t_seconds = int(time_cuts % 60)
+            self.text_time_laser.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
             time_total = time_travel + time_cuts + extra
-            t_hours = time_total // 3600
-            t_mins = (time_total % 3600) // 60
-            t_seconds = time_total % 60
-            self.text_time_total.SetValue(f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}")
+            t_hours = int(time_total // 3600)
+            t_mins = int((time_total % 3600) // 60)
+            t_seconds = int(time_total % 60)
+            self.text_time_total.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
         except ZeroDivisionError:
             pass
+
+    def slide_out(self, event):
+        self.slided_in = not self.slided_in
+        event.Skip()
+
+    def on_redo_it(self, event):
+        with wx.BusyInfo(_("Preparing simulation...")):
+            self.context("plan{plan} clear\nplan{plan} copy preprocess validate blob preopt optimize\n".format(plan=self.plan_name))
+        self.refresh_my_plan()
 
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
@@ -572,6 +644,9 @@ class SimulationTravelWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
         self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.initvars()
+
+    def initvars(self):
         self.starts = list()
         self.ends = list()
         self.pos = list()

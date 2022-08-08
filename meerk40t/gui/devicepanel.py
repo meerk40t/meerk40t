@@ -145,6 +145,18 @@ class DevicePanel(wx.Panel):
             self.context.signal("device;renamed")
         event.Skip()
 
+    def recolor_device_items(self):
+        # As we might be in darkmode, we can't just use wx.BLACK
+        stdcol = self.button_create_device.GetForegroundColour()
+        for idx in range(self.devices_list.GetItemCount()):
+            item = self.devices_list.GetItem(idx)
+            dev_index = item.GetData()
+            service = self.devices[dev_index]
+            if self.context.device is service:
+                self.devices_list.SetItemTextColour(idx, wx.RED)
+            else:
+                self.devices_list.SetItemTextColour(idx, stdcol)
+
     @lookup_listener("service/device/available")
     def refresh_device_tree(self, *args):
         self.devices = []
@@ -225,12 +237,12 @@ class DevicePanel(wx.Panel):
         self.button_rename_device.Enable(flag1)
 
     def on_tree_device_activated(self, event):  # wxGlade: DevicePanel.<event_handler>
-
         dev_index = event.GetItem().GetData()
         if 0 <= dev_index < len(self.devices):
             device = self.devices[dev_index]
             if device is not None:
                 device.kernel.activate_service_path("device", device.path)
+                self.recolor_device_items()
 
     def on_tree_device_right_click(self, event):
         index = self.current_item
@@ -280,6 +292,7 @@ class DevicePanel(wx.Panel):
         def activateit(event=None):
             if service is not None:
                 service.kernel.activate_service_path("device", service.path)
+                self.recolor_device_items()
 
         return activateit
 
@@ -320,6 +333,7 @@ class DevicePanel(wx.Panel):
         service = self.get_selected_device()
         if service is not None:
             service.kernel.activate_service_path("device", service.path)
+            self.recolor_device_items()
 
     def on_button_rename_device(self, event):  # wxGlade: DevicePanel.<event_handler>
         service = self.get_selected_device()
