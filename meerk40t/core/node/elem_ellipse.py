@@ -1,7 +1,8 @@
 from copy import copy
+from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Node
-from meerk40t.svgelements import Path
+from meerk40t.svgelements import Path, SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
 
 
 class EllipseNode(Node):
@@ -23,26 +24,12 @@ class EllipseNode(Node):
         self.__formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
-        if matrix is None:
-            self.matrix = shape.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = shape.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = shape.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = shape.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if fillrule is None:
-            self.fillrule = Fillrule.FILLRULE_NONZERO
-        else:
-            self.fillrule = fillrule
+        self.matrix = shape.transform if matrix is None else matrix
+        self.fill = shape.fill if fill is None else fill
+        self.stroke = shape.stroke if stroke is None else stroke
+        self.stroke_width = shape.stroke_width if stroke_width is None else stroke_width
+        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
+        self._stroke_scaled = shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
         self.lock = False
 
     def __repr__(self):
@@ -72,6 +59,20 @@ class EllipseNode(Node):
             self._bounds = self.shape.bbox(with_stroke=True)
             self._bounds_dirty = False
         return self._bounds
+
+    @property
+    def stroke_scaled(self):
+        return self._stroke_scaled
+
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        if not v and self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width *= sqrt(abs(matrix.determinant))
+        if v and not self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width /= sqrt(abs(matrix.determinant))
+        self._stroke_scaled = v
 
     def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
@@ -132,5 +133,4 @@ class EllipseNode(Node):
     def as_path(self):
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self.shape.fillrule = self.fillrule
         return abs(Path(self.shape))
