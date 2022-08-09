@@ -317,11 +317,7 @@ class Single(PlotManipulation):
         self.single_y = None
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.single_x),
-            str(self.single_y),
-        )
+        return f"{self.__class__.__name__}({str(self.single_x)},{str(self.single_y)})"
 
     def process(self, plot):
         """
@@ -395,11 +391,7 @@ class Smooth(PlotManipulation):
         self.smooth_y = None
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.smooth_x),
-            str(self.smooth_y),
-        )
+        return f"{self.__class__.__name__}({str(self.smooth_x)},{str(self.smooth_y)})"
 
     def flushed(self):
         return (
@@ -612,13 +604,7 @@ class Group(PlotManipulation):
         self.group_dy = 0
 
     def __str__(self):
-        return "%s(%s,%s,%s,%s)" % (
-            self.__class__.__name__,
-            str(self.group_x),
-            str(self.group_y),
-            str(self.group_dx),
-            str(self.group_dy),
-        )
+        return f"{self.__class__.__name__}({str(self.group_x)},{str(self.group_y)},{str(self.group_dx)},{str(self.group_dy)})"
 
     def flushed(self):
         return (

@@ -278,7 +278,7 @@ class Bind(Service):
                 self.keymap[key] = command_line
             elif key in self.keymap:
                 del self.keymap[key]
-                channel(_("Unbound %s") % key)
+                channel(_("Unbound {key}").format(key=key))
             return
 
         self.read_persistent_string_dict(self.keymap, suffix=True)
@@ -396,9 +396,11 @@ class Alias(Service):
             if remainder is None:
                 if alias in self.aliases:
                     del self.aliases[alias]
-                    channel(_("Alias %s unset.") % alias)
+                    channel(_("Alias {alias_name} unset.").format(alias_name=alias))
                 else:
-                    channel(_("No alias for %s was set.") % alias)
+                    channel(
+                        _("No alias for {alias_name} was set.").format(alias_name=alias)
+                    )
             else:
                 self.aliases[alias] = remainder
 

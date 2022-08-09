@@ -445,22 +445,34 @@ class wxMeerK40t(wx.App, Module):
                 path = kernel.get_context(path)
 
             if remainder is None:
-                channel(_("Loaded Windows in Context %s:") % str(context.path))
+                channel(
+                    _("Loaded Windows in Context {name}:").format(
+                        name=str(context.path)
+                    )
+                )
                 for i, name in enumerate(context.opened):
                     if not name.startswith("window"):
                         continue
                     module = context.opened[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
+                    channel(
+                        _("{index}: {name} as type of {type}").format(
+                            index=i + 1, name=name, type=type(module)
+                        )
+                    )
 
                 channel("----------")
                 if path is context:
                     return "window", path
-                channel(_("Loaded Windows in Path %s:") % str(path.path))
+                channel(_("Loaded Windows in Path {path}:").format(path=str(path.path)))
                 for i, name in enumerate(path.opened):
                     if not name.startswith("window"):
                         continue
                     module = path.opened[name]
-                    channel(_("%d: %s as type of %s") % (i + 1, name, type(module)))
+                    channel(
+                        _("{index}: {name} as type of {type}").format(
+                            index=i + 1, name=name, type=type(module)
+                        )
+                    )
                 channel("----------")
             return "window", path
 
@@ -565,7 +577,7 @@ class wxMeerK40t(wx.App, Module):
                             wx.CallAfter(window_open, None)
                         # kernel.run_later(window_open, None)
                 else:
-                    channel(_("No such window as %s" % window))
+                    channel(_("No such window as {name}").format(name=window))
                     raise CommandSyntaxError
 
         @kernel.console_argument("window", type=str, help=_("window to be closed"))
@@ -579,9 +591,10 @@ class wxMeerK40t(wx.App, Module):
             path = data
             try:
                 parent = context.gui if hasattr(context, "gui") else None
-                kernel.run_later(
-                    lambda e: path.close(f"window/{window}", parent, *args), None
-                )
+                if wx.IsMainThread():
+                    path.close(f"window/{window}", parent, *args)
+                else:
+                    wx.CallAfter(path.close(f"window/{window}", parent, *args), None)
                 channel(_("Window closed."))
             except (KeyError, ValueError):
                 channel(_("No such window as {window}").format(window=window))
@@ -737,7 +750,7 @@ def send_data_to_developers(filename, data):
     http_req.append("Host: api.anonfiles.com")
     http_req.append("User-Agent: meerk40t/0.0.1")
     http_req.append("Accept: */*")
-    http_req.append("Content-Length: %d" % (len(payload)))
+    http_req.append(f"Content-Length: {len(payload)}")
     http_req.append(f"Content-Type: multipart/form-data; boundary={boundary}")
     http_req.append("")
     header = "\x0D\x0A".join(http_req)

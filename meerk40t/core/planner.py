@@ -423,10 +423,10 @@ class Planner(Service):
                 for i, plan_name in enumerate(cutplan.name):
                     channel(f"{i}: {plan_name}")
                 channel(_("----------"))
-                channel(_("Plan %s:") % self._default_plan)
+                channel(_("Plan {plan}:").format(plan=self._default_plan))
                 for i, op_name in enumerate(cutplan.plan):
                     channel(f"{i}: {op_name}")
-                channel(_("Commands %s:") % self._default_plan)
+                channel(_("Commands {plan}:").format(plan=self._default_plan))
                 for i, cmd_name in enumerate(cutplan.commands):
                     channel(f"{i}: {cmd_name}")
                 channel(_("----------"))
@@ -445,10 +445,10 @@ class Planner(Service):
             for i, plan_name in enumerate(self._plan):
                 channel(f"{i}: {plan_name}")
             channel(_("----------"))
-            channel(_("Plan %s:") % data.name)
+            channel(_("Plan {plan}:").format(plan=data.name))
             for i, op_name in enumerate(data.plan):
                 channel(f"{i}: {op_name}")
-            channel(_("Commands %s:") % data.name)
+            channel(_("Commands {plan}:").format(plan=data.name))
             for i, cmd_name in enumerate(data.commands):
                 channel(f"{i}: {cmd_name}")
             channel(_("----------"))

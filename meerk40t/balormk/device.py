@@ -1129,7 +1129,9 @@ class BalorDevice(Service, ViewPort):
                 return
             if time > 1000.0:
                 channel(
-                    _('"%sms" exceeds 1 second limit to fire a standing laser.') % time
+                    _(
+                        '"{time}ms" exceeds 1 second limit to fire a standing laser.'
+                    ).format(time=time)
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -1138,7 +1140,7 @@ class BalorDevice(Service, ViewPort):
                     return
             if self.spooler.is_idle:
                 self.spooler.command("pulse", time)
-                channel(_("Pulse laser for %f milliseconds") % time)
+                channel(_("Pulse laser for {time} milliseconds").format(time=time))
             else:
                 channel(_("Pulse laser failed: Busy"))
             return

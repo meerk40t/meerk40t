@@ -174,7 +174,10 @@ class SpoolerPanel(wx.Panel):
             return
         menu = wx.Menu()
         item = menu.Append(
-            wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
+            wx.ID_ANY,
+            _("Remove {name}").format(name=str(element)[:16]),
+            "",
+            wx.ITEM_NORMAL,
         )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), item)
 

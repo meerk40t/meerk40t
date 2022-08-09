@@ -254,7 +254,9 @@ class LihuiyuDevice(Service, ViewPort):
                 return
             if time > 1000.0:
                 channel(
-                    _('"%sms" exceeds 1 second limit to fire a standing laser.') % time
+                    _(
+                        '"{time}ms" exceeds 1 second limit to fire a standing laser.'
+                    ).format(time=time)
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -270,7 +272,7 @@ class LihuiyuDevice(Service, ViewPort):
 
             if self.spooler.is_idle:
                 self.spooler.laserjob(list(timed_fire()))
-                channel(_("Pulse laser for %f milliseconds") % time)
+                channel(_("Pulse laser for {time} milliseconds").format(time=time))
             else:
                 channel(_("Pulse laser failed: Busy"))
             return
@@ -316,7 +318,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if current_speed is None:
                     channel(_("Speed is unset."))
                 else:
-                    channel(_("Speed set at: %f mm/s") % driver.settings.speed)
+                    channel(
+                        _("Speed set at: {speed} mm/s").format(
+                            speed=driver.settings.speed
+                        )
+                    )
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -335,7 +341,7 @@ class LihuiyuDevice(Service, ViewPort):
             elif percent:
                 s = driver.speed * (s / 100.0)
             driver.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % driver.speed)
+            channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @self.console_command("power", help=_("Set Driver Power"))
@@ -345,7 +351,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if original_power is None:
                     channel(_("Power is not set."))
                 else:
-                    channel(_("Power set at: %d pulses per inch") % original_power)
+                    channel(
+                        _("Power set at: {power} pulses per inch").format(
+                            power=original_power
+                        )
+                    )
             else:
                 try:
                     self.driver.set_power(ppi)
@@ -368,7 +378,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if self.driver.acceleration is None:
                     channel(_("Acceleration is set to default."))
                 else:
-                    channel(_("Acceleration: %d") % self.driver.acceleration)
+                    channel(
+                        _("Acceleration: {acceleration}").format(
+                            acceleration=self.driver.acceleration
+                        )
+                    )
 
             else:
                 try:
@@ -378,7 +392,11 @@ class LihuiyuDevice(Service, ViewPort):
                         channel(_("Acceleration is set to default."))
                         return
                     self.driver.set_acceleration(v)
-                    channel(_("Acceleration: %d") % self.driver.acceleration)
+                    channel(
+                        _("Acceleration: {acceleration}").format(
+                            acceleration=self.driver.acceleration
+                        )
+                    )
                 except ValueError:
                     channel(_("Invalid Acceleration [1-4]."))
                     return
@@ -450,10 +468,9 @@ class LihuiyuDevice(Service, ViewPort):
                 self.rapid_override_speed_x = rapid_x
                 self.rapid_override_speed_y = rapid_y
                 channel(
-                    _("Rapid Limit: %f, %f")
-                    % (
-                        self.rapid_override_speed_x,
-                        self.rapid_override_speed_y,
+                    _("Rapid Limit: {max_x}, {max_y}").format(
+                        max_x=self.rapid_override_speed_x,
+                        max_y=self.rapid_override_speed_y,
                     )
                 )
             else:
@@ -496,7 +513,7 @@ class LihuiyuDevice(Service, ViewPort):
                         self.output.write(buffer)
                     self.output.write(b"\n")
             except (PermissionError, IOError, FileNotFoundError):
-                channel(_("Could not load: %s") % filename)
+                channel(_("Could not load: {filename}").format(filename=filename))
 
         @self.console_argument("filename", type=str)
         @self.console_command(
@@ -520,7 +537,7 @@ class LihuiyuDevice(Service, ViewPort):
                     buffer += bytes(self.controller._queue)
                     f.write(buffer.decode("utf-8"))
             except (PermissionError, IOError):
-                channel(_("Could not save: %s" % filename))
+                channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_command(
             "egv",
@@ -635,18 +652,18 @@ class LihuiyuDevice(Service, ViewPort):
                 if quit:
                     self.close(server_name)
                     return
-                channel(_("TCP Server for lihuiyu on port: %d") % port)
+                channel(_("TCP Server for lihuiyu on port: {port}").format(port=port))
                 if not silent:
                     console = kernel.channel("console")
                     server.events_channel.watch(console)
                     if watch:
                         server.data_channel.watch(console)
-                channel(_("Watching Channel: %s") % "server")
+                channel(_("Watching Channel: {channel}").format(channel="server"))
                 self.channel(f"{server_name}/recv").watch(output.write)
-                channel(_("Attached: %s") % repr(output))
+                channel(_("Attached: {output}").format(output=repr(output)))
 
             except OSError:
-                channel(_("Server failed on port: %d") % port)
+                channel(_("Server failed on port: {port}").format(port=port))
             except KeyError:
                 channel(_("Server cannot be attached to any device."))
             return
@@ -655,7 +672,9 @@ class LihuiyuDevice(Service, ViewPort):
         def lhyemulator(channel, _, **kwargs):
             try:
                 self.open_as("emulator/lihuiyu", "lhyemulator")
-                channel(_("Lihuiyu Emulator attached to %s") % str(self))
+                channel(
+                    _("Lihuiyu Emulator attached to {device}").format(device=str(self))
+                )
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
             return
@@ -2549,7 +2568,9 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return f"TCPOutput('{self.service.address}:{self.service.port}','{self.name}')"
+            return (
+                f"TCPOutput('{self.service.address}:{self.service.port}','{self.name}')"
+            )
         return f"TCPOutput('{self.service.address}:{self.service.port}')"
 
     def __len__(self):
@@ -2572,7 +2593,7 @@ def get_code_string_from_code(code):
     elif code == 0:
         return "USB Failed"
     else:
-        return "UNK %02x" % code
+        return f"UNK {code:02x}"
 
 
 distance_lookup = [

@@ -117,7 +117,7 @@ class DummyDevice(Service, ViewPort):
                 for d, d_name in enumerate(self.match("device", suffix=True)):
                     channel(f"{d}: {d_name}")
                 channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
+                channel(_("Spooler on device {name}:").format(name=str(self.label)))
                 for s, op_name in enumerate(spooler.queue):
                     channel(f"{s}: {op_name}")
                 channel(_("----------"))

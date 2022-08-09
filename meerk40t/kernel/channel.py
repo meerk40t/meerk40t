@@ -126,7 +126,7 @@ class Channel:
             message = "    " + message.replace("\n", "\n    ")
         if self.timestamp:
             ts = datetime.now().strftime("[%H:%M:%S] ")
-            message = ts + message.replace("\n", "\n%s" % ts)
+            message = ts + message.replace("\n", f"\n{ts}")
         if ansi:
             if self.ansi:
                 # Convert bbcode to ansi
