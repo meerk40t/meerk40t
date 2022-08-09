@@ -508,7 +508,7 @@ class Scene(Module, Job):
         gc = wx.GraphicsContext.Create(dc)
         gc.Size = dc.Size
 
-        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+        font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         gc.SetFont(font, wx.BLACK)
         self.draw(gc)
         if dm & DRAW_MODE_INVERT != 0:

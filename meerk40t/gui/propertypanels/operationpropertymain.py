@@ -1463,7 +1463,7 @@ class HatchSettingsPanel(wx.Panel):
                     gc.SetPen(self.raster_pen)
                     gc.StrokeLineSegments(starts, ends)
                 else:
-                    font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+                    font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
                     gc.SetFont(font, wx.BLACK)
                     gc.DrawText(_("No hatch preview..."), 0, 0)
             if self.travel_lines is not None:
