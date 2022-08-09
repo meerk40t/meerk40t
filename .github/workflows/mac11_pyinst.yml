@@ -68,7 +68,7 @@ jobs:
         ## python3.8 -m pip install wheel six numpy
         ## python3.8 -m pip install pyinstaller py2app wheel six numpy
         python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
-        if [ -f requirements.txt ]; then python3.8 -m pip install -r requirements.txt; fi
+        if [ -f requirements-nogui.txt ]; then python3.8 -m pip install -r requirements-nogui.txt; fi
         python3.8 -m pip uninstall -y meerk40t[gui]
 
     - name: Build meerk40t

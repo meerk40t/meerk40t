@@ -24,7 +24,7 @@ jobs:
         python3 -m pip install --upgrade pip
         pip install pyinstaller wheel
         pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements-nogui.txt ]; then pip install -r requirements-nogui.txt; fi
 
     - name: Build meerk40t
       run: |

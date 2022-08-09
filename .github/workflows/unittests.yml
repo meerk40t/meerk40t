@@ -51,12 +51,12 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-gui.txt') }}
+        key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-nogui.txt') }}
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
-        if [ -f requirements-gui.txt ]; then pip install --upgrade --upgrade-strategy eager -r requirements.txt; fi
+        if [ -f requirements-nogui.txt ]; then pip install --upgrade --upgrade-strategy eager -r requirements-nogui.txt; fi
 
     - name: List environment
       env:
