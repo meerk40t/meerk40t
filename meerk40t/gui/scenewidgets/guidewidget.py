@@ -654,7 +654,7 @@ class GuideWidget(Widget):
 
                     if (y - last_text_pos) >= t_height * 1.25:
                         # Adding zero makes -0 into positive 0
-                        gc.DrawText(f"{mark_point + 0}g", edge_gap, y + 0)
+                        gc.DrawText(f"{mark_point + 0:g}", edge_gap, y + 0)
                         last_text_pos = y
             y += points_y_primary
         if len(starts) > 0:
