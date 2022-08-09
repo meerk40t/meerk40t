@@ -1689,9 +1689,6 @@ class SelectionWidget(Widget):
         # want to have sharp edges
         self.handle_pen.SetJoin(wx.JOIN_MITER)
 
-        self.popupID1 = None
-        self.popupID2 = None
-        self.popupID3 = None
         self.gc = None
         self.reset_variables()
         self.modifiers = []
@@ -1934,25 +1931,19 @@ class SelectionWidget(Widget):
         # Add Manipulation menu
         if reference_object is not None:
             submenu = wx.Menu()
-            if self.popupID1 is None:
-                self.popupID1 = wx.NewId()
-            gui.Bind(wx.EVT_MENU, self.show_reference_align_dialog, id=self.popupID1)
-            submenu.Append(self.popupID1, _("Align to reference object"))
+            item1 = submenu.Append(wx.ID_ANY, _("Align to reference object"))
+            gui.Bind(wx.EVT_MENU, self.show_reference_align_dialog, id=item1.GetId())
 
         if self.single_element and not self.is_ref:
             if submenu is None:
                 submenu = wx.Menu()
-            if self.popupID3 is None:
-                self.popupID3 = wx.NewId()
-            gui.Bind(wx.EVT_MENU, self.become_reference, id=self.popupID3)
-            submenu.Append(self.popupID3, _("Become reference object"))
+            item2 = submenu.Append(wx.ID_ANY, _("Become reference object"))
+            gui.Bind(wx.EVT_MENU, self.become_reference, id=item2.GetId())
         if not self.scene.reference_object is None:
             if submenu is None:
                 submenu = wx.Menu()
-            if self.popupID2 is None:
-                self.popupID2 = wx.NewId()
-            gui.Bind(wx.EVT_MENU, self.delete_reference, id=self.popupID2)
-            submenu.Append(self.popupID2, _("Clear reference object"))
+            item3 = submenu.Append(wx.ID_ANY, _("Clear reference object"))
+            gui.Bind(wx.EVT_MENU, self.delete_reference, id=item3.GetId())
 
         if not submenu is None:
             menu.AppendSubMenu(submenu, _("Reference Object"))

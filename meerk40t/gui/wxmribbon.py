@@ -406,8 +406,8 @@ class RibbonPanel(wx.Panel):
             return
         menu = wx.Menu()
         for v in button.button_dict["multi"]:
-            menu_id = wx.NewId()
-            menu.Append(menu_id, v.get("label"))
+            item = menu.Append(wx.ID_ANY, v.get("label"))
+            menu_id = item.GetId()
             self.Bind(wx.EVT_MENU, self.drop_menu_click(button, v), id=menu_id)
         event.PopupMenu(menu)
 
@@ -502,9 +502,9 @@ class RibbonPanel(wx.Panel):
 
         for button in buttons:
             # Every registered button in the updated lookup gets created.
-            new_id = wx.NewId()
             group = button.get("group")
             resize_param = button.get("size")
+            new_id = wx.NewIdRef()
             if "multi" in button:
                 # Button is a multi-type button
                 b = button_bar.AddHybridButton(
