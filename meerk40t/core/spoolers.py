@@ -42,7 +42,7 @@ def plugin(kernel, lifecycle):
                 for d, d_name in enumerate(device.match("device", suffix=True)):
                     channel(f"{d}: {d_name}")
                 channel(_("----------"))
-                channel(_("Spooler on device %s:") % str(device.label))
+                channel(_("Spooler on device {name}:").format(name=str(device.label)))
                 for s, op_name in enumerate(spooler.queue):
                     channel(f"{s}: {op_name}")
                 channel(_("----------"))
@@ -83,7 +83,7 @@ def plugin(kernel, lifecycle):
             for d, d_name in enumerate(kernel.match("device", suffix=True)):
                 channel(f"{d}: {d_name}")
             channel(_("----------"))
-            channel(_("Spooler on device %s:" % str(kernel.device.label)))
+            channel(_("Spooler on device {name}:").format(name=str(kernel.device.label)))
             for s, op_name in enumerate(spooler.queue):
                 channel(f"{s}: {op_name}")
             channel(_("----------"))
@@ -473,7 +473,7 @@ class Spooler:
         self._thread = None
 
     def __repr__(self):
-        return "Spooler(%s)" % str(self.context)
+        return f"Spooler({str(self.context)})"
 
     def __del__(self):
         self.name = None

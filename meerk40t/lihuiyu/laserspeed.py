@@ -345,7 +345,7 @@ def encode_16bit(value):
     value = int(value)
     b0 = value & 255
     b1 = (value >> 8) & 0xFFFFFF  # unsigned shift, to emulate bugged form.
-    return "%03d%03d" % (b1, b0)
+    return f"{b1:03d}{b0:03d}"
 
 
 def get_acceleration_for_speed(

@@ -268,8 +268,7 @@ def console_command(
             else:
                 if not isinstance(returned, tuple) or len(returned) != 2:
                     raise ValueError(
-                        '"%s" from command "%s" returned improper values. "%s"'
-                        % (str(returned), command, str(kwargs))
+                        f'"{str(returned)}" from command "{command}" returned improper values. "{str(kwargs)}"'
                     )
                 command_return_context, value = returned
             return value, remainder, command_return_context
@@ -296,7 +295,7 @@ def console_command(
 
         for cmd in cmds:
             for i in ins:
-                p = "command/%s/%s" % (i, cmd)
+                p = f"command/{i}/{cmd}"
                 registration.register(p, inner)
         return inner
 

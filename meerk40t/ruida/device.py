@@ -122,13 +122,13 @@ def plugin(kernel, lifecycle=None):
                     channel(_("RuidaServer shutdown."))
                     return
                 if r2m:
-                    channel(_("Ruida Data Server opened on port %d.") % 50200)
+                    channel(_("Ruida Data Server opened on port {port}.").format(port=50200))
                 if r2mj:
-                    channel(_("Ruida Jog Server opened on port %d.") % 50207)
+                    channel(_("Ruida Jog Server opened on port {port}.").format(port=50207))
                 if m2l:
-                    channel(_("Ruida Data Destination opened on port %d.") % 40200)
+                    channel(_("Ruida Data Destination opened on port {port}.").format(port=40200))
                 if m2lj:
-                    channel(_("Ruida Jog Destination opened on port %d.") % 40207)
+                    channel(_("Ruida Jog Destination opened on port {port}.").format(port=40207))
 
                 if verbose:
                     console = kernel.channel("console")
@@ -531,7 +531,7 @@ class RuidaEmulator(Module, Parameters):
             response = b"\xCF"
             self.reply(
                 response,
-                desc="Checksum Fail (%d != %d)" % (checksum_sum, checksum_check),
+                desc=f"Checksum Fail ({checksum_sum} != {checksum_check})"
             )
             self.ruida_channel("--> " + str(data.hex()))
             return
@@ -1128,8 +1128,7 @@ class RuidaEmulator(Module, Parameters):
                     desc = f"Move {param} X: {coord} ({self.x},{self.y})"
                     if self.control:
                         self.context(
-                            "move -f %f %f\n"
-                            % (self.x / UNITS_PER_uM, self.y / UNITS_PER_uM)
+                            f"move -f {self.x / UNITS_PER_uM} {self.y / UNITS_PER_uM}\n"
                         )
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = self.abscoord(array[3:8])
@@ -1184,13 +1183,7 @@ class RuidaEmulator(Module, Parameters):
                 else:
                     vencode = v
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = "Respond %02x %02x (mem: %04x) (%s) = %s" % (
-                        array[2],
-                        array[3],
-                        mem,
-                        name,
-                        str(vencode),
-                    )
+                    respond_desc = f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {str(vencode)}"
             elif array[1] == 0x01:
                 value0 = array[4:9]
                 value1 = array[9:14]
@@ -1944,7 +1937,7 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x0180:
             return "Card Language", 0
         if 0x181 <= mem <= 0x187:
-            return "PC Lock %d" % (mem - 0x181)
+            return f"PC Lock {mem - 0x181}", 0
         if mem == 0x0188:
             return "User Key Slow Velocity", 0
         if mem == 0x0189:

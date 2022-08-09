@@ -381,7 +381,7 @@ class CamInterfaceWidget(Widget):
             item = menu.Append(wx.ID_ANY, _("Update Background"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
-                lambda e: self.cam.context("camera%d background\n" % self.cam.index),
+                lambda e: self.cam.context(f"camera{self.cam.index} background\n"),
                 id=item.GetId(),
             )
 
@@ -443,7 +443,7 @@ class CamInterfaceWidget(Widget):
 
             menu.Append(
                 wx.ID_ANY,
-                _("Preserve: %s") % self.cam.camera.preserve_aspect,
+                _(f"Preserve: {self.cam.camera.preserve_aspect}"),
                 sub_menu,
             )
             menu.AppendSeparator()
@@ -503,20 +503,20 @@ class CamInterfaceWidget(Widget):
                 keys.sort()
                 uri_list = [keylist[k] for k in keys]
                 for uri in uri_list:
-                    item = sub_menu.Append(wx.ID_ANY, _("URI: %s") % uri, "")
+                    item = sub_menu.Append(wx.ID_ANY, _("URI: {uri}").format(uri=uri), "")
                     self.cam.Bind(
                         wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
                     )
 
-            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=0), "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(0), id=item.GetId())
-            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=1), "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(1), id=item.GetId())
-            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=2), "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(2), id=item.GetId())
-            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=3), "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(3), id=item.GetId())
-            item = sub_menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
+            item = sub_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=4), "")
             self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(4), id=item.GetId())
 
             menu.Append(
@@ -689,7 +689,7 @@ class CameraInterface(MWindow):
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("CameraInterface %d") % index)
+        self.SetTitle(_("CameraInterface {index}").format(index=index))
         self.Layout()
 
     def create_menu(self, append):
@@ -709,15 +709,15 @@ class CameraInterface(MWindow):
             id=item.GetId(),
         )
 
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 0, "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=0), "")
         self.Bind(wx.EVT_MENU, self.panel.swap_camera(0), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 1, "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=1), "")
         self.Bind(wx.EVT_MENU, self.panel.swap_camera(1), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 2, "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=2), "")
         self.Bind(wx.EVT_MENU, self.panel.swap_camera(2), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 3, "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=3), "")
         self.Bind(wx.EVT_MENU, self.panel.swap_camera(3), id=item.GetId())
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB %d") % 4, "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("USB {usb_index}").format(usb_index=4), "")
         self.Bind(wx.EVT_MENU, self.panel.swap_camera(4), id=item.GetId())
 
         append(wxglade_tmp_menu, _("Camera"))
@@ -731,7 +731,6 @@ class CameraInterface(MWindow):
     @staticmethod
     def sub_register(kernel):
         CAM_FOUND = "cam_found_indices"
-        CAM_INDEX = "cam_%d_uri"
         CAM_MAX = "cam_search_range"
 
         def camera_click(index=None):
@@ -740,9 +739,9 @@ class CameraInterface(MWindow):
                 kernel.root.setting(int, CAM_MAX, 5)
                 kernel.root.setting(str, CAM_FOUND, "")
                 for ci in range(5):
-                    kernel.root.setting(int, CAM_INDEX % ci, -1)
+                    kernel.root.setting(int, f"cam_{ci}_uri", -1)
                 if index is not None:
-                    ukey = CAM_INDEX % index
+                    ukey = f"cam_{index}_uri"
                     testuri = getattr(kernel.root, ukey)
                     if testuri is None or testuri < 0 or testuri == "":
                         foundstr = getattr(kernel.root, CAM_FOUND)
@@ -771,7 +770,7 @@ class CameraInterface(MWindow):
                 kernel.root.setting(int, CAM_MAX, 5)
                 kernel.root.setting(str, CAM_FOUND, "")
                 for ci in range(5):
-                    ukey = CAM_INDEX % ci
+                    ukey = f"cam_{ci}_uri"
                     kernel.root.setting(int, ukey, -1)
                     setattr(kernel.root, ukey, -1)
                 try:
@@ -782,10 +781,10 @@ class CameraInterface(MWindow):
                 if MAXFIND is None or MAXFIND < 1:
                     MAXFIND = 5
                 found = 0
-                fstr = _("Cameras found: %d")
+                found_camera_string = _("Cameras found: {count}")
                 progress = wx.ProgressDialog(
-                    _("Looking for Cameras (Range=%d)") % MAXFIND,
-                    fstr % found,
+                    _("Looking for Cameras (Range={max_range})").format(max_range=MAXFIND),
+                    found_camera_string.format(count=found),
                     maximum=MAXFIND,
                     parent=None,
                     style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
@@ -802,7 +801,7 @@ class CameraInterface(MWindow):
                             found += 1
                     except:
                         pass
-                    keepgoing = progress.Update(index + 1, fstr % found)
+                    keepgoing = progress.Update(index + 1, found_camera_string.format(count=found))
                     index += 1
                 progress.Destroy()
                 foundstr = ";".join(available_cameras)
@@ -821,27 +820,27 @@ class CameraInterface(MWindow):
                 "multi": [
                     {
                         "identifier": "cam0",
-                        "label": _("Camera %d") % 0,
+                        "label": _("Camera {index}").format(index=0),
                         "action": camera_click(0),
                     },
                     {
                         "identifier": "cam1",
-                        "label": _("Camera %d") % 1,
+                        "label": _("Camera {index}").format(index=1),
                         "action": camera_click(1),
                     },
                     {
                         "identifier": "cam2",
-                        "label": _("Camera %d") % 2,
+                        "label": _("Camera {index}").format(index=2),
                         "action": camera_click(2),
                     },
                     {
                         "identifier": "cam3",
-                        "label": _("Camera %d") % 3,
+                        "label": _("Camera {index}").format(index=3),
                         "action": camera_click(3),
                     },
                     {
                         "identifier": "cam4",
-                        "label": _("Camera %d") % 4,
+                        "label": _("Camera {index}").format(index=4),
                         "action": camera_click(5),
                     },
                     {
@@ -961,7 +960,7 @@ class CameraURIPanel(wx.Panel):
         element = event.Text
         menu = wx.Menu()
         convert = menu.Append(
-            wx.ID_ANY, _("Remove %s") % str(element)[:16], "", wx.ITEM_NORMAL
+            wx.ID_ANY, _("Remove {name}").format(name=str(element)[:16]), "", wx.ITEM_NORMAL
         )
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(index), convert)
         convert = menu.Append(wx.ID_ANY, _("Duplicate"), "", wx.ITEM_NORMAL)

@@ -1005,7 +1005,7 @@ class MovePanel(wx.Panel):
             pos_y = self.context.device.length(
                 self.text_position_y.Value, axis=1, new_units=self.context.units_name
             )
-            self.context("move %s %s\n" % (pos_x, pos_y))
+            self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
             return
 

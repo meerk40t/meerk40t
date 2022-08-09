@@ -1038,7 +1038,7 @@ class SkewWidget(Widget):
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         s_me = "skew"
-        s_help = "Skew element in %s-direction" % ("X" if self.is_x else "Y")
+        s_help = f"Skew element in {'X' if self.is_x else 'Y'}-direction"
         response = process_event(
             widget=self,
             widget_identifier=s_me,

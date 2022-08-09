@@ -224,7 +224,7 @@ class SceneSpaceWidget(Widget):
         self.aspect_matrix()
 
     def set_frame(self, x, y, w, h):
-        self._frame = Viewbox("%d %d %d %d" % (x, y, w, h))
+        self._frame = Viewbox(f"{x} {y} {w} {h}")
         self.aspect_matrix()
 
     def set_aspect(self, aspect=True):

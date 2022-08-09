@@ -837,7 +837,7 @@ class Scene(Module, Job):
                 )
                 if self.log_events:
                     self.log_events(
-                        "Converted %s: %s" % ("hover_start", str(window_pos))
+                        f"Converted hover_start: {str(window_pos)}"
                     )
                 previous_top_element = current_widget
             if (

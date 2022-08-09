@@ -829,7 +829,7 @@ class EdgePanel(wx.Panel):
             raise ValueError
         self.op = op
         self.original_op = deepcopy(op)
-        self.check_enable.SetLabel(_("Enable %s") % op["name"])
+        self.check_enable.SetLabel(_("Enable {name}").format(name=op["name"]))
         self.check_enable.SetValue(op["enable"])
 
     def __set_properties(self):
@@ -889,7 +889,7 @@ class AutoContrastPanel(wx.Panel):
             raise ValueError
         self.op = op
         self.original_op = deepcopy(op)
-        self.check_enable.SetLabel(_("Enable %s") % op["name"])
+        self.check_enable.SetLabel(_("Enable {name}").format(name=op["name"]))
         self.check_enable.SetValue(op["enable"])
 
     def __set_properties(self):

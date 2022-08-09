@@ -1124,8 +1124,7 @@ class Kernel(Settings):
                 obj = context.opened[opened_name]
                 if channel:
                     channel(
-                        _("%s: Finalizing Module %s: %s")
-                        % (str(context), opened_name, str(obj))
+                        _("{context}: Finalizing Module {path}: {object}").format(context=str(context), path=opened_name, object=str(obj))
                     )
                 self.set_module_lifecycle(
                     obj,
@@ -1167,7 +1166,7 @@ class Kernel(Settings):
 
         def signal(code, path, *message):
             if channel:
-                channel(_("Suspended Signal: %s for %s" % (code, message)))
+                channel(_("Suspended Signal: {signal} for {message}").format(signal=code, message=message))
 
         # pylint: disable=method-hidden
         self.signal = signal  # redefine signal function, hidden by design
@@ -1189,11 +1188,11 @@ class Kernel(Settings):
             if context is None:
                 continue
             if channel:
-                channel(_("Saving Context State: '%s'") % str(context))
+                channel(_("Saving Context State: '{context}'").format(context=str(context)))
             context.flush()
             del self.contexts[context_name]
             if channel:
-                channel(_("Context Shutdown Finished: '%s'") % str(context))
+                channel(_("Context Shutdown Finished: '{context}'").format(context=str(context)))
         self.write_configuration()
         try:
             del self._config_dict
@@ -1214,22 +1213,21 @@ class Kernel(Settings):
                 thread = self.threads[thread_name]
             except KeyError:
                 if channel:
-                    channel(_("Thread %s exited safely") % thread_name)
+                    channel(_("Thread {name} exited safely").format(name=thread_name))
                 continue
 
             if not thread.is_alive:
                 if channel:
                     channel(
-                        _("WARNING: Dead thread %s still registered to %s.")
-                        % (thread_name, str(thread))
+                        _("WARNING: Dead thread {name} still registered to {object}.").format(name=thread_name, object=str(thread))
                     )
                 continue
             if channel:
-                channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
+                channel(_("Finishing Thread {name} for {object}").format(name=thread_name, object=str(thread)))
             try:
                 if thread is threading.currentThread():
                     if channel:
-                        channel(_("%s is the current shutdown thread") % thread_name)
+                        channel(_("{name} is the current shutdown thread").format(name=thread_name))
                     continue
                 if channel:
                     channel(_("Asking thread to stop."))
@@ -1238,17 +1236,16 @@ class Kernel(Settings):
                 pass
             if not thread.daemon:
                 if channel:
-                    channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+                    channel(_("Waiting for thread {name}: {object}").format(name=thread_name, object=str(thread)))
                 thread.join()
                 if channel:
                     channel(
-                        _("Thread %s has finished. %s") % (thread_name, str(thread))
+                        _("Thread {name} has finished. {object}").format(name=thread_name, object=str(thread))
                     )
             else:
                 if channel:
                     channel(
-                        _("Thread %s is daemon. It will die automatically: %s")
-                        % (thread_name, str(thread))
+                        _("Thread {name} is daemon. It will die automatically: {object}").format(name=thread_name, object=str(thread))
                     )
         if thread_count == 0:
             if channel:
@@ -1258,8 +1255,7 @@ class Kernel(Settings):
             if len(listener):
                 if channel:
                     channel(
-                        _("WARNING: Listener '%s' still registered to %s.")
-                        % (key, str(listener))
+                        _("WARNING: Listener '{listener}' still registered to {object}.").format(listener=key, object=str(listener))
                     )
         self._last_message = {}
         self.listeners = {}
@@ -1443,9 +1439,7 @@ class Kernel(Settings):
 
         @return:
         """
-        self.channel("lookup")(
-            "Changed %s (%s)" % (str(path), str(threading.currentThread().getName()))
-        )
+        self.channel("lookup")(f"Changed {str(path)} ({str(threading.currentThread().getName())})")
         with self._lookup_lock:
             if not self._dirty_paths:
                 self.schedule(self._clean_lookup)
@@ -1581,29 +1575,29 @@ class Kernel(Settings):
             thread_name = func.__name__
         try:
             old_thread = self.threads[thread_name]
-            channel(_("Thread: %s already exists. Waiting...") % thread_name)
+            channel(_("Thread: {name} already exists. Waiting...").format(name=thread_name))
             old_thread.join()
             # We must wait for the old thread to complete before running. Lock.
         except KeyError:
             # No current thread
             pass
         thread = Thread(name=thread_name)
-        channel(_("Thread: %s, Initialized") % thread_name)
+        channel(_("Thread: {name}, Initialized").format(name=thread_name))
 
         def run():
             func_result = None
-            channel(_("Thread: %s, Set") % thread_name)
+            channel(_("Thread: {name}, Set").format(name=thread_name))
             try:
-                channel(_("Thread: %s, Start") % thread_name)
+                channel(_("Thread: {name}, Start").format(name=thread_name))
                 func_result = func(*args)
-                channel(_("Thread: %s, End ") % thread_name)
+                channel(_("Thread: {name}, End ").format(name=thread_name))
             except Exception:
-                channel(_("Thread: %s, Exception-End") % thread_name)
+                channel(_("Thread: {name}, Exception-End").format(name=thread_name))
                 import sys
 
                 channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
-            channel(_("Thread: %s, Unset") % thread_name)
+            channel(_("Thread: {name}, Unset").format(name=thread_name))
             del self.threads[thread_name]
             if result is not None:
                 result(func_result)
@@ -2029,7 +2023,7 @@ class Kernel(Settings):
         if text.startswith("."):
             text = text[1:]
         else:
-            channel("[blue][bold][raw]%s[/raw]" % text, indent=False, ansi=True)
+            channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -2079,7 +2073,7 @@ class Kernel(Settings):
                     if str(e):
                         message = str(e)
                     channel(
-                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message),
+                        "[red][bold]" + _("Syntax Error ({command}): {message}").format(command=command, message=message),
                         ansi=True,
                     )
                     return None
@@ -2095,8 +2089,7 @@ class Kernel(Settings):
                     ctx_name = input_type
                 channel(
                     "[red][bold]"
-                    + _("%s is not a registered command in this context: %s")
-                    % (command, ctx_name),
+                    + _("{command} is not a registered command in this context: {context}").format(command=command, context=ctx_name),
                     ansi=True,
                 )
                 return None
@@ -2203,7 +2196,7 @@ class Kernel(Settings):
                         arg_help = a.get("help")
                         arg_help = f":\n\t\t{arg_help if arg_help is not None else ''}"
                         channel(
-                            _("\tArgument: %s '%s'%s") % (arg_type, arg_name, arg_help)
+                            _("\tArgument: {type} '{name}'{help}").format(type=arg_type, name=arg_name, help=arg_help)
                         )
                     for b in func.options:
                         opt_name = b.get("name", "")
@@ -2212,13 +2205,12 @@ class Kernel(Settings):
                         opt_help = b.get("help")
                         opt_help = f":\n\t\t{opt_help if opt_help is not None else ''}"
                         channel(
-                            _("\tOption: %s ('--%s', '-%s')%s")
-                            % (opt_type, opt_name, opt_short, opt_help)
+                            _("\tOption: {type} ('--{name}', '-{short}'){help}").format(type=opt_type, name=opt_name, short=opt_short, help=opt_help)
                         )
                     found = True
                 if found:
                     return
-                channel(_("No extended help for: %s") % extended_help)
+                channel(_("No extended help for: {name}").format(name=extended_help))
                 return
 
             matches = list(self.match("command/.*/.*"))
@@ -2235,7 +2227,7 @@ class Kernel(Settings):
                     continue
                 if previous_input_type != input_type:
                     command_class = input_type if input_type != "None" else _("Base")
-                    channel(_("--- %s Commands ---") % command_class)
+                    channel(_("--- {category} Commands ---").format(category=command_class))
                     previous_input_type = input_type
 
                 help_attribute = func.help
@@ -2302,7 +2294,7 @@ class Kernel(Settings):
 
                 else:
                     channel(
-                        _("No commands found that contained: [red]%s[normal]") % substr,
+                        _("No commands found that contained: [red]{string}[normal]").format(string=substr),
                         ansi=True,
                     )
                 return
@@ -2327,7 +2319,7 @@ class Kernel(Settings):
             for i, thread_name in enumerate(list(self.threads)):
                 thread = self.threads[thread_name]
                 parts = list()
-                parts.append("%d:" % (i + 1))
+                parts.append(f"{i + 1}:")
                 parts.append(str(thread))
                 if thread.is_alive:
                     parts.append(_("is alive."))
@@ -2346,11 +2338,11 @@ class Kernel(Settings):
                 if job.times is None:
                     parts.append(_("forever,"))
                 else:
-                    parts.append(_("%d times,") % job.times)
+                    parts.append(_("{times} times,").format(times=job.times))
                 if job.interval is None:
                     parts.append(_("never"))
                 else:
-                    parts.append(_("each %f seconds") % job.interval)
+                    parts.append(_("each {interval} seconds").format(interval=job.interval))
                 channel(" ".join(parts))
             channel(_("----------"))
 
@@ -2415,12 +2407,12 @@ class Kernel(Settings):
                         parts.append(_("forever,"))
                     else:
                         parts.append(
-                            _("%d/%d times,") % (job.times - job.remaining, job.times)
+                            _("{index}/{total} times,").format(index=job.times - job.remaining, total=job.times)
                         )
                     if job.interval is None:
                         parts.append(_("never"))
                     else:
-                        parts.append(_("each %f seconds") % job.interval)
+                        parts.append(_("each {interval} seconds").format(interval=job.interval))
                     if job.run_main:
                         parts.append(_("- gui"))
                     channel(" ".join(parts))
@@ -2439,9 +2431,9 @@ class Kernel(Settings):
                     obj = self.jobs[command]
                     obj.cancel()
                     self.unschedule(obj)
-                    channel(_("Timer '%s' canceled.") % name)
+                    channel(_("Timer '{name}' canceled.").format(name=name))
                 except KeyError:
-                    channel(_("Timer '%s' does not exist.") % name)
+                    channel(_("Timer '{name}' does not exist.").format(name=name))
                 return
             try:
                 times = int(times)
@@ -2517,12 +2509,12 @@ class Kernel(Settings):
                     if match.match(r):
                         obj = service._registered[r]
                         channel(
-                            _("%s, %d: %s type of %s") % (domain, i + 1, r, str(obj))
+                            _("{domain}, {index}: {object} type of {type}").format(domain=domain, index=i + 1, object=r, type=str(obj))
                         )
             for i, r in enumerate(self._registered):
                 if match.match(r):
                     obj = self._registered[r]
-                    channel(_("%s, %d: %s type of %s") % ("kernel", i + 1, r, str(obj)))
+                    channel(_("{domain}, {index}: {object} type of {type}").format(domain="kernel", index=i + 1, object=r, type=str(obj)))
             channel(_("----------"))
 
         @self.console_command("context", _("context"))
@@ -2566,11 +2558,11 @@ class Kernel(Settings):
                     context = self.contexts[name]
                     if len(context.opened) == 0:
                         continue
-                    channel(_("Loaded Modules in Context %s:") % str(context.path))
+                    channel(_("Loaded Modules in Context {context}:").format(context=str(context.path)))
                     for j, jname in enumerate(context.opened):
                         module = context.opened[jname]
                         channel(
-                            _("%d: %s as type of %s") % (j + 1, jname, type(module))
+                            _("{index}: {object} type of {type}").format(index=j + 1, object=jname, type=type(module))
                         )
                     channel(_("----------"))
                     return
@@ -2591,13 +2583,13 @@ class Kernel(Settings):
                     else:
                         path_context.open(index)
                 else:
-                    channel(_("Module '%s' not found.") % index)
+                    channel(_("Module '{name}' not found.").format(name=index))
             elif value == "close":
                 index = args[1]
                 if index in path_context.opened:
                     path_context.close(index)
                 else:
-                    channel(_("Module '%s' not found.") % index)
+                    channel(_("Module '{name}' not found.").format(name=index))
             return
 
         # ==========
@@ -2615,7 +2607,7 @@ class Kernel(Settings):
                 channel(_("----------"))
                 channel(_("Service Providers:"))
                 for i, name in enumerate(self.match("provider")):
-                    channel("%d: %s" % (i + 1, name))
+                    channel(f"{i + 1}: {name}")
                 channel(_("----------"))
                 channel(_("Services:"))
                 for i, value in enumerate(self.services_available()):
@@ -2792,11 +2784,8 @@ class Kernel(Settings):
                 channel(_("Channels Active:"))
                 for i, name in enumerate(self.channels):
                     channel_name = self.channels[name]
-                    if self._console_channel in channel_name.watchers:
-                        is_watched = "* "
-                    else:
-                        is_watched = "  "
-                    channel("%s%d: %s" % (is_watched, i + 1, name))
+                    is_watched = "*" if self._console_channel in channel_name.watchers else " "
+                    channel(f"{is_watched} {i + 1}: {name}")
             return "channel", 0
 
         @self.console_command(
@@ -2839,7 +2828,7 @@ class Kernel(Settings):
                 channel(_("Infinite Loop Error."))
             else:
                 self.channel(channel_name).watch(self._console_channel)
-                channel(_("Watching Channel: %s") % channel_name)
+                channel(_("Watching Channel: {name}").format(name=channel_name))
             return "channel", channel_name
 
         @self.console_argument("channel_name", help=_("channel name"))
@@ -2862,9 +2851,9 @@ class Kernel(Settings):
                 pass
             try:
                 self.channel(channel_name).unwatch(self._console_channel)
-                channel(_("No Longer Watching Channel: %s") % channel_name)
+                channel(_("No Longer Watching Channel: {name}").format(name=channel_name))
             except (KeyError, ValueError):
-                channel(_("Channel %s is not opened.") % channel_name)
+                channel(_("Channel {name} is not opened.").format(name=channel_name))
             return "channel", channel_name
 
         @self.console_argument("channel_name", help=_("channel name"))
@@ -2885,7 +2874,7 @@ class Kernel(Settings):
                         break
             except ValueError:
                 pass
-            channel(_("Printing Channel: %s") % channel_name)
+            channel(_("Printing Channel: {name}").format(name=channel_name))
             self.channel(channel_name).watch(print)
             return "channel", channel_name
 
@@ -2917,11 +2906,11 @@ class Kernel(Settings):
                 pass
             if filename is None:
                 filename = f"MeerK40t-channel-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
-            channel(_("Opening file: %s") % filename)
+            channel(_("Opening file: {filename}").format(filename=filename))
             console_channel_file = self.open_safe(filename, "a")
             for cn in channel_name.split(","):
                 channel(
-                    _("Recording Channel: %s to file %s") % (channel_name, filename)
+                    _("Recording Channel: {name} to file {filename}").format(name=channel_name, filename=filename)
                 )
 
                 def _console_file_write(v):

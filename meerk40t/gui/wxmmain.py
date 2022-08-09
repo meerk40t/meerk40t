@@ -2075,7 +2075,7 @@ class MeerK40t(MWindow):
             else:
                 dlg = wx.MessageDialog(
                     None,
-                    _('Offline help file ("%s") was not found.') % _resource_path,
+                    _('Offline help file ("{help}") was not found.').format(help=_resource_path),
                     _("File Not Found"),
                     wx.OK | wx.ICON_WARNING,
                 )
@@ -2489,7 +2489,7 @@ class MeerK40t(MWindow):
     @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
         self.main_statusbar.SetStatusText(
-            _("Usb: %s") % value,
+            _("Usb: {index}").format(index=value),
             1,
         )
 
@@ -2500,14 +2500,14 @@ class MeerK40t(MWindow):
         self.pipe_state = state
 
         self.main_statusbar.SetStatusText(
-            _("Controller: %s") % self.context.kernel.get_text_thread_state(state),
+            _("Controller: {state}").format(state=self.context.kernel.get_text_thread_state(state)),
             2,
         )
 
     @signal_listener("spooler;thread")
     def on_spooler_state(self, origin, value):
         self.main_statusbar.SetStatusText(
-            _("Spooler: %s") % self.context.get_text_thread_state(value),
+            _("Spooler: {state}").format(state=self.context.get_text_thread_state(value)),
             3,
         )
         self.main_statusbar.Signal("spooler;thread", value)
@@ -2765,7 +2765,7 @@ class MeerK40t(MWindow):
                 rejected_files.append(pathname)
         if rejected != 0:
             reject = "\n".join(rejected_files)
-            err_msg = _("Some files were unrecognized:\n%s") % reject
+            err_msg = _("Some files were unrecognized:\n{rejected_files}").format(rejected_files=reject)
             dlg = wx.MessageDialog(
                 None, err_msg, _("Error encountered"), wx.OK | wx.ICON_ERROR
             )

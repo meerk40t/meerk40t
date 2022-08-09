@@ -95,7 +95,7 @@ class KeymapPanel(wx.Panel):
             self.on_tree_popup_delete(element),
             menu.Append(
                 wx.ID_ANY,
-                _("Remove %s") % str(element)[:16],
+                _("Remove {name}").format(name=str(element)[:16]),
                 "",
             ),
         )
@@ -106,7 +106,7 @@ class KeymapPanel(wx.Panel):
                 self.on_tree_popup_delete_all_selected,
                 menu.Append(
                     wx.ID_ANY,
-                    _("Remove %d entries") % ct,
+                    _("Remove {count} entries").format(count=ct),
                     "",
                 ),
             )

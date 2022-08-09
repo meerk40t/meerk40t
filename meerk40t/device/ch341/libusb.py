@@ -55,7 +55,7 @@ class CH341Driver(CH341Connection):
                 raise ConnectionRefusedError
             self.channel(_("Device Connected.\n"))
             chip_version = self.get_chip_version()
-            self.channel(_("CH341 Chip Version: %d") % chip_version)
+            self.channel(_("CH341 Chip Version: {chip_version}").format(chip_version=chip_version))
             self.channel(_("Driver Detected: LibUsb"))
             self.index = self.driver_index
             self.bus = self.driver.bus(self.driver_value)

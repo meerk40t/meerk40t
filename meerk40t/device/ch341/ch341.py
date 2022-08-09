@@ -169,12 +169,12 @@ class CH341(Module, Handler):
             chip_version = connection.get_chip_version()
         except AttributeError:
             return connection
-        self.channel(_("CH341 Chip Version: %d") % chip_version)
+        self.channel(_("CH341 Chip Version: {chip_version}").format(chip_version=chip_version))
         self.context.signal("pipe;index", connection.index)
         self.context.signal("pipe;chipv", chip_version)
         self.context.signal("pipe;bus", connection.bus)
         self.context.signal("pipe;address", connection.address)
-        self.channel(_("Driver Detected: %s") % connection.driver_name)
+        self.channel(_("Driver Detected: {name}").format(name=connection.driver_name))
         self._state_change("STATE_CONNECTED")
         self.channel(_("Device Connected.\n"))
         return connection
