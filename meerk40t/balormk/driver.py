@@ -210,9 +210,6 @@ class BalorDriver:
                         con.abort()
                         self._aborting = False
                         return
-                    if con._port_bits != self._list_bits:
-                        con.list_write_port()
-                        self._list_bits = con._port_bits
                     while self.paused:
                         time.sleep(0.05)
 
