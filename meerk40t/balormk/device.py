@@ -1349,7 +1349,13 @@ class BalorDevice(Service, ViewPort):
                     if not default:
                         self.driver.connection.raw_clear()
                     for v in raw_commands:
-                        self.driver.connection.raw_write(*v)
+                        command = v[0]
+                        if command >= 0x8000:
+                            self.driver.connection.program_mode()
+                            self.driver.connection._list_write(*v)
+                        else:
+                            self.driver.connection.rapid_mode()
+                            self.driver.connection._command(*v)
                     self.driver.connection.rapid_mode()
             else:
                 # output to file
