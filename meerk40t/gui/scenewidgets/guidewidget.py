@@ -584,7 +584,7 @@ class GuideWidget(Widget):
         edge_gap = self.edge_gap
 
         gc.SetPen(self.pen_guide1)
-        font = wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD)
+        font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_BOLD)
         gc.SetFont(font, self.color_guide1)
         gc.DrawText(self.units, edge_gap, edge_gap)
         (t_width, t_height) = gc.GetTextExtent("0")
