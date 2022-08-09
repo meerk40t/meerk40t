@@ -374,6 +374,9 @@ class GalvoController:
         self.set_fiber_mo(0)
         self.port_off(bit=0)
         self.write_port()
+        marktime = self.get_mark_time()
+        self.service.signal("galvo;marktime", marktime)
+        self.usb_log(f"Time taken for list execution: {marktime}")
         self.mode = DRIVER_STATE_RAPID
 
     def program_mode(self):
