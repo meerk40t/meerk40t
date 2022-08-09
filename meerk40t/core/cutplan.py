@@ -695,8 +695,11 @@ def short_travel_cutcode(
         end = c.end
         curr = complex(end[0], end[1])
         ordered.append(c)
-
-    ordered._start_x, ordered._start_y = context.start
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
