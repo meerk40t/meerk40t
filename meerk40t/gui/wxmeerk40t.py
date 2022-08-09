@@ -591,9 +591,10 @@ class wxMeerK40t(wx.App, Module):
             path = data
             try:
                 parent = context.gui if hasattr(context, "gui") else None
-                kernel.run_later(
-                    lambda e: path.close(f"window/{window}", parent, *args), None
-                )
+                if wx.IsMainThread():
+                    path.close(f"window/{window}", parent, *args)
+                else:
+                    wx.CallAfter(path.close(f"window/{window}", parent, *args), None)
                 channel(_("Window closed."))
             except (KeyError, ValueError):
                 channel(_("No such window as {window}").format(window=window))
