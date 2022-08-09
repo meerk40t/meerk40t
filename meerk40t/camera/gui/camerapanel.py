@@ -443,7 +443,7 @@ class CamInterfaceWidget(Widget):
 
             menu.Append(
                 wx.ID_ANY,
-                _(f"Preserve: {self.cam.camera.preserve_aspect}"),
+                _("Preserve: {aspect}").format(aspect=self.cam.camera.preserve_aspect),
                 sub_menu,
             )
             menu.AppendSeparator()
