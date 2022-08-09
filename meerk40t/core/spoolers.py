@@ -3,7 +3,7 @@ from threading import Lock
 
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
-
+from meerk40t.core.cutcode import CutCode
 
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
@@ -329,6 +329,25 @@ class LaserJob:
 
         self._stopped = True
 
+        self._estimate = 0
+        MILS_IN_MM = 39.3701
+
+        for item in self.items:
+            time_cuts = 0
+            time_travel = 0
+            time_extra = 0
+            if isinstance(item, CutCode):
+                travel = item.length_travel()
+                cuts = item.length_cut()
+                travel /= MILS_IN_MM
+                cuts /= MILS_IN_MM
+                time_extra = item.extra_time()
+                if item.travel_speed is not None and item.travel_speed != 0:
+                    time_travel = travel / item.travel_speed
+                time_cuts = item.duration_cut()
+                time_total = time_travel + time_cuts + time_extra
+                self._estimate += time_total
+
     def __str__(self):
         return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
 
@@ -407,6 +426,18 @@ class LaserJob:
         """
         self._stopped = True
 
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if not self._stopped:
+                result = time.time() - self.time_started
+        return result
+
     def estimate_time(self):
         """
         Give laser job time estimate.
@@ -417,24 +448,20 @@ class LaserJob:
         # a) we know the elapsed time
         # b) we know current and total steps (if the driver has such a property)
         result = 0
-        if self.is_running:
+        if self.is_running and self.time_started is not None:
             # We fall back on elapsed and some info from the driver...
-            if self.time_started is not None:
-                elapsed = time.time() - self.time_started
-            else:
-                elapsed = 0
+            elapsed = time.time() - self.time_started
             ratio = 1
             if hasattr(self._driver, "total_steps"):
                 total = self._driver.total_steps
                 current = self._driver.current_steps
-                if current > 0:
+                if current > 10 and total > 0 :
+                    # Arbitrary minimum steps (if too low, value is erratic)
                     ratio = total / current
             result = elapsed * ratio
-        else:
-            # Hmm we could ask the driver to assess the steps required
-            # and he could be using some basic assumptions then,
-            # but this is not implemented (yet)
-            pass
+        if result==0:
+            # Nothing useful came out, so we fall back on the initial value
+            result = self._estimate
 
         return result
 
