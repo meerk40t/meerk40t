@@ -469,6 +469,7 @@ class Elemental(Service):
         """
         Returns the amount of elements in the clipboard
         """
+        # TODO: this counts the clipboard not returns whether it exists
         destination = self._clipboard_default
         try:
             num = len(self._clipboard[destination])
@@ -861,13 +862,14 @@ class Elemental(Service):
                 if key in self.mywordlist.content:
                     wordlist = self.mywordlist.content[key]
                     channel(
-                        _("Wordlist %s (Type=%d, Index=%d)):")
-                        % (key, wordlist[0], wordlist[1] - 2)
+                        _("Wordlist {name} (Type={type}, Index={index})):").format(
+                            name=key, type=wordlist[0], index=wordlist[1] - 2
+                        )
                     )
                     for idx, value in enumerate(wordlist[2:]):
                         channel(f"#{idx}: {str(value)}")
                 else:
-                    channel(_("There is no such pattern %s") % key)
+                    channel(_("There is no such pattern {name}").format(name=key))
             channel("----------")
             return "wordlist", key
 
@@ -888,8 +890,8 @@ class Elemental(Service):
                 return
 
             rows, columns, names = self.mywordlist.load_csv_file(new_file)
-            channel(_("Rows added: %d") % rows)
-            channel(_("Values added: %d") % columns)
+            channel(_("Rows added: {rows}").format(rows=rows))
+            channel(_("Values added: {values}").format(columns=columns))
             for name in names:
                 channel("  " + name)
             return "wordlist", names
@@ -1215,7 +1217,7 @@ class Elemental(Service):
                     op = self.get_op(value)
                     op_values.append(op)
                 except IndexError:
-                    channel(_("index %d out of range") % value)
+                    channel(_("index {index} out of range").format(index=value))
             return "ops", op_values
 
         @self.console_command(
@@ -1454,14 +1456,7 @@ class Elemental(Service):
                             else oe.fill.hex
                         )
                         ident_piece = str(oe.id)
-                        name = "%s%d: %s-%s s:%s f:%s" % (
-                            "".ljust(5),
-                            q,
-                            str(type(oe).__name__),
-                            ident_piece,
-                            stroke_piece,
-                            fill_piece,
-                        )
+                        name = f"{''.ljust(5)}{q}: {str(type(oe).__name__)}-{ident_piece} s:{stroke_piece} f:{fill_piece}"
                         channel(name)
             channel("----------")
 
@@ -1613,7 +1608,11 @@ class Elemental(Service):
                 for op in data:
                     if op.type in ("op raster", "op image"):
                         dpi = op.dpi
-                        channel(_("Step for %s is currently: %d") % (str(op), dpi))
+                        channel(
+                            _("Step for {name} is currently: {dpi}").format(
+                                name=str(op), dpi=dpi
+                            )
+                        )
                         found = True
                 if not found:
                     channel(_("No raster operations selected."))
@@ -1655,7 +1654,11 @@ class Elemental(Service):
             if speed is None:
                 for op in data:
                     old = op.speed
-                    channel(_("Speed for '%s' is currently: %f") % (str(op), old))
+                    channel(
+                        _("Speed for '{name}' is currently: {speed}").format(
+                            name=str(op), speed=old
+                        )
+                    )
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -1685,7 +1688,11 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.speed = s
-                channel(_("Speed for '%s' updated %f -> %f") % (str(op), old, s))
+                channel(
+                    _("Speed for '{name}' updated {old_speed} -> {speed}").format(
+                        name=str(op), old_speed=old, speed=s
+                    )
+                )
                 op.notify_update()
             return "ops", data
 
@@ -1722,7 +1729,11 @@ class Elemental(Service):
             if power is None:
                 for op in data:
                     old = op.power
-                    channel(_("Power for '%s' is currently: %d") % (str(op), old))
+                    channel(
+                        _("Power for '{name}' is currently: {power}").format(
+                            name=str(op), power=old
+                        )
+                    )
                 return
             delta = 0
             for op in data:
@@ -1739,7 +1750,11 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.power = s
-                channel(_("Power for '%s' updated %d -> %d") % (str(op), old, s))
+                channel(
+                    _("Power for '{name}' updated {old_power} -> {power}").format(
+                        name=str(op), old_power=old, power=s
+                    )
+                )
                 op.notify_update()
             return "ops", data
 
@@ -1776,7 +1791,11 @@ class Elemental(Service):
             if frequency is None:
                 for op in data:
                     old = op.frequency
-                    channel(_("Frequency for '%s' is currently: %f") % (str(op), old))
+                    channel(
+                        _("Frequency for '{name}' is currently: {frequency}").format(
+                            name=str(op), frequency=old
+                        )
+                    )
                 return
             delta = 0
             for op in data:
@@ -1791,7 +1810,11 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.frequency = s
-                channel(_("Frequency for '%s' updated %f -> %f") % (str(op), old, s))
+                channel(
+                    _(
+                        "Frequency for '{name}' updated {old_frequency} -> {frequency}"
+                    ).format(name=str(op), old_frequency=old, frequency=s)
+                )
                 op.notify_update()
             return "ops", data
 
@@ -1804,7 +1827,9 @@ class Elemental(Service):
                 for op in data:
                     old_passes = op.passes
                     channel(
-                        _("Passes for '%s' is currently: %d") % (str(op), old_passes)
+                        _("Passes for '{name}' is currently: {passes}").format(
+                            name=str(op), passes=old_passes
+                        )
                     )
                 return
             for op in data:
@@ -1813,8 +1838,9 @@ class Elemental(Service):
                 if passes >= 1:
                     op.passes_custom = True
                 channel(
-                    _("Passes for '%s' updated %d -> %d")
-                    % (str(op), old_passes, passes)
+                    _("Passes for '{name}' updated {old_passes} -> {passes}").format(
+                        name=str(op), old_passes=old_passes, passes=passes
+                    )
                 )
                 op.notify_update()
             return "ops", data
@@ -1856,7 +1882,9 @@ class Elemental(Service):
                 for op in data:
                     old = op.hatch_distance
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s") % (str(op), old)
+                        _(
+                            "Hatch Distance for '{name}' is currently: {distance}"
+                        ).format(name=str(op), distance=old)
                     )
                 return
             delta = 0
@@ -1873,8 +1901,9 @@ class Elemental(Service):
                     s = 0
                 op.hatch_distance = Length(amount=s).length_mm
                 channel(
-                    _("Hatch Distance for '%s' updated %s -> %s")
-                    % (str(op), old, op.hatch_distance)
+                    _(
+                        "Hatch Distance for '{name}' updated {old_distance} -> {distance}"
+                    ).format(name=str(op), old_distance=old, distance=op.hatch_distance)
                 )
                 op.notify_update()
             return "ops", data
@@ -1919,8 +1948,11 @@ class Elemental(Service):
                         f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
                     )
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s (%s)")
-                        % (str(op), old, old_hatch_angle_deg)
+                        _(
+                            "Hatch Angle for '{name}' is currently: {angle} ({angle_degree})"
+                        ).format(
+                            name=str(op), angle=old, angle_degree=old_hatch_angle_deg
+                        )
                     )
                 return
             delta = 0
@@ -1939,12 +1971,13 @@ class Elemental(Service):
                 new_hatch_angle_deg = f"{s.as_degrees:.4f}deg"
 
                 channel(
-                    _("Hatch Angle for '%s' updated %s -> %s (%s)")
-                    % (
-                        str(op),
-                        f"{old.as_turns:.4f}turn",
-                        new_hatch_angle_turn,
-                        new_hatch_angle_deg,
+                    _(
+                        "Hatch Angle for '{name}' updated {old_angle} -> {angle} ({angle_degree})"
+                    ).format(
+                        name=str(op),
+                        old_angle=f"{old.as_turns:.4f}turn",
+                        angle=new_hatch_angle_turn,
+                        angle_degree=new_hatch_angle_deg,
                     )
                 )
                 op.notify_update()
@@ -1962,13 +1995,15 @@ class Elemental(Service):
                 if hasattr(op, "output"):
                     try:
                         op.output = False
-                        channel(_("Operation '%s' disabled.") % str(op))
+                        channel(_("Operation '{name}' disabled.").format(name=str(op)))
                         op.notify_update()
                         no_op = False
                     except AttributeError:
                         pass
                 if no_op:
-                    channel(_("Operation '%s' can't be disabled.") % str(op))
+                    channel(
+                        _("Operation '{name}' can't be disabled.").format(name=str(op))
+                    )
             return "ops", data
 
         @self.console_command(
@@ -1983,13 +2018,15 @@ class Elemental(Service):
                 if hasattr(op, "output"):
                     try:
                         op.output = True
-                        channel(_("Operation '%s' enabled.") % str(op))
+                        channel(_("Operation '{name}' enabled.").format(name=str(op)))
                         op.notify_update()
                         no_op = False
                     except AttributeError:
                         pass
                 if no_op:
-                    channel(_("Operation '%s' can't be enabled.") % str(op))
+                    channel(
+                        _("Operation '{name}' can't be enabled.").format(name=str(op))
+                    )
             return "ops", data
 
         # ==========
@@ -2133,7 +2170,7 @@ class Elemental(Service):
                     e = self.get_elem(value)
                     elements_list.append(e)
                 except IndexError:
-                    channel(_("index %d out of range") % value)
+                    channel(_("index {index} out of range").format(index=value))
             return "elements", elements_list
 
         # ==========
@@ -2437,7 +2474,7 @@ class Elemental(Service):
             for node in data:
                 subbox = node.bounds
                 top = subbox[1] - top_edge
-                matrix = "translate(0, %f)" % -top
+                matrix = f"translate(0, {-top})"
                 if top != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -3620,12 +3657,14 @@ class Elemental(Service):
                                 )
                             ct += 1
                     channel(
-                        _("Just for info: we have missed %d vertices...")
-                        % (corners - len(star_points))
+                        _("Just for info: we have missed {count} vertices...").format(
+                            count=(corners - len(star_points))
+                        )
                     )
                     channel(
-                        _("To hit all, the density parameters should be e.g. %s")
-                        % possible_combinations
+                        _(
+                            "To hit all, the density parameters should be e.g. {combinations}"
+                        ).format(combinations=possible_combinations)
                     )
 
             poly_path = Polygon(star_points)
@@ -4055,9 +4094,17 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     if e.stroke is None or e.stroke == "none":
-                        channel(_("%d: stroke = none - %s") % (i, name))
+                        channel(
+                            _("{index}: stroke = none - {name}").format(
+                                index=i, name=name
+                            )
+                        )
                     else:
-                        channel(_("%d: stroke = %s - %s") % (i, e.stroke_width, name))
+                        channel(
+                            _("{index}: stroke = {stroke_width} - {name}").format(
+                                index=i, stroke_width=e.stroke_width, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
@@ -4067,7 +4114,7 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: %s") % str(e))
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
                     continue
                 e.stroke_width = stroke_width
                 e.altered()
@@ -4104,7 +4151,7 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
             if cap is None:
                 channel("----------")
                 channel(_("Linecaps:"))
@@ -4120,7 +4167,11 @@ class Elemental(Service):
                             capname = "butt"
                         else:
                             capname = "round"
-                        channel(_("%d: linecap = %s - %s") % (i, capname, name))
+                        channel(
+                            _("{index}: linecap = {linecap} - {name}").format(
+                                index=i, linecap=capname, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
@@ -4136,7 +4187,11 @@ class Elemental(Service):
                     for e in apply:
                         if hasattr(e, "linecap"):
                             if hasattr(e, "lock") and e.lock:
-                                channel(_("Can't modify a locked element: %s") % str(e))
+                                channel(
+                                    _("Can't modify a locked element: {name}").format(
+                                        str(e)
+                                    )
+                                )
                                 continue
                             e.linecap = capvalue
                             e.altered()
@@ -4175,7 +4230,7 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
             if join is None:
                 channel("----------")
                 channel(_("Linejoins:"))
@@ -4195,7 +4250,11 @@ class Elemental(Service):
                             joinname = "miter"
                         elif e.linejoin == Linejoin.JOIN_ROUND:
                             joinname = "round"
-                        channel(_("%d: linejoin = %s - %s") % (i, joinname, name))
+                        channel(
+                            _("{index}: linejoin = {linejoin} - {name}").format(
+                                index=i, linejoin=joinname, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
@@ -4215,7 +4274,11 @@ class Elemental(Service):
                     for e in apply:
                         if hasattr(e, "linejoin"):
                             if hasattr(e, "lock") and e.lock:
-                                channel(_("Can't modify a locked element: %s") % str(e))
+                                channel(
+                                    _("Can't modify a locked element: {name}").format(
+                                        str(e)
+                                    )
+                                )
                                 continue
                             e.linejoin = joinvalue
                             e.altered()
@@ -4225,8 +4288,9 @@ class Elemental(Service):
         @self.console_argument(
             "rule",
             type=str,
-            help=_("rule to apply to fill the path (one of %s, %s)")
-            % (SVG_RULE_NONZERO, SVG_RULE_EVENODD),
+            help=_(
+                "rule to apply to fill the path (one of {nonzero}, {evenodd})"
+            ).format(nonzero=SVG_RULE_NONZERO, evenodd=SVG_RULE_EVENODD),
         )
         @self.console_command(
             "fillrule",
@@ -4253,7 +4317,7 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
             if rule is None:
                 channel("----------")
                 channel(_("fillrules:"))
@@ -4267,7 +4331,11 @@ class Elemental(Service):
                             rulename = SVG_RULE_EVENODD
                         elif e.fillrule == Fillrule.FILLRULE_NONZERO:
                             rulename = SVG_RULE_NONZERO
-                        channel(_("%d: fillrule = %s - %s") % (i, rulename, name))
+                        channel(
+                            _("{index}: fillrule = {fillrule} - {name}").format(
+                                index=i, fillrule=rulename, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
@@ -4281,7 +4349,11 @@ class Elemental(Service):
                     for e in apply:
                         if hasattr(e, "fillrule"):
                             if hasattr(e, "lock") and e.lock:
-                                channel(_("Can't modify a locked element: %s") % str(e))
+                                channel(
+                                    _("Can't modify a locked element: {name}").format(
+                                        str(e)
+                                    )
+                                )
                                 continue
                             e.fillrule = rulevalue
                             e.altered()
@@ -4322,7 +4394,7 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
             if color is None:
                 channel("----------")
                 channel(_("Stroke Values:"))
@@ -4332,23 +4404,35 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     if e.stroke is None or e.stroke == "none":
-                        channel(_("%d: stroke = none - %s") % (i, name))
+                        channel(
+                            _("{index}: stroke = none - {name}").format(
+                                index=i, name=name
+                            )
+                        )
                     else:
-                        channel(_("%d: stroke = %s - %s") % (i, e.stroke.hex, name))
+                        channel(
+                            _("{index}: stroke = {stroke} - {name}").format(
+                                index=i, stroke=e.stroke.hex, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
             elif color == "none":
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
-                        channel(_("Can't modify a locked element: %s") % str(e))
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
                         continue
                     e.stroke = None
                     e.altered()
             else:
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
-                        channel(_("Can't modify a locked element: %s") % str(e))
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
                         continue
                     e.stroke = Color(color)
                     e.altered()
@@ -4397,7 +4481,7 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
             if color is None:
                 channel("----------")
                 channel(_("Fill Values:"))
@@ -4407,23 +4491,35 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     if e.fill is None or e.fill == "none":
-                        channel(_("%d: fill = none - %s") % (i, name))
+                        channel(
+                            _("{index}: fill = none - {name}").format(
+                                index=i, name=name
+                            )
+                        )
                     else:
-                        channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
+                        channel(
+                            _("{index}: fill = {fill} - {name}").format(
+                                index=i, fill=e.fill.hex, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return "elements", data
             elif color == "none":
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
-                        channel(_("Can't modify a locked element: %s") % str(e))
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
                         continue
                     e.fill = None
                     e.altered()
             else:
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
-                        channel(_("Can't modify a locked element: %s") % str(e))
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
                         continue
                     e.fill = Color(color)
                     e.altered()
@@ -4531,8 +4627,9 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        _("%d: rotate(%fturn) - %s")
-                        % (i, node.matrix.rotation.as_turns, name)
+                        _("{index}: rotate({angle}turn) - {name}").format(
+                            index=i, angle=node.matrix.rotation.as_turns, name=name
+                        )
                     )
                     i += 1
                 channel("----------")
@@ -4566,9 +4663,7 @@ class Elemental(Service):
                     for node in data:
                         start_angle = node.matrix.rotation
                         amount = rot - start_angle
-                        matrix = Matrix(
-                            "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
-                        )
+                        matrix = Matrix(f"rotate({Angle(amount).as_degrees},{cx},{cy})")
                         node.matrix *= matrix
                         node.modified()
             except ValueError:
@@ -4637,7 +4732,7 @@ class Elemental(Service):
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            matrix = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
+            matrix = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
             try:
                 if not absolute:
                     for node in data:
@@ -4698,7 +4793,7 @@ class Elemental(Service):
             total_area = 0
             if display_only:
                 channel("----------")
-                channel(_("Area values (Density=%d)") % density)
+                channel(_("Area values (Density={density})").format(density=density))
 
             units = ("mm", "cm", "in")
             square_unit = [0] * len(units)
@@ -4714,7 +4809,7 @@ class Elemental(Service):
                     name = str(elem)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel("%d: %s" % (i, name))
+                    channel(f"{i}: {name}")
                     for idx, u in enumerate(units):
                         this_area_local = this_area / square_unit[idx]
                         channel(
@@ -4764,12 +4859,13 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        _("%d: translate(%f, %f) - %s")
-                        % (
-                            i,
-                            node.matrix.value_trans_x(),
-                            node.matrix.value_trans_y(),
-                            name,
+                        _(
+                            "{index}: translate({translate_x}, {translate_y}) - {name}"
+                        ).format(
+                            index=i,
+                            translate_x=node.matrix.value_trans_x(),
+                            translate_y=node.matrix.value_trans_y(),
+                            name=name,
                         )
                     )
                     i += 1
@@ -4926,7 +5022,7 @@ class Elemental(Service):
                     name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel("%d: %s - %s" % (i, str(node.matrix), name))
+                    channel(f"{i}: {str(node.matrix)} - {name}")
                     i += 1
                 channel("----------")
                 return
@@ -4971,7 +5067,7 @@ class Elemental(Service):
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "…"
-                channel(_("reset - %s") % name)
+                channel(_("reset - {name}").format(name=name))
                 e.matrix.reset()
                 e.modified()
             return "elements", data
@@ -5074,7 +5170,7 @@ class Elemental(Service):
                 if d.type == "root":
                     channel(_("Tree:"))
                 else:
-                    channel("%s:" % str(d))
+                    channel(f"{str(d)}:")
                 b_list([], d)
                 channel("----------")
 
@@ -5109,7 +5205,7 @@ class Elemental(Service):
                 if d.type == "root":
                     channel(_("Tree:"))
                 else:
-                    channel("%s:" % d.label)
+                    channel(f"{d.label}:")
                 t_list([], d)
                 channel("----------")
 
@@ -5222,7 +5318,7 @@ class Elemental(Service):
                         p = list(path)
                         p.append(str(i))
                         _name, _submenu = _n
-                        channel("%s: %s" % (".".join(p).ljust(10), str(_name)))
+                        channel(f"{'.'.join(p).ljust(10)}: {str(_name)}")
                         if isinstance(_submenu, list):
                             m_list(p, _submenu)
 
@@ -5544,7 +5640,7 @@ class Elemental(Service):
                 k = self._clipboard[v]
                 channel(f"{str(v).ljust(5)}: {str(k)}")
             num = self.has_clipboard()
-            channel(_("Clipboard-Entries: %d") % num)
+            channel(_("Clipboard-Entries: {index}").format(index=num))
 
         # ==========
         # NOTES COMMANDS
@@ -6095,9 +6191,7 @@ class Elemental(Service):
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
         )
-        @self.tree_operation(
-            _("Apply: %s") % "{script}", node_type="elem image", help=""
-        )
+        @self.tree_operation(_("Apply: {script}"), node_type="elem image", help="")
         def image_rasterwizard_apply(node, script=None, **kwargs):
             raster_script = self.lookup(f"raster_script/{script}")
             node.operations = raster_script
@@ -6110,7 +6204,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
         @self.tree_operation(
-            _("%smm/s") % "{speed}", node_type=("op raster", "op image"), help=""
+            _("{speed}mm/s"), node_type=("op raster", "op image"), help=""
         )
         def set_speed_raster(node, speed=150, **kwargs):
             node.speed = float(speed)
@@ -6120,7 +6214,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
         @self.tree_operation(
-            _("%smm/s") % "{speed}",
+            _("{speed}mm/s"),
             node_type=("op cut", "op engrave", "op hatch"),
             help="",
         )
@@ -6135,7 +6229,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
-            _("%sppi") % "{power}",
+            _("{power}ppi"),
             node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
             help="",
         )
@@ -6150,7 +6244,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("dpi", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
-            _("DPI %s") % "{dpi}",
+            _("DPI {dpi}"),
             node_type=("op raster", "elem image"),
             help=_("Change dpi values"),
         )
@@ -6167,7 +6261,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
         @self.tree_operation(
-            _("Passes %s") % "{passvalue}", node_type=op_parent_nodes, help=""
+            _("Passes {passvalue}"), node_type=op_parent_nodes, help=""
         )
         def set_n_passes(node, passvalue=1, **kwargs):
             node.passes = passvalue
@@ -6229,7 +6323,7 @@ class Elemental(Service):
             ),
         )
         @self.tree_operation(
-            _("Remove %s selected items from operations") % "{ecount}",
+            _("Remove {ecount} selected items from operations"),
             node_type="reference",
             help="",
         )
@@ -6310,7 +6404,7 @@ class Elemental(Service):
             == 1
         )
         @self.tree_operation(
-            _("Delete element '%s' fully") % "{name}",
+            _("Delete element '{name}' fully"),
             node_type=elem_nodes,
             help="",
         )
@@ -6328,7 +6422,7 @@ class Elemental(Service):
             == 1
         )
         @self.tree_operation(
-            _("Delete operation '%s' fully") % "{name}",
+            _("Delete operation '{name}' fully"),
             node_type=op_nodes,
             help="",
         )
@@ -6354,7 +6448,7 @@ class Elemental(Service):
             == 1
         )
         @self.tree_operation(
-            _("Delete group '%s' and all its child-elements fully") % "{name}",
+            _("Delete group '{name}' and all its child-elements fully"),
             node_type="group",
             help="",
         )
@@ -6370,7 +6464,7 @@ class Elemental(Service):
             == 1
         )
         @self.tree_operation(
-            _("Remove loaded file '%s' and all its child-elements fully") % "{name}",
+            _("Remove loaded file '{name}' and all its child-elements fully"),
             node_type="file",
             help="",
         )
@@ -6394,7 +6488,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
-            _("Delete %s operations") % "{ecount}",
+            _("Delete {ecount} operations"),
             node_type=(
                 "op cut",
                 "op raster",
@@ -6422,7 +6516,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
-            _("Delete %s elements, as selected in scene") % "{ecount}",
+            _("Delete {ecount} elements, as selected in scene"),
             node_type=elem_group_nodes,
             help="",
         )
@@ -6486,7 +6580,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type=("reference",), help=""
+            _("Make {copies} copies"), node_type=("reference",), help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
             nodes = list(self.flat(selected=True, cascade=False, types="reference"))
@@ -6557,9 +6651,9 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Load"))
         @self.tree_values("opname", values=self.op_data.section_set)
-        @self.tree_operation(_("%s") % "{opname}", node_type="branch ops", help="")
+        @self.tree_operation("{opname}", node_type="branch ops", help="")
         def load_ops(node, opname, **kwargs):
-            self("material load %s\n" % opname)
+            self(f"material load {opname}\n")
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Load"))
@@ -6768,7 +6862,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Add %s passes") % "{copies}",
+            _("Add {copies} passes"),
             node_type=("op image", "op engrave", "op cut", "op hatch"),
             help="",
         )
@@ -6802,7 +6896,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Duplicate elements %s times") % "{copies}",
+            _("Duplicate elements {copies} times"),
             node_type=("op image", "op engrave", "op cut"),
             help="",
         )
@@ -6929,7 +7023,7 @@ class Elemental(Service):
                 pos += 1
             append_operation_interrupt(node, pos=pos, **kwargs)
 
-        @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
+        @self.tree_operation(_("Reload '{name}'"), node_type="file", help="")
         def reload_file(node, **kwargs):
             filepath = node.filepath
             node.remove_node()
@@ -7051,9 +7145,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
-        )
+        @self.tree_operation(_("Make {copies} copies"), node_type=elem_nodes, help="")
         def duplicate_element_n(node, copies, **kwargs):
             copy_nodes = list()
             for e in list(self.elems(emphasized=True)):
@@ -7116,7 +7208,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("scale 1 -1 %f %f\n" % (center_x, center_y))
+            self(f"scale 1 -1 {center_x} {center_y}\n")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_conditional_try(lambda node: not node.lock)
@@ -7124,7 +7216,7 @@ class Elemental(Service):
         @self.tree_iterate("scale", 25, 1, -1)
         @self.tree_calc("scale_percent", lambda i: f"{(600.0 / float(i)):.2f}")
         @self.tree_operation(
-            _("Scale %s%%") % "{scale_percent}",
+            _("Scale {scale_percent}%"),
             node_type=elem_group_nodes,
             help=_("Scale Element"),
         )
@@ -7172,9 +7264,7 @@ class Elemental(Service):
                 -90,
             ),
         )
-        @self.tree_operation(
-            _("Rotate %s°") % "{angle}", node_type=elem_group_nodes, help=""
-        )
+        @self.tree_operation(_("Rotate {angle}°"), node_type=elem_group_nodes, help="")
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
             bounds = node.bounds
@@ -7182,7 +7272,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
+            self(f"rotate {turns}turn {center_x} {center_y}\n")
             self.signal("ext-modified")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
@@ -7286,7 +7376,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Z-depth divide"))
         @self.tree_iterate("divide", 2, 10)
         @self.tree_operation(
-            _("Divide into %s images") % "{divide}", node_type="elem image", help=""
+            _("Divide into {divide} images"), node_type="elem image", help=""
         )
         def image_zdepth(node, divide=1, **kwargs):
             if node.image.mode != "RGBA":
@@ -7699,7 +7789,7 @@ class Elemental(Service):
                 p = f"tree/{_in}/{registered_name}"
                 if p in self._registered:
                     raise NameError(
-                        "A function of this name was already registered: %s" % p
+                        f"A function of this name was already registered: {p}"
                     )
                 self.register(p, inner)
             return inner

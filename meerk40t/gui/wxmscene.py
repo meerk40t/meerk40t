@@ -303,7 +303,11 @@ class MeerK40tScenePanel(wx.Panel):
                     channel(_("Scene aspect color is set."))
                     self.context.signal("theme", False)
                 else:
-                    channel(_("%s is not a known scene color command") % aspect)
+                    channel(
+                        _("{name} is not a known scene color command").format(
+                            name=aspect
+                        )
+                    )
 
             return "scene", data
 

@@ -642,7 +642,7 @@ class ShadowTree:
             txt = self.wxtree.GetItemText(pnode)
             state = self.wxtree.IsExpanded(pnode)
             if state:
-                self.was_already_expanded.append("%d-%s" % (level, txt))
+                self.was_already_expanded.append(f"{level}-{txt}")
             self.parse_tree(pnode, level + 1)
             pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
 

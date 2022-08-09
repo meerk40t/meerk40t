@@ -539,7 +539,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def pane_hide(self):
         if self.auto_clear:
-            self.context("plan%s clear\n" % self.plan_name)
+            self.context(f"plan{self.plan_name} clear\n")
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False

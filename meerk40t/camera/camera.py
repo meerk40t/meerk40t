@@ -163,7 +163,7 @@ class Camera(Service):
             return
         self.signal(
             "warning",
-            _("Success. %d images so far.") % len(self._object_points),
+            _("Success. {count} images so far.").format(count=len(self._object_points)),
             _("Image Captured"),
             4 | 2048,
         )
@@ -270,7 +270,7 @@ class Camera(Service):
         uri = self.uri
         self.signal("camera_reconnect")
         self.capture = cv2.VideoCapture(uri)
-        channel("Capture: %s" % str(self.capture))
+        channel(f"Capture: {str(self.capture)}")
         if self.capture is None:
             return False
         return True

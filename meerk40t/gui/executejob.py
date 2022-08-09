@@ -239,8 +239,7 @@ class PlannerPanel(wx.Panel):
             y_distance = height
 
         self.context(
-            "plan%s step_repeat %s %s %s %s\n"
-            % (self.plan_name, cols, rows, x_distance, y_distance)
+            f"plan{self.plan_name} step_repeat {cols} {rows} {x_distance} {y_distance}\n"
         )
 
     def jobadd_physicalhome(self, event=None):
