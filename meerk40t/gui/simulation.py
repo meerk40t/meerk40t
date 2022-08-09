@@ -607,8 +607,6 @@ class SimulationPanel(wx.Panel, Job):
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         index = self.combo_device.GetSelection()
         self.selected_device = self.available_devices[index]
-        index = self.combo_device.GetSelection()
-        self.selected_device = self.available_devices[index]
         self.selected_device.kernel.activate_service_path(
             "device", self.selected_device.path
         )
