@@ -1238,6 +1238,7 @@ class BalorDevice(Service, ViewPort):
                 single_command_lookup,
             )
 
+            # Establish reverse lookup for string commands to binary command.
             reverse_lookup = {}
             for k in list_command_lookup:
                 command_string = list_command_lookup[k]
@@ -1250,20 +1251,21 @@ class BalorDevice(Service, ViewPort):
                 reverse_lookup[command_string.lower()] = k
 
             if remainder is None and input is None:
-                # List permitted commands.
+                # "raw" was typed without any data or input file, so we list the permitted commands
                 channel("Permitted List Commands:")
                 for k in list_command_lookup:
                     command_string = list_command_lookup[k]
                     channel(f"{command_string.lower()[4:]} aka {k:04x}")
                 channel("----------------------------")
-                channel("Permitted Short Commands:")
 
+                channel("Permitted Short Commands:")
                 for k in single_command_lookup:
                     command_string = single_command_lookup[k]
                     channel(f"{command_string.lower()} aka {k:04x}")
                 return
 
             if input is not None:
+                # We were given an input file. We load that data, in either binary plain text.
                 from os.path import exists
 
                 if exists(input):
@@ -1282,7 +1284,8 @@ class BalorDevice(Service, ViewPort):
                     return
 
             cmds = None
-            if len(remainder) == 0x1800 or raw or binary_in:
+            if raw or binary_in:
+                # Our data is 6 values int16le
                 if trim:
                     # Used to cut off raw header data
                     remainder = remainder[trim:]

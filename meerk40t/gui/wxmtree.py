@@ -66,6 +66,9 @@ class TreePanel(wx.Panel):
         self.wxtree = wx.TreeCtrl(
             self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT
         )
+        if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
+            self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
+
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.wxtree, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)

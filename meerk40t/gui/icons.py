@@ -90,9 +90,9 @@ class PyEmbeddedImage(py_embedded_image):
 
         if resize is not None:
             if isinstance(resize, int) or isinstance(resize, float):
-                image = image.Scale(resize, resize)
+                image = image.Scale(int(resize), int(resize))
             else:
-                image = image.Scale(*resize)
+                image = image.Scale(int(resize[0]), int(resize[1]))
         if rotate is not None:
             if rotate == 1:
                 image = image.Rotate90()

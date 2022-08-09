@@ -45,15 +45,12 @@ def plugin(kernel, lifecycle):
         # with a loss (e.g. that have the __int__() method but do not have the __index__() method).
         # wxpython up to 4.1.1 exposes this issue
         try:
-            testcase = wx.Size(0.5, 1)
+            if wx.VERSION[:2] <= (4, 1):
+                testcase = wx.Size(0.5, 1)
         except TypeError:
-            print(
-                "The version of wxPython you are running is incompatible with your current Python version."
-            )
-            print(
-                "At the time of writing this is especially true for any Python version >= 3.10"
-            )
-            print("and a wxpython version <= 4.1.1.")
+            print("""The version of wxPython you are running is incompatible with your current Python version.
+At the time of writing this is especially true for any Python version >= 3.10
+and a wxpython version <= 4.1.1.""")
             return True
         return False
     if not kernel.has_feature("wx"):
