@@ -5072,29 +5072,33 @@ class Elemental(Service):
                 e.modified()
             return "elements", data
 
-        # @self.console_command(
-        #     "reify",
-        #     help=_("reify affine transformations"),
-        #     input_type=(None, "elements"),
-        #     output_type="elements",
-        # )
-        # def element_reify(command, channel, _, data=None, **kwargs):
-        #     if data is None:
-        #         data = list(self.elems(emphasized=True))
-        #     for e in data:
-        #         try:
-        #             if e.lock:
-        #                 continue
-        #         except AttributeError:
-        #             pass
-        #
-        #         name = str(e)
-        #         if len(name) > 50:
-        #             name = name[:50] + "…"
-        #         channel(_("reified - %s") % name)
-        #         e.reify()
-        #         e.altered()
-        #     return "elements", data
+        @self.console_command(
+            "reify",
+            help=_("reify affine transformations"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_reify(command, channel, _, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    if e.lock:
+                        continue
+                except AttributeError:
+                    pass
+
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                try:
+                    e.shape.reify()
+                    e.altered()
+                    channel(_("reified - %s") % name)
+                except AttributeError as err:
+                    channel(_("Couldn't reify - %s - %s") % (name, err))
+
+            return "elements", data
 
         @self.console_command(
             "classify",
