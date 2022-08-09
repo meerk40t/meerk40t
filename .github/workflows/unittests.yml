@@ -51,17 +51,12 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-gui.txt') }}
+        key: new-${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-nogui.txt') }}
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
-        if [ "${{ runner.os }}" == "Windows" ]; then
-            pip install --upgrade --upgrade-strategy eager wxPython
-        else
-            pip install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
-        fi
-        if [ -f requirements-gui.txt ]; then pip install --upgrade --upgrade-strategy eager -r requirements-gui.txt; fi
+        if [ -f requirements-nogui.txt ]; then pip install --upgrade --upgrade-strategy eager -r requirements-nogui.txt; fi
 
     - name: List environment
       env:
