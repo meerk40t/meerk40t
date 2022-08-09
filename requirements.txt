@@ -2,5 +2,4 @@ wheel
 Pillow
 pyusb
 pyserial
-wxPython
 numpy
