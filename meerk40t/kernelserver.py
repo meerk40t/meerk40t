@@ -39,7 +39,9 @@ def plugin(kernel, lifecycle=None):
                     root.close("console-server")
                     return
                 send = root.channel("console-server/send")
-                send.greet = _("{kernel_name} {kernel_version} Telnet Console.\r\n").format(kernel_name=kernel.name, kernel_version=kernel.version)
+                send.greet = _(
+                    "{kernel_name} {kernel_version} Telnet Console.\r\n"
+                ).format(kernel_name=kernel.name, kernel_version=kernel.version)
                 send.line_end = "\r\n"
 
                 recv = root.channel("console-server/recv")
@@ -115,7 +117,9 @@ class UDPServer(Module):
     def run_udp_listener(self):
         _ = self.context._
         try:
-            self.events_channel(_("UDP Socket({port}) Listening.").format(port=self.port))
+            self.events_channel(
+                _("UDP Socket({port}) Listening.").format(port=self.port)
+            )
             while self.state != STATE_END and self.state != STATE_TERMINATE:
                 try:
                     message, address = self.socket.recvfrom(1024)
@@ -179,13 +183,17 @@ class TCPServer(Module):
         handle = 1
         while self.state != STATE_TERMINATE:
             self.events_channel(
-                _("Listening {name} on port {port}...").format(name=self.name, port=self.port)
+                _("Listening {name} on port {port}...").format(
+                    name=self.name, port=self.port
+                )
             )
             connection = None
             address = None
             try:
                 connection, address = self.socket.accept()
-                self.events_channel(_("Socket Connected: {address}").format(address=address))
+                self.events_channel(
+                    _("Socket Connected: {address}").format(address=address)
+                )
                 self.context.threaded(
                     self.connection_handler(connection, address),
                     thread_name=f"handler-{self.port}-{handle}",
@@ -195,7 +203,9 @@ class TCPServer(Module):
             except socket.timeout:
                 pass
             except OSError:
-                self.events_channel(_("Socket was killed: {address}").format(address=address))
+                self.events_channel(
+                    _("Socket was killed: {address}").format(address=address)
+                )
                 if connection is not None:
                     connection.close()
                 break
@@ -233,13 +243,17 @@ class TCPServer(Module):
                         break
                     recv(data_from_socket)
                 except socket.timeout:
-                    self.events_channel(_("Connection to {address} timed out.").format(address=address))
+                    self.events_channel(
+                        _("Connection to {address} timed out.").format(address=address)
+                    )
                     break
                 except socket.error:
                     if connection is not None:
                         connection.close()
                     break
             self.context.channel(send_channel_name).unwatch(send)
-            self.events_channel(_("Connection to {address} was closed.").format(address=address))
+            self.events_channel(
+                _("Connection to {address} was closed.").format(address=address)
+            )
 
         return handle

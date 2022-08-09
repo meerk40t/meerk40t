@@ -230,7 +230,9 @@ def get_code_from_speed(
         if suffix_c:
             return f"CV{encoded_speed}1{step_value:03d}{encoded_diagonal}C"
         else:
-            return f"CV{encoded_speed}{acceleration:1d}{step_value:03d}{encoded_diagonal}"
+            return (
+                f"CV{encoded_speed}{acceleration:1d}{step_value:03d}{encoded_diagonal}"
+            )
 
 
 def parse_speed_code(speed_code):

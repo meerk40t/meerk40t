@@ -254,7 +254,9 @@ class LihuiyuDevice(Service, ViewPort):
                 return
             if time > 1000.0:
                 channel(
-                    _('"{time}ms" exceeds 1 second limit to fire a standing laser.').format(time=time)
+                    _(
+                        '"{time}ms" exceeds 1 second limit to fire a standing laser.'
+                    ).format(time=time)
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -316,7 +318,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if current_speed is None:
                     channel(_("Speed is unset."))
                 else:
-                    channel(_("Speed set at: {speed} mm/s").format(speed=driver.settings.speed))
+                    channel(
+                        _("Speed set at: {speed} mm/s").format(
+                            speed=driver.settings.speed
+                        )
+                    )
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -345,7 +351,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if original_power is None:
                     channel(_("Power is not set."))
                 else:
-                    channel(_("Power set at: {power} pulses per inch").format(power=original_power))
+                    channel(
+                        _("Power set at: {power} pulses per inch").format(
+                            power=original_power
+                        )
+                    )
             else:
                 try:
                     self.driver.set_power(ppi)
@@ -368,7 +378,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if self.driver.acceleration is None:
                     channel(_("Acceleration is set to default."))
                 else:
-                    channel(_("Acceleration: {acceleration}").format(acceleration=self.driver.acceleration))
+                    channel(
+                        _("Acceleration: {acceleration}").format(
+                            acceleration=self.driver.acceleration
+                        )
+                    )
 
             else:
                 try:
@@ -378,7 +392,11 @@ class LihuiyuDevice(Service, ViewPort):
                         channel(_("Acceleration is set to default."))
                         return
                     self.driver.set_acceleration(v)
-                    channel(_("Acceleration: {acceleration}").format(acceleration=self.driver.acceleration))
+                    channel(
+                        _("Acceleration: {acceleration}").format(
+                            acceleration=self.driver.acceleration
+                        )
+                    )
                 except ValueError:
                     channel(_("Invalid Acceleration [1-4]."))
                     return
@@ -450,7 +468,10 @@ class LihuiyuDevice(Service, ViewPort):
                 self.rapid_override_speed_x = rapid_x
                 self.rapid_override_speed_y = rapid_y
                 channel(
-                    _("Rapid Limit: {max_x}, {max_y}").format(max_x=self.rapid_override_speed_x, max_y=self.rapid_override_speed_y)
+                    _("Rapid Limit: {max_x}, {max_y}").format(
+                        max_x=self.rapid_override_speed_x,
+                        max_y=self.rapid_override_speed_y,
+                    )
                 )
             else:
                 self.rapid_override = False
@@ -651,7 +672,9 @@ class LihuiyuDevice(Service, ViewPort):
         def lhyemulator(channel, _, **kwargs):
             try:
                 self.open_as("emulator/lihuiyu", "lhyemulator")
-                channel(_("Lihuiyu Emulator attached to {device}").format(device=str(self)))
+                channel(
+                    _("Lihuiyu Emulator attached to {device}").format(device=str(self))
+                )
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
             return
@@ -2545,7 +2568,9 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return f"TCPOutput('{self.service.address}:{self.service.port}','{self.name}')"
+            return (
+                f"TCPOutput('{self.service.address}:{self.service.port}','{self.name}')"
+            )
         return f"TCPOutput('{self.service.address}:{self.service.port}')"
 
     def __len__(self):

@@ -197,7 +197,9 @@ def plugin(kernel, lifecycle=None):
                 return
             v1 = data.capture.get(setting)
             channel(
-                _("Attempt camera setting ({property}) to {value}. {current}->{old}").format(property=prop, value=value, current=v0, old=v1)
+                _(
+                    "Attempt camera setting ({property}) to {value}. {current}->{old}"
+                ).format(property=prop, value=value, current=v0, old=v1)
             )
 
         @kernel.console_command(

@@ -233,7 +233,10 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 c.image.save(stream, format="PNG")
-                subelement.set("xlink:href", f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}")
+                subelement.set(
+                    "xlink:href",
+                    f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
+                )
                 subelement.set(SVG_ATTR_X, "0")
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(c.image.width))

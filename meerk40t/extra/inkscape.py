@@ -129,7 +129,11 @@ def plugin(kernel, lifecycle):
             if filename is None:
                 channel(_("inkscape filename fn - filename not specified"))
             if not os.path.exists(filename):
-                channel(_("inkscape filename {filename} - file not found").format(filename=filename))
+                channel(
+                    _("inkscape filename {filename} - file not found").format(
+                        filename=filename
+                    )
+                )
                 return
             return "inkscape", (inkscape_path, filename)
 
@@ -146,7 +150,9 @@ def plugin(kernel, lifecycle):
                 return
             c = run([inkscape_path, "-V"], stdout=PIPE)
             channel(
-                _('Inkscape executable at "{path}" is: {version}').format(path=inkscape_path, version=c.stdout.decode("utf-8"))
+                _('Inkscape executable at "{path}" is: {version}').format(
+                    path=inkscape_path, version=c.stdout.decode("utf-8")
+                )
             )
             return "inkscape", data
 
@@ -177,7 +183,9 @@ def plugin(kernel, lifecycle):
                 ]
             else:
                 channel(
-                    _("Inkscape location: Platform '{platform}' unknown. No idea where to look").format(platform=platform)
+                    _(
+                        "Inkscape location: Platform '{platform}' unknown. No idea where to look"
+                    ).format(platform=platform)
                 )
                 return
             inkscape_path, filename = data

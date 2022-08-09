@@ -388,7 +388,9 @@ class ElementpropertyPanel(wx.Panel):
                 elem.modified()
         else:
             u = self.position_units
-            self.context(f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n")
+            self.context(
+                f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n"
+            )
 
         self.update_position(True)
 
@@ -424,7 +426,9 @@ class ElementpropertyPanel(wx.Panel):
                 elem.modified()
         else:
             u = self.position_units
-            self.context(f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n")
+            self.context(
+                f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n"
+            )
         self.update_position(True)
 
     def on_combo_box_units(self, event):

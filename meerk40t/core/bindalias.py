@@ -398,7 +398,9 @@ class Alias(Service):
                     del self.aliases[alias]
                     channel(_("Alias {alias_name} unset.").format(alias_name=alias))
                 else:
-                    channel(_("No alias for {alias_name} was set.").format(alias_name=alias))
+                    channel(
+                        _("No alias for {alias_name} was set.").format(alias_name=alias)
+                    )
             else:
                 self.aliases[alias] = remainder
 

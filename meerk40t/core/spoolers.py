@@ -83,7 +83,9 @@ def plugin(kernel, lifecycle):
             for d, d_name in enumerate(kernel.match("device", suffix=True)):
                 channel(f"{d}: {d_name}")
             channel(_("----------"))
-            channel(_("Spooler on device {name}:").format(name=str(kernel.device.label)))
+            channel(
+                _("Spooler on device {name}:").format(name=str(kernel.device.label))
+            )
             for s, op_name in enumerate(spooler.queue):
                 channel(f"{s}: {op_name}")
             channel(_("----------"))

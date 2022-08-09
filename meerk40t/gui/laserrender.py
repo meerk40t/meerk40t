@@ -968,6 +968,7 @@ class LaserRender:
         black.putalpha(pil_data.point(lambda e: 255 - e))
         return wx.Bitmap.FromBufferRGBA(width, height, black.tobytes())
 
+
 # import platform
 # from math import ceil, floor, sqrt, isnan
 #

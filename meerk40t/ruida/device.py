@@ -122,13 +122,25 @@ def plugin(kernel, lifecycle=None):
                     channel(_("RuidaServer shutdown."))
                     return
                 if r2m:
-                    channel(_("Ruida Data Server opened on port {port}.").format(port=50200))
+                    channel(
+                        _("Ruida Data Server opened on port {port}.").format(port=50200)
+                    )
                 if r2mj:
-                    channel(_("Ruida Jog Server opened on port {port}.").format(port=50207))
+                    channel(
+                        _("Ruida Jog Server opened on port {port}.").format(port=50207)
+                    )
                 if m2l:
-                    channel(_("Ruida Data Destination opened on port {port}.").format(port=40200))
+                    channel(
+                        _("Ruida Data Destination opened on port {port}.").format(
+                            port=40200
+                        )
+                    )
                 if m2lj:
-                    channel(_("Ruida Jog Destination opened on port {port}.").format(port=40207))
+                    channel(
+                        _("Ruida Jog Destination opened on port {port}.").format(
+                            port=40207
+                        )
+                    )
 
                 if verbose:
                     console = kernel.channel("console")
@@ -530,8 +542,7 @@ class RuidaEmulator(Module, Parameters):
         else:
             response = b"\xCF"
             self.reply(
-                response,
-                desc=f"Checksum Fail ({checksum_sum} != {checksum_check})"
+                response, desc=f"Checksum Fail ({checksum_sum} != {checksum_check})"
             )
             self.ruida_channel("--> " + str(data.hex()))
             return
@@ -714,7 +725,9 @@ class RuidaEmulator(Module, Parameters):
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
             self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
-            desc = f"Cut Absolute ({self.x / UNITS_PER_uM} nm, {self.y / UNITS_PER_uM} nm)"
+            desc = (
+                f"Cut Absolute ({self.x / UNITS_PER_uM} nm, {self.y / UNITS_PER_uM} nm)"
+            )
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
@@ -1177,9 +1190,7 @@ class RuidaEmulator(Module, Parameters):
                     v = int(v)
                     vencode = RuidaEmulator.encode32(v)
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = (
-                        f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v} (0x{v:08x})"
-                    )
+                    respond_desc = f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v} (0x{v:08x})"
                 else:
                     vencode = v
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)

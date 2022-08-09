@@ -147,7 +147,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             if not len(script) and inode.operations:
                 channel(_("Disabled raster script."))
@@ -189,7 +191,9 @@ def plugin(kernel, lifecycle=None):
                     channel(f"Locked: {str(inode)}")
                     inode.lock = True
                 else:
-                    channel(_("Element was not unlocked: {name}").format(name=str(inode)))
+                    channel(
+                        _("Element was not unlocked: {name}").format(name=str(inode))
+                    )
             except AttributeError:
                 channel(_("Element was not unlocked: {name}").format(name=str(inode)))
         context.signal("element_property_update", data)
@@ -251,7 +255,9 @@ def plugin(kernel, lifecycle=None):
     def image_dither(command, channel, _, data, method="Floyd-Steinberg", **kwargs):
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "RGBA":
@@ -299,7 +305,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode != "RGBA":
@@ -325,7 +333,9 @@ def plugin(kernel, lifecycle=None):
         pix = (color.red, color.green, color.blue, color.alpha)
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode != "RGBA":
@@ -348,7 +358,9 @@ def plugin(kernel, lifecycle=None):
     def image_dewhite(channel, _, data, **kwargs):
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode not in ("1", "L"):
@@ -369,7 +381,9 @@ def plugin(kernel, lifecycle=None):
     def image_rgba(command, channel, _, data, **kwargs):
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode != "RGBA":
@@ -388,7 +402,9 @@ def plugin(kernel, lifecycle=None):
     def image_crop(command, channel, _, data, left, upper, right, lower, **kwargs):
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             try:
@@ -420,7 +436,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             try:
                 img = inode.image
@@ -445,7 +463,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             try:
                 factor = float(args[1])
@@ -469,7 +489,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             try:
                 img = inode.image
@@ -494,7 +516,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             try:
                 img = inode.image
@@ -514,7 +538,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -534,7 +560,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -552,7 +580,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -572,7 +602,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -590,7 +622,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -610,7 +644,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -628,7 +664,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -648,7 +686,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -670,7 +710,9 @@ def plugin(kernel, lifecycle=None):
     def image_quantize(command, channel, _, data, colors, **kwargs):
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             try:
                 img = inode.image
@@ -693,13 +735,19 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             try:
                 img = inode.image
                 inode.image = ImageOps.solarize(img, threshold=threshold)
                 inode.altered()
-                channel(_("Image Solarized at {threshold} gray.").format(threshold=threshold))
+                channel(
+                    _("Image Solarized at {threshold} gray.").format(
+                        threshold=threshold
+                    )
+                )
             except (IndexError, ValueError):
                 channel(_("image solarize <threshold>"))
         return "image", data
@@ -712,7 +760,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             original_mode = img.mode
@@ -727,7 +777,9 @@ def plugin(kernel, lifecycle=None):
                 inode.altered()
                 channel(_("Image Inverted."))
             except OSError:
-                channel(_("Image type cannot be converted. {mode}").format(mode=img.mode))
+                channel(
+                    _("Image type cannot be converted. {mode}").format(mode=img.mode)
+                )
         return "image", data
 
     @context.console_command(
@@ -738,7 +790,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             inode.image = ImageOps.flip(img)
@@ -754,7 +808,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             inode.image = ImageOps.mirror(img)
@@ -772,7 +828,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             inode.image = img.transpose(Image.ROTATE_90)
@@ -788,7 +846,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             inode.image = img.transpose(Image.ROTATE_270)
@@ -812,7 +872,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             try:
                 img = inode.image
@@ -842,7 +904,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if method is not None:
@@ -878,7 +942,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             inode.image = ImageOps.equalize(img)
@@ -900,7 +966,9 @@ def plugin(kernel, lifecycle=None):
     def image_slice(command, channel, _, data, x, **kwargs):
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             image_left = img.crop((0, 0, x, inode.image.height))
@@ -935,7 +1003,9 @@ def plugin(kernel, lifecycle=None):
     def image_slash(command, channel, _, data, y, **kwargs):
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             image_top = img.crop((0, 0, inode.image.width, y))
@@ -981,7 +1051,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             img = inode.image
             if img.mode == "P":
@@ -1052,7 +1124,9 @@ def plugin(kernel, lifecycle=None):
         """
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             points = len(args) - 1
             im = inode.image
@@ -1118,7 +1192,9 @@ def plugin(kernel, lifecycle=None):
 
         for inode in data:
             if inode.lock:
-                channel(_("Can't modify a locked image: {name}").format(name=str(inode)))
+                channel(
+                    _("Can't modify a locked image: {name}").format(name=str(inode))
+                )
                 continue
             image = inode.image
             im = image

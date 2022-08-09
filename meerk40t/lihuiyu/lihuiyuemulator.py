@@ -439,7 +439,9 @@ class LihuiyuParser:
             self.x_on = True
             self.y_on = True
             if self.channel:
-                self.channel(f"Diagonal {'Top' if self.top else 'Bottom'} {'Left' if self.left else 'Right'}")
+                self.channel(
+                    f"Diagonal {'Top' if self.top else 'Bottom'} {'Left' if self.left else 'Right'}"
+                )
 
 
 class EGVBlob:

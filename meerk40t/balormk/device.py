@@ -1129,7 +1129,9 @@ class BalorDevice(Service, ViewPort):
                 return
             if time > 1000.0:
                 channel(
-                    _('"{time}ms" exceeds 1 second limit to fire a standing laser.').format(time=time)
+                    _(
+                        '"{time}ms" exceeds 1 second limit to fire a standing laser.'
+                    ).format(time=time)
                 )
                 try:
                     if not idonotlovemyhouse:
