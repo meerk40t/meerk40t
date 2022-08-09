@@ -66,8 +66,7 @@ class TreePanel(wx.Panel):
         self.wxtree = wx.TreeCtrl(
             self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT
         )
-        if DARKMODE:
-            self.wxtree.SetBackgroundColour(wx.Colour(0xAA, 0xAA, 0xAA))
+        self.wxtree.SetBackgroundColour(wx.Colour(0xAA, 0xAA, 0xAA))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.wxtree, 1, wx.EXPAND, 0)
