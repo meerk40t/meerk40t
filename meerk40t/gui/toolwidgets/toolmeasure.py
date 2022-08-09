@@ -42,9 +42,9 @@ class MeasureTool(ToolWidget):
             if self.font_size < 1.0:
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:
-                font = wx.Font(self.font_size, wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_BOLD)
+                font = wx.Font(self.font_size, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
             except TypeError:
-                font = wx.Font(int(self.font_size), wx.FONTFAMILY_SWISS, wx.NORMAL, wx.FONTWEIGHT_BOLD)
+                font = wx.Font(int(self.font_size), wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
             gc.SetFont(font, self.scene.colors.color_measure_text)
 
             gc.SetPen(self.line_pen)
