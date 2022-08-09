@@ -186,9 +186,9 @@ class BorderWidget(Widget):
             # if draw_mode & DRAW_MODE_SELECTION == 0:
             units = context.units_name
             try:
-                font = wx.Font(self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+                font = wx.Font(self.master.font_size, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
             except TypeError:
-                font = wx.Font(int(self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+                font = wx.Font(int(self.master.font_size), wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
             gc.SetFont(font, self.scene.colors.color_manipulation)
             # Show Y-Value
             s_txt = str(Length(amount=self.top, digits=2, preferred_units=units))
@@ -228,11 +228,11 @@ class BorderWidget(Widget):
         if abs(self.master.rotated_angle) > 0.001:
             try:
                 font = wx.Font(
-                    0.75 * self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD
+                    0.75 * self.master.font_size, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
                 )
             except TypeError:
                 font = wx.Font(
-                    int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
+                    int(0.75 * self.master.font_size), wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
                 )
             gc.SetFont(font, self.scene.colors.color_manipulation)
             symbol = f"{360 * self.master.rotated_angle / math.tau:.0f}°"
@@ -240,7 +240,7 @@ class BorderWidget(Widget):
             pen.SetColour(self.scene.colors.color_manipulation)
             pen.SetStyle(wx.PENSTYLE_SOLID)
             gc.SetPen(pen)
-            brush = wx.Brush(wx.WHITE, wx.SOLID)
+            brush = wx.Brush(wx.WHITE, wx.BRUSHSTYLE_SOLID)
             gc.SetBrush(brush)
             (t_width, t_height) = gc.GetTextExtent(symbol)
             gc.DrawEllipse(
@@ -607,7 +607,7 @@ class CornerWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID)
         gc.SetPen(self.master.handle_pen)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
@@ -801,7 +801,7 @@ class SideWidget(Widget):
             return
 
         self.update()  # make sure coords are valid
-        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID)
         gc.SetPen(self.master.handle_pen)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
@@ -975,7 +975,7 @@ class SkewWidget(Widget):
 
         self.update()  # make sure coords are valid
         gc.SetPen(self.master.handle_pen)
-        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
@@ -1118,7 +1118,7 @@ class MoveWidget(Widget):
 
         self.update()  # make sure coords are valid
         gc.SetPen(self.master.handle_pen)
-        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.SOLID)
+        brush = wx.Brush(self.scene.colors.color_manipulation_handle, wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         gc.DrawRectangle(
             self.left + self.half_x - self.drawhalf,
@@ -1332,15 +1332,15 @@ class ReferenceWidget(Widget):
             pen.SetWidth(int(self.master.line_width))
         pen.SetStyle(wx.PENSTYLE_SOLID)
         gc.SetPen(pen)
-        brush = wx.Brush(bgcol, wx.SOLID)
+        brush = wx.Brush(bgcol, wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         gc.DrawEllipse(self.left, self.top, self.width, self.height)
         # gc.DrawRectangle(self.left, self.top, self.width, self.height)
         try:
-            font = wx.Font(0.75 * self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            font = wx.Font(0.75 * self.master.font_size, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         except TypeError:
             font = wx.Font(
-                int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
+                int(0.75 * self.master.font_size), wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
             )
         gc.SetFont(font, fgcol)
         symbol = "r"
@@ -1441,15 +1441,15 @@ class LockWidget(Widget):
             pen.SetWidth(int(self.master.line_width))
         pen.SetStyle(wx.PENSTYLE_SOLID)
         gc.SetPen(pen)
-        brush = wx.Brush(bgcol, wx.SOLID)
+        brush = wx.Brush(bgcol, wx.BRUSHSTYLE_SOLID)
         gc.SetBrush(brush)
         gc.DrawEllipse(self.left, self.top, self.width, self.height)
         # gc.DrawRectangle(self.left, self.top, self.width, self.height)
         try:
-            font = wx.Font(0.75 * self.master.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+            font = wx.Font(0.75 * self.master.font_size, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         except TypeError:
             font = wx.Font(
-                int(0.75 * self.master.font_size), wx.SWISS, wx.NORMAL, wx.BOLD
+                int(0.75 * self.master.font_size), wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
             )
         gc.SetFont(font, fgcol)
         symbol = "L"
@@ -1689,9 +1689,6 @@ class SelectionWidget(Widget):
         # want to have sharp edges
         self.handle_pen.SetJoin(wx.JOIN_MITER)
 
-        self.popupID1 = None
-        self.popupID2 = None
-        self.popupID3 = None
         self.gc = None
         self.reset_variables()
         self.modifiers = []
@@ -1934,25 +1931,19 @@ class SelectionWidget(Widget):
         # Add Manipulation menu
         if reference_object is not None:
             submenu = wx.Menu()
-            if self.popupID1 is None:
-                self.popupID1 = wx.NewId()
-            gui.Bind(wx.EVT_MENU, self.show_reference_align_dialog, id=self.popupID1)
-            submenu.Append(self.popupID1, _("Align to reference object"))
+            item1 = submenu.Append(wx.ID_ANY, _("Align to reference object"))
+            gui.Bind(wx.EVT_MENU, self.show_reference_align_dialog, id=item1.GetId())
 
         if self.single_element and not self.is_ref:
             if submenu is None:
                 submenu = wx.Menu()
-            if self.popupID3 is None:
-                self.popupID3 = wx.NewId()
-            gui.Bind(wx.EVT_MENU, self.become_reference, id=self.popupID3)
-            submenu.Append(self.popupID3, _("Become reference object"))
+            item2 = submenu.Append(wx.ID_ANY, _("Become reference object"))
+            gui.Bind(wx.EVT_MENU, self.become_reference, id=item2.GetId())
         if not self.scene.reference_object is None:
             if submenu is None:
                 submenu = wx.Menu()
-            if self.popupID2 is None:
-                self.popupID2 = wx.NewId()
-            gui.Bind(wx.EVT_MENU, self.delete_reference, id=self.popupID2)
-            submenu.Append(self.popupID2, _("Clear reference object"))
+            item3 = submenu.Append(wx.ID_ANY, _("Clear reference object"))
+            gui.Bind(wx.EVT_MENU, self.delete_reference, id=item3.GetId())
 
         if not submenu is None:
             menu.AppendSubMenu(submenu, _("Reference Object"))
@@ -2088,9 +2079,9 @@ class SelectionWidget(Widget):
             if self.font_size < 1.0:
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:
-                font = wx.Font(self.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+                font = wx.Font(self.font_size, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
             except TypeError:
-                font = wx.Font(int(self.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+                font = wx.Font(int(self.font_size), wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
             gc.SetFont(font, self.scene.colors.color_manipulation)
             gc.SetPen(self.selection_pen)
             self.left = bounds[0]

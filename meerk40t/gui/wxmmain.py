@@ -92,85 +92,6 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
-ID_MENU_IMPORT = wx.NewId()
-ID_MENU_RECENT = wx.NewId()
-ID_MENU_ZOOM_OUT = wx.NewId()
-ID_MENU_ZOOM_IN = wx.NewId()
-ID_MENU_ZOOM_SIZE = wx.NewId()
-ID_MENU_ZOOM_BED = wx.NewId()
-ID_MENU_SCENE_MINMAX = wx.NewId()
-
-# 1 fill, 2 grids, 4 guides, 8 laserpath, 16 writer_position, 32 selection
-ID_MENU_HIDE_FILLS = wx.NewId()
-ID_MENU_HIDE_GUIDES = wx.NewId()
-ID_MENU_HIDE_GRID = wx.NewId()
-ID_MENU_HIDE_BACKGROUND = wx.NewId()
-ID_MENU_HIDE_LINEWIDTH = wx.NewId()
-ID_MENU_HIDE_STROKES = wx.NewId()
-ID_MENU_HIDE_ICONS = wx.NewId()
-ID_MENU_HIDE_LASERPATH = wx.NewId()
-ID_MENU_HIDE_RETICLE = wx.NewId()
-ID_MENU_HIDE_SELECTION = wx.NewId()
-ID_MENU_SCREEN_REFRESH = wx.NewId()
-ID_MENU_SCREEN_ANIMATE = wx.NewId()
-ID_MENU_SCREEN_INVERT = wx.NewId()
-ID_MENU_SCREEN_FLIPXY = wx.NewId()
-ID_MENU_PREVENT_CACHING = wx.NewId()
-ID_MENU_PREVENT_ALPHABLACK = wx.NewId()
-ID_MENU_HIDE_IMAGE = wx.NewId()
-ID_MENU_HIDE_PATH = wx.NewId()
-ID_MENU_HIDE_TEXT = wx.NewId()
-ID_MENU_SHOW_VARIABLES = wx.NewId()
-
-ID_MENU_FILE0 = wx.NewId()
-ID_MENU_FILE1 = wx.NewId()
-ID_MENU_FILE2 = wx.NewId()
-ID_MENU_FILE3 = wx.NewId()
-ID_MENU_FILE4 = wx.NewId()
-ID_MENU_FILE5 = wx.NewId()
-ID_MENU_FILE6 = wx.NewId()
-ID_MENU_FILE7 = wx.NewId()
-ID_MENU_FILE8 = wx.NewId()
-ID_MENU_FILE9 = wx.NewId()
-ID_MENU_FILE10 = wx.NewId()
-ID_MENU_FILE11 = wx.NewId()
-ID_MENU_FILE12 = wx.NewId()
-ID_MENU_FILE13 = wx.NewId()
-ID_MENU_FILE14 = wx.NewId()
-ID_MENU_FILE15 = wx.NewId()
-ID_MENU_FILE16 = wx.NewId()
-ID_MENU_FILE17 = wx.NewId()
-ID_MENU_FILE18 = wx.NewId()
-ID_MENU_FILE19 = wx.NewId()
-ID_MENU_FILE_CLEAR = wx.NewId()
-
-ID_MENU_KEYMAP = wx.NewId()
-ID_MENU_DEVICE_MANAGER = wx.NewId()
-ID_MENU_CONFIG = wx.NewId()
-ID_MENU_NAVIGATION = wx.NewId()
-ID_MENU_NOTES = wx.NewId()
-ID_MENU_OPERATIONS = wx.NewId()
-ID_MENU_CONTROLLER = wx.NewId()
-ID_MENU_CAMERA = wx.NewId()
-ID_MENU_CONSOLE = wx.NewId()
-ID_MENU_USB = wx.NewId()
-ID_MENU_SPOOLER = wx.NewId()
-ID_MENU_SIMULATE = wx.NewId()
-ID_MENU_RASTER_WIZARD = wx.NewId()
-ID_MENU_WINDOW_RESET = wx.NewId()
-ID_MENU_PANE_RESET = wx.NewId()
-ID_MENU_PANE_LOCK = wx.NewId()
-ID_MENU_JOB = wx.NewId()
-ID_MENU_TREE = wx.NewId()
-
-ID_BEGINNERS = wx.NewId()
-ID_HOMEPAGE = wx.NewId()
-ID_RELEASES = wx.NewId()
-ID_FACEBOOK = wx.NewId()
-ID_DISCORD = wx.NewId()
-ID_MAKERS_FORUM = wx.NewId()
-ID_IRC = wx.NewId()
-
 
 class MeerK40t(MWindow):
     """MeerK40t main window"""
@@ -1747,12 +1668,11 @@ class MeerK40t(MWindow):
             if not pane_caption:
                 pane_caption = pane_name[0].upper() + pane_name[1:] + "."
 
-            id_new = wx.NewId()
-            menu_item = menu_context.Append(id_new, pane_caption, "", wx.ITEM_CHECK)
+            menu_item = menu_context.Append(wx.ID_ANY, pane_caption, "", wx.ITEM_CHECK)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_pane(pane_name),
-                id=id_new,
+                id=menu_item.GetId(),
             )
             pane = self._mgr.GetPane(pane_name)
             try:
@@ -1763,12 +1683,23 @@ class MeerK40t(MWindow):
 
         self.panes_menu.AppendSeparator()
         item = self.main_menubar.lockpane = self.panes_menu.Append(
-            ID_MENU_PANE_LOCK, _("Lock Panes"), "", wx.ITEM_CHECK
+            wx.ID_ANY, _("Lock Panes"), "", wx.ITEM_CHECK
         )
         item.Check(self.context.pane_lock)
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_pane_lock,
+            id=item.GetId(),
+        )
+
         self.panes_menu.AppendSeparator()
         self.main_menubar.panereset = self.panes_menu.Append(
-            ID_MENU_PANE_RESET, _("Reset Panes"), ""
+            wx.ID_ANY, _("Reset Panes"), ""
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            self.on_pane_reset,
+            id=self.main_menubar.panereset.GetId(),
         )
 
     @lookup_listener("window")
@@ -1815,12 +1746,11 @@ class MeerK40t(MWindow):
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            id_new = wx.NewId()
-            menu_context.Append(id_new, caption, "", wx.ITEM_NORMAL)
+            menuitem = menu_context.Append(wx.ID_ANY, caption, "", wx.ITEM_NORMAL)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
-                id=id_new,
+                id=menuitem.GetId(),
             )
 
         self.window_menu.AppendSeparator()
@@ -1828,12 +1758,12 @@ class MeerK40t(MWindow):
         # then resetting windows becomes difficult, so a shortcut is in order...
         # REVISED: CTRL-W is needed for mac close-window
         self.window_menu.windowreset = self.window_menu.Append(
-            ID_MENU_WINDOW_RESET, _("Reset Windows"), ""
+            wx.ID_ANY, _("Reset Windows"), ""
         )
         self.Bind(
             wx.EVT_MENU,
             lambda v: self.context("window reset *\n"),
-            id=ID_MENU_WINDOW_RESET,
+            id=self.window_menu.windowreset.GetId(),
         )
 
     def __set_menubars(self):
@@ -1843,187 +1773,180 @@ class MeerK40t(MWindow):
         self.__set_tool_menu()
         self.__set_window_menu()
         self.__set_help_menu()
-        self.__set_menu_binds()
         self.add_language_menu()
-        self.__set_draw_modes()
 
     def __set_file_menu(self):
+
         self.file_menu = wx.Menu()
         # ==========
         # FILE MENU
         # ==========
 
-        self.file_menu.Append(
+        menu_item = self.file_menu.Append(
             wx.ID_NEW, _("&New\tCtrl-N"), _("Clear Operations, Elements and Notes")
         )
+        self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
+
         self.file_menu.Append(
             wx.ID_OPEN,
             _("&Open Project\tCtrl-O"),
             _("Clear existing elements and notes and open a new file"),
         )
+        self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
+
         self.recent_file_menu = wx.Menu()
         if not getattr(sys, "frozen", False) or platform.system() != "Darwin":
             self.file_menu.AppendSubMenu(self.recent_file_menu, _("&Recent"))
-        self.file_menu.Append(
-            ID_MENU_IMPORT,
+        menu_item = self.file_menu.Append(
+            wx.ID_ANY,
             _("&Import File"),
             _("Import another file into the same project"),
         )
+        self.Bind(wx.EVT_MENU, self.on_click_import, id=menu_item.GetId())
         self.file_menu.AppendSeparator()
-        self.file_menu.Append(
+        menu_item = self.file_menu.Append(
             wx.ID_SAVE,
             _("&Save\tCtrl-S"),
             _("Save the project as an SVG file (overwriting any existing file)"),
         )
-        self.file_menu.Append(
+        self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
+        menu_item = self.file_menu.Append(
             wx.ID_SAVEAS,
             _("Save &As\tCtrl-Shift-S"),
             _("Save the project in a new SVG file"),
         )
+        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
         self.file_menu.AppendSeparator()
         if platform.system() == "Darwin":
-            self.file_menu.Append(
+            menu_item = self.file_menu.Append(
                 wx.ID_CLOSE, _("&Close Window\tCtrl-W"), _("Close Meerk40t")
             )
-        self.file_menu.Append(wx.ID_EXIT, _("E&xit"), _("Close Meerk40t"))
+            self.Bind(wx.EVT_MENU, self.on_click_close, id=menu_item.GetId())
+
+        menu_item = self.file_menu.Append(wx.ID_EXIT, _("E&xit"), _("Close Meerk40t"))
+        self.Bind(wx.EVT_MENU, self.on_click_exit, id=menu_item.GetId())
         self.main_menubar.Append(self.file_menu, _("File"))
 
     def __set_view_menu(self):
+        def create_draw_mode_item(label, tooltip, FLAG):
+            menu_item = self.view_menu.Append(wx.ID_ANY, label, tooltip, wx.ITEM_CHECK,)
+            self.Bind(
+                wx.EVT_MENU, self.toggle_draw_mode(FLAG), id=menu_item.GetId()
+            )
+            menu_item.Check(self.context.draw_mode & FLAG != 0)
         # ==========
         # VIEW MENU
         # ==========
+        self.context.setting(int, "draw_mode", 0)
         self.view_menu = wx.Menu()
 
-        self.view_menu.Append(
-            ID_MENU_ZOOM_OUT, _("Zoom &Out\tCtrl--"), _("Make the scene smaller")
+        menu_item = self.view_menu.Append(
+            wx.ID_ANY, _("Zoom &Out\tCtrl--"), _("Make the scene smaller")
         )
-        self.view_menu.Append(
-            ID_MENU_ZOOM_IN, _("Zoom &In\tCtrl-+"), _("Make the scene larger")
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=menu_item.GetId())
+
+        menu_item = self.view_menu.Append(
+            wx.ID_ANY, _("Zoom &In\tCtrl-+"), _("Make the scene larger")
         )
-        self.view_menu.Append(
-            ID_MENU_ZOOM_SIZE,
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=menu_item.GetId())
+        menu_item = self.view_menu.Append(
+            wx.ID_ANY,
             _("Zoom to &Selected\tCtrl-Shift-B"),
             _("Fill the scene area with the selected elements"),
         )
-        self.view_menu.Append(
-            ID_MENU_ZOOM_BED, _("Zoom to &Bed\tCtrl-B"), _("View the whole laser bed")
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=menu_item.GetId())
+        menu_item = self.view_menu.Append(
+            wx.ID_ANY, _("Zoom to &Bed\tCtrl-B"), _("View the whole laser bed")
         )
-        self.view_menu.Append(
-            ID_MENU_SCENE_MINMAX,
+        self.Bind(wx.EVT_MENU, self.on_click_zoom_bed, id=menu_item.GetId())
+        menu_item = self.view_menu.Append(
+            wx.ID_ANY,
             _("Show/Hide UI-Panels\tCtrl-U"),
             _("Show/Hide all panels/ribbon bar"),
         )
+        self.Bind(wx.EVT_MENU, self.on_click_toggle_ui, id=menu_item.GetId())
 
         self.view_menu.AppendSeparator()
 
-        self.view_menu.Append(
-            ID_MENU_HIDE_GRID,
+        create_draw_mode_item(
             _("Hide Grid"),
             _("Don't show the sizing grid"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_GRID
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_BACKGROUND,
+        create_draw_mode_item(
             _("Hide Background"),
             _("Don't show any background image"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_BACKGROUND
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_GUIDES,
+        create_draw_mode_item(
             _("Hide Guides"),
             _("Don't show the measurement guides"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_GUIDES
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_PATH,
+        create_draw_mode_item(
             _("Hide Shapes"),
             _("Don't show shapes (i.e. Rectangles, Paths etc.)"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_PATH
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_STROKES,
+        create_draw_mode_item(
             _("Hide Strokes"),
             _("Don't show the strokes (i.e. the edges of SVG shapes)"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_STROKES
         )
         # TODO - this function doesn't work.
-        self.view_menu.Append(
-            ID_MENU_HIDE_LINEWIDTH,
+        create_draw_mode_item(
             _("No Stroke-Width Render"),
             _("Ignore the stroke width when drawing the stroke"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_LINEWIDTH
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_FILLS,
+        create_draw_mode_item(
             _("Hide Fills"),
             _("Don't show fills (i.e. the fill inside strokes)"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_FILLS
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_IMAGE, _("Hide Images"), _("Don't show images"), wx.ITEM_CHECK
-        )
-        self.view_menu.Append(
-            ID_MENU_HIDE_TEXT,
+        create_draw_mode_item(_("Hide Images"), _("Don't show images"), DRAW_MODE_IMAGE)
+        create_draw_mode_item(
             _("Hide Text"),
             _("Don't show text elements"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_TEXT
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_LASERPATH,
+        create_draw_mode_item(
             _("Hide Laserpath"),
             _("Don't show the path that the laserhead has followed (blue line)"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_LASERPATH
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_RETICLE,
+        create_draw_mode_item(
             _("Hide Reticle"),
-            _(
-                "Don't show the small read circle showing the current laserhead position"
-            ),
-            wx.ITEM_CHECK,
+            _("Don't show the small read circle showing the current laserhead position"),
+            DRAW_MODE_RETICLE
         )
-        self.view_menu.Append(
-            ID_MENU_HIDE_SELECTION,
+        create_draw_mode_item(
             _("Hide Selection"),
             _("Don't show the selection boundaries and dimensions"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_SELECTION
         )
         # TODO This menu does not clear existing icons or create icons when it is changed
-        self.view_menu.Append(ID_MENU_HIDE_ICONS, _("Hide Icons"), "", wx.ITEM_CHECK)
-        self.view_menu.Append(
-            ID_MENU_PREVENT_CACHING, _("Do Not Cache Image"), "", wx.ITEM_CHECK
-        )
-        self.view_menu.Append(
-            ID_MENU_PREVENT_ALPHABLACK,
-            _("Do Not Alpha/Black Images"),
-            "",
-            wx.ITEM_CHECK,
-        )
-        self.view_menu.Append(
-            ID_MENU_SCREEN_REFRESH, _("Do Not Refresh"), _(""), wx.ITEM_CHECK
-        )
-        self.view_menu.Append(
-            ID_MENU_SCREEN_ANIMATE, _("Do Not Animate"), _(""), wx.ITEM_CHECK
-        )
-        self.view_menu.Append(
-            ID_MENU_SCREEN_INVERT,
+        create_draw_mode_item(_("Hide Icons"), "", DRAW_MODE_ICONS)
+        create_draw_mode_item(_("Do Not Cache Image"), "", DRAW_MODE_CACHE)
+        create_draw_mode_item(_("Do Not Alpha/Black Images"), "", DRAW_MODE_ALPHABLACK)
+        create_draw_mode_item(_("Do Not Refresh"), _(""), DRAW_MODE_REFRESH)
+        create_draw_mode_item(_("Do Not Animate"), _(""), DRAW_MODE_ANIMATE)
+        create_draw_mode_item(
             _("Invert"),
             _("Show a negative image of the scene by inverting colours"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_INVERT
         )
-        self.view_menu.Append(
-            ID_MENU_SCREEN_FLIPXY,
+        create_draw_mode_item(
             _("Flip XY"),
             _("Effectively rotate the scene display by 180 degrees"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_FLIPXY
         )
 
         self.view_menu.AppendSeparator()
-        self.view_menu.Append(
-            ID_MENU_SHOW_VARIABLES,
+        create_draw_mode_item(
             _("Show Variables"),
             _("Replace variables in textboxes by their 'real' content"),
-            wx.ITEM_CHECK,
+            DRAW_MODE_VARIABLES
         )
 
         self.main_menubar.Append(self.view_menu, _("View"))
@@ -2085,280 +2008,111 @@ class MeerK40t(MWindow):
                 dlg.Destroy()
 
         if platform.system() == "Darwin":
-            self.help_menu.Append(
+            menuitem = self.help_menu.Append(
                 wx.ID_HELP, _("&MeerK40t Help"), _("Open the MeerK40t Mac help file")
             )
-            self.Bind(wx.EVT_MENU, launch_help_osx, id=wx.ID_HELP)
-            ONLINE_HELP = wx.NewId()
-            self.help_menu.Append(
-                ONLINE_HELP, _("&Online Help"), _("Open the Meerk40t online wiki")
+            self.Bind(wx.EVT_MENU, launch_help_osx, id=menuitem.GetId())
+            menuitem = self.help_menu.Append(
+                wx.ID_ANY, _("&Online Help"), _("Open the Meerk40t online wiki")
             )
             self.Bind(
-                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=ONLINE_HELP
+                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=menuitem.GetId()
             )
         else:
-            self.help_menu.Append(
+            menuitem = self.help_menu.Append(
                 wx.ID_HELP,
                 _("&Help"),
                 _("Open the Meerk40t online wiki Beginners page"),
             )
             self.Bind(
-                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=wx.ID_HELP
+                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=menuitem.GetId()
             )
 
-        self.help_menu.Append(
-            ID_BEGINNERS,
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
             _("&Beginners' Help"),
             _("Open the Meerk40t online wiki Beginners page"),
         )
-        self.help_menu.Append(
-            ID_HOMEPAGE, _("&Github"), _("Visit Meerk40t's Github home page")
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp beginners\n"),
+            id=menuitem.GetId(),
         )
-        self.help_menu.Append(
-            ID_RELEASES,
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY, _("&Github"), _("Visit Meerk40t's Github home page")
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp main\n"),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
             _("&Releases"),
             _("Check for a new release on Meerk40t's Github releases page"),
         )
-        self.help_menu.Append(
-            ID_FACEBOOK,
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp releases\n"),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
             _("&Facebook"),
             _("Get help from the K40 Meerk40t Facebook group"),
         )
-        self.help_menu.Append(
-            ID_DISCORD,
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp facebook\n"),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
             _("&Discord"),
             _("Chat with developers to get help on the Meerk40t Discord server"),
         )
-        self.help_menu.Append(
-            ID_MAKERS_FORUM,
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp discord\n"),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
             _("&Makers Forum"),
             _("Get help from the Meerk40t page on the Makers Forum"),
         )
-        self.help_menu.Append(
-            ID_IRC,
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp makers\n"),
+            id=menuitem.GetId(),
+        )
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
             _("&IRC"),
             _("Chat with developers to get help on the Meerk40t IRC channel"),
         )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp irc\n"),
+            id=menuitem.GetId(),
+        )
         self.help_menu.AppendSeparator()
-        self.help_menu.Append(
+        menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
             _("&About MeerK40t"),
             _(
                 "Toggle the About window acknowledging those who contributed to creating Meerk40t"
             ),
         )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda v: self.context("window toggle About\n"),
+            id=menuitem.GetId(),
+        )
 
         self.main_menubar.Append(self.help_menu, _("Help"))
 
         self.SetMenuBar(self.main_menubar)
-
-    def __set_menu_binds(self):
-        self.__set_file_menu_binds()
-        self.__set_view_menu_binds()
-        self.__set_panes_menu_binds()
-        self.__set_help_menu_binds()
-
-    def __set_file_menu_binds(self):
-        # ==========
-        # BINDS
-        # ==========
-        self.Bind(wx.EVT_MENU, self.on_click_new, id=wx.ID_NEW)
-        self.Bind(wx.EVT_MENU, self.on_click_open, id=wx.ID_OPEN)
-        self.Bind(wx.EVT_MENU, self.on_click_import, id=ID_MENU_IMPORT)
-        self.Bind(wx.EVT_MENU, self.on_click_save, id=wx.ID_SAVE)
-        self.Bind(wx.EVT_MENU, self.on_click_save_as, id=wx.ID_SAVEAS)
-
-        self.Bind(wx.EVT_MENU, self.on_click_close, id=wx.ID_CLOSE)
-        self.Bind(wx.EVT_MENU, self.on_click_exit, id=wx.ID_EXIT)
-
-    def __set_view_menu_binds(self):
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=ID_MENU_ZOOM_OUT)
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=ID_MENU_ZOOM_IN)
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=ID_MENU_ZOOM_SIZE)
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_bed, id=ID_MENU_ZOOM_BED)
-        self.Bind(wx.EVT_MENU, self.on_click_toggle_ui, id=ID_MENU_SCENE_MINMAX)
-
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GRID), id=ID_MENU_HIDE_GRID
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_BACKGROUND),
-            id=ID_MENU_HIDE_BACKGROUND,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_LINEWIDTH),
-            id=ID_MENU_HIDE_LINEWIDTH,
-        )
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_GUIDES), id=ID_MENU_HIDE_GUIDES
-        )
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_PATH), id=ID_MENU_HIDE_PATH
-        )
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_IMAGE), id=ID_MENU_HIDE_IMAGE
-        )
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_TEXT), id=ID_MENU_HIDE_TEXT
-        )
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_FILLS), id=ID_MENU_HIDE_FILLS
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_LASERPATH),
-            id=ID_MENU_HIDE_LASERPATH,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_RETICLE),
-            id=ID_MENU_HIDE_RETICLE,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_SELECTION),
-            id=ID_MENU_HIDE_SELECTION,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_STROKES),
-            id=ID_MENU_HIDE_STROKES,
-        )
-        self.Bind(
-            wx.EVT_MENU, self.toggle_draw_mode(DRAW_MODE_ICONS), id=ID_MENU_HIDE_ICONS
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_CACHE),
-            id=ID_MENU_PREVENT_CACHING,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_ALPHABLACK),
-            id=ID_MENU_PREVENT_ALPHABLACK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_REFRESH),
-            id=ID_MENU_SCREEN_REFRESH,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_ANIMATE),
-            id=ID_MENU_SCREEN_ANIMATE,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_INVERT),
-            id=ID_MENU_SCREEN_INVERT,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_FLIPXY),
-            id=ID_MENU_SCREEN_FLIPXY,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.toggle_draw_mode(DRAW_MODE_VARIABLES),
-            id=ID_MENU_SHOW_VARIABLES,
-        )
-
-    def __set_panes_menu_binds(self):
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_pane_reset,
-            id=ID_MENU_PANE_RESET,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.on_pane_lock,
-            id=ID_MENU_PANE_LOCK,
-        )
-
-    def __set_help_menu_binds(self):
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp beginners\n"),
-            id=ID_BEGINNERS,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp main\n"),
-            id=ID_HOMEPAGE,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp releases\n"),
-            id=ID_RELEASES,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp makers\n"),
-            id=ID_MAKERS_FORUM,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp facebook\n"),
-            id=ID_FACEBOOK,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp discord\n"),
-            id=ID_DISCORD,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp irc\n"),
-            id=ID_IRC,
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda v: self.context("window toggle About\n"),
-            id=wx.ID_ABOUT,
-        )
-
-    def __set_draw_modes(self):
-        self.context.setting(int, "draw_mode", 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_FILLS)
-        m.Check(self.context.draw_mode & DRAW_MODE_FILLS != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GUIDES)
-        m.Check(self.context.draw_mode & DRAW_MODE_GUIDES != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_BACKGROUND)
-        m.Check(self.context.draw_mode & DRAW_MODE_BACKGROUND != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LINEWIDTH)
-        m.Check(self.context.draw_mode & DRAW_MODE_LINEWIDTH != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_GRID)
-        m.Check(self.context.draw_mode & DRAW_MODE_GRID != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_LASERPATH)
-        m.Check(self.context.draw_mode & DRAW_MODE_LASERPATH != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_RETICLE)
-        m.Check(self.context.draw_mode & DRAW_MODE_RETICLE != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_SELECTION)
-        m.Check(self.context.draw_mode & DRAW_MODE_SELECTION != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_STROKES)
-        m.Check(self.context.draw_mode & DRAW_MODE_STROKES != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_ICONS)
-        m.Check(self.context.draw_mode & DRAW_MODE_ICONS != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_CACHING)
-        m.Check(self.context.draw_mode & DRAW_MODE_CACHE != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_PREVENT_ALPHABLACK)
-        m.Check(self.context.draw_mode & DRAW_MODE_ALPHABLACK != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_REFRESH)
-        m.Check(self.context.draw_mode & DRAW_MODE_REFRESH != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_ANIMATE)
-        m.Check(self.context.draw_mode & DRAW_MODE_ANIMATE != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_PATH)
-        m.Check(self.context.draw_mode & DRAW_MODE_PATH != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_IMAGE)
-        m.Check(self.context.draw_mode & DRAW_MODE_IMAGE != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_HIDE_TEXT)
-        m.Check(self.context.draw_mode & DRAW_MODE_TEXT != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_FLIPXY)
-        m.Check(self.context.draw_mode & DRAW_MODE_FLIPXY != 0)
-        m = self.GetMenuBar().FindItemById(ID_MENU_SCREEN_INVERT)
-        m.Check(self.context.draw_mode & DRAW_MODE_INVERT != 0)
 
     def add_language_menu(self):
         tl = wx.FileTranslationsLoader()
@@ -2616,26 +2370,26 @@ class MeerK40t(MWindow):
 
         context = self.context
         recents = [
-            (context.file0, ID_MENU_FILE0, "&1 "),
-            (context.file1, ID_MENU_FILE1, "&2 "),
-            (context.file2, ID_MENU_FILE2, "&3 "),
-            (context.file3, ID_MENU_FILE3, "&4 "),
-            (context.file4, ID_MENU_FILE4, "&5 "),
-            (context.file5, ID_MENU_FILE5, "&6 "),
-            (context.file6, ID_MENU_FILE6, "&7 "),
-            (context.file7, ID_MENU_FILE7, "&8 "),
-            (context.file8, ID_MENU_FILE8, "&9 "),
-            (context.file9, ID_MENU_FILE9, "1&0"),
-            (context.file10, ID_MENU_FILE10, "11"),
-            (context.file11, ID_MENU_FILE11, "12"),
-            (context.file12, ID_MENU_FILE12, "13"),
-            (context.file13, ID_MENU_FILE13, "14"),
-            (context.file14, ID_MENU_FILE14, "15"),
-            (context.file15, ID_MENU_FILE15, "16"),
-            (context.file16, ID_MENU_FILE16, "17"),
-            (context.file17, ID_MENU_FILE17, "18"),
-            (context.file18, ID_MENU_FILE18, "19"),
-            (context.file19, ID_MENU_FILE19, "20"),
+            (context.file0, "&1 "),
+            (context.file1, "&2 "),
+            (context.file2, "&3 "),
+            (context.file3, "&4 "),
+            (context.file4, "&5 "),
+            (context.file5, "&6 "),
+            (context.file6, "&7 "),
+            (context.file7, "&8 "),
+            (context.file8, "&9 "),
+            (context.file9, "1&0"),
+            (context.file10, "11"),
+            (context.file11, "12"),
+            (context.file12, "13"),
+            (context.file13, "14"),
+            (context.file14, "15"),
+            (context.file15, "16"),
+            (context.file16, "17"),
+            (context.file17, "18"),
+            (context.file18, "19"),
+            (context.file19, "20"),
         ]
 
         # for i in range(self.recent_file_menu.MenuItemCount):
@@ -2644,26 +2398,26 @@ class MeerK40t(MWindow):
         for item in self.recent_file_menu.GetMenuItems():
             self.recent_file_menu.Remove(item)
 
-        for file, id, shortcode in recents:
+        for file, shortcode in recents:
             if file is not None and file:
                 shortfile = _("Load {file}...").format(file=os.path.basename(file))
-                self.recent_file_menu.Append(
-                    id, shortcode + "  " + file.replace("&", "&&"), shortfile
+                menuitem = self.recent_file_menu.Append(
+                    wx.ID_ANY, shortcode + "  " + file.replace("&", "&&"), shortfile
                 )
                 self.Bind(
                     wx.EVT_MENU,
                     partial(lambda f, event: self.load_or_open(f), file),
-                    id=id,
+                    id=menuitem.GetId(),
                 )
 
         if self.recent_file_menu.MenuItemCount != 0:
             self.recent_file_menu.AppendSeparator()
-            self.recent_file_menu.Append(
-                ID_MENU_FILE_CLEAR,
+            menuitem = self.recent_file_menu.Append(
+                wx.ID_ANY,
                 _("Clear Recent"),
                 _("Delete the list of recent projects"),
             )
-            self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=ID_MENU_FILE_CLEAR)
+            self.Bind(wx.EVT_MENU, lambda e: self.clear_recent(), id=menuitem.GetId())
 
     def clear_recent(self):
         for i in range(20):
