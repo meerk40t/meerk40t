@@ -287,17 +287,17 @@ class Bind(Service):
 
     # help transition from old definitions of control-key-combinations
     def is_found(self, keyvalue, target):
-        valu = False
+        value = False
         if keyvalue is not None:
             s = keyvalue
             if s in target:
-                valu = True
+                value = True
             else:
                 s = keyvalue.replace("ctrl", "control")
                 if s in target:
                     keyvalue = s
-                    valu = True
-        return valu, keyvalue
+                    value = True
+        return value, keyvalue
 
     def trigger(self, keyvalue):
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
