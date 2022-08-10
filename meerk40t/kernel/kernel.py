@@ -2290,7 +2290,7 @@ class Kernel(Settings):
 
         @self.console_argument("substr", type=str)
         @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
-        def help_command(channel, _, substr, **kwargs):
+        def find_command(channel, _, substr, **kwargs):
             """
             'find' will display the list of accepted commands that contain a given substr.
             """
