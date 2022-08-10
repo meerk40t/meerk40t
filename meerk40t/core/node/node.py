@@ -609,13 +609,6 @@ class Node:
     def count_children(self):
         return len(self._children)
 
-    def objects_of_children(self, types):
-        if isinstance(self.object, types):
-            yield self.object
-        for q in self._children:
-            for o in q.objects_of_children(types):
-                yield o
-
     def append_child(self, new_child):
         """
         Add the new_child node as the last child of the current node.
@@ -702,13 +695,19 @@ class Node:
             child.remove_all_children()
             child.remove_node()
 
-    def get(self, obj=None, type=None):
-        if (obj is None or obj == self.object) and (type is None or type == self.type):
+    def get(self, type=None):
+        """
+        Recursive call for get to find first sub-nodes with the given type.
+        @param type:
+        @return:
+        """
+        if type is None or type == self.type:
             return self
         for n in self._children:
-            node = n.get(obj, type)
+            node = n.get(type)
             if node is not None:
                 return node
+        return None
 
     def move(self, dest, pos=None):
         self._parent.remove(self)

@@ -447,19 +447,19 @@ class MeerK40tScenePanel(wx.Panel):
                 channel(f"Primary: {p_state}")
                 if self.widget_scene.draw_grid_secondary:
                     channel(f"Secondary: {_('On')}")
-                    if not self.widget_scene.grid_secondary_cx is None:
+                    if self.widget_scene.grid_secondary_cx is not None:
                         channel(
                             f"   cx: {Length(amount=self.widget_scene.grid_secondary_cx).length_mm}"
                         )
-                    if not self.widget_scene.grid_secondary_cy is None:
+                    if self.widget_scene.grid_secondary_cy is not None:
                         channel(
                             f"   cy: {Length(amount=self.widget_scene.grid_secondary_cy).length_mm}"
                         )
-                    if not self.widget_scene.grid_secondary_scale_x is None:
+                    if self.widget_scene.grid_secondary_scale_x is not None:
                         channel(
                             f"   scale-x: {self.widget_scene.grid_secondary_scale_x:.2f}"
                         )
-                    if not self.widget_scene.grid_secondary_scale_y is None:
+                    if self.widget_scene.grid_secondary_scale_y is not None:
                         channel(
                             f"   scale-y: {self.widget_scene.grid_secondary_scale_y:.2f}"
                         )
@@ -467,11 +467,11 @@ class MeerK40tScenePanel(wx.Panel):
                     channel(f"Secondary: {_('Off')}")
                 if self.widget_scene.draw_grid_circular:
                     channel(f"Circular: {_('On')}")
-                    if not self.widget_scene.grid_circular_cx is None:
+                    if self.widget_scene.grid_circular_cx is not None:
                         channel(
                             f"   cx: {Length(amount=self.widget_scene.grid_circular_cx).length_mm}"
                         )
-                    if not self.widget_scene.grid_circular_cy is None:
+                    if self.widget_scene.grid_circular_cy is not None:
                         channel(
                             f"   cy: {Length(amount=self.widget_scene.grid_circular_cy).length_mm}"
                         )

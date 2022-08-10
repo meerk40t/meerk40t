@@ -1884,7 +1884,7 @@ class SelectionWidget(Widget):
             opt_pos, opt_scale, opt_rotate = dlgRefAlign.results()
             # print ("I would need to align to: %s and scale to: %s" % (opt_pos, opt_scale))
         dlgRefAlign.Destroy()
-        if not opt_pos is None:
+        if opt_pos is not None:
             elements = self.scene.context.elements
             self.rotate_elements_if_needed(opt_rotate)
             self.scale_selection_to_ref(opt_scale)
@@ -1939,13 +1939,13 @@ class SelectionWidget(Widget):
                 submenu = wx.Menu()
             item2 = submenu.Append(wx.ID_ANY, _("Become reference object"))
             gui.Bind(wx.EVT_MENU, self.become_reference, id=item2.GetId())
-        if not self.scene.reference_object is None:
+        if self.scene.reference_object is not None:
             if submenu is None:
                 submenu = wx.Menu()
             item3 = submenu.Append(wx.ID_ANY, _("Clear reference object"))
             gui.Bind(wx.EVT_MENU, self.delete_reference, id=item3.GetId())
 
-        if not submenu is None:
+        if submenu is not None:
             menu.AppendSubMenu(submenu, _("Reference Object"))
 
         if menu.MenuItemCount != 0:

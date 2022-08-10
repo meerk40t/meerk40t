@@ -314,7 +314,7 @@ class GRBLDevice(Service, ViewPort):
             help=_("Send realtime resume gcode to the device"),
             input_type=None,
         )
-        def pause(command, channel, _, data=None, remainder=None, **kwgs):
+        def resume(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.resume()
 
     @property
@@ -708,6 +708,7 @@ class GRBLDriver(Parameters):
         if data_type != "gcode":
             return
         for line in data:
+            #TODO: Process line does not exist as a function.
             self.process_line(line)
 
     def home(self, *values):

@@ -150,7 +150,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         return specific
 
     # Check specifically for the optional first (use case: reference nodes)
-    if not optional_2nd_node is None:
+    if optional_2nd_node is not None:
         mc1 = menu.MenuItemCount
         last_was_separator = False
         for func in elements.tree_operations_for_node(optional_2nd_node):

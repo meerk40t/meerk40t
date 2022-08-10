@@ -125,7 +125,7 @@ class LihuiyuParser:
 
     @property
     def raster_mode(self):
-        return self.settings.get("raster_step", 0) != 0
+        return self.settings.settings.get("raster_step", 0) != 0
 
     def new_file(self):
         self.header_skipped = False

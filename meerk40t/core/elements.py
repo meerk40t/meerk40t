@@ -615,7 +615,7 @@ class Elemental(Service):
             interpolation = density
 
         subject_polygons = []
-        if not path is None:
+        if path is not None:
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
 
@@ -819,7 +819,7 @@ class Elemental(Service):
             command, channel, _, filename=None, remainder=None, **kwargs
         ):
             new_file = filename
-            if not filename is None:
+            if filename is not None:
                 new_file = os.path.join(self.kernel.current_directory, filename)
                 if not os.path.exists(new_file):
                     channel(_("No such file."))
@@ -840,7 +840,7 @@ class Elemental(Service):
             command, channel, _, filename=None, remainder=None, **kwargs
         ):
             new_file = filename
-            if not filename is None:
+            if filename is not None:
                 new_file = os.path.join(self.kernel.current_directory, filename)
 
             self.mywordlist.save_data(new_file)
@@ -3574,7 +3574,7 @@ class Elemental(Service):
                     density = 1
 
                 # Do we have to consider the radius value as the length of one corner?
-                if not side_length is None:
+                if side_length is not None:
                     # Let's recalculate the radius then...
                     # d_oc = s * csc( pi / n)
                     radius = 0.5 * radius / sin(pi / corners)
@@ -4183,7 +4183,7 @@ class Elemental(Service):
                     capvalue = Linecap.CAP_ROUND
                 elif cap.lower() == "square":
                     capvalue = Linecap.CAP_SQUARE
-                if not capvalue is None:
+                if capvalue is not None:
                     for e in apply:
                         if hasattr(e, "linecap"):
                             if hasattr(e, "lock") and e.lock:
@@ -4270,7 +4270,7 @@ class Elemental(Service):
                     joinvalue = Linejoin.JOIN_MITER_CLIP
                 elif join.lower() == "round":
                     joinvalue = Linejoin.JOIN_ROUND
-                if not joinvalue is None:
+                if joinvalue is not None:
                     for e in apply:
                         if hasattr(e, "linejoin"):
                             if hasattr(e, "lock") and e.lock:
@@ -4345,7 +4345,7 @@ class Elemental(Service):
                     rulevalue = Fillrule.FILLRULE_EVENODD
                 elif rule.lower() == SVG_RULE_NONZERO:
                     rulevalue = Fillrule.FILLRULE_NONZERO
-                if not rulevalue is None:
+                if rulevalue is not None:
                     for e in apply:
                         if hasattr(e, "fillrule"):
                             if hasattr(e, "lock") and e.lock:
@@ -5813,7 +5813,7 @@ class Elemental(Service):
                         path = node.as_path()
                     except AttributeError:
                         path = None
-                    if not path is None:
+                    if path is not None:
                         p = path.first_point
                         pts += [(p.x, p.y)]
                         for segment in path:
@@ -5833,7 +5833,7 @@ class Elemental(Service):
                     except AttributeError:
                         path = None
 
-                    if not path is None:
+                    if path is not None:
                         for subpath in path.as_subpaths():
                             psp = Path(subpath)
                             p = psp.first_point
@@ -8303,7 +8303,7 @@ class Elemental(Service):
                     if f_area > e_area:
                         e_area = f_area
                         e = node
-            if not e is None:
+            if e is not None:
                 bounds = e.bounds
                 e_list.append(e)
                 if self._emphasized_bounds is not None:

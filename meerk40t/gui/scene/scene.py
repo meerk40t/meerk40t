@@ -331,32 +331,32 @@ class Scene(Module, Job):
             )
             if delta_x3 < delta_x1 and delta_x3 < delta_x2:
                 if delta_x3 < attraction_len:
-                    if not x3 is None:
+                    if x3 is not None:
                         dx = x3 - (bounds[0] + bounds[2]) / 2
                         # print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
             elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
                 if delta_x1 < attraction_len:
-                    if not x1 is None:
+                    if x1 is not None:
                         dx = x1 - bounds[0]
                         # print("X Take left side, x=%.1f, dx=%.1f" % (bounds[0], dx))
             elif delta_x2 < delta_x1 and delta_x2 < delta_x3:
                 if delta_x2 < attraction_len:
-                    if not x2 is None:
+                    if x2 is not None:
                         dx = x2 - bounds[2]
                         # print("X Take right side, x=%.1f, dx=%.1f" % (bounds[2], dx))
             if delta_y3 < delta_y1 and delta_y3 < delta_y2:
                 if delta_y3 < attraction_len:
-                    if not y3 is None:
+                    if y3 is not None:
                         dy = y3 - (bounds[1] + bounds[3]) / 2
                         # print("Y Take center , x=%.1f, dx=%.1f" % ((bounds[1] + bounds[3]) / 2, dy))
             elif delta_y1 < delta_y2 and delta_y1 < delta_y3:
                 if delta_y1 < attraction_len:
-                    if not y1 is None:
+                    if y1 is not None:
                         dy = y1 - bounds[1]
                         # print("Y Take top side, y=%.1f, dy=%.1f" % (bounds[1], dy))
             elif delta_y2 < delta_y1 and delta_y2 < delta_y3:
                 if delta_y2 < attraction_len:
-                    if not y2 is None:
+                    if y2 is not None:
                         dy = y2 - bounds[3]
                         # print("Y Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
 

@@ -2290,7 +2290,7 @@ class Kernel(Settings):
 
         @self.console_argument("substr", type=str)
         @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
-        def help_command(channel, _, substr, **kwargs):
+        def find_command(channel, _, substr, **kwargs):
             """
             'find' will display the list of accepted commands that contain a given substr.
             """
@@ -2818,7 +2818,7 @@ class Kernel(Settings):
             help=_("execute line located at specific index"),
             all_arguments_required=True,
         )
-        def batch_remove(channel, _, data=None, index=None, **kwargs):
+        def batch_run(channel, _, data=None, index=None, **kwargs):
             try:
                 self.batch_execute(index - 1)
             except IndexError:

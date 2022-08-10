@@ -176,7 +176,7 @@ class Wordlist:
                 # Original cASEs, vkey is already lowered...
                 sformat = vkey[6:-1]
                 value = self.wordlist_timestr(sformat)
-            if not value is None:
+            if value is not None:
                 result = result.replace(vkey, str(value))
 
         return result

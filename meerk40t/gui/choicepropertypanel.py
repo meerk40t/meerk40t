@@ -67,7 +67,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         )
         self.choices = list()
         dealt_with = False
-        if not constraint is None:
+        if constraint is not None:
             if isinstance(constraint, (tuple, list, str)):
                 if isinstance(constraint, str):
                     # make it a tuple

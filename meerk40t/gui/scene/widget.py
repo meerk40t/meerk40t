@@ -95,7 +95,7 @@ class Widget(list):
         self.process_draw(gc)
         for i in range(len(self) - 1, -1, -1):
             widget = self[i]
-            if not widget is None:
+            if widget is not None:
                 widget.draw(gc)
         gc.PopState()
 

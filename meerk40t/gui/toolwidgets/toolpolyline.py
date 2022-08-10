@@ -88,9 +88,9 @@ class PolylineTool(ToolWidget):
             polyline = Polyline(*self.point_series, stroke="blue", stroke_width=1000)
             elements = self.scene.context.elements
             node = elements.elem_branch.add(shape=polyline, type="elem polyline")
-            if not self.scene.context.elements.default_stroke is None:
+            if self.scene.context.elements.default_stroke is not None:
                 node.stroke = self.scene.context.elements.default_stroke
-            if not self.scene.context.elements.default_fill is None:
+            if self.scene.context.elements.default_fill is not None:
                 node.fill = self.scene.context.elements.default_fill
             if elements.classify_new:
                 elements.classify([node])

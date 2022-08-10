@@ -1064,7 +1064,7 @@ class BalorDevice(Service, ViewPort):
             self.spooler.command("light_loop", self.job.process)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
-        def select_light(**kwargs):
+        def full_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveFullLightJob(self)
@@ -1156,7 +1156,7 @@ class BalorDevice(Service, ViewPort):
             "usb_disconnect",
             help=_("connect usb"),
         )
-        def usb_connect(command, channel, _, data=None, remainder=None, **kwgs):
+        def usb_disconnect(command, channel, _, data=None, remainder=None, **kwgs):
             self.spooler.command("disconnect", priority=1)
 
         @self.console_command("usb_abort", help=_("Stops USB retries"))
@@ -1481,7 +1481,7 @@ class BalorDevice(Service, ViewPort):
             "lstatus",
             help=_("Checks the list status."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_liststatus(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_list_status()
             if reply is None:
                 channel("Not connected, cannot get serial number.")

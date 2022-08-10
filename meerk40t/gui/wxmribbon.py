@@ -109,6 +109,7 @@ class MyRibbonPanel(RB.RibbonPanel):
             name=name,
         )
         self.recurse = recurse
+        self._expanded_panel = None
 
     def GetBestSize(self):
         try:

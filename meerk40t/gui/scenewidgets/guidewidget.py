@@ -423,13 +423,13 @@ class GuideWidget(Widget):
             tick_distance_x = self.scene.tick_distance
             tick_distance_y = self.scene.tick_distance
             if secondary:
-                if not self.scene.grid_secondary_cx is None:
+                if self.scene.grid_secondary_cx is not None:
                     sx = self.scene.grid_secondary_cx
-                if not self.scene.grid_secondary_cy is None:
+                if self.scene.grid_secondary_cy is not None:
                     sy = self.scene.grid_secondary_cy
-                if not self.scene.grid_secondary_scale_x is None:
+                if self.scene.grid_secondary_scale_x is not None:
                     tick_distance_x *= self.scene.grid_secondary_scale_x
-                if not self.scene.grid_secondary_scale_y is None:
+                if self.scene.grid_secondary_scale_y is not None:
                     tick_distance_y *= self.scene.grid_secondary_scale_y
             ox, oy = self.scene.convert_scene_to_window([sx, sy])
 
@@ -551,12 +551,12 @@ class GuideWidget(Widget):
         y = p.device.unit_height * p.device.show_origin_y
         sx_primary, sy_primary = self.scene.convert_scene_to_window([x, y])
         #  ... and now for secondary
-        if not self.scene.grid_secondary_cx is None:
+        if self.scene.grid_secondary_cx is not None:
             x = self.scene.grid_secondary_cx
             relative_x = self.scene.grid_secondary_cx / p.device.unit_width
         else:
             relative_x = p.device.show_origin_x
-        if not self.scene.grid_secondary_cy is None:
+        if self.scene.grid_secondary_cy is not None:
             y = self.scene.grid_secondary_cy
             relative_y = self.scene.grid_secondary_cy / p.device.unit_height
         else:

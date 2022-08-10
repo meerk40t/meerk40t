@@ -340,7 +340,7 @@ class SVGWriter:
                         val = getattr(element, attrib[0])
                     if val is None and hasattr(c, attrib[0]):
                         val = getattr(c, attrib[0])
-                    if not val is None:
+                    if val is not None:
                         subelement.set(attrib[1], str(val))
                 text_dec = ""
                 if c.underline:
@@ -525,7 +525,7 @@ class SVGProcessor:
 
     def check_for_fill_attributes(self, node, element):
         lc = element.values.get(SVG_ATTR_FILL_RULE)
-        if not lc is None:
+        if lc is not None:
             nlc = Fillrule.FILLRULE_NONZERO
             lc = lc.lower()
             if lc == SVG_RULE_EVENODD:
@@ -536,7 +536,7 @@ class SVGProcessor:
 
     def check_for_line_attributes(self, node, element):
         lc = element.values.get(SVG_ATTR_STROKE_CAP)
-        if not lc is None:
+        if lc is not None:
             nlc = Linecap.CAP_ROUND
             if lc == "butt":
                 nlc = Linecap.CAP_BUTT
@@ -546,7 +546,7 @@ class SVGProcessor:
                 nlc = Linecap.CAP_SQUARE
             node.linecap = nlc
         lj = element.values.get(SVG_ATTR_STROKE_JOIN)
-        if not lj is None:
+        if lj is not None:
             nlj = Linejoin.JOIN_MITER
             if lj == "arcs":
                 nlj = Linejoin.JOIN_ARCS
@@ -570,7 +570,7 @@ class SVGProcessor:
         ink_tag = "inkscape:label"
         try:
             inkscape = element.values.get("inkscape")
-            if not inkscape is None and inkscape != "":
+            if inkscape is not None and inkscape != "":
                 ink_tag = "{" + inkscape + "}label"
         except (AttributeError, KeyError):
             pass

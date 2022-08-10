@@ -604,7 +604,7 @@ class LaserToolPanel(wx.Panel):
 
     def calculate_frame(self):
         result = False
-        if not self.coord_a is None and not self.coord_b is None:
+        if self.coord_a is not None and self.coord_b is not None:
             x0 = self.coord_a[0]
             x1 = self.coord_b[0]
             y0 = self.coord_a[1]
