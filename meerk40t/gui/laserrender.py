@@ -317,7 +317,7 @@ class LaserRender:
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None,):
+    def set_pen(self, gc, stroke, width=1.0, alpha=None):
         c = stroke
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
@@ -347,38 +347,6 @@ class LaserRender:
             gc.SetBrush(self.brush)
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-    def set_element_pen(
-        self,
-        gc,
-        element,
-        zoomscale=1.0,
-        width_scale=None,
-        alpha=255,
-        capstyle=None,
-        joinstyle=None,
-    ):
-        try:
-            sw = element.stroke_width
-        except AttributeError:
-            sw = 1000
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self.set_pen(
-            gc,
-            element.stroke,
-            width=sw,
-            alpha=alpha,
-            capstyle=capstyle,
-            joinstyle=joinstyle,
-        )
 
     def draw_cutcode_node(
         self,
