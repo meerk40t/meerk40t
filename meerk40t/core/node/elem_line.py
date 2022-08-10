@@ -92,7 +92,9 @@ class LineNode(Node):
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
+        self.stroke_scaled = True
         self.matrix *= matrix
+        self.stroke_scaled = False
         self._sync_svg()
 
     def default_map(self, default_map=None):
