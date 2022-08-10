@@ -269,33 +269,8 @@ class LaserRender:
             else:
                 return wx.WINDING_RULE
 
-    def _set_penwidth_by_node_and_zoom(self, node, zoomscale):
+    def _set_penwidth(self, width):
         try:
-            sw = node.stroke_width
-        except AttributeError:
-            sw = 1000
-
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
-            try:
-                sw /= width_scale
-                limit /= width_scale
-            except ZeroDivisionError:
-                pass
-        except AttributeError:
-            pass
-        if sw < limit:
-            sw = limit
-        self._set_penwidth_by_width(sw)
-
-    def _set_penwidth_by_width(self, width, matrix=None):
-        try:
-            if matrix is not None:
-                width /= sqrt(abs(matrix.determinant))
             if isnan(width):
                 width = 1.0
             try:
@@ -370,7 +345,7 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self._set_penwidth_by_width(7.0)
+                self._set_penwidth(7.0)
                 self.set_pen(gc, c, alpha=127)
             start = cut.start
             end = cut.end
@@ -471,9 +446,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
@@ -502,9 +477,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
@@ -533,9 +508,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
@@ -588,9 +563,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
