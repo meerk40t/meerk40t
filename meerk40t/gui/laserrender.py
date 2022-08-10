@@ -317,7 +317,7 @@ class LaserRender:
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None, capstyle=None, joinstyle=None):
+    def set_pen(self, gc, stroke, width=1.0, alpha=None,):
         c = stroke
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
@@ -325,10 +325,6 @@ class LaserRender:
                 alpha = c.alpha
             self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
-            if capstyle is not None:
-                self.pen.SetCap(capstyle)
-            if joinstyle is not None:
-                self.pen.SetJoin(joinstyle)
             try:
                 try:
                     self.pen.SetWidth(width)
