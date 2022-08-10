@@ -424,9 +424,7 @@ class ViewPort:
                 return f"scale({scale_x:.12f}, {scale_y:.12f})"
         else:
             if scale_x == 1 and scale_y == 1:
-                return (
-                    f"translate({translate_x:.12f}, {translate_y:.12f})"
-                )
+                return f"translate({translate_x:.12f}, {translate_y:.12f})"
             else:
                 return (
                     f"translate({translate_x:.12f}, {translate_y:.12f}) "

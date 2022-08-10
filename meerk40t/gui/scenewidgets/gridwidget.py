@@ -619,9 +619,19 @@ class GridWidget(Widget):
                 if fsize < 1.0:
                     fsize = 1.0  # Mac does not allow values lower than 1.
                 try:
-                    font = wx.Font(fsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+                    font = wx.Font(
+                        fsize,
+                        wx.FONTFAMILY_SWISS,
+                        wx.FONTSTYLE_NORMAL,
+                        wx.FONTWEIGHT_BOLD,
+                    )
                 except TypeError:
-                    font = wx.Font(int(fsize), wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+                    font = wx.Font(
+                        int(fsize),
+                        wx.FONTFAMILY_SWISS,
+                        wx.FONTSTYLE_NORMAL,
+                        wx.FONTWEIGHT_BOLD,
+                    )
                 # gc.SetFont(font, wx.BLACK)
                 # debugstr = "Angle= %.1f - %.1f (%d)" % (self.min_angle/tau*360, self.max_angle/tau*360, self.sector)
                 # gc.DrawText(debugstr, (self.min_x + self.max_x)/2, (self.min_y + self.max_y)/2)

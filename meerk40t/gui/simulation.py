@@ -525,7 +525,11 @@ class SimulationPanel(wx.Panel, Job):
 
     def on_redo_it(self, event):
         with wx.BusyInfo(_("Preparing simulation...")):
-            self.context("plan{plan} clear\nplan{plan} copy preprocess validate blob preopt optimize\n".format(plan=self.plan_name))
+            self.context(
+                "plan{plan} clear\nplan{plan} copy preprocess validate blob preopt optimize\n".format(
+                    plan=self.plan_name
+                )
+            )
         self.refresh_my_plan()
 
     def pane_show(self):

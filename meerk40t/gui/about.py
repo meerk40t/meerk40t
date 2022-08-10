@@ -150,7 +150,9 @@ class InformationPanel(wx.Panel):
         self.py_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.wx_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.config_path = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.os_version = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE)
+        self.os_version = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
         self.info_btn = wx.Button(self, wx.ID_ANY, _("Copy to Clipboard"))
         self.Bind(wx.EVT_BUTTON, self.copy_debug_info, self.info_btn)
         self.__set_properties()
@@ -173,11 +175,11 @@ class InformationPanel(wx.Panel):
         uname = platform.uname()
         info = ""
         info += f"System: {uname.system}" + "\n"
-        info += f"Node Name: {uname.node}"+ "\n"
-        info += f"Release: {uname.release}"+ "\n"
-        info += f"Version: {uname.version}"+ "\n"
-        info += f"Machine: {uname.machine}"+ "\n"
-        info += f"Processor: {uname.processor}"+ "\n"
+        info += f"Node Name: {uname.node}" + "\n"
+        info += f"Release: {uname.release}" + "\n"
+        info += f"Version: {uname.version}" + "\n"
+        info += f"Machine: {uname.machine}" + "\n"
+        info += f"Processor: {uname.processor}" + "\n"
         info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
         self.os_version.SetValue(info)
 
@@ -237,7 +239,7 @@ class InformationPanel(wx.Panel):
 
         sizer_os = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "OS"), wx.HORIZONTAL)
         sizer_os.Add(self.os_version, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_os, 1, wx.EXPAND, 0) # This one may grow
+        sizer_main.Add(sizer_os, 1, wx.EXPAND, 0)  # This one may grow
 
         sizer_main.Add(self.info_btn, 0, wx.EXPAND, 0)
 
@@ -258,6 +260,7 @@ class InformationPanel(wx.Panel):
         else:
             # print ("COuldnt access clipboard")
             wx.Bell()
+
 
 class About(MWindow):
     def __init__(self, *args, **kwds):

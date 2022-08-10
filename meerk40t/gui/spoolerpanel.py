@@ -218,7 +218,6 @@ class SpoolerPanel(wx.Panel):
         except AttributeError:
             return str(named_obj)
 
-
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
@@ -375,6 +374,7 @@ class SpoolerPanel(wx.Panel):
                 self.list_job_spool.SetItem(list_id, 7, runtime)
             except AttributeError:
                 self.list_job_spool.SetItem(list_id, 7, "-")
+
 
 class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):

@@ -22,7 +22,9 @@ class TextEntry(wx.Dialog):
         wx.Dialog.__init__(self, *args, **kwds)
         self.SetSize((518, 580))
         self.SetTitle(_("Add a Text-element"))
-        self.default_font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.default_font = wx.Font(
+            14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
+        )
         self.result_text = ""
         self.result_font = self.default_font
         self.result_colour = wx.BLACK

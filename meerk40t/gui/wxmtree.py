@@ -1094,6 +1094,7 @@ class ShadowTree:
         @param event:
         @return:
         """
+
         def typefamily(typename):
             # Combine similar nodetypes
             if typename.startswith("op "):

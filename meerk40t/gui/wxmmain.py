@@ -1829,11 +1829,15 @@ class MeerK40t(MWindow):
 
     def __set_view_menu(self):
         def create_draw_mode_item(label, tooltip, FLAG):
-            menu_item = self.view_menu.Append(wx.ID_ANY, label, tooltip, wx.ITEM_CHECK,)
-            self.Bind(
-                wx.EVT_MENU, self.toggle_draw_mode(FLAG), id=menu_item.GetId()
+            menu_item = self.view_menu.Append(
+                wx.ID_ANY,
+                label,
+                tooltip,
+                wx.ITEM_CHECK,
             )
+            self.Bind(wx.EVT_MENU, self.toggle_draw_mode(FLAG), id=menu_item.GetId())
             menu_item.Check(self.context.draw_mode & FLAG != 0)
+
         # ==========
         # VIEW MENU
         # ==========
@@ -1869,61 +1873,57 @@ class MeerK40t(MWindow):
         self.view_menu.AppendSeparator()
 
         create_draw_mode_item(
-            _("Hide Grid"),
-            _("Don't show the sizing grid"),
-            DRAW_MODE_GRID
+            _("Hide Grid"), _("Don't show the sizing grid"), DRAW_MODE_GRID
         )
         create_draw_mode_item(
             _("Hide Background"),
             _("Don't show any background image"),
-            DRAW_MODE_BACKGROUND
+            DRAW_MODE_BACKGROUND,
         )
         create_draw_mode_item(
-            _("Hide Guides"),
-            _("Don't show the measurement guides"),
-            DRAW_MODE_GUIDES
+            _("Hide Guides"), _("Don't show the measurement guides"), DRAW_MODE_GUIDES
         )
         create_draw_mode_item(
             _("Hide Shapes"),
             _("Don't show shapes (i.e. Rectangles, Paths etc.)"),
-            DRAW_MODE_PATH
+            DRAW_MODE_PATH,
         )
         create_draw_mode_item(
             _("Hide Strokes"),
             _("Don't show the strokes (i.e. the edges of SVG shapes)"),
-            DRAW_MODE_STROKES
+            DRAW_MODE_STROKES,
         )
         # TODO - this function doesn't work.
         create_draw_mode_item(
             _("No Stroke-Width Render"),
             _("Ignore the stroke width when drawing the stroke"),
-            DRAW_MODE_LINEWIDTH
+            DRAW_MODE_LINEWIDTH,
         )
         create_draw_mode_item(
             _("Hide Fills"),
             _("Don't show fills (i.e. the fill inside strokes)"),
-            DRAW_MODE_FILLS
+            DRAW_MODE_FILLS,
         )
         create_draw_mode_item(_("Hide Images"), _("Don't show images"), DRAW_MODE_IMAGE)
         create_draw_mode_item(
-            _("Hide Text"),
-            _("Don't show text elements"),
-            DRAW_MODE_TEXT
+            _("Hide Text"), _("Don't show text elements"), DRAW_MODE_TEXT
         )
         create_draw_mode_item(
             _("Hide Laserpath"),
             _("Don't show the path that the laserhead has followed (blue line)"),
-            DRAW_MODE_LASERPATH
+            DRAW_MODE_LASERPATH,
         )
         create_draw_mode_item(
             _("Hide Reticle"),
-            _("Don't show the small read circle showing the current laserhead position"),
-            DRAW_MODE_RETICLE
+            _(
+                "Don't show the small read circle showing the current laserhead position"
+            ),
+            DRAW_MODE_RETICLE,
         )
         create_draw_mode_item(
             _("Hide Selection"),
             _("Don't show the selection boundaries and dimensions"),
-            DRAW_MODE_SELECTION
+            DRAW_MODE_SELECTION,
         )
         # TODO This menu does not clear existing icons or create icons when it is changed
         create_draw_mode_item(_("Hide Icons"), "", DRAW_MODE_ICONS)
@@ -1934,19 +1934,19 @@ class MeerK40t(MWindow):
         create_draw_mode_item(
             _("Invert"),
             _("Show a negative image of the scene by inverting colours"),
-            DRAW_MODE_INVERT
+            DRAW_MODE_INVERT,
         )
         create_draw_mode_item(
             _("Flip XY"),
             _("Effectively rotate the scene display by 180 degrees"),
-            DRAW_MODE_FLIPXY
+            DRAW_MODE_FLIPXY,
         )
 
         self.view_menu.AppendSeparator()
         create_draw_mode_item(
             _("Show Variables"),
             _("Replace variables in textboxes by their 'real' content"),
-            DRAW_MODE_VARIABLES
+            DRAW_MODE_VARIABLES,
         )
 
         self.main_menubar.Append(self.view_menu, _("View"))
@@ -2016,7 +2016,9 @@ class MeerK40t(MWindow):
                 wx.ID_ANY, _("&Online Help"), _("Open the Meerk40t online wiki")
             )
             self.Bind(
-                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=menuitem.GetId()
+                wx.EVT_MENU,
+                lambda e: self.context("webhelp help\n"),
+                id=menuitem.GetId(),
             )
         else:
             menuitem = self.help_menu.Append(
@@ -2025,7 +2027,9 @@ class MeerK40t(MWindow):
                 _("Open the Meerk40t online wiki Beginners page"),
             )
             self.Bind(
-                wx.EVT_MENU, lambda e: self.context("webhelp help\n"), id=menuitem.GetId()
+                wx.EVT_MENU,
+                lambda e: self.context("webhelp help\n"),
+                id=menuitem.GetId(),
             )
 
         menuitem = self.help_menu.Append(

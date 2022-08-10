@@ -334,7 +334,9 @@ class CamInterfaceWidget(Widget):
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.cam.frame_bitmap is None:
-            font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+            font = wx.Font(
+                14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
+            )
             gc.SetFont(font, wx.BLACK)
             if self.cam.camera is None:
                 gc.DrawText(

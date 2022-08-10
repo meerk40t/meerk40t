@@ -201,7 +201,7 @@ class LayerSettingPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is  None or not self.accepts(node):
+        if self.operation is None or not self.accepts(node):
             self.Hide()
             return
         op = self.operation.type
@@ -537,7 +537,7 @@ class PassesPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is  None or not self.accepts(node):
+        if self.operation is None or not self.accepts(node):
             self.Hide()
             return
         if self.operation.passes_custom is not None:
@@ -650,7 +650,7 @@ class InfoPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is  None or not self.accepts(node):
+        if self.operation is None or not self.accepts(node):
             self.Hide()
             return
         self.refresh_display()
@@ -754,7 +754,7 @@ class PanelStartPreference(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is  None or not self.accepts(node):
+        if self.operation is None or not self.accepts(node):
             self.Hide()
             return
         if self.operation.raster_preference_top is not None:
@@ -1112,7 +1112,7 @@ class RasterSettingsPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is  None or not self.accepts(node):
+        if self.operation is None or not self.accepts(node):
             self.Hide()
             return
         if self.operation.dpi is not None:
@@ -1279,13 +1279,11 @@ class HatchSettingsPanel(wx.Panel):
         pass
 
     def accepts(self, node):
-        return node.type in (
-            "op hatch",
-        )
+        return node.type in ("op hatch",)
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is  None or not self.accepts(node):
+        if self.operation is None or not self.accepts(node):
             self.Hide()
             return
         i = 0
@@ -1463,7 +1461,9 @@ class HatchSettingsPanel(wx.Panel):
                     gc.SetPen(self.raster_pen)
                     gc.StrokeLineSegments(starts, ends)
                 else:
-                    font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+                    font = wx.Font(
+                        14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
+                    )
                     gc.SetFont(font, wx.BLACK)
                     gc.DrawText(_("No hatch preview..."), 0, 0)
             if self.travel_lines is not None:
@@ -1526,13 +1526,11 @@ class DwellSettingsPanel(wx.Panel):
         pass
 
     def accepts(self, node):
-        return node.type in (
-            "op dots",
-        )
+        return node.type in ("op dots",)
 
     def set_widgets(self, node):
         self.operation = node
-        if self.operation is  None or not self.accepts(node):
+        if self.operation is None or not self.accepts(node):
             self.Hide()
             return
         set_ctrl_value(self.text_dwelltime, str(self.operation.dwell_time))

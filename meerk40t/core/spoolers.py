@@ -5,6 +5,7 @@ from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
 from meerk40t.core.cutcode import CutCode
 
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
@@ -455,11 +456,11 @@ class LaserJob:
             if hasattr(self._driver, "total_steps"):
                 total = self._driver.total_steps
                 current = self._driver.current_steps
-                if current > 10 and total > 0 :
+                if current > 10 and total > 0:
                     # Arbitrary minimum steps (if too low, value is erratic)
                     ratio = total / current
             result = elapsed * ratio
-        if result==0:
+        if result == 0:
             # Nothing useful came out, so we fall back on the initial value
             result = self._estimate
 

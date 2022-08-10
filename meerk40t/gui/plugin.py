@@ -48,9 +48,11 @@ def plugin(kernel, lifecycle):
             if wx.VERSION[:2] <= (4, 1):
                 testcase = wx.Size(0.5, 1)
         except TypeError:
-            print("""The version of wxPython you are running is incompatible with your current Python version.
+            print(
+                """The version of wxPython you are running is incompatible with your current Python version.
 At the time of writing this is especially true for any Python version >= 3.10
-and a wxpython version <= 4.1.1.""")
+and a wxpython version <= 4.1.1."""
+            )
             return True
         return False
     if not kernel.has_feature("wx"):
