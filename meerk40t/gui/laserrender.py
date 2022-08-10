@@ -317,25 +317,6 @@ class LaserRender:
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None):
-        c = stroke
-        if c is not None and c != "none":
-            swizzle_color = swizzlecolor(c)
-            if alpha is None:
-                alpha = c.alpha
-            self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
-            self.pen.SetColour(self.color)
-            try:
-                try:
-                    self.pen.SetWidth(width)
-                except TypeError:
-                    self.pen.SetWidth(int(width))
-            except OverflowError:
-                pass  # Exceeds 32 bit signed integer.
-            gc.SetPen(self.pen)
-        else:
-            gc.SetPen(wx.TRANSPARENT_PEN)
-
     def set_brush(self, gc, fill, alpha=None):
         c = fill
         if c is not None and c != "none":
@@ -925,4 +906,3 @@ class LaserRender:
         black = Image.new("RGBA", pil_data.size, "black")
         black.putalpha(pil_data.point(lambda e: 255 - e))
         return wx.Bitmap.FromBufferRGBA(width, height, black.tobytes())
-
