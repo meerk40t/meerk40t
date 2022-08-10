@@ -314,7 +314,7 @@ class GRBLDevice(Service, ViewPort):
             help=_("Send realtime resume gcode to the device"),
             input_type=None,
         )
-        def pause(command, channel, _, data=None, remainder=None, **kwgs):
+        def resume(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.resume()
 
     @property
