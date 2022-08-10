@@ -16,6 +16,7 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        stroke_scale=True,
         underline=None,
         strikethrough=None,
         overline=None,
@@ -30,15 +31,17 @@ class TextNode(Node):
         self.fill = text.fill if fill is None else fill
         self.stroke = text.stroke if stroke is None else stroke
         self.stroke_width = text.stroke_width if stroke_width is None else stroke_width
+        self._stroke_scaled = (
+            (text.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
+            if stroke_scale is None
+            else stroke_scale
+        )
         self.underline = False if underline is None else underline
         self.strikethrough = False if strikethrough is None else strikethrough
 
         # For sake of completeness, afaik there is no way to display it with wxpython
         self.overline = False if overline is None else overline
         self.texttransform = "" if texttransform is None else texttransform
-        self._stroke_scaled = (
-            text.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
-        )
         self.lock = False
 
     def __copy__(self):
@@ -48,6 +51,7 @@ class TextNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            stroke_scale=self._stroke_scaled,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,

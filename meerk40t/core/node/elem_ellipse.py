@@ -21,6 +21,7 @@ class EllipseNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        stroke_scale=None,
         fillrule=None,
         **kwargs,
     ):
@@ -32,10 +33,12 @@ class EllipseNode(Node):
         self.fill = shape.fill if fill is None else fill
         self.stroke = shape.stroke if stroke is None else stroke
         self.stroke_width = shape.stroke_width if stroke_width is None else stroke_width
-        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
         self._stroke_scaled = (
-            shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
+            (shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
+            if stroke_scale is None
+            else stroke_scale
         )
+        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
         self.lock = False
 
     def __repr__(self):
@@ -48,6 +51,7 @@ class EllipseNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=copy(self.stroke_width),
+            stroke_scale=self._stroke_scaled,
             fillrule=self.fillrule,
             **self.settings,
         )
@@ -84,9 +88,9 @@ class EllipseNode(Node):
         return sw
 
     def preprocess(self, context, matrix, commands):
-        self.stroke_scaled = True
-        self.matrix *= matrix
         self.stroke_scaled = False
+        self.matrix *= matrix
+        self.stroke_width *= sqrt(abs(matrix.determinant))
         self._sync_svg()
 
     def default_map(self, default_map=None):
@@ -140,7 +144,9 @@ class EllipseNode(Node):
         return False
 
     def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if self._stroke_scaled else ""
+        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
+            SVG_VALUE_NON_SCALING_STROKE if self._stroke_scaled else ""
+        )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
         self._bounds_dirty = True

@@ -4146,7 +4146,6 @@ class Elemental(Service):
                 e.altered()
             return "elements", data
 
-
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
             "cap",
