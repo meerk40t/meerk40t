@@ -921,14 +921,14 @@ class MeerK40t(MWindow):
 
             found_some = False
             for node in list(kernel.elements.elems(emphasized=True)):
-                if not node is None:
+                if node is not None:
                     if node.type in ("group", "file"):
                         found_some = True
                         release_em(node)
             if not found_some:
                 # So let's see that we address the parents...
                 for node in list(kernel.elements.elems(emphasized=True)):
-                    if not node is None:
+                    if node is not None:
                         if hasattr(node, "parent"):
                             if hasattr(node.parent, "type"):
                                 if node.parent.type in ("group", "file"):
