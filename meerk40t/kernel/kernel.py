@@ -2818,7 +2818,7 @@ class Kernel(Settings):
             help=_("execute line located at specific index"),
             all_arguments_required=True,
         )
-        def batch_remove(channel, _, data=None, index=None, **kwargs):
+        def batch_run(channel, _, data=None, index=None, **kwargs):
             try:
                 self.batch_execute(index - 1)
             except IndexError:
