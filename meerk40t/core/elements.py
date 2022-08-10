@@ -4120,6 +4120,33 @@ class Elemental(Service):
                 e.altered()
             return "elements", data
 
+        @self.console_command(
+            ("enable_stroke_scale", "disable_stroke_scale"),
+            help=_("stroke-width <length>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            hidden=True,
+            output_type="elements",
+        )
+        def element_stroke_scale_enable(
+            command, channel, _, data=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    continue
+                e.stroke_scaled = command == "enable_stroke_scale"
+                e.altered()
+            return "elements", data
+
+
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
             "cap",
