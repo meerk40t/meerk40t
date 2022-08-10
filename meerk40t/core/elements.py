@@ -4093,15 +4093,15 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.stroke is None or e.stroke == "none":
+                    if e.stroke_scaled:
                         channel(
-                            _("{index}: stroke = none - {name}").format(
-                                index=i, name=name
+                            _("{index}: stroke-width = {stroke_width} - {name} - scaled-stroke").format(
+                                index=i, stroke_width=e.stroke_width, name=name
                             )
                         )
                     else:
                         channel(
-                            _("{index}: stroke = {stroke_width} - {name}").format(
+                            _("{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke").format(
                                 index=i, stroke_width=e.stroke_width, name=name
                             )
                         )
@@ -4117,6 +4117,32 @@ class Elemental(Service):
                     channel(_("Can't modify a locked element: {name}").format(str(e)))
                     continue
                 e.stroke_width = stroke_width
+                e.altered()
+            return "elements", data
+
+        @self.console_command(
+            ("enable_stroke_scale", "disable_stroke_scale"),
+            help=_("stroke-width <length>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            hidden=True,
+            output_type="elements",
+        )
+        def element_stroke_scale_enable(
+            command, channel, _, data=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    continue
+                e.stroke_scaled = command == "enable_stroke_scale"
                 e.altered()
             return "elements", data
 

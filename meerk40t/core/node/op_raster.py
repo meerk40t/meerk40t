@@ -339,9 +339,9 @@ class RasterOpNode(Node, Parameters):
                 except AssertionError:
                     raise CutPlanningFailedError("Raster too large.")
             image = image.convert("L")
-            matrix = Matrix.scale(step_x, step_y)
-            matrix.post_translate(bounds[0], bounds[1])
-            image_node = ImageNode(image=image, matrix=matrix)
+            img_mx = Matrix.scale(step_x, step_y)
+            img_mx.post_translate(bounds[0], bounds[1])
+            image_node = ImageNode(image=image, matrix=img_mx)
             self.children.clear()
             self.add_node(image_node)
 

@@ -269,33 +269,8 @@ class LaserRender:
             else:
                 return wx.WINDING_RULE
 
-    def _set_penwidth_by_node_and_zoom(self, node, zoomscale):
+    def _set_penwidth(self, width):
         try:
-            sw = node.stroke_width
-        except AttributeError:
-            sw = 1000
-
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
-            try:
-                sw /= width_scale
-                limit /= width_scale
-            except ZeroDivisionError:
-                pass
-        except AttributeError:
-            pass
-        if sw < limit:
-            sw = limit
-        self._set_penwidth_by_width(sw)
-
-    def _set_penwidth_by_width(self, width, matrix=None):
-        try:
-            if matrix is not None:
-                width /= sqrt(abs(matrix.determinant))
             if isnan(width):
                 width = 1.0
             try:
@@ -317,29 +292,6 @@ class LaserRender:
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None, capstyle=None, joinstyle=None):
-        c = stroke
-        if c is not None and c != "none":
-            swizzle_color = swizzlecolor(c)
-            if alpha is None:
-                alpha = c.alpha
-            self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
-            self.pen.SetColour(self.color)
-            if capstyle is not None:
-                self.pen.SetCap(capstyle)
-            if joinstyle is not None:
-                self.pen.SetJoin(joinstyle)
-            try:
-                try:
-                    self.pen.SetWidth(width)
-                except TypeError:
-                    self.pen.SetWidth(int(width))
-            except OverflowError:
-                pass  # Exceeds 32 bit signed integer.
-            gc.SetPen(self.pen)
-        else:
-            gc.SetPen(wx.TRANSPARENT_PEN)
-
     def set_brush(self, gc, fill, alpha=None):
         c = fill
         if c is not None and c != "none":
@@ -351,38 +303,6 @@ class LaserRender:
             gc.SetBrush(self.brush)
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
-
-    def set_element_pen(
-        self,
-        gc,
-        element,
-        zoomscale=1.0,
-        width_scale=None,
-        alpha=255,
-        capstyle=None,
-        joinstyle=None,
-    ):
-        try:
-            sw = element.stroke_width
-        except AttributeError:
-            sw = 1000
-        if sw is None:
-            sw = 1000
-        limit = 25 * zoomscale**0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self.set_pen(
-            gc,
-            element.stroke,
-            width=sw,
-            alpha=alpha,
-            capstyle=capstyle,
-            joinstyle=joinstyle,
-        )
 
     def draw_cutcode_node(
         self,
@@ -425,7 +345,7 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self._set_penwidth_by_width(7.0)
+                self._set_penwidth(7.0)
                 self.set_pen(gc, c, alpha=127)
             start = cut.start
             end = cut.end
@@ -510,118 +430,6 @@ class LaserRender:
             gc.StrokePath(p)
             del p
 
-    def draw_cutcode(
-        self, cutcode: CutCode, gc: wx.GraphicsContext, x: int = 0, y: int = 0
-    ):
-        """
-        Draw cutcode object into wxPython graphics code.
-
-        This code accepts x,y offset values. The cutcode laser offset can be set with a
-        command with the rest of the cutcode remaining the same. So drawing the cutcode
-        requires knowing what, if any offset is currently being applied.
-
-        @param cutcode: flat cutcode object to draw.
-        @param gc: wx.graphics context
-        @param x: offset in x direction
-        @param y: offset in y direction
-        @return:
-        """
-        p = None
-        last_point = None
-        color = None
-        for cut in cutcode:
-            c = cut.line_color
-            if c is not color:
-                color = c
-                last_point = None
-                if p is not None:
-                    gc.StrokePath(p)
-                    del p
-                p = gc.CreatePath()
-                self.set_pen(gc, c, width=7.0, alpha=127)
-            start = cut.start
-            end = cut.end
-            if p is None:
-                p = gc.CreatePath()
-            if last_point != start:
-                p.MoveToPoint(start[0] + x, start[1] + y)
-            if isinstance(cut, LineCut):
-                # Standard line cut. Applies to path object.
-                p.AddLineToPoint(end[0] + x, end[1] + y)
-            elif isinstance(cut, QuadCut):
-                # Standard quadratic bezier cut
-                p.AddQuadCurveToPoint(
-                    cut.c()[0] + x, cut.c()[1] + y, end[0] + x, end[1] + y
-                )
-            elif isinstance(cut, CubicCut):
-                # Standard cubic bezier cut
-                p.AddCurveToPoint(
-                    cut.c1()[0] + x,
-                    cut.c1()[1] + y,
-                    cut.c2()[0] + x,
-                    cut.c2()[1] + y,
-                    end[0] + x,
-                    end[1] + y,
-                )
-            elif isinstance(cut, RasterCut):
-                # Rastercut object.
-                image = cut.image
-                gc.PushState()
-                matrix = Matrix.scale(cut.step_x, cut.step_y)
-                matrix.post_translate(
-                    cut.offset_x + x, cut.offset_y + y
-                )  # Adjust image xy
-                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-                try:
-                    cache = cut.cache
-                    cache_id = cut.cache_id
-                except AttributeError:
-                    cache = None
-                    cache_id = -1
-                if cache_id != id(image):
-                    # Cached image is invalid.
-                    cache = None
-                if cache is None:
-                    # No valid cache. Generate.
-                    cut.c_width, cut.c_height = image.size
-                    try:
-                        cut.cache = self.make_thumbnail(image, maximum=5000)
-                    except (MemoryError, RuntimeError):
-                        cut.cache = None
-                    cut.cache_id = id(image)
-                if cut.cache is not None:
-                    # Cache exists and is valid.
-                    gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
-                else:
-                    # Image was too large to cache, draw a red rectangle instead.
-                    gc.SetBrush(wx.RED_BRUSH)
-                    gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
-                    gc.DrawBitmap(
-                        icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height
-                    )
-                gc.PopState()
-            elif isinstance(cut, RawCut):
-                pass
-            elif isinstance(cut, PlotCut):
-                p.MoveToPoint(start[0] + x, start[1] + y)
-                for px, py, pon in cut.plot:
-                    if pon == 0:
-                        p.MoveToPoint(px + x, py + y)
-                    else:
-                        p.AddLineToPoint(px + x, py + y)
-            elif isinstance(cut, DwellCut):
-                pass
-            elif isinstance(cut, WaitCut):
-                pass
-            elif isinstance(cut, InputCut):
-                pass
-            elif isinstance(cut, OutputCut):
-                pass
-            last_point = end
-        if p is not None:
-            gc.StrokePath(p)
-            del p
-
     def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the shape element."""
         try:
@@ -638,9 +446,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
@@ -649,68 +457,6 @@ class LaserRender:
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
-        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
-        gc.PopState()
-
-    def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        """Default draw routine for the shape element."""
-        try:
-            matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
-        except AttributeError:
-            matrix = None
-            width_scale = 1.0
-        if not hasattr(node, "linecap") or node.linecap is None:
-            lc = wx.CAP_ROUND
-        else:
-            if node.linecap == Linecap.CAP_BUTT:
-                lc = wx.CAP_BUTT
-            elif node.linecap == Linecap.CAP_ROUND:
-                lc = wx.CAP_ROUND
-            elif node.linecap == Linecap.CAP_SQUARE:
-                lc = wx.CAP_PROJECTING
-            else:
-                lc = wx.CAP_ROUND
-        if not hasattr(node, "linejoin") or node.linejoin is None:
-            lj = wx.JOIN_MITER
-        else:
-            if node.linejoin == Linejoin.JOIN_ARCS:
-                lj = wx.JOIN_ROUND
-            elif node.linejoin == Linejoin.JOIN_BEVEL:
-                lj = wx.JOIN_BEVEL
-            elif node.linejoin == Linejoin.JOIN_MITER:
-                lj = wx.JOIN_MITER
-            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
-                lj = wx.JOIN_MITER
-            else:
-                lj = wx.JOIN_MITER
-        if not hasattr(node, "fillrule") or node.fillrule is None:
-            fr = wx.WINDING_RULE
-        else:
-            if node.fillrule == Fillrule.FILLRULE_EVENODD:
-                fr = wx.ODDEVEN_RULE
-            else:
-                fr = wx.WINDING_RULE
-
-        if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_path(gc, Path(node.shape))
-            node.cache = cache
-        gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(
-            gc,
-            node,
-            zoomscale=zoomscale,
-            width_scale=width_scale,
-            alpha=alpha,
-            capstyle=lc,
-            joinstyle=lj,
-        )
-        self.set_brush(gc, node.fill, alpha=alpha)
-        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=fr)
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
@@ -731,9 +477,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
@@ -742,69 +488,6 @@ class LaserRender:
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
-        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
-        gc.PopState()
-
-    def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        """Default draw routine for the laser path element."""
-        try:
-            matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
-        except AttributeError:
-            matrix = None
-            width_scale = 1.0
-        if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_path(gc, node.path)
-            node.cache = cache
-        if not hasattr(node, "linecap") or node.linecap is None:
-            lc = wx.CAP_ROUND
-        else:
-            if node.linecap == Linecap.CAP_BUTT:
-                lc = wx.CAP_BUTT
-            elif node.linecap == Linecap.CAP_ROUND:
-                lc = wx.CAP_ROUND
-            elif node.linecap == Linecap.CAP_SQUARE:
-                lc = wx.CAP_PROJECTING
-            else:
-                lc = wx.CAP_ROUND
-        if not hasattr(node, "linejoin") or node.linejoin is None:
-            lj = wx.JOIN_MITER
-        else:
-            if node.linejoin == Linejoin.JOIN_ARCS:
-                lj = wx.JOIN_ROUND
-            elif node.linejoin == Linejoin.JOIN_BEVEL:
-                lj = wx.JOIN_BEVEL
-            elif node.linejoin == Linejoin.JOIN_MITER:
-                lj = wx.JOIN_MITER
-            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
-                lj = wx.JOIN_MITER
-            else:
-                lj = wx.JOIN_ROUND
-        if not hasattr(node, "fillrule") or node.fillrule is None:
-            fr = wx.WINDING_RULE
-        else:
-            if node.fillrule == Fillrule.FILLRULE_EVENODD:
-                fr = wx.ODDEVEN_RULE
-            else:
-                fr = wx.WINDING_RULE
-        gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(
-            gc,
-            node,
-            zoomscale=zoomscale,
-            width_scale=width_scale,
-            alpha=alpha,
-            capstyle=lc,
-            joinstyle=lj,
-        )
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
-        self.set_brush(gc, node.fill, alpha=alpha)
-        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=fr)
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
@@ -825,9 +508,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
@@ -836,72 +519,6 @@ class LaserRender:
         self.set_brush(gc, node.fill, alpha=alpha)
         if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
             gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
-        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
-            gc.StrokePath(node.cache)
-        gc.PopState()
-
-    def draw_numpath_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
-        """Default draw routine for the laser path element."""
-        try:
-            matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
-        except AttributeError:
-            matrix = None
-            width_scale = 1.0
-        if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_numpath(gc, node.path)
-            node.cache = cache
-        if not hasattr(node, "linecap") or node.linecap is None:
-            lc = wx.CAP_ROUND
-        else:
-            if node.linecap == Linecap.CAP_BUTT:
-                lc = wx.CAP_BUTT
-            elif node.linecap == Linecap.CAP_ROUND:
-                lc = wx.CAP_ROUND
-            elif node.linecap == Linecap.CAP_SQUARE:
-                lc = wx.CAP_PROJECTING
-            else:
-                lc = wx.CAP_ROUND
-
-        if not hasattr(node, "linejoin") or node.linejoin is None:
-            lj = wx.JOIN_MITER
-        else:
-            if node.linejoin == Linejoin.JOIN_ARCS:
-                lj = wx.JOIN_ROUND
-            elif node.linejoin == Linejoin.JOIN_BEVEL:
-                lj = wx.JOIN_BEVEL
-            elif node.linejoin == Linejoin.JOIN_MITER:
-                lj = wx.JOIN_MITER
-            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
-                lj = wx.JOIN_MITER
-            else:
-                lj = wx.JOIN_ROUND
-
-        if not hasattr(node, "fillrule") or node.fillrule is None:
-            fr = wx.WINDING_RULE
-        else:
-            if node.fillrule == Fillrule.FILLRULE_EVENODD:
-                fr = wx.ODDEVEN_RULE
-            else:
-                fr = wx.WINDING_RULE
-
-        gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(
-            gc,
-            node,
-            zoomscale=zoomscale,
-            width_scale=width_scale,
-            alpha=alpha,
-            capstyle=lc,
-            joinstyle=lj,
-        )
-        if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, node.stroke, width=1000, alpha=alpha)
-        self.set_brush(gc, node.fill, alpha=alpha)
-        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
-            gc.FillPath(node.cache, fillStyle=fr)
         if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
@@ -946,9 +563,9 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth_by_width(1000, matrix)
+            self._set_penwidth(1000)
         else:
-            self._set_penwidth_by_node_and_zoom(node, zoomscale)
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
             gc,
             node.stroke,
@@ -976,94 +593,10 @@ class LaserRender:
             if ttf == "lowercase":
                 textstr = textstr.lower()
         # There's a fundamental flaw in wxPython to get the right fontsize
-        # Both GetTextExtent as well as GetFullTextextent provide the fontmetric-size
-        # as result for the font-height and dont take the real glyphs into account
+        # Both GetTextExtent and GetFullTextextent provide the fontmetric-size
+        # as result for the font-height and don't take the real glyphs into account
         # That means that ".", "a", "g" and "T" all have the same height...
-        # Consequently the size is always off... This can be somewhat compensated by taking
-        # the descent from the font-metric into account.
-        # A 'real' height routine would most probably need to draw the string on an
-        # empty canvas and find the first and last dots on a line...
-        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
-        # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
-        # print ("Scale Width=%.1f" % width_scale)
-        # That stuff drives my crazy...
-        # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
-        has_underscore = any(
-            substring in textstr for substring in ("g", "j", "p", "q", "y", ",", ";")
-        )
-        delta = self.fontdescent_factor * f_descent
-        if has_underscore:
-            delta -= self.fontdescent_factor / 2 * f_descent
-        delta -= f_externalLeading
-        f_height -= delta
-        text.width = f_width
-        text.height = f_height
-        # print ("Anchor= %s" % text.anchor)
-        if not hasattr(text, "anchor") or text.anchor == "start":
-            y -= (
-                text.height
-                + self.fontdescent_factor * self.fontdescent_delta * f_descent
-            )
-        elif text.anchor == "middle":
-            x -= text.width / 2
-            y -= (
-                text.height
-                + self.fontdescent_factor * self.fontdescent_delta * f_descent
-            )
-        elif text.anchor == "end":
-            x -= text.width
-            y -= (
-                text.height
-                + self.fontdescent_factor * self.fontdescent_delta * f_descent
-            )
-        gc.DrawText(textstr, x, y)
-        gc.PopState()
-
-    def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
-        text = node.text
-        if text.text is None or text.text == "":
-            return
-
-        try:
-            matrix = node.matrix
-            width_scale = sqrt(abs(matrix.determinant))
-        except AttributeError:
-            matrix = None
-            width_scale = 1.0
-
-        svgfont_to_wx(node)
-        font = node.wxfont
-
-        gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, node, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_brush(gc, node.fill, alpha=255)
-
-        if node.fill is None or node.fill == "none":
-            gc.SetFont(font, wx.BLACK)
-        else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
-
-        x = text.x
-        y = text.y
-        textstr = text.text
-        if draw_mode & DRAW_MODE_VARIABLES:
-            # Only if flag show the translated values
-            textstr = self.context.elements.mywordlist.translate(textstr)
-        if not node.texttransform is None:
-            ttf = node.texttransform.lower()
-            if ttf == "capitalize":
-                textstr = textstr.capitalize()
-            elif ttf == "uppercase":
-                textstr = textstr.upper()
-            if ttf == "lowercase":
-                textstr = textstr.lower()
-        # There's a fundamental flaw in wxPython to get the right fontsize
-        # Both GetTextExtent as well as GetFullTextextent provide the fontmetric-size
-        # as result for the font-height and dont take the real glyphs into account
-        # That means that ".", "a", "g" and "T" all have the same height...
-        # Consequently the size is always off... This can be somewhat compensated by taking
+        # Consequently, the size is always off... This can be somewhat compensated by taking
         # the descent from the font-metric into account.
         # A 'real' height routine would most probably need to draw the string on an
         # empty canvas and find the first and last dots on a line...
@@ -1348,4 +881,3 @@ class LaserRender:
         black = Image.new("RGBA", pil_data.size, "black")
         black.putalpha(pil_data.point(lambda e: 255 - e))
         return wx.Bitmap.FromBufferRGBA(width, height, black.tobytes())
-
