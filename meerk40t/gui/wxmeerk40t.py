@@ -715,8 +715,7 @@ def send_file_to_developers(filename):
         with open(filename, "r") as f:
             data = f.read()
     except:
-        if data is None:
-            return  # There is no file, there is no data.
+        return  # There is no file, there is no data.
     send_data_to_developers(filename, data)
 
 
