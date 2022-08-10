@@ -7882,8 +7882,8 @@ class Elemental(Service):
     def count_op(self, **kwargs):
         return len(list(self.ops(**kwargs)))
 
-    def get(self, obj=None, type=None):
-        return self._tree.get(obj=obj, type=type)
+    def get(self, type=None):
+        return self._tree.get(type=type)
 
     def get_op(self, index, **kwargs):
         for i, op in enumerate(self.ops(**kwargs)):
