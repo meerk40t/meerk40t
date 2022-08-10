@@ -496,7 +496,7 @@ class wxMeerK40t(wx.App, Module):
             output_type="window",
             help=_("Give display info for the current opened windows"),
         )
-        def window_list(channel, _, data, **kwargs):
+        def displays(channel, _, data, **kwargs):
             for idx in range(wx.Display.GetCount()):
                 d = wx.Display(idx)
                 channel(f"{idx} Primary: {d.IsPrimary()} {d.GetGeometry()}")
