@@ -695,14 +695,6 @@ class Node:
             child.remove_all_children()
             child.remove_node()
 
-    def get(self, obj=None, type=None):
-        if (obj is None or obj == self.object) and (type is None or type == self.type):
-            return self
-        for n in self._children:
-            node = n.get(obj, type)
-            if node is not None:
-                return node
-
     def move(self, dest, pos=None):
         self._parent.remove(self)
         dest.insert_node(self, pos=pos)
