@@ -421,16 +421,16 @@ class ViewPort:
             if scale_x == 1 and scale_y == 1:
                 return ""  # Nothing happens.
             else:
-                return f"scale({Length.str(scale_x)}, {Length.str(scale_y)})"
+                return f"scale({scale_x:.12f}, {scale_y:.12f})"
         else:
             if scale_x == 1 and scale_y == 1:
                 return (
-                    f"translate({Length.str(translate_x)}, {Length.str(translate_y)})"
+                    f"translate({translate_x:.12f}, {translate_y:.12f})"
                 )
             else:
                 return (
-                    f"translate({Length.str(translate_x)}, {Length.str(translate_y)}) "
-                    f"scale({Length.str(scale_x)}, {Length.str(scale_y)})"
+                    f"translate({translate_x:.12f}, {translate_y:.12f}) "
+                    f"scale({scale_x:.12f}, {scale_y:.12f})"
                 )
 
     @staticmethod
