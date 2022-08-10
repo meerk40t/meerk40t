@@ -21,12 +21,8 @@ def plugin(kernel, lifecycle):
             try:
                 kernel.elements.load(filename)
             except BadFileError as e:
-                channel(
-                    "\n".join(
-                        _("File is Malformed."),
-                        str(e),
-                    )
-                )
+                channel(_("File is Malformed."))
+                channel(str(e))
             else:
                 kernel.elements.classify(list(kernel.elements.elems()))
             return "inkscape", data
