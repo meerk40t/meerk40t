@@ -58,6 +58,8 @@ class MeasureTool(ToolWidget):
             area_y_x = 0
             # https://www.wikihow.com/Calculate-the-Area-of-a-Polygon
             idx = -1
+            last_x = 0
+            last_y = 0
             for pt in points:
                 idx += 1
                 # print("%d, %.1f, %.1f" % (idx, pt[0],pt[1]))
