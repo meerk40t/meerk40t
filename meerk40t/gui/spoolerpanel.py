@@ -1,3 +1,4 @@
+import time
 from math import isinf
 
 import wx
@@ -76,6 +77,7 @@ class SpoolerPanel(wx.Panel):
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool
         )
         # end wxGlade
+        self._last_invokation = 0
         self.dirty = False
         self.update_buffer_size = False
         self.update_spooler_state = False
@@ -216,6 +218,7 @@ class SpoolerPanel(wx.Panel):
         except AttributeError:
             return str(named_obj)
 
+
     def refresh_spooler_list(self):
         if not self.update_spooler:
             return
@@ -277,7 +280,7 @@ class SpoolerPanel(wx.Panel):
 
                 # Runtime
                 try:
-                    t = spool_obj.runtime
+                    t = spool_obj.elapsed_time()
                     hours, remainder = divmod(t, 3600)
                     minutes, seconds = divmod(remainder, 60)
                     runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
@@ -294,6 +297,7 @@ class SpoolerPanel(wx.Panel):
                     self.list_job_spool.SetItem(list_id, 7, runtime)
                 except AttributeError:
                     self.list_job_spool.SetItem(list_id, 7, "-")
+        self._last_invokation = time.time()
 
     def refresh_history(self, newestinfo):
         def timestr(t, oneday):
@@ -336,6 +340,41 @@ class SpoolerPanel(wx.Panel):
         self.update_spooler = True
         self.refresh_spooler_list()
 
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
+    def on_device_update(self, origin, pos):
+        # Only update every 2 seconds or so
+        dtime = time.time()
+        if dtime - self._last_invokation < 2:
+            return
+        spooler = self.selected_device.spooler
+        if spooler is None:
+            return
+        if len(spooler.queue) != self.list_job_spool.GetItemCount():
+            # Mismatch
+            return
+        self._last_invokation = dtime
+        for idx, spool_obj in enumerate(spooler.queue):
+            list_id = idx
+            # Runtime
+            try:
+                t = spool_obj.elapsed_time()
+                hours, remainder = divmod(t, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                self.list_job_spool.SetItem(list_id, 6, runtime)
+            except AttributeError:
+                self.list_job_spool.SetItem(list_id, 6, "-")
+
+            # Estimate Time
+            try:
+                t = spool_obj.estimate_time()
+                hours, remainder = divmod(t, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                self.list_job_spool.SetItem(list_id, 7, runtime)
+            except AttributeError:
+                self.list_job_spool.SetItem(list_id, 7, "-")
 
 class JobSpooler(MWindow):
     def __init__(self, *args, **kwds):
