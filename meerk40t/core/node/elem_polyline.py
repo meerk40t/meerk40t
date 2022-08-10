@@ -82,9 +82,7 @@ class PolylineNode(Node):
 
     def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self._bounds_dirty = True
+        self._sync_svg()
 
     def default_map(self, default_map=None):
         default_map = super(PolylineNode, self).default_map(default_map=default_map)
@@ -136,10 +134,12 @@ class PolylineNode(Node):
     def add_point(self, point, index=None):
         return False
 
-    def as_path(self):
+    def _sync_svg(self):
+        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if self._stroke_scaled else ""
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self.shape.linecap = self.linecap
-        self.shape.linejoin = self.linejoin
-        self.shape.fillrule = self.fillrule
+        self._bounds_dirty = True
+
+    def as_path(self):
+        self._sync_svg()
         return abs(Path(self.shape))

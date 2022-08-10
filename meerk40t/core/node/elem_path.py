@@ -79,9 +79,7 @@ class PathNode(Node):
 
     def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
-        self.path.transform = self.matrix
-        self.path.stroke_width = self.stroke_width
-        self._bounds_dirty = True
+        self._sync_svg()
 
     def default_map(self, default_map=None):
         default_map = super(PathNode, self).default_map(default_map=default_map)
@@ -133,10 +131,13 @@ class PathNode(Node):
     def add_point(self, point, index=None):
         return False
 
-    def as_path(self):
+    def _sync_svg(self):
+        self.path.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if self._stroke_scaled else ""
         self.path.transform = self.matrix
         self.path.stroke_width = self.stroke_width
-        self.path.linecap = self.linecap
-        self.path.linejoin = self.linejoin
-        self.path.fillrule = self.fillrule
+        self._bounds_dirty = True
+
+    def as_path(self):
+        self._sync_svg()
         return abs(self.path)
+

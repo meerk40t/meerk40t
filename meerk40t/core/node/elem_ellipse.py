@@ -68,18 +68,14 @@ class EllipseNode(Node):
     @stroke_scaled.setter
     def stroke_scaled(self, v):
         if not v and self._stroke_scaled:
-            matrix = self.matrix
-            self.stroke_width *= sqrt(abs(matrix.determinant))
+            self.stroke_width *= sqrt(abs(self.matrix.determinant))
         if v and not self._stroke_scaled:
-            matrix = self.matrix
-            self.stroke_width /= sqrt(abs(matrix.determinant))
+            self.stroke_width /= sqrt(abs(self.matrix.determinant))
         self._stroke_scaled = v
 
     def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self._bounds_dirty = True
+        self._sync_svg()
 
     def default_map(self, default_map=None):
         default_map = super(EllipseNode, self).default_map(default_map=default_map)
@@ -131,7 +127,12 @@ class EllipseNode(Node):
     def add_point(self, point, index=None):
         return False
 
-    def as_path(self):
+    def _sync_svg(self):
+        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if self._stroke_scaled else ""
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
+        self._bounds_dirty = True
+
+    def as_path(self):
+        self._sync_svg()
         return abs(Path(self.shape))
