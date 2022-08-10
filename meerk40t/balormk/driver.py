@@ -40,6 +40,8 @@ class BalorDriver:
         self.plot_planner.settings_then_jog = True
         self._aborting = False
         self._list_bits = None
+        self.current_steps = 0
+        self.total_steps = 0
 
     def __repr__(self):
         return f"BalorDriver({self.name})"
@@ -164,9 +166,6 @@ class BalorDriver:
                 con.abort()
                 self._aborting = False
                 return
-            if con._port_bits != self._list_bits:
-                con.list_write_port()
-                self._list_bits = con._port_bits
             if isinstance(q, LineCut):
                 self.current_steps += 1
                 last_x, last_y = con.get_last_xy()
@@ -189,9 +188,6 @@ class BalorDriver:
                         con.abort()
                         self._aborting = False
                         return
-                    if con._port_bits != self._list_bits:
-                        con.list_write_port()
-                        self._list_bits = con._port_bits
                     while self.paused:
                         time.sleep(0.05)
 
@@ -271,9 +267,6 @@ class BalorDriver:
                         con.abort()
                         self._aborting = False
                         return
-                    if con._port_bits != self._list_bits:
-                        self._list_bits = con._port_bits
-                        con.list_write_port()
                     while self.paused:
                         time.sleep(0.05)
 
