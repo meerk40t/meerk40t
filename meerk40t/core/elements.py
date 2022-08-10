@@ -4093,15 +4093,15 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.stroke is None or e.stroke == "none":
+                    if e.stroke_scaled:
                         channel(
-                            _("{index}: stroke = none - {name}").format(
-                                index=i, name=name
+                            _("{index}: stroke-width = {stroke_width} - {name} - scaled-stroke").format(
+                                index=i, stroke_width=e.stroke_width, name=name
                             )
                         )
                     else:
                         channel(
-                            _("{index}: stroke = {stroke_width} - {name}").format(
+                            _("{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke").format(
                                 index=i, stroke_width=e.stroke_width, name=name
                             )
                         )
