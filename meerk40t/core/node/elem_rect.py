@@ -69,6 +69,17 @@ class RectNode(Node):
             self.stroke_width /= sqrt(abs(matrix.determinant))
         self._stroke_scaled = v
 
+    def implied_stroke_width(self, zoomscale=1.0):
+        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
+        need to countermand that scaling by dividing by the square root of the absolute
+        value of the determinant of the local matrix (1d matrix scaling)"""
+        scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
+        sw = self.stroke_width / scalefactor
+        limit = 25 * sqrt(zoomscale) / scalefactor
+        if sw < limit:
+            sw = limit
+        return sw
+
     @property
     def bounds(self):
         if self._bounds_dirty:
