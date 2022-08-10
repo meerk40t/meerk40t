@@ -57,7 +57,7 @@ DEFAULT_KEYMAP = {
         "window controller",
         "window open Controller",
     ),
-    "f8": ("", "dialog_path", "control Path"),
+    "f8": ("", "dialog_path"),
     "f9": (
         "",
         "dialog_transform",
@@ -65,7 +65,6 @@ DEFAULT_KEYMAP = {
     "f12": (
         "",
         "window open Console",
-        "window open Terminal",
     ),
     "delete": (
         "tree selected delete",
@@ -146,7 +145,6 @@ DEFAULT_KEYMAP = {
     "ctrl+s": (
         "",
         "dialog_stroke",
-        "control Stroke",
     ),
     "ctrl+v": ("clipboard paste",),
     "ctrl+x": ("clipboard cut",),
@@ -163,7 +161,6 @@ DEFAULT_KEYMAP = {
     "ctrl+f9": (
         "",
         "dialog_flip",
-        "control Flip",
     ),
     "ctrl+alt+d": ("image wizard Gold",),
     "ctrl+alt+e": ("image wizard Simple",),
