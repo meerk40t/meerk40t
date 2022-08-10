@@ -1094,6 +1094,16 @@ class ShadowTree:
         @param event:
         @return:
         """
+        def typefamily(typename):
+            # Combine similar nodetypes
+            if typename.startswith("op "):
+                result = "op"
+            elif typename.startswith("elem "):
+                result = "elem"
+            else:
+                result = typename
+            return result
+
         self.dragging_nodes = None
 
         pt = event.GetPoint()
@@ -1110,9 +1120,11 @@ class ShadowTree:
             event.Skip()
             return
 
-        t = self.dragging_nodes[0].type
+        t = typefamily(self.dragging_nodes[0].type)
         for n in self.dragging_nodes:
-            if t != n.type:
+            tt = typefamily(n.type)
+            if t != tt:
+                # Different typefamilies
                 event.Skip()
                 return
             if not n.is_movable():

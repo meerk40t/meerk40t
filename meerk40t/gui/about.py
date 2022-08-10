@@ -204,7 +204,8 @@ class InformationPanel(wx.Panel):
         if git and branch and branch not in ("main", "legacy6", "legacy7"):
             info = info + " - " + branch
         self.mk_version.SetValue(info)
-        info = self.context.kernel.current_directory
+        info = os.path.dirname(self.context.elements.op_data._config_file)
+        # info = self.context.kernel.current_directory
         self.config_path.SetValue(info)
 
     def __do_layout(self):
