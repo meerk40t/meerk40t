@@ -1064,7 +1064,7 @@ class BalorDevice(Service, ViewPort):
             self.spooler.command("light_loop", self.job.process)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
-        def select_light(**kwargs):
+        def full_light(**kwargs):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveFullLightJob(self)
