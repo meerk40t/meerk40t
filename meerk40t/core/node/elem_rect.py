@@ -79,7 +79,7 @@ class RectNode(Node):
         value of the determinant of the local matrix (1d matrix scaling)"""
         scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
         sw = self.stroke_width / scalefactor
-        limit = 25 * sqrt(zoomscale) / scalefactor
+        limit = 25 * sqrt(zoomscale) * scalefactor
         if sw < limit:
             sw = limit
         return sw
