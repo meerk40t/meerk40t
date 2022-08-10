@@ -695,6 +695,20 @@ class Node:
             child.remove_all_children()
             child.remove_node()
 
+    def get(self, type=None):
+        """
+        Recursive call for get to find first sub-nodes with the given type.
+        @param type:
+        @return:
+        """
+        if type is None or type == self.type:
+            return self
+        for n in self._children:
+            node = n.get(type)
+            if node is not None:
+                return node
+        return None
+
     def move(self, dest, pos=None):
         self._parent.remove(self)
         dest.insert_node(self, pos=pos)
