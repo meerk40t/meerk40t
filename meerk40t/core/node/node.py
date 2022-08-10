@@ -609,13 +609,6 @@ class Node:
     def count_children(self):
         return len(self._children)
 
-    def objects_of_children(self, types):
-        if isinstance(self.object, types):
-            yield self.object
-        for q in self._children:
-            for o in q.objects_of_children(types):
-                yield o
-
     def append_child(self, new_child):
         """
         Add the new_child node as the last child of the current node.
