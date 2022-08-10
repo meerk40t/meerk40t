@@ -790,7 +790,7 @@ class Simulation(MWindow):
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):
-        if not background is None:
+        if background is not None:
             background = wx.Bitmap.FromBuffer(*background)
         self.panel.widget_scene._signal_widget(
             self.panel.widget_scene.widget_root, "background", background

@@ -296,14 +296,14 @@ class WordlistPanel(wx.Panel):
         event.Skip()
 
     def on_backup(self, event):
-        if not self.wlist.default_filename is None:
+        if self.wlist.default_filename is not None:
             self.wlist.save_data(self.wlist.default_filename)
             msg = _("Saved to ") + self.wlist.default_filename
             self.edit_message(msg)
         event.Skip()
 
     def on_restore(self, event):
-        if not self.wlist.default_filename is None:
+        if self.wlist.default_filename is not None:
             self.wlist.load_data(self.wlist.default_filename)
             msg = _("Loaded from ") + self.wlist.default_filename
             self.edit_message(msg)

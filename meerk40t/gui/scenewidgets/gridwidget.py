@@ -388,7 +388,7 @@ class GridWidget(Widget):
                 min_a = 0
                 max_a = tau
         self.sector = quadrant
-        if not pt1 is None:
+        if pt1 is not None:
             dx1 = pt1[0] - self.cx
             dy1 = pt1[1] - self.cy
             dx2 = pt2[0] - self.cx

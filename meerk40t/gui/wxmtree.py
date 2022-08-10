@@ -1215,7 +1215,7 @@ class ShadowTree:
                 image_id = -1
             if image_id < 0:
                 node = self.wxtree.GetItemData(item)
-                if not node is None:
+                if node is not None:
                     self.set_icon(node, force=True)
 
         selected = [

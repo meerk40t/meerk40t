@@ -67,7 +67,7 @@ class RectTool(ToolWidget):
                 self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            if not self.p1 is None:
+            if self.p1 is not None:
                 if nearest_snap is None:
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
@@ -98,9 +98,9 @@ class RectTool(ToolWidget):
                 if not rect.is_degenerate():
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(shape=rect, type="elem rect")
-                    if not self.scene.context.elements.default_stroke is None:
+                    if self.scene.context.elements.default_stroke is not None:
                         node.stroke = self.scene.context.elements.default_stroke
-                    if not self.scene.context.elements.default_fill is None:
+                    if self.scene.context.elements.default_fill is not None:
                         node.fill = self.scene.context.elements.default_fill
                     if elements.classify_new:
                         elements.classify([node])

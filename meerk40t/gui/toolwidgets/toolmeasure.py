@@ -86,7 +86,7 @@ class MeasureTool(ToolWidget):
             perimeter = 0
             for pt in points:
                 pt_count += 1
-                if not first_point is None:
+                if first_point is not None:
                     dx = pt[0] - first_point[0]
                     dy = pt[1] - first_point[1]
                     if dx == 0:

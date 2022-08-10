@@ -288,7 +288,7 @@ class Bind(Service):
     # help transition from old definitions of control-key-combinations
     def is_found(self, keyvalue, target):
         valu = False
-        if not keyvalue is None:
+        if keyvalue is not None:
             s = keyvalue
             if s in target:
                 valu = True

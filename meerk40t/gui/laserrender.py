@@ -240,9 +240,9 @@ class LaserRender:
                 alpha = c.alpha
             self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
-            if not capstyle is None:
+            if capstyle is not None:
                 self.pen.SetCap(capstyle)
-            if not joinstyle is None:
+            if joinstyle is not None:
                 self.pen.SetJoin(joinstyle)
             try:
                 try:
