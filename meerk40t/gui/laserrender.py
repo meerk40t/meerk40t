@@ -687,7 +687,6 @@ class LaserRender:
             gc.DrawText(txt, 30, 30)
             gc.PopState()
 
-    # Corrected docstring only
     def make_raster(
         self,
         nodes,

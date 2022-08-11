@@ -1,4 +1,5 @@
 from copy import copy
+from math import sqrt
 
 from meerk40t.core.node.node import Node
 from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
@@ -60,23 +61,44 @@ class TextNode(Node):
         )
 
     @property
+    def stroke_scaled(self):
+        return self._stroke_scaled
+
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        if not v and self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width *= sqrt(abs(matrix.determinant))
+        if v and not self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width /= sqrt(abs(matrix.determinant))
+        self._stroke_scaled = v
+
+    def implied_stroke_width(self, zoomscale=1.0):
+        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
+        need to countermand that scaling by dividing by the square root of the absolute
+        value of the determinant of the local matrix (1d matrix scaling)"""
+        scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
+        sw = self.stroke_width / scalefactor
+        limit = 25 * sqrt(zoomscale) * scalefactor
+        if sw < limit:
+            sw = limit
+        return sw
+
+    @property
     def bounds(self):
         if self._bounds_dirty:
-            self.text.transform = self.matrix
-            self.text.stroke_width = self.stroke_width
+            self._sync_svg()
             self._bounds = self.text.bbox(with_stroke=True)
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
+        self.stroke_scaled = True
         self.matrix *= matrix
-        self.text.transform = self.matrix
-        self.text.stroke_width = self.stroke_width
-        self._bounds_dirty = True
-        self.text.width = 0
-        self.text.height = 0
-        text = context.elements.mywordlist.translate(self.text.text)
-        self.text.text = text
+        self.stroke_scaled = False
+        self._sync_svg()
 
+        self.text.text = context.elements.mywordlist.translate(self.text.text)
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
 
@@ -133,3 +155,11 @@ class TextNode(Node):
 
     def add_point(self, point, index=None):
         return False
+
+    def _sync_svg(self):
+        self.text.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        self.text.transform = self.matrix
+        self.text.stroke_width = self.stroke_width
+        self.text.width = 0
+        self.text.height = 0
+        self._bounds_dirty = True
