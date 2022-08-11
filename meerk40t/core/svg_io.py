@@ -81,18 +81,6 @@ def plugin(kernel, lifecycle=None):
                 "page": "Input/Output",
                 "section": "Input",
             },
-            # {
-            #     "attr": "uniform_svg",
-            #     "object": kernel.elements,
-            #     "default": False,
-            #     "type": bool,
-            #     "label": _("SVG Uniform Save"),
-            #     "tip": _(
-            #         "Do not treat overwriting SVG differently if they are MeerK40t files"
-            #     ),
-            #     "page": "Input/Output",
-            #     "section": "Input",
-            # },
         ]
         kernel.register_choices("preferences", choices)
         kernel.register("load/SVGLoader", SVGLoader)
@@ -103,14 +91,47 @@ MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
 MEERK40T_XMLS_ID = "meerk40t"
 
 
+def capstr(linecap):
+    if linecap == Linecap.CAP_BUTT:
+        return "butt"
+    elif linecap == Linecap.CAP_SQUARE:
+        return "square"
+    else:
+        return "round"
+
+
+def joinstr(linejoin):
+    if linejoin == Linejoin.JOIN_ARCS:
+        return "arcs"
+    elif linejoin == Linejoin.JOIN_BEVEL:
+        return "bevel"
+    elif linejoin == Linejoin.JOIN_MITER_CLIP:
+        return "miter-clip"
+    elif linejoin == Linejoin.JOIN_ROUND:
+        return "round"
+    else:
+        return "miter"
+
+
+def rulestr(fillrule):
+    if fillrule == Fillrule.FILLRULE_EVENODD:
+        return "evenodd"
+    else:
+        return "nonzero"
+
+
+def copy_attributes(source, target):
+    if hasattr(source, "stroke"):
+        target.stroke = source.stroke
+    if hasattr(source, "fill"):
+        target.fill = source.fill
+
+
 class SVGWriter:
     @staticmethod
     def save_types():
-        yield "Scalable Vector Graphics", "svg", "image/svg+xml"
-
-    @staticmethod
-    def versions():
-        yield "default"
+        yield "Scalable Vector Graphics", "svg", "image/svg+xml", "default"
+        yield "SVG-Compressed", "svgz", "image/svg+xml", "compressed"
 
     @staticmethod
     def save(context, f, version="default"):
@@ -160,6 +181,8 @@ class SVGWriter:
 
         SVGWriter._pretty_print(root)
         tree = ElementTree(root)
+        if f.lower().endswith("svgz"):
+            f = gzip.open(f, "wb")
         tree.write(f)
 
     @staticmethod
@@ -181,43 +204,6 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
-
-        def capstr(linecap):
-            if linecap == Linecap.CAP_BUTT:
-                s = "butt"
-            elif linecap == Linecap.CAP_SQUARE:
-                s = "square"
-            else:
-                s = "round"
-            return s
-
-        def joinstr(linejoin):
-            if linejoin == Linejoin.JOIN_ARCS:
-                s = "arcs"
-            elif linejoin == Linejoin.JOIN_BEVEL:
-                s = "bevel"
-            elif linejoin == Linejoin.JOIN_MITER_CLIP:
-                s = "miter-clip"
-            elif linejoin == Linejoin.JOIN_ROUND:
-                s = "round"
-            else:
-                s = "miter"
-            return s
-
-        def rulestr(fillrule):
-            if fillrule == Fillrule.FILLRULE_EVENODD:
-                s = "evenodd"
-            else:
-                s = "nonzero"
-            return s
-
-        def copy_attributes(source, target):
-            #
-
-            if hasattr(source, "stroke"):
-                target.stroke = source.stroke
-            if hasattr(source, "fill"):
-                target.fill = source.fill
 
         scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         for c in elem_tree.children:
@@ -437,8 +423,7 @@ class SVGWriter:
             regmark = SubElement(xml_tree, SVG_TAG_GROUP)
             regmark.set("id", "regmarks")
             regmark.set("visibility", "hidden")
-            for c in reg_tree.children:
-                SVGWriter._write_elements(regmark, c)
+            SVGWriter._write_elements(regmark, reg_tree)
 
     @staticmethod
     def _write_operation(xml_tree, node):
@@ -749,9 +734,7 @@ class SVGProcessor:
                 # Meerk40t 0.7.x fallback node types.
                 op_type = element.values.get("operation")
                 if op_type is None:
-                    op_type = element.values.get("operation")
-                    if op_type is None:
-                        return
+                    return
                 node_type = f"op {op_type.lower()}"
                 element.values["attributes"]["type"] = node_type
 
