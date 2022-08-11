@@ -81,18 +81,6 @@ def plugin(kernel, lifecycle=None):
                 "page": "Input/Output",
                 "section": "Input",
             },
-            # {
-            #     "attr": "uniform_svg",
-            #     "object": kernel.elements,
-            #     "default": False,
-            #     "type": bool,
-            #     "label": _("SVG Uniform Save"),
-            #     "tip": _(
-            #         "Do not treat overwriting SVG differently if they are MeerK40t files"
-            #     ),
-            #     "page": "Input/Output",
-            #     "section": "Input",
-            # },
         ]
         kernel.register_choices("preferences", choices)
         kernel.register("load/SVGLoader", SVGLoader)
@@ -437,8 +425,7 @@ class SVGWriter:
             regmark = SubElement(xml_tree, SVG_TAG_GROUP)
             regmark.set("id", "regmarks")
             regmark.set("visibility", "hidden")
-            for c in reg_tree.children:
-                SVGWriter._write_elements(regmark, c)
+            SVGWriter._write_elements(regmark, reg_tree)
 
     @staticmethod
     def _write_operation(xml_tree, node):
