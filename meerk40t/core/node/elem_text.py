@@ -97,7 +97,8 @@ class TextNode(Node):
         self.matrix *= matrix
         self.stroke_scaled = False
         self._sync_svg()
-
+        self.text.width = 0
+        self.text.height = 0
         self.text.text = context.elements.mywordlist.translate(self.text.text)
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
@@ -160,6 +161,4 @@ class TextNode(Node):
         self.text.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
         self.text.transform = self.matrix
         self.text.stroke_width = self.stroke_width
-        self.text.width = 0
-        self.text.height = 0
         self._bounds_dirty = True
