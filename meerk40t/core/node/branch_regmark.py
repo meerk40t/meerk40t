@@ -21,6 +21,8 @@ class BranchRegmarkNode(Node):
     def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
             if modify:
+                for ref in list(drag_node._references):
+                    ref.remove_node()
                 self.append_child(drag_node)
             return True
         elif drag_node.type == "group":
