@@ -1380,7 +1380,11 @@ class GalvoController:
         return self._command(InputPort)
 
     def get_mark_time(self):
-        return self._command(GetMarkTime)
+        """
+        Get Mark Time is always called with data 3. With 0 it returns 0. It is unknown what the payload means.
+        @return:
+        """
+        return self._command(GetMarkTime, 3)
 
     def get_user_data(self):
         return self._command(GetUserData)
