@@ -9251,12 +9251,12 @@ class Elemental(Service):
                 filetypes.append(";".join(exts))
         return "|".join(filetypes)
 
-    def save(self, pathname):
+    def save(self, pathname, version="default"):
         kernel = self.kernel
         for saver, save_name, sname in kernel.find("save"):
-            for description, extension, mimetype in saver.save_types():
-                if pathname.lower().endswith(extension):
-                    saver.save(self, pathname, "default")
+            for description, extension, mimetype, _version in saver.save_types():
+                if pathname.lower().endswith(extension) and _version == version:
+                    saver.save(self, pathname, version)
                     return True
         return False
 
@@ -9264,7 +9264,7 @@ class Elemental(Service):
         kernel = self.kernel
         filetypes = []
         for saver, save_name, sname in kernel.find("save"):
-            for description, extension, mimetype in saver.save_types():
+            for description, extension, mimetype, _version in saver.save_types():
                 filetypes.append(f"{description} ({extension})")
                 filetypes.append(f"*.{extension}")
         return "|".join(filetypes)
