@@ -1251,7 +1251,16 @@ class MeerK40t(MWindow):
 
         @context.console_command("dialog_save_as", hidden=True)
         def save_dialog(**kwargs):
-            files = context.elements.save_types()
+            filetypes = []
+            types = []
+            for saver, save_name, sname in context.find("save"):
+                for save_type in saver.save_types():
+                    types.append(save_type)
+                    description, extension, mimetype, version = save_type
+                    filetypes.append(f"{description} ({extension})")
+                    filetypes.append(f"*.{extension}")
+            files = "|".join(filetypes)
+
             with wx.FileDialog(
                 gui,
                 _("Save Project"),
@@ -1259,11 +1268,12 @@ class MeerK40t(MWindow):
                 style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
+                    return
+                description, extension, mimetype, version = types[fileDialog.GetFilterIndex()]
                 pathname = fileDialog.GetPath()
-                if not pathname.lower().endswith(".svg"):
-                    pathname += ".svg"
-                context.elements.save(pathname)
+                if not pathname.lower().endswith(f".{extension}"):
+                    pathname += f".{extension}"
+                context.elements.save(pathname, version=version)
                 gui.validate_save()
                 gui.working_file = pathname
                 gui.set_file_as_recently_used(gui.working_file)

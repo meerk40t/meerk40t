@@ -130,11 +130,8 @@ def copy_attributes(source, target):
 class SVGWriter:
     @staticmethod
     def save_types():
-        yield "Scalable Vector Graphics", "svg", "image/svg+xml"
-
-    @staticmethod
-    def versions():
-        yield "default"
+        yield "Scalable Vector Graphics", "svg", "image/svg+xml", "default"
+        yield "SVG-Compressed", "svgz", "image/svg+xml", "compressed"
 
     @staticmethod
     def save(context, f, version="default"):
@@ -184,6 +181,8 @@ class SVGWriter:
 
         SVGWriter._pretty_print(root)
         tree = ElementTree(root)
+        if f.lower().endswith("svgz"):
+            f = gzip.open(f, "wb")
         tree.write(f)
 
     @staticmethod
