@@ -90,6 +90,44 @@ def plugin(kernel, lifecycle=None):
 MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
 MEERK40T_XMLS_ID = "meerk40t"
 
+def capstr(linecap):
+    if linecap == Linecap.CAP_BUTT:
+        s = "butt"
+    elif linecap == Linecap.CAP_SQUARE:
+        s = "square"
+    else:
+        s = "round"
+    return s
+
+
+def joinstr(linejoin):
+    if linejoin == Linejoin.JOIN_ARCS:
+        s = "arcs"
+    elif linejoin == Linejoin.JOIN_BEVEL:
+        s = "bevel"
+    elif linejoin == Linejoin.JOIN_MITER_CLIP:
+        s = "miter-clip"
+    elif linejoin == Linejoin.JOIN_ROUND:
+        s = "round"
+    else:
+        s = "miter"
+    return s
+
+
+def rulestr(fillrule):
+    if fillrule == Fillrule.FILLRULE_EVENODD:
+        s = "evenodd"
+    else:
+        s = "nonzero"
+    return s
+
+
+def copy_attributes(source, target):
+    if hasattr(source, "stroke"):
+        target.stroke = source.stroke
+    if hasattr(source, "fill"):
+        target.fill = source.fill
+
 
 class SVGWriter:
     @staticmethod
@@ -169,43 +207,6 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
-
-        def capstr(linecap):
-            if linecap == Linecap.CAP_BUTT:
-                s = "butt"
-            elif linecap == Linecap.CAP_SQUARE:
-                s = "square"
-            else:
-                s = "round"
-            return s
-
-        def joinstr(linejoin):
-            if linejoin == Linejoin.JOIN_ARCS:
-                s = "arcs"
-            elif linejoin == Linejoin.JOIN_BEVEL:
-                s = "bevel"
-            elif linejoin == Linejoin.JOIN_MITER_CLIP:
-                s = "miter-clip"
-            elif linejoin == Linejoin.JOIN_ROUND:
-                s = "round"
-            else:
-                s = "miter"
-            return s
-
-        def rulestr(fillrule):
-            if fillrule == Fillrule.FILLRULE_EVENODD:
-                s = "evenodd"
-            else:
-                s = "nonzero"
-            return s
-
-        def copy_attributes(source, target):
-            #
-
-            if hasattr(source, "stroke"):
-                target.stroke = source.stroke
-            if hasattr(source, "fill"):
-                target.fill = source.fill
 
         scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         for c in elem_tree.children:
