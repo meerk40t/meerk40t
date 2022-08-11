@@ -1706,7 +1706,7 @@ class MeerK40t(MWindow):
     def dynamic_fill_window_menu(self, new=None, old=None):
         def toggle_window(_window):
             def toggle(event=None):
-                self.context(f"window toggle {window}\n")
+                self.context(f"window toggle {_window}\n")
 
             return toggle
 
