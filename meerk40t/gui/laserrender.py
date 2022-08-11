@@ -121,6 +121,8 @@ class LaserRender:
                 nodes = [e for e in nodes if e.type != "elem image"]
             if draw_mode & DRAW_MODE_TEXT:  # Do not draw text.
                 nodes = [e for e in nodes if e.type != "elem text"]
+            if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
+                nodes = [e for e in nodes if e._parent.type != "branch reg"]
 
         for node in nodes:
             if node.type == "reference":
