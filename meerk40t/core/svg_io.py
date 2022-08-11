@@ -90,36 +90,34 @@ def plugin(kernel, lifecycle=None):
 MEERK40T_NAMESPACE = "https://github.com/meerk40t/meerk40t/wiki/Namespace"
 MEERK40T_XMLS_ID = "meerk40t"
 
+
 def capstr(linecap):
     if linecap == Linecap.CAP_BUTT:
-        s = "butt"
+        return "butt"
     elif linecap == Linecap.CAP_SQUARE:
-        s = "square"
+        return "square"
     else:
-        s = "round"
-    return s
+        return "round"
 
 
 def joinstr(linejoin):
     if linejoin == Linejoin.JOIN_ARCS:
-        s = "arcs"
+        return "arcs"
     elif linejoin == Linejoin.JOIN_BEVEL:
-        s = "bevel"
+        return "bevel"
     elif linejoin == Linejoin.JOIN_MITER_CLIP:
-        s = "miter-clip"
+        return "miter-clip"
     elif linejoin == Linejoin.JOIN_ROUND:
-        s = "round"
+        return "round"
     else:
-        s = "miter"
-    return s
+        return "miter"
 
 
 def rulestr(fillrule):
     if fillrule == Fillrule.FILLRULE_EVENODD:
-        s = "evenodd"
+        return "evenodd"
     else:
-        s = "nonzero"
-    return s
+        return "nonzero"
 
 
 def copy_attributes(source, target):
