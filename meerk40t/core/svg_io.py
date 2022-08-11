@@ -736,9 +736,7 @@ class SVGProcessor:
                 # Meerk40t 0.7.x fallback node types.
                 op_type = element.values.get("operation")
                 if op_type is None:
-                    op_type = element.values.get("operation")
-                    if op_type is None:
-                        return
+                    return
                 node_type = f"op {op_type.lower()}"
                 element.values["attributes"]["type"] = node_type
 
