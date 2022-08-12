@@ -816,14 +816,24 @@ class ShadowTree:
             node.item = tree.InsertItem(parent_item, pos, self.name)
         tree.SetItemData(node.item, node)
         self.update_decorations(node)
-        try:
+        wxcolor = self.wxtree.GetForegroundColour()
+        if hasattr(node, "stroke"):
             wxcolor = self.safe_color(node.stroke)
+        else:
+            back_color = self.wxtree.GetBackgroundColour()
+            rgb = back_color.Get()
+            background = Color(rgb[0], rgb[1], rgb[2])
+            if background is not None:
+                c1 = Color("Black")
+                c2 = Color("White")
+                if Color.distance(background, c1) > Color.distance(background, c2):
+                    textcolor = c1
+                else:
+                    textcolor = c2
+                wxcolor = swizzlecolor(textcolor)
+        try:
             tree.SetItemTextColour(node.item, wxcolor)
-        except AttributeError:
-            pass
-        except KeyError:
-            pass
-        except TypeError:
+        except (AttributeError, KeyError, TypeError):
             pass
 
     def set_enhancements(self, node):
