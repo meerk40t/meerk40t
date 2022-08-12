@@ -81,6 +81,7 @@ from .laserrender import (
     DRAW_MODE_LINEWIDTH,
     DRAW_MODE_PATH,
     DRAW_MODE_REFRESH,
+    DRAW_MODE_REGMARKS,
     DRAW_MODE_RETICLE,
     DRAW_MODE_SELECTION,
     DRAW_MODE_STROKES,
@@ -243,6 +244,14 @@ class MeerK40t(MWindow):
     def destroy_statusbar_panels(self):
         self.main_statusbar.Clear()
         self.widgets_created = False
+
+    # --- Listen to external events to toggle regmark visibility
+    @signal_listener("toggle_regmarks")
+    def on_regmark_toggle(self, origin, *args):
+        bits = DRAW_MODE_REGMARKS
+        self.context.draw_mode ^= bits
+        self.context.signal("draw_mode", self.context.draw_mode)
+        self.context.signal("refresh_scene", "Scene")
 
     # --- Listen to external events to update the bar
     @signal_listener("show_colorbar")
@@ -1935,6 +1944,10 @@ class MeerK40t(MWindow):
             _("Don't show the selection boundaries and dimensions"),
             DRAW_MODE_SELECTION,
         )
+        create_draw_mode_item(
+            _("Hide Regmarks"), _("Don't show elements under the regmark branch"), DRAW_MODE_REGMARKS
+        )
+
         # TODO This menu does not clear existing icons or create icons when it is changed
         create_draw_mode_item(_("Hide Icons"), "", DRAW_MODE_ICONS)
         create_draw_mode_item(_("Do Not Cache Image"), "", DRAW_MODE_CACHE)

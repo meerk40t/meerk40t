@@ -7355,6 +7355,14 @@ class Elemental(Service):
         def element_lock_manipulations(node, **kwargs):
             self("element lock\n")
 
+        @self.tree_conditional(lambda node: node.type == "branch reg")
+        @self.tree_separator_before()
+        @self.tree_operation(
+            _("Toggle visibility of regmarks"), node_type="branch reg", help=""
+        )
+        def toggle_visibility(node, **kwargs):
+            self.signal("toggle_regmarks")
+
         @self.tree_conditional(lambda node: is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(
