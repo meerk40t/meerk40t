@@ -288,25 +288,6 @@ class RasterOpNode(Node, Parameters):
 
         if len(self.children) == 0:
             return
-        if len(self.children) == 1 and self.children[0].type == "elem image":
-            node = self.children[0]
-            node.step_x = step_x
-            node.step_y = step_y
-            m = node.matrix
-            # Transformation must be uniform to permit native rastering.
-            if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
-
-                def actualize_raster_image(image_node, s_x, s_y):
-                    def actualize_raster_image_node():
-                        image_node.image, image_node.matrix = actualize(
-                            image_node.image, image_node.matrix, step_x=s_x, step_y=s_y
-                        )
-                        image_node.cache = None
-
-                    return actualize_raster_image_node
-
-                commands.append(actualize_raster_image(node, step_x, step_y))
-            return
 
         make_raster = context.lookup("render-op/make_raster")
         if make_raster is None:
@@ -344,6 +325,9 @@ class RasterOpNode(Node, Parameters):
             image_node = ImageNode(image=image, matrix=img_mx)
             self.children.clear()
             self.add_node(image_node)
+            image_node.step_x = step_x
+            image_node.step_y = step_y
+            image_node.process_image()
 
         commands.append(make_image)
 

@@ -5,7 +5,6 @@ from meerk40t.kernel import CommandSyntaxError
 
 from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path
-from .actualize import actualize
 
 
 def plugin(kernel, lifecycle=None):
