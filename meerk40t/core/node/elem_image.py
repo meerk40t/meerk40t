@@ -24,6 +24,13 @@ class ImageNode(Node):
         direction=None,
         dpi=500,
         operations=None,
+        invert=None,
+        dither=None,
+        dither_type=None,
+        red=None,
+        green=None,
+        blue=None,
+        lightness=None,
         **kwargs,
     ):
         super(ImageNode, self).__init__(type="elem image", **kwargs)
@@ -55,14 +62,6 @@ class ImageNode(Node):
         else:
             self.image = image
             self.matrix = matrix
-        self.processed_image = None
-        self.processed_matrix = None
-        self.process_image_failed = False
-        self.text = None
-
-        self._needs_update = False
-        self._update_thread = None
-        self._update_lock = threading.Lock()
 
         self.settings = kwargs
         self.overscan = overscan
@@ -72,18 +71,26 @@ class ImageNode(Node):
         self.step_y = None
         self.lock = False
 
-        self.invert = False
-        self.red = 1.0
-        self.green = 1.0
-        self.blue = 1.0
-        self.lightness = 1.0
-        self.view_invert = False
-        self.dither = True
-        self.dither_type = "Floyd-Steinberg"
+        self.invert = False if invert is None else invert
+        self.red = 1.0 if red is None else red
+        self.green = 1.0 if green is None else green
+        self.blue = 1.0 if blue is None else blue
+        self.lightness = 1.0 if lightness is None else lightness
+        self.dither = True if dither is None else dither
+        self.dither_type = "Floyd-Steinberg" if dither_type is None else dither_type
 
         if operations is None:
             operations = list()
         self.operations = operations
+
+        self._needs_update = False
+        self._update_thread = None
+        self._update_lock = threading.Lock()
+        self.processed_image = None
+        self.processed_matrix = None
+        self.process_image_failed = False
+        self.view_invert = False
+        self.text = None
 
     def __copy__(self):
         return ImageNode(
@@ -93,6 +100,13 @@ class ImageNode(Node):
             direction=self.direction,
             dpi=self.dpi,
             operations=self.operations,
+            invert=self.invert,
+            dither=self.dither,
+            dither_type=self.dither_type,
+            red=self.red,
+            green=self.green,
+            blue=self.blue,
+            lightness=self.lightness,
             **self.settings,
         )
 
