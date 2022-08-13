@@ -525,6 +525,9 @@ class GridWidget(Widget):
 
         # Get proper gridsize
         w, h = gc.Size
+        if w < 50 or h < 50:
+            # Algorithm is unstable for very low values of w or h.
+            return
         if self.scene.auto_tick:
             self.calculate_tickdistance(w, h)
         self.calculate_gridsize(w, h)
