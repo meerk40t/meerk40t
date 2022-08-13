@@ -257,6 +257,7 @@ class ImageNode(Node):
         image = self.image
         main_matrix = self.matrix
 
+        # Precalculate RGB for L conversion.
         r = self.red * 0.299
         g = self.green * 0.587
         b = self.blue * 0.114
@@ -271,20 +272,26 @@ class ImageNode(Node):
             pass
 
         transform = main_matrix.a != step_x or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_y
+
+        # Create Transparency Mask.
         if "transparency" in image.info:
             image = image.convert("RGBA")
         try:
-            # If transparency we paste 0 into the image where transparent.
             transparent_mask = image.getchannel("A").point(lambda e: 255 - e)
         except ValueError:
             transparent_mask = None
 
         matrix = copy(main_matrix)   # Prevent Knock-on effect.
 
+        # Convert image to L type.
         if image.mode != "L":
-            # All images must be greyscale
             image = image.convert("RGB")
             image = image.convert("L", matrix=(r, g, b, 1.0))
+
+        if transparent_mask:
+            image_copy = image.copy()  # Correct knock-on-effect.
+            image_copy.paste(transparent_mask, None, transparent_mask)
+            image = image_copy
 
         box = None
         if crop:
@@ -349,8 +356,8 @@ class ImageNode(Node):
         else:
             matrix = copy(main_matrix)
 
-        box = None
         if crop:
+            box = None
             try:
                 if self.invert:
                     box = image.getbbox()
@@ -503,7 +510,6 @@ class ImageNode(Node):
         if empty_mask is not None:
             background = Image.new(image.mode, image.size, "white")
             background.paste(image, mask=empty_mask)
-            background.paste(transparent_mask, None, transparent_mask)
             image = background  # Mask exists use it to remove any pixels that were pure reject.
 
         if self.dither and self.dither_type is not None:
