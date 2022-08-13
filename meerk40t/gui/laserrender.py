@@ -582,18 +582,18 @@ class LaserRender:
 
         x = text.x
         y = text.y
-        textstr = text.text
+        text_string = text.text
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            textstr = self.context.elements.mywordlist.translate(textstr)
-        if not node.texttransform is None:
+            text_string = self.context.elements.mywordlist.translate(text_string)
+        if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
-                textstr = textstr.capitalize()
+                text_string = text_string.capitalize()
             elif ttf == "uppercase":
-                textstr = textstr.upper()
+                text_string = text_string.upper()
             if ttf == "lowercase":
-                textstr = textstr.lower()
+                text_string = text_string.lower()
         # There's a fundamental flaw in wxPython to get the right fontsize
         # Both GetTextExtent and GetFullTextextent provide the fontmetric-size
         # as result for the font-height and don't take the real glyphs into account
@@ -602,13 +602,12 @@ class LaserRender:
         # the descent from the font-metric into account.
         # A 'real' height routine would most probably need to draw the string on an
         # empty canvas and find the first and last dots on a line...
-        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(textstr)
-        # print ("GetFullTextextent for %s (%s): Height=%.1f, descent=%.1f, leading=%.1f" % ( textstr, font.GetFaceName(), f_height, f_descent, f_externalLeading ))
-        # print ("Scale Width=%.1f" % width_scale)
+        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(text_string)
+
         # That stuff drives my crazy...
-        # If you have characters with and underline, like p, y, g, j, q the you need to subtract 1x descent otherwise 2x
+        # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
         has_underscore = any(
-            substring in textstr for substring in ("g", "j", "p", "q", "y", ",", ";")
+            substring in text_string for substring in ("g", "j", "p", "q", "y", ",", ";")
         )
         delta = self.fontdescent_factor * f_descent
         if has_underscore:
@@ -617,25 +616,17 @@ class LaserRender:
         f_height -= delta
         text.width = f_width
         text.height = f_height
-        # print ("Anchor= %s" % text.anchor)
-        if not hasattr(text, "anchor") or text.anchor == "start":
-            y -= (
-                text.height
-                + self.fontdescent_factor * self.fontdescent_delta * f_descent
-            )
-        elif text.anchor == "middle":
+        y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
+
+        anchor = "start"
+        if hasattr(text, "anchor"):
+            if text.anchor is not None:
+                anchor = text.anchor
+        if anchor == "middle":
             x -= text.width / 2
-            y -= (
-                text.height
-                + self.fontdescent_factor * self.fontdescent_delta * f_descent
-            )
-        elif text.anchor == "end":
+        elif anchor == "end":
             x -= text.width
-            y -= (
-                text.height
-                + self.fontdescent_factor * self.fontdescent_delta * f_descent
-            )
-        gc.DrawText(textstr, x, y)
+        gc.DrawText(text_string, x, y)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
