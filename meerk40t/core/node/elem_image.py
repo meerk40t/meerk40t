@@ -288,11 +288,13 @@ class ImageNode(Node):
             image = image.convert("RGB")
             image = image.convert("L", matrix=(r, g, b, 1.0))
 
+        # Paste Transparency mask.
         if transparent_mask:
             image_copy = image.copy()  # Correct knock-on-effect.
             image_copy.paste(transparent_mask, None, transparent_mask)
             image = image_copy
 
+        # Calculate image box.
         box = None
         if crop:
             try:
@@ -303,7 +305,6 @@ class ImageNode(Node):
                     box = image.point(lambda e: 255 - e).getbbox()
             except ValueError:
                 pass
-
         if box is None:
             # If box is entirely white, bbox caused value error, or crop not set.
             box = (0, 0, image.width, image.height)
@@ -333,8 +334,10 @@ class ImageNode(Node):
         matrix.post_translate(-tx, -ty)
         matrix.post_scale(step_scale_x, step_scale_y)
         if step_y < 0:
+            # If step_y is negative, translate
             matrix.post_translate(0, image_height)
         if step_x < 0:
+            # If step_x is negative, translate
             matrix.post_translate(image_width, 0)
         try:
             matrix.inverse()
@@ -344,6 +347,7 @@ class ImageNode(Node):
             matrix.post_translate(-tx, -ty)
             matrix.post_scale(step_scale_x, step_scale_y)
 
+        # Perform image transform if needed.
         if transform:
             image = image.transform(
                 (image_width, image_height),
@@ -356,6 +360,7 @@ class ImageNode(Node):
         else:
             matrix = copy(main_matrix)
 
+        # If crop applies, apply crop.
         if crop:
             box = None
             try:
@@ -372,20 +377,23 @@ class ImageNode(Node):
                     image = image.crop(box)
                     matrix.post_translate(box[0], box[1])
 
-        # step level requires the new actualized matrix be scaled up.
         if step_y < 0:
+            # if step_y is negative, translate.
             matrix.post_translate(0, -image_height)
         if step_x < 0:
+            # if step_x is negative, translate.
             matrix.post_translate(-image_width, 0)
+
         matrix.post_scale(step_x, step_y)
         matrix.post_translate(tx, ty)
         actualized_matrix = matrix
 
+        # Invert black to white if needed.
         if self.invert:
-            empty_mask = image.point(lambda e: 0 if e == 0 else 255)
             image = ImageOps.invert(image)
-        else:
-            empty_mask = image.point(lambda e: 0 if e == 255 else 255)
+
+        # Find rejection mask of white pixels.
+        reject_mask = image.point(lambda e: 0 if e == 255 else 255)
 
         # Process operations.
         for op in self.operations:
@@ -507,16 +515,20 @@ class ImageNode(Node):
                 except KeyError:
                     pass
 
-        if empty_mask is not None:
+        # Remask image removing any white pixels.
+        if reject_mask is not None:
+            # Mask exists use it to remove any pixels that were pure reject.
             background = Image.new(image.mode, image.size, "white")
-            background.paste(image, mask=empty_mask)
-            image = background  # Mask exists use it to remove any pixels that were pure reject.
+            background.paste(image, mask=reject_mask)
+            image = background
 
+        # Dither image to 1 bit.
         if self.dither and self.dither_type is not None:
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
             image = image.convert("1")
 
+        # Set final values.
         inverted_main_matrix = Matrix(main_matrix).inverse()
         self.processed_matrix = actualized_matrix * inverted_main_matrix
         self.processed_image = image
