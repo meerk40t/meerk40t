@@ -515,7 +515,7 @@ class ImageNode(Node):
                 except KeyError:
                     pass
 
-        # Remask image removing any white pixels.
+        # Remask image removing pixels that were white before operations were processed.
         if reject_mask is not None:
             # Mask exists use it to remove any pixels that were pure reject.
             background = Image.new(image.mode, image.size, "white")
