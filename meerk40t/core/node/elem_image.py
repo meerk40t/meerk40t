@@ -216,12 +216,8 @@ class ImageNode(Node):
             self.wx_bitmap_image = None
             self.cache = None
 
-    def process_image(self):
+    def process_image(self, crop=True):
         """
-        Makes PIL image actual in that it manipulates the pixels to actually exist
-        rather than simply apply the transform on the image to give the resulting image.
-        Since our goal is to raster the images real pixels this is required.
-
         SVG matrices are defined as follows.
         [a c e]
         [b d f]
@@ -236,14 +232,27 @@ class ImageNode(Node):
         of step level which requires an introduced empty edge pixel to be added.
         """
 
+        from PIL import Image
+
+        try:
+            self._process_image(crop=crop)
+            self.process_image_failed = False
+        except (MemoryError, Image.DecompressionBombError):
+            self.process_image_failed = True
+        self.altered()
+
+    def _process_image(self, crop=True):
+        from meerk40t.image.imagetools import dither
+        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+
+        # Calculate device real step.
         if self.step_x is None:
             step = UNITS_PER_INCH / self.dpi
             self.step_x = step
             self.step_y = step
-
-        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
-
-        from meerk40t.image.imagetools import dither
+        step_x, step_y = self.step_x, self.step_y
+        assert step_x != 0
+        assert step_y != 0
 
         image = self.image
         main_matrix = self.matrix
@@ -261,138 +270,117 @@ class ImageNode(Node):
         except ZeroDivisionError:
             pass
 
-        # Calculate device real step.
-        step_x, step_y = self.step_x, self.step_y
-        if (
-            main_matrix.a != step_x
-            or main_matrix.b != 0.0
-            or main_matrix.c != 0.0
-            or main_matrix.d != step_y
-        ):
+        transform = main_matrix.a != step_x or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_y
+        if "transparency" in image.info:
+            image = image.convert("RGBA")
+        try:
+            # If transparency we paste 0 into the image where transparent.
+            transparent_mask = image.getchannel("A").point(lambda e: 255 - e)
+        except ValueError:
+            transparent_mask = None
+
+        matrix = copy(main_matrix)   # Prevent Knock-on effect.
+
+        if image.mode != "L":
+            # All images must be greyscale
+            image = image.convert("RGB")
+            image = image.convert("L", matrix=(r, g, b, 1.0))
+
+        box = None
+        if crop:
             try:
-                # Actualize Matrix.
-                assert step_x != 0
-                assert step_y != 0
+                # Get the bbox cutting off the white edges.
+                if self.invert:
+                    box = image.getbbox()
+                else:
+                    box = image.point(lambda e: 255 - e).getbbox()
+            except ValueError:
+                pass
 
-                matrix = copy(main_matrix)   # Prevent Knock-on effect.
-                crop = True
-                inverted = self.invert
-                assert isinstance(image, Image.Image)
-                if "transparency" in image.info:
-                    image = image.convert("RGBA")
-                try:
-                    # If transparency we paste 0 into the image where transparent.
-                    mask = image.getchannel("A").point(lambda e: 255 - e)
-                    image_copy = image.copy()  # Correct knock-on-effect.
-                    image_copy.paste(mask, None, mask)
-                    image = image_copy
-                except ValueError:
-                    pass
+        if box is None:
+            # If box is entirely white, bbox caused value error, or crop not set.
+            box = (0, 0, image.width, image.height)
 
-                if image.mode != "L":
-                    # All images must be greyscale
-                    image = image.convert("RGB")
-                    image = image.convert("L", matrix=(r, g, b, 1.0))
+        # Find the boundary points of the rotated box edges.
+        boundary_points = [
+            matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
+            matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
+            matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
+            matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
+        ]
+        xs = [e[0] for e in boundary_points]
+        ys = [e[1] for e in boundary_points]
 
-                box = None
-                if crop:
-                    try:
-                        # Get the bbox cutting off the white edges.
-                        if inverted:
-                            box = image.getbbox()
-                        else:
-                            box = image.point(lambda e: 255 - e).getbbox()
-                    except ValueError:
-                        pass
+        # bbox here is expanded matrix size of box.
+        step_scale_x = 1 / float(step_x)
+        step_scale_y = 1 / float(step_y)
 
-                if box is None:
-                    # If box is entirely white, bbox caused value error, or crop not set.
-                    box = (0, 0, image.width, image.height)
+        bbox = min(xs), min(ys), max(xs), max(ys)
 
-                # Find the boundary points of the rotated box edges.
-                boundary_points = [
-                    matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
-                    matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
-                    matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
-                    matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
-                ]
-                xs = [e[0] for e in boundary_points]
-                ys = [e[1] for e in boundary_points]
+        image_width = ceil(abs(bbox[2] * step_scale_x)) - floor(abs(bbox[0] * step_scale_x))
+        image_height = ceil(abs(bbox[3] * step_scale_y)) - floor(
+            abs(bbox[1] * step_scale_y)
+        )
+        tx = bbox[0]
+        ty = bbox[1]
+        matrix.post_translate(-tx, -ty)
+        matrix.post_scale(step_scale_x, step_scale_y)
+        if step_y < 0:
+            matrix.post_translate(0, image_height)
+        if step_x < 0:
+            matrix.post_translate(image_width, 0)
+        try:
+            matrix.inverse()
+        except ZeroDivisionError:
+            # Rare crash if matrix is malformed and cannot invert.
+            matrix.reset()
+            matrix.post_translate(-tx, -ty)
+            matrix.post_scale(step_scale_x, step_scale_y)
 
-                # bbox here is expanded matrix size of box.
-                step_scale_x = 1 / float(step_x)
-                step_scale_y = 1 / float(step_y)
-
-                bbox = min(xs), min(ys), max(xs), max(ys)
-
-                image_width = ceil(abs(bbox[2] * step_scale_x)) - floor(abs(bbox[0] * step_scale_x))
-                image_height = ceil(abs(bbox[3] * step_scale_y)) - floor(
-                    abs(bbox[1] * step_scale_y)
-                )
-                tx = bbox[0]
-                ty = bbox[1]
-                matrix.post_translate(-tx, -ty)
-                matrix.post_scale(step_scale_x, step_scale_y)
-                if step_y < 0:
-                    matrix.post_translate(0, image_height)
-                if step_x < 0:
-                    matrix.post_translate(image_width, 0)
-                try:
-                    matrix.inverse()
-                except ZeroDivisionError:
-                    # Rare crash if matrix is malformed and cannot invert.
-                    matrix.reset()
-                    matrix.post_translate(-tx, -ty)
-                    matrix.post_scale(step_scale_x, step_scale_y)
-                image = image.transform(
-                    (image_width, image_height),
-                    Image.AFFINE,
-                    (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                    resample=Image.BICUBIC,
-                    fillcolor="black" if inverted else "white",
-                )
-                matrix.reset()
-                box = None
-                if crop:
-                    try:
-                        if inverted:
-                            box = image.getbbox()
-                        else:
-                            box = image.point(lambda e: 255 - e).getbbox()
-                    except ValueError:
-                        pass
-                    if box is not None:
-                        width = box[2] - box[0]
-                        height = box[3] - box[1]
-                        if width != image_width or height != image_height:
-                            image = image.crop(box)
-                            matrix.post_translate(box[0], box[1])
-                # step level requires the new actualized matrix be scaled up.
-                if step_y < 0:
-                    matrix.post_translate(0, -image_height)
-                if step_x < 0:
-                    matrix.post_translate(-image_width, 0)
-                matrix.post_scale(step_x, step_y)
-                matrix.post_translate(tx, ty)
-                actualized_matrix = matrix
-                self.process_image_failed = False
-            except (MemoryError, Image.DecompressionBombError):
-                self.process_image_failed = True
-                return
+        if transform:
+            image = image.transform(
+                (image_width, image_height),
+                Image.AFFINE,
+                (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+                resample=Image.BICUBIC,
+                fillcolor="black" if self.invert else "white",
+            )
+            matrix.reset()
         else:
-            if image.mode != "L":
-                image = image.convert("RGB")
-                image = image.convert("L", matrix=(r, g, b, 1.0))
-            if self.invert:
-                image = image.point(lambda e: 255 - e)
-            actualized_matrix = Matrix(main_matrix)
+            matrix = copy(main_matrix)
+
+        box = None
+        if crop:
+            try:
+                if self.invert:
+                    box = image.getbbox()
+                else:
+                    box = image.point(lambda e: 255 - e).getbbox()
+            except ValueError:
+                pass
+            if box is not None:
+                width = box[2] - box[0]
+                height = box[3] - box[1]
+                if width != image_width or height != image_height:
+                    image = image.crop(box)
+                    matrix.post_translate(box[0], box[1])
+
+        # step level requires the new actualized matrix be scaled up.
+        if step_y < 0:
+            matrix.post_translate(0, -image_height)
+        if step_x < 0:
+            matrix.post_translate(-image_width, 0)
+        matrix.post_scale(step_x, step_y)
+        matrix.post_translate(tx, ty)
+        actualized_matrix = matrix
 
         if self.invert:
-            empty_mask = image.convert("L").point(lambda e: 0 if e == 0 else 255)
+            empty_mask = image.point(lambda e: 0 if e == 0 else 255)
+            image = ImageOps.invert(image)
         else:
-            empty_mask = image.convert("L").point(lambda e: 0 if e == 255 else 255)
-        # Process operations.
+            empty_mask = image.point(lambda e: 0 if e == 255 else 255)
 
+        # Process operations.
         for op in self.operations:
             name = op["name"]
             if name == "crop":
@@ -515,18 +503,17 @@ class ImageNode(Node):
         if empty_mask is not None:
             background = Image.new(image.mode, image.size, "white")
             background.paste(image, mask=empty_mask)
+            background.paste(transparent_mask, None, transparent_mask)
             image = background  # Mask exists use it to remove any pixels that were pure reject.
 
         if self.dither and self.dither_type is not None:
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
             image = image.convert("1")
+
         inverted_main_matrix = Matrix(main_matrix).inverse()
         self.processed_matrix = actualized_matrix * inverted_main_matrix
         self.processed_image = image
-        # self.matrix = actualized_matrix
-        self.altered()
-        self.process_image_failed = False
 
     @staticmethod
     def line(p):
