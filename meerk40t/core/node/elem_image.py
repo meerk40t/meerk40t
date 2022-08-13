@@ -516,7 +516,7 @@ class ImageNode(Node):
                     pass
 
         # Remask image removing pixels that were white before operations were processed.
-        background = Image.new(image.mode, image.size, "white")
+        background = Image.new("L", image.size, "white")
         background.paste(image, mask=reject_mask)
         image = background
 
