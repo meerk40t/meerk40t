@@ -216,7 +216,6 @@ class TestActualize(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((100, 100, 150, 150), "white")
         transform = Matrix()
-        image.save("original.png")
 
         for step in range(1, 20):
             node = ImageNode(image=image, matrix=transform)
