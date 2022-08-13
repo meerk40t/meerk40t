@@ -290,9 +290,11 @@ class ImageNode(Node):
 
         # Paste Transparency mask.
         if transparent_mask:
-            image_copy = image.copy()  # Correct knock-on-effect.
-            image_copy.paste(transparent_mask, None, transparent_mask)
-            image = image_copy
+            # Fill in original transparent values with reject pixels
+            background = image.copy()
+            reject = Image.new("L", image.size, "black" if self.invert else "white")
+            background.paste(reject, mask=transparent_mask)
+            image = background
 
         # Calculate image box.
         box = None
