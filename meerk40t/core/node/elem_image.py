@@ -243,11 +243,6 @@ class ImageNode(Node):
             b = b / c
         except ZeroDivisionError:
             pass
-        if image.mode != "L":
-            image = image.convert("RGB")
-            image = image.convert("L", matrix=[r, g, b, 1.0])
-        if self.invert:
-            image = image.point(lambda e: 255 - e)
 
         # Calculate device real step.
         step_x, step_y = self.step_x, self.step_y
@@ -269,6 +264,11 @@ class ImageNode(Node):
                 self.process_image_failed = True
                 return
         else:
+            if image.mode != "L":
+                image = image.convert("RGB")
+                image = image.convert("L", matrix=[r, g, b, 1.0])
+            if self.invert:
+                image = image.point(lambda e: 255 - e)
             actualized_matrix = Matrix(main_matrix)
 
         if self.invert:
