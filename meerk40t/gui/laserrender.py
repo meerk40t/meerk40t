@@ -611,7 +611,7 @@ class LaserRender:
         )
         delta = self.fontdescent_factor * f_descent
         if has_underscore:
-            delta -= self.fontdescent_factor / 2 * f_descent
+            delta /= 2.0
         delta -= f_externalLeading
         f_height -= delta
         text.width = f_width
