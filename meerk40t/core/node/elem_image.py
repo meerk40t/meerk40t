@@ -516,11 +516,9 @@ class ImageNode(Node):
                     pass
 
         # Remask image removing pixels that were white before operations were processed.
-        if reject_mask is not None:
-            # Mask exists use it to remove any pixels that were pure reject.
-            background = Image.new(image.mode, image.size, "white")
-            background.paste(image, mask=reject_mask)
-            image = background
+        background = Image.new(image.mode, image.size, "white")
+        background.paste(image, mask=reject_mask)
+        image = background
 
         # Dither image to 1 bit.
         if self.dither and self.dither_type is not None:
