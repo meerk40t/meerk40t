@@ -217,7 +217,7 @@ class ImageNode(Node):
                 context.signal("image updated", self)
 
             self.processed_image = None
-            self.processed_matrix = None
+            # self.processed_matrix = None
             self._update_thread = context.threaded(
                 self.process_image_thread, result=clear, daemon=True
             )
