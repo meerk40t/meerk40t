@@ -215,8 +215,7 @@ class Wordlist:
         choices = []
         for skey in self.content:
             value = self.fetch(skey)
-            svalue = skey + " (" + value + ")"
-            choices.append(svalue)
+            choices.append(f"{skey} ({value})")
         return choices
 
     def load_data(self, filename):
