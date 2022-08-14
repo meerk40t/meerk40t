@@ -1215,6 +1215,16 @@ class MeerK40t(MWindow):
                     context._stepping_force = None
             dlg.Destroy()
 
+        @context.console_argument("message")
+        @context.console_command("notify", hidden=True)
+        def notification_message(message=None, **kwargs):
+            if message is None:
+                message = _("Something requires your attention")
+            from wx.adv import NotificationMessage
+            msg = NotificationMessage(title="MeerK40t", message=message)
+            msg.Show()
+
+
         @context.console_argument(
             "message", help=_("Message to display, optional"), default=""
         )
