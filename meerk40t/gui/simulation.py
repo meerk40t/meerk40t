@@ -619,6 +619,8 @@ class SimulationPanel(wx.Panel, Job):
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.context(f"plan{self.plan_name} spool\n")
         self.context("window close Simulation\n")
+        if self.context.auto_spooler:
+            self.context("window open JobSpooler\n")
 
 
 class SimulationWidget(Widget):

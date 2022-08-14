@@ -299,6 +299,8 @@ class LaserPanel(wx.Panel):
                 self.context("planz clear copy preprocess validate blob spool\n")
         self.arm_toggle.SetValue(False)
         self.check_laser_arm()
+        if self.context.auto_spooler:
+            self.context("window open JobSpooler\n")
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
