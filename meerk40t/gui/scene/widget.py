@@ -34,15 +34,18 @@ class Widget(list):
         right: float = None,
         bottom: float = None,
         all: bool = False,
+        visible: bool = True,
     ):
         """
         All produces a widget of infinite space rather than finite space.
         """
+        assert scene.__class__.__name__ == "Scene"
         list.__init__(self)
         self.matrix = Matrix()
         self.scene = scene
         self.parent = None
         self.properties = ORIENTATION_RELATIVE
+        self.visible = True
         if all:
             # contains all points
             self.left = -float("inf")
@@ -63,18 +66,14 @@ class Widget(list):
             self.top = top
         if bottom is not None:
             self.bottom = bottom
+        if visible is not None:
+            self.visible = visible
 
     def __str__(self):
-        return "Widget(%f, %f, %f, %f)" % (self.left, self.top, self.right, self.bottom)
+        return f"Widget({self.left}, {self.top}, {self.right}, {self.bottom})"
 
     def __repr__(self):
-        return "%s(%f, %f, %f, %f)" % (
-            type(self).__name__,
-            self.left,
-            self.top,
-            self.right,
-            self.bottom,
-        )
+        return f"{type(self).__name__}({self.left}, {self.top}, {self.right}, {self.bottom})"
 
     def hit(self):
         """
@@ -87,6 +86,8 @@ class Widget(list):
         Widget.draw() routine which concat's the widgets matrix and call the process_draw() function.
         """
         # Concat if this is a thing.
+        if not self.visible:
+            return
         matrix = self.matrix
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
@@ -94,7 +95,7 @@ class Widget(list):
         self.process_draw(gc)
         for i in range(len(self) - 1, -1, -1):
             widget = self[i]
-            if not widget is None:
+            if widget is not None:
                 widget.draw(gc)
         gc.PopState()
 
@@ -111,11 +112,13 @@ class Widget(list):
         if y is None:
             y = x.y
             x = x.x
-        return self.left <= x <= self.right and self.top <= y <= self.bottom
+        return (
+            self.visible
+            and self.left <= x <= self.right
+            and self.top <= y <= self.bottom
+        )
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
         Default event which simply chains the event to the next hittable object.
         """
@@ -160,7 +163,7 @@ class Widget(list):
         The properties can be used to trigger particular layouts or properties for the added widget.
         """
         if len(self) == 0:
-            last = None
+            last = self
         else:
             last = self[-1]
         if 0 <= index < len(self):
@@ -349,11 +352,11 @@ class Widget(list):
         if widget is None:
             return
         if isinstance(widget, Widget):
-            list.remove(widget)
+            self.remove(widget)
         elif isinstance(widget, int):
             index = widget
             widget = self[index]
-            list.remove(index)
+            del self[index]
         widget.parent = None
         widget.notify_removed_from_parent(self)
         self.notify_removed_child(widget)
@@ -466,3 +469,19 @@ class Widget(list):
         Gets the translate_y of the current matrix()
         """
         return self.matrix.value_trans_y()
+
+    def show(self, flag=None):
+        """
+        This does not automically display the widget (yet)
+        """
+        if flag is None:
+            flag = True
+        self.visible = flag
+
+    def hide(self, flag=None):
+        """
+        This does not automically display the widget (yet)
+        """
+        if flag is None:
+            flag = True
+        self.visible = not flag

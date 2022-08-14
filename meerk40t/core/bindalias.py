@@ -57,7 +57,7 @@ DEFAULT_KEYMAP = {
         "window controller",
         "window open Controller",
     ),
-    "f8": ("", "dialog_path", "control Path"),
+    "f8": ("", "dialog_path"),
     "f9": (
         "",
         "dialog_transform",
@@ -65,11 +65,10 @@ DEFAULT_KEYMAP = {
     "f12": (
         "",
         "window open Console",
-        "window open Terminal",
     ),
     "delete": (
-        "tree emphasized delete",
         "tree selected delete",
+        "tree emphasized delete",
         "element delete",
     ),
     "escape": (
@@ -146,7 +145,6 @@ DEFAULT_KEYMAP = {
     "ctrl+s": (
         "",
         "dialog_stroke",
-        "control Stroke",
     ),
     "ctrl+v": ("clipboard paste",),
     "ctrl+x": ("clipboard cut",),
@@ -163,7 +161,6 @@ DEFAULT_KEYMAP = {
     "ctrl+f9": (
         "",
         "dialog_flip",
-        "control Flip",
     ),
     "ctrl+alt+d": ("image wizard Gold",),
     "ctrl+alt+e": ("image wizard Simple",),
@@ -257,7 +254,7 @@ class Bind(Service):
                 channel(_("    Key                    Command"))
                 for i, key in enumerate(sorted(self.keymap.keys(), key=keymap_index)):
                     value = self.keymap[key]
-                    channel("%2d: %s %s" % (i, key.ljust(22), value))
+                    channel(f"{i:2d}: {key.ljust(22)} {value}")
                 channel("----------")
                 return
             key = args[0].lower()
@@ -278,7 +275,7 @@ class Bind(Service):
                 self.keymap[key] = command_line
             elif key in self.keymap:
                 del self.keymap[key]
-                channel(_("Unbound %s") % key)
+                channel(_("Unbound {key}").format(key=key))
             return
 
         self.read_persistent_string_dict(self.keymap, suffix=True)
@@ -287,17 +284,17 @@ class Bind(Service):
 
     # help transition from old definitions of control-key-combinations
     def is_found(self, keyvalue, target):
-        valu = False
-        if not keyvalue is None:
+        value = False
+        if keyvalue is not None:
             s = keyvalue
             if s in target:
-                valu = True
+                value = True
             else:
                 s = keyvalue.replace("ctrl", "control")
                 if s in target:
                     keyvalue = s
-                    valu = True
-        return valu, keyvalue
+                    value = True
+        return value, keyvalue
 
     def trigger(self, keyvalue):
         fnd, keyvalue = self.is_found(keyvalue, self.keymap)
@@ -308,7 +305,7 @@ class Bind(Service):
                 action = self.keymap[keyvalue]
                 cmds = (action,) if action[0] in "+-" else action.split(";")
                 for cmd in cmds:
-                    self("%s\n" % cmd)
+                    self(f"{cmd}\n")
                 return True
         return False
 
@@ -374,16 +371,16 @@ class Alias(Service):
                     if last is None or last[0] != "+" or key[0] != "-":
                         i += 1
                     if keystroke and len(key) + len(keystroke) < 18:
-                        key += " (%s)" % keystroke
+                        key += f" ({keystroke})"
                         keystroke = ""
                     if keystroke:
-                        channel("%2d: (%s)" % (i, keystroke))
+                        channel(f"{i:2d}: ({keystroke})")
                     if last and last[0] == "+" and key[0] == "-":
-                        channel("    %s %s" % (key.ljust(22), value))
+                        channel(f"    {key.ljust(22)} {value}")
                     elif keystroke:
-                        channel("    %s %s" % (key.ljust(22), value))
+                        channel(f"    {key.ljust(22)} {value}")
                     else:
-                        channel("%2d: %s %s" % (i, key.ljust(22), value))
+                        channel(f"{i:2d}: {key.ljust(22)} {value}")
                     last = key
 
                 channel("----------")
@@ -396,9 +393,11 @@ class Alias(Service):
             if remainder is None:
                 if alias in self.aliases:
                     del self.aliases[alias]
-                    channel(_("Alias %s unset.") % alias)
+                    channel(_("Alias {alias_name} unset.").format(alias_name=alias))
                 else:
-                    channel(_("No alias for %s was set.") % alias)
+                    channel(
+                        _("No alias for {alias_name} was set.").format(alias_name=alias)
+                    )
             else:
                 self.aliases[alias] = remainder
 
@@ -448,5 +447,5 @@ def keymap_execute(context, keyvalue, keydown=True):
         if not keydown and action.startswith("+"):
             action = "-" + action[1:]
         for cmd in action.split(";"):
-            context("%s\n" % cmd)
+            context(f"{cmd}\n")
     return True

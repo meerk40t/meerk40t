@@ -176,7 +176,7 @@ class Wordlist:
                 # Original cASEs, vkey is already lowered...
                 sformat = vkey[6:-1]
                 value = self.wordlist_timestr(sformat)
-            if not value is None:
+            if value is not None:
                 result = result.replace(vkey, str(value))
 
         return result
@@ -252,7 +252,7 @@ class Wordlist:
                 if not has_header:
                     # Use Line as Data and set some default names
                     for idx, entry in enumerate(headers):
-                        skey = "Column_{ct}".format(ct=idx + 1)
+                        skey = f"Column_{idx + 1}"
                         self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
                         headers[idx] = skey
                     ct = 1

@@ -1,5 +1,6 @@
 import time
 
+from meerk40t.balormk.lmc_controller import GalvoController
 from meerk40t.core.cutcode import (
     CubicCut,
     DwellCut,
@@ -12,7 +13,6 @@ from meerk40t.core.cutcode import (
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
-from meerk40t.balormk.lmc_controller import GalvoController
 
 
 class BalorDriver:
@@ -40,9 +40,11 @@ class BalorDriver:
         self.plot_planner.settings_then_jog = True
         self._aborting = False
         self._list_bits = None
+        self.current_steps = 0
+        self.total_steps = 0
 
     def __repr__(self):
-        return "BalorDriver(%s)" % self.name
+        return f"BalorDriver({self.name})"
 
     @property
     def connected(self):
@@ -65,7 +67,7 @@ class BalorDriver:
     def abort_retry(self):
         self.connection.abort_connect()
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
 
@@ -74,15 +76,7 @@ class BalorDriver:
 
         @return:
         """
-        return self.paused
-
-    def hold_idle(self):
-        """
-        This is checked by the spooler to see if we should abort checking if there's any idle job after the work queue
-        was found to be empty.
-        @return:
-        """
-        return False
+        return priority <= 0 and self.paused
 
     def laser_off(self, *values):
         """
@@ -102,14 +96,6 @@ class BalorDriver:
         """
         self.laser = True
 
-    def light_loop(self, job):
-        self.connection.rapid_mode()
-        self.connection.light_mode()
-        while job(self.connection):
-            if self._shutdown:
-                break
-        self.connection.abort()
-
     def plot(self, plot):
         """
         This command is called with bits of cutcode as they are processed through the spooler. This should be optimized
@@ -126,6 +112,38 @@ class BalorDriver:
 
         @return:
         """
+        # preprocess queue to establish steps
+        assessment_start = time.time()
+        dummy_planner = PlotPlanner(
+            dict(), single=True, smooth=False, ppi=False, shift=False, group=True
+        )
+        self.current_steps = 0
+        self.total_steps = 0
+        for q in self.queue:
+            if isinstance(q, LineCut):
+                self.total_steps += 1
+            elif isinstance(q, (QuadCut, CubicCut)):
+                interp = self.service.interpolate
+                for p in range(int(interp)):
+                    self.total_steps += 1
+            elif isinstance(q, PlotCut):
+                for x, y, on in q.plot[1:]:
+                    self.total_steps += 1
+            elif isinstance(q, DwellCut):
+                self.total_steps += 1
+            elif isinstance(q, WaitCut):
+                self.total_steps += 1
+            elif isinstance(q, OutputCut):
+                self.total_steps += 1
+            elif isinstance(q, InputCut):
+                self.total_steps += 1
+            else:
+                dummy_planner.push(q)
+                dummy_data = list(dummy_planner.gen())
+                self.total_steps += len(dummy_data)
+                dummy_planner.clear()
+        # print ("Balor-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+
         con = self.connection
         con.program_mode()
         self._list_bits = con._port_bits
@@ -148,10 +166,8 @@ class BalorDriver:
                 con.abort()
                 self._aborting = False
                 return
-            if con._port_bits != self._list_bits:
-                con.list_write_port()
-                self._list_bits = con._port_bits
             if isinstance(q, LineCut):
+                self.current_steps += 1
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
@@ -166,15 +182,13 @@ class BalorDriver:
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
+                    self.current_steps += 1
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
                         self._aborting = False
                         return
-                    if con._port_bits != self._list_bits:
-                        con.list_write_port()
-                        self._list_bits = con._port_bits
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
 
                     p = q.point(t)
@@ -186,15 +200,13 @@ class BalorDriver:
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 for x, y, on in q.plot[1:]:
+                    self.current_steps += 1
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
                         self._aborting = False
                         return
-                    if con._port_bits != self._list_bits:
-                        con.list_write_port()
-                        self._list_bits = con._port_bits
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
 
                     # q.plot can have different on values, these are parsed
@@ -222,6 +234,7 @@ class BalorDriver:
                             con.power(current_power * on)
                     con.mark(x, y)
             elif isinstance(q, DwellCut):
+                self.current_steps += 1
                 start = q.start
                 con.goto(start[0], start[1])
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
@@ -231,29 +244,30 @@ class BalorDriver:
                     dwell_time -= d
                 con.list_delay_time(int(self.service.delay_end / 10.0))
             elif isinstance(q, WaitCut):
+                self.current_steps += 1
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
                     con.list_delay_time(int(d))
                     dwell_time -= d
             elif isinstance(q, OutputCut):
+                self.current_steps += 1
                 con.port_set(q.output_mask, q.output_value)
                 con.list_write_port()
             elif isinstance(q, InputCut):
+                self.current_steps += 1
                 input_value = q.input_value
                 con.list_wait_for_input(input_value)
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
+                    self.current_steps += 1
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
                         self._aborting = False
                         return
-                    if con._port_bits != self._list_bits:
-                        self._list_bits = con._port_bits
-                        con.list_write_port()
-                    while self.hold_work():
+                    while self.paused:
                         time.sleep(0.05)
 
                     if on > 1:
@@ -311,6 +325,8 @@ class BalorDriver:
                                 )
                                 con.power(current_power * on)
                         con.mark(x, y)
+        self.current_steps = 0
+        self.total_steps = 0
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()

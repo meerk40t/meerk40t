@@ -38,6 +38,22 @@ def plugin(kernel, lifecycle):
         except ImportError:
             print("wxMeerK40t plugin could not load because wxPython is not installed.")
             return True
+        # Lets check whether we have an incompatible version of wxpython and python
+        # Python 3.10 onwards no longer supports automatic casts of decimals to ints:
+        # Builtin and extension functions that take integer arguments no longer accept
+        # Decimals, Fractions and other objects that can be converted to integers only
+        # with a loss (e.g. that have the __int__() method but do not have the __index__() method).
+        # wxpython up to 4.1.1 exposes this issue
+        try:
+            if wx.VERSION[:2] <= (4, 1):
+                testcase = wx.Size(0.5, 1)
+        except TypeError:
+            print(
+                """The version of wxPython you are running is incompatible with your current Python version.
+At the time of writing this is especially true for any Python version >= 3.10
+and a wxpython version <= 4.1.1."""
+            )
+            return True
         return False
     if not kernel.has_feature("wx"):
         return
@@ -82,8 +98,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
                 ),
-                "page": "Gui",
-                "section": "Scene",
+                "page": "Scene",
+                "section": "General",
             },
             {
                 "attr": "windows_save",
@@ -209,25 +225,18 @@ def plugin(kernel, lifecycle):
         kernel_root.planner.register("plan/interrupt", interrupt)
 
         if kernel._gui:
-
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             for window in kernel.derivable("window"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
-                if kernel.read_persistent(
-                    bool, "window/%s/open_on_start" % window, False
-                ):
+                if kernel.read_persistent(bool, window, "open_on_start", False):
                     if window_index is not None:
                         kernel.console(
-                            "window open -m {index} {window} {index}\n".format(
-                                index=window_index, window=window_name
-                            )
+                            f"window open -m {window_index} {window_name[7:]} {window_index}\n"
                         )
                     else:
-                        kernel.console(
-                            "window open {window}\n".format(window=window_name)
-                        )
+                        kernel.console(f"window open {window_name[7:]}\n")
 
             meerk40tgui.MainLoop()

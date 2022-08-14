@@ -63,7 +63,7 @@ def plugin(kernel, lifecycle=None):
         ):
             if len(command) > 6:
                 current_camera = command[6:]
-                camera_path = "camera/%s" % current_camera
+                camera_path = f"camera/{current_camera}"
                 if camera_path not in kernel.contexts:
                     kernel.add_service("camera", Camera(kernel, camera_path))
                 kernel.activate_service_path("camera", camera_path)
@@ -197,7 +197,9 @@ def plugin(kernel, lifecycle=None):
                 return
             v1 = data.capture.get(setting)
             channel(
-                _("Attempt camera setting (%s) to %f. %f->%f") % (prop, value, v0, v1)
+                _(
+                    "Attempt camera setting ({property}) to {value}. {current}->{old}"
+                ).format(property=prop, value=value, current=v0, old=v1)
             )
 
         @kernel.console_command(
@@ -219,6 +221,6 @@ def plugin(kernel, lifecycle=None):
                             break
                     if prop is None:
                         continue
-                    channel("%d: %s -- %s" % (i, str(prop), str(v)))
+                    channel(f"{i}: {str(prop)} -- {str(v)}")
                 except:
                     pass

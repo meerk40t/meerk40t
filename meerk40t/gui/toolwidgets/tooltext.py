@@ -22,7 +22,9 @@ class TextEntry(wx.Dialog):
         wx.Dialog.__init__(self, *args, **kwds)
         self.SetSize((518, 580))
         self.SetTitle(_("Add a Text-element"))
-        self.default_font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+        self.default_font = wx.Font(
+            14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
+        )
         self.result_text = ""
         self.result_font = self.default_font
         self.result_colour = wx.BLACK
@@ -253,17 +255,15 @@ class TextEntry(wx.Dialog):
             self.history[i] = self.history[i - 1]
         self.history[0] = fontdesc
         for i in range(self.FONTHISTORY):
-            setattr(self.context, "fonthistory_{num}".format(num=i), self.history[i])
+            setattr(self.context, f"fonthistory_{i}", self.history[i])
         self.context.flush()
 
     def load_font_history(self):
         self.history = []
         defaultfontdesc = self.default_font.GetNativeFontInfoUserDesc()
         for i in range(self.FONTHISTORY):
-            self.context.setting(
-                str, "fonthistory_{num}".format(num=i), defaultfontdesc
-            )
-            fontdesc = getattr(self.context, "fonthistory_{num}".format(num=i))
+            self.context.setting(str, f"fonthistory_{i}", defaultfontdesc)
+            fontdesc = getattr(self.context, f"fonthistory_{i}")
             self.history.append(fontdesc)
             font = wx.Font(fontdesc)
             self.last_font[i].SetFont(font)
@@ -293,7 +293,13 @@ class TextTool(ToolWidget):
             gc.DrawText(self.text.text, self.x, self.y)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
@@ -308,9 +314,7 @@ class TextTool(ToolWidget):
                 y = nearest_snap[1]
             self.x = x
             self.y = y
-            self.text *= "translate({x}, {y}) scale({scale})".format(
-                x=x, y=y, scale=UNITS_PER_PIXEL
-            )
+            self.text *= f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"
             dlg = TextEntry(self.scene.context, "", None, wx.ID_ANY, "")
             if dlg.ShowModal() == wx.ID_OK:
                 self.text.text = dlg.result_text
@@ -331,8 +335,16 @@ class TextTool(ToolWidget):
                 node.wxfont = dlg.result_font
                 dlg.store_font_history()
                 wxfont_to_svg(node)
-                elements.classify([node])
+                if elements.classify_new:
+                    elements.classify([node])
                 self.notify_created(node)
             dlg.Destroy()
             response = RESPONSE_CONSUME
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response

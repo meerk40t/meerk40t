@@ -289,13 +289,14 @@ def plugin(kernel, lifecycle=None):
 
     elif lifecycle == "poststart":
         planner = kernel.planner
-        if hasattr(kernel.args, "auto") and kernel.args.auto:
+        auto = hasattr(kernel.args, "auto") and kernel.args.auto
+        if auto:
             planner("plan copy preprocess validate blob preopt optimize\n")
-        if hasattr(kernel.args, "origin") and kernel.args.origin:
-            planner("plan append origin\n")
-        if hasattr(kernel.args, "quit") and kernel.args.quit:
-            planner("plan append shutdown\n")
-        planner("plan spool\n")
+            if hasattr(kernel.args, "origin") and kernel.args.origin:
+                planner("plan append origin\n")
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                planner("plan append shutdown\n")
+            planner("plan spool\n")
 
 
 class Planner(Service):
@@ -372,7 +373,7 @@ class Planner(Service):
             """
             if alias is None:
                 raise CommandSyntaxError
-            plan_command = "plan/%s" % alias
+            plan_command = f"plan/{alias}"
             if self.lookup(plan_command) is not None:
                 raise CommandSyntaxError(
                     _("You may not overwrite an already used alias.")
@@ -420,14 +421,14 @@ class Planner(Service):
                 channel(_("----------"))
                 channel(_("Plan:"))
                 for i, plan_name in enumerate(cutplan.name):
-                    channel("%d: %s" % (i, plan_name))
+                    channel(f"{i}: {plan_name}")
                 channel(_("----------"))
-                channel(_("Plan %s:" % self._default_plan))
+                channel(_("Plan {plan}:").format(plan=self._default_plan))
                 for i, op_name in enumerate(cutplan.plan):
-                    channel("%d: %s" % (i, op_name))
-                channel(_("Commands %s:" % self._default_plan))
+                    channel(f"{i}: {op_name}")
+                channel(_("Commands {plan}:").format(plan=self._default_plan))
                 for i, cmd_name in enumerate(cutplan.commands):
-                    channel("%d: %s" % (i, cmd_name))
+                    channel(f"{i}: {cmd_name}")
                 channel(_("----------"))
 
             return "plan", cutplan
@@ -442,14 +443,14 @@ class Planner(Service):
             channel(_("----------"))
             channel(_("Plan:"))
             for i, plan_name in enumerate(self._plan):
-                channel("%d: %s" % (i, plan_name))
+                channel(f"{i}: {plan_name}")
             channel(_("----------"))
-            channel(_("Plan %s:" % data.name))
+            channel(_("Plan {plan}:").format(plan=data.name))
             for i, op_name in enumerate(data.plan):
-                channel("%d: %s" % (i, op_name))
-            channel(_("Commands %s:" % data.name))
+                channel(f"{i}: {op_name}")
+            channel(_("Commands {plan}:").format(plan=data.name))
             for i, cmd_name in enumerate(data.commands):
-                channel("%d: %s" % (i, cmd_name))
+                channel(f"{i}: {cmd_name}")
             channel(_("----------"))
             return data_type, data
 
@@ -742,9 +743,9 @@ class Planner(Service):
                 # exceptions need to be narrow not global in scope.
                 # try:
                 if x_distance is None:
-                    x_distance = "%f%%" % (100.0 / (cols + 1))
+                    x_distance = f"{100.0 / (cols + 1)}%"
                 if y_distance is None:
-                    y_distance = "%f%%" % (100.0 / (rows + 1))
+                    y_distance = f"{100.0 / (rows + 1)}%"
             # except Exception:
             # pass
             x_last = 0
@@ -898,7 +899,7 @@ class offset:
         self.y = y
 
     def __str__(self):
-        return "offset_value (%.1f, %.1f)" % (self.x, self.y)
+        return f"offset_value ({self.x:.1f}, {self.y:.1f})"
 
     def __call__(self, *args):
         if len(args) > 1:

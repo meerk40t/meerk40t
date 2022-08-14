@@ -23,7 +23,13 @@ class RelocateTool(ToolWidget):
         pass
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         # Add snap behaviour
         response = RESPONSE_CHAIN
@@ -53,9 +59,14 @@ class RelocateTool(ToolWidget):
                 y = 0
             x /= UNITS_PER_MM
             y /= UNITS_PER_MM
-            self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
+            self.scene.context(f"move_absolute {x}mm {y}mm\n")
             response = RESPONSE_CONSUME
             self.scene.tool_active = False
-        elif event_type == "lost":
-            self.scene.tool_active = False
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response

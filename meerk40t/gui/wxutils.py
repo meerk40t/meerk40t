@@ -6,6 +6,8 @@ from typing import List
 
 import wx
 
+from meerk40t.core.units import Angle, Length
+
 _ = wx.GetTranslation
 
 
@@ -148,7 +150,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         return specific
 
     # Check specifically for the optional first (use case: reference nodes)
-    if not optional_2nd_node is None:
+    if optional_2nd_node is not None:
         mc1 = menu.MenuItemCount
         last_was_separator = False
         for func in elements.tree_operations_for_node(optional_2nd_node):
@@ -197,9 +199,15 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
                     item.Enable(False)
             else:
                 last_was_separator = False
-                item = menu_context.Append(
-                    wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
-                )
+                if hasattr(func, "check_state") and func.check_state is not None:
+                    check = func.check_state
+                    kind = wx.ITEM_CHECK
+                else:
+                    kind = wx.ITEM_NORMAL
+                    check = None
+                item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
+                if check is not None:
+                    item.Check(check)
                 if func.enabled:
                     gui.Bind(
                         wx.EVT_MENU,
@@ -254,9 +262,15 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
             else:
                 item.Enable(False)
         else:
-            item = menu_context.Append(
-                wx.ID_ANY, func.real_name, func.help, wx.ITEM_NORMAL
-            )
+            if hasattr(func, "check_state") and func.check_state is not None:
+                check = func.check_state
+                kind = wx.ITEM_CHECK
+            else:
+                kind = wx.ITEM_NORMAL
+                check = None
+            item = menu_context.Append(wx.ID_ANY, func.real_name, func.help, kind)
+            if check is not None:
+                item.Check(check)
             if func.enabled:
                 gui.Bind(
                     wx.EVT_MENU,
@@ -289,6 +303,7 @@ def create_menu(gui, node, elements):
 
     @param gui: Gui used to create menu items.
     @param node: The Node clicked on for the generated menu.
+    @param elements: elements service for use with node creation
     @return:
     """
     if node is None:
@@ -303,6 +318,67 @@ def create_menu(gui, node, elements):
     if menu.MenuItemCount != 0:
         gui.PopupMenu(menu)
         menu.Destroy()
+
+
+class TextCtrl(wx.TextCtrl):
+    # Just to add someof the more common things we need, i.e. smaller default size...
+    #
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        value="",
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        style=0,
+        validator=wx.DefaultValidator,
+        name="",
+        check="",
+        limited=False,
+    ):
+        super().__init__(
+            parent,
+            id=id,
+            value=value,
+            pos=pos,
+            size=size,
+            style=style,
+            validator=validator,
+            name=name,
+        )
+        self.SetMinSize(wx.Size(35, -1))
+        if limited:
+            self.SetMaxSize(wx.Size(100, -1))
+        self._check = check
+        if self._check is not None and self._check != "":
+            self.Bind(wx.EVT_TEXT, self.on_check)
+
+    def on_check(self, event):
+        event.Skip()
+        try:
+            txt = self.GetValue()
+            if self._check == "float":
+                __ = float(txt)
+            elif self._check == "percent":
+                if txt.endswith("%"):
+                    __ = float(txt[:-1]) / 100.0
+                else:
+                    __ = float(txt)
+            elif self._check == "int":
+                __ = int(txt)
+            elif self._check == "empty":
+                if len(txt) == 0:
+                    raise ValueError
+            elif self._check == "length":
+                __ = Length(txt)
+            elif self._check == "angle":
+                __ = Angle(txt)
+
+            self.SetBackgroundColour(None)
+            self.Refresh()
+        except ValueError:
+            self.SetBackgroundColour(wx.RED)
+            self.Refresh()
 
 
 WX_METAKEYS = [
@@ -337,8 +413,6 @@ WX_SPECIALKEYS = {
     wx.WXK_F13: "f13",
     wx.WXK_F14: "f14",
     wx.WXK_F15: "f15",
-    wx.WXK_F16: "f16",
-    wx.WXK_F16: "f17",
     wx.WXK_F16: "f16",
     wx.WXK_F17: "f17",
     wx.WXK_F18: "f18",
@@ -453,3 +527,11 @@ def disable_window(window):
             m.Disable()
         if hasattr(m, "Children"):
             disable_window(m)
+
+
+def set_ctrl_value(ctrl, value):
+    # Let's try to save the caret position
+    cursor = ctrl.GetLastPosition()
+    if ctrl.GetValue() != value:
+        ctrl.SetValue(value)
+        ctrl.SetInsertionPoint(min(len(value), cursor))

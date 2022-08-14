@@ -1,23 +1,35 @@
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
+from ...core.units import Length
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
+from ..wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
 
-class ImagePropertyPanel(wx.Panel):
+class ImagePropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwargs):
         # begin wxGlade: ConsolePanel.__init__
         kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.node = node
-        self.text_dpi = wx.TextCtrl(self, wx.ID_ANY, "500")
-        self.text_x = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_y = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_height = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+
+        self.text_dpi = TextCtrl(
+            self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float"
+        )
+        self.text_x = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
+        self.text_y = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
+        self.text_width = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True
+        )
+        self.text_height = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True
+        )
 
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
@@ -64,22 +76,19 @@ class ImagePropertyPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
+        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
+        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
+        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
+        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither
         )
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
 
-        self.Bind(wx.EVT_TEXT, self.on_text_dpi, self.text_dpi)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi, self.text_dpi)
-        self.Bind(wx.EVT_TEXT, self.on_text_x, self.text_x)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_x, self.text_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_y, self.text_y)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_y, self.text_y)
-        self.Bind(wx.EVT_TEXT, self.on_text_width, self.text_width)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_width, self.text_width)
-        self.Bind(wx.EVT_TEXT, self.on_text_height, self.text_height)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_height, self.text_height)
+        self.text_dpi.Bind(wx.EVT_KILL_FOCUS, self.on_text_dpi)
+        self.text_dpi.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi)
+
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_invert_grayscale, self.check_invert_grayscale
         )
@@ -128,13 +137,32 @@ class ImagePropertyPanel(wx.Panel):
             node = self.node
         if node is None:
             return
+        try:
+            if node.id is not None:
+                self.text_id.SetValue(str(node.id))
+        except AttributeError:
+            pass
+        try:
+            if node.label is not None:
+                self.text_label.SetValue(str(node.label))
+        except AttributeError:
+            pass
+
         self.text_dpi.SetValue(str(node.dpi))
         try:
             bounds = node.bounds
-            self.text_x.SetValue(str(bounds[0]))
-            self.text_y.SetValue(str(bounds[1]))
-            self.text_width.SetValue(str((bounds[2] - bounds[0])))
-            self.text_height.SetValue(str((bounds[3] - bounds[1])))
+            self.text_x.SetValue(
+                Length(amount=bounds[0], unitless=1, digits=2).length_mm
+            )
+            self.text_y.SetValue(
+                Length(amount=bounds[1], unitless=1, digits=2).length_mm
+            )
+            self.text_width.SetValue(
+                Length(amount=bounds[2] - bounds[0], unitless=1, digits=2).length_mm
+            )
+            self.text_height.SetValue(
+                Length(amount=bounds[3] - bounds[1], unitless=1, digits=2).length_mm
+            )
         except AttributeError:
             pass
         self.check_enable_dither.SetValue(node.dither)
@@ -142,13 +170,9 @@ class ImagePropertyPanel(wx.Panel):
 
     def __set_properties(self):
         self.text_x.SetToolTip(_("X property of image"))
-        self.text_x.Enable(False)
         self.text_y.SetToolTip(_("Y property of image"))
-        self.text_y.Enable(False)
         self.text_width.SetToolTip(_("Width property of image"))
-        self.text_width.Enable(False)
         self.text_height.SetToolTip(_("Height property of image"))
-        self.text_height.Enable(False)
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
@@ -169,38 +193,50 @@ class ImagePropertyPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_dim = wx.BoxSizer(wx.HORIZONTAL)
         sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_id = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
+        )
+        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
+        sizer_label = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
+        )
+        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
 
         sizer_dpi = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.VERTICAL
         )
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
-        sizer_dpi.Add(self.text_dpi, 5, 0, 0)
+        sizer_dpi.Add(self.text_dpi, 0, 0, 0)
 
-        sizer_main.Add(sizer_dpi, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dpi, 0, wx.EXPAND, 0)
         label_x = wx.StaticText(self, wx.ID_ANY, _("X:"))
         label_y = wx.StaticText(self, wx.ID_ANY, _("Y:"))
 
-        sizer_xy.Add(label_x, 1, 0, 0)
-        sizer_xy.Add(self.text_x, 5, 0, 0)
-        sizer_xy.Add(label_y, 1, 0, 0)
-        sizer_xy.Add(self.text_y, 5, 0, 0)
-        sizer_main.Add(sizer_xy, 1, wx.EXPAND, 0)
+        sizer_xy.Add(label_x, 1, wx.EXPAND, 0)
+        sizer_xy.Add(self.text_x, 3, wx.EXPAND, 0)
+        sizer_xy.Add(label_y, 1, wx.EXPAND, 0)
+        sizer_xy.Add(self.text_y, 3, wx.EXPAND, 0)
+        sizer_main.Add(sizer_xy, 0, wx.EXPAND, 0)
 
         label_w = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         label_h = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        sizer_dim.Add(label_w, 1, 0, 0)
-        sizer_dim.Add(self.text_width, 5, 0, 0)
-        sizer_dim.Add(label_h, 1, 0, 0)
-        sizer_dim.Add(self.text_height, 5, 0, 0)
-        sizer_main.Add(sizer_dim, 1, wx.EXPAND, 0)
+        sizer_dim.Add(label_w, 1, wx.EXPAND, 0)
+        sizer_dim.Add(self.text_width, 3, wx.EXPAND, 0)
+        sizer_dim.Add(label_h, 1, wx.EXPAND, 0)
+        sizer_dim.Add(self.text_height, 3, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dim, 0, wx.EXPAND, 0)
 
         sizer_dither = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
         )
         sizer_dither.Add(self.check_enable_dither, 0, 0, 0)
-        sizer_dither.Add(self.combo_dither, 0, 0, 0)
+        sizer_dither.Add(self.combo_dither, 0, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_dither, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_dither, 0, wx.EXPAND, 0)
 
         # -----
 
@@ -237,27 +273,34 @@ class ImagePropertyPanel(wx.Panel):
         sizer_grayscale.Add(sizer_rg, 5, wx.EXPAND, 0)
         sizer_grayscale.Add(sizer_bl, 5, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_grayscale, 1, wx.EXPAND, 0)
+        self.text_grayscale_red.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_green.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_blue.SetMaxSize(wx.Size(70, -1))
+        self.text_grayscale_lightness.SetMaxSize(wx.Size(70, -1))
+
+        sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()
         # end wxGlade
 
+    def on_text_id_change(self, event=None):
+        try:
+            self.node.id = self.text_id.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
+
+    def on_text_label_change(self, event=None):
+        try:
+            self.node.label = self.text_label.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
+
     def on_text_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
-
-    def on_text_x(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
-
-    def on_text_y(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
-
-    def on_text_width(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
-
-    def on_text_height(self, event):  # wxGlade: ImageProperty.<event_handler>
-        event.Skip()
 
     def on_check_enable_dither(
         self, event=None

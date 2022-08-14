@@ -28,6 +28,7 @@ class SceneSpaceWidget(Widget):
         self._previous_zoom = None
         self._placement_event = None
         self._placement_event_type = None
+        self._scene_matrix_animator = SceneAnimateMatrix(self.scene_widget)
         self.osv = -1
 
     def hit(self):
@@ -74,7 +75,7 @@ class SceneSpaceWidget(Widget):
 
     @property
     def zoom_factor(self):
-        zf = self.scene.context.zoom_factor
+        zf = 1.0 / self.scene.context.zoom_level
         if self.scene.context.mouse_zoom_invert:
             zf = -zf
         zf += 1.0
@@ -92,7 +93,7 @@ class SceneSpaceWidget(Widget):
         return 1.0 / zf
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
         """
         Process the zooming and panning of otherwise unhit-widget events.
@@ -109,8 +110,7 @@ class SceneSpaceWidget(Widget):
             self.scene_widget.matrix.post_translate(0, -self.pan_factor)
         elif event_type == "wheeldown" and self.scene.context.mouse_wheel_pan:
             self.scene_widget.matrix.post_translate(0, self.pan_factor)
-        elif event_type == "wheelup" or event_type == "wheelup_ctrl":
-            # print ("Zoom forward, current: %.5f, %.5f" % (self.scene_widget.matrix.value_scale_x(), self.scene_widget.matrix.value_scale_y()))
+        elif event_type == "wheelup":
             if (
                 self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff
                 and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff
@@ -120,16 +120,12 @@ class SceneSpaceWidget(Widget):
                 )
                 self.scene.request_refresh()
             return RESPONSE_CONSUME
-        # elif event_type == "zoom-in":
-        #     self.scene_widget.matrix.post_scale(self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1])
-        #     self.scene.request_refresh()
-        #     return RESPONSE_CONSUME
-        elif event_type == "rightdown+alt":
+        elif event_type == "rightdown" and "alt" in modifiers:
             self._previous_zoom = 1.0
             self._placement_event = space_pos
             self._placement_event_type = "zoom"
             return RESPONSE_CONSUME
-        elif event_type == "rightdown+control":
+        elif event_type == "rightdown" and "ctrl" in modifiers:
             self._previous_zoom = 1.0
             self._placement_event = space_pos
             self._placement_event_type = "pan"
@@ -138,18 +134,12 @@ class SceneSpaceWidget(Widget):
             self._previous_zoom = None
             self._placement_event = None
             self._placement_event_type = None
-        elif event_type == "wheeldown" or event_type == "wheeldown_ctrl":
+        elif event_type == "wheeldown":
             self.scene_widget.matrix.post_scale(
                 self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
             )
             self.scene.request_refresh()
             return RESPONSE_CONSUME
-        # elif event_type == "zoom-out":
-        #     self.scene_widget.matrix.post_scale(
-        #         self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
-        #     )
-        #     self.scene.request_refresh()
-        #     return RESPONSE_CONSUME
         elif event_type == "wheelleft":
             self.scene_widget.matrix.post_translate(self.pan_factor, 0)
             self.scene.request_refresh()
@@ -230,14 +220,11 @@ class SceneSpaceWidget(Widget):
         return RESPONSE_CONSUME
 
     def set_view(self, x, y, w, h, preserve_aspect=None):
-        self._view = Viewbox(
-            "%d %d %d %d" % (x, y, w, h),
-            preserve_aspect,
-        )
+        self._view = Viewbox(f"{x} {y} {w} {h}", preserve_aspect)
         self.aspect_matrix()
 
     def set_frame(self, x, y, w, h):
-        self._frame = Viewbox("%d %d %d %d" % (x, y, w, h))
+        self._frame = Viewbox(f"{x} {y} {w} {h}")
         self.aspect_matrix()
 
     def set_aspect(self, aspect=True):
@@ -264,7 +251,7 @@ class SceneSpaceWidget(Widget):
         self.scene_post_pan(window_width / 2.0, window_height / 2.0)
 
     def focus_viewport_scene(
-        self, new_scene_viewport, scene_size, buffer=0.0, lock=True
+        self, new_scene_viewport, scene_size, buffer=0.0, lock=True, animate=False
     ):
         """
         Focus on the given viewport in the scene.
@@ -273,6 +260,7 @@ class SceneSpaceWidget(Widget):
         @param scene_size: Size of the scene in which this viewport is active.
         @param buffer: Amount of buffer around the edge of the new viewport.
         @param lock: lock the scalex, scaley.
+        @param animate: perform focus with animated scene.
         @return:
         """
         window_width, window_height = scene_size
@@ -299,13 +287,66 @@ class SceneSpaceWidget(Widget):
 
         cx = (right + left) / 2
         cy = (top + bottom) / 2
-        self.scene_widget.matrix.reset()
-        self.scene_widget.matrix.post_translate(-cx, -cy)
+        matrix = Matrix()
+        matrix.post_translate(-cx, -cy)
         if lock:
             scale = min(scale_x, scale_y)
             if scale != 0:
-                self.scene_widget.matrix.post_scale(scale)
+                matrix.post_scale(scale)
         else:
             if scale_x != 0 and scale_y != 0:
-                self.scene_widget.matrix.post_scale(scale_x, scale_y)
-        self.scene_widget.matrix.post_translate(window_width / 2.0, window_height / 2.0)
+                matrix.post_scale(scale_x, scale_y)
+        matrix.post_translate(window_width / 2.0, window_height / 2.0)
+
+        if animate:
+            self._scene_matrix_animator.set_animate_zoom(matrix)
+            self.scene.animate(self._scene_matrix_animator)
+        else:
+            self.scene_widget.matrix.reset()
+            self.scene_widget.matrix.post_cat(matrix)
+
+
+class SceneAnimateMatrix:
+    def __init__(self, widget):
+        self.widget = widget
+        self.tick_max = 10
+        self.tick_index = 0
+        self._from_matrix = None
+        self._to_matrix = None
+
+    def set_animate_zoom(self, matrix):
+        self._from_matrix = Matrix(self.widget.matrix)
+        self._to_matrix = matrix
+
+    def start_threaded(self):
+        self.tick_index = 0
+
+    def tick(self):
+        if self._to_matrix is None or self._from_matrix is None:
+            return False  # Nothing to animate.
+        if self.tick_max < self.tick_index:
+            self.widget.scene.request_refresh()
+            return False  # Animation was complete.
+        amount = self.tick_index / self.tick_max
+        self.widget.matrix.a = (
+            amount * (self._to_matrix.a - self._from_matrix.a) + self._from_matrix.a
+        )
+        self.widget.matrix.b = (
+            amount * (self._to_matrix.b - self._from_matrix.b) + self._from_matrix.b
+        )
+        self.widget.matrix.c = (
+            amount * (self._to_matrix.c - self._from_matrix.c) + self._from_matrix.c
+        )
+        self.widget.matrix.d = (
+            amount * (self._to_matrix.d - self._from_matrix.d) + self._from_matrix.d
+        )
+        self.widget.matrix.e = (
+            amount * (self._to_matrix.e - self._from_matrix.e) + self._from_matrix.e
+        )
+        self.widget.matrix.f = (
+            amount * (self._to_matrix.f - self._from_matrix.f) + self._from_matrix.f
+        )
+        self.widget.scene.request_refresh_for_animation()
+        self.widget.on_matrix_change()
+        self.tick_index += 1
+        return True

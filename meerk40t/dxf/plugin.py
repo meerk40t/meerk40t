@@ -16,7 +16,7 @@ def plugin(kernel, lifecycle=None):
                 "object": kernel.elements,
                 "default": True,
                 "type": bool,
-                "label": _("DXF Centering"),
+                "label": _("DXF Center and Fit"),
                 "tip": _(
                     "Fit (scale down if necessary) and center a DXF file within the bed"
                 ),

@@ -34,7 +34,7 @@ _advanced_width = 952
 _default_height = 584
 
 
-class LhystudiosControllerPanel(ScrolledPanel):
+class LihuiyuControllerPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -85,11 +85,27 @@ class LhystudiosControllerPanel(ScrolledPanel):
         self.SetupScrolling()
 
     def __set_properties(self):
-        self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
+        self.SetFont(
+            wx.Font(
+                9,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetFont(
-            wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
+            wx.Font(
+                12,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
         )
         self.button_device_connect.SetToolTip(
             _("Force connection/disconnection from the device.")
@@ -99,7 +115,14 @@ class LhystudiosControllerPanel(ScrolledPanel):
         self.button_controller_control.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_controller_control.SetForegroundColour(wx.BLACK)
         self.button_controller_control.SetFont(
-            wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
+            wx.Font(
+                12,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
         )
         self.button_controller_control.SetToolTip(
             _("Change the currently performed operation.")
@@ -132,7 +155,6 @@ class LhystudiosControllerPanel(ScrolledPanel):
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: LhystudiosController.__do_layout
         sizer_24 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_show_usb_log = wx.BoxSizer(wx.HORIZONTAL)
@@ -237,15 +259,13 @@ class LhystudiosControllerPanel(ScrolledPanel):
         self.pane_hide()
 
     def pane_show(self):
-        self.context.channel(
-            "{name}/usb".format(name=self.context.label), buffer_size=500
-        ).watch(self.update_text)
+        self.context.channel(f"{self.context.label}/usb", buffer_size=500).watch(
+            self.update_text
+        )
         self.on_network_update()
 
     def pane_hide(self):
-        self.context.channel("{name}/usb".format(name=self.context.label)).unwatch(
-            self.update_text
-        )
+        self.context.channel(f"{self.context.label}/usb").unwatch(self.update_text)
 
     @signal_listener("network_update")
     def on_network_update(self, origin=None, *args):
@@ -483,15 +503,11 @@ class LhystudiosControllerPanel(ScrolledPanel):
     def on_usb_failing(self, origin, count):
         self.retries = count
 
-    def on_button_start_controller(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_button_start_controller(self, event=None):
         print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
 
-    def on_check_show_usb_log(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_check_show_usb_log(self, event=None):
         on = self.checkbox_show_usb_log.GetValue()
         self.text_usb_log.Show(on)
         self.context.show_usb_log = bool(on)
@@ -501,7 +517,7 @@ class LhystudiosControllerPanel(ScrolledPanel):
             self.GetParent().SetSize((_simple_width, _default_height))
 
 
-class LhystudiosControllerGui(MWindow):
+class LihuiyuControllerGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(_advanced_width, _default_height, *args, **kwds)
 
@@ -511,19 +527,19 @@ class LhystudiosControllerGui(MWindow):
         from platform import system as _sys
 
         if _sys() != "Darwin":
-            self.LhystudiosController_menubar = wx.MenuBar()
-            self.create_menu(self.LhystudiosController_menubar.Append)
-            self.SetMenuBar(self.LhystudiosController_menubar)
+            self.LihuiyuController_menubar = wx.MenuBar()
+            self.create_menu(self.LihuiyuController_menubar.Append)
+            self.SetMenuBar(self.LihuiyuController_menubar)
         # ==========
         # MENUBAR END
         # ==========
 
-        self.panel = LhystudiosControllerPanel(self, wx.ID_ANY, context=self.context)
+        self.panel = LihuiyuControllerPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
-        self.SetTitle(_("Lhystudios-Controller"))
+        self.SetTitle(_("Lihuiyu-Controller"))
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
@@ -552,35 +568,29 @@ class LhystudiosControllerGui(MWindow):
     def window_preserve(self):
         return False
 
-    def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_usb_reset(self, event):
         try:
             self.context("usb_reset\n")
         except AttributeError:
             pass
 
-    def on_menu_usb_release(
-        self, event
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_usb_release(self, event):
         try:
             self.context("usb_release\n")
         except AttributeError:
             pass
 
-    def on_menu_pause(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_pause(self, event=None):
         try:
             self.context("pause\n")
         except AttributeError:
             pass
 
-    def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_stop(self, event=None):
         try:
             self.context("estop\n")
         except AttributeError:
             pass
 
-    def on_menu_bufferview(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_bufferview(self, event=None):
         self.context("window open BufferView\n")

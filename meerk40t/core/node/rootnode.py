@@ -15,6 +15,7 @@ from meerk40t.core.node.elem_text import TextNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
+from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
@@ -38,7 +39,7 @@ class RootNode(Node):
 
     def __init__(self, context, **kwargs):
         _ = context._
-        super(RootNode, self).__init__(type="reference", **kwargs)
+        super(RootNode, self).__init__(type="root", **kwargs)
         self._root = self
         self.context = context
         self.listeners = []
@@ -57,6 +58,7 @@ class RootNode(Node):
             "lasercode": LaserCodeNode,
             "blob": BlobNode,
             "group": GroupNode,
+            "layer": LayerNode,
             "elem ellipse": EllipseNode,
             "elem line": LineNode,
             "elem rect": RectNode,
@@ -78,7 +80,7 @@ class RootNode(Node):
         self.add(type="branch reg", label=_("Regmarks"))
 
     def __repr__(self):
-        return "RootNode(%s)" % (str(self.context))
+        return f"RootNode({str(self.context)})"
 
     def is_movable(self):
         return False

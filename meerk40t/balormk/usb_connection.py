@@ -2,7 +2,6 @@ import usb.core
 import usb.util
 from usb.backend.libusb1 import LIBUSB_ERROR_ACCESS, LIBUSB_ERROR_NOT_FOUND
 
-
 USB_LOCK_VENDOR = 0x9588
 USB_LOCK_PRODUCT = 0x9899
 
@@ -250,7 +249,7 @@ class USBConnection:
 
     def write(self, index=0, packet=None):
         packet_length = len(packet)
-        assert(packet_length == 0xC or packet_length == 0xC00)
+        assert packet_length == 0xC or packet_length == 0xC00
         if packet is not None:
             try:
                 # endpoint, data, timeout

@@ -88,26 +88,26 @@ class LaserSpeed:
     def __repr__(self):
         parts = list()
         if self.board != "M2":
-            parts.append('board="%s"' % self.board)
+            parts.append(f'board="{self.board}"')
         if self.speed is not None:
-            parts.append("speed=%f" % self.speed)
+            parts.append(f"speed={self.speed}")
         if self.d_ratio is not None:
-            parts.append("d_ratio=%f" % self.d_ratio)
+            parts.append(f"d_ratio={self.d_ratio}")
         if self.raster_step != 0:
-            parts.append("raster_step=%d" % self.raster_step)
+            parts.append(f"raster_step={self.raster_step}")
         if self.suffix_c is not None:
-            parts.append("suffix_c=%s" % str(self.suffix_c))
+            parts.append(f"suffix_c={str(self.suffix_c)}")
         if self.acceleration is not None:
-            parts.append("acceleration=%d" % self.acceleration)
+            parts.append(f"acceleration={self.acceleration}")
         if self.fix_speeds:
-            parts.append("fix_speeds=%s" % str(self.fix_speeds))
+            parts.append(f"fix_speeds={str(self.fix_speeds)}")
         if self.fix_lows:
-            parts.append("fix_lows=%s" % str(self.fix_lows))
+            parts.append(f"fix_lows={str(self.fix_lows)}")
         if self.fix_limit:
-            parts.append("fix_limit=%s" % str(self.fix_limit))
+            parts.append(f"fix_limit={str(self.fix_limit)}")
         if not self.raster_horizontal:
-            parts.append("raster_horizontal=%s" % str(self.raster_horizontal))
-        return "LaserSpeed(%s)" % (", ".join(parts))
+            parts.append(f"raster_horizontal={str(self.raster_horizontal)}")
+        return f"LaserSpeed({', '.join(parts)})"
 
     @property
     def speedcode(self):
@@ -201,22 +201,17 @@ def get_code_from_speed(
     if raster_step != 0:
         # There is no C suffix notation for raster step.
         if isinstance(raster_step, tuple):
-            return "V%s%1dG%03dG%03d" % (
-                encoded_speed,
-                acceleration,
-                raster_step[0],
-                raster_step[1],
-            )
+            return f"V{encoded_speed}{acceleration:1d}G{raster_step[0]:03d}G{raster_step[1]:03d}"
         else:
-            return "V%s%1dG%03d" % (encoded_speed, acceleration, raster_step)
+            return f"V{encoded_speed}{acceleration:1d}G{raster_step:03d}"
 
     if d_ratio == 0 or board in ("A", "B", "M"):
         # We do not need the diagonal code.
         if raster_step == 0:
             if suffix_c:
-                return "CV%s1C" % encoded_speed
+                return f"CV{encoded_speed}1C"
             else:
-                return "CV%s%1d" % (encoded_speed, acceleration)
+                return f"CV{encoded_speed}{acceleration:1d}"
     else:
         step_value = min(int(floor(mm_per_second) + 1), 128)
         frequency_kHz = float(mm_per_second) / 25.4
@@ -233,13 +228,10 @@ def get_code_from_speed(
                 d_value = 0
         encoded_diagonal = encode_16bit(d_value)
         if suffix_c:
-            return "CV%s1%03d%sC" % (encoded_speed, step_value, encoded_diagonal)
+            return f"CV{encoded_speed}1{step_value:03d}{encoded_diagonal}C"
         else:
-            return "CV%s%1d%03d%s" % (
-                encoded_speed,
-                acceleration,
-                step_value,
-                encoded_diagonal,
+            return (
+                f"CV{encoded_speed}{acceleration:1d}{step_value:03d}{encoded_diagonal}"
             )
 
 
@@ -355,7 +347,7 @@ def encode_16bit(value):
     value = int(value)
     b0 = value & 255
     b1 = (value >> 8) & 0xFFFFFF  # unsigned shift, to emulate bugged form.
-    return "%03d%03d" % (b1, b0)
+    return f"{b1:03d}{b0:03d}"
 
 
 def get_acceleration_for_speed(

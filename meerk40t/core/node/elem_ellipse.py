@@ -1,7 +1,12 @@
 from copy import copy
+from math import sqrt
 
 from meerk40t.core.node.node import Fillrule, Node
-from meerk40t.svgelements import Path
+from meerk40t.svgelements import (
+    SVG_ATTR_VECTOR_EFFECT,
+    SVG_VALUE_NON_SCALING_STROKE,
+    Path,
+)
 
 
 class EllipseNode(Node):
@@ -16,41 +21,28 @@ class EllipseNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        stroke_scale=None,
         fillrule=None,
         **kwargs,
     ):
         super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
+        self.__formatter = "{element_type} {id} {stroke}"
         self.shape = shape
         self.settings = kwargs
-        if matrix is None:
-            self.matrix = shape.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = shape.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = shape.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = shape.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if fillrule is None:
-            self.fillrule = Fillrule.FILLRULE_NONZERO
-        else:
-            self.fillrule = fillrule
+        self.matrix = shape.transform if matrix is None else matrix
+        self.fill = shape.fill if fill is None else fill
+        self.stroke = shape.stroke if stroke is None else stroke
+        self.stroke_width = shape.stroke_width if stroke_width is None else stroke_width
+        self._stroke_scaled = (
+            (shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
+            if stroke_scale is None
+            else stroke_scale
+        )
+        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
         self.lock = False
 
     def __repr__(self):
-        return "%s('%s', %s, %s)" % (
-            self.__class__.__name__,
-            self.type,
-            str(self.shape),
-            str(self._parent),
-        )
+        return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
 
     def __copy__(self):
         return EllipseNode(
@@ -59,6 +51,7 @@ class EllipseNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=copy(self.stroke_width),
+            stroke_scale=self._stroke_scaled,
             fillrule=self.fillrule,
             **self.settings,
         )
@@ -66,17 +59,39 @@ class EllipseNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self.shape.transform = self.matrix
-            self.shape.stroke_width = self.stroke_width
+            self._sync_svg()
             self._bounds = self.shape.bbox(with_stroke=True)
             self._bounds_dirty = False
         return self._bounds
 
+    @property
+    def stroke_scaled(self):
+        return self._stroke_scaled
+
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        if not v and self._stroke_scaled:
+            self.stroke_width *= sqrt(abs(self.matrix.determinant))
+        if v and not self._stroke_scaled:
+            self.stroke_width /= sqrt(abs(self.matrix.determinant))
+        self._stroke_scaled = v
+
+    def implied_stroke_width(self, zoomscale=1.0):
+        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
+        need to countermand that scaling by dividing by the square root of the absolute
+        value of the determinant of the local matrix (1d matrix scaling)"""
+        scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
+        sw = self.stroke_width / scalefactor
+        limit = 25 * sqrt(zoomscale) * scalefactor
+        if sw < limit:
+            sw = limit
+        return sw
+
     def preprocess(self, context, matrix, commands):
+        self.stroke_scaled = True
         self.matrix *= matrix
-        self.shape.transform = self.matrix
-        self.shape.stroke_width = self.stroke_width
-        self._bounds_dirty = True
+        self.stroke_scaled = False
+        self._sync_svg()
 
     def default_map(self, default_map=None):
         default_map = super(EllipseNode, self).default_map(default_map=default_map)
@@ -88,10 +103,11 @@ class EllipseNode(Node):
         default_map["matrix"] = self.matrix
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         # Dragging element into element.
         if drag_node.type.startswith("elem"):
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         return False
 
@@ -127,8 +143,14 @@ class EllipseNode(Node):
     def add_point(self, point, index=None):
         return False
 
-    def as_path(self):
+    def _sync_svg(self):
+        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
+            SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self.shape.fillrule = self.fillrule
+        self._bounds_dirty = True
+
+    def as_path(self):
+        self._sync_svg()
         return abs(Path(self.shape))

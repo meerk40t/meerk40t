@@ -21,7 +21,7 @@ def plugin(kernel, lifecycle):
                 channel(_("Webhelp Registered:"))
                 for i, find in enumerate(kernel.find("webhelp")):
                     value, name, suffix = find
-                    channel("%d: %s %s" % (i + 1, str(suffix).ljust(15), value))
+                    channel(f"{i + 1}: {str(suffix).ljust(15)} {value}")
                 channel(_("----------"))
                 return
             try:

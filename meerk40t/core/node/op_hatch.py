@@ -22,6 +22,9 @@ class HatchOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op hatch", **kwargs)
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = (
+            "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}"
+        )
         self.settings.update(kwargs)
         self._hatch_distance_native = None
 
@@ -45,27 +48,17 @@ class HatchOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
         )
+        # To which attributes does the classification color check respond
+        # Can be extended / reduced by add_color_attribute / remove_color_attribute
+        self.allowed_attributes = [
+            "stroke",
+        ]  # comma is relevant
+        # Is this op out of useful bounds?
+        self.dangerous = False
+        self.stopop = True
 
     def __repr__(self):
         return "HatchOpNode()"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        parts.append("Hatch")
-        if self.speed is not None:
-            parts.append("%gmm/s" % float(self.speed))
-        if self.frequency is not None:
-            parts.append("%gkHz" % float(self.frequency))
-        if self.power is not None:
-            parts.append("%gppi" % float(self.power))
-        parts.append("%s" % self.color.hex)
-        return " ".join(parts)
 
     def __copy__(self):
         return HatchOpNode(self)
@@ -77,10 +70,20 @@ class HatchOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    # def is_dangerous(self, minpower, maxspeed):
+    #     result = False
+    #     if maxspeed is not None and self.speed > maxspeed:
+    #         result = True
+    #     if minpower is not None and self.power < minpower:
+    #         result = True
+    #     self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(HatchOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Hatch"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
@@ -93,71 +96,131 @@ class HatchOpNode(Node, Parameters):
         default_map["frequency"] = "default"
         default_map["hatch_angle"] = "default"
         default_map["hatch_distance"] = "default"
+        ct = 0
+        t = ""
+        s = ""
+        for cc in self.allowed_attributes:
+            if len(cc) > 0:
+                t += cc[0].upper()
+                ct += 1
+        if ct > 0:
+            s = self.color.hex + "-" + t
+        default_map["colcode"] = s
+        default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
             if not drag_node.type in self.allowed_elements_dnd:
                 return False
             # Dragging element onto operation adds that element to the op.
-            self.add_reference(drag_node, pos=0)
+            if modify:
+                self.add_reference(drag_node, pos=0)
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
             if not drag_node.node.type in self.allowed_elements_dnd:
                 return False
             # Move a refelem to end of op.
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
                 if e.type in self.allowed_elements_dnd:
-                    self.add_reference(e)
+                    if modify:
+                        self.add_reference(e)
                     some_nodes = True
             return some_nodes
         return False
 
-    def classify(self, node):
+    def has_color_attribute(self, attribute):
+        return attribute in self.allowed_attributes
+
+    def add_color_attribute(self, attribute):
+        if not attribute in self.allowed_attributes:
+            self.allowed_attributes.append(attribute)
+
+    def remove_color_attribute(self, attribute):
+        if attribute in self.allowed_attributes:
+            self.allowed_attributes.remove(attribute)
+
+    def valid_node(self, node):
         def is_valid_closed_path(p):
-            result = False
+            valid = False
             if len(p) != 0:
                 # Is it a closed path?
                 if p[-1].d().lower() == "z":
-                    result = True
+                    valid = True
+            return valid
+
+        result = False
+        if hasattr(node, "path"):
+            if is_valid_closed_path(node.path):
+                result = True
+
+        elif node.type == "elem polyline":
+            # Are they a closed path?
+            obj = Path(node.shape)
+            if is_valid_closed_path(obj):
+                result = True
+        elif node.type in ("elem rect", "elem ellipse"):
+            result = True
+
+        return result
+
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        def matching_color(col1, col2):
+            result = False
+            if col1 is None and col2 is None:
+                result = True
+            elif (
+                col1 is not None
+                and col1.argb is not None
+                and col2 is not None
+                and col2.argb is not None
+            ):
+                if fuzzy:
+                    distance = Color.distance(col1, col2)
+                    result = distance < fuzzydistance
+                else:
+                    result = col1 == col2
             return result
 
-        if not self.default and hasattr(node, "stroke") and node.stroke is not None:
-            plain_color_op = abs(self.color)
-            plain_color_node = abs(node.stroke)
-            if plain_color_op != plain_color_node:
-                return False, False
         if node.type in self.allowed_elements:
-            if hasattr(node, "path"):
-                if is_valid_closed_path(node.path):
-                    self.add_reference(node)
-                    return True, True
-                else:
-                    return False, False
-
-            elif node.type == "elem polyline":
-                # Are they a closed path?
-                obj = Path(node.shape)
-                if is_valid_closed_path(obj):
-                    self.add_reference(node)
-                    return True, True
-            else:
-                # Ellipse, rect are closed by default
-                self.add_reference(node)
-                return True, True
-
+            if not self.default:
+                if len(self.allowed_attributes) > 0:
+                    for attribute in self.allowed_attributes:
+                        if (
+                            hasattr(node, attribute)
+                            and getattr(node, attribute) is not None
+                        ):
+                            plain_color_op = abs(self.color)
+                            plain_color_node = abs(getattr(node, attribute))
+                            if matching_color(plain_color_op, plain_color_node):
+                                if self.valid_node(node):
+                                    self.add_reference(node)
+                                # Have classified but more classification might be needed
+                                return True, self.stopop
+                else:  # empty ? Anything goes
+                    if self.valid_node(node):
+                        self.add_reference(node)
+                    # Have classified but more classification might be needed
+                    return True, self.stopop
+            elif self.default and usedefault:
+                # Have classified but more classification might be needed
+                if self.valid_node(node):
+                    return True, self.stopop
         return False, False
 
     def load(self, settings, section):
@@ -186,13 +249,11 @@ class HatchOpNode(Node, Parameters):
     def time_estimate(self):
         estimate = 0
         # TODO: Implement time_estimate.
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
-        return "%s:%s:%s" % (
-            int(hours),
-            str(int(minutes)).zfill(2),
-            str(int(seconds)).zfill(2),
-        )
+        return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
     @staticmethod
     def split(points):

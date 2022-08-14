@@ -111,9 +111,7 @@ class GridWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
-    ):
+    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
         Capture and deal with events.
         """
@@ -275,11 +273,7 @@ class GridWidget(Widget):
         self.max_x = min(float(self.scene.context.device.unit_width), self.max_x)
         self.max_y = min(float(self.scene.context.device.unit_height), self.max_y)
         tlen = float(
-            Length(
-                "{value}{units}".format(
-                    value=self.scene.tick_distance, units=self.scene.context.units_name
-                )
-            )
+            Length(f"{self.scene.tick_distance}{self.scene.context.units_name}")
         )
         if tlen == 0:
             tlen = float(Length("10mm"))
@@ -394,7 +388,7 @@ class GridWidget(Widget):
                 min_a = 0
                 max_a = tau
         self.sector = quadrant
-        if not pt1 is None:
+        if pt1 is not None:
             dx1 = pt1[0] - self.cx
             dy1 = pt1[1] - self.cy
             dx2 = pt2[0] - self.cx
@@ -531,6 +525,9 @@ class GridWidget(Widget):
 
         # Get proper gridsize
         w, h = gc.Size
+        if w < 50 or h < 50:
+            # Algorithm is unstable for very low values of w or h.
+            return
         if self.scene.auto_tick:
             self.calculate_tickdistance(w, h)
         self.calculate_gridsize(w, h)
@@ -625,9 +622,19 @@ class GridWidget(Widget):
                 if fsize < 1.0:
                     fsize = 1.0  # Mac does not allow values lower than 1.
                 try:
-                    font = wx.Font(fsize, wx.SWISS, wx.NORMAL, wx.BOLD)
+                    font = wx.Font(
+                        fsize,
+                        wx.FONTFAMILY_SWISS,
+                        wx.FONTSTYLE_NORMAL,
+                        wx.FONTWEIGHT_BOLD,
+                    )
                 except TypeError:
-                    font = wx.Font(int(fsize), wx.SWISS, wx.NORMAL, wx.BOLD)
+                    font = wx.Font(
+                        int(fsize),
+                        wx.FONTFAMILY_SWISS,
+                        wx.FONTSTYLE_NORMAL,
+                        wx.FONTWEIGHT_BOLD,
+                    )
                 # gc.SetFont(font, wx.BLACK)
                 # debugstr = "Angle= %.1f - %.1f (%d)" % (self.min_angle/tau*360, self.max_angle/tau*360, self.sector)
                 # gc.DrawText(debugstr, (self.min_x + self.max_x)/2, (self.min_y + self.max_y)/2)
@@ -648,7 +655,7 @@ class GridWidget(Widget):
                         degang = round(c_angle / tau * 360, 1)
                         if degang == 360:
                             degang = 0
-                        a_text = "%.0f°" % degang
+                        a_text = f"{degang:.0f}°"
                         (t_width, t_height) = gc.GetTextExtent(a_text)
                         # Make sure text remains legible without breaking your neck... ;-)
                         if tau * 1 / 4 < c_angle < tau * 3 / 4:

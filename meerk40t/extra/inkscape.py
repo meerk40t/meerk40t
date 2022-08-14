@@ -21,12 +21,8 @@ def plugin(kernel, lifecycle):
             try:
                 kernel.elements.load(filename)
             except BadFileError as e:
-                channel(
-                    "\n".join(
-                        _("File is Malformed."),
-                        str(e),
-                    )
-                )
+                channel(_("File is Malformed."))
+                channel(str(e))
             else:
                 kernel.elements.classify(list(kernel.elements.elems()))
             return "inkscape", data
@@ -107,7 +103,7 @@ def plugin(kernel, lifecycle):
                     "--export-area-drawing",
                     "--export-type=png",
                     "--export-filename=temp.png",
-                    "--export-dpi=%d" % dpi,
+                    f"--export-dpi={dpi}",
                     filename,
                 ],
                 stdout=PIPE,
@@ -129,7 +125,11 @@ def plugin(kernel, lifecycle):
             if filename is None:
                 channel(_("inkscape filename fn - filename not specified"))
             if not os.path.exists(filename):
-                channel(_("inkscape filename %s - file not found") % filename)
+                channel(
+                    _("inkscape filename {filename} - file not found").format(
+                        filename=filename
+                    )
+                )
                 return
             return "inkscape", (inkscape_path, filename)
 
@@ -146,8 +146,9 @@ def plugin(kernel, lifecycle):
                 return
             c = run([inkscape_path, "-V"], stdout=PIPE)
             channel(
-                'Inkscape executable at "%s" is: %s'
-                % (inkscape_path, c.stdout.decode("utf-8"))
+                _('Inkscape executable at "{path}" is: {version}').format(
+                    path=inkscape_path, version=c.stdout.decode("utf-8")
+                )
             )
             return "inkscape", data
 
@@ -179,9 +180,8 @@ def plugin(kernel, lifecycle):
             else:
                 channel(
                     _(
-                        "Inkscape location: Platform '%s' unknown so no idea where to look"
-                    )
-                    % platform
+                        "Inkscape location: Platform '{platform}' unknown. No idea where to look"
+                    ).format(platform=platform)
                 )
                 return
             inkscape_path, filename = data
@@ -191,10 +191,10 @@ def plugin(kernel, lifecycle):
             for ink in inkscape:
                 if os.path.exists(ink):
                     match = ink
-                    result = _("Success")
+                    channel(_("Searching: {path} -- Result: Success").format(path=ink))
                 else:
-                    result = _("Fail")
-                channel(_("Searching: %s -- Result: %s") % (ink, result))
+                    channel(_("Searching: {path} -- Result: Fail").format(path=ink))
+
             channel(_("----------"))
             root_context = kernel.root
             root_context.setting(str, "inkscape_path", "inkscape.exe")

@@ -1,9 +1,12 @@
+import platform
+
 import wx
 from wx import aui
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
+    get_default_icon_size,
     icon_corner1,
     icon_corner2,
     icon_corner3,
@@ -39,6 +42,7 @@ from meerk40t.gui.icons import (
     icons8up,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import TextCtrl
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -49,18 +53,26 @@ MILS_IN_MM = 39.3701
 
 def register_panel_navigation(window, context):
     panel = Drag(window, wx.ID_ANY, context=context)
+    iconsize = get_default_icon_size()
+    if platform.system() == "Windows":
+        dx = 24
+        dy = 30
+    else:
+        dx = 12
+        dy = 12
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Drag"))
         .Name("drag")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -70,14 +82,15 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .BestSize(3 * iconsize + dx, 3 * iconsize + dy)
+        .FloatingSize(3 * iconsize + dx, 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Jog"))
         .Name("jog")
         .CaptionVisible(not context.pane_lock)
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -88,14 +101,15 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(150, 75)
-        .FloatingSize(150, 75)
+        .MinSize(iconsize + 100, iconsize + 25)
+        .BestSize(iconsize + 100, iconsize + 25)
+        .FloatingSize(iconsize + 100, iconsize + 25)
         .MaxSize(200, 100)
         .Caption(_("Move"))
         .CaptionVisible(not context.pane_lock)
         .Name("move")
     )
-    pane.dock_proportion = 150
+    pane.dock_proportion = iconsize + 100
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -106,14 +120,14 @@ def register_panel_navigation(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(75, 50)
-        .FloatingSize(150, 75)
+        .MinSize(iconsize + 25, iconsize + 25)
+        .FloatingSize(iconsize + 60, iconsize + 25)
         .Hide()
         .Caption(_("Pulse"))
         .CaptionVisible(not context.pane_lock)
         .Name("pulse")
     )
-    pane.dock_proportion = 150
+    pane.dock_proportion = iconsize + 60
     pane.control = panel
     pane.submenu = _("Navigation")
 
@@ -138,19 +152,25 @@ def register_panel_navigation(window, context):
     window.on_pane_add(pane)
     context.register("pane/objsizer", pane)
 
+    if platform.system() == "Windows":
+        dx = 24
+        dy = 30
+    else:
+        dx = 12
+        dy = 12
     panel = Transform(window, wx.ID_ANY, context=context)
     pane = (
         aui.AuiPaneInfo()
         .Right()
-        .MinSize(174, 230)
-        .FloatingSize(174, 230)
+        .MinSize(max(3 * iconsize, 3 * 57), 3 * iconsize + dy)
+        .FloatingSize(max(3 * iconsize, 3 * 57), 3 * iconsize + dy)
         .MaxSize(300, 300)
         .Caption(_("Transform"))
         .Name("transform")
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
-    pane.dock_proportion = 230
+    pane.dock_proportion = max(3 * iconsize, 3 * 57)
     pane.control = panel
     pane.submenu = _("Editing")
 
@@ -217,9 +237,8 @@ def get_movement(device, dx, dy):
             newy = tmp
         sx = Length(newx, unitless=1)
         sy = Length(newy, unitless=1)
-        # print ("sx, sy", sx, sx.mm, sy, sy.mm)
-        nx = "%.4fmm" % sx.mm
-        ny = "%.4fmm" % sy.mm
+        nx = f"{sx.mm:.4f}mm"
+        ny = f"{sy.mm:.4f}mm"
     else:
         nx = dx
         ny = dy
@@ -523,10 +542,7 @@ class Drag(wx.Panel):
                 dlg.Destroy()
                 return
         self.context(
-            "move_absolute {x} {y}\n".format(
-                x=Length(amount=x).length_mm,
-                y=Length(amount=y).length_mm,
-            )
+            f"move_absolute {Length(amount=x).length_mm} {Length(amount=y).length_mm}\n"
         )
         self.drag_ready(True)
 
@@ -552,9 +568,7 @@ class Drag(wx.Panel):
 
     def drag_relative(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
-        self.context(
-            "move_relative {dx} {dy}\ntranslate {dx} {dy}\n".format(dx=nx, dy=ny)
-        )
+        self.context(f"move_relative {nx} {ny}\ntranslate {nx} {ny}\n")
 
     def on_button_align_drag_down(
         self, event=None
@@ -596,10 +610,7 @@ class Drag(wx.Panel):
         else:
             return
         self.context(
-            "move_absolute {x} {y}\n".format(
-                x=Length(amount=pos[0]).length_mm,
-                y=Length(amount=pos[1]).length_mm,
-            )
+            f"move_absolute {Length(amount=pos[0]).length_mm} {Length(amount=pos[1]).length_mm}\n"
         )
         self.drag_ready(True)
 
@@ -654,10 +665,7 @@ class Drag(wx.Panel):
         dy = pos[3] - orgy
 
         self.context(
-            "translate {dx} {dy}\n".format(
-                dx=Length(amount=dx).length_mm,
-                dy=Length(amount=dy).length_mm,
-            )
+            f"translate {Length(amount=dx).length_mm} {Length(amount=dy).length_mm}\n"
         )
         self.drag_ready(True)
 
@@ -840,14 +848,12 @@ class Jog(wx.Panel):
             new_y = min(max_y, max(min_y, current_y))
             if new_x != current_x or new_y != current_y:
                 self.context(
-                    "move_absolute %.3fmm %.3fmm\n"
-                    % (Length(amount=new_x).mm, Length(amount=new_y).mm)
+                    f"move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
                 )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
-        cmd = "move_relative %s %s\n" % (nx, ny)
-        self.context(cmd)
+        self.context(f"move_relative {nx} {ny}\n")
 
     def on_button_navigate_home(
         self, event=None
@@ -856,38 +862,38 @@ class Jog(wx.Panel):
 
     def on_button_navigate_ul(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "-{jog}".format(jog=self.context.jog_amount),
-            "-{jog}".format(jog=self.context.jog_amount),
+            f"-{self.context.jog_amount}",
+            f"-{self.context.jog_amount}",
         )
 
     def on_button_navigate_u(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", "-{jog}".format(jog=self.context.jog_amount))
+        self.move_rel("0", f"-{self.context.jog_amount}")
 
     def on_button_navigate_ur(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "{jog}".format(jog=self.context.jog_amount),
-            "-{jog}".format(jog=self.context.jog_amount),
+            f"{self.context.jog_amount}",
+            f"-{self.context.jog_amount}",
         )
 
     def on_button_navigate_l(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("-{jog}".format(jog=self.context.jog_amount), "0")
+        self.move_rel(f"-{self.context.jog_amount}", "0")
 
     def on_button_navigate_r(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("{jog}".format(jog=self.context.jog_amount), "0")
+        self.move_rel(f"{self.context.jog_amount}", "0")
 
     def on_button_navigate_dl(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "-{jog}".format(jog=self.context.jog_amount),
-            "{jog}".format(jog=self.context.jog_amount),
+            f"-{self.context.jog_amount}",
+            f"{self.context.jog_amount}",
         )
 
     def on_button_navigate_d(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.move_rel("0", "{jog}".format(jog=self.context.jog_amount))
+        self.move_rel("0", f"{self.context.jog_amount}")
 
     def on_button_navigate_dr(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.move_rel(
-            "{jog}".format(jog=self.context.jog_amount),
-            "{jog}".format(jog=self.context.jog_amount),
+            f"{self.context.jog_amount}",
+            f"{self.context.jog_amount}",
         )
 
     def on_button_navigate_unlock(
@@ -912,8 +918,22 @@ class MovePanel(wx.Panel):
         )
         units = self.context.units_name
         default_pos = f"0{units}"
-        self.text_position_x = wx.TextCtrl(self, wx.ID_ANY, default_pos)
-        self.text_position_y = wx.TextCtrl(self, wx.ID_ANY, default_pos)
+        self.text_position_x = TextCtrl(
+            self,
+            wx.ID_ANY,
+            default_pos,
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
+        self.text_position_y = TextCtrl(
+            self,
+            wx.ID_ANY,
+            default_pos,
+            limited=True,
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+        )
 
         self.__set_properties()
         self.__do_layout()
@@ -927,8 +947,6 @@ class MovePanel(wx.Panel):
         self.Bind(
             wx.EVT_TEXT_ENTER, self.on_button_navigate_move_to, self.text_position_y
         )
-        self.Bind(wx.EVT_TEXT, self.on_text_position_x, self.text_position_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_position_y, self.text_position_y)
 
     def __set_properties(self):
         # begin wxGlade: MovePanel.__set_properties
@@ -940,47 +958,30 @@ class MovePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
-        sizer_12 = wx.StaticBoxSizer(
+        main_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Move To:")), wx.HORIZONTAL
         )
-        sizer_13 = wx.BoxSizer(wx.VERTICAL)
-        sizer_15 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_14 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_12.Add(self.button_navigate_move_to, 0, 0, 0)
+        v_main_sizer = wx.BoxSizer(wx.VERTICAL)
+        h_x_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer.Add(self.button_navigate_move_to, 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
         label_9.SetMinSize((-1, 23))
-        sizer_14.Add(label_9, 0, 0, 0)
-        sizer_14.Add(self.text_position_x, 0, 0, 0)
-        sizer_13.Add(sizer_14, 0, wx.EXPAND, 0)
+        self.text_position_x.SetMinSize((45, 23))
+        self.text_position_y.SetMinSize((45, 23))
+        h_x_sizer.Add(label_9, 0, 0, 0)
+        h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
+        v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
         label_10 = wx.StaticText(self, wx.ID_ANY, "Y:")
         label_10.SetMinSize((-1, 23))
-        sizer_15.Add(label_10, 0, 0, 0)
-        sizer_15.Add(self.text_position_y, 0, 0, 0)
-        sizer_13.Add(sizer_15, 0, wx.EXPAND, 0)
-        sizer_12.Add(sizer_13, 0, wx.EXPAND, 0)
-        self.SetSizer(sizer_12)
-        sizer_12.Fit(self)
+        h_y_sizer.Add(label_10, 0, 0, 0)
+        h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
+        v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
+        main_sizer.Add(v_main_sizer, 1, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
         self.Layout()
         # end wxGlade
-
-    def on_text_position_x(self, event):
-        try:
-            pos = self.context.device.length(self.text_position_x.Value, axis=0)
-            self.text_position_x.SetBackgroundColour(None)
-        except ValueError:
-            self.text_position_x.SetBackgroundColour(wx.RED)
-            self.Refresh()
-        self.text_position_x.Refresh()
-        event.Skip()
-
-    def on_text_position_y(self, event):
-        try:
-            pos = self.context.device.length(self.text_position_y.Value, axis=1)
-            self.text_position_y.SetBackgroundColour(None)
-        except ValueError:
-            self.text_position_y.SetBackgroundColour(wx.RED)
-        self.text_position_y.Refresh()
-        event.Skip()
 
     def on_button_navigate_move_to(
         self, event=None
@@ -1004,7 +1005,7 @@ class MovePanel(wx.Panel):
             pos_y = self.context.device.length(
                 self.text_position_y.Value, axis=1, new_units=self.context.units_name
             )
-            self.context("move %s %s\n" % (pos_x, pos_y))
+            self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
             return
 
@@ -1039,7 +1040,7 @@ class PulsePanel(wx.Panel):
         # begin wxGlade: PulsePanel.__set_properties
         self.button_navigate_pulse.SetToolTip(_("Fire a short laser pulse"))
         self.button_navigate_pulse.SetSize(self.button_navigate_pulse.GetBestSize())
-        self.spin_pulse_duration.SetMinSize((80, 23))
+        self.spin_pulse_duration.SetMinSize((40, 23))
         self.spin_pulse_duration.SetToolTip(_("Set the duration of the laser pulse"))
         # end wxGlade
 
@@ -1049,7 +1050,7 @@ class PulsePanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Short Pulse:")), wx.HORIZONTAL
         )
         sizer_5.Add(self.button_navigate_pulse, 0, 0, 0)
-        sizer_5.Add(self.spin_pulse_duration, 0, 0, 0)
+        sizer_5.Add(self.spin_pulse_duration, 1, 0, 0)
         label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
         sizer_5.Add(label_4, 0, 0, 0)
         self.SetSizer(sizer_5)
@@ -1061,7 +1062,7 @@ class PulsePanel(wx.Panel):
         self, event=None
     ):  # wxGlade: Navigation.<event_handler>
         value = self.spin_pulse_duration.GetValue()
-        self.context("pulse %f\n" % value)
+        self.context(f"pulse {value}\n")
 
     def on_spin_pulse_duration(self, event=None):  # wxGlade: Navigation.<event_handler>
         self.context.navigate_pulse = float(self.spin_pulse_duration.GetValue())
@@ -1089,11 +1090,11 @@ class SizePanel(wx.Panel):
         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
 
-        self.text_width = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0"
+        self.text_width = TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
         )
-        self.text_height = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0"
+        self.text_height = TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
 
@@ -1103,12 +1104,10 @@ class SizePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
         )
-        self.text_width.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_width)
-        self.text_height.Bind(wx.EVT_KILL_FOCUS, self.on_lostfocus_height)
+        self.text_width.Bind(wx.EVT_KILL_FOCUS, self.on_textenter_width)
         self.text_width.Bind(wx.EVT_TEXT_ENTER, self.on_textenter_width)
+        self.text_height.Bind(wx.EVT_KILL_FOCUS, self.on_textenter_height)
         self.text_height.Bind(wx.EVT_TEXT_ENTER, self.on_textenter_height)
-        self.text_width.Bind(wx.EVT_TEXT, self.on_text_width)
-        self.text_height.Bind(wx.EVT_TEXT, self.on_text_height)
 
     def __set_properties(self):
         # begin wxGlade: SizePanel.__set_properties
@@ -1230,49 +1229,8 @@ class SizePanel(wx.Panel):
         new_width = Length(self.text_width.Value, relative_length=self.object_width)
         new_height = Length(self.text_height.Value, relative_length=self.object_height)
         self.context(
-            "resize {x} {y} {width} {height}".format(
-                x=repr(self.object_x),
-                y=repr(self.object_y),
-                width=new_width,
-                height=new_height,
-            )
+            f"resize {repr(self.object_x)} {repr(self.object_y)} {new_width} {new_height}"
         )
-
-    def on_text_width(self, event):
-        try:
-            p = self.context
-            units = p.units_name
-            new_width = Length(
-                self.text_width.Value,
-                relative_length=self.object_width,
-                preferred_units=units,
-                digits=3,
-            )
-            if self.text_width.GetBackgroundColour() == wx.RED:
-                self.text_width.SetBackgroundColour(None)
-                self.Refresh()
-        except ValueError:
-            if self.text_width.GetBackgroundColour() != wx.RED:
-                self.text_width.SetBackgroundColour(wx.RED)
-                self.Refresh()
-
-    def on_text_height(self, event):
-        try:
-            p = self.context
-            units = p.units_name
-            new_height = Length(
-                self.text_height.Value,
-                relative_length=self.object_height,
-                preferred_units=units,
-                digits=3,
-            )
-            if self.text_height.GetBackgroundColour() == wx.RED:
-                self.text_height.SetBackgroundColour(None)
-                self.Refresh()
-        except ValueError:
-            if self.text_height.GetBackgroundColour() != wx.RED:
-                self.text_height.SetBackgroundColour(wx.RED)
-                self.Refresh()
 
     def on_textenter_width(self, event):  # wxGlade: SizePanel.<event_handler>
         try:
@@ -1318,48 +1276,6 @@ class SizePanel(wx.Panel):
             return
         event.Skip()
 
-    def on_lostfocus_width(self, event):  # wxGlade: SizePanel.<event_handler>
-        try:
-            p = self.context
-            units = p.units_name
-            new_width = Length(
-                self.text_width.Value,
-                relative_length=self.object_width,
-                preferred_units=units,
-                digits=3,
-            )
-            if self.btn_lock_ratio.GetValue():
-                self.text_height.SetValue(
-                    (new_width * (1.0 / self.object_ratio)).preferred_length
-                )
-        except ValueError:
-            # This was not a value, reset this to the last actually used value.
-            if self.object_width is not None:
-                self.text_width.SetValue(self.object_width.preferred_length)
-            return
-        event.Skip()
-
-    def on_lostfocus_height(self, event):  # wxGlade: SizePanel.<event_handler>
-        try:
-            p = self.context
-            units = p.units_name
-            new_height = Length(
-                self.text_height.Value,
-                relative_length=self.object_height,
-                preferred_units=units,
-                digits=3,
-            )
-            if self.btn_lock_ratio.GetValue():
-                self.text_width.SetValue(
-                    (new_height * self.object_ratio).preferred_length
-                )
-        except ValueError:
-            # This was not a value, reset this to the last actually used value.
-            if self.object_height is not None:
-                self.text_height.SetValue(self.object_height.preferred_length)
-            return
-        event.Skip()
-
 
 class Transform(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -1394,23 +1310,53 @@ class Transform(wx.Panel):
         self.button_rotate_cw = wx.BitmapButton(
             self, wx.ID_ANY, icons8_rotate_right_50.GetBitmap()
         )
-        self.text_a = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000"
+        self.text_a = TextCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="1.000000",
+            check="percent",
+            limited=True,
         )
-        self.text_d = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="1.000000"
+        self.text_d = TextCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="1.000000",
+            check="percent",
+            limited=True,
         )
-        self.text_c = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000"
+        self.text_c = TextCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.000000",
+            check="angle",
+            limited=True,
         )
-        self.text_b = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.000000"
+        self.text_b = TextCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.000000",
+            check="angle",
+            limited=True,
         )
-        self.text_e = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0"
+        self.text_e = TextCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.0",
+            check="float",
+            limited=True,
         )
-        self.text_f = wx.TextCtrl(
-            self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0.0"
+        self.text_f = TextCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.TE_PROCESS_ENTER,
+            value="0.0",
+            check="float",
+            limited=True,
         )
 
         self.__set_properties()
@@ -1611,13 +1557,13 @@ class Transform(wx.Panel):
             # You will get sometimes slightly different numbers thean you would expect due to arithmetic operations
             # we will therefore 'adjust' those figures slightly to avoid confusion by rounding them to the sixth decimal (arbitrary)
             # that should be good enough...
-            self.text_a.SetValue("%.5f" % matrix.a)  # Scale X
-            self.text_b.SetValue("%.5f" % matrix.b)  # Skew Y
-            self.text_c.SetValue("%.5f" % matrix.c)  # Skew X
-            self.text_d.SetValue("%.5f" % matrix.d)  # Scale Y
+            self.text_a.SetValue(f"{matrix.a:.5f}")  # Scale X
+            self.text_b.SetValue(f"{matrix.b:.5f}")  # Skew Y
+            self.text_c.SetValue(f"{matrix.c:.5f}")  # Skew X
+            self.text_d.SetValue(f"{matrix.e:.5f}")  # Scale Y
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
-            self.text_e.SetValue("%.1f" % matrix.e)  # Translate X
-            self.text_f.SetValue("%.1f" % matrix.f)  # Translate Y
+            self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
+            self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
 
     def select_ready(self, v):
         """
@@ -1640,12 +1586,12 @@ class Transform(wx.Panel):
         self.update_matrix_text()
 
     def _scale(self, scale):
-        self.context("scale %f %f \n" % (scale, scale))
+        self.context(f"scale {scale} {scale} \n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
     def _rotate(self, angle):
-        self.context("rotate %fdeg \n" % (angle))
+        self.context(f"rotate {angle}deg \n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
@@ -1656,7 +1602,7 @@ class Transform(wx.Panel):
         dy = self.context.device.length(
             dy, 1, scale=scale, new_units=self.context.units_name
         )
-        self.context("translate {dx} {dy}\n".format(dx=dx, dy=dy))
+        self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
         self.matrix_updated()
 
@@ -1751,36 +1697,28 @@ class Transform(wx.Panel):
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
         try:
             event.Skip()
-            sc_x = self.scaled_value(self.text_a.GetValue())
-            sk_x = self.skewed_value(self.text_c.GetValue())
-            sc_y = self.scaled_value(self.text_d.GetValue())
-            sk_y = self.skewed_value(self.text_b.GetValue())
-            tl_x = float(self.text_e.GetValue())
-            tl_y = float(self.text_f.GetValue())
+            scale_x = self.scaled_value(self.text_a.GetValue())
+            skew_x = self.skewed_value(self.text_c.GetValue())
+            scale_y = self.scaled_value(self.text_d.GetValue())
+            skew_y = self.skewed_value(self.text_b.GetValue())
+            translate_x = float(self.text_e.GetValue())
+            translate_y = float(self.text_f.GetValue())
             f = self.context.elements.first_element(emphasized=True)
             matrix = f.matrix
             if (
-                sc_x == matrix.a
-                and sk_y == matrix.b
-                and sk_x == matrix.c
-                and sc_y == matrix.d
-                and tl_x == matrix.e
-                and tl_y == matrix.f
+                scale_x == matrix.a
+                and skew_y == matrix.b
+                and skew_x == matrix.c
+                and scale_y == matrix.d
+                and translate_x == matrix.e
+                and translate_y == matrix.f
             ):
                 return
             # SVG defines the transformation Matrix as  - Matrix parameters are
             #  Scale X  - Skew X  - Translate X            1 - 3 - 5
             #  Skew Y   - Scale Y - Translate Y            2 - 4 - 6
             self.context(
-                "matrix %f %f %f %f %s %s\n"
-                % (
-                    sc_x,  # Scale X
-                    sk_y,  # Skew Y
-                    sk_x,  # Skew X
-                    sc_y,  # Scale Y
-                    tl_x,  # Translate X
-                    tl_y,  # Translate Y
-                )
+                f"matrix {scale_x} {skew_y} {skew_x} {scale_y} {translate_x} {translate_y}\n"
             )
             self.context.signal("refresh_scene")
         except ValueError:
@@ -1795,11 +1733,12 @@ class JogDistancePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.text_jog_amount = wx.TextCtrl(
+        self.text_jog_amount = TextCtrl(
             self,
             wx.ID_ANY,
             style=wx.TE_PROCESS_ENTER,
             value="10mm",
+            check="length",
         )
         main_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Jog Distance:")), wx.VERTICAL
@@ -1809,7 +1748,8 @@ class JogDistancePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
 
-        self.Bind(wx.EVT_TEXT, self.on_text_jog_amount, self.text_jog_amount)
+        self.text_jog_amount.Bind(wx.EVT_TEXT_ENTER, self.on_text_jog_amount)
+        self.text_jog_amount.Bind(wx.EVT_KILL_FOCUS, self.on_text_jog_amount)
         # end wxGlade
 
     def pane_show(self, *args):
@@ -1821,11 +1761,7 @@ class JogDistancePanel(wx.Panel):
             jog = self.context.device.length(
                 self.text_jog_amount.GetValue(), new_units=self.context.units_name
             )
-            self.text_jog_amount.SetBackgroundColour(None)
-            self.text_jog_amount.Refresh()
         except ValueError:
-            self.text_jog_amount.SetBackgroundColour(wx.RED)
-            self.text_jog_amount.Refresh()
             return
         self.context.jog_amount = str(jog)
         self.context.signal("jog_amount", str(jog))
@@ -1838,6 +1774,7 @@ class NavigationPanel(wx.Panel):
         self.context = context
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+
         pulse_and_move_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_panels_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -1856,15 +1793,15 @@ class NavigationPanel(wx.Panel):
         main_sizer.Add(main_panels_sizer, 0, wx.EXPAND, 0)
 
         short_pulse = PulsePanel(self, wx.ID_ANY, context=self.context)
-        pulse_and_move_sizer.Add(short_pulse, 0, wx.EXPAND, 0)
+        pulse_and_move_sizer.Add(short_pulse, 1, wx.EXPAND, 0)
 
         move_panel = MovePanel(self, wx.ID_ANY, context=self.context)
-        pulse_and_move_sizer.Add(move_panel, 0, wx.EXPAND, 0)
+        pulse_and_move_sizer.Add(move_panel, 1, wx.EXPAND, 0)
 
         size_panel = SizePanel(self, wx.ID_ANY, context=self.context)
-        pulse_and_move_sizer.Add(size_panel, 0, wx.EXPAND, 0)
+        pulse_and_move_sizer.Add(size_panel, 1, wx.EXPAND, 0)
 
-        main_sizer.Add(pulse_and_move_sizer, 1, wx.EXPAND, 0)
+        main_sizer.Add(pulse_and_move_sizer, 0, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
         self.panels = [
@@ -1899,6 +1836,10 @@ class Navigation(MWindow):
 
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
+        iconsize = get_default_icon_size()
+        minw = (3 + 3 + 3) * iconsize + 150
+        minh = (4 + 1) * iconsize + 170
+        super().SetSizeHints(minW=minw, minH=minh)
 
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_move_50.GetBitmap())

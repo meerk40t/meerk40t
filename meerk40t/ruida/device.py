@@ -122,13 +122,25 @@ def plugin(kernel, lifecycle=None):
                     channel(_("RuidaServer shutdown."))
                     return
                 if r2m:
-                    channel(_("Ruida Data Server opened on port %d.") % 50200)
+                    channel(
+                        _("Ruida Data Server opened on port {port}.").format(port=50200)
+                    )
                 if r2mj:
-                    channel(_("Ruida Jog Server opened on port %d.") % 50207)
+                    channel(
+                        _("Ruida Jog Server opened on port {port}.").format(port=50207)
+                    )
                 if m2l:
-                    channel(_("Ruida Data Destination opened on port %d.") % 40200)
+                    channel(
+                        _("Ruida Data Destination opened on port {port}.").format(
+                            port=40200
+                        )
+                    )
                 if m2lj:
-                    channel(_("Ruida Jog Destination opened on port %d.") % 40207)
+                    channel(
+                        _("Ruida Jog Destination opened on port {port}.").format(
+                            port=40207
+                        )
+                    )
 
                 if verbose:
                     console = kernel.channel("console")
@@ -178,11 +190,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         suffix = "ruida"
         for d in kernel.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")
 
 
 class RuidaCommandError(Exception):
@@ -241,6 +249,25 @@ class RuidaDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
         ViewPort.__init__(
             self,
             self.bedwidth,
@@ -257,34 +284,6 @@ class RuidaDevice(Service, ViewPort):
         self.viewbuffer = ""
 
         _ = self.kernel.translation
-
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-
-            return "spooler", spooler
 
 
 class RuidaParser:
@@ -347,7 +346,7 @@ class RuidaEmulator(Module, Parameters):
         self.state = 22
 
     def __repr__(self):
-        return "Ruida(%s, %d cuts)" % (self.name, len(self.cutcode))
+        return f"Ruida({self.name}, {len(self.cutcode)} cuts)"
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
@@ -508,7 +507,7 @@ class RuidaEmulator(Module, Parameters):
             self.ruida_reply(self.swizzle(response))
         else:
             self.ruida_reply_realtime(response)
-        self.ruida_channel("<-- %s\t(%s)" % (response.hex(), desc))
+        self.ruida_channel(f"<-- {response.hex()}\t({desc})")
 
     def checksum_write(self, sent_data):
         """
@@ -543,8 +542,7 @@ class RuidaEmulator(Module, Parameters):
         else:
             response = b"\xCF"
             self.reply(
-                response,
-                desc="Checksum Fail (%d != %d)" % (checksum_sum, checksum_check),
+                response, desc=f"Checksum Fail ({checksum_sum} != {checksum_check})"
             )
             self.ruida_channel("--> " + str(data.hex()))
             return
@@ -574,9 +572,9 @@ class RuidaEmulator(Module, Parameters):
             try:
                 self.process(array)
             except RuidaCommandError:
-                self.ruida_channel("Process Failure: %s" % str(bytes(array).hex()))
+                self.ruida_channel(f"Process Failure: {str(bytes(array).hex())}")
             except Exception as e:
-                self.ruida_channel("Crashed processing: %s" % str(bytes(array).hex()))
+                self.ruida_channel(f"Crashed processing: {str(bytes(array).hex())}")
                 self.ruida_channel(str(e))
                 raise e
 
@@ -596,15 +594,15 @@ class RuidaEmulator(Module, Parameters):
         if self.filestream:
             self.filestream.write(self.swizzle(array))
         if array[0] < 0x80:
-            self.ruida_channel("NOT A COMMAND: %d" % array[0])
+            self.ruida_channel(f"NOT A COMMAND: {array[0]}")
             raise RuidaCommandError
         elif array[0] == 0x80:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
-                desc = "Axis X Move %f" % value
+                desc = f"Axis X Move {value}"
                 self.x += value
             elif array[1] == 0x08:
-                desc = "Axis Z Move %f" % value
+                desc = f"Axis Z Move {value}"
                 self.z += value
         elif array[0] == 0x88:  # 0b10001000 11 characters.
             if self.speed < 40:
@@ -625,22 +623,19 @@ class RuidaEmulator(Module, Parameters):
                 self.plotcut.plot_append(
                     self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0
                 )
-                desc = "Move Relative (%f nm, %f nm)" % (
-                    dx / UNITS_PER_uM,
-                    dy / UNITS_PER_uM,
-                )
+                desc = f"Move Relative ({dx / UNITS_PER_uM} nm, {dy / UNITS_PER_uM} nm)"
             else:
                 desc = "Move Relative (no coords)"
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
             self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
-            desc = "Move Horizontal Relative (%f nm)" % (dx / UNITS_PER_uM)
+            desc = f"Move Horizontal Relative ({dx / UNITS_PER_uM} nm)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
             self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
-            desc = "Move Vertical Relative (%f nm)" % (dy / UNITS_PER_uM)
+            desc = f"Move Vertical Relative ({dy / UNITS_PER_uM} nm)"
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
         elif array[0] == 0x9B:
@@ -650,9 +645,9 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0xA0:
             value = self.abscoord(array[2:7])
             if array[1] == 0x00:
-                desc = "Axis Y Move %f" % value
+                desc = f"Axis Y Move {value}"
             elif array[1] == 0x08:
-                desc = "Axis U Move %f" % value
+                desc = f"Axis U Move {value}"
         elif array[0] == 0xA5:
             key = None
             if array[1] == 0x50:
@@ -664,43 +659,43 @@ class RuidaEmulator(Module, Parameters):
                     desc = "Interface Frame"
             else:
                 if array[2] == 0x02:
-                    desc = "Interface +X %s" % key
+                    desc = f"Interface +X {key}"
                     if self.control:
                         if key == "Down":
                             self.context("+right\n")
                         else:
                             self.context("-right\n")
                 elif array[2] == 0x01:
-                    desc = "Interface -X %s" % key
+                    desc = f"Interface -X {key}"
                     if self.control:
                         if key == "Down":
                             self.context("+left\n")
                         else:
                             self.context("-left\n")
                 if array[2] == 0x03:
-                    desc = "Interface +Y %s" % key
+                    desc = f"Interface +Y {key}"
                     if self.control:
                         if key == "Down":
                             self.context("+up\n")
                         else:
                             self.context("-up\n")
                 elif array[2] == 0x04:
-                    desc = "Interface -Y %s" % key
+                    desc = f"Interface -Y {key}"
                     if self.control:
                         if key == "Down":
                             self.context("+down\n")
                         else:
                             self.context("-down\n")
                 if array[2] == 0x0A:
-                    desc = "Interface +Z %s" % key
+                    desc = f"Interface +Z {key}"
                 elif array[2] == 0x0B:
-                    desc = "Interface -Z %s" % key
+                    desc = f"Interface -Z {key}"
                 if array[2] == 0x0C:
-                    desc = "Interface +U %s" % key
+                    desc = f"Interface +U {key}"
                 elif array[2] == 0x0D:
-                    desc = "Interface -U %s" % key
+                    desc = f"Interface -U {key}"
                 elif array[2] == 0x05:
-                    desc = "Interface Pulse %s" % key
+                    desc = f"Interface Pulse {key}"
                     if self.control:
                         if key == "Down":
                             self.context("+laser\n")
@@ -730,9 +725,8 @@ class RuidaEmulator(Module, Parameters):
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
             self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
-            desc = "Cut Absolute (%f nm, %f nm)" % (
-                self.x / UNITS_PER_uM,
-                self.y / UNITS_PER_uM,
+            desc = (
+                f"Cut Absolute ({self.x / UNITS_PER_uM} nm, {self.y / UNITS_PER_uM} nm)"
             )
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
@@ -740,166 +734,166 @@ class RuidaEmulator(Module, Parameters):
             self.x += dx
             self.y += dy
             self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
-            desc = "Cut Relative (%f nm, %fnm)" % (dx / UNITS_PER_uM, dy / UNITS_PER_uM)
+            desc = f"Cut Relative ({dx / UNITS_PER_uM} nm, {dy / UNITS_PER_uM} nm)"
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
             self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
-            desc = "Cut Horizontal Relative (%f mil)" % (dx / UNITS_PER_uM)
+            desc = f"Cut Horizontal Relative ({dx / UNITS_PER_uM} mil)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
             self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
-            desc = "Cut Vertical Relative (%f mil)" % (dy / UNITS_PER_uM)
+            desc = f"Cut Vertical Relative ({dy / UNITS_PER_uM} mil)"
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
-            desc = "Imd Power 1 (%f)" % v0
+            desc = f"Imd Power 1 ({v0})"
         elif array[0] == 0xC2:
             v0 = self.parse_power(array[1:3])
-            desc = "Imd Power 3 (%f)" % v0
+            desc = f"Imd Power 3 ({v0})"
         elif array[0] == 0xC0:
             v0 = self.parse_power(array[1:3])
-            desc = "Imd Power 2 (%f)" % v0
+            desc = f"Imd Power 2 ({v0})"
         elif array[0] == 0xC3:
             v0 = self.parse_power(array[1:3])
-            desc = "Imd Power 4 (%f)" % v0
+            desc = f"Imd Power 4 ({v0})"
         elif array[0] == 0xC8:
             v0 = self.parse_power(array[1:3])
-            desc = "End Power 1 (%f)" % v0
+            desc = f"End Power 1 ({v0})"
         elif array[0] == 0xC4:
             v0 = self.parse_power(array[1:3])
-            desc = "End Power 3 (%f)" % v0
+            desc = f"End Power 3 ({v0})"
         elif array[0] == 0xC1:
             v0 = self.parse_power(array[1:3])
-            desc = "End Power 2 (%f)" % v0
+            desc = f"End Power 2 ({v0})"
         elif array[0] == 0xC5:
             v0 = self.parse_power(array[1:3])
-            desc = "End Power 4 (%f)" % v0
+            desc = f"End Power 4 ({v0})"
         elif array[0] == 0xC6:
             if array[1] == 0x01:
                 self.new_plot_cut()
                 power = self.parse_power(array[2:4])
-                desc = "Power 1 min=%f" % power
+                desc = f"Power 1 min={power}"
                 self.power1_min = power
                 self.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x02:
                 self.new_plot_cut()
                 power = self.parse_power(array[2:4])
-                desc = "Power 1 max=%f" % power
+                desc = f"Power 1 max={power}"
                 self.power1_max = power
                 self.power = self.power1_max * 10.0  # 1000 / 100
                 self._use_set = None
             elif array[1] == 0x05:
                 power = self.parse_power(array[2:4])
-                desc = "Power 3 min=%f" % power
+                desc = f"Power 3 min={power}"
             elif array[1] == 0x06:
                 power = self.parse_power(array[2:4])
-                desc = "Power 3 max=%f" % power
+                desc = f"Power 3 max={power}"
             elif array[1] == 0x07:
                 power = self.parse_power(array[2:4])
-                desc = "Power 4 min=%f" % power
+                desc = f"Power 4 min={power}"
             elif array[1] == 0x08:
                 power = self.parse_power(array[2:4])
-                desc = "Power 4 max=%f" % power
+                desc = f"Power 4 max={power}"
             elif array[1] == 0x10:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser Interval %fms" % interval
+                desc = f"Laser Interval {interval}ms"
             elif array[1] == 0x11:
                 interval = self.parse_time(array[2:7])
-                desc = "Add Delay %fms" % interval
+                desc = f"Add Delay {interval}ms"
             elif array[1] == 0x12:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser On Delay %fms" % interval
+                desc = f"Laser On Delay {interval}ms"
             elif array[1] == 0x13:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser Off Delay %fms" % interval
+                desc = f"Laser Off Delay {interval}ms"
             elif array[1] == 0x15:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser On2 %fms" % interval
+                desc = f"Laser On2 {interval}ms"
             elif array[1] == 0x16:
                 interval = self.parse_time(array[2:7])
-                desc = "Laser Off2 %fms" % interval
+                desc = f"Laser Off2 {interval}ms"
             elif array[1] == 0x21:
                 power = self.parse_power(array[2:4])
-                desc = "Power 2 min=%f" % power
+                desc = f"Power 2 min={power}"
                 self.power2_min = power
             elif array[1] == 0x22:
                 power = self.parse_power(array[2:4])
-                desc = "Power 2 max=%f" % power
+                desc = f"Power 2 max={power}"
                 self.power2_max = power
             elif array[1] == 0x31:
                 part = array[2]
                 self.power1_min = self.parse_power(array[3:5])
-                desc = "%d, Power 1 Min=(%f)" % (part, self.power1_min)
+                desc = f"{part}, Power 1 Min=({self.power1_min})"
             elif array[1] == 0x32:
                 part = array[2]
                 self.power1_max = self.parse_power(array[3:5])
-                desc = "%d, Power 1 Max=(%f)" % (part, self.power1_max)
+                desc = f"{part}, Power 1 Max=({self.power1_max})"
             elif array[1] == 0x35:
                 part = array[2]
                 power = self.parse_power(array[3:5])
-                desc = "%d, Power 3 Min (%f)" % (part, power)
+                desc = f"{part}, Power 3 Min ({power})"
             elif array[1] == 0x36:
                 part = array[2]
                 power = self.parse_power(array[3:5])
-                desc = "%d, Power 3 Max (%f)" % (part, power)
+                desc = f"{part}, Power 3 Max ({power})"
             elif array[1] == 0x37:
                 part = array[2]
                 power = self.parse_power(array[3:5])
-                desc = "%d, Power 4 Min (%f)" % (part, power)
+                desc = f"{part}, Power 4 Min ({power})"
             elif array[1] == 0x38:
                 part = array[2]
                 power = self.parse_power(array[3:5])
-                desc = "%d, Power 4 Max (%f)" % (part, power)
+                desc = f"{part}, Power 4 Max ({power})"
             elif array[1] == 0x41:
                 part = array[2]
                 power = self.parse_power(array[3:5])
-                desc = "%d, Power 2 Min (%f)" % (part, power)
+                desc = f"{part}, Power 2 Min ({power})"
             elif array[1] == 0x42:
                 part = array[2]
                 power = self.parse_power(array[3:5])
-                desc = "%d, Power 2 Max (%f)" % (part, power)
+                desc = f"{part}, Power 2 Max ({power})"
             elif array[1] == 0x50:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 1 (%f)" % power
+                desc = f"Through Power 1 ({power})"
             elif array[1] == 0x51:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 2 (%f)" % power
+                desc = f"Through Power 2 ({power})"
             elif array[1] == 0x55:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 3 (%f)" % power
+                desc = f"Through Power 3 ({power})"
             elif array[1] == 0x56:
                 power = self.parse_power(array[2:4])
-                desc = "Through Power 4 (%f)" % power
+                desc = f"Through Power 4 ({power})"
             elif array[1] == 0x60:
                 laser = array[2]
                 part = array[3]
                 frequency = self.parse_frequency(array[4:9])
-                desc = "%d, Laser %d, Frequency (%f)" % (part, laser, frequency)
+                desc = f"part, Laser {laser}, Frequency ({frequency})"
         elif array[0] == 0xC9:
             if array[1] == 0x02:
                 self.new_plot_cut()
                 speed = self.parse_speed(array[2:7])
-                desc = "Speed Laser 1 %fmm/s" % speed
+                desc = f"Speed Laser 1 {speed}mm/s"
                 self.speed = speed
                 self._use_set = None
             elif array[1] == 0x03:
                 speed = self.parse_speed(array[2:7])
-                desc = "Axis Speed %fmm/s" % speed
+                desc = f"Axis Speed {speed}mm/s"
             elif array[1] == 0x04:
                 self.new_plot_cut()
                 part = array[2]
                 speed = self.parse_speed(array[3:8])
                 self.speed = speed
                 self._use_set = None
-                desc = "%d, Speed %fmm/s" % (part, speed)
+                desc = f"{part}, Speed {speed}mm/s"
             elif array[1] == 0x05:
                 speed = self.parse_speed(array[2:7]) / 1000.0
-                desc = "Force Eng Speed %fmm/s" % speed
+                desc = f"Force Eng Speed {speed}mm/s"
             elif array[1] == 0x06:
                 speed = self.parse_speed(array[2:7]) / 1000.0
-                desc = "Axis Move Speed %fmm/s" % speed
+                desc = f"Axis Move Speed {speed}mm/s"
         elif array[0] == 0xCA:
             if array[1] == 0x01:
                 if array[2] == 0x00:
@@ -932,12 +926,12 @@ class RuidaEmulator(Module, Parameters):
                     desc = "EnLaser2Offset 1"
             elif array[1] == 0x02:
                 part = array[2]
-                desc = "%d, Layer Number" % part
+                desc = f"{part}, Layer Number"
             elif array[1] == 0x03:
                 desc = "EnLaserTube Start"
             elif array[1] == 0x04:
                 value = array[2]
-                desc = "X Sign Map %d" % value
+                desc = f"X Sign Map {value}"
             elif array[1] == 0x05:
                 self.new_plot_cut()
                 c = RuidaEmulator.decodeu35(array[2:7])
@@ -948,7 +942,7 @@ class RuidaEmulator(Module, Parameters):
                 self.color = c.hex
                 self.line_color = c
                 self._use_set = None
-                desc = "Layer Color %s" % str(self.color)
+                desc = f"Layer Color {str(self.color)}"
             elif array[1] == 0x06:
                 part = array[2]
                 c = RuidaEmulator.decodeu35(array[3:8])
@@ -957,23 +951,23 @@ class RuidaEmulator(Module, Parameters):
                 b = (c >> 16) & 0xFF
                 c = Color(red=r, blue=b, green=g)
                 self.color = c.hex
-                desc = "%d, Color %s" % (part, self.color)
+                desc = f"{part}, Color {self.color}"
             elif array[1] == 0x10:
                 value = array[2]
-                desc = "EnExIO Start %d" % value
+                desc = f"EnExIO Start {value}"
             elif array[1] == 0x22:
                 part = array[2]
-                desc = "%d, Max Layer" % part
+                desc = f"{part}, Max Layer"
             elif array[1] == 0x30:
                 filenumber = self.parse_filenumber(array[2:4])
-                desc = "U File ID %d" % filenumber
+                desc = f"U File ID {filenumber}"
             elif array[1] == 0x40:
                 value = array[2]
-                desc = "ZU Map %d" % value
+                desc = f"ZU Map {value}"
             elif array[1] == 0x41:
                 part = array[2]
                 mode = array[3]
-                desc = "%d, Work Mode %d" % (part, mode)
+                desc = f"{part}, Work Mode {mode}"
         elif array[0] == 0xCC:
             desc = "ACK from machine"
         elif array[0] == 0xCD:
@@ -1144,46 +1138,39 @@ class RuidaEmulator(Module, Parameters):
                 if array[1] == 0x00 or array[1] == 0x50:
                     coord = self.abscoord(array[3:8])
                     self.x += coord
-                    desc = "Move %s X: %f (%f,%f)" % (param, coord, self.x, self.y)
+                    desc = f"Move {param} X: {coord} ({self.x},{self.y})"
                     if self.control:
                         self.context(
-                            "move -f %f %f\n"
-                            % (self.x / UNITS_PER_uM, self.y / UNITS_PER_uM)
+                            f"move -f {self.x / UNITS_PER_uM} {self.y / UNITS_PER_uM}\n"
                         )
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = self.abscoord(array[3:8])
                     self.y += coord
-                    desc = "Move %s Y: %f (%f,%f)" % (param, coord, self.x, self.y)
+                    desc = f"Move {param} Y: {coord} ({self.x},{self.y})"
                     if self.control:
                         self.context(
-                            "move -f %f %f\n"
-                            % (self.x / UNITS_PER_uM, self.y / UNITS_PER_uM)
+                            f"move -f {self.x / UNITS_PER_uM} {self.y / UNITS_PER_uM}\n"
                         )
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = self.abscoord(array[3:8])
                     self.z += coord
-                    desc = "Move %s Z: %f (%f,%f)" % (param, coord, self.x, self.y)
+                    desc = f"Move {param} Z: {coord} ({self.x},{self.y})"
                 elif array[1] == 0x03 or array[1] == 0x53:
                     coord = self.abscoord(array[3:8])
                     self.u += coord
-                    desc = "Move %s U: %f (%f,%f)" % (param, coord, self.x, self.y)
+                    desc = f"Move {param} U: {coord} ({self.x},{self.y})"
                 elif array[1] == 0x0F:
                     desc = "Feed Axis Move"
                 elif array[1] == 0x10 or array[1] == 0x60:
                     self.x = self.abscoord(array[3:8])
                     self.y = self.abscoord(array[8:13])
-                    desc = "Move %s XY (%f, %f)" % (
-                        param,
-                        self.x / UNITS_PER_uM,
-                        self.y / UNITS_PER_uM,
-                    )
+                    desc = f"Move {param} XY ({self.x / UNITS_PER_uM}, {self.y / UNITS_PER_uM})"
                     # self.x = 0
                     # self.y = 0
                     if self.control:
                         if "Origin" in param:
                             self.context(
-                                "move -f %f %f\n"
-                                % (self.x / UNITS_PER_uM, self.y / UNITS_PER_uM)
+                                f"move -f {self.x / UNITS_PER_uM} {self.y / UNITS_PER_uM}\n"
                             )
                         else:
                             self.context("home\n")
@@ -1191,64 +1178,29 @@ class RuidaEmulator(Module, Parameters):
                     self.x = self.abscoord(array[3:8])
                     self.y = self.abscoord(array[8:13])
                     self.u = self.abscoord(array[13 : 13 + 5])
-                    desc = "Move %s XYU: %f (%f,%f)" % (
-                        param,
-                        self.x / UNITS_PER_uM,
-                        self.y / UNITS_PER_uM,
-                        self.u / UNITS_PER_uM,
-                    )
+                    desc = f"Move {param} XYU: {self.x / UNITS_PER_uM} ({self.y / UNITS_PER_uM},{self.u / UNITS_PER_uM})"
         elif array[0] == 0xDA:
             mem = self.parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
             if array[1] == 0x00:
                 if name is None:
                     name = "Unmapped"
-                desc = "Get %02x %02x (mem: %04x) (%s)" % (
-                    array[2],
-                    array[3],
-                    mem,
-                    name,
-                )
+                desc = f"Get {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name})"
                 if isinstance(v, int):
                     v = int(v)
                     vencode = RuidaEmulator.encode32(v)
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = (
-                        "Respond %02x %02x (mem: %04x) (%s) = %d (0x%08x)"
-                        % (
-                            array[2],
-                            array[3],
-                            mem,
-                            name,
-                            v,
-                            v,
-                        )
-                    )
+                    respond_desc = f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v} (0x{v:08x})"
                 else:
                     vencode = v
                     respond = b"\xDA\x01" + bytes(array[2:4]) + bytes(vencode)
-                    respond_desc = "Respond %02x %02x (mem: %04x) (%s) = %s" % (
-                        array[2],
-                        array[3],
-                        mem,
-                        name,
-                        str(vencode),
-                    )
+                    respond_desc = f"Respond {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {str(vencode)}"
             elif array[1] == 0x01:
                 value0 = array[4:9]
                 value1 = array[9:14]
                 v0 = self.decodeu35(value0)
                 v1 = self.decodeu35(value1)
-                desc = "Set %02x %02x (mem: %04x) (%s) = %d (0x%08x) %d (0x%08x)" % (
-                    array[2],
-                    array[3],
-                    mem,
-                    name,
-                    v0,
-                    v0,
-                    v1,
-                    v1,
-                )
+                desc = f"Set {array[2]:02x} {array[3]:02x} (mem: {mem:04x}) ({name}) = {v0} (0x{v0:08x}) {v1} (0x{v1:08x})"
             elif array[1] == 0x04:
                 desc = "OEM On/Off, CardIO On/OFF"
             elif array[1] == 0x05 or array[1] == 0x54:
@@ -1264,17 +1216,17 @@ class RuidaEmulator(Module, Parameters):
             elif array[1] == 0x30:
                 # Property requested with select document, upload button "fresh property"
                 filenumber = self.parse_filenumber(array[2:4])
-                desc = "Upload Info 0x30 Document %d" % filenumber
+                desc = f"Upload Info 0x30 Document {filenumber}"
                 # TODO: Requires Response.
             elif array[1] == 0x31:
                 # Property requested with select document, upload button "fresh property"
                 filenumber = self.parse_filenumber(array[2:4])
-                desc = "Upload Info 0x31 Document %d" % filenumber
+                desc = f"Upload Info 0x31 Document {filenumber}"
                 # TODO: Requires Response.
             elif array[1] == 0x60:
                 # len: 14
                 v = self.decode14(array[2:4])
-                desc = "RD-FUNCTION-UNK1 %d" % v
+                desc = f"RD-FUNCTION-UNK1 {v}"
         elif array[0] == 0xE5:  # 0xE502
             if len(array) == 1:
                 desc = "Lightburn Swizzle Modulation E5"
@@ -1282,7 +1234,7 @@ class RuidaEmulator(Module, Parameters):
                 if array[1] == 0x00:
                     # RDWorks File Upload
                     filenumber = array[2]
-                    desc = "Document Page Number %d" % filenumber
+                    desc = f"Document Page Number {filenumber}"
                     # TODO: Requires Response.
                 if array[1] == 0x02:
                     # len 3
@@ -1301,13 +1253,13 @@ class RuidaEmulator(Module, Parameters):
                     if a == 0x00:
                         break
                     self.filename += chr(a)
-                desc = "Filename: %s" % self.filename
+                desc = f"Filename: {self.filename}"
                 if self.saving:
-                    self.filestream = open(get_safe_path("%s.rd" % self.filename), "wb")
+                    self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
             elif array[1] == 0x03:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Process TopLeft (%f, %f)" % (c_x, c_y)
+                desc = f"Process TopLeft ({c_x}, {c_y})"
             elif array[1] == 0x04:
                 v0 = self.decode14(array[2:4])
                 v1 = self.decode14(array[4:6])
@@ -1316,26 +1268,18 @@ class RuidaEmulator(Module, Parameters):
                 v4 = self.decode14(array[10:12])
                 v5 = self.decode14(array[12:14])
                 v6 = self.decode14(array[14:16])
-                desc = "Process Repeat (%d, %d, %d, %d, %d, %d, %d)" % (
-                    v0,
-                    v1,
-                    v2,
-                    v3,
-                    v4,
-                    v5,
-                    v6,
-                )
+                desc = f"Process Repeat ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
             elif array[1] == 0x05:
                 direction = array[2]
-                desc = "Array Direction (%d)" % direction
+                desc = f"Array Direction ({direction})"
             elif array[1] == 0x06:
                 v1 = self.decodeu35(array[2:7])
                 v2 = self.decodeu35(array[7:12])
-                desc = "Feed Repeat (%d, %d)" % (v1, v2)
+                desc = f"Feed Repeat ({v1}, {v2})"
             elif array[1] == 0x07:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Process BottomRight(%f, %f)" % (c_x, c_y)
+                desc = f"Process BottomRight({c_x}, {c_y})"
             elif array[1] == 0x08:  # Same value given to F2 05
                 v0 = self.decode14(array[2:4])
                 v1 = self.decode14(array[4:6])
@@ -1344,86 +1288,78 @@ class RuidaEmulator(Module, Parameters):
                 v4 = self.decode14(array[10:12])
                 v5 = self.decode14(array[12:14])
                 v6 = self.decode14(array[14:16])
-                desc = "Array Repeat (%d, %d, %d, %d, %d, %d, %d)" % (
-                    v0,
-                    v1,
-                    v2,
-                    v3,
-                    v4,
-                    v5,
-                    v6,
-                )
+                desc = f"Array Repeat ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
             elif array[1] == 0x09:
                 v1 = self.decodeu35(array[2:7])
-                desc = "Feed Length %d" % v1
+                desc = f"Feed Length {v1}"
             elif array[1] == 0x0B:
                 v1 = array[2]
-                desc = "Unknown 1 %d" % v1
+                desc = f"Unknown 1 {v1}"
             elif array[1] == 0x13:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Array Min Point (%f,%f)" % (c_x, c_y)
+                desc = f"Array Min Point ({c_x},{c_y})"
             elif array[1] == 0x17:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Array Max Point (%f,%f)" % (c_x, c_y)
+                desc = f"Array Max Point ({c_x},{c_y})"
             elif array[1] == 0x23:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Array Add (%f,%f)" % (c_x, c_y)
+                desc = f"Array Add ({c_x},{c_y})"
             elif array[1] == 0x24:
                 v1 = array[2]
-                desc = "Array Mirror %d" % v1
+                desc = f"Array Mirror {v1}"
             elif array[1] == 0x32:
                 v1 = self.decodeu35(array[2:7])
-                desc = "Unknown Preamble %d" % v1
+                desc = f"Unknown Preamble {v1}"
             elif array[1] == 0x35:
                 v1 = self.decodeu35(array[2:7])
                 v2 = self.decodeu35(array[7:12])
-                desc = "Block X Size %d %d" % (v1, v2)
+                desc = f"Block X Size {v1} {v2}"
             elif array[1] == 0x38:
                 v1 = array[2]
-                desc = "Unknown 2 %d" % v1
+                desc = f"Unknown 2 {v1}"
             elif array[1] == 0x46:
                 desc = "BY Test 0x11227766"
             elif array[1] == 0x50:
                 c_x = self.abscoord(array[1:6]) / UNITS_PER_uM
                 c_y = self.abscoord(array[6:11]) / UNITS_PER_uM
-                desc = "Document Min Point(%f, %f)" % (c_x, c_y)
+                desc = f"Document Min Point({c_x}, {c_y})"
             elif array[1] == 0x51:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Document Max Point(%f, %f)" % (c_x, c_y)
+                desc = f"Document Max Point({c_x}, {c_y})"
             elif array[1] == 0x52:
                 part = array[2]
                 c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
                 c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
-                desc = "%d, Min Point(%f, %f)" % (part, c_x, c_y)
+                desc = f"{part}, Min Point({c_x}, {c_y})"
             elif array[1] == 0x53:
                 part = array[2]
                 c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
                 c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
-                desc = "%d, MaxPoint(%f, %f)" % (part, c_x, c_y)
+                desc = f"{part}, MaxPoint({c_x}, {c_y})"
             elif array[1] == 0x54:
                 axis = array[2]
                 c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
-                desc = "Pen Offset %d: %f" % (axis, c_x)
+                desc = f"Pen Offset {axis}: {c_x}"
             elif array[1] == 0x55:
                 axis = array[2]
                 c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
-                desc = "Layer Offset %d: %f" % (axis, c_x)
+                desc = f"Layer Offset {axis}: {c_x}"
             elif array[1] == 0x60:
-                desc = "Set Current Element Index (%d)" % (array[2])
+                desc = f"Set Current Element Index ({array[2]})"
             elif array[1] == 0x61:
                 part = array[2]
                 c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
                 c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
-                desc = "%d, MinPointEx(%f, %f)" % (part, c_x, c_y)
+                desc = f"{part}, MinPointEx({c_x}, {c_y})"
             elif array[1] == 0x62:
                 part = array[2]
                 c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
                 c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
-                desc = "%d, MaxPointEx(%f, %f)" % (part, c_x, c_y)
+                desc = f"{part}, MaxPointEx({c_x}, {c_y})"
         elif array[0] == 0xE8:
             if array[1] == 0x00:
                 # e8 00 00 00 00 00
@@ -1442,10 +1378,10 @@ class RuidaEmulator(Module, Parameters):
                 else:
                     name = files[v1 - 1]
                     os.remove(name)
-                    desc = "Delete Document %d %d" % (v1, v2)
+                    desc = f"Delete Document {v1} {v2}"
             elif array[1] == 0x01:
                 filenumber = self.parse_filenumber(array[2:4])
-                desc = "Document Name %d" % filenumber
+                desc = f"Document Name {filenumber}"
                 from glob import glob
                 from os.path import join, realpath
 
@@ -1458,7 +1394,7 @@ class RuidaEmulator(Module, Parameters):
                 name = name.upper()[:8]
 
                 respond = bytes(array[:4]) + bytes(name, "utf8") + b"\00"
-                respond_desc = "Document %d Named: %s" % (filenumber, name)
+                respond_desc = f"Document {filenumber} Named: {name}"
             elif array[1] == 0x02:
                 self.saving = True
                 desc = "File transfer"
@@ -1477,13 +1413,13 @@ class RuidaEmulator(Module, Parameters):
                         self.write(BytesIO(self.unswizzle(f.read())))
                 except IOError:
                     pass
-                desc = "Start Select Document %d" % filenumber
+                desc = f"Start Select Document {filenumber}"
             elif array[1] == 0x04:
                 filenumber = self.parse_filenumber(array[2:4])
-                desc = "Calculate Document Time %d" % filenumber
+                desc = f"Calculate Document Time {filenumber}"
         elif array[0] == 0xEA:
             index = array[1]  # TODO: Index error raised here.
-            desc = "Array Start (%d)" % index
+            desc = f"Array Start ({index})"
         elif array[0] == 0xEB:
             desc = "Array End"
         elif array[0] == 0xF0:
@@ -1491,40 +1427,40 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0xF1:
             if array[1] == 0x00:
                 index = array[2]
-                desc = "Element Max Index (%d)" % index
+                desc = f"Element Max Index ({index})"
             elif array[1] == 0x01:
                 index = array[2]
-                desc = "Element Name Max Index(%d)" % index
+                desc = f"Element Name Max Index({index})"
             elif array[1] == 0x02:
                 enable = array[2]
-                desc = "Enable Block Cutting (%d)" % enable
+                desc = f"Enable Block Cutting ({enable})"
             elif array[1] == 0x03:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Display Offset (%f,%f)" % (c_x, c_y)
+                desc = f"Display Offset ({c_x},{c_y})"
             elif array[1] == 0x04:
                 enable = array[2]
-                desc = "Feed Auto Calc (%d)" % enable
+                desc = f"Feed Auto Calc ({enable})"
             elif array[1] == 0x20:
-                desc = "Unknown (%d,%d)" % (array[2], array[3])
+                desc = f"Unknown ({array[2]},{array[3]})"
         elif array[0] == 0xF2:
             if array[1] == 0x00:
                 index = array[2]
-                desc = "Element Index (%d)" % index
+                desc = f"Element Index ({index})"
             if array[1] == 0x01:
                 index = array[2]
-                desc = "Element Name Index (%d)" % index
+                desc = f"Element Name Index ({index})"
             if array[1] == 0x02:
                 name = bytes(array[2:12])
-                desc = "Element Name (%s)" % (str(name))
+                desc = f"Element Name ({str(name)})"
             if array[1] == 0x03:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Element Array Min Point (%f,%f)" % (c_x, c_y)
+                desc = f"Element Array Min Point ({c_x},{c_y})"
             if array[1] == 0x04:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Element Array Max Point (%f,%f)" % (c_x, c_y)
+                desc = f"Element Array Max Point ({c_x},{c_y})"
             if array[1] == 0x05:
                 v0 = self.decode14(array[2:4])
                 v1 = self.decode14(array[4:6])
@@ -1533,27 +1469,19 @@ class RuidaEmulator(Module, Parameters):
                 v4 = self.decode14(array[10:12])
                 v5 = self.decode14(array[12:14])
                 v6 = self.decode14(array[14:16])
-                desc = "Element Array (%d, %d, %d, %d, %d, %d, %d)" % (
-                    v0,
-                    v1,
-                    v2,
-                    v3,
-                    v4,
-                    v5,
-                    v6,
-                )
+                desc = f"Element Array ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
             if array[1] == 0x06:
                 c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
                 c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
-                desc = "Element Array Add (%f,%f)" % (c_x, c_y)
+                desc = f"Element Array Add ({c_x},{c_y})"
             if array[1] == 0x07:
                 index = array[2]
-                desc = "Element Array Mirror (%d)" % index
+                desc = f"Element Array Mirror ({index})"
         else:
             desc = "Unknown Command!"
 
-        self.ruida_describe("%s\t%s" % (str(bytes(array).hex()), desc))
-        self.ruida_channel("--> %s\t(%s)" % (str(bytes(array).hex()), desc))
+        self.ruida_describe(f"{str(bytes(array).hex())}\t{desc}")
+        self.ruida_channel(f"--> {str(bytes(array).hex())}\t({desc})")
         if respond is not None:
             self.reply(respond, desc=respond_desc)
 
@@ -2020,7 +1948,7 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x0180:
             return "Card Language", 0
         if 0x181 <= mem <= 0x187:
-            return "PC Lock %d" % (mem - 0x181)
+            return f"PC Lock {mem - 0x181}", 0
         if mem == 0x0188:
             return "User Key Slow Velocity", 0
         if mem == 0x0189:
@@ -2215,7 +2143,7 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x0340:
             return "Stop Time", 0
         if 0x0391 <= mem < 0x0420:
-            return "Time for File %d to Run" % (mem - 0x00390), 100
+            return f"Time for File {mem - 0x00390} to Run", 100
         if mem == 0x0591:
             return "Card Lock", 0  # 0x55aaaa55
         if mem == 0x05C0:

@@ -1,15 +1,19 @@
 import copy
+import platform
 import threading
 
 import wx
 import wx.lib.agw.ribbon as RB
-
 from wx import aui
 
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import icons8_opened_folder_50
+from .icons import (
+    get_default_icon_size,
+    get_default_scale_factor,
+    icons8_opened_folder_50,
+)
 
 _ = wx.GetTranslation
 
@@ -39,7 +43,7 @@ class RibbonButtonBar(RB.RibbonButtonBar):
         if self.screen_refresh_lock.acquire(timeout=0.2):
 
             dc = wx.AutoBufferedPaintDC(self)
-            if not dc is None:
+            if dc is not None:
 
                 self._art.DrawButtonBarBackground(
                     dc, self, wx.Rect(0, 0, *self.GetSize())
@@ -80,17 +84,44 @@ class RibbonButtonBar(RB.RibbonButtonBar):
         # else:
         #     print ("OnPaint was locked...")
 
-class MyRibbonPanel(RB.RibbonPanel):
 
-    def __init__(self, parent, id=wx.ID_ANY, label="", minimised_icon=wx.NullBitmap,
-                 pos=wx.DefaultPosition, size=wx.DefaultSize, agwStyle=RB.RIBBON_PANEL_DEFAULT_STYLE,
-                 name="RibbonPanel"):
-        super().__init__(parent=parent, id=id, label=label, minimised_icon=minimised_icon,
-                 pos=pos, size=size, agwStyle=agwStyle, name=name)
+class MyRibbonPanel(RB.RibbonPanel):
+    def __init__(
+        self,
+        parent,
+        id=wx.ID_ANY,
+        label="",
+        minimised_icon=wx.NullBitmap,
+        pos=wx.DefaultPosition,
+        size=wx.DefaultSize,
+        agwStyle=RB.RIBBON_PANEL_DEFAULT_STYLE,
+        name="RibbonPanel",
+        recurse=False,
+    ):
+        super().__init__(
+            parent=parent,
+            id=id,
+            label=label,
+            minimised_icon=minimised_icon,
+            pos=pos,
+            size=size,
+            agwStyle=agwStyle,
+            name=name,
+        )
+        self.recurse = recurse
+        self._expanded_panel = None
 
     def GetBestSize(self):
-        size = super().GetBestSize()
-        if size[0]<50: # There's something wrong here
+        try:
+            size = super().GetBestSize()
+        except AttributeError:
+            size = (0, 0)
+        oldw = size[0]
+        oldh = size[1]
+        # Set default values
+        wd = oldw
+        ht = oldh
+        if size[0] < 50:  # There's something wrong here
             # print ("Wrong best size for %s = %s" % (self.GetLabel(), size))
             for bar in self.GetChildren():
                 if isinstance(bar, RB.RibbonButtonBar):
@@ -103,14 +134,127 @@ class MyRibbonPanel(RB.RibbonPanel):
                     ht += 10
                     if self.GetLabel() != "":
                         ht += 23
-                    # print ("Found: wd=%s, ht=%s" % (wd, ht))
-                    size = wx.Size(wd, ht)
+                    else:
+                        ht += 10
                     break
+        else:
+            wd = size[0]
+            ht = size[1]
+        if platform.system != "Windows":
+            ht = max(ht, 120)
+            maxw = 0
+            ct = 0
+
+            for bar in self.GetChildren():
+                if isinstance(bar, RB.RibbonButtonBar):
+                    # Look for the largest button
+                    for button in bar._buttons:
+                        w, h = button.bitmap_large.GetSize()
+                        maxw = max(maxw, w + 10)
+                        ct += 1
+                    # Needs to have a minimum size of 25 though
+                    maxw = max(maxw, 25 + 10)
+            # print ("Ct=%d, widest=%d, wd=%.1f, wd2=%.1f, ht=%.1f, oldh=%.1f" % (ct, maxw, wd, 1.5*ct*maxw, ht, oldh))
+            wd = max(wd, int(1.5 * ct * maxw))
+        size = wx.Size(wd, ht)
+        # print (size, size2)
+        # size = size2
         return size
+
+    def IsMinimised(self, at_size=None):
+        # Very much simplified version..
+        if self.recurse:
+            res = False
+        else:
+            res = super().IsMinimised(at_size)
+        return res
+
+    def ShowExpanded(self):
+        """
+        Show the panel externally expanded.
+
+        When a panel is minimised, it can be shown full-size in a pop-out window, which
+        is referred to as being (externally) expanded.
+
+        :returns: ``True`` if the panel was expanded, ``False`` if it was not (possibly
+         due to it not being minimised, or already being expanded).
+
+        :note: When a panel is expanded, there exist two panels - the original panel
+         (which is referred to as the dummy panel) and the expanded panel. The original
+         is termed a dummy as it sits in the ribbon bar doing nothing, while the expanded
+         panel holds the panel children.
+
+        :see: :meth:`~RibbonPanel.HideExpanded`, :meth:`~RibbonPanel.GetExpandedPanel`
+        """
+
+        if not self.IsMinimised():
+            return False
+
+        if self._expanded_dummy is not None or self._expanded_panel != None:
+            return False
+
+        size = self.GetBestSize()
+        pos = self.GetExpandedPosition(
+            wx.Rect(self.GetScreenPosition(), self.GetSize()),
+            size,
+            self._preferred_expand_direction,
+        ).GetTopLeft()
+
+        # Need a top-level frame to contain the expanded panel
+        container = wx.Frame(
+            None,
+            wx.ID_ANY,
+            self.GetLabel(),
+            pos,
+            size,
+            wx.FRAME_NO_TASKBAR | wx.BORDER_NONE,
+        )
+
+        self._expanded_panel = MyRibbonPanel(
+            parent=container,
+            id=wx.ID_ANY,
+            label=self.GetLabel(),
+            minimised_icon=self._minimised_icon,
+            pos=wx.Point(0, 0),
+            size=size,
+            agwStyle=self._flags,
+            recurse=True,
+        )
+        self._expanded_panel.SetArtProvider(self._art)
+        self._expanded_panel._expanded_dummy = self
+
+        # Move all children to the new panel.
+        # Conceptually it might be simpler to reparent self entire panel to the
+        # container and create a new panel to sit in its place while expanded.
+        # This approach has a problem though - when the panel is reinserted into
+        # its original parent, it'll be at a different position in the child list
+        # and thus assume a new position.
+        # NB: Children iterators not used as behaviour is not well defined
+        # when iterating over a container which is being emptied
+
+        for child in self.GetChildren():
+            child.Reparent(self._expanded_panel)
+            child.Show()
+
+        # Move sizer to new panel
+        if self.GetSizer():
+            sizer = self.GetSizer()
+            self.SetSizer(None, False)
+            self._expanded_panel.SetSizer(sizer)
+
+        self._expanded_panel._minimised = False
+        self._expanded_panel.SetSize(size)
+        self._expanded_panel.Realize()
+        self.Refresh()
+        container.Show()
+        self._expanded_panel.SetFocus()
+
+        return True
 
 
 def register_panel_ribbon(window, context):
-    minh = 150
+    iconsize = get_default_icon_size()
+    minh = 3 * iconsize
     pane = (
         aui.AuiPaneInfo()
         .Name("ribbon")
@@ -188,7 +332,7 @@ class RibbonPanel(wx.Panel):
             if item_id == evt_id:
                 bar = item
                 # Now look for the corresponding buttons...
-                if not bar._hovered_button is None:
+                if bar._hovered_button is not None:
                     # print ("Hovered button: %d" % bar._hovered_button.base.id)
                     active_button = bar._hovered_button.base.id
                 break
@@ -263,8 +407,8 @@ class RibbonPanel(wx.Panel):
             return
         menu = wx.Menu()
         for v in button.button_dict["multi"]:
-            menu_id = wx.NewId()
-            menu.Append(menu_id, v.get("label"))
+            item = menu.Append(wx.ID_ANY, v.get("label"))
+            menu_id = item.GetId()
             self.Bind(wx.EVT_MENU, self.drop_menu_click(button, v), id=menu_id)
         event.PopupMenu(menu)
 
@@ -276,6 +420,7 @@ class RibbonPanel(wx.Panel):
         @param v:
         @return:
         """
+
         def menu_item_click(event):
             """
             Process menu item click.
@@ -353,13 +498,14 @@ class RibbonPanel(wx.Panel):
 
         def sort_priority(elem):
             return elem.get("priority", 0)
+
         buttons.sort(key=sort_priority)  # Sort buttons by priority
 
         for button in buttons:
             # Every registered button in the updated lookup gets created.
-            new_id = wx.NewId()
             group = button.get("group")
             resize_param = button.get("size")
+            new_id = wx.NewIdRef()
             if "multi" in button:
                 # Button is a multi-type button
                 b = button_bar.AddHybridButton(
@@ -453,11 +599,7 @@ class RibbonPanel(wx.Panel):
 
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
-                self._store_button_aspect(
-                    b,
-                    key,
-                    **toggle_action
-                )
+                self._store_button_aspect(b, key, **toggle_action)
                 if "icon" in toggle_action:
                     toggle_icon = toggle_action.get("icon")
                     self._update_button_aspect(

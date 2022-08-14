@@ -15,6 +15,7 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from .mwindow import MWindow
+from .choicepropertypanel import ChoicePropertyPanel
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
@@ -66,6 +67,16 @@ class SimulationPanel(wx.Panel, Job):
             # Was set...
             self.widget_scene.context.draw_mode ^= DRAW_MODE_GUIDES
 
+        # poor mans slide out
+        self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
+        self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
+        choices = self.context.lookup("choices/optimize")[:7]
+        self.panel_optimize = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
+        )
+        self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
+        self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
+
         self.slider_progress = wx.Slider(self, wx.ID_ANY, self.max, 0, self.max)
         self.slider_progress.SetFocus()
         self.text_distance_laser = wx.TextCtrl(
@@ -80,6 +91,24 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_distance_laser_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_distance_travel_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_distance_total_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_time_laser_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_time_travel_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_time_total_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
         self.button_play = wx.Button(self, wx.ID_ANY, "")
         self.slider_playbackspeed = wx.Slider(self, wx.ID_ANY, 180, 0, 310)
         self.text_playback_speed = wx.TextCtrl(
@@ -100,6 +129,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.combo_device.SetSelection(index)
         self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
+        self._slided_in = None
 
         self.__set_properties()
         self.__do_layout()
@@ -120,9 +150,8 @@ class SimulationPanel(wx.Panel, Job):
         # end wxGlade
 
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
-        self.widget_scene.add_scenewidget(
-            SimulationTravelWidget(self.widget_scene, self)
-        )
+        self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
+        self.widget_scene.add_scenewidget(self.sim_travel)
         # Don't let grid resize itself
         self.widget_scene.auto_tick = False
         self.widget_scene.tick_distance = 10  # mm
@@ -164,63 +193,134 @@ class SimulationPanel(wx.Panel, Job):
 
     def __do_layout(self):
         # begin wxGlade: Simulation.__do_layout
-        sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_2 = wx.BoxSizer(wx.VERTICAL)
-        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
+        self.text_distance_laser.SetMinSize((35, -1))
+        self.text_distance_laser_step.SetMinSize((35, -1))
+        self.text_distance_total.SetMinSize((35, -1))
+        self.text_distance_total_step.SetMinSize((35, -1))
+        self.text_distance_travel.SetMinSize((35, -1))
+        self.text_distance_travel_step.SetMinSize((35, -1))
+        self.text_time_laser.SetMinSize((35, -1))
+        self.text_time_laser_step.SetMinSize((35, -1))
+        self.text_time_total.SetMinSize((35, -1))
+        self.text_time_total_step.SetMinSize((35, -1))
+        self.text_time_travel.SetMinSize((35, -1))
+        self.text_time_travel_step.SetMinSize((35, -1))
+        v_sizer_main = wx.BoxSizer(wx.VERTICAL)
+        h_sizer_scroll = wx.BoxSizer(wx.HORIZONTAL)
+        h_sizer_text_1 = wx.BoxSizer(wx.HORIZONTAL)
+        h_sizer_text_2 = wx.BoxSizer(wx.HORIZONTAL)
+        h_sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+
         sizer_6 = wx.BoxSizer(wx.VERTICAL)
         sizer_4 = wx.BoxSizer(wx.VERTICAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_time = wx.BoxSizer(wx.HORIZONTAL)
         sizer_total_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Total Time")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Total Time")), wx.HORIZONTAL
         )
         sizer_travel_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Travel Time")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Travel Time")), wx.HORIZONTAL
         )
         sizer_laser_time = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Laser Time")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Laser Time")), wx.HORIZONTAL
         )
-        sizer_distance = wx.BoxSizer(wx.HORIZONTAL)
         sizer_total_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Total Distance")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Total Distance")), wx.HORIZONTAL
         )
         sizer_travel_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Travel Distance")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Travel Distance")), wx.HORIZONTAL
         )
         sizer_laser_distance = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Laser Distance")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Laser Distance")), wx.HORIZONTAL
         )
-        sizer_1.Add(self.view_pane, 3, wx.EXPAND, 0)
-        sizer_2.Add(self.slider_progress, 0, wx.EXPAND, 0)
-        sizer_laser_distance.Add(self.text_distance_laser, 0, wx.EXPAND, 0)
-        sizer_distance.Add(sizer_laser_distance, 1, wx.EXPAND, 0)
-        sizer_travel_distance.Add(self.text_distance_travel, 0, wx.EXPAND, 0)
-        sizer_distance.Add(sizer_travel_distance, 1, wx.EXPAND, 0)
-        sizer_total_distance.Add(self.text_distance_total, 0, wx.EXPAND, 0)
-        sizer_distance.Add(sizer_total_distance, 1, wx.EXPAND, 0)
-        sizer_2.Add(sizer_distance, 0, wx.EXPAND, 0)
-        sizer_laser_time.Add(self.text_time_laser, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_laser_time, 1, wx.EXPAND, 0)
-        sizer_travel_time.Add(self.text_time_travel, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_travel_time, 1, wx.EXPAND, 0)
-        sizer_total_time.Add(self.text_time_total, 0, wx.EXPAND, 0)
-        sizer_time.Add(sizer_total_time, 1, wx.EXPAND, 0)
-        sizer_2.Add(sizer_time, 0, wx.EXPAND, 0)
-        sizer_3.Add(self.button_play, 0, 0, 0)
+        # +--------+---+-------+
+        # |   P    |   | Optim |
+        # |   R    |   |       |
+        # |   E    |   |Options|
+        # |   V    | > |       |
+        # |   I    |   |       |
+        # |   E    |   +-------+
+        # |   W    |   |Refresh|
+        # +--------+---+-------+
+        self.btn_slide_options.SetMinSize(wx.Size(20, -1))
+        self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
+        self.voption_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
+
+        self.hscene_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.hscene_sizer.Add(self.view_pane, 2, wx.EXPAND, 0)
+        self.hscene_sizer.Add(self.btn_slide_options, 0, wx.EXPAND, 0)
+        self.hscene_sizer.Add(self.voption_sizer, 1, wx.EXPAND, 0)
+
+        v_sizer_main.Add(self.hscene_sizer, 3, wx.EXPAND, 0)
+
+        h_sizer_scroll.Add(self.slider_progress, 1, wx.EXPAND, 0)
+        v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
+
+        sizer_laser_distance.Add(self.text_distance_laser_step, 1, wx.EXPAND, 0)
+        sizer_laser_distance.Add(self.text_distance_laser, 1, wx.EXPAND, 0)
+        h_sizer_text_1.Add(sizer_laser_distance, 1, wx.EXPAND, 0)
+
+        sizer_travel_distance.Add(self.text_distance_travel_step, 1, wx.EXPAND, 0)
+        sizer_travel_distance.Add(self.text_distance_travel, 1, wx.EXPAND, 0)
+        h_sizer_text_1.Add(sizer_travel_distance, 1, wx.EXPAND, 0)
+
+        sizer_total_distance.Add(self.text_distance_total_step, 1, wx.EXPAND, 0)
+        sizer_total_distance.Add(self.text_distance_total, 1, wx.EXPAND, 0)
+        h_sizer_text_1.Add(sizer_total_distance, 1, wx.EXPAND, 0)
+
+        sizer_laser_time.Add(self.text_time_laser_step, 1, wx.EXPAND, 0)
+        sizer_laser_time.Add(self.text_time_laser, 1, wx.EXPAND, 0)
+        h_sizer_text_2.Add(sizer_laser_time, 1, wx.EXPAND, 0)
+
+        sizer_travel_time.Add(self.text_time_travel_step, 1, wx.EXPAND, 0)
+        sizer_travel_time.Add(self.text_time_travel, 1, wx.EXPAND, 0)
+        h_sizer_text_2.Add(sizer_travel_time, 1, wx.EXPAND, 0)
+
+        sizer_total_time.Add(self.text_time_total_step, 1, wx.EXPAND, 0)
+        sizer_total_time.Add(self.text_time_total, 1, wx.EXPAND, 0)
+        h_sizer_text_2.Add(sizer_total_time, 1, wx.EXPAND, 0)
+
+        h_sizer_buttons.Add(self.button_play, 0, 0, 0)
         sizer_4.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
         label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed"))
         sizer_5.Add(label_playback_speed, 2, 0, 0)
         sizer_5.Add(self.text_playback_speed, 1, 0, 0)
         sizer_4.Add(sizer_5, 1, wx.EXPAND, 0)
-        sizer_3.Add(sizer_4, 1, wx.EXPAND, 0)
+        h_sizer_buttons.Add(sizer_4, 1, wx.EXPAND, 0)
         sizer_6.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_6.Add(self.button_spool, 0, wx.EXPAND, 0)
-        sizer_3.Add(sizer_6, 1, wx.EXPAND, 0)
-        sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
-        sizer_1.Add(sizer_2, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_1)
+        h_sizer_buttons.Add(sizer_6, 1, wx.EXPAND, 0)
+
+        v_sizer_main.Add(h_sizer_text_1, 0, wx.EXPAND, 0)
+        v_sizer_main.Add(h_sizer_text_2, 0, wx.EXPAND, 0)
+        v_sizer_main.Add(h_sizer_buttons, 1, wx.EXPAND, 0)
+        self.SetSizer(v_sizer_main)
+        self.slided_in = True  # Hide initially
         self.Layout()
         # end wxGlade
+
+    # Manages the display, non-display of the optimisation-options
+    @property
+    def slided_in(self):
+        return self._slided_in
+
+    @slided_in.setter
+    def slided_in(self, newvalue):
+        self._slided_in = newvalue
+        if newvalue:
+            # Slided in ->
+            self.hscene_sizer.Show(sizer=self.voption_sizer, show=False, recursive=True)
+            self.voption_sizer.Layout()
+            self.btn_slide_options.SetLabel("<")
+            self.hscene_sizer.Layout()
+            self.Layout()
+        else:
+            # Slided out ->
+            self.hscene_sizer.Show(sizer=self.voption_sizer, show=True, recursive=True)
+            self.voption_sizer.Layout()
+            self.btn_slide_options.SetLabel(">")
+            self.hscene_sizer.Layout()
+            self.Layout()
 
     def toggle_background(self, event):
         """
@@ -265,7 +365,7 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context(
-                "plan%s sublist %d -1\n" % (self.plan_name, self.progress)
+                f"plan{self.plan_name} sublist {self.progress} -1\n"
             ),
             menu.Append(
                 wx.ID_ANY,
@@ -275,9 +375,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context(
-                "plan%s sublist 0 %d\n" % (self.plan_name, self.progress)
-            ),
+            lambda e: self.context(f"plan{self.plan_name} sublist 0 {self.progress}\n"),
             menu.Append(
                 wx.ID_ANY,
                 _("Delete cuts after"),
@@ -329,22 +427,110 @@ class SimulationPanel(wx.Panel, Job):
             gui.PopupMenu(menu)
             menu.Destroy()
 
+    def refresh_my_plan(self):
+        # Stop animation
+        if self.running:
+            self._stop()
+            return
+        # Refresh cutcode
+        self.cutcode = CutCode()
+
+        for c in self.operations:
+            if isinstance(c, CutCode):
+                self.cutcode.extend(c)
+        self.cutcode = CutCode(self.cutcode.flat())
+        self.max = max(len(self.cutcode), 0) + 1
+        self.progress = self.max
+        self.slider_progress.SetMin(0)
+        self.slider_progress.SetMax(self.max)
+        self.slider_progress.SetValue(self.max)
+        self.sim_travel.initvars()
+        self.update_fields()
+        self.request_refresh()
+
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         if plan_name == self.plan_name:
-            # Refresh cutcode
-            self.cutcode = CutCode()
+            self.refresh_my_plan()
 
-            for c in self.operations:
-                if isinstance(c, CutCode):
-                    self.cutcode.extend(c)
-            self.cutcode = CutCode(self.cutcode.flat())
-            self.max = max(len(self.cutcode), 0) + 1
-            self.progress = self.max
-            self.slider_progress.SetMin(0)
-            self.slider_progress.SetMax(self.max)
-            self.slider_progress.SetValue(self.max)
-            self.request_refresh()
+    def update_fields(self):
+        step = self.progress
+        travel = self.cutcode.length_travel(stop_at=step)
+        cuts = self.cutcode.length_cut(stop_at=step)
+        travel /= MILS_IN_MM
+        cuts /= MILS_IN_MM
+        self.text_distance_travel_step.SetValue(f"{travel:.2f}mm")
+        self.text_distance_laser_step.SetValue(f"{cuts:.2f}mm")
+        self.text_distance_total_step.SetValue(f"{travel + cuts:.2f}mm")
+
+        extra = self.cutcode.extra_time(stop_at=step)
+
+        try:
+            time_travel = travel / self.cutcode.travel_speed
+            t_hours = int(time_travel // 3600)
+            t_mins = int((time_travel % 3600) // 60)
+            t_seconds = int(time_travel % 60)
+            self.text_time_travel_step.SetValue(
+                f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
+            )
+            time_cuts = self.cutcode.duration_cut(stop_at=step)
+            t_hours = int(time_cuts // 3600)
+            t_mins = int((time_cuts % 3600) // 60)
+            t_seconds = int(time_cuts % 60)
+            self.text_time_laser_step.SetValue(
+                f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
+            )
+            time_total = time_travel + time_cuts + extra
+            t_hours = int(time_total // 3600)
+            t_mins = int((time_total % 3600) // 60)
+            t_seconds = int(time_total % 60)
+            self.text_time_total_step.SetValue(
+                f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
+            )
+        except ZeroDivisionError:
+            pass
+
+        travel = self.cutcode.length_travel()
+        cuts = self.cutcode.length_cut()
+        travel /= MILS_IN_MM
+        cuts /= MILS_IN_MM
+        self.text_distance_travel.SetValue(f"{travel:.2f}mm")
+        self.text_distance_laser.SetValue(f"{cuts:.2f}mm")
+        self.text_distance_total.SetValue(f"{travel + cuts:.2f}mm")
+
+        extra = self.cutcode.extra_time()
+
+        try:
+            time_travel = travel / self.cutcode.travel_speed
+            t_hours = int(time_travel // 3600)
+            t_mins = int((time_travel % 3600) // 60)
+            t_seconds = int(time_travel % 60)
+            self.text_time_travel.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
+            time_cuts = self.cutcode.duration_cut()
+            t_hours = int(time_cuts // 3600)
+            t_mins = int((time_cuts % 3600) // 60)
+            t_seconds = int(time_cuts % 60)
+            self.text_time_laser.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
+            time_total = time_travel + time_cuts + extra
+            t_hours = int(time_total // 3600)
+            t_mins = int((time_total % 3600) // 60)
+            t_seconds = int(time_total % 60)
+            self.text_time_total.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
+        except ZeroDivisionError:
+            pass
+
+    def slide_out(self, event):
+        self.slided_in = not self.slided_in
+        event.Skip()
+
+    def on_redo_it(self, event):
+        with wx.BusyInfo(_("Preparing simulation...")):
+            self.context(
+                "plan{plan} clear\nplan{plan} copy preprocess validate blob preopt optimize\n".format(
+                    plan=self.plan_name
+                )
+            )
+        self.refresh_my_plan()
 
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
@@ -353,40 +539,11 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.widget_root.focus_viewport_scene(
             bbox, self.view_pane.Size, 0.1
         )
-        travel = self.cutcode.length_travel()
-        cuts = self.cutcode.length_cut()
-        travel /= MILS_IN_MM
-        cuts /= MILS_IN_MM
-        self.text_distance_travel.SetValue("%.2fmm" % travel)
-        self.text_distance_laser.SetValue("%.2fmm" % cuts)
-        self.text_distance_total.SetValue("%.2fmm" % (travel + cuts))
-
-        extra = self.cutcode.extra_time()
-
-        try:
-            time_travel = travel / self.cutcode.travel_speed
-            t_hours = time_travel // 3600
-            t_mins = (time_travel % 3600) // 60
-            t_seconds = time_travel % 60
-            self.text_time_travel.SetValue(
-                "%d:%02d:%02d" % (t_hours, t_mins, t_seconds)
-            )
-            time_cuts = self.cutcode.duration_cut()
-            t_hours = time_cuts // 3600
-            t_mins = (time_cuts % 3600) // 60
-            t_seconds = time_cuts % 60
-            self.text_time_laser.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
-            time_total = time_travel + time_cuts + extra
-            t_hours = time_total // 3600
-            t_mins = (time_total % 3600) // 60
-            t_seconds = time_total % 60
-            self.text_time_total.SetValue("%d:%02d:%02d" % (t_hours, t_mins, t_seconds))
-        except ZeroDivisionError:
-            pass
+        self.update_fields()
 
     def pane_hide(self):
         if self.auto_clear:
-            self.context("plan%s clear\n" % self.plan_name)
+            self.context(f"plan{self.plan_name} clear\n")
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
@@ -408,6 +565,7 @@ class SimulationPanel(wx.Panel, Job):
 
     def on_slider_progress(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.progress = min(self.slider_progress.GetValue(), self.max)
+        self.update_fields()
         self.context.signal("refresh_scene", self.widget_scene.name)
 
     def _start(self):
@@ -427,6 +585,7 @@ class SimulationPanel(wx.Panel, Job):
         if self.progress >= self.max:
             self.progress = 0
             self.slider_progress.SetValue(self.progress)
+            self.update_fields()
         self._start()
 
     def animate_sim(self, event=None):
@@ -437,6 +596,7 @@ class SimulationPanel(wx.Panel, Job):
             self._stop()
         else:
             self.slider_progress.SetValue(self.progress)
+        self.update_fields()
         self.context.signal("refresh_scene", self.widget_scene.name)
 
     def on_slider_playback(self, event=None):  # wxGlade: Simulation.<event_handler>
@@ -446,14 +606,18 @@ class SimulationPanel(wx.Panel, Job):
         value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
         self.interval = 0.1 * 100.0 / float(value)
 
-        self.text_playback_speed.SetValue("%d%%" % value)
+        self.text_playback_speed.SetValue(f"{value}%")
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
         index = self.combo_device.GetSelection()
         self.selected_device = self.available_devices[index]
+        self.selected_device.kernel.activate_service_path(
+            "device", self.selected_device.path
+        )
+        self.widget_scene.request_refresh()
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
-        self.context("plan%s spool\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} spool\n")
         self.context("window close Simulation\n")
 
 
@@ -488,6 +652,9 @@ class SimulationTravelWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.sim = sim
         self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
+        self.initvars()
+
+    def initvars(self):
         self.starts = list()
         self.ends = list()
         self.pos = list()
@@ -631,7 +798,7 @@ class Simulation(MWindow):
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):
-        if not background is None:
+        if background is not None:
             background = wx.Bitmap.FromBuffer(*background)
         self.panel.widget_scene._signal_widget(
             self.panel.widget_scene.widget_root, "background", background

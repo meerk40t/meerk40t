@@ -17,7 +17,6 @@ NM_PER_uM = 1000
 NM_PER_MM = 1000000
 NM_PER_CM = 10000000
 NM_PER_PIXEL = NM_PER_INCH / DEFAULT_PPI
-PX_PER_uM = DEFAULT_PPI / NM_PER_INCH
 
 MIL_PER_INCH = 1000
 NM_PER_INCH = 2.54e7
@@ -192,17 +191,9 @@ class ViewPort:
     def scene_to_device_matrix(self):
         ops = []
         if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append(
-                "scale({sx:.13f}, {sy:.13f})".format(
-                    sx=1.0 / self._scale_x, sy=1.0 / self._scale_y
-                )
-            )
+            ops.append(f"scale({1.0 / self._scale_x:.13f}, {1.0 / self._scale_y:.13f})")
         if self._offset_x != 0 or self._offset_y != 0:
-            ops.append(
-                "translate({dx:.13f}, {dy:.13f})".format(
-                    dx=self._offset_x, dy=self._offset_y
-                )
-            )
+            ops.append(f"translate({self._offset_x:.13f}, {self._offset_y:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
@@ -430,24 +421,19 @@ class ViewPort:
             if scale_x == 1 and scale_y == 1:
                 return ""  # Nothing happens.
             else:
-                return "scale(%s, %s)" % (Length.str(scale_x), Length.str(scale_y))
+                return f"scale({scale_x:.12f}, {scale_y:.12f})"
         else:
             if scale_x == 1 and scale_y == 1:
-                return "translate(%s, %s)" % (
-                    Length.str(translate_x),
-                    Length.str(translate_y),
-                )
+                return f"translate({translate_x:.12f}, {translate_y:.12f})"
             else:
-                return "translate(%s, %s) scale(%s, %s)" % (
-                    Length.str(translate_x),
-                    Length.str(translate_y),
-                    Length.str(scale_x),
-                    Length.str(scale_y),
+                return (
+                    f"translate({translate_x:.12f}, {translate_y:.12f}) "
+                    f"scale({scale_x:.12f}, {scale_y:.12f})"
                 )
 
     @staticmethod
     def conversion(units, amount=1):
-        return Length("{amount}{units}".format(units=units, amount=amount)).preferred
+        return Length(f"{amount}{units}").preferred
 
 
 ACCEPTED_UNITS = ("", "cm", "mm", "in", "mil", "pt", "pc", "px", "%")

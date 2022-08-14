@@ -34,10 +34,6 @@ def plugin(kernel, lifecycle=None):
                 str, "preferred_device", "lhystudios"
             )
             # Nothing has yet established a device. Boot this device.
-            kernel.root(
-                "service device start {preferred_device}\n".format(
-                    preferred_device=preferred_device
-                )
-            )
+            kernel.root(f"service device start {preferred_device}\n")
     if lifecycle == "preshutdown":
         setattr(kernel.root, "activated_device", kernel.device.path)

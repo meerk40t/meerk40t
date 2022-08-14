@@ -1,4 +1,5 @@
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.gui.fonts import wxfont_to_svg
 
@@ -11,14 +12,16 @@ _ = wx.GetTranslation
 
 
 class PromptingComboBox(wx.ComboBox):
-    def __init__(self, parent, choices=[], style=0, **args):
+    def __init__(self, parent, choices=None, style=0, **kwargs):
+        if choices is None:
+            choices = []
         wx.ComboBox.__init__(
             self,
             parent,
             wx.ID_ANY,
             style=style | wx.CB_DROPDOWN,
             choices=choices,
-            **args,
+            **kwargs,
         )
         self.choices = choices
         self.Bind(wx.EVT_TEXT, self.OnText)
@@ -54,11 +57,13 @@ class PromptingComboBox(wx.ComboBox):
         event.Skip()
 
 
-class TextPropertyPanel(wx.Panel):
-    def __init__(self, *args, context=None, node=None, **kwds):
+class TextPropertyPanel(ScrolledPanel):
+    def __init__(self, parent, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, *args, **kwds)
+        super().__init__(parent, *args, **kwds)
         self.context = context
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.node = node
@@ -121,7 +126,6 @@ class TextPropertyPanel(wx.Panel):
         self.combo_font = PromptingComboBox(
             self, choices=elist, style=wx.TE_PROCESS_ENTER
         )
-        #        self.combo_font = wx.ComboBox(self, id=wx.ID_ANY, choices = elist, style = wx.CB_READONLY)
         self.button_attrib_larger = wx.Button(
             self, id=wx.ID_ANY, label="A", size=wx.Size(23, 23)
         )
@@ -144,8 +148,13 @@ class TextPropertyPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
+        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
+        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
+        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
+        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
+
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_text)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_name_change, self.text_text)
+
         self.Bind(wx.EVT_BUTTON, self.on_button_choose_font, self.button_choose_font)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F00)
@@ -166,7 +175,7 @@ class TextPropertyPanel(wx.Panel):
 
         self.Bind(wx.EVT_COMBOBOX, self.on_font_choice, self.combo_font)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_font_choice, self.combo_font)
-        self.Bind(wx.EVT_KILL_FOCUS, self.on_font_choice, self.combo_font)
+        self.combo_font.Bind(wx.EVT_KILL_FOCUS, self.on_font_choice)
 
         self.Bind(wx.EVT_BUTTON, self.on_button_larger, self.button_attrib_larger)
         self.Bind(wx.EVT_BUTTON, self.on_button_smaller, self.button_attrib_smaller)
@@ -196,6 +205,16 @@ class TextPropertyPanel(wx.Panel):
     def set_widgets(self, node):
         if node is not None:
             self.node = node
+        try:
+            if node.id is not None:
+                self.text_id.SetValue(str(node.id))
+        except AttributeError:
+            pass
+        try:
+            if node.label is not None:
+                self.text_label.SetValue(str(node.label))
+        except AttributeError:
+            pass
         try:
             if self.node.text is not None:
                 self.text_text.SetValue(self.node.text.text)
@@ -284,6 +303,18 @@ class TextPropertyPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: TextProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_id = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
+        )
+        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
+        sizer_label = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
+        )
+        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
         sizer_fill = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL
         )
@@ -343,8 +374,8 @@ class TextPropertyPanel(wx.Panel):
             pass
         self.label_fonttest.SetLabelText(self.node.text.text)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
-        self.button_attrib_bold.SetValue(self.node.text.font_weight != "normal")
-        self.button_attrib_italic.SetValue(self.node.font_style != "normal")
+        self.button_attrib_bold.SetValue(self.node.text.weight > 600)
+        self.button_attrib_italic.SetValue(self.node.text.font_style != "normal")
         self.button_attrib_underline.SetValue(self.node.underline)
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
         self.combo_font.SetValue(self.node.wxfont.GetFaceName())
@@ -353,23 +384,34 @@ class TextPropertyPanel(wx.Panel):
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
 
+    def on_text_id_change(self, event=None):
+        try:
+            self.node.id = self.text_id.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
+
+    def on_text_label_change(self, event=None):
+        try:
+            self.node.label = self.text_label.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
+
     def on_button_smaller(self, event):
         try:
             size = self.node.wxfont.GetFractionalPointSize()
-            intmode = False
-        except:
+        except AttributeError:
             size = self.node.wxfont.GetPointSize()
-            intmode = True
-        if intmode:
-            size = int(size / 1.2)
-            if size < 4:
-                size = 4
-            self.node.wxfont.SetPointSize(size)
-        else:
-            size = size / 1.2
-            if size < 4:
-                size = 4.0
+
+        size = size / 1.2
+        if size < 4:
+            size = 4
+        try:
             self.node.wxfont.SetFractionalPointSize(size)
+        except AttributeError:
+            self.node.wxfont.SetPointSize(int(size))
+
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
@@ -378,16 +420,15 @@ class TextPropertyPanel(wx.Panel):
     def on_button_larger(self, event):
         try:
             size = self.node.wxfont.GetFractionalPointSize()
-            intmode = False
-        except:
+        except AttributeError:
             size = self.node.wxfont.GetPointSize()
-            intmode = True
-        if intmode:
-            size = int(size * 1.2)
-            self.node.wxfont.SetPointSize(size)
-        else:
-            size = size * 1.2
+        size *= 1.2
+
+        try:
             self.node.wxfont.SetFractionalPointSize(size)
+        except AttributeError:
+            self.node.wxfont.SetPointSize(int(size))
+
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
@@ -408,9 +449,15 @@ class TextPropertyPanel(wx.Panel):
         button = event.EventObject
         state = button.GetValue()
         if state:
-            self.node.wxfont.SetWeight(wx.FONTWEIGHT_BOLD)
+            try:
+                self.node.wxfont.SetNumericWeight(700)
+            except AttributeError:
+                self.node.wxfont.SetWeight(wx.FONTWEIGHT_BOLD)
         else:
-            self.node.wxfont.SetWeight(wx.FONTWEIGHT_NORMAL)
+            try:
+                self.node.wxfont.SetNumericWeight(400)
+            except AttributeError:
+                self.node.wxfont.SetWeight(wx.FONTWEIGHT_NORMAL)
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
@@ -477,7 +524,7 @@ class TextPropertyPanel(wx.Panel):
                 self.node.wxfont = font
                 wxfont_to_svg(self.node)
                 self.node.modified()
-            except Exception:  # rgb get failed.
+            except AttributeError:  # rgb get failed.
                 pass
 
             self.update_label()
@@ -505,7 +552,7 @@ class TextPropertyPanel(wx.Panel):
                 self.node.fill = color
                 self.node.altered()
             else:
-                self.fill = Color("none")
+                self.node.fill = Color("none")
                 self.node.altered()
         self.update_label()
         self.refresh()

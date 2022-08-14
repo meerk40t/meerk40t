@@ -9,7 +9,7 @@ from meerk40t.gui.mwindow import MWindow
 _ = wx.GetTranslation
 
 
-class LhystudiosAccelerationChartPanel(ScrolledPanel):
+class LihuiyuAccelerationChartPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -105,46 +105,70 @@ class LhystudiosAccelerationChartPanel(ScrolledPanel):
             _("Enable defined acceleration chart for vectors")
         )
         self.text_vector_accel_1.SetMinSize((55, 23))
-        self.text_vector_accel_1.SetToolTip(_("Upper limit for accel level %d") % 1)
+        self.text_vector_accel_1.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=1)
+        )
         self.text_vector_accel_1.Enable(False)
         self.text_vector_accel_2.SetMinSize((55, 23))
-        self.text_vector_accel_2.SetToolTip(_("Upper limit for accel level %d") % 2)
+        self.text_vector_accel_2.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=2)
+        )
         self.text_vector_accel_2.Enable(False)
         self.text_vector_accel_3.SetMinSize((55, 23))
-        self.text_vector_accel_3.SetToolTip(_("Upper limit for accel level %d") % 3)
+        self.text_vector_accel_3.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=3)
+        )
         self.text_vector_accel_3.Enable(False)
         self.text_vector_accel_4.SetMinSize((55, 23))
-        self.text_vector_accel_4.SetToolTip(_("Upper limit for accel level %d") % 4)
+        self.text_vector_accel_4.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=4)
+        )
         self.text_vector_accel_4.Enable(False)
         self.checkbox_vraster_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for vertical rasters")
         )
         self.text_vraster_accel_1.SetMinSize((55, 23))
-        self.text_vraster_accel_1.SetToolTip(_("Upper limit for accel level %d") % 1)
+        self.text_vraster_accel_1.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=1)
+        )
         self.text_vraster_accel_1.Enable(False)
         self.text_vraster_accel_2.SetMinSize((55, 23))
-        self.text_vraster_accel_2.SetToolTip(_("Upper limit for accel level %d") % 2)
+        self.text_vraster_accel_2.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=2)
+        )
         self.text_vraster_accel_2.Enable(False)
         self.text_vraster_accel_3.SetMinSize((55, 23))
-        self.text_vraster_accel_3.SetToolTip(_("Upper limit for accel level %d") % 3)
+        self.text_vraster_accel_3.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=3)
+        )
         self.text_vraster_accel_3.Enable(False)
         self.text_vraster_accel_4.SetMinSize((55, 23))
-        self.text_vraster_accel_4.SetToolTip(_("Upper limit for accel level %d") % 4)
+        self.text_vraster_accel_4.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=4)
+        )
         self.text_vraster_accel_4.Enable(False)
         self.checkbox_raster_accel_enable.SetToolTip(
             _("Enable defined acceleration chart for horizontal rasters")
         )
         self.text_raster_accel_1.SetMinSize((55, 23))
-        self.text_raster_accel_1.SetToolTip(_("Upper limit for accel level %d") % 1)
+        self.text_raster_accel_1.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=1)
+        )
         self.text_raster_accel_1.Enable(False)
         self.text_raster_accel_2.SetMinSize((55, 23))
-        self.text_raster_accel_2.SetToolTip(_("Upper limit for accel level %d") % 2)
+        self.text_raster_accel_2.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=2)
+        )
         self.text_raster_accel_2.Enable(False)
         self.text_raster_accel_3.SetMinSize((55, 23))
-        self.text_raster_accel_3.SetToolTip(_("Upper limit for accel level %d") % 3)
+        self.text_raster_accel_3.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=3)
+        )
         self.text_raster_accel_3.Enable(False)
         self.text_raster_accel_4.SetMinSize((55, 23))
-        self.text_raster_accel_4.SetToolTip(_("Upper limit for accel level %d") % 4)
+        self.text_raster_accel_4.SetToolTip(
+            _("Upper limit for accel level {acceleration}").format(acceleration=4)
+        )
         self.text_raster_accel_4.Enable(False)
         # end wxGlade
 
@@ -276,21 +300,17 @@ class LhystudiosAccelerationChartPanel(ScrolledPanel):
         # self.Close()
         pass
 
-    def on_check_vector_accel_enable(
-        self, event=None
-    ):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_check_vector_accel_enable(self, event=None):
 
         self.context.vector_accel_table = self.checkbox_vector_accel_enable.GetValue()
 
-    def on_text_vector_accel(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_text_vector_accel(self, event):
         pass
 
-    def on_check_raster_accel_enable(
-        self, event=None
-    ):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_check_raster_accel_enable(self, event=None):
         self.context.raster_accel_table = self.checkbox_raster_accel_enable.GetValue()
 
-    def on_text_raster_accel(self, event):  # wxGlade: LhystudiosDriver.<event_handler>
+    def on_text_raster_accel(self, event):
         pass
 
     def on_check_vraster_accel_enable(
@@ -302,11 +322,11 @@ class LhystudiosAccelerationChartPanel(ScrolledPanel):
         pass
 
 
-class LhystudiosAccelerationChart(MWindow):
+class LihuiyuAccelerationChart(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, *args, **kwds)
 
-        self.panel = LhystudiosAccelerationChartPanel(
+        self.panel = LihuiyuAccelerationChartPanel(
             self, wx.ID_ANY, context=self.context
         )
         self.add_module_delegate(self.panel)

@@ -227,11 +227,11 @@ class CutGroup(list, CutObject, ABC):
     def __copy__(self):
         return CutGroup(self.parent, self)
 
+    def __str__(self):
+        return f"CutGroup(children={list.__str__(self)}, parent={str(self.parent)})"
+
     def __repr__(self):
-        return "CutGroup(children=%s, parent=%s)" % (
-            list.__repr__(self),
-            str(self.parent),
-        )
+        return f"CutGroup(children={list.__repr__(self)}, parent={str(self.parent)})"
 
     def reversible(self):
         return False
@@ -342,8 +342,8 @@ class CutCode(CutGroup):
 
     def __str__(self):
         parts = list()
-        parts.append("%d items" % len(self))
-        return "CutCode(%s)" % " ".join(parts)
+        parts.append(f"{len(self)} items")
+        return f"CutCode({' '.join(parts)})"
 
     def __copy__(self):
         return CutCode(self)
@@ -402,43 +402,59 @@ class CutCode(CutGroup):
             yield "plot", cutobject
         yield "plot_start"
 
-    def length_travel(self, include_start=False):
+    def length_travel(self, include_start=False, stop_at=-1):
         cutcode = list(self.flat())
         if len(cutcode) == 0:
             return 0
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
         distance = 0
         if include_start:
             if self.start is not None:
                 distance += abs(complex(*self.start) - complex(*cutcode[0].start))
             else:
                 distance += abs(0 - complex(*cutcode[0].start))
-        for i in range(1, len(cutcode)):
+        for i in range(1, stop_at):
             prev = cutcode[i - 1]
             curr = cutcode[i]
             delta = Point.distance(prev.end, curr.start)
             distance += delta
         return distance
 
-    def length_cut(self):
+    def length_cut(self, stop_at=-1):
         cutcode = list(self.flat())
         distance = 0
-        for i in range(0, len(cutcode)):
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             distance += curr.length()
         return distance
 
-    def extra_time(self):
+    def extra_time(self, stop_at=-1):
         cutcode = list(self.flat())
         extra = 0
-        for i in range(0, len(cutcode)):
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             extra += curr.extra()
         return extra
 
-    def duration_cut(self):
+    def duration_cut(self, stop_at=None):
         cutcode = list(self.flat())
         distance = 0
-        for i in range(0, len(cutcode)):
+        if stop_at is None:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             if curr.speed != 0:
                 distance += (curr.length() / MILS_IN_MM) / curr.speed
@@ -572,6 +588,12 @@ class QuadCut(CutObject):
         self.raster_step = 0
         self._control = control_point
 
+    def __repr__(self):
+        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.implicit_passes})"
+
     def c(self):
         return self._control
 
@@ -624,6 +646,12 @@ class CubicCut(CutObject):
         self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
+
+    def __repr__(self):
+        return f'CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, passes={self.implicit_passes})"
 
     def c1(self):
         return self._control1 if self.normal else self._control2
@@ -988,12 +1016,12 @@ class PlotCut(CutObject):
 
     def __str__(self):
         parts = list()
-        parts.append("{points} points".format(points=len(self.plot)))
-        parts.append("xmin: {v}".format(v=self.min_x))
-        parts.append("ymin: {v}".format(v=self.min_y))
-        parts.append("xmax: {v}".format(v=self.max_x))
-        parts.append("ymax: {v}".format(v=self.max_y))
-        return "PlotCut(%s)" % ", ".join(parts)
+        parts.append(f"{len(self.plot)} points")
+        parts.append(f"xmin: {self.min_x}")
+        parts.append(f"ymin: {self.min_y}")
+        parts.append(f"xmax: {self.max_x}")
+        parts.append(f"ymax: {self.max_y}")
+        return f"PlotCut({', '.join(parts)})"
 
     def check_if_rasterable(self):
         """
@@ -1004,8 +1032,8 @@ class PlotCut(CutObject):
         """
         # Default to vector settings.
         self.settings["raster_alt"] = False
-        self.settings["constant_move_x"] = False
-        self.settings["constant_move_y"] = False
+        self.settings["_constant_move_x"] = False
+        self.settings["_constant_move_y"] = False
         self.settings["raster_step"] = 0
         if self.settings.get("speed", 0) < 80:
             # Twitchless gets sketchy at 80.
@@ -1016,10 +1044,10 @@ class PlotCut(CutObject):
         # Above 80 we're likely dealing with a raster.
         if 0 < self.max_dx <= 15:
             self.v_raster = True
-            self.settings["constant_move_y"] = True
+            self.settings["_constant_move_y"] = True
         if 0 < self.max_dy <= 15:
             self.h_raster = True
-            self.settings["constant_move_x"] = True
+            self.settings["_constant_move_x"] = True
         # if self.vertical_raster or self.horizontal_raster:
         self.settings["raster_step"] = min(self.max_dx, self.max_dy)
         self.settings["raster_alt"] = True

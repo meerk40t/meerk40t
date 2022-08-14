@@ -41,7 +41,7 @@ class PlannerPanel(wx.Panel):
 
         choices = self.context.lookup("choices/optimize")[:7]
         self.panel_optimize = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices, scrolling = False
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
@@ -110,7 +110,7 @@ class PlannerPanel(wx.Panel):
         # end wxGlade
 
     def jobchange_return_to_operations(self, event=None):
-        self.context("plan%s return clear\n" % (self.plan_name))
+        self.context(f"plan{self.plan_name} return clear\n")
 
     def jobchange_step_repeat(self, event=None):
         elems = []
@@ -179,7 +179,7 @@ class PlannerPanel(wx.Panel):
                     digits=3,
                 )
             else:
-                width = "%.2f%%" % (100.0 / rows)
+                width = f"{100.0 / rows:.2f}%"
             dlg.SetValue(str(width))
             if dlg.ShowModal() == wx.ID_OK:
                 try:
@@ -218,7 +218,7 @@ class PlannerPanel(wx.Panel):
                     digits=3,
                 )
             else:
-                height = "%.2f%%" % (100.0 / cols)
+                height = f"{100.0 / cols:.2f}%"
             dlg.SetValue(str(height))
             if dlg.ShowModal() == wx.ID_OK:
                 try:
@@ -239,32 +239,31 @@ class PlannerPanel(wx.Panel):
             y_distance = height
 
         self.context(
-            "plan%s step_repeat %s %s %s %s\n"
-            % (self.plan_name, cols, rows, x_distance, y_distance)
+            f"plan{self.plan_name} step_repeat {cols} {rows} {x_distance} {y_distance}\n"
         )
 
     def jobadd_physicalhome(self, event=None):
-        self.context("plan%s command -o physicalhome\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o physicalhome\n")
         self.update_gui()
 
     def jobadd_home(self, event=None):
-        self.context("plan%s command -o home\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o home\n")
         self.update_gui()
 
     def jobadd_origin(self, event=None):
-        self.context("plan%s command -o origin\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o origin\n")
         self.update_gui()
 
     def jobadd_beep(self, event=None):
-        self.context("plan%s command -o beep\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o beep\n")
         self.update_gui()
 
     def jobadd_interrupt(self, event=None):
-        self.context("plan%s command -o interrupt\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o interrupt\n")
         self.update_gui()
 
     def jobadd_command(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context("plan%s command -o console\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o console\n")
         self.update_gui()
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
@@ -293,31 +292,31 @@ class PlannerPanel(wx.Panel):
     def on_button_start(self, event=None):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
             with wx.BusyInfo(_("Preprocessing...")):
-                self.context("plan%s copy preprocess\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} copy preprocess\n")
                 cutplan = self.context.planner.default_plan
                 if len(cutplan.commands) == 0:
-                    self.context("plan%s validate\n" % self.plan_name)
+                    self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 1:
             with wx.BusyInfo(_("Determining validity of operations...")):
-                self.context("plan%s preprocess\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} preprocess\n")
                 cutplan = self.context.planner.default_plan
                 if len(cutplan.commands) == 0:
-                    self.context("plan%s validate\n" % self.plan_name)
+                    self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 2:
             with wx.BusyInfo(_("Validating operation data...")):
-                self.context("plan%s validate\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 3:
             with wx.BusyInfo(_("Compiling cuts...")):
-                self.context("plan%s blob preopt\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} blob preopt\n")
         elif self.stage == 4:
             with wx.BusyInfo(_("Determining optimizations to perform...")):
-                self.context("plan%s preopt\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} preopt\n")
         elif self.stage == 5:
             with wx.BusyInfo(_("Performing Optimizations...")):
-                self.context("plan%s optimize\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} optimize\n")
         elif self.stage == 6:
             with wx.BusyInfo(_("Sending data to laser...")):
-                self.context("plan%s spool\n" % (self.plan_name))
+                self.context(f"plan{self.plan_name} spool\n")
                 if self.context.auto_spooler:
                     self.context("window open JobSpooler\n")
                 try:
@@ -332,12 +331,12 @@ class PlannerPanel(wx.Panel):
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
-            self.context("plan%s copy preprocess\n" % self.plan_name)
+            self.context(f"plan{self.plan_name} copy preprocess\n")
 
         self.update_gui()
 
     def pane_hide(self):
-        self.context("plan%s clear\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} clear\n")
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):

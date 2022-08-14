@@ -1,5 +1,10 @@
 from meerk40t.gui.laserrender import DRAW_MODE_REGMARKS
-from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CONSUME, RESPONSE_DROP
+from meerk40t.gui.scene.sceneconst import (
+    HITCHAIN_HIT,
+    RESPONSE_CHAIN,
+    RESPONSE_CONSUME,
+    RESPONSE_DROP,
+)
 from meerk40t.gui.scene.widget import Widget
 
 
@@ -12,8 +17,6 @@ class ElementsWidget(Widget):
     def __init__(self, scene, renderer):
         Widget.__init__(self, scene, all=True)
         self.renderer = renderer
-        self.key_shift_pressed = False
-        self.key_ctrl_pressed = False
 
     def hit(self):
         return HITCHAIN_HIT
@@ -54,27 +57,24 @@ class ElementsWidget(Widget):
         # gc.PopState()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
-        if event_type == "kb_shift_release":
-            if self.key_shift_pressed:
-                self.key_shift_pressed = False
-        elif event_type == "kb_shift_press":
-            if not self.key_shift_pressed:
-                self.key_shift_pressed = True
-        elif event_type == "kb_ctrl_press":
-            if not self.key_ctrl_pressed:
-                self.key_ctrl_pressed = True
-        elif event_type == "kb_ctrl_release":
-            if self.key_ctrl_pressed:
-                self.key_ctrl_pressed = False
+        if event_type == "rightdown" and not modifiers:
+            if not self.scene.tool_active:
+                if self.scene.active_tool != "none":
+                    self.scene.context("tool none")
+                    return RESPONSE_CONSUME
+                else:
+                    if self.scene.context.use_toolmenu:
+                        self.scene.context("tool_menu")
+                        return RESPONSE_CONSUME
+            return RESPONSE_CHAIN
         elif event_type == "leftclick":
             elements = self.scene.context.elements
-            keep_old = self.key_shift_pressed
-            if self.scene.context.select_smallest:
-                smallest = not self.key_ctrl_pressed
-            else:
-                smallest = self.key_ctrl_pressed
+            keep_old = "shift" in modifiers
+            smallest = bool(self.scene.context.select_smallest) != bool(
+                "ctrl" in modifiers
+            )
             elements.set_emphasized_by_position(space_pos, keep_old, smallest)
             elements.signal("select_emphasized_tree", 0)
             return RESPONSE_CONSUME

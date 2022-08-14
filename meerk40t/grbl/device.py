@@ -139,6 +139,25 @@ class GRBLDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
         ViewPort.__init__(
             self,
             self.bedwidth,
@@ -235,33 +254,6 @@ class GRBLDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-            return "spooler", spooler
-
         @self.console_argument("com")
         @self.console_option("baud", "b")
         @self.console_command(
@@ -322,7 +314,7 @@ class GRBLDevice(Service, ViewPort):
             help=_("Send realtime resume gcode to the device"),
             input_type=None,
         )
-        def pause(command, channel, _, data=None, remainder=None, **kwgs):
+        def resume(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.resume()
 
     @property
@@ -367,6 +359,9 @@ class GRBLDriver(Parameters):
         self.queue = []
         self.plot_data = None
 
+        self.current_steps = 0
+        self.total_steps = 0
+
         self.on_value = 0
         self.power_dirty = True
         self.speed_dirty = True
@@ -393,9 +388,9 @@ class GRBLDriver(Parameters):
         self.elements = None
 
     def __repr__(self):
-        return "GRBLDriver(%s)" % self.name
+        return f"GRBLDriver({self.name})"
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Required.
 
@@ -403,16 +398,7 @@ class GRBLDriver(Parameters):
 
         @return: hold?
         """
-        return self.hold or self.paused
-
-    def hold_idle(self):
-        """
-        Required.
-
-        Spooler check. Should the idle job be processed or held.
-        @return:
-        """
-        return False
+        return priority <= 0 and (self.paused or self.hold)
 
     def move(self, x, y, absolute=False):
         if self._absolute:
@@ -428,14 +414,14 @@ class GRBLDriver(Parameters):
             line.append("G1")
         x /= self.unit_scale
         y /= self.unit_scale
-        line.append("X%.3f" % x)
-        line.append("Y%.3f" % y)
+        line.append(f"X{x:.3f}")
+        line.append(f"Y{y:.3f}")
         if self.power_dirty:
             if self.power is not None:
-                line.append("S%.1f" % (self.power * self.on_value))
+                line.append(f"S{self.power * self.on_value:.1f}")
             self.power_dirty = False
         if self.speed_dirty:
-            line.append("F%.1f" % self.feed_convert(self.speed))
+            line.append(f"F{self.feed_convert(self.speed):.1f}")
             self.speed_dirty = False
         self.grbl(" ".join(line) + "\r")
 
@@ -576,6 +562,38 @@ class GRBLDriver(Parameters):
 
         @return:
         """
+        # preprocess queue to establish steps
+        assessment_start = time.time()
+        dummy_planner = PlotPlanner(
+            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+        )
+
+        self.current_steps = 0
+        self.total_steps = 0
+        for q in self.queue:
+            if isinstance(q, LineCut):
+                self.total_steps += 1
+            elif isinstance(q, (QuadCut, CubicCut)):
+                interp = self.service.interpolate
+                step_size = 1.0 / float(interp)
+                t = step_size
+                for p in range(int(interp)):
+                    self.total_steps += 1
+                    t += step_size
+            elif isinstance(q, WaitCut):
+                self.total_steps += 1
+            elif isinstance(q, DwellCut):
+                self.total_steps += 1
+                # Moshi cannot fire in place.
+            elif isinstance(q, (InputCut, OutputCut)):
+                self.total_steps += 1
+            else:
+                dummy_planner.push(q)
+                dummy_data = list(dummy_planner.gen())
+                self.total_steps += len(dummy_data)
+                dummy_planner.clear()
+        # print ("GRBL-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+
         self.g91_absolute()
         self.g94_feedrate()
         self.clean()
@@ -605,6 +623,7 @@ class GRBLDriver(Parameters):
                 self.set("speed", q.speed)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
+                self.current_steps += 1
                 self.move_mode = 1
                 self.move(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
@@ -613,23 +632,28 @@ class GRBLDriver(Parameters):
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
-                    while self.hold_work():
+                    self.current_steps += 1
+                    while self.paused:
                         time.sleep(0.05)
                     self.move(*q.point(t))
                     t += step_size
                 last_x, last_y = q.end
                 self.move(last_x, last_y)
             elif isinstance(q, WaitCut):
+                self.current_steps += 1
                 self.wait(q.dwell_time)
             elif isinstance(q, DwellCut):
+                self.current_steps += 1
                 self.dwell(q.dwell_time)
             elif isinstance(q, (InputCut, OutputCut)):
+                self.current_steps += 1
                 # GRBL has no core GPIO functionality
                 pass
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
-                    while self.hold_work():
+                    self.current_steps += 1
+                    while self.paused:
                         time.sleep(0.05)
                     if on > 1:
                         # Special Command.
@@ -661,6 +685,9 @@ class GRBLDriver(Parameters):
                     self.on_value = on
                     self.move(x, y)
         self.queue.clear()
+        self.current_steps = 0
+        self.total_steps = 0
+
         self.grbl("G1 S0\r")
         self.grbl("M5\r")
         self.power_dirty = True
@@ -669,67 +696,6 @@ class GRBLDriver(Parameters):
         self.feedrate_dirty = True
         self.units_dirty = True
         return False
-
-    # def plot_start2(self):
-    #     """
-    #     Called at the end of plot commands to ensure the driver can deal with them all as a group.
-    #
-    #     @return:
-    #     """
-    #     for q in self.queue:
-    #         self.plot_planner.push(q)
-    #     self.queue.clear()
-    #     if self.plot_data is None:
-    #         self.plot_data = self.plot_planner.gen()
-    #     self.g91_absolute()
-    #     self.g94_feedrate()
-    #     self.clean()
-    #     if self.service.use_m3:
-    #         self.grbl("M3\r")
-    #     else:
-    #         self.grbl("M4\r")
-    #
-    #     for x, y, on in self.plot_data:
-    #         while self.hold_work():
-    #             time.sleep(0.05)
-    #         if on > 1:
-    #             # Special Command.
-    #             if on & PLOT_FINISH:  # Plot planner is ending.
-    #                 break
-    #             elif on & PLOT_SETTING:  # Plot planner settings have changed.
-    #                 p_set = Parameters(self.plot_planner.settings)
-    #                 if p_set.power != self.power:
-    #                     self.set("power", p_set.power)
-    #                 if (
-    #                     p_set.speed != self.speed
-    #                     or p_set.raster_step != self.raster_step
-    #                 ):
-    #                     self.set("speed", p_set.speed)
-    #                 self.settings.update(p_set.settings)
-    #             elif on & (
-    #                 PLOT_RAPID | PLOT_JOG
-    #             ):  # Plot planner requests position change.
-    #                 self.move_mode = 0
-    #                 self.move(x, y)
-    #             continue
-    #         if on == 0:
-    #             self.move_mode = 0
-    #         else:
-    #             self.move_mode = 1
-    #         if self.on_value != on:
-    #             self.power_dirty = True
-    #         self.on_value = on
-    #         self.move(x, y)
-    #
-    #     self.plot_data = None
-    #     self.grbl("G1 S0\r")
-    #     self.grbl("M5\r")
-    #     self.power_dirty = True
-    #     self.speed_dirty = True
-    #     self.absolute_dirty = True
-    #     self.feedrate_dirty = True
-    #     self.units_dirty = True
-    #     return False
 
     def blob(self, data_type, data):
         """
@@ -742,6 +708,7 @@ class GRBLDriver(Parameters):
         if data_type != "gcode":
             return
         for line in data:
+            # TODO: Process line does not exist as a function.
             self.process_line(line)
 
     def home(self, *values):
@@ -824,7 +791,7 @@ class GRBLDriver(Parameters):
         @param t:
         @return:
         """
-        self.grbl("G04 S{time}\r".format(time=t))
+        self.grbl(f"G04 S{t}\r")
 
     def wait_finish(self, *values):
         """
@@ -897,10 +864,10 @@ class GRBLDriver(Parameters):
         self.grbl("?")
 
         parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.get("speed", 0.0))
-        parts.append("power=%d" % self.settings.get("power", 0))
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.settings.get('speed', 0.0)}")
+        parts.append(f"power={self.settings.get('power', 0)}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -1302,8 +1269,8 @@ class GrblController:
         self.com_port = self.service.com_port
         self.baud_rate = self.service.baud_rate
         self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel("send-%s" % self.com_port.lower())
-        self.recv = self.service.channel("recv-%s" % self.com_port.lower())
+        self.send = self.service.channel(f"send-{self.com_port.lower()}")
+        self.recv = self.service.channel(f"recv-{self.com_port.lower()}")
         if not self.service.mock:
             self.connection = SerialConnection(self.service)
         else:
@@ -1393,7 +1360,7 @@ class GrblController:
         if self.sending_thread is None:
             self.sending_thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-%s" % self.com_port.lower(),
+                thread_name=f"sender-{self.com_port.lower()}",
                 result=self.stop,
                 daemon=True,
             )
@@ -1432,24 +1399,21 @@ class GrblController:
                         line = self.commands_in_device_buffer.pop(0)
                         self.buffered_characters -= len(line)
                     except IndexError:
-                        self.channel("Response: %s, but this was unexpected" % response)
+                        self.channel(f"Response: {response}, but this was unexpected")
                         continue
-                    self.channel("Response: %s" % response)
+                    self.channel(f"Response: {response}")
                 if response.startswith("echo:"):
                     self.service.channel("console")(response[5:])
                 if response.startswith("error"):
-                    self.channel("ERROR: %s" % response)
+                    self.channel(f"ERROR: {response}")
                 else:
-                    self.channel("Data: %s" % response)
+                    self.channel(f"Data: {response}")
                 read += 1
             if read == 0 and write == 0:
                 time.sleep(0.05)
 
     def __repr__(self):
-        return "GRBLSerial('%s:%s')" % (
-            self.service.com_port,
-            str(self.service.serial_baud_rate),
-        )
+        return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
 
     def __len__(self):
         return len(self.sending_queue)
@@ -1470,7 +1434,7 @@ class SerialConnection:
         try:
             if self.laser.in_waiting:
                 self.read_buffer += self.laser.readall()
-        except (SerialException, AttributeError):
+        except (SerialException, AttributeError, OSError):
             return None
         f = self.read_buffer.find(b"\n")
         if f == -1:
@@ -1596,7 +1560,7 @@ class TCPOutput:
         if self.thread is None:
             self.thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-%d" % self.service.port,
+                thread_name=f"sender-{self.service.port}",
                 result=self._stop,
             )
 
@@ -1630,10 +1594,7 @@ class TCPOutput:
                         break
 
     def __repr__(self):
-        return "TCPOutput('%s:%s')" % (
-            self.service.address,
-            self.service.port,
-        )
+        return f"TCPOutput('{self.service.address}:{self.service.port}')"
 
     def __len__(self):
         return len(self.buffer)
@@ -1645,7 +1606,7 @@ class GcodeBlob(list):
         self.name = name
 
     def __repr__(self):
-        return "Gcode(%s, %d lines)" % (self.name, len(self))
+        return f"Gcode({self.name}, {len(self)} lines)"
 
     def as_svg(self):
         pass

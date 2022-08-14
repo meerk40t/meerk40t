@@ -56,7 +56,7 @@ class Rotary(Service):
     """
 
     def __init__(self, kernel, index=0, *args, **kwargs):
-        Service.__init__(self, kernel, "rotary/{index}".format(index=index))
+        Service.__init__(self, kernel, f"rotary/{index}")
         self.index = index
         _ = kernel.translation
 
@@ -67,9 +67,7 @@ class Rotary(Service):
         )
         def rotary(command, channel, _, data=None, **kwargs):
             channel(
-                "Rotary {index} set to scale: {x}, scale:{y}".format(
-                    index=self.index, x=self.scale_x, y=self.scale_y
-                )
+                f"Rotary {self.index} set to scale: {self.scale_x}, scale:{self.scale_y}"
             )
             return "rotary", None
 
@@ -78,7 +76,7 @@ class Rotary(Service):
             sx = self.scale_x
             sy = self.scale_y
             x, y = self.device.current
-            matrix = Matrix("scale(%f, %f, %f, %f)" % (sx, sy, x, y))
+            matrix = Matrix(f"scale({sx}, {sy}, {x}, {y})")
             for node in self.elements.elems():
                 if hasattr(node, "rotary_scale"):
                     # This element is already scaled

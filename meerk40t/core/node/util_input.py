@@ -12,6 +12,7 @@ class InputOperation(Node):
 
     def __init__(self, mask=0, value=0, message=None, **kwargs):
         super().__init__(type="util input", **kwargs)
+        self._formatter = "{enabled}{element_type} {bits}"
         self.settings = {
             "input_mask": mask,
             "input_value": value,
@@ -21,14 +22,6 @@ class InputOperation(Node):
 
     def __repr__(self):
         return f"InputOperation('{self.mask}')"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        parts.append("Input")
-        parts.append(self.bitstring())
-        return " ".join(parts)
 
     def __copy__(self):
         return InputOperation(self.mask, self.value, self.message)
@@ -47,7 +40,7 @@ class InputOperation(Node):
 
     @property
     def mask(self):
-        return int(self.settings.get("input_mask"))
+        return self.settings.get("input_mask")
 
     @mask.setter
     def mask(self, v):
@@ -55,7 +48,7 @@ class InputOperation(Node):
 
     @property
     def value(self):
-        return int(self.settings.get("input_value"))
+        return self.settings.get("input_value")
 
     @value.setter
     def value(self, v):
@@ -63,7 +56,7 @@ class InputOperation(Node):
 
     @property
     def message(self):
-        return str(self.settings.get("input_message"))
+        return self.settings.get("input_message")
 
     @message.setter
     def message(self, v):
@@ -76,6 +69,23 @@ class InputOperation(Node):
     @output.setter
     def output(self, v):
         self.settings["output"] = v
+
+    def validate(self):
+        parameters = [
+            ("output", lambda v: str(v).lower() == "true"),
+            ("input_message", str),
+            ("input_value", int),
+            ("input_mask", int),
+        ]
+        settings = self.settings
+        for param, cast in parameters:
+            try:
+                if param in settings and settings[param] is not None:
+                    settings[param] = (
+                        cast(settings[param]) if settings[param] != "None" else None
+                    )
+            except (KeyError, ValueError):
+                pass
 
     @property
     def implicit_passes(self):
@@ -120,20 +130,23 @@ class InputOperation(Node):
         default_map.update(self.settings)
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         drop_node = self
         if drag_node.type in op_nodes:
-            drop_node.insert_sibling(drag_node)
+            if modify:
+                drop_node.insert_sibling(drag_node)
             return True
         elif drop_node.type == "branch ops":
             # Dragging operation to op branch to effectively move to bottom.
-            drop_node.append_child(drag_node)
+            if modify:
+                drop_node.append_child(drag_node)
             return True
         return False
 
     def load(self, settings, section):
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
         self.settings.update(update_dict)
+        self.validate()
 
     def save(self, settings, section):
         settings.write_persistent_dict(section, self.settings)

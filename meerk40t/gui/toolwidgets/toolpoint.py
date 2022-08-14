@@ -20,7 +20,13 @@ class PointTool(ToolWidget):
         pass
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
@@ -32,10 +38,19 @@ class PointTool(ToolWidget):
             node = elements.elem_branch.add(
                 point=point, matrix=Matrix(), type="elem point"
             )
-            if self.scene.default_stroke is not None:
-                node.stroke = self.scene.default_stroke
-            if self.scene.default_fill is not None:
-                node.fill = self.scene.default_fill
+            if self.scene.context.elements.default_stroke is not None:
+                node.stroke = self.scene.context.elements.default_stroke
+            if self.scene.context.elements.default_fill is not None:
+                node.fill = self.scene.context.elements.default_fill
+            if elements.classify_new:
+                elements.classify([node])
             self.notify_created(node)
             response = RESPONSE_CONSUME
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response

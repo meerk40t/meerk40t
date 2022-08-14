@@ -101,7 +101,7 @@ class BalorControllerPanel(wx.ScrolledWindow):
         if status is None:
             status = "Unknown"
         try:
-            connected = self.context.device.driver.connected
+            connected = self.service.connected
         except AttributeError:
             return
         try:
@@ -115,12 +115,12 @@ class BalorControllerPanel(wx.ScrolledWindow):
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         try:
-            connected = self.context.device.driver.connected
+            connected = self.service.driver.connected
         except AttributeError:
             return
         try:
-            if self.context.device.driver.connection.is_connecting:
-                self.context.device.driver.connection.abort_connect()
+            if self.service.driver.connection.is_connecting:
+                self.service.driver.connection.abort_connect()
                 return
         except AttributeError:
             pass
@@ -131,11 +131,11 @@ class BalorControllerPanel(wx.ScrolledWindow):
             self.context("usb_connect\n")
 
     def pane_show(self):
-        name = self.context.device.label
+        name = self.service.label
         self.context.channel(f"{name}/usb").watch(self.update_text)
 
     def pane_hide(self):
-        name = self.context.device.label
+        name = self.service.label
         self.context.channel(f"{name}/usb").unwatch(self.update_text)
 
 

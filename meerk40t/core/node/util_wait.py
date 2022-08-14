@@ -13,18 +13,10 @@ class WaitOperation(Node):
     def __init__(self, wait=1.0, **kwargs):
         super().__init__(type="util wait", **kwargs)
         self.settings = {"wait": wait, "output": True}
+        self._formatter = "{enabled}{element_type} {wait}"
 
     def __repr__(self):
         return f"WaitOperation('{self.wait}')"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        parts.append("Wait")
-        if self.wait is not None:
-            parts.append(str(self.wait))
-        return " ".join(parts)
 
     def __copy__(self):
         return WaitOperation(self.wait)
@@ -32,9 +24,24 @@ class WaitOperation(Node):
     def __len__(self):
         return 1
 
+    def validate(self):
+        parameters = [
+            ("output", lambda v: str(v).lower() == "true"),
+            ("wait", float),
+        ]
+        settings = self.settings
+        for param, cast in parameters:
+            try:
+                if param in settings and settings[param] is not None:
+                    settings[param] = (
+                        cast(settings[param]) if settings[param] != "None" else None
+                    )
+            except (KeyError, ValueError):
+                pass
+
     @property
     def wait(self):
-        return float(self.settings.get("wait"))
+        return self.settings.get("wait")
 
     @wait.setter
     def wait(self, v):
@@ -60,20 +67,23 @@ class WaitOperation(Node):
         default_map.update(self.settings)
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         drop_node = self
         if drag_node.type in op_nodes:
-            drop_node.insert_sibling(drag_node)
+            if modify:
+                drop_node.insert_sibling(drag_node)
             return True
         elif drop_node.type == "branch ops":
             # Dragging operation to op branch to effectively move to bottom.
-            drop_node.append_child(drag_node)
+            if modify:
+                drop_node.append_child(drag_node)
             return True
         return False
 
     def load(self, settings, section):
         update_dict = settings.read_persistent_string_dict(section, suffix=True)
         self.settings.update(update_dict)
+        self.validate()
 
     def save(self, settings, section):
         settings.write_persistent_dict(section, self.settings)

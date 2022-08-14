@@ -6,6 +6,8 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.device.gui.warningpanel import WarningPanel
 
 _ = wx.GetTranslation
 
@@ -14,12 +16,16 @@ class MoshiConfigurationPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context.device
+        self.context = context
 
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
-        self.text_home_x = wx.TextCtrl(self, wx.ID_ANY, "0mm")
-        self.text_home_y = wx.TextCtrl(self, wx.ID_ANY, "0mm")
+        self.text_home_x = TextCtrl(
+            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_home_y = TextCtrl(
+            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+        )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
         # self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
 
@@ -28,8 +34,10 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
-        self.Bind(wx.EVT_TEXT, self.on_text_home_x, self.text_home_x)
-        self.Bind(wx.EVT_TEXT, self.on_text_home_y, self.text_home_y)
+        self.text_home_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_x)
+        self.text_home_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_x)
+        self.text_home_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_y)
+        self.text_home_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
@@ -113,17 +121,19 @@ class MoshiConfigurationPanel(ScrolledPanel):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def on_text_home_x(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+        event.Skip()
         self.context.home_x = self.text_home_x.GetValue()
 
     def on_text_home_y(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+        event.Skip()
         self.context.home_y = self.text_home_y.GetValue()
 
     def on_button_set_home_current(
         self, event
     ):  # wxGlade: MoshiDriverGui.<event_handler>
         current_x, current_y = self.context.device.current
-        self.context.home_x = "%.1fmm" % Length(amount=current_x).mm
-        self.context.home_y = "%.1fmm" % Length(amount=current_y).mm
+        self.context.home_x = f"{Length(amount=current_x).mm}.1fmm"
+        self.context.home_y = f"{Length(amount=current_y).mm}.1fmm"
         self.text_home_x.SetValue(self.context.home_x)
         self.text_home_y.SetValue(self.context.home_y)
 
@@ -134,19 +144,42 @@ class MoshiConfigurationPanel(ScrolledPanel):
 class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(335, 170, *args, **kwds)
-
-        self.panel = MoshiConfigurationPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
+        self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Moshiboard-Configuration"))
 
+        self.notebook_main = wx.aui.AuiNotebook(
+            self,
+            -1,
+            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | wx.aui.AUI_NB_SCROLL_BUTTONS
+            | wx.aui.AUI_NB_TAB_SPLIT
+            | wx.aui.AUI_NB_TAB_MOVE,
+        )
+
+        self.ConfigurationPanel = MoshiConfigurationPanel(
+            self.notebook_main, wx.ID_ANY, context=self.context
+        )
+
+        self.notebook_main.AddPage(self.ConfigurationPanel, _("Configuration"))
+
+        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+
+        self.Layout()
+
+        self.add_module_delegate(self.ConfigurationPanel)
+        self.add_module_delegate(self.panel_warn)
+
     def window_open(self):
-        self.panel.pane_show()
+        self.ConfigurationPanel.pane_show()
+        self.panel_warn.pane_show()
 
     def window_close(self):
-        self.panel.pane_hide()
+        self.ConfigurationPanel.pane_hide()
+        self.panel_warn.pane_hide()
 
     def window_preserve(self):
         return False

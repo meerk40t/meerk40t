@@ -9,16 +9,25 @@ class BranchRegmarkNode(Node):
 
     def __init__(self, **kwargs):
         super(BranchRegmarkNode, self).__init__(**kwargs)
+        self._formatter = "{element_type}"
 
-    def __str__(self):
-        return "Regmarks"
+    def default_map(self, default_map=None):
+        default_map = super(BranchRegmarkNode, self).default_map(
+            default_map=default_map
+        )
+        default_map["element_type"] = "Regmark"
+        return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
-            self.append_child(drag_node)
+            if modify:
+                for ref in list(drag_node._references):
+                    ref.remove_node()
+                self.append_child(drag_node)
             return True
         elif drag_node.type == "group":
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         return False
 

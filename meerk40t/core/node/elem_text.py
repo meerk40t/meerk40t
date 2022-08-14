@@ -1,6 +1,8 @@
 from copy import copy
+from math import sqrt
 
 from meerk40t.core.node.node import Node
+from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
 
 
 class TextNode(Node):
@@ -15,7 +17,7 @@ class TextNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        font_style=None,
+        stroke_scale=True,
         underline=None,
         strikethrough=None,
         overline=None,
@@ -23,45 +25,24 @@ class TextNode(Node):
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
+        self._formatter = "{element_type} {id}: {text}"
         self.text = text
         self.settings = kwargs
-        if matrix is None:
-            self.matrix = text.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = text.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = text.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = text.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if font_style is None:
-            self.font_style = "normal"
-        else:
-            self.font_style = font_style  # normal / italic / oblique
-        if underline is None:
-            self.underline = False
-        else:
-            self.underline = underline
-        if strikethrough is None:
-            self.strikethrough = False
-        else:
-            self.strikethrough = strikethrough
+        self.matrix = text.transform if matrix is None else matrix
+        self.fill = text.fill if fill is None else fill
+        self.stroke = text.stroke if stroke is None else stroke
+        self.stroke_width = text.stroke_width if stroke_width is None else stroke_width
+        self._stroke_scaled = (
+            (text.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
+            if stroke_scale is None
+            else stroke_scale
+        )
+        self.underline = False if underline is None else underline
+        self.strikethrough = False if strikethrough is None else strikethrough
+
         # For sake of completeness, afaik there is no way to display it with wxpython
-        if overline is None:
-            self.overline = False
-        else:
-            self.overline = overline
-        if texttransform is None:
-            self.texttransform = ""
-        else:
-            self.texttransform = texttransform
+        self.overline = False if overline is None else overline
+        self.texttransform = "" if texttransform is None else texttransform
         self.lock = False
 
     def __copy__(self):
@@ -71,7 +52,7 @@ class TextNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            font_style=self.font_style,
+            stroke_scale=self._stroke_scaled,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,
@@ -80,23 +61,45 @@ class TextNode(Node):
         )
 
     @property
+    def stroke_scaled(self):
+        return self._stroke_scaled
+
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        if not v and self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width *= sqrt(abs(matrix.determinant))
+        if v and not self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width /= sqrt(abs(matrix.determinant))
+        self._stroke_scaled = v
+
+    def implied_stroke_width(self, zoomscale=1.0):
+        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
+        need to countermand that scaling by dividing by the square root of the absolute
+        value of the determinant of the local matrix (1d matrix scaling)"""
+        scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
+        sw = self.stroke_width / scalefactor
+        limit = 25 * sqrt(zoomscale) * scalefactor
+        if sw < limit:
+            sw = limit
+        return sw
+
+    @property
     def bounds(self):
         if self._bounds_dirty:
-            self.text.transform = self.matrix
-            self.text.stroke_width = self.stroke_width
+            self._sync_svg()
             self._bounds = self.text.bbox(with_stroke=True)
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
+        self.stroke_scaled = True
         self.matrix *= matrix
-        self.text.transform = self.matrix
-        self.text.stroke_width = self.stroke_width
-        self._bounds_dirty = True
+        self.stroke_scaled = False
+        self._sync_svg()
         self.text.width = 0
         self.text.height = 0
-        text = context.elements.mywordlist.translate(self.text.text)
-        self.text.text = text
-
+        self.text.text = context.elements.mywordlist.translate(self.text.text)
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
 
@@ -114,10 +117,11 @@ class TextNode(Node):
         default_map["matrix"] = self.matrix
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         # Dragging element into element.
         if drag_node.type.startswith("elem"):
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         return False
 
@@ -152,3 +156,9 @@ class TextNode(Node):
 
     def add_point(self, point, index=None):
         return False
+
+    def _sync_svg(self):
+        self.text.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        self.text.transform = self.matrix
+        self.text.stroke_width = self.stroke_width
+        self._bounds_dirty = True

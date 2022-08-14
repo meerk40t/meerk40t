@@ -34,9 +34,6 @@ class RectSelectWidget(Widget):
         SELECTION_TOUCH,
     ]  # Selection rectangle to the right: enclose, to the left: touch
 
-    key_shift_pressed = False
-    key_control_pressed = False
-    key_alt_pressed = False
     was_lb_raised = False
 
     def __init__(self, scene):
@@ -67,6 +64,7 @@ class RectSelectWidget(Widget):
         self.selection_pen.SetJoin(wx.JOIN_MITER)
         self.start_location = None
         self.end_location = None
+        self.modifiers = []
 
     def hit(self):
         return HITCHAIN_HIT
@@ -81,17 +79,10 @@ class RectSelectWidget(Widget):
     # debug_msg = ""
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
-        # sdbg = event_type
-        # if sdbg in ("hover_start", "hover_end", "hover"):
-        #    sdbg = "hover"
-        # if sdbg != self.debug_msg:
-        #    self.debug_msg = sdbg
-        #    print(
-        #        "SelRect-Event: %s (current state: %s)"
-        #        % (event_type, self.was_lb_raised)
-        #    )
+        if modifiers is not None:
+            self.modifiers = modifiers
 
         elements = self.scene.context.elements
         if event_type == "leftdown":
@@ -99,81 +90,6 @@ class RectSelectWidget(Widget):
             self.end_location = space_pos
             # print ("RectSelect consumed leftdown")
             return RESPONSE_CONSUME
-        elif event_type == "kb_shift_release":
-            if self.key_shift_pressed:
-                self.key_shift_pressed = False
-                if self.start_location is None:
-                    return RESPONSE_CHAIN
-                else:
-                    self.scene.request_refresh()
-                    return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
-        elif event_type == "kb_shift_press":
-            if not self.key_shift_pressed:
-                self.key_shift_pressed = True
-                ignore = False
-                if self.start_location is None:
-                    ignore = True
-                if self.key_control_pressed or self.key_alt_pressed:
-                    # Dont care about multi-keypresses
-                    ignore = True
-
-                if ignore:
-                    return RESPONSE_CHAIN
-                else:
-                    self.scene.request_refresh()
-                    return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
-        elif event_type == "kb_ctrl_release":
-            if self.key_control_pressed:
-                self.key_control_pressed = False
-                if self.start_location is None:
-                    return RESPONSE_CHAIN
-                else:
-                    self.scene.request_refresh()
-                    return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
-        elif event_type == "kb_ctrl_press":
-            if not self.key_control_pressed:
-                self.key_control_pressed = True
-                ignore = False
-                if self.start_location is None:
-                    ignore = True
-                if self.key_shift_pressed or self.key_alt_pressed:
-                    # Dont care about multi-keypresses
-                    ignore = True
-
-                if ignore:
-                    return RESPONSE_CHAIN
-                else:
-                    self.scene.request_refresh()
-                    return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
-        elif event_type == "kb_alt_release":
-            if self.key_alt_pressed:
-                self.key_alt_pressed = False
-                if self.start_location is None:
-                    return RESPONSE_CHAIN
-                else:
-                    self.scene.request_refresh()
-                    return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
-        elif event_type == "kb_alt_press":
-            if not self.key_alt_pressed:
-                self.key_alt_pressed = True
-                if self.start_location is None:
-                    return RESPONSE_CHAIN
-                else:
-                    self.scene.request_refresh()
-                    return RESPONSE_CONSUME
-            else:
-                return RESPONSE_CHAIN
-
         elif event_type == "leftclick":
             # That's too fast
             # still chaining though
@@ -206,10 +122,6 @@ class RectSelectWidget(Widget):
             sy = min(self.start_location[1], self.end_location[1])
             ex = max(self.start_location[0], self.end_location[0])
             ey = max(self.start_location[1], self.end_location[1])
-            # print(
-            #    "Selection_box: (%f,%f)-(%f,%f) - Method=%f"
-            #    % (sx, sy, ex, ey, self.selection_method[sector])
-            # )
             for node in elements.elems():
                 try:
                     q = node.bounds
@@ -246,20 +158,24 @@ class RectSelectWidget(Widget):
                 if ((sx <= xmin) and (xmax <= ex)) and ((sy <= ymin) and (ymax <= ey)):
                     cover = self.SELECTION_ENCLOSE
 
-                if self.key_shift_pressed:
+                if "shift" in self.modifiers:
                     # Add Selection
                     if cover >= self.selection_method[sector]:
                         node.emphasized = True
-                elif self.key_control_pressed:
+                        node.selected = True
+                elif "ctrl" in self.modifiers:
                     # Invert Selection
                     if cover >= self.selection_method[sector]:
                         node.emphasized = not node.emphasized
+                        node.selected = node.emphasized
                 else:
                     # Replace Selection
                     if cover >= self.selection_method[sector]:
                         node.emphasized = True
+                        node.selected = True
                     else:
                         node.emphasized = False
+                        node.selected = False
 
             self.scene.request_refresh()
             self.scene.context.signal("select_emphasized_tree", 0)
@@ -325,7 +241,12 @@ class RectSelectWidget(Widget):
             font_size = 10.0 / matrix.value_scale_x()
             if font_size < 1.0:
                 font_size = 1.0
-            font = wx.Font(font_size, wx.SWISS, wx.NORMAL, wx.NORMAL)
+            font = wx.Font(
+                font_size,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
 
             gc.SetFont(font, tcolor)
             (t_width, t_height) = gc.GetTextExtent(symbol)
@@ -369,9 +290,9 @@ class RectSelectWidget(Widget):
 
             _ = self.scene.context._
             statusmsg = _(self.selection_style[self.selection_method[sector] - 1][2])
-            if self.key_shift_pressed:
+            if "shift" in self.modifiers:
                 statusmsg += _(self.selection_text_shift)
-            elif self.key_control_pressed:
+            elif "ctrl" in self.modifiers:
                 statusmsg += _(self.selection_text_control)
 
             self.update_statusmsg(statusmsg)
@@ -389,7 +310,7 @@ class RectSelectWidget(Widget):
 
             # Determine Colour on selection mode: standard (from left top to right bottom) = Blue, else Green
             # Draw indicator...
-            if self.key_shift_pressed:
+            if "shift" in self.modifiers:
                 self.draw_tiny_indicator(
                     gc,
                     "+",
@@ -401,7 +322,7 @@ class RectSelectWidget(Widget):
                     gccolor,
                 )
 
-            elif self.key_control_pressed:
+            elif "ctrl" in self.modifiers:
                 self.draw_tiny_indicator(
                     gc,
                     "^",

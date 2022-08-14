@@ -29,24 +29,34 @@ class RectTool(ToolWidget):
             y0 = min(self.p1.imag, self.p2.imag)
             x1 = max(self.p1.real, self.p2.real)
             y1 = max(self.p1.imag, self.p2.imag)
-            if self.scene.default_stroke is None:
+            if self.scene.context.elements.default_stroke is None:
                 self.pen.SetColour(wx.BLUE)
             else:
-                self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.default_stroke)))
+                self.pen.SetColour(
+                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+                )
             gc.SetPen(self.pen)
-            if self.scene.default_fill is None:
+            if self.scene.context.elements.default_fill is None:
                 gc.SetBrush(wx.TRANSPARENT_BRUSH)
             else:
                 gc.SetBrush(
                     wx.Brush(
-                        wx.Colour(swizzlecolor(self.scene.default_fill)),
+                        wx.Colour(
+                            swizzlecolor(self.scene.context.elements.default_fill)
+                        ),
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
             gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
@@ -57,7 +67,7 @@ class RectTool(ToolWidget):
                 self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            if not self.p1 is None:
+            if self.p1 is not None:
                 if nearest_snap is None:
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
@@ -88,12 +98,12 @@ class RectTool(ToolWidget):
                 if not rect.is_degenerate():
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(shape=rect, type="elem rect")
-                    if not self.scene.default_stroke is None:
-                        node.stroke = self.scene.default_stroke
-                    if not self.scene.default_fill is None:
-                        node.fill = self.scene.default_fill
-
-                    elements.classify([node])
+                    if self.scene.context.elements.default_stroke is not None:
+                        node.stroke = self.scene.context.elements.default_stroke
+                    if self.scene.context.elements.default_fill is not None:
+                        node.fill = self.scene.context.elements.default_fill
+                    if elements.classify_new:
+                        elements.classify([node])
                     self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
@@ -101,8 +111,13 @@ class RectTool(ToolWidget):
                 pass
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "lost":
-            self.scene.tool_active = False
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
             self.p1 = None
             self.p2 = None
         return response

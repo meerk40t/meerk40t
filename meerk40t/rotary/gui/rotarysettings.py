@@ -9,6 +9,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 
 from meerk40t.gui.icons import icons8_roll_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
@@ -21,8 +22,12 @@ class RotarySettingsPanel(ScrolledPanel):
 
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.Children[0].SetFocus()
-        self.text_rotary_scaley = wx.TextCtrl(self, wx.ID_ANY, "1.0")
-        self.text_rotary_scalex = wx.TextCtrl(self, wx.ID_ANY, "1.0")
+        self.text_rotary_scaley = TextCtrl(
+            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_rotary_scalex = TextCtrl(
+            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
+        )
         # self.checkbox_rotary_loop = wx.CheckBox(self, wx.ID_ANY, _("Field Loop"))
         # self.text_rotary_rotation = wx.TextCtrl(self, wx.ID_ANY, "360.0")
         # self.checkbox_rotary_roller = wx.CheckBox(self, wx.ID_ANY, _("Uses Roller"))
@@ -33,10 +38,12 @@ class RotarySettingsPanel(ScrolledPanel):
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
-        self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_y, self.text_rotary_scaley)
-        self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_x, self.text_rotary_scalex)
+        self.text_rotary_scalex.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_x)
+        self.text_rotary_scalex.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_x)
+        self.text_rotary_scaley.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_y)
+        self.text_rotary_scaley.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_y)
         # self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_loop, self.checkbox_rotary_loop)
-        # self.Bind(wx.EVT_TEXT, self.on_text_rotation, self.text_rotary_rotation)
+        # self.text_rotary_rotation.Bind(wx.EVT_TEXT, self.on_text_rotation)
         # self.Bind(
         #     wx.EVT_CHECKBOX, self.on_check_rotary_roller, self.checkbox_rotary_roller
         # )
