@@ -790,20 +790,16 @@ class Elemental(Service):
         @self.console_argument(
             "key", help=_("Individual wordlist value (use @ALL for all)")
         )
-        @self.console_argument("index", help=_("index to use"))
+        @self.console_argument("index", help=_("index to use, or +2 to increment by 2"))
         @self.console_command(
             "index",
             help=_("sets index in wordlist"),
             input_type="wordlist",
             output_type="wordlist",
+            all_arguments_required=True,
         )
         def wordlist_index(command, channel, _, key=None, index=None, **kwargs):
-            if key is not None and index is not None:
-                try:
-                    index = int(index)
-                except ValueError:
-                    index = 0
-                self.mywordlist.set_index(skey=key, idx=index)
+            self.mywordlist.set_index(skey=key, idx=index)
             return "wordlist", key
 
         @self.console_argument(
@@ -6708,8 +6704,7 @@ class Elemental(Service):
         @self.tree_prompt("opname", _("Name to store current operations under?"))
         @self.tree_operation("New", node_type="branch ops", help="")
         def save_material_custom(node, opname, **kwargs):
-            if opname is not None:
-                self(f"material save {opname.replace(' ', '_')}\n")
+            self(f"material save {opname.replace(' ', '_')}\n")
 
         @self.tree_submenu(_("Delete"))
         @self.tree_values("opname", values=self.op_data.section_set)
@@ -7027,9 +7022,12 @@ class Elemental(Service):
             append_operation_interrupt(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_prompt(
+            "wait_time", _("Wait for how long (in seconds)?"), data_type=float
+        )
         @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
-        def add_operation_wait(node, **kwargs):
-            append_operation_wait(node, pos=add_after_index(node), **kwargs)
+        def add_operation_wait(node, wait_time, **kwargs):
+            append_operation_wait(node, wait_time=wait_time, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")

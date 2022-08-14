@@ -700,7 +700,15 @@ class SVGProcessor:
                     e_list.append(node)
             except OSError:
                 pass
-        elif isinstance(element, (Group, SVG)):
+        elif isinstance(element, SVG):
+            # SVG is type of group, must go first
+            if self.reverse:
+                for child in reversed(element):
+                    self.parse(child, context_node, e_list)
+            else:
+                for child in element:
+                    self.parse(child, context_node, e_list)
+        elif isinstance(element, Group):
             context_node = context_node.add(type="group", id=ident)
             # recurse to children
             if self.reverse:
@@ -745,26 +753,21 @@ class SVGProcessor:
                     if not self.operations_cleared:
                         self.elements.clear_operations()
                         self.operations_cleared = True
-
-                    op = self.elements.op_branch.add(type=node_type)
                     try:
-                        op.settings.update(element.values["attributes"])
+                        attrs = element.values["attributes"]
+                    except KeyError:
+                        attrs = element.values
+                    try:
+                        try:
+                            del attrs["type"]
+                        except KeyError:
+                            pass
+                        op = self.elements.op_branch.add(type=node_type, **attrs)
+                        op.validate()
+                        op.id = node_id
                     except AttributeError:
                         # This operation is invalid.
-                        # print ("Attribute Error #1 loading an op", element.values["attributes"])
-                        op.remove_node()
-                    except KeyError:
-                        try:
-                            op.settings.update(element.values)
-                        except AttributeError:
-                            # This operation is invalid.
-                            # print ("Attribute Error #2 loading an op", element.values)
-                            op.remove_node()
-                    try:
-                        op.validate()
-                    except AttributeError:
                         pass
-                    op.id = node_id
                 # Check if SVGElement: element
                 elif tag == "element":
                     if "type" in element.values:

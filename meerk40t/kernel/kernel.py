@@ -2537,6 +2537,11 @@ class Kernel(Settings):
             elif OS_NAME == "Darwin":  # Mac
 
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
+            elif OS_NAME == "Linux":
+
+                print("\a")  # Beep.
+                os.system('say "Ding"')
+
             else:  # Assuming other linux like system
                 print("\a")  # Beep.
 

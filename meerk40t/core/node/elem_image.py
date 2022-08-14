@@ -363,6 +363,10 @@ class ImageNode(Node):
 
         # Perform image transform if needed.
         if transform:
+            if image_height <= 0:
+                image_height = 1
+            if image_width <= 0:
+                image_width = 1
             image = image.transform(
                 (image_width, image_height),
                 Image.AFFINE,

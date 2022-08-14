@@ -100,7 +100,6 @@ class LaserRender:
         else:
             return 2.0, 0.5
 
-    # removed group.
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
         Render scene information.
@@ -602,7 +601,7 @@ class LaserRender:
         # the descent from the font-metric into account.
         # A 'real' height routine would most probably need to draw the string on an
         # empty canvas and find the first and last dots on a line...
-        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(text_string)
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text_string)
 
         # That stuff drives my crazy...
         # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
@@ -612,7 +611,7 @@ class LaserRender:
         delta = self.fontdescent_factor * f_descent
         if has_underscore:
             delta /= 2.0
-        delta -= f_externalLeading
+        delta -= f_external_leading
         f_height -= delta
         text.width = f_width
         text.height = f_height
