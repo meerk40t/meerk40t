@@ -71,7 +71,7 @@ class Wordlist:
         # Index < 0 append
         skey = skey.lower()
         if not skey in self.content:
-            # hasnt been there, so establish it
+            # hasn't been there, so establish it
             if wtype is None:
                 wtype = 0
             self.content[skey] = [wtype, 2, value]
@@ -91,24 +91,29 @@ class Wordlist:
 
     def set_index(self, skey, idx, wtype=None):
         skey = skey.lower()
-        if idx is None:
-            idx = 2
-        else:  # Zerobased outside + 2 inside
-            idx += 2
-        if skey == "@all":  # Set it for all fields from a csv file
-            for mkey in self.content:
-                maxlen = len(self.content[mkey]) - 1
-                if self.content[mkey][0] == 1:  # csv
-                    self.content[mkey][1] = min(idx, maxlen)
-        else:
-            if idx >= len(self.content[skey]):
-                idx = 2
-            self.content[skey][1] = idx
 
-    # def debug_me(self, header):
-    #    print ("Wordlist (%s):" % header)
-    #    for key in self.content:
-    #        print ("Key: %s" % key, self.content[key])
+        if isinstance(idx, str):
+            relative = idx.startswith("+") or idx.startswith("-")
+            index = int(idx)
+        else:
+            relative = False
+            index = idx
+        wordlists = []
+
+        if skey == "@all":  # Set it for all fields from a csv file
+            wordlists.extend(self.content)
+        else:
+            wordlists.extend(list(skey.split(",")))
+
+        for wkey in wordlists:
+            wordlist = self.content[wkey]
+            if wordlist[0] == 1:  # Variable Wordlist type.
+                last_index = len(wordlist) - 1
+                # Zero-based outside, +2 inside
+                if relative:
+                    wordlist[1] = min(wordlist[1] + index, last_index)
+                else:
+                    wordlist[1] = min(index + 2, last_index)
 
     def reset(self, skey=None):
         # Resets position
@@ -178,7 +183,9 @@ class Wordlist:
                 sformat = vkey[6:-1]
                 value = self.wordlist_timestr(sformat)
             if value is not None:
-                result = result.replace(vkey, str(value))
+                result = result.replace(bracketed_key, str(value))
+
+
 
         return result
 
