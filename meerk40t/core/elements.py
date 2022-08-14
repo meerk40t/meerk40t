@@ -790,20 +790,16 @@ class Elemental(Service):
         @self.console_argument(
             "key", help=_("Individual wordlist value (use @ALL for all)")
         )
-        @self.console_argument("index", help=_("index to use"))
+        @self.console_argument("index", help=_("index to use, or +2 to increment by 2"))
         @self.console_command(
             "index",
             help=_("sets index in wordlist"),
             input_type="wordlist",
             output_type="wordlist",
+            all_arguments_required=True,
         )
         def wordlist_index(command, channel, _, key=None, index=None, **kwargs):
-            if key is not None and index is not None:
-                try:
-                    index = int(index)
-                except ValueError:
-                    index = 0
-                self.mywordlist.set_index(skey=key, idx=index)
+            self.mywordlist.set_index(skey=key, idx=index)
             return "wordlist", key
 
         @self.console_argument(
