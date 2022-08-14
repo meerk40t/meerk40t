@@ -1,7 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 
 import wx
-from wx.lib.scrolledpanel import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel
 
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_administrative_tools_50

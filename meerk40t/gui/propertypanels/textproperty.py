@@ -1,5 +1,5 @@
 import wx
-from wx.lib.scrolledpanel import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel
 
 from meerk40t.gui.fonts import wxfont_to_svg
 
@@ -557,14 +557,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.update_label()
         self.refresh()
         event.Skip()
-
-    def _SetupAfter(self, scrollToTop):
-        try:
-            self.SetVirtualSize(self.GetBestVirtualSize())
-            if scrollToTop:
-                self.Scroll(0,0)
-        except RuntimeError:
-            pass
 
 
 class TextProperty(MWindow):

@@ -5,6 +5,7 @@ Mixin functions for wxMeerk40t
 from typing import List
 
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel as SP
 
 from meerk40t.core.units import Angle, Length
 
@@ -382,6 +383,19 @@ class TextCtrl(wx.TextCtrl):
         except ValueError:
             self.SetBackgroundColour(wx.RED)
             self.Refresh()
+
+
+class ScrolledPanel(SP):
+    """
+    We sometimes delete things fast enough that they call _SetupAfter when dead and crash.
+    """
+    def _SetupAfter(self, scrollToTop):
+        try:
+            self.SetVirtualSize(self.GetBestVirtualSize())
+            if scrollToTop:
+                self.Scroll(0,0)
+        except RuntimeError:
+            pass
 
 
 WX_METAKEYS = [

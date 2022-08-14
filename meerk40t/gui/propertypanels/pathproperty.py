@@ -1,5 +1,5 @@
 import wx
-from wx.lib.scrolledpanel import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel
 
 from ...svgelements import Color
 from ..icons import icons8_vector_50

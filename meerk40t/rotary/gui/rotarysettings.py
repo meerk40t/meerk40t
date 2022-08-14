@@ -5,7 +5,7 @@
 #
 
 import wx
-from wx.lib.scrolledpanel import ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel
 
 from meerk40t.gui.icons import icons8_roll_50
 from meerk40t.gui.mwindow import MWindow
