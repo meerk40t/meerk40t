@@ -700,16 +700,17 @@ class SVGProcessor:
                     e_list.append(node)
             except OSError:
                 pass
-        elif isinstance(element, Group):
-            context_node = context_node.add(type="group", id=ident)
-            # recurse to children
+        elif isinstance(element, SVG):
+            # SVG is type of group, must go first
             if self.reverse:
                 for child in reversed(element):
                     self.parse(child, context_node, e_list)
             else:
                 for child in element:
                     self.parse(child, context_node, e_list)
-        elif isinstance(element, SVG):
+        elif isinstance(element, Group):
+            context_node = context_node.add(type="group", id=ident)
+            # recurse to children
             if self.reverse:
                 for child in reversed(element):
                     self.parse(child, context_node, e_list)
