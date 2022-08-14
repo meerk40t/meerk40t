@@ -100,7 +100,6 @@ class LaserRender:
         else:
             return 2.0, 0.5
 
-    # removed group.
     def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
         Render scene information.
