@@ -918,7 +918,7 @@ class ShadowTree:
                 img_obj = None
                 tofind = node.type
                 if tofind == "util console":
-                    # Lets see whether we find the keyword...
+                    # Let's see whether we find the keyword...
                     for key in self.default_images:
                         if key.startswith("console "):
                             skey = key[8:]
