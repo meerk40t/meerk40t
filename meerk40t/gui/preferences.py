@@ -170,7 +170,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.text_svg_ppi.SetToolTip(
             _("Custom Pixels Per Inch to use when loading an SVG file")
         )
-        sizer_3.Add(self.text_svg_ppi, 1, 0, 0)
+        sizer_3.Add(self.text_svg_ppi, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_3)
 
