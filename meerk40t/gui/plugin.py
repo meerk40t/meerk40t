@@ -196,7 +196,7 @@ and a wxpython version <= 4.1.1."""
                 if dlg.ShowModal() == wx.ID_OK:
                     value = dlg.GetValue()
                 else:
-                    return
+                    return None
             try:
                 return data_type(value)
             except ValueError:

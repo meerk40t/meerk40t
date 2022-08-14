@@ -6708,8 +6708,7 @@ class Elemental(Service):
         @self.tree_prompt("opname", _("Name to store current operations under?"))
         @self.tree_operation("New", node_type="branch ops", help="")
         def save_material_custom(node, opname, **kwargs):
-            if opname is not None:
-                self(f"material save {opname.replace(' ', '_')}\n")
+            self(f"material save {opname.replace(' ', '_')}\n")
 
         @self.tree_submenu(_("Delete"))
         @self.tree_values("opname", values=self.op_data.section_set)
@@ -6792,12 +6791,11 @@ class Elemental(Service):
         )
         @self.tree_operation(_("Append Wait"), node_type="branch ops", help="")
         def append_operation_wait(node, wait_time, pos=None, **kwargs):
-            if wait_time is not None:
-                self.op_branch.add(
-                    type="util wait",
-                    pos=pos,
-                    wait=wait_time,
-                )
+            self.op_branch.add(
+                type="util wait",
+                pos=pos,
+                wait=wait_time,
+            )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Output"), node_type="branch ops", help="")
@@ -6843,12 +6841,11 @@ class Elemental(Service):
         @self.tree_prompt("opname", _("Console command to append to operations?"))
         @self.tree_operation(_("Append Console"), node_type="branch ops", help="")
         def append_operation_custom(node, opname, pos=None, **kwargs):
-            if opname is not None:
-                self.op_branch.add(
-                    type="util console",
-                    pos=pos,
-                    command=opname,
-                )
+            self.op_branch.add(
+                type="util console",
+                pos=pos,
+                command=opname,
+            )
 
         @self.tree_operation(
             _("Reclassify operations"), node_type="branch elems", help=""

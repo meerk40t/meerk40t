@@ -142,9 +142,12 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         def specific(event=None):
             prompts = f.user_prompt
             for prompt in prompts:
-                func_dict[prompt["attr"]] = elements.kernel.prompt(
+                response = elements.kernel.prompt(
                     prompt["type"], prompt["prompt"]
                 )
+                if response is None:
+                    return
+                func_dict[prompt["attr"]] = response
             f(node, **func_dict)
 
         return specific
