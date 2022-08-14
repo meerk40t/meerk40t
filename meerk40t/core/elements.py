@@ -7026,9 +7026,12 @@ class Elemental(Service):
             append_operation_interrupt(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_prompt(
+            "wait_time", _("Wait for how long (in seconds)?"), data_type=float
+        )
         @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
-        def add_operation_wait(node, **kwargs):
-            append_operation_wait(node, pos=add_after_index(node), **kwargs)
+        def add_operation_wait(node, wait_time, **kwargs):
+            append_operation_wait(node, wait_time=wait_time, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")
