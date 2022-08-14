@@ -922,7 +922,7 @@ class ShadowTree:
                     for key in self.default_images:
                         if key.startswith("console "):
                             skey = key[8:]
-                            if skey in node.command:
+                            if node.command is not None and skey in node.command:
                                 try:
                                     img_obj = self.default_images[key]
                                 except (IndexError, KeyError):
