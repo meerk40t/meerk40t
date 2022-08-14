@@ -1,11 +1,11 @@
 import unittest
-from math import ceil
+
+from meerk40t.core.node.elem_image import ImageNode
 from test import bootstrap
 
 from PIL import Image, ImageDraw
 
-from meerk40t.image.actualize import actualize
-from meerk40t.svgelements import Matrix, SVGImage
+from meerk40t.svgelements import Matrix
 
 
 class TestActualize(unittest.TestCase):
@@ -182,10 +182,11 @@ class TestActualize(unittest.TestCase):
 
             for step in range(1, 20):
                 transform = Matrix()
-                actual, transform = actualize(
-                    image, transform, step_x=step, step_y=step, crop=False
-                )
-                self.assertEqual(actual.getpixel((-1, -1)), 255)
+                node = ImageNode(image=image, matrix=transform)
+                node.step_x = step
+                node.step_y = step
+                node.process_image(crop=False)
+                self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_white(self):
         """
@@ -199,10 +200,11 @@ class TestActualize(unittest.TestCase):
 
         for step in range(1, 20):
             transform = Matrix()
-            actual, transform = actualize(
-                image, transform, step_x=step, step_y=step, crop=False
-            )
-            self.assertEqual(actual.getpixel((-1, -1)), 255)
+            node = ImageNode(image=image, matrix=transform)
+            node.step_x = step
+            node.step_y = step
+            node.process_image(crop=False)
+            self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_black(self):
         """
@@ -213,17 +215,22 @@ class TestActualize(unittest.TestCase):
         image = Image.new("RGBA", (256, 256), "black")
         draw = ImageDraw.Draw(image)
         draw.ellipse((100, 100, 150, 150), "white")
+        transform = Matrix()
 
         for step in range(1, 20):
-            transform = Matrix()
-            actual, transform = actualize(
-                image, transform, step_x=step, step_y=step, crop=False, inverted=True
-            )
-            self.assertEqual(actual.getpixel((-1, -1)), 0)
+            node = ImageNode(image=image, matrix=transform)
+            node.step_x = step
+            node.step_y = step
+            node.invert = True
+            node.process_image(crop=False)
+            self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
 
         # Note: inverted flag not set. White edge pixel is correct.
-        actual, transform = actualize(image, Matrix(), step_x=3, step_y=3, crop=False)
-        self.assertEqual(actual.getpixel((-1, -1)), 255)
+        node = ImageNode(image=image, matrix=transform)
+        node.step_x = 3
+        node.step_y = 3
+        node.process_image(crop=False)
+        self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
 
     # def test_actualize_largecircle(self):
     #     """
