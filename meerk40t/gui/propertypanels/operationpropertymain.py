@@ -1660,13 +1660,4 @@ class ParameterPanel(ScrolledPanel):
         self.dwell_panel.pane_show()
         self.info_panel.pane_show()
 
-    def _SetupAfter(self, scrollToTop):
-        print("Did this print?")
-        # try:
-        #     self.SetVirtualSize(self.GetBestVirtualSize())
-        #     if scrollToTop:
-        #         self.Scroll(0,0)
-        # except RuntimeError:
-        #     pass
-
 # end of class ParameterPanel

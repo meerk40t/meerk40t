@@ -558,6 +558,14 @@ class TextPropertyPanel(ScrolledPanel):
         self.refresh()
         event.Skip()
 
+    def _SetupAfter(self, scrollToTop):
+        try:
+            self.SetVirtualSize(self.GetBestVirtualSize())
+            if scrollToTop:
+                self.Scroll(0,0)
+        except RuntimeError:
+            pass
+
 
 class TextProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
