@@ -1220,17 +1220,41 @@ class MeerK40t(MWindow):
         )
         @context.console_command("interrupt", hidden=True)
         def interrupt(message="", **kwargs):
+            """
+            Interrupt interrupts but does so in the gui thread. This is so that some
+            OSes like linux can be properly stopped in the gui. The gui-thread will
+            often be required. But, this will typically be called in the spooler thread.
+
+            If called in the main thread, we call the dialog ourselves to avoid livelock.
+
+            @param message:
+            @param kwargs:
+            @return:
+            """
             if not message:
                 message = _("Spooling Interrupted.")
 
-            dlg = wx.MessageDialog(
-                None,
-                message + "\n\n" + _("Press OK to Continue."),
-                _("Interrupt"),
-                wx.OK,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
+            import threading
+            lock = threading.Lock()
+            lock.acquire(True)
+
+            def message_dialog(*args):
+                dlg = wx.MessageDialog(
+                    None,
+                    message + "\n\n" + _("Press OK to Continue."),
+                    _("Interrupt"),
+                    wx.OK,
+                )
+                dlg.ShowModal()
+                dlg.Destroy()
+                lock.release()
+
+            if wx.IsMainThread():
+                # If we're in main thread we much call here or livelock.
+                message_dialog()
+            else:
+                wx.CallAfter(message_dialog, None)
+            lock.acquire(True)
 
         @context.console_command("dialog_load", hidden=True)
         def load_dialog(**kwargs):
