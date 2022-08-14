@@ -190,9 +190,15 @@ class TestPlotplanner(unittest.TestCase):
             for i in range(10):
                 goal_x = random.randint(0, 100)
                 goal_y = random.randint(0, 100)
+                start_x = random.randint(0, 100)
+                start_y = random.randint(0, 100)
+                while start_x == goal_x and start_y == goal_y:
+                    # If exactly equal go ahead and randomize again.
+                    start_x = random.randint(0, 100)
+                    start_y = random.randint(0, 100)
                 plan.push(
                     LineCut(
-                        Point(random.randint(0, 100), random.randint(0, 100)),
+                        Point(start_x, start_y),
                         Point(goal_x, goal_y),
                         settings=settings,
                     )
