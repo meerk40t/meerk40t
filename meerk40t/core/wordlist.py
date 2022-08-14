@@ -136,6 +136,8 @@ class Wordlist:
             else:
                 autoincrement = False
 
+            reset = False
+            relative = 0
             pos = key.find("#")
             if pos > 0:  # Needs to be after first character
                 # Process offset modification.
@@ -150,9 +152,6 @@ class Wordlist:
                     relative = int(index_string)
                 except ValueError:
                     relative = 0
-            else:
-                reset = False
-                relative = 0
 
             # And now date and time...
             if key == "date":
@@ -192,8 +191,6 @@ class Wordlist:
 
             if value is not None:
                 result = result.replace(bracketed_key, str(value))
-
-
 
         return result
 
