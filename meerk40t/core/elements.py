@@ -6842,6 +6842,8 @@ class Elemental(Service):
         @self.tree_prompt("opname", _("Console command to append to operations?"))
         @self.tree_operation(_("Append Console"), node_type="branch ops", help="")
         def append_operation_custom(node, opname, pos=None, **kwargs):
+            if not opname:
+                return
             self.op_branch.add(
                 type="util console",
                 pos=pos,
