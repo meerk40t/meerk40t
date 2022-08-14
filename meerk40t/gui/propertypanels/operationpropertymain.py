@@ -1660,15 +1660,11 @@ class ParameterPanel(ScrolledPanel):
         self.dwell_panel.pane_show()
         self.info_panel.pane_show()
 
-    def SetVirtualSize(self, *__args):
-        """
-        Fixes wx.Python error. We load and close some Scrolled Panels so fast they crash.
-
-        @param __args:
-        @return:
-        """
+    def _SetupAfter(self, scrollToTop):
         try:
-            ScrolledPanel.SetVirtualSize(self, *__args)
+            self.SetVirtualSize(self.GetBestVirtualSize())
+            if scrollToTop:
+                self.Scroll(0,0)
         except RuntimeError:
             pass
 
