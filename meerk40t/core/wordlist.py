@@ -120,6 +120,7 @@ class Wordlist:
             self.content[skey][1] = 2
 
     def translate(self, pattern):
+        value = None
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
         for vkey in brackets.findall(result):
@@ -214,8 +215,11 @@ class Wordlist:
     def load_data(self, filename):
         if filename is None:
             filename = self.default_filename
-        with open(filename, "r") as f:
-            self.content = json.load(f)
+        try:
+            with open(filename, "r") as f:
+                self.content = json.load(f)
+        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+            pass
 
     def save_data(self, filename):
         if filename is None:
