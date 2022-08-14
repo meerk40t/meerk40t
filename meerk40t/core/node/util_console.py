@@ -6,8 +6,6 @@ class ConsoleOperation(Node):
     """
     ConsoleOperation contains a console command (as a string) to be run.
 
-    NOTE: This will eventually replace ConsoleOperation.
-
     Node type "util console"
     """
 
