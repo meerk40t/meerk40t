@@ -233,6 +233,94 @@ class LaserRender:
 
         return p
 
+    def make_image(self, node, draw_mode, zoomscale, alpha):
+        matrix = node.matrix
+
+        svgfont_to_wx(node)
+        font = node.wxfont
+
+        dc = wx.MemoryDC()
+        f_width, f_height, f_descent, f_externalLeading = dc.GetFullTextExtent(node.text.text, font)
+        bmp = wx.Bitmap(f_width, f_height, 32)
+        dc.SelectObject(bmp)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        text = node.text
+        text_string = text.text
+        if text_string is None or text_string == "":
+            return None, 0, 0
+
+        if draw_mode & DRAW_MODE_VARIABLES:
+            # Only if flag show the translated values
+            text_string = self.context.elements.mywordlist.translate(text_string)
+        if node.texttransform is not None:
+            ttf = node.texttransform.lower()
+            if ttf == "capitalize":
+                text_string = text_string.capitalize()
+            elif ttf == "uppercase":
+                text_string = text_string.upper()
+            if ttf == "lowercase":
+                text_string = text_string.lower()
+
+        gc = wx.GraphicsContext.Create(dc)
+        gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
+
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth(1000)
+        else:
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self.set_pen(
+            gc,
+            node.stroke,
+            alpha=alpha,
+        )
+        self.set_brush(gc, node.fill, alpha=255)
+
+        if node.fill is None or node.fill == "none":
+            gc.SetFont(font, wx.BLACK)
+        else:
+            gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
+
+        width, height = gc.GetTextExtent(text_string)
+
+        print(f"{f_width}v{width} and {f_height}v{height}")
+        if width <= 0:
+            width = 1
+        if height <= 0:
+            height = 1
+
+        gc.PushState()
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+
+        gc.SetBrush(wx.WHITE_BRUSH)
+
+        # Actually draw objects.
+        x = text.x
+        y = text.y
+        text.width = f_width
+        text.height = f_height
+        anchor = "start"
+        if hasattr(text, "anchor"):
+            if text.anchor is not None:
+                anchor = text.anchor
+        if anchor == "middle":
+            x -= text.width / 2
+        elif anchor == "end":
+            x -= text.width
+        gc.DrawText(text_string, 0, 0)
+
+        img = bmp.ConvertToImage()
+        buf = img.GetData()
+        image = Image.frombuffer(
+            "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+        )
+        gc.PopState()
+        dc.SelectObject(wx.NullBitmap)
+        gc.Destroy()
+        del dc
+        return bmp, f_width, f_height
+
     def _set_linecap_by_node(self, node):
         if not hasattr(node, "linecap") or node.linecap is None:
             self.pen.SetCap(wx.CAP_ROUND)
@@ -549,6 +637,9 @@ class LaserRender:
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
+        if not hasattr(node, "cache") or node.cache is None:
+            node.cache, node.c_width, node.c_height = self.make_image(node, draw_mode, zoomscale, alpha)
+
         text = node.text
         if text.text is None or text.text == "":
             return
@@ -557,9 +648,6 @@ class LaserRender:
             matrix = node.matrix
         except AttributeError:
             matrix = None
-
-        svgfont_to_wx(node)
-        font = node.wxfont
 
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
@@ -573,60 +661,8 @@ class LaserRender:
             node.stroke,
             alpha=alpha,
         )
-        self.set_brush(gc, node.fill, alpha=255)
-
-        if node.fill is None or node.fill == "none":
-            gc.SetFont(font, wx.BLACK)
-        else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
-
-        x = text.x
-        y = text.y
-        text_string = text.text
-        if draw_mode & DRAW_MODE_VARIABLES:
-            # Only if flag show the translated values
-            text_string = self.context.elements.mywordlist.translate(text_string)
-        if node.texttransform is not None:
-            ttf = node.texttransform.lower()
-            if ttf == "capitalize":
-                text_string = text_string.capitalize()
-            elif ttf == "uppercase":
-                text_string = text_string.upper()
-            if ttf == "lowercase":
-                text_string = text_string.lower()
-        # There's a fundamental flaw in wxPython to get the right fontsize
-        # Both GetTextExtent and GetFullTextextent provide the fontmetric-size
-        # as result for the font-height and don't take the real glyphs into account
-        # That means that ".", "a", "g" and "T" all have the same height...
-        # Consequently, the size is always off... This can be somewhat compensated by taking
-        # the descent from the font-metric into account.
-        # A 'real' height routine would most probably need to draw the string on an
-        # empty canvas and find the first and last dots on a line...
-        f_width, f_height, f_descent, f_externalLeading = gc.GetFullTextExtent(text_string)
-
-        # That stuff drives my crazy...
-        # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
-        has_underscore = any(
-            substring in text_string for substring in ("g", "j", "p", "q", "y", ",", ";")
-        )
-        delta = self.fontdescent_factor * f_descent
-        if has_underscore:
-            delta /= 2.0
-        delta -= f_externalLeading
-        f_height -= delta
-        text.width = f_width
-        text.height = f_height
-        y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
-
-        anchor = "start"
-        if hasattr(text, "anchor"):
-            if text.anchor is not None:
-                anchor = text.anchor
-        if anchor == "middle":
-            x -= text.width / 2
-        elif anchor == "end":
-            x -= text.width
-        gc.DrawText(text_string, x, y)
+        self.set_brush(gc, node.fill, alpha=alpha)
+        gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
