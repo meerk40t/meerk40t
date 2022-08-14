@@ -125,63 +125,71 @@ class Wordlist:
             self.content[skey][1] = 2
 
     def translate(self, pattern):
-        value = None
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
-        for vkey in brackets.findall(result):
-            skey = vkey[1:-1].lower()
-            # Lets check whether we have a modifier at the end: #<num>
-            index = None
-            idx = skey.find("#")
-            if idx > 0:  # Needs to be after first character
-                idx_str = skey[idx + 1 :]
-                skey = skey[:idx]
-                if skey in self.content:
-                    curridx = self.content[skey][1]
-                    currval = self.content[skey][2]
-                else:
-                    continue
+        for bracketed_key in brackets.findall(result):
+            key = bracketed_key[1:-1].lower()
+            # Let's check whether we have a modifier at the end: #<num>
+            if key.endswith("++"):
+                autoincrement = True
+                key = key[:-2]
+            else:
+                autoincrement = False
+
+            pos = key.find("#")
+            if pos > 0:  # Needs to be after first character
+                # Process offset modification.
+                index_string = key[pos + 1 :]
+                key = key[:pos]
+
+                if not index_string.startswith("+") and not index_string.startswith("-"):
+                    # We have a #<index> value without + or -, specific index value from 0
+                    reset = True
                 try:
-                    relative = int(idx_str)
+                    # This covers +x, -x, x
+                    relative = int(index_string)
                 except ValueError:
                     relative = 0
-                if curridx == self.content[skey][0] == 2:  # Counter
-                    if idx_str.startswith("+") or idx_str.startswith("-"):
-                        value = currval + relative
-                    else:
-                        value = relative
-                else:
-                    if idx_str.startswith("+") or idx_str.startswith("-"):
-                        index = curridx + relative
-                    else:
-                        index = relative
-                    value = self.fetch_value(skey, index)
-                    if value is None:
-                        value = ""
             else:
-                if skey in self.content:
-                    value = self.fetch_value(skey, index)
-                    if value is None:
-                        value = ""
-                elif skey.startswith("date") or skey.startswith("time"):
-                    pass
-                else:
-                    # Something unknown...
-                    continue
+                reset = False
+                relative = 0
 
             # And now date and time...
-            if skey == "date":
+            if key == "date":
                 value = self.wordlist_datestr(None)
-            elif skey == "time":
+            elif key == "time":
                 value = self.wordlist_timestr(None)
-            elif skey.startswith("date@"):
+            elif key.startswith("date@"):
                 # Original cASEs, vkey is already lowered...
-                sformat = vkey[6:-1]
+                sformat = bracketed_key[6:-1]
                 value = self.wordlist_datestr(sformat)
-            elif skey.startswith("time@"):
+            elif key.startswith("time@"):
                 # Original cASEs, vkey is already lowered...
-                sformat = vkey[6:-1]
+                sformat = bracketed_key[6:-1]
                 value = self.wordlist_timestr(sformat)
+            else:
+                # Must be a wordlist type.
+                if key not in self.content:
+                    # This is not a wordlist name.
+                    continue
+                wordlist = self.content[key]
+
+                if wordlist[0] == 2:  # Counter-type
+                    # Counter index is the value.
+                    value = wordlist[2] if not reset else 0
+                    value += relative
+                    if autoincrement:
+                        # autoincrement of counter means value + 1
+                        wordlist[2] = value + 1
+                else:
+                    # This is a variable wordlist.
+                    current_index = wordlist[1] if not reset else 0
+                    current_index += relative
+                    value = self.fetch_value(key, current_index)
+                    if autoincrement:
+                        # Index set to current index + 1
+                        wordlist[1] = current_index + 1
+
             if value is not None:
                 result = result.replace(bracketed_key, str(value))
 
