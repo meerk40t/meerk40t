@@ -8,7 +8,6 @@ from meerk40t.svgelements import (
     Rect,
     SimpleLine,
     SVGImage,
-    SVGText,
 )
 
 
@@ -27,8 +26,6 @@ def get_type_from_element(element):
         return "elem polyline"
     elif isinstance(element, Point):
         return "elem point"
-    elif isinstance(element, SVGText):
-        return "elem text"
 
 
 non_structural_nodes = (

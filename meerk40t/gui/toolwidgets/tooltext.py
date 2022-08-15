@@ -4,7 +4,7 @@ from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Color, SVGText
+from meerk40t.svgelements import Color
 
 from ...core.units import UNITS_PER_PIXEL
 
