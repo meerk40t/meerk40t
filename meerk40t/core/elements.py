@@ -3881,7 +3881,7 @@ class Elemental(Service):
             data.append(node)
             return "elements", data
 
-        @self.console_option("size", "s", type=float, help=_("font size to for object"))
+        @self.console_option("size", "s", type=float, default=16, help=_("font size to for object"))
         @self.console_argument("text", type=str, help=_("quoted string of text"))
         @self.console_command(
             "text",
@@ -3895,12 +3895,8 @@ class Elemental(Service):
             if text is None:
                 channel(_("No text specified"))
                 return
-            svg_text = SVGText(text)
-            if size is not None:
-                svg_text.font_size = size
-            svg_text *= f"scale({UNITS_PER_PIXEL})"
             node = self.elem_branch.add(
-                text=svg_text, matrix=svg_text.transform, type="elem text"
+                text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), font_size=size, type="elem text"
             )
             node.stroke = self.default_stroke
             self.set_emphasis([node])

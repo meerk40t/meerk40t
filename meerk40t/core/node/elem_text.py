@@ -36,8 +36,8 @@ class TextNode(Node):
     def __init__(
         self,
         text=None,
-        x=None,
-        y=None,
+        x=0,
+        y=0,
         width=None,
         height=None,
         font=None,

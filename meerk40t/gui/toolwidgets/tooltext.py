@@ -308,8 +308,8 @@ class TextTool(ToolWidget):
                 text = dlg.result_text
                 elements = self.scene.context.elements
 
-                node = elements.elem_branch.add(text=text, type="elem text", x=x / UNITS_PER_PIXEL, y=y / UNITS_PER_PIXEL)
-                node.matrix *= f"scale({UNITS_PER_PIXEL})"
+                node = elements.elem_branch.add(text=text, type="elem text")
+                node.matrix *= f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"
                 if dlg.result_anchor == 1:
                     node.anchor = "middle"
                 elif dlg.result_anchor == 2:
