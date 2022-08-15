@@ -158,7 +158,7 @@ class TextNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self._bounds_dirty = True
+            self._bounds_dirty = False
             self._bounds = self.bbox(with_stroke=True)
         return self._bounds
 
