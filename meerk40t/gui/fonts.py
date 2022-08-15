@@ -56,106 +56,22 @@ def wx_to_svg_fontstyle(wxfont):
     return "normal"
 
 
-def wxfont_to_svg(svgtextnode):
+def wxfont_to_svg(textnode):
     """
     Translates all wxfont - properties to their svg-equivalents
-    @param svgtextnode:
+    @param textnode:
     @return:
     """
 
-    if not hasattr(svgtextnode, "wxfont"):
-        svgtextnode.wxfont = wx.Font()
-    wxfont = svgtextnode.wxfont
+    if not hasattr(textnode, "wxfont"):
+        textnode.wxfont = wx.Font()
+    wxfont = textnode.wxfont
 
     # A point is 1/72 of an inch
     factor = PX_PER_INCH / 72
-    svgtextnode.text.font_size = wxfont.GetPointSize() * factor
-    svgtextnode.text.font_weight = str(wxfont.GetWeight())
-    svgtextnode.text.font_family = wx_to_svg_family_name(wxfont)
-    svgtextnode.text.font_style = wx_to_svg_fontstyle(wxfont)
-    svgtextnode.underline = wxfont.GetUnderlined()
-    svgtextnode.strikethrough = wxfont.GetStrikethrough()
-
-
-def svg_to_wx_family(svgtextnode, wxfont):
-    font_list = svgtextnode.text.font_list
-    for ff in font_list:
-        if ff == "fantasy":
-            family = wx.FONTFAMILY_DECORATIVE
-            wxfont.SetFamily(family)
-            return
-        elif ff == "serif":
-            family = wx.FONTFAMILY_ROMAN
-            wxfont.SetFamily(family)
-            return
-        elif ff == "cursive":
-            family = wx.FONTFAMILY_SCRIPT
-            wxfont.SetFamily(family)
-            return
-        elif ff == "sans-serif":
-            family = wx.FONTFAMILY_SWISS
-            wxfont.SetFamily(family)
-            return
-        elif ff == "monospace":
-            family = wx.FONTFAMILY_TELETYPE
-            wxfont.SetFamily(family)
-            return
-        if wxfont.SetFaceName(ff):
-            # We found a correct face name.
-            return
-
-
-def svg_to_wx_fontstyle(svgtextnode, wxfont):
-    ff = svgtextnode.text.font_style
-    if ff == "normal":
-        fontstyle = wx.FONTSTYLE_NORMAL
-    elif ff == "italic":
-        fontstyle = wx.FONTSTYLE_ITALIC
-    elif ff == "oblique":
-        fontstyle = wx.FONTSTYLE_SLANT
-    else:
-        fontstyle = wx.FONTSTYLE_NORMAL
-    wxfont.SetStyle(fontstyle)
-
-
-def svgfont_to_wx(svgtextnode):
-    """
-    Translates all svg-text-properties to their wxfont-equivalents
-    @param svgtextnode:
-    @return:
-    """
-    if not hasattr(svgtextnode, "wxfont"):
-        svgtextnode.wxfont = wx.Font()
-    wxfont = svgtextnode.wxfont
-    try:
-        wxfont.SetNumericWeight(svgtextnode.text.weight)  # Gets numeric weight.
-    except AttributeError:
-        # Running version wx4.0. No set Numeric Weight, can only set bold or normal.
-        weight = svgtextnode.text.weight
-        wxfont.SetWeight(
-            wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
-        )  # Gets numeric weight.
-
-    svg_to_wx_family(svgtextnode, wxfont)
-    svg_to_wx_fontstyle(svgtextnode, wxfont)
-
-    # A point is 1/72 of an inch
-    factor = 72 / PX_PER_INCH
-    font_size = svgtextnode.text.font_size * factor
-    if font_size < 1:
-        if font_size > 0:
-            textx = 0
-            texty = 0
-            if hasattr(svgtextnode.text, "x"):
-                textx = svgtextnode.text.x
-            if hasattr(svgtextnode.text, "y"):
-                texty = svgtextnode.text.y
-            svgtextnode.matrix.pre_scale(font_size, font_size, textx, texty)
-            font_size = 1
-            svgtextnode.text.font_size = font_size  # No zero sized fonts.
-    try:
-        wxfont.SetFractionalPointSize(font_size)
-    except AttributeError:
-        wxfont.SetPointSize(int(font_size))
-    wxfont.SetUnderlined(svgtextnode.underline)
-    wxfont.SetStrikethrough(svgtextnode.strikethrough)
+    textnode.font_size = wxfont.GetPointSize() * factor
+    textnode.font_weight = str(wxfont.GetWeight())
+    textnode.font_family = wx_to_svg_family_name(wxfont)
+    textnode.font_style = wx_to_svg_fontstyle(wxfont)
+    textnode.underline = wxfont.GetUnderlined()
+    textnode.strikethrough = wxfont.GetStrikethrough()

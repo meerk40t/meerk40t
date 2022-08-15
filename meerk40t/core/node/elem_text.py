@@ -36,16 +36,21 @@ class TextNode(Node):
     def __init__(
         self,
         text=None,
+        x=None,
+        y=None,
+        width=None,
+        height=None,
+        font=None,
         matrix=None,
         fill=None,
         stroke=None,
-        stroke_width=None,
+        stroke_width=0,
         stroke_scale=True,
-        font=None,
         underline=None,
         strikethrough=None,
         overline=None,
         texttransform=None,
+        path=None,
         **kwargs,
     ):
         super(TextNode, self).__init__(type="elem text", **kwargs)
@@ -55,12 +60,12 @@ class TextNode(Node):
         self.matrix = Matrix() if matrix is None else matrix
         self.fill = fill
         self.stroke = stroke
-        self.stroke_width = text.stroke_width if stroke_width is None else stroke_width
+        self.stroke_width = stroke_width
         self._stroke_scaled = stroke_scale
-        self.width = 0
-        self.height = 0
-        self.x = 0
-        self.y = 0
+        self.width = width
+        self.height = height
+        self.x = x
+        self.y = y
 
         self.font_style = "normal"
         self.font_variant = "normal"
@@ -80,12 +85,16 @@ class TextNode(Node):
         self.texttransform = "" if texttransform is None else texttransform
 
         self.anchor = "start"  # start, middle, end.
-        self.path = None
+        self.path = path
         self.lock = False
 
     def __copy__(self):
         return TextNode(
             text=self.text,
+            x=self.x,
+            y=self.y,
+            width=self.width,
+            height=self.height,
             matrix=copy(self.matrix),
             fill=copy(self.fill),
             stroke=copy(self.stroke),
@@ -96,6 +105,7 @@ class TextNode(Node):
             strikethrough=self.strikethrough,
             overline=self.overline,
             texttransform=self.texttransform,
+            path=self.path,
             **self.settings,
         )
 
@@ -163,7 +173,7 @@ class TextNode(Node):
         default_map = super(TextNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Text"
         default_map.update(self.settings)
-        default_map["text"] = self.text.text
+        default_map["text"] = self.text
         default_map["stroke"] = self.stroke
         default_map["fill"] = self.fill
         default_map["stroke-width"] = self.stroke_width
@@ -297,11 +307,14 @@ class TextNode(Node):
         :return: bounding box of the given element
         """
         if self.path is not None:
-            return (self.path * self.transform).bbox(
+            return (self.path * self.matrix).bbox(
                 transformed=True,
                 with_stroke=with_stroke,
             )
-
+        if self.height is None:
+            self.height = self.line_height * len(list(self.text.split("\n")))
+        if self.width is None:
+            self.width = len(self.text) * self.font_size
         width = self.width
         height = self.height
         xmin = self.x
@@ -317,6 +330,7 @@ class TextNode(Node):
         elif self.anchor == "end":
             xmin -= width
             xmax -= width
+
         if transformed:
             p0 = self.matrix.transform_point([xmin, ymin])
             p1 = self.matrix.transform_point([xmin, ymax])

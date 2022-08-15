@@ -58,7 +58,7 @@ and a wxpython version <= 4.1.1."""
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
-        from meerk40t.gui.fonts import svgfont_to_wx, wxfont_to_svg
+        from meerk40t.gui.fonts import wxfont_to_svg
         from meerk40t.gui.laserrender import LaserRender
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
 
@@ -68,7 +68,6 @@ and a wxpython version <= 4.1.1."""
         # Registers the render-op make_raster. This is used to do cut planning.
         renderer = LaserRender(kernel_root)
         kernel_root.register("render-op/make_raster", renderer.make_raster)
-        kernel_root.register("font/svg_to_wx", svgfont_to_wx)
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
 

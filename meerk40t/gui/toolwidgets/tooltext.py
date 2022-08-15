@@ -282,15 +282,9 @@ class TextTool(ToolWidget):
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
         self.start_position = None
-        self.x = None
-        self.y = None
-        self.text = None
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.text is not None:
-            gc.SetPen(self.pen)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            gc.DrawText(self.text.text, self.x, self.y)
+        pass
 
     def event(
         self,
@@ -303,29 +297,26 @@ class TextTool(ToolWidget):
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
-            self.p1 = complex(space_pos[0], space_pos[1])
-            _ = self.scene.context._
-            self.text = SVGText("")
             if nearest_snap is None:
                 x = space_pos[0]
                 y = space_pos[1]
             else:
                 x = nearest_snap[0]
                 y = nearest_snap[1]
-            self.x = x
-            self.y = y
-            self.text *= f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"
             dlg = TextEntry(self.scene.context, "", None, wx.ID_ANY, "")
             if dlg.ShowModal() == wx.ID_OK:
-                self.text.text = dlg.result_text
-                if dlg.result_anchor == 1:
-                    self.text.anchor = "middle"
-                elif dlg.result_anchor == 2:
-                    self.text.anchor = "end"
-                else:
-                    self.text.anchor = "start"
+                text = dlg.result_text
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(text=self.text, type="elem text")
+
+                node = elements.elem_branch.add(text=text, type="elem text", x=x / UNITS_PER_PIXEL, y=y / UNITS_PER_PIXEL)
+                node.matrix *= f"scale({UNITS_PER_PIXEL})"
+                if dlg.result_anchor == 1:
+                    node.anchor = "middle"
+                elif dlg.result_anchor == 2:
+                    node.anchor = "end"
+                else:
+                    node.anchor = "start"
+
                 color = dlg.result_colour
                 rgb = color.GetRGB()
                 color = swizzlecolor(rgb)

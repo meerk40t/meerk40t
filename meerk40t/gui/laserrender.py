@@ -18,7 +18,6 @@ from meerk40t.core.cutcode import (
     WaitCut,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
-from meerk40t.gui.fonts import svgfont_to_wx
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -30,6 +29,7 @@ from meerk40t.svgelements import (
     Path,
     QuadraticBezier,
 )
+from ..core.units import PX_PER_INCH
 
 from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .icons import icons8_image_50
@@ -69,6 +69,91 @@ def swizzlecolor(c):
         return c.blue << 16 | c.green << 8 | c.red
     except (ValueError, TypeError):
         return None
+
+
+def svgfont_to_wx(textnode):
+    """
+    Translates all svg-text-properties to their wxfont-equivalents
+    @param textnode:
+    @return:
+    """
+    if not hasattr(textnode, "wxfont"):
+        textnode.wxfont = wx.Font()
+    wxfont = textnode.wxfont
+
+    try:
+        wxfont.SetNumericWeight(textnode.weight)  # Gets numeric weight.
+    except AttributeError:
+        # Running version wx4.0. No set Numeric Weight, can only set bold or normal.
+        weight = textnode.text.weight
+        wxfont.SetWeight(
+            wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
+        )  # Gets numeric weight.
+
+    svg_to_wx_family(textnode, wxfont)
+    svg_to_wx_fontstyle(textnode, wxfont)
+
+    # A point is 1/72 of an inch
+    factor = 72 / PX_PER_INCH
+    font_size = textnode.font_size * factor
+    if font_size < 1:
+        if font_size > 0:
+            textx = 0
+            texty = 0
+            if hasattr(textnode.text, "x"):
+                textx = textnode.x
+            if hasattr(textnode.text, "y"):
+                texty = textnode.y
+            textnode.matrix.pre_scale(font_size, font_size, textx, texty)
+            font_size = 1
+            textnode.font_size = font_size  # No zero sized fonts.
+    try:
+        wxfont.SetFractionalPointSize(font_size)
+    except AttributeError:
+        wxfont.SetPointSize(int(font_size))
+    wxfont.SetUnderlined(textnode.underline)
+    wxfont.SetStrikethrough(textnode.strikethrough)
+
+
+def svg_to_wx_family(textnode, wxfont):
+    font_list = textnode.font_list
+    for ff in font_list:
+        if ff == "fantasy":
+            family = wx.FONTFAMILY_DECORATIVE
+            wxfont.SetFamily(family)
+            return
+        elif ff == "serif":
+            family = wx.FONTFAMILY_ROMAN
+            wxfont.SetFamily(family)
+            return
+        elif ff == "cursive":
+            family = wx.FONTFAMILY_SCRIPT
+            wxfont.SetFamily(family)
+            return
+        elif ff == "sans-serif":
+            family = wx.FONTFAMILY_SWISS
+            wxfont.SetFamily(family)
+            return
+        elif ff == "monospace":
+            family = wx.FONTFAMILY_TELETYPE
+            wxfont.SetFamily(family)
+            return
+        if wxfont.SetFaceName(ff):
+            # We found a correct face name.
+            return
+
+
+def svg_to_wx_fontstyle(textnode, wxfont):
+    ff = textnode.font_style
+    if ff == "normal":
+        fontstyle = wx.FONTSTYLE_NORMAL
+    elif ff == "italic":
+        fontstyle = wx.FONTSTYLE_ITALIC
+    elif ff == "oblique":
+        fontstyle = wx.FONTSTYLE_SLANT
+    else:
+        fontstyle = wx.FONTSTYLE_NORMAL
+    wxfont.SetStyle(fontstyle)
 
 
 class LaserRender:
@@ -549,7 +634,7 @@ class LaserRender:
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
         text = node.text
-        if text.text is None or text.text == "":
+        if text is None or text == "":
             return
 
         try:
@@ -579,20 +664,19 @@ class LaserRender:
         else:
             gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
 
-        x = text.x
-        y = text.y
-        text_string = text.text
+        x = node.x
+        y = node.y
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text_string = self.context.elements.mywordlist.translate(text_string)
+            text = self.context.elements.mywordlist.translate(text)
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
-                text_string = text_string.capitalize()
+                text = text.capitalize()
             elif ttf == "uppercase":
-                text_string = text_string.upper()
+                text = text.upper()
             if ttf == "lowercase":
-                text_string = text_string.lower()
+                text = text.lower()
         # There's a fundamental flaw in wxPython to get the right fontsize
         # Both GetTextExtent and GetFullTextextent provide the fontmetric-size
         # as result for the font-height and don't take the real glyphs into account
@@ -601,31 +685,29 @@ class LaserRender:
         # the descent from the font-metric into account.
         # A 'real' height routine would most probably need to draw the string on an
         # empty canvas and find the first and last dots on a line...
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text_string)
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
 
         # That stuff drives my crazy...
         # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
         has_underscore = any(
-            substring in text_string for substring in ("g", "j", "p", "q", "y", ",", ";")
+            substring in text for substring in ("g", "j", "p", "q", "y", ",", ";")
         )
         delta = self.fontdescent_factor * f_descent
         if has_underscore:
             delta /= 2.0
+
         delta -= f_external_leading
         f_height -= delta
-        text.width = f_width
-        text.height = f_height
-        y -= text.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
+        node.width = f_width
+        node.height = f_height
+        y -= node.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
 
-        anchor = "start"
-        if hasattr(text, "anchor"):
-            if text.anchor is not None:
-                anchor = text.anchor
+        anchor = node.anchor
         if anchor == "middle":
             x -= text.width / 2
         elif anchor == "end":
             x -= text.width
-        gc.DrawText(text_string, x, y)
+        gc.DrawText(text, x, y)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
@@ -724,15 +806,15 @@ class LaserRender:
             mynodes = nodes
         if recursion == 0:
             # Do it only once...
-            textnodes = []
+            text_nodes = []
             for item in mynodes:
                 if item.type == "elem text":
-                    if item.text.width == 0 or item.text.height == 0:
-                        textnodes.append(item)
-            if len(textnodes) > 0:
+                    if item.width is None or item.height is None:
+                        text_nodes.append(item)
+            if len(text_nodes) > 0:
                 # print ("Invalid textnodes found, call me again...")
                 self.make_raster(
-                    nodes=textnodes,
+                    nodes=text_nodes,
                     bounds=bounds,
                     width=width,
                     height=height,
