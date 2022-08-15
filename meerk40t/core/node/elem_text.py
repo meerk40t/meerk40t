@@ -160,8 +160,8 @@ class TextNode(Node):
         self.matrix *= matrix
         self.stroke_scaled = False
         self._bounds_dirty = True
-        self.width = 0
-        self.height = 0
+        self.width = None
+        self.height = None
         self.text = context.elements.mywordlist.translate(self.text)
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
@@ -226,6 +226,25 @@ class TextNode(Node):
         font-family: [ <family-name> | <generic-family> ] #
         generic-family:  `serif`, `sans-serif`, `cursive`, `fantasy`, and `monospace`
         """
+        # Removed from svg_io duplicate parsing.
+        # if font_style is not None:
+        #     # This comes inherited from a class so let's split it up...
+        #     subvalues = font_style.split()
+        #     for subvalue in subvalues:
+        #         subvalue_lower = subvalue.lower()
+        #         if subvalue_lower in ("italic", "normal", "oblique"):
+        #             node.text.font_style = subvalue_lower
+        #         elif subvalue_lower in ("lighter", "bold", "bolder"):
+        #             node.text.font_weight = subvalue_lower
+        #         elif subvalue_lower in (
+        #                 "fantasy",
+        #                 "serif",
+        #                 "cursive",
+        #                 "sans-serif",
+        #                 "monospace",
+        #         ):
+        #             node.text.font_family = subvalue_lower
+
         # https://www.w3.org/TR/css-fonts-3/#font-prop
         match = REGEX_CSS_FONT.match(font)
         if not match:
@@ -250,6 +269,16 @@ class TextNode(Node):
         self.font_size = match.group(5)
         if self.font_size is None:
             self.font_size = "12pt"
+        self.line_height = match.group(6)
+        self.font_family = match.group(7)
+        self.validate_font()
+
+    def validate_font(self):
+        if self.line_height is None:
+            if self.font_size is None:
+                self.line_height = "12pt"
+            else:
+                self.line_height = self.font_size  # 100% sized
         if self.font_size:
             size = self.font_size
             self.font_size = float(Length(self.font_size))
@@ -259,10 +288,6 @@ class TextNode(Node):
                     self.font_size = size
             except ValueError:
                 self.font_size = size
-
-        self.line_height = match.group(6)
-        if self.line_height is None:
-            self.line_height = "12pt"
         if self.line_height:
             height = self.line_height
             self.line_height = Length(self.line_height)
@@ -274,7 +299,6 @@ class TextNode(Node):
                     self.line_height = height
             except ValueError:
                 self.line_height = height
-        self.font_family = match.group(7)
 
     @property
     def font_list(self):

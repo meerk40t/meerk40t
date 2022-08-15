@@ -56,7 +56,7 @@ from ..svgelements import (
     Rect,
     SimpleLine,
     SVGImage,
-    SVGText,
+    SVGText, SVG_ATTR_FONT_STRETCH, SVG_ATTR_FONT_VARIANT,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
 
@@ -566,56 +566,35 @@ class SVGProcessor:
         except (AttributeError, KeyError):
             pass
         if isinstance(element, SVGText):
-            if element.text is not None:
-                node = context_node.add(text=element, type="elem text", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
-                # Maybe superseded by concrete values later, so do it first
-                font_style = element.values.get("font")
-                # TODO: This is now generally duplicated parsing.
-                if font_style is not None:
-                    # This comes inherited from a class so let's split it up...
-                    subvalues = font_style.split()
-                    for subvalue in subvalues:
-                        subvalue_lower = subvalue.lower()
-                        if subvalue_lower in ("italic", "normal", "oblique"):
-                            node.text.font_style = subvalue_lower
-                        elif subvalue_lower in ("lighter", "bold", "bolder"):
-                            node.text.font_weight = subvalue_lower
-                        elif subvalue_lower in (
-                            "fantasy",
-                            "serif",
-                            "cursive",
-                            "sans-serif",
-                            "monospace",
-                        ):
-                            node.text.font_family = subvalue_lower
-                font_style = element.values.get("font-style")
-                if font_style is not None:
-                    node.font_style = font_style
-                font_style = element.values.get("text-transform")
-                if font_style is not None:
-                    node.texttransform = font_style
-                font_style = element.values.get("text-decoration")
-                if font_style is not None:
-                    font_style = font_style.lower()
-                    node.underline = "underline" in font_style
-                    node.overline = "overline" in font_style
-                    node.strikethrough = "line-through" in font_style
-                font_style = element.values.get(SVG_ATTR_TEXT_ANCHOR)
-                if font_style is not None:
-                    node.text.anchor = font_style
-                font_style = element.values.get("x")
-                if font_style is not None:
-                    node.text.x = Length(font_style).value()
-                font_style = element.values.get("y")
-                if font_style is not None:
-                    node.text.y = Length(font_style).value()
+            if element.text is None:
+                return
+            node = context_node.add(text=element, type="elem text", id=ident)
+            if my_label != "" and hasattr(node, "label"):
+                node.label = my_label
+            # Maybe superseded by concrete values later, so do it first
+            if "font" in element.values:
+                node.font = element.values.get("font")
+            else:
+                node.font_size = element.values.get(SVG_ATTR_FONT_SIZE)
+                node.font_style = element.values.get(SVG_ATTR_FONT_STYLE)
+                node.font_variant = element.values.get(SVG_ATTR_FONT_VARIANT)
+                node.font_weight = element.values.get(SVG_ATTR_FONT_WEIGHT)
+                node.font_stretch = element.values.get(SVG_ATTR_FONT_STRETCH)
+                node.validate_font()
+            node.texttransform = element.values.get("text-transform")
 
-                svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
-                if svgfont_to_wx:
-                    svgfont_to_wx(node)
-                e_list.append(node)
+            decor = element.values.get("text-decoration", "").lower()
+            node.underline = "underline" in decor
+            node.overline = "overline" in decor
+            node.strikethrough = "line-through" in decor
+
+            node.anchor = element.values.get(SVG_ATTR_TEXT_ANCHOR)
+            node.x = element.values.get("x")
+            node.y = element.values.get("y")
+            svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
+            if svgfont_to_wx:
+                svgfont_to_wx(node)
+            e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
