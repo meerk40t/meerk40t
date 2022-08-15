@@ -5515,6 +5515,7 @@ class Elemental(Service):
             # for n in todelete[entry]:
             #     print ("Node to delete: %s" % n.type)
             self.remove_nodes(todelete[entry])
+            self.validate_selected_area()
             self.signal("tree_changed")
             self.signal("refresh_scene", "Scene")
             return "tree", [self._tree]
