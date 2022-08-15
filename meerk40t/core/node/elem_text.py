@@ -67,6 +67,9 @@ class TextNode(Node):
         self.x = x
         self.y = y
 
+        self.offset_x = None
+        self.offset_y = None
+
         self.font_style = "normal"
         self.font_variant = "normal"
         self.font_weight = 400
@@ -345,15 +348,21 @@ class TextNode(Node):
         ymin = self.y - height
         xmax = self.x + width
         ymax = self.y
+        if self.offset_x:
+            xmin -= self.offset_x
+            xmax -= self.offset_x
+        if self.offset_y:
+            ymin -= self.offset_y
+            ymax -= self.offset_y
 
-        if not hasattr(self, "anchor") or self.anchor == "start":
-            pass
-        elif self.anchor == "middle":
-            xmin -= width / 2
-            xmax -= width / 2
-        elif self.anchor == "end":
-            xmin -= width
-            xmax -= width
+        # if not hasattr(self, "anchor") or self.anchor == "start":
+        #     pass
+        # elif self.anchor == "middle":
+        #     xmin -= width / 2
+        #     xmax -= width / 2
+        # elif self.anchor == "end":
+        #     xmin -= width
+        #     xmax -= width
 
         if transformed:
             p0 = self.matrix.transform_point([xmin, ymin])

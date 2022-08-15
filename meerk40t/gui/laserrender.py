@@ -689,25 +689,27 @@ class LaserRender:
 
         # That stuff drives my crazy...
         # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
-        has_underscore = any(
+        has_descent = any(
             substring in text for substring in ("g", "j", "p", "q", "y", ",", ";")
         )
-        delta = self.fontdescent_factor * f_descent
-        if has_underscore:
-            delta /= 2.0
 
-        delta -= f_external_leading
-        f_height -= delta
-        node.width = f_width
-        node.height = f_height
-        y -= node.height + self.fontdescent_factor * self.fontdescent_delta * f_descent
+        # x = f_external_leading
+        # f_height -= f_descent
+        y = -f_height
 
+        # if has_descent:
+        #     y -= f_descent
         anchor = node.anchor
         if anchor == "middle":
-            x -= text.width / 2
+            x -= f_width / 2
         elif anchor == "end":
-            x -= text.width
-        gc.DrawText(text, x, y)
+            x -= f_width
+        node.width = f_width
+        node.height = f_height
+        node.offset_x = x
+        node.offset_y = y
+
+        gc.DrawText(text, 0, 0)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
