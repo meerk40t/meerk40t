@@ -495,7 +495,7 @@ class TextPropertyPanel(ScrolledPanel):
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
-            self.node.text.text = self.text_text.GetValue()
+            self.node.text = self.text_text.GetValue()
             self.node.modified()
             self.update_label()
             self.refresh()

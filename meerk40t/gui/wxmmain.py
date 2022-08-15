@@ -1224,7 +1224,6 @@ class MeerK40t(MWindow):
             msg = NotificationMessage(title="MeerK40t", message=message)
             msg.Show()
 
-
         @context.console_argument(
             "message", help=_("Message to display, optional"), default=""
         )

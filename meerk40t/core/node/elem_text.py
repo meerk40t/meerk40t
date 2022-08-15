@@ -1,8 +1,31 @@
+import re
 from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
-from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
+from meerk40t.core.units import Length
+from meerk40t.svgelements import Matrix
+
+REGEX_CSS_FONT = re.compile(
+    r"^"
+    r"(?:"
+    r"(?:(normal|italic|oblique)\s)?"
+    r"(?:(normal|small-caps)\s)?"
+    r"(?:(normal|bold|bolder|lighter|[0-9]{3})\s)?"
+    r"(?:(normal|(?:ultra-|extra-|semi-)?condensed|(?:semi-|extra-)?expanded)\s)"
+    r"?){0,4}"
+    r"(?:"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"(?:/"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r")?\s"
+    r")?"
+    r"([^;]*);?"
+    r"$"
+)
+REGEX_CSS_FONT_FAMILY = re.compile(
+    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+)
 
 
 class TextNode(Node):
@@ -18,6 +41,7 @@ class TextNode(Node):
         stroke=None,
         stroke_width=None,
         stroke_scale=True,
+        font=None,
         underline=None,
         strikethrough=None,
         overline=None,
@@ -28,37 +52,66 @@ class TextNode(Node):
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
         self.settings = kwargs
-        self.matrix = text.transform if matrix is None else matrix
-        self.fill = text.fill if fill is None else fill
-        self.stroke = text.stroke if stroke is None else stroke
+        self.matrix = Matrix() if matrix is None else matrix
+        self.fill = fill
+        self.stroke = stroke
         self.stroke_width = text.stroke_width if stroke_width is None else stroke_width
-        self._stroke_scaled = (
-            (text.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
-            if stroke_scale is None
-            else stroke_scale
-        )
+        self._stroke_scaled = stroke_scale
+        self.width = 0
+        self.height = 0
+        self.x = 0
+        self.y = 0
+
+        self.font_style = "normal"
+        self.font_variant = "normal"
+        self.font_weight = 400
+        self.font_stretch = "normal"
+        self.font_size = 16.0  # 16px font 'normal' 12pt font
+        self.line_height = 16.0
+        self.font_family = "san-serif"
+        if font is not None:
+            self.parse_font(font)
+
         self.underline = False if underline is None else underline
         self.strikethrough = False if strikethrough is None else strikethrough
 
         # For sake of completeness, afaik there is no way to display it with wxpython
         self.overline = False if overline is None else overline
         self.texttransform = "" if texttransform is None else texttransform
+
+        self.anchor = "start"  # start, middle, end.
+        self.path = None
         self.lock = False
 
     def __copy__(self):
         return TextNode(
-            text=copy(self.text),
+            text=self.text,
             matrix=copy(self.matrix),
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
             stroke_scale=self._stroke_scaled,
+            font=self.font,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,
             texttransform=self.texttransform,
             **self.settings,
         )
+
+    @property
+    def font(self):
+        return (
+            f"{self.font_style} "
+            f"{self.font_variant} "
+            f"{self.font_weight} "
+            f"{self.font_size}/{self.line_height} "
+            f"{self.font_family}"
+        )
+
+    @font.setter
+    def font(self, value):
+        self.parse_font(value)
 
     @property
     def stroke_scaled(self):
@@ -88,18 +141,18 @@ class TextNode(Node):
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self._sync_svg()
-            self._bounds = self.text.bbox(with_stroke=True)
+            self._bounds_dirty = True
+            self._bounds = self.bbox(with_stroke=True)
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._sync_svg()
-        self.text.width = 0
-        self.text.height = 0
-        self.text.text = context.elements.mywordlist.translate(self.text.text)
+        self._bounds_dirty = True
+        self.width = 0
+        self.height = 0
+        self.text = context.elements.mywordlist.translate(self.text)
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
 
@@ -142,14 +195,6 @@ class TextNode(Node):
         self._points[6] = [cx, bounds[3], "bounds bottom_center"]
         self._points[7] = [bounds[0], cy, "bounds center_left"]
         self._points[8] = [bounds[2], cy, "bounds center_right"]
-        obj = self.text
-        if hasattr(obj, "point"):
-            if len(self._points) <= 11:
-                self._points.extend([None] * (11 - len(self._points)))
-            start = obj.point(0)
-            end = obj.point(1)
-            self._points[9] = [start[0], start[1], "endpoint"]
-            self._points[10] = [end[0], end[1], "endpoint"]
 
     def update_point(self, index, point):
         return False
@@ -157,8 +202,146 @@ class TextNode(Node):
     def add_point(self, point, index=None):
         return False
 
-    def _sync_svg(self):
-        self.text.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
-        self.text.transform = self.matrix
-        self.text.stroke_width = self.stroke_width
-        self._bounds_dirty = True
+    def parse_font(self, font):
+        """
+        CSS Fonts 3 has a shorthand font property which serves to provide a single location to define:
+        `font-style`, `font-variant`, `font-weight`, `font-stretch`, `font-size`, `line-height`, and `font-family`
+
+        font-style: normal | italic | oblique
+        font-variant: normal | small-caps
+        font-weight: normal | bold | bolder | lighter | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
+        font-stretch: normal | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded
+        font-size: <absolute-size> | <relative-size> | <length-percentage>
+        line-height: '/' <`line-height`>
+        font-family: [ <family-name> | <generic-family> ] #
+        generic-family:  `serif`, `sans-serif`, `cursive`, `fantasy`, and `monospace`
+        """
+        # https://www.w3.org/TR/css-fonts-3/#font-prop
+        match = REGEX_CSS_FONT.match(font)
+        if not match:
+            # This is not a qualified shorthand font.
+            return
+        self.font_style = match.group(1)
+        if self.font_style is None:
+            self.font_style = "normal"
+
+        self.font_variant = match.group(2)
+        if self.font_variant is None:
+            self.font_variant = "normal"
+
+        self.font_weight = match.group(3)
+        if self.font_weight is None:
+            self.font_weight = "normal"
+
+        self.font_stretch = match.group(4)
+        if self.font_stretch is None:
+            self.font_stretch = "normal"
+
+        self.font_size = match.group(5)
+        if self.font_size is None:
+            self.font_size = "12pt"
+        if self.font_size:
+            size = self.font_size
+            self.font_size = float(Length(self.font_size))
+            try:
+                self.font_size = float(Length(self.font_size))
+                if self.font_size == 0:
+                    self.font_size = size
+            except ValueError:
+                self.font_size = size
+
+        self.line_height = match.group(6)
+        if self.line_height is None:
+            self.line_height = "12pt"
+        if self.line_height:
+            height = self.line_height
+            self.line_height = Length(self.line_height)
+            try:
+                self.line_height = float(
+                    Length(self.line_height, relative_length=self.font_size)
+                )
+                if self.line_height == 0:
+                    self.line_height = height
+            except ValueError:
+                self.line_height = height
+        self.font_family = match.group(7)
+
+    @property
+    def font_list(self):
+        return [
+            family[1:-1] if family.startswith('"') or family.startswith("'") else family
+            for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
+        ]
+
+    @property
+    def weight(self):
+        """
+        This does not correctly parse weights for bolder or lighter. Those are relative to the previous set
+        font-weight and that is generally unknown in this context.
+        """
+        if self.font_weight == "bold":
+            return 700
+        if self.font_weight == "normal":
+            return 400
+        try:
+            return int(self.font_weight)
+        except ValueError:
+            return 400
+
+    def bbox(self, transformed=True, with_stroke=False):
+        """
+        Get the bounding box for the given text object.
+
+        :param transformed: whether this is the transformed bounds or default.
+        :param with_stroke: should the stroke-width be included in the bounds.
+        :return: bounding box of the given element
+        """
+        if self.path is not None:
+            return (self.path * self.transform).bbox(
+                transformed=True,
+                with_stroke=with_stroke,
+            )
+
+        width = self.width
+        height = self.height
+        xmin = self.x
+        ymin = self.y - height
+        xmax = self.x + width
+        ymax = self.y
+
+        if not hasattr(self, "anchor") or self.anchor == "start":
+            pass
+        elif self.anchor == "middle":
+            xmin -= width / 2
+            xmax -= width / 2
+        elif self.anchor == "end":
+            xmin -= width
+            xmax -= width
+        if transformed:
+            p0 = self.matrix.transform_point([xmin, ymin])
+            p1 = self.matrix.transform_point([xmin, ymax])
+            p2 = self.matrix.transform_point([xmax, ymin])
+            p3 = self.matrix.transform_point([xmax, ymax])
+            xmin = min(p0[0], p1[0], p2[0], p3[0])
+            ymin = min(p0[1], p1[1], p2[1], p3[1])
+            xmax = max(p0[0], p1[0], p2[0], p3[0])
+            ymax = max(p0[1], p1[1], p2[1], p3[1])
+
+        if (
+            with_stroke
+            and self.stroke_width is not None
+            and not (self.stroke is None or self.stroke.value is None)
+        ):
+            if transformed:
+                delta = float(self.implied_stroke_width()) / 2.0
+            else:
+                delta = float(self.stroke_width) / 2.0
+        else:
+            delta = 0.0
+
+        return (
+            xmin - delta,
+            ymin - delta,
+            xmax + delta,
+            ymax + delta,
+        )

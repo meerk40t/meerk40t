@@ -284,7 +284,7 @@ class SVGWriter:
                 if hasattr(c, "label") and c.label is not None and c.label != "":
                     subelement.set("inkscape:label", c.label)
             elif c.type == "elem text":
-                # The svg attributes should be up to date, but better safe than sorry
+                # The svg attributes should be up-to-date, but better safe than sorry
                 if hasattr(c, "wxfont_to_svg"):
                     c.wxfont_to_svg()
                 element = c.text
@@ -310,7 +310,6 @@ class SVGWriter:
                         subelement.set(key, str(val))
                 attribs = [
                     ("font_family", SVG_ATTR_FONT_FAMILY),
-                    # ("font_face", SVG_ATTR_FONT_FACE),
                     ("font_size", SVG_ATTR_FONT_SIZE),
                     ("font_weight", SVG_ATTR_FONT_WEIGHT),
                     ("font_style", SVG_ATTR_FONT_STYLE),  # Not implemented yet afaics
