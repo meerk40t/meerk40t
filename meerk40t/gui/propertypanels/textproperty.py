@@ -1,4 +1,5 @@
 import wx
+import platform
 from meerk40t.gui.wxutils import ScrolledPanel
 
 from meerk40t.gui.fonts import wxfont_to_svg
@@ -122,27 +123,36 @@ class TextPropertyPanel(ScrolledPanel):
         flist.EnumerateFacenames()
         elist = flist.GetFacenames()
         elist.sort()
-
         self.combo_font = PromptingComboBox(
             self, choices=elist, style=wx.TE_PROCESS_ENTER
         )
+        # Linux requires a minimum  height / width to display a text inside a button
+        system = platform.system()
+        if system == "Darwin":
+            mysize = 40
+        elif system == "Windows":
+            mysize = 23
+        elif system == "Linux":
+            mysize = 40
+        else:
+            mysize = 23
         self.button_attrib_larger = wx.Button(
-            self, id=wx.ID_ANY, label="A", size=wx.Size(23, 23)
+            self, id=wx.ID_ANY, label="A", size=wx.Size(mysize, mysize)
         )
         self.button_attrib_smaller = wx.Button(
-            self, id=wx.ID_ANY, label="a", size=wx.Size(23, 23)
+            self, id=wx.ID_ANY, label="a", size=wx.Size(mysize, mysize)
         )
         self.button_attrib_bold = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="b", size=wx.Size(23, 23)
+            self, id=wx.ID_ANY, label="b", size=wx.Size(mysize, mysize)
         )
         self.button_attrib_italic = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="i", size=wx.Size(23, 23)
+            self, id=wx.ID_ANY, label="i", size=wx.Size(mysize, mysize)
         )
         self.button_attrib_underline = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="u", size=wx.Size(23, 23)
+            self, id=wx.ID_ANY, label="u", size=wx.Size(mysize, mysize)
         )
         self.button_attrib_strikethrough = wx.ToggleButton(
-            self, id=wx.ID_ANY, label="s", size=wx.Size(23, 23)
+            self, id=wx.ID_ANY, label="s", size=wx.Size(mysize, mysize)
         )
 
         self.__set_properties()
@@ -275,21 +285,16 @@ class TextPropertyPanel(ScrolledPanel):
                 "",
             )
         )
-        self.button_attrib_underline.SetFont(
-            wx.Font(
-                9,
-                wx.FONTFAMILY_DEFAULT,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-                1,
-                "",
-            )
-        )
         special_font = wx.Font(
             9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, 0, ""
         )
         special_font.SetUnderlined(True)
-        self.button_attrib_strikethrough.SetFont(special_font)
+        self.button_attrib_underline.SetFont(special_font)
+        special_font2 = wx.Font(
+            9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, 0, ""
+        )
+        special_font2.SetStrikethrough(True)
+        self.button_attrib_strikethrough.SetFont(special_font2)
 
         self.combo_font.SetToolTip(_("Choose System-font"))
         self.button_attrib_smaller.SetToolTip(_("Decrease fontsize"))
