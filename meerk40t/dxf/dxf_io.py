@@ -28,7 +28,6 @@ from ..svgelements import (
     Polygon,
     Polyline,
     SimpleLine,
-    SVGText,
     Viewbox,
 )
 
