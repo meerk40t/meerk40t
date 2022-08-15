@@ -40,6 +40,8 @@ class TextNode(Node):
         y=0,
         width=None,
         height=None,
+        offset_x=None,
+        offset_y=None,
         font=None,
         matrix=None,
         fill=None,
@@ -67,8 +69,8 @@ class TextNode(Node):
         self.x = x
         self.y = y
 
-        self.offset_x = None
-        self.offset_y = None
+        self.offset_x = offset_x
+        self.offset_y = offset_y
 
         self.font_style = "normal"
         self.font_variant = "normal"
@@ -98,6 +100,8 @@ class TextNode(Node):
             y=self.y,
             width=self.width,
             height=self.height,
+            offset_x=self.offset_x,
+            offset_y=self.offset_y,
             matrix=copy(self.matrix),
             fill=copy(self.fill),
             stroke=copy(self.stroke),
@@ -159,15 +163,16 @@ class TextNode(Node):
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
+        if self.parent.type != "op raster":
+            commands.append(self.remove_text)
+            return
+        self.text = context.elements.mywordlist.translate(self.text)
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
         self._bounds_dirty = True
-        self.width = None
-        self.height = None
-        self.text = context.elements.mywordlist.translate(self.text)
-        if self.parent.type != "op raster":
-            commands.append(self.remove_text)
+        # self.width = None
+        # self.height = None
 
     def remove_text(self):
         self.remove_node()
@@ -339,7 +344,7 @@ class TextNode(Node):
                 with_stroke=with_stroke,
             )
         if self.height is None:
-            self.height = self.line_height * len(list(self.text.split("\n")))
+            self.height = -self.line_height * len(list(self.text.split("\n")))
         if self.width is None:
             self.width = len(self.text) * self.font_size
         width = self.width
