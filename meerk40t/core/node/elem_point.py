@@ -60,6 +60,7 @@ class PointNode(Node):
                 p[0],
                 p[1],
             )
+            self._bounds_dirty = False
         return self._bounds
 
     def default_map(self, default_map=None):

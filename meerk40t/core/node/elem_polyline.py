@@ -92,6 +92,7 @@ class PolylineNode(Node):
         if self._bounds_dirty:
             self._sync_svg()
             self._bounds = self.shape.bbox(with_stroke=True)
+            self._bounds_dirty = False
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
