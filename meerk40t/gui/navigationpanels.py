@@ -1128,29 +1128,23 @@ class SizePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: SizePanel.__do_layout
-        self.mainsizer.Add(self.button_navigate_resize, 0, 0, 0)
-        fieldsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.mainsizer.Add(self.button_navigate_resize, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_label = wx.BoxSizer(wx.VERTICAL)
+        fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.label_9.SetMinSize(wx.Size(45, -1))
+        self.label_10.SetMinSize(wx.Size(45, -1))
+        fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
 
-        self.mainsizer.Add(fieldsizer, 1, wx.EXPAND, 0)
+        fieldsizer2.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        fieldsizer2.Add(self.text_height, 1, wx.EXPAND, 0)
 
-        fieldsizer.Add(sizer_label, 0, wx.EXPAND, 0)
+        sizer_label.Add(fieldsizer1, 0, wx.EXPAND, 0)
+        sizer_label.Add(fieldsizer2, 0, wx.EXPAND, 0)
 
-        sizer_label.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sizer_label.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sizer_text = wx.BoxSizer(wx.VERTICAL)
-        fieldsizer.Add(sizer_text, 1, wx.EXPAND, 0)
-
-        sizer_text.Add(self.text_width, 0, wx.EXPAND, 0)
-
-        sizer_text.Add(self.text_height, 0, wx.EXPAND, 0)
-
-        sizer_lock = wx.BoxSizer(wx.VERTICAL)
-        fieldsizer.Add(sizer_lock, 0, wx.EXPAND, 0)
-
-        sizer_lock.Add(self.btn_lock_ratio, 0, 0, 0)
+        self.mainsizer.Add(sizer_label, 1, wx.EXPAND, 0)
+        self.mainsizer.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(self.mainsizer)
         self.mainsizer.Fit(self)
