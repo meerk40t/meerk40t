@@ -37,7 +37,7 @@ class RasterOpNode(Node, Parameters):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
-        self.allowed_elements_dnd = (
+        self._allowed_elements_dnd = (
             "elem ellipse",
             "elem path",
             "elem polyline",
@@ -48,7 +48,7 @@ class RasterOpNode(Node, Parameters):
             "elem image",
         )
         # Which elements do we consider for automatic classification?
-        self.allowed_elements = (
+        self._allowed_elements = (
             "elem ellipse",
             "elem path",
             "elem polyline",
@@ -201,7 +201,7 @@ class RasterOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
-        if node.type in self.allowed_elements:
+        if node.type in self._allowed_elements:
             if not self.default:
                 if len(self.allowed_attributes) > 0:
                     for attribute in self.allowed_attributes:
