@@ -62,10 +62,6 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
-        # No Labels in circular
-        if self.widget_scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
-            # Was set...
-            self.widget_scene.context.draw_mode ^= DRAW_MODE_GUIDES
 
         # poor mans slide out
         self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
@@ -157,7 +153,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.tick_distance = 10  # mm
 
         self.widget_scene.add_scenewidget(
-            GridWidget(self.widget_scene, name="Simulation")
+            GridWidget(self.widget_scene, name="Simulation", suppress_labels=True)
         )
         self.widget_scene.add_scenewidget(
             BedWidget(self.widget_scene, name="Simulation")
@@ -293,9 +289,9 @@ class SimulationPanel(wx.Panel, Job):
         h_sizer_buttons.Add(self.button_play, 0, 0, 0)
         sizer_4.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
         label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed"))
-        sizer_5.Add(label_playback_speed, 2, 0, 0)
-        sizer_5.Add(self.text_playback_speed, 1, 0, 0)
-        sizer_4.Add(sizer_5, 1, wx.EXPAND, 0)
+        sizer_5.Add(label_playback_speed, 2, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_5.Add(self.text_playback_speed, 1, wx.EXPAND, 0)
+        sizer_4.Add(sizer_5, 0, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_4, 1, wx.EXPAND, 0)
         sizer_6.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_6.Add(self.button_spool, 0, wx.EXPAND, 0)

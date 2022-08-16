@@ -19,7 +19,7 @@ class GridWidget(Widget):
     Interface Widget
     """
 
-    def __init__(self, scene, name=None):
+    def __init__(self, scene, name=None, suppress_labels = False):
         Widget.__init__(self, scene, all=True)
         if name is None:
             self.name = "Standard"
@@ -38,6 +38,10 @@ class GridWidget(Widget):
         self.last_min_y = float("inf")
         self.last_max_x = -float("inf")
         self.last_max_y = -float("inf")
+        if suppress_labels is None:
+            suppress_labels = False
+        self.suppress_labels_in_all_cases = suppress_labels
+
 
         self.draw_grid = True
         self.sx = 0
@@ -664,7 +668,7 @@ class GridWidget(Widget):
                         else:
                             myangle = -1.0 * c_angle
                             dx = 0
-                        if self.scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
+                        if self.scene.context.draw_mode & DRAW_MODE_GUIDES == 0 or self.suppress_labels_in_all_cases:
                             gc.DrawText(
                                 a_text,
                                 self.cx + cos(c_angle) * (mid_y + dx),

@@ -966,15 +966,13 @@ class MovePanel(wx.Panel):
         h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(self.button_navigate_move_to, 0, 0, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
-        label_9.SetMinSize((-1, 23))
         self.text_position_x.SetMinSize((45, 23))
         self.text_position_y.SetMinSize((45, 23))
-        h_x_sizer.Add(label_9, 0, 0, 0)
+        h_x_sizer.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_x_sizer.Add(self.text_position_x, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_x_sizer, 0, wx.EXPAND, 0)
         label_10 = wx.StaticText(self, wx.ID_ANY, "Y:")
-        label_10.SetMinSize((-1, 23))
-        h_y_sizer.Add(label_10, 0, 0, 0)
+        h_y_sizer.Add(label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
         main_sizer.Add(v_main_sizer, 1, wx.EXPAND, 0)
@@ -1052,7 +1050,7 @@ class PulsePanel(wx.Panel):
         sizer_5.Add(self.button_navigate_pulse, 0, 0, 0)
         sizer_5.Add(self.spin_pulse_duration, 1, 0, 0)
         label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
-        sizer_5.Add(label_4, 0, 0, 0)
+        sizer_5.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(sizer_5)
         sizer_5.Fit(self)
         self.Layout()
@@ -1130,31 +1128,23 @@ class SizePanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: SizePanel.__do_layout
-        self.mainsizer.Add(self.button_navigate_resize, 0, 0, 0)
-        fieldsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.mainsizer.Add(self.button_navigate_resize, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_label = wx.BoxSizer(wx.VERTICAL)
+        fieldsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        fieldsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.label_9.SetMinSize(wx.Size(45, -1))
+        self.label_10.SetMinSize(wx.Size(45, -1))
+        fieldsizer1.Add(self.label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        fieldsizer1.Add(self.text_width, 1, wx.EXPAND, 0)
 
-        self.mainsizer.Add(fieldsizer, 1, wx.EXPAND, 0)
+        fieldsizer2.Add(self.label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        fieldsizer2.Add(self.text_height, 1, wx.EXPAND, 0)
 
-        fieldsizer.Add(sizer_label, 0, wx.EXPAND, 0)
+        sizer_label.Add(fieldsizer1, 0, wx.EXPAND, 0)
+        sizer_label.Add(fieldsizer2, 0, wx.EXPAND, 0)
 
-        self.label_9.SetMinSize((-1, 23))
-        sizer_label.Add(self.label_9, 0, 0, 0)
-
-        self.label_10.SetMinSize((-1, 23))
-        sizer_label.Add(self.label_10, 0, 0, 0)
-
-        sizer_text = wx.BoxSizer(wx.VERTICAL)
-        fieldsizer.Add(sizer_text, 1, wx.EXPAND, 0)
-
-        sizer_text.Add(self.text_width, 0, wx.EXPAND, 0)
-
-        sizer_text.Add(self.text_height, 0, wx.EXPAND, 0)
-
-        sizer_lock = wx.BoxSizer(wx.VERTICAL)
-        fieldsizer.Add(sizer_lock, 0, wx.EXPAND, 0)
-
-        sizer_lock.Add(self.btn_lock_ratio, 0, 0, 0)
+        self.mainsizer.Add(sizer_label, 1, wx.EXPAND, 0)
+        self.mainsizer.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(self.mainsizer)
         self.mainsizer.Fit(self)
