@@ -15,9 +15,11 @@ REGEX_CSS_FONT = re.compile(
     r"(?:(normal|(?:ultra-|extra-|semi-)?condensed|(?:semi-|extra-)?expanded)\s)"
     r"?){0,4}"
     r"(?:"
-    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
     r"(?:/"
-    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
     r")?\s"
     r")?"
     r"([^;]*);?"
@@ -121,7 +123,7 @@ class TextNode(Node):
         return (
             f"{self.font_style} "
             f"{self.font_variant} "
-            f"{self.font_weight} "
+            f"{self.weight} "
             f"{self.font_size}/{self.line_height} "
             f"{self.font_family}"
         )
@@ -283,30 +285,25 @@ class TextNode(Node):
 
     def validate_font(self):
         if self.line_height is None:
-            if self.font_size is None:
-                self.line_height = "12pt"
-            else:
-                self.line_height = self.font_size  # 100% sized
+            self.line_height = "12pt" if self.font_size is None else "100%"
         if self.font_size:
             size = self.font_size
-            self.font_size = float(Length(self.font_size))
             try:
-                self.font_size = float(Length(self.font_size))
+                self.font_size = float(Length(self.font_size, unitless=1))
                 if self.font_size == 0:
                     self.font_size = size
             except ValueError:
-                self.font_size = size
+                pass
         if self.line_height:
             height = self.line_height
-            self.line_height = Length(self.line_height)
             try:
                 self.line_height = float(
-                    Length(self.line_height, relative_length=self.font_size)
+                    Length(self.line_height, relative_length=self.font_size, unitless=1)
                 )
                 if self.line_height == 0:
                     self.line_height = height
             except ValueError:
-                self.line_height = height
+                pass
 
     @property
     def font_list(self):
