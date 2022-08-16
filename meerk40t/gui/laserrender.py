@@ -679,6 +679,8 @@ class LaserRender:
         # A 'real' height routine would most probably need to draw the string on an
         # empty canvas and find the first and last dots on a line...
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        if node.width != f_width or node.height != f_height:
+            node._bounds_dirty = True
         node.width = f_width
         node.height = f_height
 
