@@ -4,7 +4,7 @@ from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Color
+from meerk40t.svgelements import Color, Matrix
 
 from ...core.units import UNITS_PER_PIXEL
 
@@ -307,21 +307,25 @@ class TextTool(ToolWidget):
             if dlg.ShowModal() == wx.ID_OK:
                 text = dlg.result_text
                 elements = self.scene.context.elements
-
-                node = elements.elem_branch.add(text=text, type="elem text")
-                node.matrix *= f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"
                 if dlg.result_anchor == 1:
-                    node.anchor = "middle"
+                    anchor = "middle"
                 elif dlg.result_anchor == 2:
-                    node.anchor = "end"
+                    anchor = "end"
                 else:
-                    node.anchor = "start"
+                    anchor = "start"
 
                 color = dlg.result_colour
                 rgb = color.GetRGB()
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
-                node.fill = color
+                node = elements.elem_branch.add(
+                    text=text,
+                    matrix=Matrix(f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"),
+                    anchor=anchor,
+                    fill=color,
+                    type="elem text",
+                )
+
                 # Translate wxFont to SVG font....
                 node.wxfont = dlg.result_font
                 dlg.store_font_history()
