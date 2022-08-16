@@ -3918,7 +3918,7 @@ class Elemental(Service):
             output_type="elements",
         )
         def element_text_anchor(
-            command, channel, _, anchor=None, **kwargs
+            command, channel, _, data, anchor=None, **kwargs
         ):
             if anchor not in ("start", "middle", "end"):
                 raise CommandSyntaxError(_("Only 'start', 'middle', and 'end' are valid anchors."))
