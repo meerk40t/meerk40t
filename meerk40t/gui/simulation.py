@@ -62,10 +62,6 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.view_pane.SetCanFocus(False)
         self.widget_scene = self.view_pane.scene
-        # No Labels in circular
-        if self.widget_scene.context.draw_mode & DRAW_MODE_GUIDES == 0:
-            # Was set...
-            self.widget_scene.context.draw_mode ^= DRAW_MODE_GUIDES
 
         # poor mans slide out
         self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
@@ -157,7 +153,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.tick_distance = 10  # mm
 
         self.widget_scene.add_scenewidget(
-            GridWidget(self.widget_scene, name="Simulation")
+            GridWidget(self.widget_scene, name="Simulation", suppress_labels=True)
         )
         self.widget_scene.add_scenewidget(
             BedWidget(self.widget_scene, name="Simulation")
