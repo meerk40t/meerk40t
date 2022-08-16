@@ -337,14 +337,12 @@ class TextNode(Node):
             ymin -= self.offset_y
             ymax -= self.offset_y
 
-        # if not hasattr(self, "anchor") or self.anchor == "start":
-        #     pass
-        # elif self.anchor == "middle":
-        #     xmin -= width / 2
-        #     xmax -= width / 2
-        # elif self.anchor == "end":
-        #     xmin -= width
-        #     xmax -= width
+        if self.anchor == "middle":
+            xmin -= width / 2
+            xmax -= width / 2
+        elif self.anchor == "end":
+            xmin -= width
+            xmax -= width
 
         if transformed:
             p0 = self.matrix.transform_point([xmin, ymin])

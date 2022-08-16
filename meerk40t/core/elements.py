@@ -3906,6 +3906,39 @@ class Elemental(Service):
             data.append(node)
             return "elements", data
 
+        @self.console_argument("anchor", type=str, default="start", help=_("set text anchor"))
+        @self.console_command(
+            "text-anchor",
+            help=_("set text object text-anchor; start, middle, end"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            hidden=True,
+            output_type="elements",
+        )
+        def element_text_anchor(
+            command, channel, _, anchor=None, **kwargs
+        ):
+            if anchor not in ("start", "middle", "end"):
+                raise CommandSyntaxError(_("Only 'start', 'middle', and 'end' are valid anchors."))
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    continue
+                if e.type == "elem text":
+                    old_anchor = e.anchor
+                    e.anchor = anchor
+                    channel(f"Node {e} anchor changed from {old_anchor} to {anchor}")
+
+                e.altered()
+            return "elements", data
+
         @self.console_argument(
             "mlist", type=Length, help=_("list of positions"), nargs="*"
         )

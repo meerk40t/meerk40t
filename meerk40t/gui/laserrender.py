@@ -700,7 +700,14 @@ class LaserRender:
         node.offset_x = x
         node.offset_y = y
 
-        gc.DrawText(text, 0, 0)
+        dx = 0
+        dy = 0
+        if node.anchor == "middle":
+            dx -= f_width / 2
+        elif node.anchor == "end":
+            dx -= f_width
+
+        gc.DrawText(text, dx, dy)
         gc.PopState()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
