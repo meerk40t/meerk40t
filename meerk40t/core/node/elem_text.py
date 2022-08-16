@@ -45,6 +45,7 @@ class TextNode(Node):
         offset_x=None,
         offset_y=None,
         font=None,
+        anchor=None,
         matrix=None,
         fill=None,
         stroke=None,
@@ -91,7 +92,7 @@ class TextNode(Node):
         self.overline = False if overline is None else overline
         self.texttransform = "" if texttransform is None else texttransform
 
-        self.anchor = "start"  # start, middle, end.
+        self.anchor = "start" if anchor is None else anchor  # start, middle, end.
         self.path = path
         self.lock = False
 
@@ -110,6 +111,7 @@ class TextNode(Node):
             stroke_width=self.stroke_width,
             stroke_scale=self._stroke_scaled,
             font=self.font,
+            anchor=self.anchor,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,
