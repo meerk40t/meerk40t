@@ -298,8 +298,12 @@ class TextNode(Node):
         """
         if self.font_weight == "bold":
             return 700
-        if self.font_weight == "normal":
+        elif self.font_weight == "normal":
             return 400
+        elif self.font_weight == "lighter":
+            return 200  # Really this should be lighter than parent font.
+        elif self.font_weight == "bolder":
+            return 900  # Really this should be bolder than parent font.
         try:
             return int(self.font_weight)
         except (ValueError, TypeError):
