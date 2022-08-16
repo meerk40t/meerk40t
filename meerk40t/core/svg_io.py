@@ -568,7 +568,7 @@ class SVGProcessor:
         if isinstance(element, SVGText):
             if element.text is None:
                 return
-            node = context_node.add(text=element.text, type="elem text", id=ident)
+            node = context_node.add(text=element.text, x=element.x, y=element.y, matrix=element.transform, type="elem text", id=ident)
             if my_label != "" and hasattr(node, "label"):
                 node.label = my_label
             # Maybe superseded by concrete values later, so do it first
@@ -589,8 +589,6 @@ class SVGProcessor:
             node.strikethrough = "line-through" in decor
 
             node.anchor = element.values.get(SVG_ATTR_TEXT_ANCHOR)
-            node.x = element.values.get("x")
-            node.y = element.values.get("y")
             svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
             if svgfont_to_wx:
                 svgfont_to_wx(node)
