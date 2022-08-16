@@ -217,8 +217,8 @@ class TextPropertyPanel(ScrolledPanel):
             pass
         try:
             if self.node.text is not None:
-                self.text_text.SetValue(self.node.text.text)
-                self.label_fonttest.SetLabelText(self.node.text.text)
+                self.text_text.SetValue(self.node.text)
+                self.label_fonttest.SetLabelText(self.node.text)
                 try:
                     self.label_fonttest.SetFont(self.node.wxfont)
                 except AttributeError:
