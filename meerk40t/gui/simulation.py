@@ -1,5 +1,5 @@
 import math
-
+import platform
 import wx
 
 from meerk40t.kernel import Job, signal_listener
@@ -241,7 +241,17 @@ class SimulationPanel(wx.Panel, Job):
         # |   E    |   +-------+
         # |   W    |   |Refresh|
         # +--------+---+-------+
-        self.btn_slide_options.SetMinSize(wx.Size(20, -1))
+        # Linux requires a minimum  height / width to display a text inside a button
+        system = platform.system()
+        if system == "Darwin":
+            mysize = 40
+        elif system == "Windows":
+            mysize = 23
+        elif system == "Linux":
+            mysize = 40
+        else:
+            mysize = 20
+        self.btn_slide_options.SetMinSize(wx.Size(mysize, -1))
         self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
         self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
         self.voption_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
