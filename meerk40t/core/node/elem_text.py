@@ -283,6 +283,8 @@ class TextNode(Node):
 
     @property
     def font_list(self):
+        if self.font_family is None:
+            return []
         return [
             family[1:-1] if family.startswith('"') or family.startswith("'") else family
             for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
