@@ -304,7 +304,7 @@ class TextNode(Node):
             return 400
         try:
             return int(self.font_weight)
-        except ValueError:
+        except (ValueError, TypeError):
             return 400
 
     def bbox(self, transformed=True, with_stroke=False):
