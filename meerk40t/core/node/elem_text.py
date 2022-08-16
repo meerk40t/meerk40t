@@ -321,7 +321,7 @@ class TextNode(Node):
                 with_stroke=with_stroke,
             )
         if self.height is None:
-            self.height = -self.line_height * len(list(self.text.split("\n")))
+            self.height = -self.line_height * len(list(self.text.split("\n"))) - self.font_size
         if self.width is None:
             self.width = len(self.text) * self.font_size
         width = self.width
