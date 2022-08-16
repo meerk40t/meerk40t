@@ -118,16 +118,16 @@ class WarningPanel(wx.Panel):
             ctrl2.Bind(wx.EVT_KILL_FOCUS, self.on_text_limit(entry, True))
             ctrl2.Bind(wx.EVT_TEXT_ENTER, self.on_text_limit(entry, True))
 
-            hsizer.Add(image, 0, 0, 0)
-            hsizer.Add(label1, 1, wx.EXPAND, 0)
-            hsizer.Add(label2, 1, wx.EXPAND, 0)
+            hsizer.Add(image, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+            hsizer.Add(label1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+            hsizer.Add(label2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
             hsizer.Add(chk1, 1, wx.EXPAND, 0)
-            hsizer.Add(label3, 1, wx.EXPAND, 0)
+            hsizer.Add(label3, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             hsizer.Add(ctrl1, 1, wx.EXPAND, 0)
 
             hsizer.Add(chk2, 1, wx.EXPAND, 0)
-            hsizer.Add(label4, 1, wx.EXPAND, 0)
+            hsizer.Add(label4, 1, wx.ALIGN_CENTER_VERTICAL, 0)
             hsizer.Add(ctrl2, 1, wx.EXPAND, 0)
 
         hsizer.Layout()
