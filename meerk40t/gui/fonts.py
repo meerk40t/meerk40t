@@ -15,8 +15,8 @@ NEW since svg 1.7:
  .line_height = 16.0
 Removed:
  .font_face
- 
- The wx.FONTWEIGHT_THIN does not exist in wxPython 4.0.x and thus isn't used. 
+
+ The wx.FONTWEIGHT_THIN does not exist in wxPython 4.0.x and thus isn't used.
 """
 
 
@@ -63,15 +63,32 @@ def wxfont_to_svg(textnode):
     @return:
     """
 
+    anychanges = False
     if not hasattr(textnode, "wxfont"):
         textnode.wxfont = wx.Font()
+        anychanges = True
+
     wxfont = textnode.wxfont
 
     # A point is 1/72 of an inch
     factor = PX_PER_INCH / 72
-    textnode.font_size = wxfont.GetPointSize() * factor
-    textnode.font_weight = str(wxfont.GetWeight())
-    textnode.font_family = wx_to_svg_family_name(wxfont)
-    textnode.font_style = wx_to_svg_fontstyle(wxfont)
-    textnode.underline = wxfont.GetUnderlined()
-    textnode.strikethrough = wxfont.GetStrikethrough()
+    if textnode.font_size != wxfont.GetPointSize() * factor:
+        textnode.font_size = wxfont.GetPointSize() * factor
+        anychanges = True
+    if textnode.font_weight != str(wxfont.GetWeight()):
+        textnode.font_weight = str(wxfont.GetWeight())
+        anychanges = True
+    if textnode.font_family != wx_to_svg_family_name(wxfont):
+        textnode.font_family = wx_to_svg_family_name(wxfont)
+        anychanges = True
+    if textnode.font_style != wx_to_svg_fontstyle(wxfont):
+        textnode.font_style = wx_to_svg_fontstyle(wxfont)
+        anychanges = True
+    if textnode.underline != wxfont.GetUnderlined():
+        textnode.underline = wxfont.GetUnderlined()
+        anychanges = True
+    if textnode.strikethrough != wxfont.GetStrikethrough():
+        textnode.strikethrough = wxfont.GetStrikethrough()
+        anychanges = True
+    if anychanges:
+        textnode.modified()
