@@ -85,7 +85,7 @@ def svgfont_to_wx(textnode):
         wxfont.SetNumericWeight(textnode.weight)  # Gets numeric weight.
     except AttributeError:
         # Running version wx4.0. No set Numeric Weight, can only set bold or normal.
-        weight = textnode.text.weight
+        weight = textnode.weight
         wxfont.SetWeight(
             wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
         )  # Gets numeric weight.
@@ -98,12 +98,8 @@ def svgfont_to_wx(textnode):
     font_size = textnode.font_size * factor
     if font_size < 1:
         if font_size > 0:
-            textx = 0
-            texty = 0
-            if hasattr(textnode.text, "x"):
-                textx = textnode.x
-            if hasattr(textnode.text, "y"):
-                texty = textnode.y
+            textx = textnode.x
+            texty = textnode.y
             textnode.matrix.pre_scale(font_size, font_size, textx, texty)
             font_size = 1
             textnode.font_size = font_size  # No zero sized fonts.
@@ -689,21 +685,16 @@ class LaserRender:
 
         # That stuff drives my crazy...
         # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
-        has_descent = any(
-            substring in text for substring in ("g", "j", "p", "q", "y", ",", ";")
-        )
-
+        # has_descent = any(
+        #     substring in text for substring in ("g", "j", "p", "q", "y", ",", ";")
+        # )
         # x = f_external_leading
         # f_height -= f_descent
-        y = -f_height
-
         # if has_descent:
         #     y -= f_descent
-        anchor = node.anchor
-        if anchor == "middle":
-            x -= f_width / 2
-        elif anchor == "end":
-            x -= f_width
+
+        y = -f_height
+
         node.width = f_width
         node.height = f_height
         node.offset_x = x
