@@ -819,6 +819,8 @@ class ShadowTree:
         wxcolor = self.wxtree.GetForegroundColour()
         if hasattr(node, "stroke"):
             wxcolor = self.safe_color(node.stroke)
+        elif hasattr(node, "color"):
+            wxcolor = self.safe_color(node.color)
         else:
             back_color = self.wxtree.GetBackgroundColour()
             rgb = back_color.Get()
@@ -830,7 +832,7 @@ class ShadowTree:
                     textcolor = c1
                 else:
                     textcolor = c2
-                wxcolor = swizzlecolor(textcolor)
+                wxcolor = wx.Colour(swizzlecolor(textcolor))
         try:
             tree.SetItemTextColour(node.item, wxcolor)
         except (AttributeError, KeyError, TypeError):

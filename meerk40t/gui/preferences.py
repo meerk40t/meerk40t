@@ -164,9 +164,9 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         sizer_3.Add((20, 20), 0, 0, 0)
 
         self.text_svg_ppi = TextCtrl(
-            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER, limited=True
         )
-        self.text_svg_ppi.SetMinSize((60, 23))
+        # self.text_svg_ppi.SetMinSize((60, 23))
         self.text_svg_ppi.SetToolTip(
             _("Custom Pixels Per Inch to use when loading an SVG file")
         )
