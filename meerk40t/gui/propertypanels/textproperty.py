@@ -189,6 +189,8 @@ class TextPropertyPanel(ScrolledPanel):
             self.on_button_strikethrough,
             self.button_attrib_strikethrough,
         )
+        self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
+
 
     @staticmethod
     def accepts(node):
@@ -298,6 +300,22 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_italic.SetToolTip(_("Toggle italic"))
         self.button_attrib_underline.SetToolTip(_("Toggle underline"))
         self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
+
+        align_options = [_("Left"), _("Center"), _("Right")]
+        self.rb_align = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            "",
+            wx.DefaultPosition,
+            wx.DefaultSize,
+            align_options,
+            len(align_options),
+            wx.RA_SPECIFY_COLS | wx.BORDER_NONE,
+        )
+        self.rb_align.SetToolTip(
+            _("Define where to place the origin (i.e. current mouse position")
+        )
+
         # end wxGlade
 
     def __do_layout(self):
@@ -315,20 +333,19 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
+
         sizer_fill = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL
         )
         sizer_stroke = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Stroke Color")), wx.VERTICAL
         )
-        sizer_main.Add(self.text_text, 0, wx.EXPAND, 0)
 
         sizer_font = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_font.Add(self.button_choose_font, 0, 0, 0)
         sizer_font.Add(self.label_fonttest, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_font, 0, wx.EXPAND, 0)
 
         sizer_attrib = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_attrib.Add(self.button_choose_font, 0, 0, 0)
         sizer_attrib.Add(self.combo_font, 0, 0, 0)
         sizer_attrib.Add(self.button_attrib_larger, 0, 0, 0)
         sizer_attrib.Add(self.button_attrib_smaller, 0, 0, 0)
@@ -336,8 +353,6 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_attrib.Add(self.button_attrib_italic, 0, 0, 0)
         sizer_attrib.Add(self.button_attrib_underline, 0, 0, 0)
         sizer_attrib.Add(self.button_attrib_strikethrough, 0, 0, 0)
-
-        sizer_main.Add(sizer_attrib, 0, wx.EXPAND, 0)
 
         sizer_colors = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -361,7 +376,14 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_fill.Add(self.button_fill_000, 0, wx.EXPAND, 0)
         sizer_colors.Add(sizer_fill, 1, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_colors, 1, wx.EXPAND, 0)
+        sizer_anchor = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_anchor.Add(self.rb_align, 0, 0, 0)
+        sizer_main.Add(self.text_text, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_attrib, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_anchor, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_colors, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_font, 1, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()
@@ -372,13 +394,42 @@ class TextPropertyPanel(ScrolledPanel):
             self.label_fonttest.SetFont(self.node.wxfont)
         except AttributeError:
             pass
+        mystyle = self.label_fonttest.GetWindowStyle()
+        if self.node.anchor == "start":
+            new_anchor = 0
+            # Align the text to the left.
+            mystyle1 = wx.ALIGN_LEFT
+            mystyle2 = wx.ST_ELLIPSIZE_END
+        elif self.node.anchor == "middle":
+            new_anchor = 1
+            mystyle1 = wx.ALIGN_CENTER
+            mystyle2 = wx.ST_ELLIPSIZE_MIDDLE
+        elif self.node.anchor == "end":
+            new_anchor = 2
+            mystyle1 = wx.ALIGN_RIGHT
+            mystyle2 = wx.ST_ELLIPSIZE_START
+        # Clear old alignment...
+        mystyle = mystyle & ~wx.ALIGN_LEFT
+        mystyle = mystyle & ~wx.ALIGN_RIGHT
+        mystyle = mystyle & ~wx.ALIGN_CENTER
+        mystyle = mystyle & ~wx.ST_ELLIPSIZE_END
+        mystyle = mystyle & ~wx.ST_ELLIPSIZE_MIDDLE
+        mystyle = mystyle & ~wx.ST_ELLIPSIZE_START
+        # Set new one
+        mystyle = mystyle | mystyle1 | mystyle2
+        self.label_fonttest.SetWindowStyle(mystyle)
+
+        self.rb_align.SetSelection(new_anchor)
         self.label_fonttest.SetLabelText(self.node.text)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
+        self.label_fonttest.Refresh()
+
         self.button_attrib_bold.SetValue(self.node.weight > 600)
         self.button_attrib_italic.SetValue(self.node.font_style != "normal")
         self.button_attrib_underline.SetValue(self.node.underline)
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
         self.combo_font.SetValue(self.node.wxfont.GetFaceName())
+
 
     def refresh(self):
         self.context.elements.signal("element_property_reload", self.node)
@@ -492,6 +543,19 @@ class TextPropertyPanel(ScrolledPanel):
         self.update_label()
         self.refresh()
         event.Skip()
+
+    def on_radio_box(self, event):
+        new_anchor = event.GetInt()
+        if new_anchor == 0:
+            self.node.anchor = "start"
+        elif new_anchor == 1:
+            self.node.anchor = "middle"
+        elif new_anchor == 2:
+            self.node.anchor = "end"
+        self.node.modified()
+        self.update_label()
+        self.refresh()
+
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
