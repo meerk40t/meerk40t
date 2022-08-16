@@ -704,7 +704,7 @@ class LaserRender:
         gc.PopState()
         # Force recalculation of bounds
         if node._bounds_dirty:
-            b = node.bounds()
+            b = node.bounds
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         image = node.active_image
