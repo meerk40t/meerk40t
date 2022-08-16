@@ -702,6 +702,9 @@ class LaserRender:
             dx -= f_width
         gc.DrawText(text, dx, dy)
         gc.PopState()
+        # Force recalculation of bounds
+        if node._bounds_dirty:
+            b = node.bounds()
 
     def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         image = node.active_image
@@ -802,7 +805,7 @@ class LaserRender:
             text_nodes = []
             for item in mynodes:
                 if item.type == "elem text":
-                    if item.width is None or item.height is None:
+                    if item.width is None or item.height is None or item._bounds_dirty:
                         text_nodes.append(item)
             if len(text_nodes) > 0:
                 # print ("Invalid textnodes found, call me again...")
