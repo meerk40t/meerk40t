@@ -117,11 +117,11 @@ class TextNode(Node):
     @property
     def font(self):
         return (
-            f"{self.font_style} "
-            f"{self.font_variant} "
+            f"{self.font_style if self.font_style else 'normal'} "
+            f"{self.font_variant if self.font_variant else 'normal'} "
             f"{self.weight} "
             f"{self.font_size}/{self.line_height} "
-            f"{self.font_family};"
+            f"{self.font_family.strip() if self.font_family else 'san-serif'};"
         )
 
     @font.setter
