@@ -125,7 +125,7 @@ class TextNode(Node):
             f"{self.font_variant} "
             f"{self.weight} "
             f"{self.font_size}/{self.line_height} "
-            f"{self.font_family}"
+            f"{self.font_family};"
         )
 
     @font.setter
