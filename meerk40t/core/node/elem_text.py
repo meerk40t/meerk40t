@@ -53,8 +53,6 @@ class TextNode(Node):
         texttransform=None,
         width=None,
         height=None,
-        offset_x=None,
-        offset_y=None,
         path=None,
         **kwargs,
     ):
@@ -91,8 +89,6 @@ class TextNode(Node):
 
         self.width = width
         self.height = height
-        self.offset_x = offset_x
-        self.offset_y = offset_y
         self.path = path
         self.lock = False
 
@@ -112,8 +108,6 @@ class TextNode(Node):
             texttransform=self.texttransform,
             width=self.width,
             height=self.height,
-            offset_x=self.offset_x,
-            offset_y=self.offset_y,
             path=self.path,
             **self.settings,
         )
