@@ -177,6 +177,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             data_style = c.get("style", None)
             data_type = type(data)
             data_type = c.get("type", data_type)
+            choice_list = None
             try:
                 # Get label
                 label = c["label"]
@@ -208,8 +209,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 def on_checkbox_check(param, ctrl, obj):
                     def check(event=None):
                         v = ctrl.GetValue()
-                        setattr(obj, param, bool(v))
-                        self.context.signal(param, v)
+                        current_value = getattr(obj, param)
+                        if current_value != bool(v):
+                            setattr(obj, param, bool(v))
+                            self.context.signal(param, v)
 
                     return check
 
@@ -239,12 +242,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pathname = str(fileDialog.GetPath())
                             ctrl.SetLabel(pathname)
                             self.Layout()
-                            try:
-                                setattr(obj, param, pathname)
-                                self.context.signal(param, pathname)
-                            except ValueError:
-                                # cannot cast to data_type, pass
-                                pass
+                            current_value = getattr(obj, param)
+                            if current_value != pathname:
+                                try:
+                                    setattr(obj, param, pathname)
+                                    self.context.signal(param, pathname)
+                                except ValueError:
+                                    # cannot cast to data_type, pass
+                                    pass
 
                     return click
 
@@ -279,8 +284,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 def on_slider(param, ctrl, obj, dtype):
                     def select(event=None):
                         v = dtype(ctrl.GetValue())
-                        setattr(obj, param, v)
-                        self.context.signal(param, v)
+                        current_value = getattr(obj, param)
+                        if current_value != v:
+                            setattr(obj, param, v)
+                            self.context.signal(param, v)
 
                     return select
 
@@ -320,8 +327,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 def on_combo_text(param, ctrl, obj, dtype):
                     def select(event=None):
                         v = dtype(ctrl.GetValue())
-                        setattr(obj, param, v)
-                        self.context.signal(param, v)
+                        current_value = getattr(obj, param)
+                        if current_value != v:
+                            setattr(obj, param, v)
+                            self.context.signal(param, v)
 
                     return select
 
@@ -365,8 +374,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 def on_combosmall_text(param, ctrl, obj, dtype):
                     def select(event=None):
                         v = dtype(ctrl.GetValue())
-                        setattr(obj, param, v)
-                        self.context.signal(param, v)
+                        current_value = getattr(obj, param)
+                        if current_value != v:
+                            setattr(obj, param, v)
+                            self.context.signal(param, v)
 
                     return select
 
@@ -404,8 +415,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                             current |= 1 << bit
                         else:
                             current = ~((~current) | (1 << bit))
-                        setattr(obj, param, current)
-                        self.context.signal(f"{param}", v)
+                        current_value = getattr(obj, param)
+                        if current_value != current:
+                            setattr(obj, param, current)
+                            self.context.signal(f"{param}", v)
 
                     return check
 
@@ -482,8 +495,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                         v = ctrl.GetValue()
                         try:
                             dtype_v = dtype(v)
-                            setattr(obj, param, dtype_v)
-                            self.context.signal(param, dtype_v)
+                            current_value = getattr(obj, param)
+                            if current_value != dtype_v:
+                                setattr(obj, param, dtype_v)
+                                self.context.signal(param, dtype_v)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -511,8 +526,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                         try:
                             v = Length(ctrl.GetValue())
                             data_v = v.preferred_length
-                            setattr(obj, param, data_v)
-                            self.context.signal(param, data_v)
+                            current_value = getattr(obj, param)
+                            if str(current_value) != str(data_v):
+                                setattr(obj, param, data_v)
+                                self.context.signal(param, data_v)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -540,8 +557,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                         try:
                             v = Angle(ctrl.GetValue(), digits=5)
                             data_v = str(v)
-                            setattr(obj, param, data_v)
-                            self.context.signal(param, data_v)
+                            current_value = str(getattr(obj, param))
+                            if current_value != data_v:
+                                setattr(obj, param, data_v)
+                                self.context.signal(param, data_v)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -580,8 +599,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                             set_color(data)
                             try:
                                 data_v = data_type(data)
-                                setattr(obj, param, data_v)
-                                self.context.signal(param, data_v)
+                                current_value = getattr(obj, param)
+                                if current_value != data_v:
+                                    setattr(obj, param, data_v)
+                                    self.context.signal(param, data_v)
                             except ValueError:
                                 # cannot cast to data_type, pass
                                 pass
@@ -627,6 +648,87 @@ class ChoicePropertyPanel(ScrolledPanel):
                     context.listen(c_attr, listener)
                 except KeyError:
                     pass
+            # Initially the above was only listening to related controls to establish
+            # whether one control should be enabled based on another controls value.
+            # Now we listen to 'ourselves' as well to learn about changes somewhere else...
+
+            def on_update_listener(param, ctrl, dtype, dstyle, choicelist):
+                def listen_to_myself(origin, value):
+                    # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
+                    data = None
+                    if value is not None:
+                        try:
+                            data = dtype(value)
+                        except ValueError:
+                            pass
+                        if data is None:
+                            try:
+                                data = c["default"]
+                            except KeyError:
+                                pass
+                    if data is None:
+                        return
+                    if dtype == bool:
+                        # Bool type objects get a checkbox.
+                        if ctrl.GetValue() != data:
+                            ctrl.SetValue(data)
+                    elif dtype == str and dstyle=="file":
+                        if ctrl.GetValue() != data:
+                            ctrl.SetValue(data)
+                    elif dtype in (int, float) and dstyle == "slider":
+                        if ctrl.GetValue() != data:
+                            ctrl.SetValue(data)
+                    elif dtype in (str, int, float) and dstyle == "combo":
+                        if dtype == str:
+                            ctrl.SetValue(str(data))
+                        else:
+                            least = None
+                            for entry in choicelist:
+                                if least is None:
+                                    least = entry
+                                else:
+                                    if abs(dtype(entry) - data) < abs(dtype(least) - data):
+                                        least = entry
+                            if least is not None:
+                                ctrl.SetValue(least)
+                    elif dtype in (str, int, float) and dstyle == "combosmall":
+                        if dtype == str:
+                            ctrl.SetValue(str(data))
+                        else:
+                            least = None
+                            for entry in choicelist:
+                                if least is None:
+                                    least = entry
+                                else:
+                                    if abs(dtype(entry) - data) < abs(dtype(least) - data):
+                                        least = entry
+                            if least is not None:
+                                ctrl.SetValue(least)
+                    elif dtype == int and dstyle == "binary":
+                        pass # not supported...
+                    elif dtype in (str, int, float):
+                        if ctrl.GetValue() != str(data):
+                            ctrl.SetValue(str(data))
+                    elif dtype == Length:
+                        if ctrl.GetValue() != str(data):
+                            ctrl.SetValue(str(data))
+                    elif dtype == Angle:
+                        if ctrl.GetValue() != str(data):
+                            ctrl.SetValue(str(data))
+                    elif dtype == Color:
+                        # Color dtype objects are a button with the background set to the color
+                        def set_color(color: Color):
+                            ctrl.SetLabel(str(color.hex))
+                            ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                            ctrl.color = color
+
+                        set_color(data)
+
+                return listen_to_myself
+
+            update_listener = on_update_listener(attr, control, data_type, data_style, choice_list)
+            self.listeners.append((attr, update_listener))
+            context.listen(attr, update_listener)
 
             try:
                 # Set the tool tip if 'tip' is available
