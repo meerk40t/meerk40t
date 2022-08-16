@@ -173,8 +173,6 @@ class TextNode(Node):
         self.matrix *= matrix
         self.stroke_scaled = False
         self._bounds_dirty = True
-        # self.width = None
-        # self.height = None
 
     def remove_text(self):
         self.remove_node()
@@ -236,26 +234,8 @@ class TextNode(Node):
         font-family: [ <family-name> | <generic-family> ] #
         generic-family:  `serif`, `sans-serif`, `cursive`, `fantasy`, and `monospace`
         """
-        # Removed from svg_io duplicate parsing.
-        # if font_style is not None:
-        #     # This comes inherited from a class so let's split it up...
-        #     subvalues = font_style.split()
-        #     for subvalue in subvalues:
-        #         subvalue_lower = subvalue.lower()
-        #         if subvalue_lower in ("italic", "normal", "oblique"):
-        #             node.text.font_style = subvalue_lower
-        #         elif subvalue_lower in ("lighter", "bold", "bolder"):
-        #             node.text.font_weight = subvalue_lower
-        #         elif subvalue_lower in (
-        #                 "fantasy",
-        #                 "serif",
-        #                 "cursive",
-        #                 "sans-serif",
-        #                 "monospace",
-        #         ):
-        #             node.text.font_family = subvalue_lower
-
         # https://www.w3.org/TR/css-fonts-3/#font-prop
+
         match = REGEX_CSS_FONT.match(font)
         if not match:
             # This is not a qualified shorthand font.
