@@ -191,7 +191,6 @@ class TextPropertyPanel(ScrolledPanel):
         )
         self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
 
-
     @staticmethod
     def accepts(node):
         if node.type == "elem text":

@@ -71,6 +71,14 @@ def swizzlecolor(c):
         return None
 
 
+def as_wx_color(c):
+    if c is None:
+        return None
+    if isinstance(c, int):
+        c = Color(argb=c)
+    return wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
+
+
 def svgfont_to_wx(textnode):
     """
     Translates all svg-text-properties to their wxfont-equivalents
@@ -658,7 +666,7 @@ class LaserRender:
         if node.fill is None or node.fill == "none":
             gc.SetFont(font, wx.BLACK)
         else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
+            gc.SetFont(font, as_wx_color(node.fill))
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.mywordlist.translate(text)
