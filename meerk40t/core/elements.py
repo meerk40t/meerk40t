@@ -3896,8 +3896,9 @@ class Elemental(Service):
                 channel(_("No text specified"))
                 return
             node = self.elem_branch.add(
-                text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), font_size=size, type="elem text"
+                text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
             )
+            node.font_size = size
             node.stroke = self.default_stroke
             self.set_emphasis([node])
             node.focus()
@@ -5544,6 +5545,7 @@ class Elemental(Service):
             # for n in todelete[entry]:
             #     print ("Node to delete: %s" % n.type)
             self.remove_nodes(todelete[entry])
+            self.validate_selected_area()
             self.signal("tree_changed")
             self.signal("refresh_scene", "Scene")
             return "tree", [self._tree]
