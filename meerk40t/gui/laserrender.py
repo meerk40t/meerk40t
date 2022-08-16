@@ -659,9 +659,6 @@ class LaserRender:
             gc.SetFont(font, wx.BLACK)
         else:
             gc.SetFont(font, wx.Colour(swizzlecolor(node.fill)))
-
-        x = node.x
-        y = node.y
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.mywordlist.translate(text)
@@ -682,6 +679,8 @@ class LaserRender:
         # A 'real' height routine would most probably need to draw the string on an
         # empty canvas and find the first and last dots on a line...
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        node.width = f_width
+        node.height = f_height
 
         # That stuff drives my crazy...
         # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
@@ -693,20 +692,12 @@ class LaserRender:
         # if has_descent:
         #     y -= f_descent
 
-        y = -f_height
-
-        node.width = f_width
-        node.height = f_height
-        node.offset_x = x
-        node.offset_y = y
-
         dx = 0
-        dy = 0
+        dy = -f_height
         if node.anchor == "middle":
             dx -= f_width / 2
         elif node.anchor == "end":
             dx -= f_width
-
         gc.DrawText(text, dx, dy)
         gc.PopState()
 

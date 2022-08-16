@@ -40,10 +40,6 @@ class TextNode(Node):
         text=None,
         x=0,
         y=0,
-        width=None,
-        height=None,
-        offset_x=None,
-        offset_y=None,
         font=None,
         anchor=None,
         matrix=None,
@@ -55,6 +51,10 @@ class TextNode(Node):
         strikethrough=None,
         overline=None,
         texttransform=None,
+        width=None,
+        height=None,
+        offset_x=None,
+        offset_y=None,
         path=None,
         **kwargs,
     ):
@@ -67,13 +67,8 @@ class TextNode(Node):
         self.stroke = stroke
         self.stroke_width = stroke_width
         self._stroke_scaled = stroke_scale
-        self.width = width
-        self.height = height
-        self.x = x
-        self.y = y
-
-        self.offset_x = offset_x
-        self.offset_y = offset_y
+        if x != 0 or y != 0:
+            matrix.pretransform(x, y)
 
         self.font_style = "normal"
         self.font_variant = "normal"
@@ -93,18 +88,17 @@ class TextNode(Node):
         self.texttransform = "" if texttransform is None else texttransform
 
         self.anchor = "start" if anchor is None else anchor  # start, middle, end.
+
+        self.width = width
+        self.height = height
+        self.offset_x = offset_x
+        self.offset_y = offset_y
         self.path = path
         self.lock = False
 
     def __copy__(self):
         return TextNode(
             text=self.text,
-            x=self.x,
-            y=self.y,
-            width=self.width,
-            height=self.height,
-            offset_x=self.offset_x,
-            offset_y=self.offset_y,
             matrix=copy(self.matrix),
             fill=copy(self.fill),
             stroke=copy(self.stroke),
@@ -116,6 +110,10 @@ class TextNode(Node):
             strikethrough=self.strikethrough,
             overline=self.overline,
             texttransform=self.texttransform,
+            width=self.width,
+            height=self.height,
+            offset_x=self.offset_x,
+            offset_y=self.offset_y,
             path=self.path,
             **self.settings,
         )
@@ -312,39 +310,46 @@ class TextNode(Node):
     def bbox(self, transformed=True, with_stroke=False):
         """
         Get the bounding box for the given text object.
-
-        :param transformed: whether this is the transformed bounds or default.
-        :param with_stroke: should the stroke-width be included in the bounds.
-        :return: bounding box of the given element
+        To perform this action one of two things should be true. Path should exist, or we should have
+        defined width, height, offset_x and offset_y values.
         """
         if self.path is not None:
             return (self.path * self.matrix).bbox(
                 transformed=True,
                 with_stroke=with_stroke,
             )
-        if self.height is None:
-            self.height = -self.line_height * len(list(self.text.split("\n"))) - self.font_size
-        if self.width is None:
-            self.width = len(self.text) * self.font_size
-        width = self.width
-        height = self.height
-        xmin = self.x
-        ymin = self.y - height
-        xmax = self.x + width
-        ymax = self.y
+
+        if self.width:
+            width = self.width
+        else:
+            # Width is undefined, make an educated guess
+            width = len(self.text) * self.font_size
+
+        if self.height:
+            height = self.height
+        else:
+            # Height is undefined, make an educated guess
+            height = (
+                -self.line_height * len(list(self.text.split("\n"))) - self.font_size
+            )
+        ymin = -height
+        ymax = 0
+        if self.anchor == "middle":
+            xmin = -width / 2
+            xmax = width / 2
+        elif self.anchor == "end":
+            xmin = -width
+            xmax = 0
+        else:  # "start"
+            xmax = width
+            xmin = 0
+
         if self.offset_x:
             xmin -= self.offset_x
             xmax -= self.offset_x
         if self.offset_y:
             ymin -= self.offset_y
             ymax -= self.offset_y
-
-        if self.anchor == "middle":
-            xmin -= width / 2
-            xmax -= width / 2
-        elif self.anchor == "end":
-            xmin -= width
-            xmax -= width
 
         if transformed:
             p0 = self.matrix.transform_point([xmin, ymin])
@@ -356,18 +361,17 @@ class TextNode(Node):
             xmax = max(p0[0], p1[0], p2[0], p3[0])
             ymax = max(p0[1], p1[1], p2[1], p3[1])
 
+        delta = 0.0
         if (
             with_stroke
             and self.stroke_width is not None
             and not (self.stroke is None or self.stroke.value is None)
         ):
-            if transformed:
-                delta = float(self.implied_stroke_width()) / 2.0
-            else:
-                delta = float(self.stroke_width) / 2.0
-        else:
-            delta = 0.0
-
+            delta = (
+                float(self.implied_stroke_width())
+                if transformed
+                else float(self.stroke_width)
+            ) / 2.0
         return (
             xmin - delta,
             ymin - delta,
