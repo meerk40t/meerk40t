@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.7.2"
+SVGELEMENTS_VERSION = "1.7.3"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -233,9 +233,11 @@ REGEX_CSS_FONT = re.compile(
     r"(?:(normal|(?:ultra-|extra-|semi-)?condensed|(?:semi-|extra-)?expanded)\s)"
     r"?){0,4}"
     r"(?:"
-    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
     r"(?:/"
-    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
     r")?\s"
     r")?"
     r"([^;]*);?"
