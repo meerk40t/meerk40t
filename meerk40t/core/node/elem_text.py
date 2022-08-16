@@ -338,13 +338,6 @@ class TextNode(Node):
             xmax = width
             xmin = 0
 
-        if self.offset_x:
-            xmin -= self.offset_x
-            xmax -= self.offset_x
-        if self.offset_y:
-            ymin -= self.offset_y
-            ymax -= self.offset_y
-
         if transformed:
             p0 = self.matrix.transform_point([xmin, ymin])
             p1 = self.matrix.transform_point([xmin, ymax])
