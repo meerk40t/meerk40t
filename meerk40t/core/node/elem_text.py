@@ -54,12 +54,14 @@ class TextNode(Node):
         width=None,
         height=None,
         path=None,
-        **kwargs,
+        settings=None,
     ):
-        super(TextNode, self).__init__(type="elem text", **kwargs)
+        if settings is None:
+            settings = dict()
+        super(TextNode, self).__init__(type="elem text", **settings)
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
-        self.settings = kwargs
+        self.settings = settings
         self.matrix = Matrix() if matrix is None else matrix
         self.fill = fill
         self.stroke = stroke
