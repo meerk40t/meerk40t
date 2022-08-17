@@ -874,6 +874,7 @@ class LaserRender:
             width = 1
         if height <= 0:
             height = 1
+
         bmp = wx.Bitmap(width, height, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -896,11 +897,9 @@ class LaserRender:
         gc.PushState()
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if not isinstance(nodes, (list, tuple)):
-            nodes = [nodes]
         gc.SetBrush(wx.WHITE_BRUSH)
         gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
-        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
+        self.render(_nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(
@@ -912,12 +911,6 @@ class LaserRender:
         del dc
         if bitmap:
             return bmp
-
-        # for item in mynodes:
-        #     bb = item.bounds
-        #     if item.type == "elem text":
-        #         print ("Afterwards Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
-
         return image
 
     def make_thumbnail(
