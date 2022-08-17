@@ -301,26 +301,23 @@ class RasterOpNode(Node, Parameters):
             step_x = self.raster_step_x
             step_y = self.raster_step_y
             bounds = self.bounds
+            img_mx = Matrix.scale(step_x, step_y)
             try:
                 image = make_raster(
                     list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
                 )
+                if step_x > 0:
+                    img_mx.post_translate(bounds[0], 0)
+                else:
+                    img_mx.post_translate(bounds[2], 0)
+                if step_y > 0:
+                    img_mx.post_translate(0, bounds[1])
+                else:
+                    img_mx.post_translate(0, bounds[3])
+
             except AssertionError:
                 raise CutPlanningFailedError("Raster too large.")
-            if image.width == 1 and image.height == 1:
-                # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
-                #  around because the renderer is what sets the size of the text. If the size hasn't already
-                #  been set, the initial bounds are wrong.
-                bounds = self.bounds
-                try:
-                    image = make_raster(
-                        list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
-                    )
-                except AssertionError:
-                    raise CutPlanningFailedError("Raster too large.")
             image = image.convert("L")
-            img_mx = Matrix.scale(step_x, step_y)
-            img_mx.post_translate(bounds[0], bounds[1])
             image_node = ImageNode(image=image, matrix=img_mx)
             self.children.clear()
             self.add_node(image_node)

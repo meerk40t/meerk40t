@@ -158,8 +158,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.add_scenewidget(
             BedWidget(self.widget_scene, name="Simulation")
         )
-        self.reticle = SimReticleWidget(self.widget_scene, self)
-        self.widget_scene.add_interfacewidget(self.reticle)
+        self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene, self))
         self.running = False
         if index == -1:
             disable_window(self)

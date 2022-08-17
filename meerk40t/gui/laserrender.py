@@ -762,6 +762,29 @@ class LaserRender:
             gc.DrawText(txt, 30, 30)
             gc.PopState()
 
+    def measure_text(self, node):
+        bmp = wx.Bitmap(1, 1, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        gc = wx.GraphicsContext.Create(dc)
+        text = self.context.elements.mywordlist.translate(node.text)
+        if node.texttransform:
+            ttf = node.texttransform.lower()
+            if ttf == "capitalize":
+                text = text.capitalize()
+            elif ttf == "uppercase":
+                text = text.upper()
+            if ttf == "lowercase":
+                text = text.lower()
+        svgfont_to_wx(node)
+        font = node.wxfont
+        gc.SetFont(font, wx.BLACK)
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        if node.width != f_width or node.height != f_height:
+            node._bounds_dirty = True
+        node.width = f_width
+        node.height = f_height
+
     def make_raster(
         self,
         nodes,
@@ -772,7 +795,6 @@ class LaserRender:
         step_x=1,
         step_y=1,
         keep_ratio=False,
-        recursion=0,
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -787,133 +809,85 @@ class LaserRender:
         @param width: desired width of the resulting raster
         @param height: desired height of the resulting raster
         @param bitmap: bitmap to use rather than provisioning
-        @param step_x: raster step rate, int scale rate of the image.
-        @param step_y: raster step rate, int scale rate of the image.
+        @param step_x: raster step rate, scale rate of the image.
+        @param step_y: raster step rate, scale rate of the image.
         @param keep_ratio: get a picture with the same height / width
                ratio as the original
-        @param recursion: prevent text from happening more than once.
         @return:
         """
         if bounds is None:
             return None
-        xxmin = float("inf")
-        yymin = float("inf")
-        xxmax = -float("inf")
-        yymax = -float("inf")
-        # print ("Recursion=%d" % recursion)
+        x_min = float("inf")
+        y_min = float("inf")
+        x_max = -float("inf")
+        y_max = -float("inf")
         if not isinstance(nodes, (tuple, list)):
-            mynodes = [nodes]
+            _nodes = [nodes]
         else:
-            mynodes = nodes
-        if recursion == 0:
-            # Do it only once...
-            text_nodes = []
-            for item in mynodes:
-                if item.type == "elem text":
-                    if item.width is None or item.height is None or item._bounds_dirty:
-                        text_nodes.append(item)
-            if len(text_nodes) > 0:
-                # print ("Invalid textnodes found, call me again...")
-                self.make_raster(
-                    nodes=text_nodes,
-                    bounds=bounds,
-                    width=width,
-                    height=height,
-                    bitmap=bitmap,
-                    step_x=step_x,
-                    step_y=step_y,
-                    keep_ratio=keep_ratio,
-                    recursion=1,
-                )
+            _nodes = nodes
+        for item in _nodes:
+            if item.type == "elem text" and (item.width is None or item.height is None):
+                # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
+                self.measure_text(item)
 
-        for item in mynodes:
+        for item in _nodes:
             bb = item.bounds
-            # if item.type == "elem text":
-            #     print ("Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
-            if bb[0] < xxmin:
-                xxmin = bb[0]
-            if bb[1] < yymin:
-                yymin = bb[1]
-            if bb[2] > xxmax:
-                xxmax = bb[2]
-            if bb[3] > yymax:
-                yymax = bb[3]
-
-        xmin = xxmin
-        ymin = yymin
-        xmax = xxmax
-        ymax = yymax
-        xmax = ceil(xmax)
-        ymax = ceil(ymax)
-        xmin = floor(xmin)
-        ymin = floor(ymin)
-        # print ("Bounds: %.1f, %.1f, %.1f, %.1f, Mine: %.1f, %.1f, %.1f, %.1f)" % (xmin, ymin, xmax, ymax, xxmin, yymin, xxmax, yymax))
-
-        image_width = int(xmax - xmin)
-        if image_width == 0:
-            image_width = 1
-
-        image_height = int(ymax - ymin)
-        if image_height == 0:
-            image_height = 1
-
+            if bb[0] < x_min:
+                x_min = bb[0]
+            if bb[1] < y_min:
+                y_min = bb[1]
+            if bb[2] > x_max:
+                x_max = bb[2]
+            if bb[3] > y_max:
+                y_max = bb[3]
+        raster_width = x_max - x_min
+        raster_height = y_max - y_min
         if width is None:
-            width = image_width
+            width = raster_width / step_x
         if height is None:
-            height = image_height
-        # Scale physical image down by step amount.
-        width /= float(step_x)
-        height /= float(step_y)
-        width = int(ceil(abs(width)))
-        height = int(ceil(abs(height)))
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        bmp = wx.Bitmap(width, height, 32)
+            height = raster_height / step_y
+
+        bmp = wx.Bitmap(int(ceil(abs(width))), int(ceil(abs(height))), 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
 
         matrix = Matrix()
-        matrix.post_translate(-xmin, -ymin)
 
         # Scale affine matrix up by step amount scaled down.
-        scale_x = width / float(image_width)
-        scale_y = height / float(image_height)
+        scale_x = width / raster_width
+        scale_y = height / raster_height
         if keep_ratio:
             scale_x = min(scale_x, scale_y)
             scale_y = scale_x
+        matrix.post_translate(-x_min, -y_min)
         matrix.post_scale(scale_x, scale_y)
+        if scale_y < 0:
+            matrix.pre_translate(0, -raster_height)
+        if scale_x < 0:
+            matrix.pre_translate(-raster_width, 0)
 
         gc = wx.GraphicsContext.Create(dc)
         gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
         gc.PushState()
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if not isinstance(nodes, (list, tuple)):
-            nodes = [nodes]
         gc.SetBrush(wx.WHITE_BRUSH)
-        gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
-        self.render(nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
+        gc.DrawRectangle(x_min - 1, y_min - 1, x_max + 1, y_max + 1)
+        self.render(_nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(
             "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
         )
+
         gc.PopState()
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
         del dc
         if bitmap:
             return bmp
-
-        # for item in mynodes:
-        #     bb = item.bounds
-        #     if item.type == "elem text":
-        #         print ("Afterwards Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
-
         return image
 
     def make_thumbnail(
