@@ -762,6 +762,29 @@ class LaserRender:
             gc.DrawText(txt, 30, 30)
             gc.PopState()
 
+    def measure_text(self, node):
+        bmp = wx.Bitmap(1, 1, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        gc = wx.GraphicsContext.Create(dc)
+        text = self.context.elements.mywordlist.translate(node.text)
+        if node.texttransform:
+            ttf = node.texttransform.lower()
+            if ttf == "capitalize":
+                text = text.capitalize()
+            elif ttf == "uppercase":
+                text = text.upper()
+            if ttf == "lowercase":
+                text = text.lower()
+        svgfont_to_wx(node)
+        font = node.wxfont
+        gc.SetFont(font, wx.BLACK)
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        if node.width != f_width or node.height != f_height:
+            node._bounds_dirty = True
+        node.width = f_width
+        node.height = f_height
+
     def make_raster(
         self,
         nodes,
@@ -787,8 +810,8 @@ class LaserRender:
         @param width: desired width of the resulting raster
         @param height: desired height of the resulting raster
         @param bitmap: bitmap to use rather than provisioning
-        @param step_x: raster step rate, int scale rate of the image.
-        @param step_y: raster step rate, int scale rate of the image.
+        @param step_x: raster step rate, scale rate of the image.
+        @param step_y: raster step rate, scale rate of the image.
         @param keep_ratio: get a picture with the same height / width
                ratio as the original
         @param recursion: prevent text from happening more than once.
