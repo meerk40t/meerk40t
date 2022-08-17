@@ -795,7 +795,6 @@ class LaserRender:
         step_x=1,
         step_y=1,
         keep_ratio=False,
-        recursion=0,
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -814,7 +813,6 @@ class LaserRender:
         @param step_y: raster step rate, scale rate of the image.
         @param keep_ratio: get a picture with the same height / width
                ratio as the original
-        @param recursion: prevent text from happening more than once.
         @return:
         """
         if bounds is None:
@@ -823,36 +821,19 @@ class LaserRender:
         yymin = float("inf")
         xxmax = -float("inf")
         yymax = -float("inf")
-        # print ("Recursion=%d" % recursion)
         if not isinstance(nodes, (tuple, list)):
-            mynodes = [nodes]
+            _nodes = [nodes]
         else:
-            mynodes = nodes
-        if recursion == 0:
-            # Do it only once...
-            text_nodes = []
-            for item in mynodes:
-                if item.type == "elem text":
-                    if item.width is None or item.height is None or item._bounds_dirty:
-                        text_nodes.append(item)
-            if len(text_nodes) > 0:
-                # print ("Invalid textnodes found, call me again...")
-                self.make_raster(
-                    nodes=text_nodes,
-                    bounds=bounds,
-                    width=width,
-                    height=height,
-                    bitmap=bitmap,
-                    step_x=step_x,
-                    step_y=step_y,
-                    keep_ratio=keep_ratio,
-                    recursion=1,
-                )
+            _nodes = nodes
+        for item in _nodes:
+            if item.type == "elem text" and (
+                item.width is None or item.height is None
+            ):
+                # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
+                self.measure_text(item)
 
-        for item in mynodes:
+        for item in _nodes:
             bb = item.bounds
-            # if item.type == "elem text":
-            #     print ("Bounds for text: %.1f, %.1f, %.1f, %.1f, w=%.1f, h=%.1f)" % (bb[0], bb[1], bb[2], bb[3], item.text.width, item.text.height))
             if bb[0] < xxmin:
                 xxmin = bb[0]
             if bb[1] < yymin:
@@ -870,7 +851,6 @@ class LaserRender:
         ymax = ceil(ymax)
         xmin = floor(xmin)
         ymin = floor(ymin)
-        # print ("Bounds: %.1f, %.1f, %.1f, %.1f, Mine: %.1f, %.1f, %.1f, %.1f)" % (xmin, ymin, xmax, ymax, xxmin, yymin, xxmax, yymax))
 
         image_width = int(xmax - xmin)
         if image_width == 0:
@@ -884,6 +864,7 @@ class LaserRender:
             width = image_width
         if height is None:
             height = image_height
+
         # Scale physical image down by step amount.
         width /= float(step_x)
         height /= float(step_y)
