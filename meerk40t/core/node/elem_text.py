@@ -77,8 +77,11 @@ class TextNode(Node):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
+        # Offset values to allow to fix the drawing of slanted fonts outside of the GetTextExtentBoundaries
         self.offset_x = 0
         self.offset_y = 0
+        self.bounds_with_variables_translated = None
+
         if font is not None:
             self.parse_font(font)
 
