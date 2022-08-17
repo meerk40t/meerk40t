@@ -817,80 +817,56 @@ class LaserRender:
         """
         if bounds is None:
             return None
-        xxmin = float("inf")
-        yymin = float("inf")
-        xxmax = -float("inf")
-        yymax = -float("inf")
+        x_min = float("inf")
+        y_min = float("inf")
+        x_max = -float("inf")
+        y_max = -float("inf")
         if not isinstance(nodes, (tuple, list)):
             _nodes = [nodes]
         else:
             _nodes = nodes
         for item in _nodes:
-            if item.type == "elem text" and (
-                item.width is None or item.height is None
-            ):
+            if item.type == "elem text" and (item.width is None or item.height is None):
                 # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
                 self.measure_text(item)
 
         for item in _nodes:
             bb = item.bounds
-            if bb[0] < xxmin:
-                xxmin = bb[0]
-            if bb[1] < yymin:
-                yymin = bb[1]
-            if bb[2] > xxmax:
-                xxmax = bb[2]
-            if bb[3] > yymax:
-                yymax = bb[3]
-
-        xmin = xxmin
-        ymin = yymin
-        xmax = xxmax
-        ymax = yymax
-        xmax = ceil(xmax)
-        ymax = ceil(ymax)
-        xmin = floor(xmin)
-        ymin = floor(ymin)
-
-        image_width = int(xmax - xmin)
-        if image_width == 0:
-            image_width = 1
-
-        image_height = int(ymax - ymin)
-        if image_height == 0:
-            image_height = 1
-
+            if bb[0] < x_min:
+                x_min = bb[0]
+            if bb[1] < y_min:
+                y_min = bb[1]
+            if bb[2] > x_max:
+                x_max = bb[2]
+            if bb[3] > y_max:
+                y_max = bb[3]
+        raster_width = x_max - x_min
+        raster_height = y_max - y_min
         if width is None:
-            width = image_width
+            width = raster_width / step_x
         if height is None:
-            height = image_height
+            height = raster_height / step_y
 
-        # Scale physical image down by step amount.
-        width /= float(step_x)
-        height /= float(step_y)
-        width = int(ceil(abs(width)))
-        height = int(ceil(abs(height)))
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-
-        bmp = wx.Bitmap(width, height, 32)
+        bmp = wx.Bitmap(int(ceil(abs(width))), int(ceil(abs(height))), 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
 
         matrix = Matrix()
-        matrix.post_translate(-xmin, -ymin)
 
         # Scale affine matrix up by step amount scaled down.
-        scale_x = width / float(image_width)
-        scale_y = height / float(image_height)
+        scale_x = width / raster_width
+        scale_y = height / raster_height
         if keep_ratio:
             scale_x = min(scale_x, scale_y)
             scale_y = scale_x
+        matrix.post_translate(-x_min, -y_min)
         matrix.post_scale(scale_x, scale_y)
+        if scale_y < 0:
+            matrix.pre_translate(0, -raster_height)
+        if scale_x < 0:
+            matrix.pre_translate(-raster_width, 0)
 
         gc = wx.GraphicsContext.Create(dc)
         gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
@@ -898,13 +874,14 @@ class LaserRender:
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         gc.SetBrush(wx.WHITE_BRUSH)
-        gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
+        gc.DrawRectangle(x_min - 1, y_min - 1, x_max + 1, y_max + 1)
         self.render(_nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(
             "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
         )
+
         gc.PopState()
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
