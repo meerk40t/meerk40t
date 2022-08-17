@@ -77,6 +77,8 @@ class TextNode(Node):
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
         self.font_family = "sans-serif"
+        self.offset_x = 0
+        self.offset_y = 0
         if font is not None:
             self.parse_font(font)
 
