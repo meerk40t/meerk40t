@@ -3706,17 +3706,12 @@ class Elemental(Service):
 
             if dpi is None:
                 dpi = 500
-            if step is None:
-                step = 2
-
-            if step <= 0:
-                step = 1
             if dpi <= 0:
                 dpi = 500
 
             ww = width / UNITS_PER_INCH * dpi
             hh = height / UNITS_PER_INCH * dpi
-            # step_x, step_y = self.device.dpi_to_steps(dpi)
+            step_x, step_y = self.device.dpi_to_steps(dpi)
             # I am not sure whether the negative steps actually make sense in this context, but we leave it...
 
             make_raster = self.lookup("render-op/make_raster")
@@ -3725,15 +3720,14 @@ class Elemental(Service):
                 bounds=bounds,
                 width=ww,
                 height=hh,
-                step_x=step,
-                step_y=step,
+                step_x=step_x,
+                step_y=step_y,
             )
             matrix = Matrix(self.device.device_to_scene_matrix())
-            # The matrix is completely off for balor...
-            matrix.post_scale(step, step)
+            matrix.post_scale(step_x, step_y)
             matrix.post_translate(bounds[0], bounds[1])
 
-            image_node = ImageNode(image=image, matrix=matrix, step_x=step, step_y=step)
+            image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
             self.elem_branch.add_node(image_node)
             self.signal("refresh_scene", "Scene")
 
