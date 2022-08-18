@@ -100,8 +100,8 @@ class PathPropertyPanel(ScrolledPanel):
         def closed_path(path):
             p1 = path.first_point
             p2 = path.current_point
-            print (p1, p2)
-            print (type(p1).__name__, type(p2).__name__)
+            # print (p1, p2)
+            # print (type(p1).__name__, type(p2).__name__)
             return p1 == p2
 
         elements = self.context.elements
