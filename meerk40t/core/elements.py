@@ -7013,7 +7013,7 @@ class Elemental(Service):
                 width=new_width,
                 height=new_height,
             )
-            matrix = Matrix.scale(new_width / width, new_height / height)
+            matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
 
             image_node = ImageNode(image=image, matrix=matrix, dpi=node.dpi)
