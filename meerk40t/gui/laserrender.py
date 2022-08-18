@@ -500,6 +500,8 @@ class LaserRender:
                 if cut.cache is not None:
                     # Cache exists and is valid.
                     gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                    # gc.SetBrush(wx.RED_BRUSH) # TODO: TESTING
+                    # gc.DrawRectangle(0, 0, cut.c_width, cut.c_height) # TODO: TESTING
                 else:
                     # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
