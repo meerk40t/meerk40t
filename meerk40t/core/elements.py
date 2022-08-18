@@ -3674,17 +3674,14 @@ class Elemental(Service):
             data.append(poly_path)
             return "elements", data
 
-        @self.console_option("step", "s", type=float)
-        @self.console_option("dpi", "d", type=float)
+        @self.console_option("dpi", "d", default=500, type=float)
         @self.console_command(
             "render",
             help=_("Convert given elements to a raster image"),
             input_type=(None, "elements"),
             output_type="image",
         )
-        def make_raster_image(
-            command, channel, _, step=None, dpi=None, data=None, **kwargs
-        ):
+        def render_elements(command, channel, _, dpi=500.0, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             reverse = self.classify_reverse
@@ -3694,6 +3691,7 @@ class Elemental(Service):
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
+
             bounds = Node.union_bounds(data)
             if bounds is None:
                 return
@@ -3704,36 +3702,20 @@ class Elemental(Service):
             width = xmax - xmin
             height = ymax - ymin
 
-            if dpi is None:
-                dpi = 500
-            if step is None:
-                step = 2
+            dots_per_units = dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
 
-            if step <= 0:
-                step = 1
-            if dpi <= 0:
-                dpi = 500
-
-            ww = width / UNITS_PER_INCH * dpi
-            hh = height / UNITS_PER_INCH * dpi
-            # step_x, step_y = self.device.dpi_to_steps(dpi)
-            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
-
-            make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
                 data,
                 bounds=bounds,
-                width=ww,
-                height=hh,
-                step_x=step,
-                step_y=step,
+                width=new_width,
+                height=new_height,
             )
-            matrix = Matrix(self.device.device_to_scene_matrix())
-            # The matrix is completely off for balor...
-            matrix.post_scale(step, step)
+            matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
 
-            image_node = ImageNode(image=image, matrix=matrix, step_x=step, step_y=step)
+            image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
             self.elem_branch.add_node(image_node)
             self.signal("refresh_scene", "Scene")
 
@@ -4148,18 +4130,30 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.stroke_scaled:
+
+                    if not hasattr(e, "stroke_scaled"):
                         channel(
                             _(
                                 "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
-                            ).format(index=i, stroke_width=e.stroke_width, name=name)
+                            ).format(index=i, stroke_width="None", name=name)
                         )
                     else:
-                        channel(
-                            _(
-                                "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
-                            ).format(index=i, stroke_width=e.stroke_width, name=name)
-                        )
+                        if e.stroke_scaled:
+                            channel(
+                                _(
+                                    "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
+                                ).format(
+                                    index=i, stroke_width=e.stroke_width, name=name
+                                )
+                            )
+                        else:
+                            channel(
+                                _(
+                                    "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
+                                ).format(
+                                    index=i, stroke_width=e.stroke_width, name=name
+                                )
+                            )
                     i += 1
                 channel("----------")
                 return
@@ -7005,28 +6999,24 @@ class Elemental(Service):
                 height = bounds[3] - bounds[1]
             except TypeError:
                 raise CommandSyntaxError
-
-            ww = width / UNITS_PER_INCH * node.dpi
-            hh = height / UNITS_PER_INCH * node.dpi
-            step_x, step_y = self.device.dpi_to_steps(node.dpi)
-            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
-
             make_raster = self.lookup("render-op/make_raster")
+            if not make_raster:
+                raise ValueError("No renderer is registered to perform render.")
+
+            dots_per_units = node.dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+
             image = make_raster(
                 data,
                 bounds=bounds,
-                width=ww,
-                height=hh,
-                step_x=step_x,
-                step_y=step_y,
+                width=new_width,
+                height=new_height,
             )
-            matrix = Matrix(self.device.device_to_scene_matrix())
-            # The matrix is completely off for balor...
-            matrix.post_scale(step_x, step_y)
+            matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
-            image_node = ImageNode(
-                image=image, matrix=matrix, step_x=step_x, step_y=step_y
-            )
+
+            image_node = ImageNode(image=image, matrix=matrix, dpi=node.dpi)
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
             self.signal("refresh_scene", "Scene")

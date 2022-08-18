@@ -42,7 +42,7 @@ class LineNode(Node):
         )
         self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
-        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
+        self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.lock = False
 
     def __copy__(self):

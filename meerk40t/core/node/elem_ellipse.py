@@ -38,7 +38,7 @@ class EllipseNode(Node):
             if stroke_scale is None
             else stroke_scale
         )
-        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
+        self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.lock = False
 
     def __repr__(self):

@@ -40,6 +40,7 @@ UNITS_PER_MM = NATIVE_UNIT_PER_INCH / MM_PER_INCH
 UNITS_PER_CM = NATIVE_UNIT_PER_INCH / CM_PER_INCH
 UNITS_PER_NM = NATIVE_UNIT_PER_INCH / NM_PER_INCH
 UNITS_PER_PIXEL = NATIVE_UNIT_PER_INCH / DEFAULT_PPI
+UNITS_PER_POINT = UNITS_PER_PIXEL * 4.0 / 3.0
 PX_PER_UNIT = 1.0 / UNITS_PER_PIXEL
 
 UNITS_NANOMETER = 0
@@ -490,7 +491,7 @@ class Length(object):
             elif units == "px":
                 scale = UNITS_PER_PIXEL
             elif units == "pt":
-                scale = UNITS_PER_PIXEL * 1.3333
+                scale = UNITS_PER_POINT
             elif units == "pc":
                 scale = UNITS_PER_PIXEL * 16.0
             elif units == "%":
@@ -647,6 +648,8 @@ class Length(object):
             return self.mil
         elif self._preferred_units == "um":
             return self.um
+        elif self._preferred_units == "pt":
+            return self.pt
         else:
             return self.units
 
@@ -666,6 +669,8 @@ class Length(object):
             return self.length_mil
         elif self._preferred_units == "um":
             return self.length_um
+        elif self._preferred_units == "pt":
+            return self.length_pt
         else:
             return self.length_units
 
@@ -719,6 +724,13 @@ class Length(object):
         return amount
 
     @property
+    def pt(self):
+        amount = self._amount / UNITS_PER_POINT
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
     def units(self):
         amount = self._amount
         if self._digits:
@@ -752,6 +764,10 @@ class Length(object):
     @property
     def length_um(self):
         return f"{self.um}um"
+
+    @property
+    def length_pt(self):
+        return f"{self.pt}pt"
 
     @property
     def length_units(self):
