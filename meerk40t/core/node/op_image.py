@@ -37,9 +37,9 @@ class ImageOpNode(Node, Parameters):
             elif isinstance(obj, dict):
                 self.settings.update(obj)
         # Which elements can be added to an operation (manually via DND)?
-        self.allowed_elements_dnd = ("elem image",)
+        self._allowed_elements_dnd = ("elem image",)
         # Which elements do we consider for automatic classification?
-        self.allowed_elements = ("elem image",)
+        self._allowed_elements = ("elem image",)
         self.stopop = True
         self.allowed_attributes = []
 
@@ -107,7 +107,7 @@ class ImageOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if not drag_node.type in self.allowed_elements_dnd:
+            if not drag_node.type in self._allowed_elements_dnd:
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -115,7 +115,7 @@ class ImageOpNode(Node, Parameters):
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
-            if not drag_node.node.type in self.allowed_elements_dnd:
+            if not drag_node.node.type in self._allowed_elements_dnd:
                 return False
             # Move a refelem to end of op.
             if modify:
@@ -130,7 +130,7 @@ class ImageOpNode(Node, Parameters):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
-                if e.type in self.allowed_elements_dnd:
+                if e.type in self._allowed_elements_dnd:
                     if modify:
                         self.add_reference(e)
                     some_nodes = True
@@ -138,7 +138,7 @@ class ImageOpNode(Node, Parameters):
         return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
-        if node.type in self.allowed_elements:
+        if node.type in self._allowed_elements:
             self.add_reference(node)
             # Have classified and no more classification are needed
             return True, self.stopop

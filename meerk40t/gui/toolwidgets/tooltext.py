@@ -1,10 +1,12 @@
+import platform
+
 import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
-from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.laserrender import LaserRender, swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Color, SVGText
+from meerk40t.svgelements import Color, Matrix
 
 from ...core.units import UNITS_PER_PIXEL
 
@@ -48,7 +50,40 @@ class TextEntry(wx.Dialog):
         self.rb_align.SetToolTip(
             _("Define where to place the origin (i.e. current mouse position")
         )
-
+        # Linux requires a minimum  height / width to display a text inside a button
+        system = platform.system()
+        if system == "Darwin":
+            mysize = 40
+        elif system == "Windows":
+            mysize = 23
+        elif system == "Linux":
+            mysize = 40
+        else:
+            mysize = 23
+        self.button_attrib_larger = wx.Button(
+            self, id=wx.ID_ANY, label="A", size=wx.Size(mysize, mysize)
+        )
+        self.button_attrib_smaller = wx.Button(
+            self, id=wx.ID_ANY, label="a", size=wx.Size(mysize, mysize)
+        )
+        self.button_attrib_bold = wx.ToggleButton(
+            self, id=wx.ID_ANY, label="b", size=wx.Size(mysize, mysize)
+        )
+        self.button_attrib_italic = wx.ToggleButton(
+            self, id=wx.ID_ANY, label="i", size=wx.Size(mysize, mysize)
+        )
+        self.button_attrib_underline = wx.ToggleButton(
+            self, id=wx.ID_ANY, label="u", size=wx.Size(mysize, mysize)
+        )
+        self.button_attrib_strikethrough = wx.ToggleButton(
+            self, id=wx.ID_ANY, label="s", size=wx.Size(mysize, mysize)
+        )
+        self.button_attrib_smaller.SetToolTip(_("Decrease fontsize"))
+        self.button_attrib_larger.SetToolTip(_("Increase fontsize"))
+        self.button_attrib_bold.SetToolTip(_("Toggle bold"))
+        self.button_attrib_italic.SetToolTip(_("Toggle italic"))
+        self.button_attrib_underline.SetToolTip(_("Toggle underline"))
+        self.button_attrib_strikethrough.SetToolTip(_("Toggle strikethrough"))
         # populate listbox
         choices = self.context.elements.mywordlist.get_variable_list()
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
@@ -111,16 +146,49 @@ class TextEntry(wx.Dialog):
         sizer_h_text = wx.BoxSizer(wx.HORIZONTAL)
         sizer_v_main.Add(sizer_h_text, 0, wx.EXPAND, 0)
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Text"))
-        sizer_h_text.Add(label_1, 0, 0, 0)
+        sizer_h_text.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_text.Add(self.txt_Text, 1, 0, 0)
         sizer_h_text.Add(self.btn_choose_font, 0, 0, 0)
+
+        self.button_attrib_bold.SetFont(
+            wx.Font(
+                9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD, 0, ""
+            )
+        )
+        self.button_attrib_italic.SetFont(
+            wx.Font(
+                9,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_ITALIC,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "",
+            )
+        )
+        special_font = wx.Font(
+            9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, 0, ""
+        )
+        special_font.SetUnderlined(True)
+        self.button_attrib_underline.SetFont(special_font)
+        special_font2 = wx.Font(
+            9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_ITALIC, wx.FONTWEIGHT_NORMAL, 0, ""
+        )
+        special_font2.SetStrikethrough(True)
+        self.button_attrib_strikethrough.SetFont(special_font2)
 
         sizer_h_align = wx.BoxSizer(wx.HORIZONTAL)
         sizer_v_main.Add(sizer_h_align, 0, wx.EXPAND, 0)
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Alignment"))
-        sizer_h_align.Add(label_2, 0, 0, 0)
-        sizer_h_align.Add(self.rb_align, 0, 0, 0)
-
+        sizer_h_align.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(self.button_attrib_larger, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(self.button_attrib_smaller, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(self.button_attrib_bold, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(self.button_attrib_italic, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(self.button_attrib_underline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(
+            self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
         sizer_h_color = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Color")), wx.HORIZONTAL
         )
@@ -148,6 +216,7 @@ class TextEntry(wx.Dialog):
         sizer_h_okcancel = wx.StdDialogButtonSizer()
         sizer_v_main.Add(sizer_h_okcancel, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
 
+        self.button_OK.Enable(False)
         sizer_h_okcancel.AddButton(self.button_OK)
         sizer_h_okcancel.AddButton(self.button_CANCEL)
         sizer_h_okcancel.Realize()
@@ -169,6 +238,19 @@ class TextEntry(wx.Dialog):
             self.btn_color[i].Bind(wx.EVT_BUTTON, self.on_btn_color)
         self.txt_Text.Bind(wx.EVT_TEXT, self.on_text_change)
         self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_larger, self.button_attrib_larger)
+        self.Bind(wx.EVT_BUTTON, self.on_button_smaller, self.button_attrib_smaller)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_bold, self.button_attrib_bold)
+        self.Bind(wx.EVT_TOGGLEBUTTON, self.on_button_italic, self.button_attrib_italic)
+        self.Bind(
+            wx.EVT_TOGGLEBUTTON, self.on_button_underline, self.button_attrib_underline
+        )
+        self.Bind(
+            wx.EVT_TOGGLEBUTTON,
+            self.on_button_strikethrough,
+            self.button_attrib_strikethrough,
+        )
 
     def set_preview_alignment(self):
         mystyle = self.preview.GetWindowStyle()
@@ -204,6 +286,7 @@ class TextEntry(wx.Dialog):
         for i in range(self.FONTHISTORY):
             self.last_font[i].Label = svalue
         self.result_text = self.txt_Text.GetValue()
+        self.button_OK.Enable(len(self.result_text) > 0)
         event.Skip()
 
     def on_choose_font(self, event):  # wxGlade: TextEntry.<event_handler>
@@ -251,6 +334,10 @@ class TextEntry(wx.Dialog):
 
     def store_font_history(self):
         fontdesc = self.result_font.GetNativeFontInfoDesc()
+        # Is the fontdesc already contained?
+        if fontdesc in self.history:
+            # print (f"Was already there: {fontdesc}")
+            return
         for i in range(self.FONTHISTORY - 1, 0, -1):
             self.history[i] = self.history[i - 1]
         self.history[0] = fontdesc
@@ -268,6 +355,95 @@ class TextEntry(wx.Dialog):
             font = wx.Font(fontdesc)
             self.last_font[i].SetFont(font)
 
+    def on_button_smaller(self, event):
+        try:
+            size = self.result_font.GetFractionalPointSize()
+        except AttributeError:
+            size = self.result_font.GetPointSize()
+
+        size = size / 1.2
+        if size < 4:
+            size = 4
+        try:
+            self.result_font.SetFractionalPointSize(size)
+        except AttributeError:
+            self.result_font.SetPointSize(int(size))
+
+        self.preview.Font = self.result_font
+        self.preview.Refresh()
+        event.Skip()
+
+    def on_button_larger(self, event):
+        try:
+            size = self.result_font.GetFractionalPointSize()
+        except AttributeError:
+            size = self.result_font.GetPointSize()
+        size *= 1.2
+
+        try:
+            self.result_font.SetFractionalPointSize(size)
+        except AttributeError:
+            self.result_font.SetPointSize(int(size))
+
+        self.preview.Font = self.result_font
+        self.preview.Refresh()
+        event.Skip()
+
+    # def on_font_choice(self, event):
+    #     lastfont = self.result_font.GetFaceName()
+    #     fface = self.combo_font.GetValue()
+    #     self.result_font.SetFaceName(fface)
+    #     if not self.result_font.IsOk():
+    #         self.result_font.SetFaceName(lastfont)
+
+    #     self.preview.Font = self.result_font
+    #     self.preview.Refresh()
+    #     event.Skip()
+
+    def on_button_bold(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        if state:
+            try:
+                self.result_font.SetNumericWeight(700)
+            except AttributeError:
+                self.result_font.SetWeight(wx.FONTWEIGHT_BOLD)
+        else:
+            try:
+                self.result_font.SetNumericWeight(400)
+            except AttributeError:
+                self.result_font.SetWeight(wx.FONTWEIGHT_NORMAL)
+        self.preview.Font = self.result_font
+        self.preview.Refresh()
+        event.Skip()
+
+    def on_button_italic(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        if state:
+            self.result_font.SetStyle(wx.FONTSTYLE_ITALIC)
+        else:
+            self.result_font.SetStyle(wx.FONTSTYLE_NORMAL)
+        self.preview.Font = self.result_font
+        self.preview.Refresh()
+        event.Skip()
+
+    def on_button_underline(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        self.result_font.SetUnderlined(state)
+        self.preview.Font = self.result_font
+        self.preview.Refresh()
+        event.Skip()
+
+    def on_button_strikethrough(self, event):
+        button = event.EventObject
+        state = button.GetValue()
+        self.result_font.SetStrikethrough(state)
+        self.preview.Font = self.result_font
+        self.preview.Refresh()
+        event.Skip()
+
 
 # end of class TextEntry
 
@@ -282,15 +458,9 @@ class TextTool(ToolWidget):
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
         self.start_position = None
-        self.x = None
-        self.y = None
-        self.text = None
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.text is not None:
-            gc.SetPen(self.pen)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
-            gc.DrawText(self.text.text, self.x, self.y)
+        pass
 
     def event(
         self,
@@ -303,38 +473,41 @@ class TextTool(ToolWidget):
     ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
-            self.p1 = complex(space_pos[0], space_pos[1])
-            _ = self.scene.context._
-            self.text = SVGText("")
             if nearest_snap is None:
                 x = space_pos[0]
                 y = space_pos[1]
             else:
                 x = nearest_snap[0]
                 y = nearest_snap[1]
-            self.x = x
-            self.y = y
-            self.text *= f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"
             dlg = TextEntry(self.scene.context, "", None, wx.ID_ANY, "")
             if dlg.ShowModal() == wx.ID_OK:
-                self.text.text = dlg.result_text
-                if dlg.result_anchor == 1:
-                    self.text.anchor = "middle"
-                elif dlg.result_anchor == 2:
-                    self.text.anchor = "end"
-                else:
-                    self.text.anchor = "start"
+                text = dlg.result_text
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(text=self.text, type="elem text")
+                if dlg.result_anchor == 1:
+                    anchor = "middle"
+                elif dlg.result_anchor == 2:
+                    anchor = "end"
+                else:
+                    anchor = "start"
+
                 color = dlg.result_colour
                 rgb = color.GetRGB()
                 color = swizzlecolor(rgb)
                 color = Color(color, 1.0)
-                node.fill = color
+                node = elements.elem_branch.add(
+                    text=text,
+                    matrix=Matrix(f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"),
+                    anchor=anchor,
+                    fill=color,
+                    type="elem text",
+                )
+
                 # Translate wxFont to SVG font....
                 node.wxfont = dlg.result_font
-                dlg.store_font_history()
                 wxfont_to_svg(node)
+                renderer = LaserRender(self.scene.context)
+                renderer.measure_text(node)
+                dlg.store_font_history()
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)

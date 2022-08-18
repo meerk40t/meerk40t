@@ -2,7 +2,7 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import TextCtrl, ScrolledPanel
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
 
@@ -486,7 +486,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                     check_flag = "float"
                 else:
                     check_flag = ""
-                control = TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, limited=True, check=check_flag)
+                control = TextCtrl(
+                    self,
+                    wx.ID_ANY,
+                    style=wx.TE_PROCESS_ENTER,
+                    limited=True,
+                    check=check_flag,
+                )
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
@@ -517,7 +523,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
-                control = TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, limited=True, check="length")
+                control = TextCtrl(
+                    self,
+                    wx.ID_ANY,
+                    style=wx.TE_PROCESS_ENTER,
+                    limited=True,
+                    check="length",
+                )
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
@@ -548,7 +560,13 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
-                control = TextCtrl(self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, check="angle", limited=True)
+                control = TextCtrl(
+                    self,
+                    wx.ID_ANY,
+                    style=wx.TE_PROCESS_ENTER,
+                    check="angle",
+                    limited=True,
+                )
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
@@ -672,7 +690,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         # Bool type objects get a checkbox.
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
-                    elif dtype == str and dstyle=="file":
+                    elif dtype == str and dstyle == "file":
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
                     elif dtype in (int, float) and dstyle == "slider":
@@ -687,7 +705,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 if least is None:
                                     least = entry
                                 else:
-                                    if abs(dtype(entry) - data) < abs(dtype(least) - data):
+                                    if abs(dtype(entry) - data) < abs(
+                                        dtype(least) - data
+                                    ):
                                         least = entry
                             if least is not None:
                                 ctrl.SetValue(least)
@@ -700,12 +720,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 if least is None:
                                     least = entry
                                 else:
-                                    if abs(dtype(entry) - data) < abs(dtype(least) - data):
+                                    if abs(dtype(entry) - data) < abs(
+                                        dtype(least) - data
+                                    ):
                                         least = entry
                             if least is not None:
                                 ctrl.SetValue(least)
                     elif dtype == int and dstyle == "binary":
-                        pass # not supported...
+                        pass  # not supported...
                     elif dtype in (str, int, float):
                         if ctrl.GetValue() != str(data):
                             ctrl.SetValue(str(data))
@@ -726,7 +748,9 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 return listen_to_myself
 
-            update_listener = on_update_listener(attr, control, data_type, data_style, choice_list)
+            update_listener = on_update_listener(
+                attr, control, data_type, data_style, choice_list
+            )
             self.listeners.append((attr, update_listener))
             context.listen(attr, update_listener)
 

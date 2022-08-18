@@ -1,11 +1,13 @@
 import math
 import platform
+
 import wx
 
 from meerk40t.kernel import Job, signal_listener
 
 from ..core.cutcode import CutCode
 from ..svgelements import Matrix
+from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
     STD_ICON_SIZE,
     icons8_laser_beam_hazard2_50,
@@ -15,7 +17,6 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from .mwindow import MWindow
-from .choicepropertypanel import ChoicePropertyPanel
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
@@ -158,8 +159,7 @@ class SimulationPanel(wx.Panel, Job):
         self.widget_scene.add_scenewidget(
             BedWidget(self.widget_scene, name="Simulation")
         )
-        self.reticle = SimReticleWidget(self.widget_scene, self)
-        self.widget_scene.add_interfacewidget(self.reticle)
+        self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene, self))
         self.running = False
         if index == -1:
             disable_window(self)

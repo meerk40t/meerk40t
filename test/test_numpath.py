@@ -1,13 +1,13 @@
 import unittest
 from copy import copy
 from math import tau
+from test import bootstrap
 
 import numpy as np
 
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
-from meerk40t.numpath import Numpath, TYPE_END, TYPE_LINE
+from meerk40t.numpath import TYPE_END, TYPE_LINE, Numpath
 from meerk40t.svgelements import Matrix, Rect
-from test import bootstrap
 
 
 def draw(segments, w, h, filename="test.png"):

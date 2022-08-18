@@ -36,7 +36,7 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
-from .units import UNITS_PER_PIXEL, Length
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from .wordlist import Wordlist
 
 
@@ -3674,14 +3674,17 @@ class Elemental(Service):
             data.append(poly_path)
             return "elements", data
 
-        @self.console_option("step", "s", default=2.0, type=float)
+        @self.console_option("step", "s", type=float)
+        @self.console_option("dpi", "d", type=float)
         @self.console_command(
             "render",
             help=_("Convert given elements to a raster image"),
             input_type=(None, "elements"),
             output_type="image",
         )
-        def make_raster_image(command, channel, _, step=2.0, data=None, **kwargs):
+        def make_raster_image(
+            command, channel, _, step=None, dpi=None, data=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
             reverse = self.classify_reverse
@@ -3694,24 +3697,46 @@ class Elemental(Service):
             bounds = Node.union_bounds(data)
             if bounds is None:
                 return
-            if step <= 0:
-                step = 1
             xmin, ymin, xmax, ymax = bounds
             if isinf(xmin):
                 channel(_("No bounds for selected elements."))
                 return
+            width = xmax - xmin
+            height = ymax - ymin
+
+            if dpi is None:
+                dpi = 500
+            if step is None:
+                step = 2
+
+            if step <= 0:
+                step = 1
+            if dpi <= 0:
+                dpi = 500
+
+            ww = width / UNITS_PER_INCH * dpi
+            hh = height / UNITS_PER_INCH * dpi
+            # step_x, step_y = self.device.dpi_to_steps(dpi)
+            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
+
+            make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
-                [n.node for n in data],
-                bounds,
+                data,
+                bounds=bounds,
+                width=ww,
+                height=hh,
                 step_x=step,
                 step_y=step,
             )
-
-            matrix = Matrix()
+            matrix = Matrix(self.device.device_to_scene_matrix())
+            # The matrix is completely off for balor...
             matrix.post_scale(step, step)
-            matrix.post_translate(xmin, ymin)
+            matrix.post_translate(bounds[0], bounds[1])
+
             image_node = ImageNode(image=image, matrix=matrix, step_x=step, step_y=step)
             self.elem_branch.add_node(image_node)
+            self.signal("refresh_scene", "Scene")
+
             return "image", [image_node]
 
         # ==========
@@ -3881,7 +3906,9 @@ class Elemental(Service):
             data.append(node)
             return "elements", data
 
-        @self.console_option("size", "s", type=float, help=_("font size to for object"))
+        @self.console_option(
+            "size", "s", type=float, default=16, help=_("font size to for object")
+        )
         @self.console_argument("text", type=str, help=_("quoted string of text"))
         @self.console_command(
             "text",
@@ -3895,19 +3922,51 @@ class Elemental(Service):
             if text is None:
                 channel(_("No text specified"))
                 return
-            svg_text = SVGText(text)
-            if size is not None:
-                svg_text.font_size = size
-            svg_text *= f"scale({UNITS_PER_PIXEL})"
             node = self.elem_branch.add(
-                text=svg_text, matrix=svg_text.transform, type="elem text"
+                text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
             )
+            node.font_size = size
             node.stroke = self.default_stroke
             self.set_emphasis([node])
             node.focus()
             if data is None:
                 data = list()
             data.append(node)
+            return "elements", data
+
+        @self.console_argument(
+            "anchor", type=str, default="start", help=_("set text anchor")
+        )
+        @self.console_command(
+            "text-anchor",
+            help=_("set text object text-anchor; start, middle, end"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            hidden=True,
+            output_type="elements",
+        )
+        def element_text_anchor(command, channel, _, data, anchor=None, **kwargs):
+            if anchor not in ("start", "middle", "end"):
+                raise CommandSyntaxError(
+                    _("Only 'start', 'middle', and 'end' are valid anchors.")
+                )
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    continue
+                if e.type == "elem text":
+                    old_anchor = e.anchor
+                    e.anchor = anchor
+                    channel(f"Node {e} anchor changed from {old_anchor} to {anchor}")
+
+                e.altered()
             return "elements", data
 
         @self.console_argument(
@@ -4091,15 +4150,15 @@ class Elemental(Service):
                         name = name[:50] + "…"
                     if e.stroke_scaled:
                         channel(
-                            _("{index}: stroke-width = {stroke_width} - {name} - scaled-stroke").format(
-                                index=i, stroke_width=e.stroke_width, name=name
-                            )
+                            _(
+                                "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
+                            ).format(index=i, stroke_width=e.stroke_width, name=name)
                         )
                     else:
                         channel(
-                            _("{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke").format(
-                                index=i, stroke_width=e.stroke_width, name=name
-                            )
+                            _(
+                                "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
+                            ).format(index=i, stroke_width=e.stroke_width, name=name)
                         )
                     i += 1
                 channel("----------")
@@ -4126,9 +4185,7 @@ class Elemental(Service):
             hidden=True,
             output_type="elements",
         )
-        def element_stroke_scale_enable(
-            command, channel, _, data=None, **kwargs
-        ):
+        def element_stroke_scale_enable(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
@@ -6939,28 +6996,40 @@ class Elemental(Service):
             help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwargs):
-            bounds = node.bounds
-            if bounds is None:
+            data = list(node.flat(types=elem_ref_nodes))
+            if len(data) == 0:
                 return
-            xmin, ymin, xmax, ymax = bounds
-            xmin, ymin = self.device.scene_to_device_position(xmin, ymin)
-            xmax, ymax = self.device.scene_to_device_position(xmax, ymax)
+            try:
+                bounds = Node.union_bounds(data)
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except TypeError:
+                raise CommandSyntaxError
+
+            ww = width / UNITS_PER_INCH * node.dpi
+            hh = height / UNITS_PER_INCH * node.dpi
             step_x, step_y = self.device.dpi_to_steps(node.dpi)
+            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
+
             make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
-                list(node.flat(types=elem_ref_nodes)),
-                (xmin, ymin, xmax, ymax),
+                data,
+                bounds=bounds,
+                width=ww,
+                height=hh,
                 step_x=step_x,
                 step_y=step_y,
             )
             matrix = Matrix(self.device.device_to_scene_matrix())
+            # The matrix is completely off for balor...
             matrix.post_scale(step_x, step_y)
-            matrix.post_translate(xmin, ymin)
+            matrix.post_translate(bounds[0], bounds[1])
             image_node = ImageNode(
                 image=image, matrix=matrix, step_x=step_x, step_y=step_y
             )
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
+            self.signal("refresh_scene", "Scene")
 
         def add_after_index(node=None):
             try:
@@ -7028,7 +7097,9 @@ class Elemental(Service):
         )
         @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
         def add_operation_wait(node, wait_time, **kwargs):
-            append_operation_wait(node, wait_time=wait_time, pos=add_after_index(node), **kwargs)
+            append_operation_wait(
+                node, wait_time=wait_time, pos=add_after_index(node), **kwargs
+            )
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")
@@ -9184,16 +9255,17 @@ class Elemental(Service):
     #         for op in default_raster_ops:
     #             op.add_reference(element.node, pos=element_pos)
 
-    @staticmethod
-    def element_label_id(element, short=True):
-        if element.node is None:
-            if short:
-                return element.id
-            return f"{element.id}: {str(element)}"
-        elif ":" in element.node.label and short:
-            return element.node.label.split(":", 1)[0]
-        else:
-            return element.node.label
+    # No longer used and still uses old element.node syntax
+    # @staticmethod
+    # def element_label_id(element, short=True):
+    #     if element.node is None:
+    #         if short:
+    #             return element.id
+    #         return f"{element.id}: {str(element)}"
+    #     elif ":" in element.node.label and short:
+    #         return element.node.label.split(":", 1)[0]
+    #     else:
+    #         return element.node.label
 
     @staticmethod
     def bbox_overlap(b1, b2):

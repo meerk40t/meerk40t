@@ -3,11 +3,11 @@ import unittest
 from meerk40t.fill.fills import (
     Wobble,
     circle,
-    slowtooth,
     gear,
     jigsaw,
     sawtooth,
     sinewave,
+    slowtooth,
 )
 
 

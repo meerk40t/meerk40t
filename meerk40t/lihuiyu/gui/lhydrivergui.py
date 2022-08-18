@@ -1,14 +1,12 @@
 # -*- coding: ISO-8859-1 -*-
 import wx
-from meerk40t.gui.wxutils import ScrolledPanel
 
 from meerk40t.core.units import Length
+from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
 from meerk40t.kernel import signal_listener
-from meerk40t.gui.wxutils import TextCtrl
-from meerk40t.device.gui.warningpanel import WarningPanel
-
 
 _ = wx.GetTranslation
 

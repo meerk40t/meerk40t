@@ -28,7 +28,6 @@ from ..svgelements import (
     Polygon,
     Polyline,
     SimpleLine,
-    SVGText,
     Viewbox,
 )
 
@@ -396,23 +395,30 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "MTEXT":
             insert = entity.dxf.insert
-            element = SVGText(x=insert[0], y=insert[1], text=entity.text)
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
+            node = context_node.add(
+                text=entity.text,
+                x=insert[0],
+                y=insert[1],
+                stroke_scaled=False,
+                type="elem text",
+            )
+            node.matrix.post_scale(self.scale, -self.scale)
+            node.matrix.post_translate_y(self.elements.device.unit_height)
 
-            node = context_node.add(text=element, type="elem text")
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return
         elif entity.dxftype() == "TEXT":
             insert = entity.dxf.insert
-            element = SVGText(x=insert[0], y=insert[1], text=entity.dxf.text)
-            element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
-            element.transform.post_scale(self.scale, -self.scale)
-            element.transform.post_translate_y(self.elements.device.unit_height)
-
-            node = context_node.add(text=element, type="elem text")
+            node = context_node.add(
+                text=entity.dxf.text,
+                x=insert[0],
+                y=insert[1],
+                stroke_scaled=False,
+                type="elem text",
+            )
+            node.matrix.post_scale(self.scale, -self.scale)
+            node.matrix.post_translate_y(self.elements.device.unit_height)
             self.check_for_attributes(node, entity)
             e_list.append(node)
             return

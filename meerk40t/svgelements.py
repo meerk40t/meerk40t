@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.7.0"
+SVGELEMENTS_VERSION = "1.7.3"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -233,9 +233,11 @@ REGEX_CSS_FONT = re.compile(
     r"(?:(normal|(?:ultra-|extra-|semi-)?condensed|(?:semi-|extra-)?expanded)\s)"
     r"?){0,4}"
     r"(?:"
-    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
     r"(?:/"
-    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[0-9]+(?:em|pt|pc|px|%))"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
     r")?\s"
     r")?"
     r"([^;]*);?"
@@ -566,7 +568,7 @@ class Length(object):
 
     Length class is lazy when solving values. Several conversion values are unknown by default and length simply
     stores that ambiguity. So we can have a length of 50% and without calling .value(relative_length=3000) it will
-    simply store as 50%. Likewise, you can have absolute values like 30cm or 20in which are not knowable in pixels
+    simply store as 50%. Likewise you can have absolute values like 30cm or 20in which are not knowable in pixels
     unless a PPI value is supplied. We can say .value(relative_length=30cm, PPI=96) and solve this for a value like
     12%. We can also convert values between knowable lengths. So 30cm is 300mm regardless whether we know how to
     convert this to pixels. 0% is 0 in any units or relative values. We can convert pixels to pc and pt without issue.
@@ -2028,7 +2030,7 @@ class Point:
         self.y = y
 
     def __key(self):
-        return self.x, self.y
+        return (self.x, self.y)
 
     def __hash__(self):
         return hash(self.__key())
@@ -7575,7 +7577,6 @@ class Group(SVGElement, Transformable, list):
         """
         Returns the union of the bounding boxes for the elements within the iterator.
 
-        :param elements: elements to be unioned to determine bounding box
         :param transformed: Should the children of this object be properly transformed.
         :param with_stroke: should the stroke-width be included in the bounds of the elements
         :return: union of all bounding boxes of elements within the iterable.
@@ -7763,7 +7764,7 @@ class Text(SVGElement, GraphicObject, Transformable):
         self.font_stretch = "normal"
         self.font_size = 16.0  # 16px font 'normal' 12pt font
         self.line_height = 16.0
-        self.font_family = "san-serif"
+        self.font_family = "sans-serif"
         self.path = None
 
         Transformable.__init__(self, *args, **kwargs)

@@ -152,7 +152,9 @@ class LineNode(Node):
         return False
 
     def _sync_svg(self):
-        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
+            SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
         self._bounds_dirty = True

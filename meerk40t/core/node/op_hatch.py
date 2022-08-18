@@ -35,14 +35,14 @@ class HatchOpNode(Node, Parameters):
             elif isinstance(obj, dict):
                 self.settings.update(obj)
         # Which elements can be added to an operation (manually via DND)?
-        self.allowed_elements_dnd = (
+        self._allowed_elements_dnd = (
             "elem ellipse",
             "elem path",
             "elem polyline",
             "elem rect",
         )
         # Which elements do we consider for automatic classification?
-        self.allowed_elements = (
+        self._allowed_elements = (
             "elem ellipse",
             "elem path",
             "elem polyline",
@@ -114,7 +114,7 @@ class HatchOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if not drag_node.type in self.allowed_elements_dnd:
+            if not drag_node.type in self._allowed_elements_dnd:
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -122,7 +122,7 @@ class HatchOpNode(Node, Parameters):
             return True
         elif drag_node.type == "reference":
             # Disallow drop of image refelems onto a Dot op.
-            if not drag_node.node.type in self.allowed_elements_dnd:
+            if not drag_node.node.type in self._allowed_elements_dnd:
                 return False
             # Move a refelem to end of op.
             if modify:
@@ -137,7 +137,7 @@ class HatchOpNode(Node, Parameters):
             some_nodes = False
             for e in drag_node.flat(elem_nodes):
                 # Add element to operation
-                if e.type in self.allowed_elements_dnd:
+                if e.type in self._allowed_elements_dnd:
                     if modify:
                         self.add_reference(e)
                     some_nodes = True
@@ -197,7 +197,7 @@ class HatchOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
-        if node.type in self.allowed_elements:
+        if node.type in self._allowed_elements:
             if not self.default:
                 if len(self.allowed_attributes) > 0:
                     for attribute in self.allowed_attributes:

@@ -1,4 +1,5 @@
 import wx
+
 from meerk40t.gui.wxutils import ScrolledPanel
 
 # from ...svgelements import SVG_ATTR_ID

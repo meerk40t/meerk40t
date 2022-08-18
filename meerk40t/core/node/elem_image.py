@@ -256,8 +256,9 @@ class ImageNode(Node):
         self.altered()
 
     def _process_image(self, crop=True):
-        from meerk40t.image.imagetools import dither
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
+
+        from meerk40t.image.imagetools import dither
 
         # Calculate device real step.
         if self.step_x is None:
@@ -285,7 +286,12 @@ class ImageNode(Node):
         except ZeroDivisionError:
             pass
 
-        transform = main_matrix.a != step_x or main_matrix.b != 0.0 or main_matrix.c != 0.0 or main_matrix.d != step_y
+        transform = (
+            main_matrix.a != step_x
+            or main_matrix.b != 0.0
+            or main_matrix.c != 0.0
+            or main_matrix.d != step_y
+        )
 
         # Create Transparency Mask.
         if "transparency" in image.info:
@@ -295,7 +301,7 @@ class ImageNode(Node):
         except ValueError:
             transparent_mask = None
 
-        matrix = copy(main_matrix)   # Prevent Knock-on effect.
+        matrix = copy(main_matrix)  # Prevent Knock-on effect.
 
         # Convert image to L type.
         if image.mode != "L":

@@ -14,7 +14,9 @@ from ..svgelements import (
     SVG_ATTR_FILL_OPACITY,
     SVG_ATTR_FONT_FAMILY,
     SVG_ATTR_FONT_SIZE,
+    SVG_ATTR_FONT_STRETCH,
     SVG_ATTR_FONT_STYLE,
+    SVG_ATTR_FONT_VARIANT,
     SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
@@ -23,6 +25,8 @@ from ..svgelements import (
     SVG_ATTR_STROKE_WIDTH,
     SVG_ATTR_TAG,
     SVG_ATTR_TEXT_ANCHOR,
+    SVG_ATTR_TRANSFORM,
+    SVG_ATTR_VECTOR_EFFECT,
     SVG_ATTR_VERSION,
     SVG_ATTR_VIEWBOX,
     SVG_ATTR_WIDTH,
@@ -38,6 +42,7 @@ from ..svgelements import (
     SVG_TAG_IMAGE,
     SVG_TAG_PATH,
     SVG_TAG_TEXT,
+    SVG_VALUE_NON_SCALING_STROKE,
     SVG_VALUE_NONE,
     SVG_VALUE_VERSION,
     SVG_VALUE_XLINK,
@@ -212,8 +217,6 @@ class SVGWriter:
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem image":
                 element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
@@ -227,119 +230,71 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(c.image.height))
-                t = Matrix(c.matrix)
-                t *= scale
+                t = Matrix(c.matrix) * scale
                 subelement.set(
                     "transform",
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem line":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
-                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem path":
                 element = abs(c.path * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
-                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem point":
                 element = Point(c.point) * scale
                 c.settings["x"] = element.x
                 c.settings["y"] = element.y
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem polyline":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
-                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem rect":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
-                # Makes no sense here, as it's not used anyway in svg for a rect
-                # subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
             elif c.type == "elem text":
-                # The svg attributes should be up to date, but better safe than sorry
-                if hasattr(c, "wxfont_to_svg"):
-                    c.wxfont_to_svg()
-                element = c.text
-                copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
-                subelement.text = element.text
-                t = Matrix(element.transform)
-                t *= scale
+                subelement.text = c.text
+                t = Matrix(c.matrix) * scale
                 subelement.set(
-                    "transform",
+                    SVG_ATTR_TRANSFORM,
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
-                # Maybe there are some inherited font-features from an import
-                for key, val in element.values.items():
-                    if key in (
-                        "font-family",
-                        "font-size",
-                        "font-weight",
-                        "anchor",
-                        "x",
-                        "y",
-                    ):
-                        subelement.set(key, str(val))
-                attribs = [
-                    ("font_family", SVG_ATTR_FONT_FAMILY),
-                    # ("font_face", SVG_ATTR_FONT_FACE),
-                    ("font_size", SVG_ATTR_FONT_SIZE),
-                    ("font_weight", SVG_ATTR_FONT_WEIGHT),
-                    ("font_style", SVG_ATTR_FONT_STYLE),  # Not implemented yet afaics
-                    ("text_transform", "text-transform"),
-                    ("anchor", SVG_ATTR_TEXT_ANCHOR),
-                    ("x", SVG_ATTR_X),
-                    ("y", SVG_ATTR_Y),
-                ]
-                for attrib in attribs:
-                    val = None
-                    # Look for both element and node
-                    if hasattr(element, attrib[0]):
-                        val = getattr(element, attrib[0])
-                    if val is None and hasattr(c, attrib[0]):
-                        val = getattr(c, attrib[0])
-                    if val is not None:
-                        subelement.set(attrib[1], str(val))
-                text_dec = ""
+                # Font features are covered by the `font` value shorthand
+                if c.font_family:
+                    subelement.set(SVG_ATTR_FONT_FAMILY, c.font_family)
+                if c.font_style:
+                    subelement.set(SVG_ATTR_FONT_STYLE, c.font_style)
+                if c.font_variant:
+                    subelement.set(SVG_ATTR_FONT_VARIANT, c.font_variant)
+                if c.font_stretch:
+                    subelement.set(SVG_ATTR_FONT_STRETCH, c.font_stretch)
+                if c.font_size:
+                    subelement.set(SVG_ATTR_FONT_SIZE, str(c.font_size))
+                if c.line_height:
+                    subelement.set("line_height", str(c.line_height))
+                if c.anchor:
+                    subelement.set(SVG_ATTR_TEXT_ANCHOR, c.anchor)
+                decor = ""
                 if c.underline:
-                    text_dec += " underline"
+                    decor += " underline"
                 if c.overline:
-                    text_dec += " overline"
+                    decor += " overline"
                 if c.strikethrough:
-                    text_dec += " line-through"
-                if len(text_dec) > 0:
-                    text_dec.strip()
-                    subelement.set("text-decoration", text_dec)
-                if hasattr(c, "label") and c.label is not None and c.label != "":
-                    subelement.set("inkscape:label", c.label)
+                    decor += " line-through"
+                decor = decor.strip()
+                if decor:
+                    subelement.set("text-decoration", decor)
+                element = c
             elif c.type == "group":
                 # This is a structural group node of elements. Recurse call to write flat values.
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
@@ -356,6 +311,29 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, "element")
                 SVGWriter._write_custom(subelement, c)
                 continue
+
+            ###############
+            # SAVE CAP/JOIN/FILL-RULE
+            ###############
+            if hasattr(c, "stroke_scaled"):
+                if not c.stroke_scaled:
+                    subelement.set(SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE)
+
+            ###############
+            # SAVE CAP/JOIN/FILL-RULE
+            ###############
+            if hasattr(c, "linecap"):
+                subelement.set(SVG_ATTR_STROKE_CAP, capstr(c.linecap))
+            if hasattr(c, "linejoin"):
+                subelement.set(SVG_ATTR_STROKE_JOIN, joinstr(c.linejoin))
+            if hasattr(c, "fillrule"):
+                subelement.set(SVG_ATTR_FILL_RULE, rulestr(c.fillrule))
+
+            ###############
+            # SAVE LABEL
+            ###############
+            if hasattr(c, "label") and c.label is not None and c.label != "":
+                subelement.set("inkscape:label", c.label)
 
             ###############
             # SAVE STROKE
@@ -567,56 +545,46 @@ class SVGProcessor:
         except (AttributeError, KeyError):
             pass
         if isinstance(element, SVGText):
-            if element.text is not None:
-                node = context_node.add(text=element, type="elem text", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
-                # Maybe superseded by concrete values later, so do it first
-                font_style = element.values.get("font")
-                # TODO: This is now generally duplicated parsing.
-                if font_style is not None:
-                    # This comes inherited from a class so let's split it up...
-                    subvalues = font_style.split()
-                    for subvalue in subvalues:
-                        subvalue_lower = subvalue.lower()
-                        if subvalue_lower in ("italic", "normal", "oblique"):
-                            node.text.font_style = subvalue_lower
-                        elif subvalue_lower in ("lighter", "bold", "bolder"):
-                            node.text.font_weight = subvalue_lower
-                        elif subvalue_lower in (
-                            "fantasy",
-                            "serif",
-                            "cursive",
-                            "sans-serif",
-                            "monospace",
-                        ):
-                            node.text.font_family = subvalue_lower
-                font_style = element.values.get("font-style")
-                if font_style is not None:
-                    node.font_style = font_style
-                font_style = element.values.get("text-transform")
-                if font_style is not None:
-                    node.texttransform = font_style
-                font_style = element.values.get("text-decoration")
-                if font_style is not None:
-                    font_style = font_style.lower()
-                    node.underline = "underline" in font_style
-                    node.overline = "overline" in font_style
-                    node.strikethrough = "line-through" in font_style
-                font_style = element.values.get(SVG_ATTR_TEXT_ANCHOR)
-                if font_style is not None:
-                    node.text.anchor = font_style
-                font_style = element.values.get("x")
-                if font_style is not None:
-                    node.text.x = Length(font_style).value()
-                font_style = element.values.get("y")
-                if font_style is not None:
-                    node.text.y = Length(font_style).value()
+            if element.text is None:
+                return
 
-                svgfont_to_wx = self.elements.lookup("font/svg_to_wx")
-                if svgfont_to_wx:
-                    svgfont_to_wx(node)
-                e_list.append(node)
+            decor = element.values.get("text-decoration", "").lower()
+            node = context_node.add(
+                text=element.text,
+                x=element.x,
+                y=element.y,
+                font=element.values.get("font"),
+                anchor=element.values.get(SVG_ATTR_TEXT_ANCHOR),
+                matrix=element.transform,
+                fill=element.fill,
+                stroke=element.stroke,
+                stroke_width=element.stroke_width,
+                stroke_scale=bool(
+                    SVG_VALUE_NON_SCALING_STROKE
+                    not in element.values.get(SVG_ATTR_VECTOR_EFFECT, "")
+                ),
+                underline="underline" in decor,
+                strikethrough="line-through" in decor,
+                overline="overline" in decor,
+                texttransform=element.values.get("text-transform"),
+                type="elem text",
+                settings=element.values,
+            )
+            if my_label != "" and hasattr(node, "label"):
+                node.label = my_label
+            # Maybe superseded by concrete values later, so do it first
+            if "font" in element.values:
+                node.font = element.values.get("font")
+            else:
+                node.font_size = element.values.get(SVG_ATTR_FONT_SIZE)
+                node.font_style = element.values.get(SVG_ATTR_FONT_STYLE)
+                node.font_variant = element.values.get(SVG_ATTR_FONT_VARIANT)
+                node.font_weight = element.values.get(SVG_ATTR_FONT_WEIGHT)
+                node.font_stretch = element.values.get(SVG_ATTR_FONT_STRETCH)
+                node.font_family = element.values.get(SVG_ATTR_FONT_FAMILY)
+                node.validate_font()
+
+            e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()

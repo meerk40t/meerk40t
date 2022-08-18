@@ -148,7 +148,9 @@ class PathNode(Node):
         return False
 
     def _sync_svg(self):
-        self.path.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        self.path.values[SVG_ATTR_VECTOR_EFFECT] = (
+            SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        )
         self.path.transform = self.matrix
         self.path.stroke_width = self.stroke_width
         self._bounds_dirty = True
@@ -156,4 +158,3 @@ class PathNode(Node):
     def as_path(self):
         self._sync_svg()
         return abs(self.path)
-
