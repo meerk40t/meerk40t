@@ -270,7 +270,7 @@ class TextNode(Node):
         if self.font_size:
             size = self.font_size
             try:
-                self.font_size = float(Length(self.font_size, unitless=1))
+                self.font_size = Length(self.font_size).pixels
                 if self.font_size == 0:
                     self.font_size = size
             except ValueError:
