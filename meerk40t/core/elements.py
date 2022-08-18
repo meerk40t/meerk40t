@@ -3702,7 +3702,6 @@ class Elemental(Service):
             width = xmax - xmin
             height = ymax - ymin
 
-            step_x, step_y = self.device.dpi_to_steps(dpi)
             dots_per_units = dpi / UNITS_PER_INCH
             new_width = width * dots_per_units
             new_height = height * dots_per_units
@@ -3712,12 +3711,9 @@ class Elemental(Service):
                 bounds=bounds,
                 width=new_width,
                 height=new_height,
-                step_x=abs(step_x),
-                step_y=abs(step_y),
             )
-            # matrix = Matrix(self.device.device_to_scene_matrix())
             matrix = Matrix()
-            matrix.post_scale(width / new_width,  height/new_height)
+            matrix.post_scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
 
             image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
