@@ -3674,7 +3674,7 @@ class Elemental(Service):
             data.append(poly_path)
             return "elements", data
 
-        @self.console_option("dpi", "d", type=float)
+        @self.console_option("dpi", "d", default=500, type=float)
         @self.console_command(
             "render",
             help=_("Convert given elements to a raster image"),
@@ -3682,7 +3682,7 @@ class Elemental(Service):
             output_type="image",
         )
         def make_raster_image(
-            command, channel, _, dpi=None, data=None, **kwargs
+            command, channel, _, dpi=500.0, data=None, **kwargs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -3702,11 +3702,6 @@ class Elemental(Service):
                 return
             width = xmax - xmin
             height = ymax - ymin
-
-            if dpi is None:
-                dpi = 500
-            if dpi <= 0:
-                dpi = 500
 
             ww = width / UNITS_PER_INCH * dpi
             hh = height / UNITS_PER_INCH * dpi
