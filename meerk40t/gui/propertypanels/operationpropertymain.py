@@ -1,6 +1,6 @@
 import wx
-from meerk40t.gui.wxutils import ScrolledPanel
 
+from meerk40t.gui.wxutils import ScrolledPanel
 from meerk40t.kernel import signal_listener
 
 from ...core.units import UNITS_PER_MM, Length
@@ -1659,5 +1659,6 @@ class ParameterPanel(ScrolledPanel):
         self.hatch_panel.pane_show()
         self.dwell_panel.pane_show()
         self.info_panel.pane_show()
+
 
 # end of class ParameterPanel

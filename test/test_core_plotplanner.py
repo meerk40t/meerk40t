@@ -8,10 +8,9 @@ from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Circle, Path, Point, Matrix
+from meerk40t.svgelements import Circle, Matrix, Path, Point
 
 
 class TestPlotplanner(unittest.TestCase):

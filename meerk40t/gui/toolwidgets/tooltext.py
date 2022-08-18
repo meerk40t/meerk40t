@@ -1,8 +1,9 @@
-import wx
 import platform
 
+import wx
+
 from meerk40t.gui.fonts import wxfont_to_svg
-from meerk40t.gui.laserrender import swizzlecolor, LaserRender
+from meerk40t.gui.laserrender import LaserRender, swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Color, Matrix
@@ -49,7 +50,7 @@ class TextEntry(wx.Dialog):
         self.rb_align.SetToolTip(
             _("Define where to place the origin (i.e. current mouse position")
         )
-     # Linux requires a minimum  height / width to display a text inside a button
+        # Linux requires a minimum  height / width to display a text inside a button
         system = platform.system()
         if system == "Darwin":
             mysize = 40
@@ -185,7 +186,9 @@ class TextEntry(wx.Dialog):
         sizer_h_align.Add(self.button_attrib_bold, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_align.Add(self.button_attrib_italic, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_h_align.Add(self.button_attrib_underline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_h_align.Add(self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_align.Add(
+            self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
         sizer_h_color = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Color")), wx.HORIZONTAL
         )
@@ -283,7 +286,7 @@ class TextEntry(wx.Dialog):
         for i in range(self.FONTHISTORY):
             self.last_font[i].Label = svalue
         self.result_text = self.txt_Text.GetValue()
-        self.button_OK.Enable(len(self.result_text)>0)
+        self.button_OK.Enable(len(self.result_text) > 0)
         event.Skip()
 
     def on_choose_font(self, event):  # wxGlade: TextEntry.<event_handler>
@@ -351,7 +354,6 @@ class TextEntry(wx.Dialog):
             self.history.append(fontdesc)
             font = wx.Font(fontdesc)
             self.last_font[i].SetFont(font)
-
 
     def on_button_smaller(self, event):
         try:
@@ -441,6 +443,7 @@ class TextEntry(wx.Dialog):
         self.preview.Font = self.result_font
         self.preview.Refresh()
         event.Skip()
+
 
 # end of class TextEntry
 

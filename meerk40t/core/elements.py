@@ -36,7 +36,7 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
-from .units import UNITS_PER_PIXEL, UNITS_PER_INCH, Length
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from .wordlist import Wordlist
 
 
@@ -3682,7 +3682,9 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="image",
         )
-        def make_raster_image(command, channel, _, step=None, dpi=None, data=None, **kwargs):
+        def make_raster_image(
+            command, channel, _, step=None, dpi=None, data=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
             reverse = self.classify_reverse
@@ -3699,8 +3701,8 @@ class Elemental(Service):
             if isinf(xmin):
                 channel(_("No bounds for selected elements."))
                 return
-            width = (xmax - xmin)
-            height = (ymax - ymin)
+            width = xmax - xmin
+            height = ymax - ymin
 
             if dpi is None:
                 dpi = 500
@@ -3904,7 +3906,9 @@ class Elemental(Service):
             data.append(node)
             return "elements", data
 
-        @self.console_option("size", "s", type=float, default=16, help=_("font size to for object"))
+        @self.console_option(
+            "size", "s", type=float, default=16, help=_("font size to for object")
+        )
         @self.console_argument("text", type=str, help=_("quoted string of text"))
         @self.console_command(
             "text",
@@ -3930,7 +3934,9 @@ class Elemental(Service):
             data.append(node)
             return "elements", data
 
-        @self.console_argument("anchor", type=str, default="start", help=_("set text anchor"))
+        @self.console_argument(
+            "anchor", type=str, default="start", help=_("set text anchor")
+        )
         @self.console_command(
             "text-anchor",
             help=_("set text object text-anchor; start, middle, end"),
@@ -3941,11 +3947,11 @@ class Elemental(Service):
             hidden=True,
             output_type="elements",
         )
-        def element_text_anchor(
-            command, channel, _, data, anchor=None, **kwargs
-        ):
+        def element_text_anchor(command, channel, _, data, anchor=None, **kwargs):
             if anchor not in ("start", "middle", "end"):
-                raise CommandSyntaxError(_("Only 'start', 'middle', and 'end' are valid anchors."))
+                raise CommandSyntaxError(
+                    _("Only 'start', 'middle', and 'end' are valid anchors.")
+                )
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
@@ -4144,15 +4150,15 @@ class Elemental(Service):
                         name = name[:50] + "…"
                     if e.stroke_scaled:
                         channel(
-                            _("{index}: stroke-width = {stroke_width} - {name} - scaled-stroke").format(
-                                index=i, stroke_width=e.stroke_width, name=name
-                            )
+                            _(
+                                "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
+                            ).format(index=i, stroke_width=e.stroke_width, name=name)
                         )
                     else:
                         channel(
-                            _("{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke").format(
-                                index=i, stroke_width=e.stroke_width, name=name
-                            )
+                            _(
+                                "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
+                            ).format(index=i, stroke_width=e.stroke_width, name=name)
                         )
                     i += 1
                 channel("----------")
@@ -4179,9 +4185,7 @@ class Elemental(Service):
             hidden=True,
             output_type="elements",
         )
-        def element_stroke_scale_enable(
-            command, channel, _, data=None, **kwargs
-        ):
+        def element_stroke_scale_enable(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             if len(data) == 0:
@@ -7093,7 +7097,9 @@ class Elemental(Service):
         )
         @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
         def add_operation_wait(node, wait_time, **kwargs):
-            append_operation_wait(node, wait_time=wait_time, pos=add_after_index(node), **kwargs)
+            append_operation_wait(
+                node, wait_time=wait_time, pos=add_after_index(node), **kwargs
+            )
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")

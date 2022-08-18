@@ -1,5 +1,5 @@
 import platform
-from math import ceil, floor, sqrt, isnan
+from math import ceil, floor, isnan, sqrt
 
 import wx
 from PIL import Image
@@ -29,12 +29,12 @@ from meerk40t.svgelements import (
     Path,
     QuadraticBezier,
 )
-from ..core.units import PX_PER_INCH
 
+from ..core.units import PX_PER_INCH
 from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
+from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
-from .fonts import wxfont_to_svg
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -695,7 +695,9 @@ class LaserRender:
         #     node._bounds_dirty = True
         # print (f"node claims: {node.width} x {node.height} (+ offset of: {node.offset_x} x {node.offset_y})\ngc claims: {f_width} x {f_height}")
         if node._bounds_dirty:
-            f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+            f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(
+                text
+            )
         else:
             f_height = node.height
             f_width = node.width
@@ -825,10 +827,10 @@ class LaserRender:
     def validate_text_nodes(self, nodes, translate_variables):
         for item in nodes:
             if item.type == "elem text" and (
-                item.width is None or
-                item.height is None or
-                item._bounds_dirty or
-                item.bounds_with_variables_translated != translate_variables
+                item.width is None
+                or item.height is None
+                or item._bounds_dirty
+                or item.bounds_with_variables_translated != translate_variables
             ):
                 # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
                 self.measure_text(item)

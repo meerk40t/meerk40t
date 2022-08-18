@@ -1,8 +1,9 @@
-import wx
 import platform
-from meerk40t.gui.wxutils import ScrolledPanel
+
+import wx
 
 from meerk40t.gui.fonts import wxfont_to_svg
+from meerk40t.gui.wxutils import ScrolledPanel
 
 from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
@@ -434,7 +435,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
         self.combo_font.SetValue(self.node.wxfont.GetFaceName())
 
-
     def refresh(self):
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
@@ -559,7 +559,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.node.modified()
         self.update_label()
         self.refresh()
-
 
     def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:

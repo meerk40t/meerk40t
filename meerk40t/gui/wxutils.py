@@ -143,9 +143,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         def specific(event=None):
             prompts = f.user_prompt
             for prompt in prompts:
-                response = elements.kernel.prompt(
-                    prompt["type"], prompt["prompt"]
-                )
+                response = elements.kernel.prompt(prompt["type"], prompt["prompt"])
                 if response is None:
                     return
                 func_dict[prompt["attr"]] = response
@@ -389,11 +387,12 @@ class ScrolledPanel(SP):
     """
     We sometimes delete things fast enough that they call _SetupAfter when dead and crash.
     """
+
     def _SetupAfter(self, scrollToTop):
         try:
             self.SetVirtualSize(self.GetBestVirtualSize())
             if scrollToTop:
-                self.Scroll(0,0)
+                self.Scroll(0, 0)
         except RuntimeError:
             pass
 

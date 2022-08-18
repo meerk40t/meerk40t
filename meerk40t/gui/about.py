@@ -162,8 +162,8 @@ class InformationPanel(wx.Panel):
         # Fill the content...
         import os
         import platform
-        import sys
         import socket
+        import sys
 
         info = "wx"
         try:

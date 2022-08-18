@@ -1,8 +1,7 @@
 import unittest
-
-from meerk40t.core.node.node import Node
 from test import bootstrap
 
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.svgelements import Circle, Rect
 

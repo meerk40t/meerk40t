@@ -1221,6 +1221,7 @@ class MeerK40t(MWindow):
             if message is None:
                 message = _("Something requires your attention")
             from wx.adv import NotificationMessage
+
             msg = NotificationMessage(title="MeerK40t", message=message)
             msg.Show()
 
@@ -1244,6 +1245,7 @@ class MeerK40t(MWindow):
                 message = _("Spooling Interrupted.")
 
             import threading
+
             lock = threading.Lock()
             lock.acquire(True)
 
@@ -1311,7 +1313,9 @@ class MeerK40t(MWindow):
             ) as fileDialog:
                 if fileDialog.ShowModal() == wx.ID_CANCEL:
                     return
-                description, extension, mimetype, version = types[fileDialog.GetFilterIndex()]
+                description, extension, mimetype, version = types[
+                    fileDialog.GetFilterIndex()
+                ]
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(f".{extension}"):
                     pathname += f".{extension}"
@@ -1978,7 +1982,9 @@ class MeerK40t(MWindow):
             DRAW_MODE_SELECTION,
         )
         create_draw_mode_item(
-            _("Hide Regmarks"), _("Don't show elements under the regmark branch"), DRAW_MODE_REGMARKS
+            _("Hide Regmarks"),
+            _("Don't show elements under the regmark branch"),
+            DRAW_MODE_REGMARKS,
         )
 
         # TODO This menu does not clear existing icons or create icons when it is changed

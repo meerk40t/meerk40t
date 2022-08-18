@@ -4,7 +4,7 @@ from test import bootstrap
 
 from PIL import Image, ImageDraw
 
-from meerk40t.svgelements import SVGImage, Matrix
+from meerk40t.svgelements import Matrix, SVGImage
 
 
 class TestRasterWizard(unittest.TestCase):

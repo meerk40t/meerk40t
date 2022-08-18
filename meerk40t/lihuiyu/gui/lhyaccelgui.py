@@ -1,10 +1,10 @@
 # -*- coding: ISO-8859-1 -*-
 
 import wx
-from meerk40t.gui.wxutils import ScrolledPanel
 
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import ScrolledPanel
 
 _ = wx.GetTranslation
 

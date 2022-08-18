@@ -144,7 +144,9 @@ class Wordlist:
                 index_string = key[pos + 1 :]
                 key = key[:pos]
 
-                if not index_string.startswith("+") and not index_string.startswith("-"):
+                if not index_string.startswith("+") and not index_string.startswith(
+                    "-"
+                ):
                     # We have a #<index> value without + or -, specific index value from 0
                     reset = True
                 try:

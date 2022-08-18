@@ -395,7 +395,13 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "MTEXT":
             insert = entity.dxf.insert
-            node = context_node.add(text=entity.text, x=insert[0], y=insert[1], stroke_scaled=False, type="elem text")
+            node = context_node.add(
+                text=entity.text,
+                x=insert[0],
+                y=insert[1],
+                stroke_scaled=False,
+                type="elem text",
+            )
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.unit_height)
 
@@ -404,7 +410,13 @@ class DXFProcessor:
             return
         elif entity.dxftype() == "TEXT":
             insert = entity.dxf.insert
-            node = context_node.add(text=entity.dxf.text, x=insert[0], y=insert[1], stroke_scaled=False, type="elem text")
+            node = context_node.add(
+                text=entity.dxf.text,
+                x=insert[0],
+                y=insert[1],
+                stroke_scaled=False,
+                type="elem text",
+            )
             node.matrix.post_scale(self.scale, -self.scale)
             node.matrix.post_translate_y(self.elements.device.unit_height)
             self.check_for_attributes(node, entity)

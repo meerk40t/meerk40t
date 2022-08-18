@@ -1,9 +1,9 @@
 import time
 from threading import Lock
 
+from meerk40t.core.cutcode import CutCode
 from meerk40t.core.units import Length
 from meerk40t.kernel import CommandSyntaxError
-from meerk40t.core.cutcode import CutCode
 
 
 def plugin(kernel, lifecycle):
