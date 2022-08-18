@@ -19,7 +19,7 @@ class NumpathNode(Node, Parameters):
         stroke_width=None,
         linecap=Linecap.CAP_BUTT,
         linejoin=Linejoin.JOIN_MITER,
-        fillrule=Fillrule.FILLRULE_NONZERO,
+        fillrule=Fillrule.FILLRULE_EVENODD,
         *args,
         **kwargs,
     ):
