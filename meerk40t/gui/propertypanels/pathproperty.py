@@ -6,6 +6,7 @@ from ...svgelements import Color
 from ..icons import icons8_vector_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
+from ...core.units import Length
 
 _ = wx.GetTranslation
 
@@ -55,6 +56,11 @@ class PathPropertyPanel(ScrolledPanel):
         self.button_fill_000.name = "fill #000"
         self.color_info_stroke = wx.StaticText(self, wx.ID_ANY, "")
         self.color_info_fill = wx.StaticText(self, wx.ID_ANY, "")
+        # Property display
+        self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.lbl_info_area   = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.btn_info_get = wx.Button(self, wx.ID_ANY, _("Retrieve"))
 
         self.__set_properties()
         self.__do_layout()
@@ -80,6 +86,8 @@ class PathPropertyPanel(ScrolledPanel):
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
         self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
+        self.Bind(wx.EVT_BUTTON, self.on_btn_get_infos, self.btn_info_get)
+
     @staticmethod
     def accepts(node):
         if node.type == "elem text":
@@ -87,6 +95,37 @@ class PathPropertyPanel(ScrolledPanel):
         elif node.type.startswith("elem"):
             return True
         return False
+
+    def on_btn_get_infos(self, event):
+        def closed_path(path):
+            p1 = path.first_point
+            p2 = path.current_point
+            print (p1, p2)
+            print (type(p1).__name__, type(p2).__name__)
+            return p1 == p2
+
+        elements = self.context.elements
+        _mm = float(Length("1mm"))
+        total_area = 0
+        total_length = 0
+
+        this_area, this_length = elements.get_information(self.node, density=50)
+        total_area += this_area
+        total_length += this_length
+
+        total_area = total_area / (_mm * _mm)
+        total_length = total_length / _mm
+        try:
+            testpath = self.node.as_path()
+            points = len(testpath.segments())
+            if closed_path(testpath):
+                points = max(0, points - 1)
+        except AttributeError:
+            points = 0
+
+        self.lbl_info_area.SetValue(f"{total_area:.1f} mm²")
+        self.lbl_info_length.SetValue(f"{total_length:.1f} mm")
+        self.lbl_info_points.SetValue(f"{points:d}")
 
     def set_widgets(self, node):
         if node is not None:
@@ -138,6 +177,9 @@ class PathPropertyPanel(ScrolledPanel):
                 s_fill = s
         self.color_info_stroke.SetLabel(s_stroke)
         self.color_info_fill.SetLabel(s_fill)
+        self.lbl_info_area.SetValue("")
+        self.lbl_info_length.SetValue("")
+        self.lbl_info_points.SetValue("")
 
         self.Refresh()
 
@@ -176,12 +218,12 @@ class PathPropertyPanel(ScrolledPanel):
 
     def __do_layout(self):
         # begin wxGlade: PathProperty.__do_layout
-        sizer_8 = wx.BoxSizer(wx.VERTICAL)
-        sizer_6 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_9 = wx.StaticBoxSizer(
+        sizer_v_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_h_colors = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_v_col_fill = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL
         )
-        sizer_7 = wx.StaticBoxSizer(
+        sizer_v_col_stroke = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Stroke Color")), wx.VERTICAL
         )
         sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
@@ -195,30 +237,55 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
         sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
         sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
-        sizer_8.Add(sizer_id_label, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_0F0, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_00F, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_F0F, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_0FF, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_FF0, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.button_stroke_000, 0, wx.EXPAND, 0)
-        sizer_7.Add(self.color_info_stroke, 0, wx.EXPAND, 0)
-        sizer_6.Add(sizer_7, 1, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_none, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_F00, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_0F0, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_00F, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_F0F, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_0FF, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_FF0, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.button_fill_000, 0, wx.EXPAND, 0)
-        sizer_9.Add(self.color_info_fill, 0, wx.EXPAND, 0)
 
-        sizer_6.Add(sizer_9, 1, wx.EXPAND, 0)
-        sizer_8.Add(sizer_6, 1, wx.EXPAND, 0)
-        self.SetSizer(sizer_8)
+        sizer_v_col_stroke.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.button_stroke_0F0, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.button_stroke_00F, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.button_stroke_F0F, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.button_stroke_0FF, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.button_stroke_FF0, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.button_stroke_000, 0, wx.EXPAND, 0)
+        sizer_v_col_stroke.Add(self.color_info_stroke, 0, wx.EXPAND, 0)
+
+        sizer_v_col_fill.Add(self.button_fill_none, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.button_fill_F00, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.button_fill_0F0, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.button_fill_00F, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.button_fill_F0F, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.button_fill_0FF, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.button_fill_FF0, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.button_fill_000, 0, wx.EXPAND, 0)
+        sizer_v_col_fill.Add(self.color_info_fill, 0, wx.EXPAND, 0)
+
+        sizer_h_colors.Add(sizer_v_col_stroke, 1, wx.EXPAND, 0)
+        sizer_h_colors.Add(sizer_v_col_fill, 1, wx.EXPAND, 0)
+
+        sizer_h_infos = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_info1 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Points")), wx.VERTICAL
+        )
+        sizer_info1.Add(self.lbl_info_points, 1, wx.EXPAND, 0)
+
+        sizer_info2 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Length")), wx.VERTICAL
+        )
+        sizer_info2.Add(self.lbl_info_length, 1, wx.EXPAND, 0)
+
+        sizer_info3 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Area")), wx.VERTICAL
+        )
+        sizer_info3.Add(self.lbl_info_area, 1, wx.EXPAND, 0)
+
+        sizer_h_infos.Add(sizer_info1, 1, wx.EXPAND, 0)
+        sizer_h_infos.Add(sizer_info2, 1, wx.EXPAND, 0)
+        sizer_h_infos.Add(sizer_info3, 1, wx.EXPAND, 0)
+        sizer_h_infos.Add(self.btn_info_get, 0, wx.EXPAND, 0)
+
+        sizer_v_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
+        sizer_v_main.Add(sizer_h_colors, 1, wx.EXPAND, 0)
+        sizer_v_main.Add(sizer_h_infos, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_v_main)
         self.Layout()
         self.Centre()
         # end wxGlade
