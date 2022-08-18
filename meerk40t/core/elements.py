@@ -3674,7 +3674,6 @@ class Elemental(Service):
             data.append(poly_path)
             return "elements", data
 
-        @self.console_option("step", "s", type=float)
         @self.console_option("dpi", "d", type=float)
         @self.console_command(
             "render",
@@ -3683,7 +3682,7 @@ class Elemental(Service):
             output_type="image",
         )
         def make_raster_image(
-            command, channel, _, step=None, dpi=None, data=None, **kwargs
+            command, channel, _, dpi=None, data=None, **kwargs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
