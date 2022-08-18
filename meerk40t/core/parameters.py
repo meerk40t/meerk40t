@@ -45,8 +45,6 @@ BOOL_PARAMETERS = (
     "raster_swing",
     "advanced",
     "stopop",
-    "raster_alt",
-    "force_twitchless",
 )
 
 STRING_PARAMETERS = (
@@ -599,23 +597,3 @@ class Parameters:
     @output_message.setter
     def output_message(self, value):
         self.settings["output_message"] = value
-
-    #####################
-    # MISC PROPERTIES
-    #####################
-
-    @property
-    def raster_alt(self):
-        return self.settings.get("raster_alt", False)
-
-    @raster_alt.setter
-    def raster_alt(self, value):
-        self.settings["raster_alt"] = value
-
-    @property
-    def force_twitchless(self):
-        return self.settings.get("force_twitchless", False)
-
-    @force_twitchless.setter
-    def force_twitchless(self, value):
-        self.settings["force_twitchless"] = value
