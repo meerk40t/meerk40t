@@ -874,7 +874,7 @@ class LaserRender:
         else:
             _nodes = nodes
 
-        # if its a raster we will always translate text variables...
+        # if it's a raster we will always translate text variables...
         variable_translation = True
         nodecopy = [e for e in _nodes]
         self.validate_text_nodes(nodecopy, variable_translation)

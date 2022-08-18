@@ -3681,9 +3681,7 @@ class Elemental(Service):
             input_type=(None, "elements"),
             output_type="image",
         )
-        def make_raster_image(
-            command, channel, _, dpi=500.0, data=None, **kwargs
-        ):
+        def render_elements(command, channel, _, dpi=500.0, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             reverse = self.classify_reverse
@@ -3693,6 +3691,7 @@ class Elemental(Service):
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
+
             bounds = Node.union_bounds(data)
             if bounds is None:
                 return
@@ -3703,22 +3702,22 @@ class Elemental(Service):
             width = xmax - xmin
             height = ymax - ymin
 
-            ww = width / UNITS_PER_INCH * dpi
-            hh = height / UNITS_PER_INCH * dpi
             step_x, step_y = self.device.dpi_to_steps(dpi)
-            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
 
-            make_raster = self.lookup("render-op/make_raster")
+            new_width = width * (dpi / UNITS_PER_INCH)
+            new_height = height * (dpi / UNITS_PER_INCH)
+
             image = make_raster(
                 data,
                 bounds=bounds,
-                width=ww,
-                height=hh,
-                step_x=step_x,
-                step_y=step_y,
+                width=new_width,
+                height=new_height,
+                step_x=abs(step_x),
+                step_y=abs(step_y),
             )
-            matrix = Matrix(self.device.device_to_scene_matrix())
-            matrix.post_scale(step_x, step_y)
+            # matrix = Matrix(self.device.device_to_scene_matrix())
+            matrix = Matrix()
+            matrix.post_scale(width / new_width,  height/new_height)
             matrix.post_translate(bounds[0], bounds[1])
 
             image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
@@ -4148,13 +4147,17 @@ class Elemental(Service):
                             channel(
                                 _(
                                     "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
-                                ).format(index=i, stroke_width=e.stroke_width, name=name)
+                                ).format(
+                                    index=i, stroke_width=e.stroke_width, name=name
+                                )
                             )
                         else:
                             channel(
                                 _(
                                     "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
-                                ).format(index=i, stroke_width=e.stroke_width, name=name)
+                                ).format(
+                                    index=i, stroke_width=e.stroke_width, name=name
+                                )
                             )
                     i += 1
                 channel("----------")
