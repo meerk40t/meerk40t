@@ -310,8 +310,8 @@ class ViewPort:
             if self._matrix is None:
                 self.calculate_matrices()
             matrix = self._matrix
-        oneinch_x = matrix.transform_vector([unit_x, 0])[0]
-        oneinch_y = matrix.transform_vector([0, unit_y])[1]
+        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+        oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
         step_x = float(oneinch_x / dpi)
         step_y = float(oneinch_y / dpi)
         return step_x, step_y
