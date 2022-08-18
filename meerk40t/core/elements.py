@@ -3712,8 +3712,7 @@ class Elemental(Service):
                 width=new_width,
                 height=new_height,
             )
-            matrix = Matrix()
-            matrix.post_scale(width / new_width, height / new_height)
+            matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
 
             image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
@@ -7000,28 +6999,24 @@ class Elemental(Service):
                 height = bounds[3] - bounds[1]
             except TypeError:
                 raise CommandSyntaxError
-
-            ww = width / UNITS_PER_INCH * node.dpi
-            hh = height / UNITS_PER_INCH * node.dpi
-            step_x, step_y = self.device.dpi_to_steps(node.dpi)
-            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
-
             make_raster = self.lookup("render-op/make_raster")
+            if not make_raster:
+                raise ValueError("No renderer is registered to perform render.")
+
+            dots_per_units = node.dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+
             image = make_raster(
                 data,
                 bounds=bounds,
-                width=ww,
-                height=hh,
-                step_x=step_x,
-                step_y=step_y,
+                width=new_width,
+                height=new_height,
             )
-            matrix = Matrix(self.device.device_to_scene_matrix())
-            # The matrix is completely off for balor...
-            matrix.post_scale(step_x, step_y)
+            matrix = Matrix.scale(new_width / width, new_height / height)
             matrix.post_translate(bounds[0], bounds[1])
-            image_node = ImageNode(
-                image=image, matrix=matrix, step_x=step_x, step_y=step_y
-            )
+
+            image_node = ImageNode(image=image, matrix=matrix, dpi=node.dpi)
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
             self.signal("refresh_scene", "Scene")
