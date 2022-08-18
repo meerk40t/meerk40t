@@ -111,9 +111,7 @@ def svgfont_to_wx(textnode):
     font_size = textnode.font_size * factor
     if font_size < 1:
         if font_size > 0:
-            textx = textnode.x
-            texty = textnode.y
-            textnode.matrix.pre_scale(font_size, font_size, textx, texty)
+            textnode.matrix.pre_scale(font_size, font_size)
             font_size = 1
             textnode.font_size = font_size  # No zero sized fonts.
     try:
