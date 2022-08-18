@@ -315,7 +315,7 @@ class RasterOpNode(Node, Parameters):
                 else:
                     img_mx.post_translate(0, bounds[3])
 
-            except AssertionError:
+            except (AssertionError, MemoryError):
                 raise CutPlanningFailedError("Raster too large.")
             image = image.convert("L")
             image_node = ImageNode(image=image, matrix=img_mx)
