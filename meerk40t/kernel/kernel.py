@@ -1896,10 +1896,13 @@ class Kernel(Settings):
                             del listeners[i]
                             removed = True
                             break
-                    if not removed and ct > 0:
-                        # print ("Was trying to remove: %s, %s for signal %s" % (str(remove_funct), str(remove_lso), signal))
-                        # print ("But wasn't present in : %s" % str(listeners))
-                        pass
+                    if not removed:
+                        # This occurs if we attempt to remove a listener which does not exist.
+                        # This is not a useless error but rather a symptom of another bug.
+                        # This should not occur, if it does, something is desynced attempting
+                        # to double remove. Which could also mean listeners are stuck listening
+                        # to places they should not which can cause other errors.
+                        print("Error removing: %s  %s" % (str(listeners), signal))
 
         # Process signals.
         signal_channel = self.channel("signals")
