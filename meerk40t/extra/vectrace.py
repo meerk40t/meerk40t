@@ -1,4 +1,4 @@
-from meerk40t.svgelements import Matrix, Path, Polygon, Color
+from meerk40t.svgelements import Matrix, Path, Polygon
 
 
 def plugin(kernel, lifecycle=None):
@@ -13,41 +13,7 @@ def plugin(kernel, lifecycle=None):
         )
         def vectrace(data, **kwargs):
             elements = kernel.root.elements
-            pref_fill = None
-            pref_stroke = None
-            saw_stroke = False
-            saw_fill = False
-            # Establish preferred stroke / fill colors
-            for node in data:
-                if hasattr(node, "stroke"):
-                    if node.stroke is None or node.stroke=="None":
-                        ns = None
-                    else:
-                        ns = node.stroke
-                    if ns is not None:
-                        if ns != pref_stroke and not saw_stroke:
-                            saw_stroke = True
-                            pref_stroke = ns
-                        elif ns != pref_stroke and pref_stroke is not None:
-                            # We had something different --> will default to blue
-                            pref_stroke = Color("blue")
-                if hasattr(node, "fill"):
-                    if node.fill is None or node.fill=="None":
-                        nf = None
-                    else:
-                        nf = node.fill
-                    if nf is not None:
-                        if nf != pref_fill and not saw_fill:
-                            saw_fill = True
-                            pref_fill = nf
-                        elif nf != pref_fill and pref_fill is not None:
-                            # We had something different --> will default to black
-                            pref_fill = Color("black")
-            if pref_stroke is None:
-                # Default...
-                pref_stroke = Color("blue")
-
-            path = Path(fill=pref_fill, stroke=pref_stroke)
+            path = Path(fill="black", stroke="blue")
             paths = []
             for node in data:
                 matrix = node.matrix
