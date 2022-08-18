@@ -34,6 +34,7 @@ from ..core.units import PX_PER_INCH
 from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
+from .fonts import wxfont_to_svg
 
 DRAW_MODE_FILLS = 0x000001
 DRAW_MODE_GUIDES = 0x000002
@@ -97,6 +98,10 @@ def svgfont_to_wx(textnode):
         wxfont.SetWeight(
             wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
         )  # Gets numeric weight.
+    # if the font_list is empty, then we do have a not properly intiialised textnode,
+    # that needs to be resolved...
+    if textnode.font_family is None:
+        wxfont_to_svg(textnode)
 
     svg_to_wx_family(textnode, wxfont)
     svg_to_wx_fontstyle(textnode, wxfont)
@@ -121,6 +126,10 @@ def svgfont_to_wx(textnode):
 
 def svg_to_wx_family(textnode, wxfont):
     font_list = textnode.font_list
+    # if font_list is None:
+    #     print("Fontlist is empty...")
+    # else:
+    #     print ("Fontlist was: ", font_list)
     for ff in font_list:
         if ff == "fantasy":
             family = wx.FONTFAMILY_DECORATIVE
@@ -201,7 +210,6 @@ class LaserRender:
         """
         if draw_mode is None:
             draw_mode = self.context.draw_mode
-
         if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
             if draw_mode & DRAW_MODE_PATH:  # Do not draw paths.
                 nodes = [e for e in nodes if e.type != "elem path"]
@@ -211,8 +219,12 @@ class LaserRender:
                 nodes = [e for e in nodes if e.type != "elem text"]
             if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
                 nodes = [e for e in nodes if e._parent.type != "branch reg"]
+        _nodes = list(nodes)
+        variable_translation = draw_mode & DRAW_MODE_VARIABLES
+        nodecopy = [e for e in _nodes]
+        self.validate_text_nodes(nodecopy, variable_translation)
 
-        for node in nodes:
+        for node in _nodes:
             if node.type == "reference":
                 self.render(
                     [node.node],
@@ -315,7 +327,7 @@ class LaserRender:
                         c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
                     )
                 else:
-                    print(seg_type)
+                    print(f"Unknown seg_type: {seg_type}")
             if subpath.first_point == end:
                 p.CloseSubpath()
 
@@ -667,6 +679,7 @@ class LaserRender:
             gc.SetFont(font, wx.BLACK)
         else:
             gc.SetFont(font, as_wx_color(node.fill))
+
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.mywordlist.translate(text)
@@ -678,36 +691,23 @@ class LaserRender:
                 text = text.upper()
             if ttf == "lowercase":
                 text = text.lower()
-        # There's a fundamental flaw in wxPython to get the right fontsize
-        # Both GetTextExtent and GetFullTextextent provide the fontmetric-size
-        # as result for the font-height and don't take the real glyphs into account
-        # That means that ".", "a", "g" and "T" all have the same height...
-        # Consequently, the size is always off... This can be somewhat compensated by taking
-        # the descent from the font-metric into account.
-        # A 'real' height routine would most probably need to draw the string on an
-        # empty canvas and find the first and last dots on a line...
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
-        if node.width != f_width or node.height != f_height:
-            node._bounds_dirty = True
-        node.width = f_width
-        node.height = f_height
-
-        # That stuff drives my crazy...
-        # If you have characters with an underline, like p, y, g, j, q then you need to subtract 1x descent otherwise 2x
-        # has_descent = any(
-        #     substring in text for substring in ("g", "j", "p", "q", "y", ",", ";")
-        # )
-        # x = f_external_leading
-        # f_height -= f_descent
-        # if has_descent:
-        #     y -= f_descent
-
+        # if node.width != f_width or node.height != f_height:
+        #     node._bounds_dirty = True
+        # print (f"node claims: {node.width} x {node.height} (+ offset of: {node.offset_x} x {node.offset_y})\ngc claims: {f_width} x {f_height}")
+        if node._bounds_dirty:
+            f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        else:
+            f_height = node.height
+            f_width = node.width
+        # We do have a compensation factor to make sure we are drawing really at the edge..
         dx = 0
         dy = -f_height
         if node.anchor == "middle":
             dx -= f_width / 2
         elif node.anchor == "end":
             dx -= f_width
+        dx += node.offset_x
+        dy += node.offset_y
         gc.DrawText(text, dx, dy)
         gc.PopState()
 
@@ -763,11 +763,23 @@ class LaserRender:
             gc.PopState()
 
     def measure_text(self, node):
-        bmp = wx.Bitmap(1, 1, 32)
+        # A 'real' height routine needs to draw the string on an
+        # empty canvas and find the first and last dots on a line...
+        # We are creating a temporary bitmap and paint on it...
+        bmp = wx.Bitmap(1000, 500, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
+        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-        text = self.context.elements.mywordlist.translate(node.text)
+        draw_mode = self.context.draw_mode
+        if draw_mode & DRAW_MODE_VARIABLES:
+            # Only if flag show the translated values
+            text = self.context.elements.mywordlist.translate(node.text)
+            node.bounds_with_variables_translated = True
+        else:
+            text = node.text
+            node.bounds_with_variables_translated = False
         if node.texttransform:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
@@ -778,12 +790,48 @@ class LaserRender:
                 text = text.lower()
         svgfont_to_wx(node)
         font = node.wxfont
-        gc.SetFont(font, wx.BLACK)
+        gc.SetFont(font, wx.WHITE)
+        gc.DrawText(text, 0, 0)
+        img = bmp.ConvertToImage()
+        buf = img.GetData()
+        image = Image.frombuffer(
+            "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+        )
+        # As a fallback, calculate these
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        offs_x = offs_y = 0
+        # print (f"textextent, Width={f_width}, Height={f_height}")
+        font_bb = image.getbbox()
+        if font_bb is not None:
+            # print(f"Pillow provides: {font_bb}")
+            f_width = font_bb[2] - font_bb[0]
+            f_height = font_bb[3] - font_bb[1]
+            offs_x = -1 * font_bb[0]
+            offs_y = -1 * font_bb[1]
+            # print (f"pillow, Width={f_width}, Height={f_height}")
+            # image.save(f"dbg_{text}.png")
+
         if node.width != f_width or node.height != f_height:
             node._bounds_dirty = True
         node.width = f_width
         node.height = f_height
+        node.offset_x = offs_x
+        node.offset_y = offs_y
+        __ = node.bounds
+        dc.SelectObject(wx.NullBitmap)
+        gc.Destroy()
+        del dc
+
+    def validate_text_nodes(self, nodes, translate_variables):
+        for item in nodes:
+            if item.type == "elem text" and (
+                item.width is None or
+                item.height is None or
+                item._bounds_dirty or
+                item.bounds_with_variables_translated != translate_variables
+            ):
+                # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
+                self.measure_text(item)
 
     def make_raster(
         self,
@@ -825,10 +873,11 @@ class LaserRender:
             _nodes = [nodes]
         else:
             _nodes = nodes
-        for item in _nodes:
-            if item.type == "elem text" and (item.width is None or item.height is None):
-                # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
-                self.measure_text(item)
+
+        # if its a raster we will always translate text variables...
+        variable_translation = True
+        nodecopy = [e for e in _nodes]
+        self.validate_text_nodes(nodecopy, variable_translation)
 
         for item in _nodes:
             bb = item.bounds

@@ -36,7 +36,7 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
-from .units import UNITS_PER_PIXEL, Length
+from .units import UNITS_PER_PIXEL, UNITS_PER_INCH, Length
 from .wordlist import Wordlist
 
 
@@ -3674,14 +3674,15 @@ class Elemental(Service):
             data.append(poly_path)
             return "elements", data
 
-        @self.console_option("step", "s", default=2.0, type=float)
+        @self.console_option("step", "s", type=float)
+        @self.console_option("dpi", "d", type=float)
         @self.console_command(
             "render",
             help=_("Convert given elements to a raster image"),
             input_type=(None, "elements"),
             output_type="image",
         )
-        def make_raster_image(command, channel, _, step=2.0, data=None, **kwargs):
+        def make_raster_image(command, channel, _, step=None, dpi=None, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             reverse = self.classify_reverse
@@ -3694,24 +3695,46 @@ class Elemental(Service):
             bounds = Node.union_bounds(data)
             if bounds is None:
                 return
-            if step <= 0:
-                step = 1
             xmin, ymin, xmax, ymax = bounds
             if isinf(xmin):
                 channel(_("No bounds for selected elements."))
                 return
+            width = (xmax - xmin)
+            height = (ymax - ymin)
+
+            if dpi is None:
+                dpi = 500
+            if step is None:
+                step = 2
+
+            if step <= 0:
+                step = 1
+            if dpi <= 0:
+                dpi = 500
+
+            ww = width / UNITS_PER_INCH * dpi
+            hh = height / UNITS_PER_INCH * dpi
+            # step_x, step_y = self.device.dpi_to_steps(dpi)
+            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
+
+            make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
-                [n.node for n in data],
-                bounds,
+                data,
+                bounds=bounds,
+                width=ww,
+                height=hh,
                 step_x=step,
                 step_y=step,
             )
-
-            matrix = Matrix()
+            matrix = Matrix(self.device.device_to_scene_matrix())
+            # The matrix is completely off for balor...
             matrix.post_scale(step, step)
-            matrix.post_translate(xmin, ymin)
+            matrix.post_translate(bounds[0], bounds[1])
+
             image_node = ImageNode(image=image, matrix=matrix, step_x=step, step_y=step)
             self.elem_branch.add_node(image_node)
+            self.signal("refresh_scene", "Scene")
+
             return "image", [image_node]
 
         # ==========
@@ -6969,28 +6992,40 @@ class Elemental(Service):
             help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwargs):
-            bounds = node.bounds
-            if bounds is None:
+            data = list(node.flat(types=elem_ref_nodes))
+            if len(data) == 0:
                 return
-            xmin, ymin, xmax, ymax = bounds
-            xmin, ymin = self.device.scene_to_device_position(xmin, ymin)
-            xmax, ymax = self.device.scene_to_device_position(xmax, ymax)
+            try:
+                bounds = Node.union_bounds(data)
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except TypeError:
+                raise CommandSyntaxError
+
+            ww = width / UNITS_PER_INCH * node.dpi
+            hh = height / UNITS_PER_INCH * node.dpi
             step_x, step_y = self.device.dpi_to_steps(node.dpi)
+            # I am not sure whether the negative steps actually make sense in this context, but we leave it...
+
             make_raster = self.lookup("render-op/make_raster")
             image = make_raster(
-                list(node.flat(types=elem_ref_nodes)),
-                (xmin, ymin, xmax, ymax),
+                data,
+                bounds=bounds,
+                width=ww,
+                height=hh,
                 step_x=step_x,
                 step_y=step_y,
             )
             matrix = Matrix(self.device.device_to_scene_matrix())
+            # The matrix is completely off for balor...
             matrix.post_scale(step_x, step_y)
-            matrix.post_translate(xmin, ymin)
+            matrix.post_translate(bounds[0], bounds[1])
             image_node = ImageNode(
                 image=image, matrix=matrix, step_x=step_x, step_y=step_y
             )
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
+            self.signal("refresh_scene", "Scene")
 
         def add_after_index(node=None):
             try:
@@ -9214,16 +9249,17 @@ class Elemental(Service):
     #         for op in default_raster_ops:
     #             op.add_reference(element.node, pos=element_pos)
 
-    @staticmethod
-    def element_label_id(element, short=True):
-        if element.node is None:
-            if short:
-                return element.id
-            return f"{element.id}: {str(element)}"
-        elif ":" in element.node.label and short:
-            return element.node.label.split(":", 1)[0]
-        else:
-            return element.node.label
+    # No longer used and still uses old element.node syntax
+    # @staticmethod
+    # def element_label_id(element, short=True):
+    #     if element.node is None:
+    #         if short:
+    #             return element.id
+    #         return f"{element.id}: {str(element)}"
+    #     elif ":" in element.node.label and short:
+    #         return element.node.label.split(":", 1)[0]
+    #     else:
+    #         return element.node.label
 
     @staticmethod
     def bbox_overlap(b1, b2):

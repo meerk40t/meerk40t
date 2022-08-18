@@ -2,7 +2,7 @@ import wx
 import platform
 
 from meerk40t.gui.fonts import wxfont_to_svg
-from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.laserrender import swizzlecolor, LaserRender
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Color, Matrix
@@ -501,8 +501,10 @@ class TextTool(ToolWidget):
 
                 # Translate wxFont to SVG font....
                 node.wxfont = dlg.result_font
-                dlg.store_font_history()
                 wxfont_to_svg(node)
+                renderer = LaserRender(self.scene.context)
+                renderer.measure_text(node)
+                dlg.store_font_history()
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)

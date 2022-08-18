@@ -1063,13 +1063,13 @@ class ShadowTree:
                     # print ("Yes: ", checker, maxspeed_minpower)
                     danger = False
                     if hasattr(node, "power"):
-                        value = node.power
+                        value = float(node.power)
                         if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
                             danger = True
                         if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
                             danger = True
                     if hasattr(node, "speed"):
-                        value = node.speed
+                        value = float(node.speed)
                         if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
                             danger = True
                         if maxspeed_minpower[6] and value > maxspeed_minpower[7]:

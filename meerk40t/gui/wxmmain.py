@@ -2629,11 +2629,18 @@ class MeerK40t(MWindow):
 
     def on_click_close(self, event=None):
         try:
-            window = self.context.app.GetTopWindow().FindFocus().GetTopLevelParent()
-            if window is self:
+            # We should just rely on the try except, but let's be thorough
+            topw = self.context.app.GetTopWindow()
+            if topw is None:
+                return
+            focw = topw.FindFocus()
+            if focw is None:
+                return
+            window = focw.GetTopLevelParent()
+            if window is self or window is None:
                 return
             window.Close(False)
-        except RuntimeError:
+        except (RuntimeError, AttributeError):
             pass
 
     def on_click_exit(self, event=None):  # wxGlade: MeerK40t.<event_handler>
@@ -2702,6 +2709,7 @@ class MeerK40t(MWindow):
         def toggle(event=None):
             self.context.draw_mode ^= bits
             self.context.signal("draw_mode", self.context.draw_mode)
+            self.context.elements.modified()
             self.context.signal("refresh_scene", "Scene")
 
         return toggle
