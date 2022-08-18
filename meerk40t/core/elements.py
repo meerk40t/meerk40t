@@ -3703,9 +3703,9 @@ class Elemental(Service):
             height = ymax - ymin
 
             step_x, step_y = self.device.dpi_to_steps(dpi)
-
-            new_width = width * (dpi / UNITS_PER_INCH)
-            new_height = height * (dpi / UNITS_PER_INCH)
+            dots_per_units = dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
 
             image = make_raster(
                 data,
