@@ -4136,18 +4136,26 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.stroke_scaled:
+
+                    if not hasattr(e, "stroke_scaled"):
                         channel(
                             _(
                                 "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
-                            ).format(index=i, stroke_width=e.stroke_width, name=name)
+                            ).format(index=i, stroke_width="None", name=name)
                         )
                     else:
-                        channel(
-                            _(
-                                "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
-                            ).format(index=i, stroke_width=e.stroke_width, name=name)
-                        )
+                        if e.stroke_scaled:
+                            channel(
+                                _(
+                                    "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
+                                ).format(index=i, stroke_width=e.stroke_width, name=name)
+                            )
+                        else:
+                            channel(
+                                _(
+                                    "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
+                                ).format(index=i, stroke_width=e.stroke_width, name=name)
+                            )
                     i += 1
                 channel("----------")
                 return
