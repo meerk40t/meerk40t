@@ -4480,17 +4480,9 @@ class Elemental(Service):
                     if not hasattr(e, "stroke"):
                         pass
                     elif hasattr(e, "stroke") and e.stroke is None or e.stroke == "none":
-                        channel(
-                            _("{index}: stroke = none - {name}").format(
-                                index=i, name=name
-                            )
-                        )
+                        channel(f"{i}: stroke = none - {name}")
                     else:
-                        channel(
-                            _("{index}: stroke = {stroke} - {name}").format(
-                                index=i, stroke=e.stroke.hex, name=name
-                            )
-                        )
+                        channel(f"{i}: stroke = {e.stroke.hex} - {name}")
                     i += 1
                 channel("----------")
                 return
@@ -4956,16 +4948,7 @@ class Elemental(Service):
                     name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel(
-                        _(
-                            "{index}: translate({translate_x}, {translate_y}) - {name}"
-                        ).format(
-                            index=i,
-                            translate_x=node.matrix.value_trans_x(),
-                            translate_y=node.matrix.value_trans_y(),
-                            name=name,
-                        )
-                    )
+                    channel(f"{i}: translate({node.matrix.value_trans_x():.1f}, {node.matrix.value_trans_y():.1f}) - {name}")
                     i += 1
                 channel("----------")
                 return
