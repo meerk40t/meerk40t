@@ -1,5 +1,5 @@
-from meerk40t.svgelements import Group, Move, Path, Point, Polygon
-from meerk40t.tools.pathtools import VectorMontonizer
+from ..core.cutplan import is_inside
+from ..svgelements import Move, Path, Point
 
 
 def plugin(kernel, lifecycle):
@@ -17,83 +17,58 @@ def plugin(kernel, lifecycle):
                 channel(_("Optimizations: cut_inner, travel, cut_travel"))
                 return
             elif args[0] == "cut_inner":
-                for element in elements.elems(emphasized=True):
-                    e = optimize_cut_inside(element)
-                    element.clear()
-                    element += e
-                    element.node.altered()
+                for node in elements.elems(emphasized=True):
+                    try:
+                        path = node.path
+                    except AttributeError:
+                        continue
+                    e = optimize_cut_inside(path)
+                    path.clear()
+                    path += e
+                    node.altered()
             elif args[0] == "travel":
                 channel(
-                    _("Travel Optimizing: %f")
-                    % length_travel(elements.elems(emphasized=True))
+                    _("Travel Optimizing: {length}").format(
+                        length=length_travel(elements.elems(emphasized=True))
+                    )
                 )
-                for element in elements.elems(emphasized=True):
-                    if not isinstance(element, Path):
+                for node in elements.elems(emphasized=True):
+                    try:
+                        path = node.path
+                    except AttributeError:
                         continue
-                    e = optimize_travel(element)
-                    element.clear()
-                    element += e
-                    element.node.altered()
+                    e = optimize_travel(path)
+                    path.clear()
+                    path.path += e
+                    node.altered()
                 channel(
-                    _("Optimized: %f") % length_travel(elements.elems(emphasized=True))
+                    _("Optimized: {length}").format(
+                        length=length_travel(elements.elems(emphasized=True))
+                    )
                 )
             elif args[0] == "cut_travel":
                 channel(
-                    _("Cut Travel Initial: %f")
-                    % length_travel(elements.elems(emphasized=True))
+                    _("Cut Travel Initial: {length}").format(
+                        length=length_travel(elements.elems(emphasized=True))
+                    )
                 )
-                for element in elements.elems(emphasized=True):
-                    e = optimize_general(element)
-                    element.clear()
-                    element += e
-                    element.node.altered()
+                for node in elements.elems(emphasized=True):
+                    try:
+                        path = node.path
+                    except AttributeError:
+                        continue
+                    e = optimize_general(path)
+                    path.clear()
+                    path += e
+                    node.altered()
                 channel(
-                    _("Cut Travel Optimized: %f")
-                    % length_travel(elements.elems(emphasized=True))
+                    _("Cut Travel Optimized: {length}").format(
+                        length=length_travel(elements.elems(emphasized=True))
+                    )
                 )
             else:
                 channel(_("Optimization not found."))
                 return
-
-
-def is_inside(inner_path, outer_path):
-    """
-    Test that path1 is inside path2.
-    :param inner_path: inner path
-    :param outer_path: outer path
-    :return: whether path1 is wholely inside path2.
-    """
-    if not hasattr(inner_path, "bounding_box"):
-        inner_path.bounding_box = Group.union_bbox([inner_path])
-    if not hasattr(outer_path, "bounding_box"):
-        outer_path.bounding_box = Group.union_bbox([outer_path])
-    if outer_path.bounding_box[0] > inner_path.bounding_box[0]:
-        # outer minx > inner minx (is not contained)
-        return False
-    if outer_path.bounding_box[1] > inner_path.bounding_box[1]:
-        # outer miny > inner miny (is not contained)
-        return False
-    if outer_path.bounding_box[2] < inner_path.bounding_box[2]:
-        # outer maxx < inner maxx (is not contained)
-        return False
-    if outer_path.bounding_box[3] < inner_path.bounding_box[3]:
-        # outer maxy < inner maxy (is not contained)
-        return False
-    if outer_path.bounding_box == inner_path.bounding_box:
-        if outer_path == inner_path:  # This is the same object.
-            return False
-    if not hasattr(outer_path, "vm"):
-        outer_path = Polygon(
-            [outer_path.point(i / 100.0, error=1e4) for i in range(101)]
-        )
-        vm = VectorMontonizer()
-        vm.add_cluster(outer_path)
-        outer_path.vm = vm
-    for i in range(101):
-        p = inner_path.point(i / 100.0, error=1e4)
-        if not outer_path.vm.is_point_inside(p.x, p.y):
-            return False
-    return True
 
 
 def optimize_cut_inside(paths):
@@ -161,10 +136,10 @@ def cross(subpaths, j, k):
     """
     Reverses subpaths flipping the individual elements from position j inclusive to
     k exclusive.
-    :param subpaths:
-    :param j:
-    :param k:
-    :return:
+    @param subpaths:
+    @param j:
+    @param k:
+    @return:
     """
     for q in range(j, k):
         subpaths[q].direct_close()

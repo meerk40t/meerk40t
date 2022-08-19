@@ -19,16 +19,8 @@ class BufferViewPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-    def window_open(self):
-        active = self.context.root.active
-        spooler, input_device, output = self.context.registered["device/%s" % active]
-        # pipe = self.context.open("pipe")
-        buffer = None
-        if output is not None:
-            try:
-                buffer = output.viewbuffer()
-            except AttributeError:
-                buffer = None
+    def pane_show(self):
+        buffer = self.context.device.viewbuffer
         if buffer is None:
             buffer = _("Could not find buffer.\n")
 
@@ -59,6 +51,7 @@ class BufferView(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(697, 586, *args, **kwds)
         self.panel = BufferViewPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
@@ -67,3 +60,7 @@ class BufferView(MWindow):
 
     def window_preserve(self):
         return False
+
+    def window_open(self):
+        self.context.close(self.name)
+        self.panel.pane_show()

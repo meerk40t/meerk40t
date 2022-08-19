@@ -15,18 +15,22 @@ def plugin(kernel, lifecycle=None):
             elements = kernel.root.elements
             path = Path(fill="black", stroke="blue")
             paths = []
-            for element in data:
-                matrix = element.transform
-                image = element.image
-                width, height = element.image.size
+            for node in data:
+                matrix = node.matrix
+                image = node.image
+                width, height = node.image.size
                 if image.mode != "L":
                     image = image.convert("L")
                 image = image.point(lambda e: int(e > 127) * 255)
                 for points in _vectrace(image.load(), width, height):
                     path += Polygon(*points)
-                path.transform = Matrix(matrix)
-                paths.append(elements.elem_branch.add(path, "elem"))
-            return "elements", [p.object for p in paths]
+                path.transform *= Matrix(matrix)
+                paths.append(
+                    elements.elem_branch.add(
+                        path=abs(path), stroke_width=0, stroke_scaled=False, type="elem path"
+                    )
+                )
+            return "elements", paths
 
 
 _NORTH = 3
@@ -46,10 +50,10 @@ def _trace(pixels, x, y, width, height):
     (x - 1, y - 1),   (x    , y - 1)
                     X
     (x - 1, y    ),   (x    , y    )
-    :param pixels:
-    :param x:
-    :param y:
-    :return:
+    @param pixels:
+    @param x:
+    @param y:
+    @return:
     """
     start_y = y
     start_x = x

@@ -1,16 +1,9 @@
-# Define meerk40t specific exceptions
-
-# Base meerk40t exceptions
-class Mk40tError(Exception):
-    pass
-
-
-class Mk40tImportAbort(ImportError, Mk40tError):
+class Meerk40tError(Exception):
     """
-    MkImportAbort should be used as follows in plugins that import an optional prerequisite Pypi package:
-
-    try:
-        import wx
-    except ImportError as e:
-        raise Mk40tImportAbort("wx") from e
+    This root Meerk40t exception is provided in case we ever want to provide common functionality
+    across all Meerk40t exceptions.
     """
+
+
+class BadFileError(Meerk40tError):
+    """Abort loading a malformed file"""

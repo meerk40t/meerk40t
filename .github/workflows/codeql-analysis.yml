@@ -2,13 +2,13 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [main, legacy, 0.7]
+    branches: [main, legacy, legacy7]
     paths:
       - '**.py'
       - '.github/workflows/codeql*.yml'
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [main, legacy, 0.7]
+    branches: [main, legacy, legacy7]
     paths:
       - '**.py'
       - '.github/workflows/codeql*.yml'
@@ -52,17 +52,12 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requireoptions.txt') }}
+        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install Python dependencies
       run: |
         python3 -m pip install --upgrade --upgrade-strategy eager pip setuptools wheel babel
-        if [ "${{ runner.os }}" == "Windows" ]; then
-            pip3 install --upgrade --upgrade-strategy eager wxPython
-        else
-            pip3 install --upgrade --upgrade-strategy eager -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
-        fi
-        if [ -f requireoptions.txt ]; then pip3 install --upgrade --upgrade-strategy eager -r requireoptions.txt; fi
+        if [ -f requirements-nogui.txt ]; then pip install --upgrade --upgrade-strategy eager -r requirements-nogui.txt; fi
 
     - name: List environment
       env:
@@ -73,7 +68,7 @@ jobs:
         STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
         MATRIX_CONTEXT: ${{ toJSON(matrix) }}
       run: |
-        pip3 list
+        pip list
         env
 
     - name: Initialize CodeQL

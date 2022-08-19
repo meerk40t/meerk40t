@@ -1,4 +1,4 @@
-from ...kernel import Module
+from meerk40t.kernel import Module
 
 
 def plugin(kernel, lifecycle=None):
@@ -37,8 +37,8 @@ class Connection:
         Writes a 32 byte packet to the device. This is typically \x00 + 30 bytes + CRC
         The driver will packetize the \0xA6 writes.
 
-        :param packet: 32 bytes of data to be written to the CH341.
-        :return:
+        @param packet: 32 bytes of data to be written to the CH341.
+        @return:
         """
         pass
 
@@ -47,8 +47,8 @@ class Connection:
         Writes an address byte packet to the device. This is typically 1 byte
         The driver will packetize the \0xA7 writes.
 
-        :param packet: 1 byte of data to be written to the CH341.
-        :return:
+        @param packet: 1 byte of data to be written to the CH341.
+        @return:
         """
         pass
 
@@ -70,14 +70,14 @@ class Connection:
         StateBitWRITE     0x00020000
         StateBitSCL         0x00400000
         StateBitSDA          0x00800000
-        :return:
+        @return:
         """
         raise NotImplementedError
 
     def get_chip_version(self):
         """
         Gets the version of the CH341 chip being used.
-        :return: version. Eg. 48.
+        @return: version. Eg. 48.
         """
         raise NotImplementedError
 
@@ -99,7 +99,7 @@ class CH341(Module, Handler):
     """
     Generic CH341 Module performs the interactions between the requested operations and several delegated backend ch341
     drivers. This permits interfacing with LibUsb, Windll or Mock Ch341 backends. In use-agnostic fashion, this should
-    be valid and acceptable for any CH341 interactions. CH341 chip interfacing is required for Lhystudios Controllers,
+    be valid and acceptable for any CH341 interactions. CH341 chip interfacing is required for Lihuiyu Controllers,
     Moshiboard Controllers, and other interactions such as a plugin that uses addition CH341 devices.
     """
 
@@ -169,12 +169,14 @@ class CH341(Module, Handler):
             chip_version = connection.get_chip_version()
         except AttributeError:
             return connection
-        self.channel(_("CH341 Chip Version: %d") % chip_version)
+        self.channel(
+            _("CH341 Chip Version: {chip_version}").format(chip_version=chip_version)
+        )
         self.context.signal("pipe;index", connection.index)
         self.context.signal("pipe;chipv", chip_version)
         self.context.signal("pipe;bus", connection.bus)
         self.context.signal("pipe;address", connection.address)
-        self.channel(_("Driver Detected: %s") % connection.driver_name)
+        self.channel(_("Driver Detected: {name}").format(name=connection.driver_name))
         self._state_change("STATE_CONNECTED")
         self.channel(_("Device Connected.\n"))
         return connection

@@ -1,29 +1,10 @@
 from abc import ABC
 from typing import Optional
 
-from ..device.lasercommandconstants import (
-    COMMAND_CUT,
-    COMMAND_HOME,
-    COMMAND_MODE_PROGRAM,
-    COMMAND_MODE_RAPID,
-    COMMAND_MOVE,
-    COMMAND_PLOT,
-    COMMAND_PLOT_START,
-    COMMAND_SET_ABSOLUTE,
-    COMMAND_SET_INCREMENTAL,
-)
 from ..svgelements import Color, Path, Point
-from ..tools.rasterplotter import (
-    BOTTOM,
-    LEFT,
-    RIGHT,
-    TOP,
-    UNIDIRECTIONAL,
-    X_AXIS,
-    Y_AXIS,
-    RasterPlotter,
-)
+from ..tools.rasterplotter import RasterPlotter
 from ..tools.zinglplotter import ZinglPlotter
+from .parameters import Parameters
 
 """
 Cutcode is a list of cut objects. These are line, quad, cubic, arc, and raster. And anything else that should be
@@ -32,7 +13,7 @@ should be toggled and move by anything executing these in the planning process. 
 be converted into cut code. This should be the parsed form of file-blobs. Cutcode can convert easily to both SVG and
 to LaserCode.
 
-All CutObjects have a .start() .end() and .generator() functions. They also have a settings object that contains all
+All CutObjects have a .start .end and .generator() functions. They also have a settings object that contains all
 properties for that cuts may need or use. Or which may be used by the CutPlanner, PlotPlanner, or local objects. These
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
@@ -40,130 +21,37 @@ are references to settings which may be shared by all CutObjects created by a La
 MILS_IN_MM = 39.3701
 
 
-class LaserSettings:
-    def __init__(self, *args, **kwargs):
-        self.line_color = None
-
-        self.laser_enabled = True
-        self.speed = None
-        self.power = None
-        self.dratio_custom = False
-        self.dratio = 0.261
-        self.acceleration_custom = False
-        self.acceleration = 1
-
-        self.force_twitchless = False
-        self.raster_alt = False
-        self.raster_step = 0
-        self.raster_direction = 1  # Bottom To Top - Default.
-        self.raster_swing = False  # False = bidirectional, True = Unidirectional
-        self.raster_preference_top = 0
-        self.raster_preference_right = 0
-        self.raster_preference_left = 0
-        self.raster_preference_bottom = 0
-        self.overscan = 20
-
-        self.advanced = False
-
-        self.ppi_enabled = True
-
-        self.dot_length_custom = False
-        self.dot_length = 1
-
-        self.shift_enabled = False
-
-        self.passes_custom = False
-        self.passes = 1
-
-        self.jog_distance = 255
-        self.jog_enable = True
-
-        for k in kwargs:
-            value = kwargs[k]
-            if hasattr(self, k):
-                q = getattr(self, k)
-                if q is None:
-                    setattr(self, k, value)
-                else:
-                    t = type(q)
-                    setattr(self, k, t(value))
-        if len(args) == 1:
-            obj = args[0]
-            try:
-                obj = obj.settings
-            except AttributeError:
-                pass
-            if isinstance(obj, LaserSettings):
-                self.set_values(obj)
-
-    def set_values(self, obj):
-        for q in dir(obj):
-            if q.startswith("_") or q.startswith("implicit"):
-                continue
-            obj_type = type(obj)
-            if hasattr(obj_type, q) and isinstance(getattr(obj_type, q), property):
-                # Do not set property values
-                continue
-
-            value = getattr(obj, q)
-            if isinstance(value, (int, float, bool, str)):
-                setattr(self, q, value)
-
-    @property
-    def horizontal_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 0 or self.raster_direction == 1
-        )
-
-    @property
-    def vertical_raster(self):
-        return self.raster_step and (
-            self.raster_direction == 2 or self.raster_direction == 3
-        )
-
-    @property
-    def implicit_accel(self):
-        if not self.acceleration_custom:
-            return None
-        return self.acceleration
-
-    @property
-    def implicit_d_ratio(self):
-        if not self.dratio_custom:
-            return None
-        return self.dratio
-
-    @property
-    def implicit_dotlength(self):
-        if not self.dot_length_custom:
-            return 1
-        return self.dot_length
-
-    @property
-    def implicit_passes(self):
-        if not self.passes_custom:
-            return 1
-        return self.passes
-
-
-class CutObject:
+class CutObject(Parameters):
     """
     CutObjects are small vector cuts which have on them a laser settings object.
     These store the start and end point of the cut. Whether this cut is normal or
     reversed.
     """
 
-    def __init__(self, start=None, end=None, settings=None, parent=None, passes=1):
-        if settings is None:
-            settings = LaserSettings()
-        self.settings = settings
-        self._start = start
-        self._end = end
+    def __init__(
+        self, start=None, end=None, settings=None, parent=None, passes=1, **kwargs
+    ):
+        super().__init__(settings)
+        if start is not None:
+            self._start_x = int(round(start[0]))
+            self._start_y = int(round(start[1]))
+        else:
+            self._start_x = None
+            self._start_y = None
+        if end is not None:
+            self._end_x = int(round(end[0]))
+            self._end_y = int(round(end[1]))
+        else:
+            self._end_x = None
+            self._end_y = None
         self.normal = True  # Normal or Reversed.
         self.parent = parent
         self.next = None
         self.previous = None
         self.passes = passes
+        if passes != 1:
+            # If passes is greater than 1 we must flag custom passes as on.
+            self.passes_custom = True
         self._burns_done = 0
 
         self.mode = None
@@ -200,53 +88,77 @@ class CutObject:
     def reversible(self):
         return True
 
+    @property
     def start(self):
-        return self._start if self.normal else self._end
+        return (
+            (self._start_x, self._start_y)
+            if self.normal
+            else (self._end_x, self._end_y)
+        )
 
+    @property
     def end(self):
-        return self._end if self.normal else self._start
+        return (
+            (self._start_x, self._start_y)
+            if not self.normal
+            else (self._end_x, self._end_y)
+        )
+
+    @start.setter
+    def start(self, value):
+        if self.normal:
+            self._start_x = value[0]
+            self._start_y = value[1]
+        else:
+            self._end_x = value[0]
+            self._end_y = value[1]
+
+    @end.setter
+    def end(self, value):
+        if self.normal:
+            self._end_x = value[0]
+            self._end_y = value[1]
+        else:
+            self._start_x = value[0]
+            self._start_y = value[1]
 
     def length(self):
-        return Point.distance(self.start(), self.end())
+        return Point.distance(
+            (self._start_x, self._start_y), (self._end_x, self._end_y)
+        )
 
     def upper(self):
-        return min(self.start()[0], self.end()[0])
+        return min(self._start_y, self._end_y)
 
     def lower(self):
-        return max(self.start()[0], self.end()[0])
+        return max(self._start_y, self._end_y)
 
     def left(self):
-        return min(self.start()[1], self.end()[1])
+        return min(self._start_x, self._end_x)
 
     def right(self):
-        return max(self.start()[1], self.end()[1])
+        return max(self._start_x, self._end_x)
 
     def extra(self):
         return 0
 
     def major_axis(self):
-        start = self.start()
-        end = self.end()
-        if abs(start.x - end.x) > abs(start.y - end.y):
+        if abs(self._start_x - self._end_x) > abs(self._start_y - self._end_y):
             return 0  # X-Axis
         else:
             return 1  # Y-Axis
 
     def x_dir(self):
-        start = self.start()
-        end = self.end()
-        if start.x < end.x:
-            return 1
+        if self.normal:
+            return 1 if self._start_x < self._end_x else -1
         else:
-            return -1
+            return 1 if self._end_x < self._start_x else -1
 
     def y_dir(self):
-        start = self.start()
-        end = self.end()
-        if start.y < end.y:
-            return 1
+        if self.normal:
+            return 1 if self._start_y < self._end_y else -1
         else:
-            return -1
+            return 1 if self._end_y < self._start_y else -1
 
     def reverse(self):
         if not self.reversible():
@@ -258,6 +170,9 @@ class CutObject:
     def generator(self):
         raise NotImplementedError
 
+    def point(self, t):
+        raise NotImplementedError
+
     def contains_burned_groups(self):
         if self.contains is None:
             return False
@@ -265,7 +180,7 @@ class CutObject:
             if isinstance(c, CutGroup):
                 if c.burn_started:
                     return True
-            elif c.burns_done == c.passes:
+            elif c.burns_done == c.implicit_passes:
                 return True
         return False
 
@@ -273,7 +188,7 @@ class CutObject:
         if self.contains is None:
             return False
         for c in self.contains:
-            if c.burns_done < c.passes:
+            if c.burns_done < c.implicit_passes:
                 return True
         return False
 
@@ -281,11 +196,11 @@ class CutObject:
         yield self
 
     def candidate(self):
-        if self.burns_done < self.passes:
+        if self.burns_done < self.implicit_passes:
             yield self
 
     def is_burned(self):
-        return self.burns_done == self.passes
+        return self.burns_done == self.implicit_passes
 
 
 class CutGroup(list, CutObject, ABC):
@@ -312,11 +227,11 @@ class CutGroup(list, CutObject, ABC):
     def __copy__(self):
         return CutGroup(self.parent, self)
 
+    def __str__(self):
+        return f"CutGroup(children={list.__str__(self)}, parent={str(self.parent)})"
+
     def __repr__(self):
-        return "CutGroup(children=%s, parent=%s)" % (
-            list.__repr__(self),
-            str(self.parent),
-        )
+        return f"CutGroup(children={list.__repr__(self)}, parent={str(self.parent)})"
 
     def reversible(self):
         return False
@@ -324,17 +239,19 @@ class CutGroup(list, CutObject, ABC):
     def reverse(self):
         pass
 
+    @property
     def start(self):
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse
-        return self[0].start() if self.normal else self[-1].end()
+        return self[0].start if self.normal else self[-1].end
 
+    @property
     def end(self):
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse
-        return self[-1].end() if self.normal else self[0].start()
+        return self[-1].end if self.normal else self[0].start
 
     def flat(self):
         """
@@ -369,7 +286,7 @@ class CutGroup(list, CutObject, ABC):
             #   b2. An outer which has all inner burned.
             # by removing from the list:
             #   1. Candidates already burned
-            #   2. Candidates which are neither inner or outer
+            #   2. Candidates which are neither inner nor outer
             #   3. Candidates which are outer and have at least one inner not yet burned
             #   4. Candidates which are inner and all outers have no inners burned
             # If the resulting list is empty then normal rules apply instead.
@@ -401,17 +318,17 @@ class CutGroup(list, CutObject, ABC):
             # Planner will need to determine which end of the subpath is yielded
             # and only consider the direction starting from the end
             if complete_path and not grp.closed and isinstance(grp, CutGroup):
-                if grp[0].burns_done < grp[0].passes:
+                if grp[0].burns_done < grp[0].implicit_passes:
                     yield grp[0]
                 # Do not yield same segment a 2nd time if only one segment
-                if len(grp) > 1 and grp[-1].burns_done < grp[-1].passes:
+                if len(grp) > 1 and grp[-1].burns_done < grp[-1].implicit_passes:
                     yield grp[-1]
                 continue
             # If we are either burning any path segment
             # or this is a closed path
             # then we should yield all segments.
             for seg in grp.flat():
-                if seg is not None and seg.burns_done < seg.passes:
+                if seg is not None and seg.burns_done < seg.implicit_passes:
                     yield seg
 
 
@@ -419,16 +336,14 @@ class CutCode(CutGroup):
     def __init__(self, seq=(), settings=None):
         CutGroup.__init__(self, None, seq, settings=settings)
         self.output = True
-        self.operation = "CutCode"
 
         self.travel_speed = 20.0
-        self.start = None
         self.mode = None
 
     def __str__(self):
         parts = list()
-        parts.append("%d items" % len(self))
-        return "CutCode(%s)" % " ".join(parts)
+        parts.append(f"{len(self)} items")
+        return f"CutCode({' '.join(parts)})"
 
     def __copy__(self):
         return CutCode(self)
@@ -438,16 +353,15 @@ class CutCode(CutGroup):
         path = None
         previous_settings = None
         for e in self.flat():
-            start = e.start()
-            end = e.end()
-            settings = e.settings
+            start = e.start
+            end = e.end
             if path is None:
                 path = Path()
-                c = settings.line_color if settings.line_color is not None else "blue"
+                c = e.line_color if e.line_color is not None else "blue"
                 path.stroke = Color(c)
 
-            if len(path) == 0 or last.x != start.x or last.y != start.y:
-                path.move(e.start())
+            if len(path) == 0 or last[0] != start[0] or last[1] != start[1]:
+                path.move(e.start)
             if isinstance(e, LineCut):
                 path.line(end)
             elif isinstance(e, QuadCut):
@@ -460,11 +374,11 @@ class CutCode(CutGroup):
                         path.line(x, y)
                     else:
                         path.move(x, y)
-            if previous_settings is not settings and previous_settings is not None:
+            if previous_settings is not e.settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
                     path = None
-            previous_settings = settings
+            previous_settings = e.settings
             last = end
         if path is not None and len(path) != 0:
             yield path
@@ -474,9 +388,9 @@ class CutCode(CutGroup):
         Reverses subpaths flipping the individual elements from position j inclusive to
         k exclusive.
 
-        :param j:
-        :param k:
-        :return:
+        @param j:
+        @param k:
+        @return:
         """
         for q in range(j, k):
             self[q].direct_close()
@@ -485,49 +399,65 @@ class CutCode(CutGroup):
 
     def generate(self):
         for cutobject in self.flat():
-            yield COMMAND_PLOT, cutobject
-        yield COMMAND_PLOT_START
+            yield "plot", cutobject
+        yield "plot_start"
 
-    def length_travel(self, include_start=False):
+    def length_travel(self, include_start=False, stop_at=-1):
         cutcode = list(self.flat())
         if len(cutcode) == 0:
             return 0
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
         distance = 0
         if include_start:
             if self.start is not None:
-                distance += abs(complex(self.start) - complex(cutcode[0].start()))
+                distance += abs(complex(*self.start) - complex(*cutcode[0].start))
             else:
-                distance += abs(0 - complex(cutcode[0].start()))
-        for i in range(1, len(cutcode)):
+                distance += abs(0 - complex(*cutcode[0].start))
+        for i in range(1, stop_at):
             prev = cutcode[i - 1]
             curr = cutcode[i]
-            delta = Point.distance(prev.end(), curr.start())
+            delta = Point.distance(prev.end, curr.start)
             distance += delta
         return distance
 
-    def length_cut(self):
+    def length_cut(self, stop_at=-1):
         cutcode = list(self.flat())
         distance = 0
-        for i in range(0, len(cutcode)):
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             distance += curr.length()
         return distance
 
-    def extra_time(self):
+    def extra_time(self, stop_at=-1):
         cutcode = list(self.flat())
         extra = 0
-        for i in range(0, len(cutcode)):
+        if stop_at < 0:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
             extra += curr.extra()
         return extra
 
-    def duration_cut(self):
+    def duration_cut(self, stop_at=None):
         cutcode = list(self.flat())
         distance = 0
-        for i in range(0, len(cutcode)):
+        if stop_at is None:
+            stop_at = len(cutcode)
+        if stop_at > len(cutcode):
+            stop_at = len(cutcode)
+        for i in range(0, stop_at):
             curr = cutcode[i]
-            if curr.settings.speed:
-                distance += (curr.length() / MILS_IN_MM) / curr.settings.speed
+            if curr.speed != 0:
+                distance += (curr.length() / MILS_IN_MM) / curr.speed
         return distance
 
     @classmethod
@@ -535,8 +465,7 @@ class CutCode(CutGroup):
         cutcode = cls()
         x = 0
         y = 0
-        relative = False
-        settings = LaserSettings()
+        settings = dict()
         for code in lasercode:
             if isinstance(code, int):
                 cmd = code
@@ -544,38 +473,44 @@ class CutCode(CutGroup):
                 cmd = code[0]
             else:
                 continue
-            # print(lasercode_string(cmd))
-            if cmd == COMMAND_PLOT:
+            if cmd == "plot":
                 cutcode.extend(code[1])
-            elif cmd == COMMAND_SET_ABSOLUTE:
-                pass
-            elif cmd == COMMAND_SET_INCREMENTAL:
-                pass
-            elif cmd == COMMAND_MODE_PROGRAM:
-                pass
-            elif cmd == COMMAND_MODE_RAPID:
-                pass
-            elif cmd == COMMAND_MOVE:
+            elif cmd == "move_rel":
                 nx = code[1]
                 ny = code[2]
-                if relative:
-                    nx = x + nx
-                    ny = y + ny
+                nx = x + nx
+                ny = y + ny
                 x = nx
                 y = ny
-            elif cmd == COMMAND_HOME:
-                x = 0
-                y = 0
-            elif cmd == COMMAND_CUT:
+            elif cmd == "move_abs":
                 nx = code[1]
                 ny = code[2]
-                if relative:
-                    nx = x + nx
-                    ny = y + ny
+                x = nx
+                y = ny
+            elif cmd == "home":
+                x = 0
+                y = 0
+            elif cmd == "cut_abs":
+                nx = code[1]
+                ny = code[2]
                 cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
                 cutcode.append(cut)
                 x = nx
                 y = ny
+            elif cmd == "cut_rel":
+                nx = code[1]
+                ny = code[2]
+                nx = x + nx
+                ny = y + ny
+                cut = LineCut(Point(x, y), Point(nx, ny), settings=settings)
+                cutcode.append(cut)
+                x = nx
+                y = ny
+            elif cmd == "dwell":
+                time = code[1]
+                cut = DwellCut((x, y), time)
+                cutcode.append(cut)
+
         return cutcode
 
     def reordered(self, order):
@@ -613,13 +548,23 @@ class LineCut(CutObject):
             passes=passes,
             parent=parent,
         )
-        settings.raster_step = 0
+        self.raster_step = 0
+
+    def __repr__(self):
+        return f'LineCut({repr(self.start)}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
 
     def generator(self):
         # pylint: disable=unsubscriptable-object
-        start = self.start()
-        end = self.end()
+        start = self.start
+        end = self.end
         return ZinglPlotter.plot_line(start[0], start[1], end[0], end[1])
+
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.end
+        x = x1 * t + x0
+        y = y1 * t + y0
+        return x, y
 
 
 class QuadCut(CutObject):
@@ -640,22 +585,26 @@ class QuadCut(CutObject):
             passes=passes,
             parent=parent,
         )
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control = control_point
+
+    def __repr__(self):
+        return f'QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"QuadCut({repr(self.start)}, {repr(self.c())}, {repr(self.end)}, passes={self.implicit_passes})"
 
     def c(self):
         return self._control
 
     def length(self):
-        return Point.distance(self.start(), self.c()) + Point.distance(
-            self.c(), self.end()
-        )
+        return Point.distance(self.start, self.c()) + Point.distance(self.c(), self.end)
 
     def generator(self):
         # pylint: disable=unsubscriptable-object
-        start = self.start()
+        start = self.start
         c = self.c()
-        end = self.end()
+        end = self.end
         return ZinglPlotter.plot_quad_bezier(
             start[0],
             start[1],
@@ -664,6 +613,15 @@ class QuadCut(CutObject):
             end[0],
             end[1],
         )
+
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.c()
+        x2, y2 = self.end
+        e = 1 - t
+        x = e * e * x0 + 2 * e * t * x1 + t * t * x2
+        y = e * e * y0 + 2 * e * t * y1 + t * t * y2
+        return x, y
 
 
 class CubicCut(CutObject):
@@ -685,9 +643,15 @@ class CubicCut(CutObject):
             passes=passes,
             parent=parent,
         )
-        settings.raster_step = 0
+        self.raster_step = 0
         self._control1 = control1
         self._control2 = control2
+
+    def __repr__(self):
+        return f'CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, settings="{self.settings}", passes={self.implicit_passes})'
+
+    def __str__(self):
+        return f"CubicCut({repr(self.start)}, {repr(self.c1())},  {repr(self.c2())}, {repr(self.end)}, passes={self.implicit_passes})"
 
     def c1(self):
         return self._control1 if self.normal else self._control2
@@ -697,16 +661,16 @@ class CubicCut(CutObject):
 
     def length(self):
         return (
-            Point.distance(self.start(), self.c1())
+            Point.distance(self.start, self.c1())
             + Point.distance(self.c1(), self.c2())
-            + Point.distance(self.c2(), self.end())
+            + Point.distance(self.c2(), self.end)
         )
 
     def generator(self):
-        start = self.start()
+        start = self.start
         c1 = self.c1()
         c2 = self.c2()
-        end = self.end()
+        end = self.end
         return ZinglPlotter.plot_cubic_bezier(
             start[0],
             start[1],
@@ -718,70 +682,81 @@ class CubicCut(CutObject):
             end[1],
         )
 
+    def point(self, t):
+        x0, y0 = self.start
+        x1, y1 = self.c1()
+        x2, y2 = self.c2()
+        x3, y3 = self.end
+        e = 1 - t
+        x = e * e * e * x0 + 3 * e * e * t * x1 + 3 * e * t * t * x2 + t * t * t * x3
+        y = e * e * e * y0 + 3 * e * e * t * y1 + 3 * e * t * t * y2 + t * t * t * y3
+        return x, y
+
 
 class RasterCut(CutObject):
     """
-    Rastercut accepts a image of type "L" or "1", and an offset in the x and y and information as to whether
-    this is a crosshatched cut or not.
+    Rastercut accepts an image of type "L" or "1", and an offset in the x and y.
     """
 
     def __init__(
-        self, image, tx, ty, settings=None, crosshatch=False, passes=1, parent=None
+        self,
+        image,
+        offset_x,
+        offset_y,
+        step_x,
+        step_y,
+        inverted=False,
+        bidirectional=True,
+        horizontal=True,
+        start_on_top=True,
+        start_on_left=True,
+        overscan=0,
+        settings=None,
+        passes=1,
+        parent=None,
     ):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         assert image.mode in ("L", "1")
         self.first = True  # Raster cuts are always first within themselves.
         self.image = image
-        self.tx = tx
-        self.ty = ty
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.step_x = step_x
+        self.step_y = step_y
+        self.bidirectional = bidirectional
+        self.horizontal = horizontal
+        self.start_on_top = start_on_top
+        self.start_on_left = start_on_left
+        self.width, self.height = image.size
+        self.inverted = inverted
+        self.scan = overscan
+        if inverted:
+            skip_pixel = 255
 
-        step = self.settings.raster_step
-        self.step = step
-        assert step > 0
+            def image_filter(pixel):
+                return pixel / 255.0
 
-        direction = self.settings.raster_direction
-        traverse = 0
-        if direction == 0 or direction == 4 and not crosshatch:
-            traverse |= X_AXIS
-            traverse |= TOP
-        elif direction == 1:
-            traverse |= X_AXIS
-            traverse |= BOTTOM
-        elif direction == 2 or direction == 4 and crosshatch:
-            traverse |= Y_AXIS
-            traverse |= RIGHT
-        elif direction == 3:
-            traverse |= Y_AXIS
-            traverse |= LEFT
-        if self.settings.raster_swing:
-            traverse |= UNIDIRECTIONAL
-        width, height = image.size
-        self.width = width
-        self.height = height
-
-        def image_filter(pixel):
-            return (255 - pixel) / 255.0
-
-        overscan = self.settings.overscan
-        if overscan is None:
-            overscan = 20
         else:
-            try:
-                overscan = int(overscan)
-            except ValueError:
-                overscan = 20
-        self.overscan = overscan
+            skip_pixel = 0
+
+            def image_filter(pixel):
+                return (255 - pixel) / 255.0
+
         self.plot = RasterPlotter(
-            image.load(),
-            width,
-            height,
-            traverse,
-            0,
-            overscan,
-            tx,
-            ty,
-            step,
-            image_filter,
+            data=image.load(),
+            width=self.width,
+            height=self.height,
+            horizontal=self.horizontal,
+            start_on_top=self.start_on_top,
+            start_on_left=self.start_on_left,
+            bidirectional=self.bidirectional,
+            skip_pixel=skip_pixel,
+            overscan=self.scan,
+            offset_x=self.offset_x,
+            offset_y=self.offset_y,
+            step_x=self.step_x,
+            step_y=self.step_y,
+            filter=image_filter,
         )
 
     def reversible(self):
@@ -790,29 +765,31 @@ class RasterCut(CutObject):
     def reverse(self):
         pass
 
+    @property
     def start(self):
-        return Point(self.plot.initial_position_in_scene())
+        return self.plot.initial_position_in_scene()
 
+    @property
     def end(self):
-        return Point(self.plot.final_position_in_scene())
+        return self.plot.final_position_in_scene()
 
     def lower(self):
-        return self.plot.offset_x + self.height
+        return self.plot.offset_y + self.height
 
     def upper(self):
-        return self.plot.offset_x
+        return self.plot.offset_y
 
     def right(self):
-        return self.plot.offset_y + self.width
+        return self.plot.offset_x + self.width
 
     def left(self):
-        return self.plot.offset_y
+        return self.plot.offset_x
 
     def length(self):
         return (
             self.width * self.height
             + (self.overscan * self.height)
-            + (self.height * self.step)
+            + (self.height * self.raster_step_y)
         )
 
     def extra(self):
@@ -822,10 +799,10 @@ class RasterCut(CutObject):
         return 0 if self.plot.horizontal else 1
 
     def x_dir(self):
-        return 1 if self.plot.rightward else -1
+        return 1 if self.plot.start_on_left else -1
 
     def y_dir(self):
-        return 1 if self.plot.bottomward else -1
+        return 1 if self.plot.start_on_top else -1
 
     def generator(self):
         return self.plot.plot()
@@ -839,6 +816,8 @@ class RawCut(CutObject):
     def __init__(self, settings=None, passes=1, parent=None):
         CutObject.__init__(self, settings=settings, passes=passes, parent=parent)
         self.plot = []
+        self.first = True  # Raw cuts are standalone
+        self.last = True
 
     def __len__(self):
         return len(self.plot)
@@ -860,32 +839,160 @@ class RawCut(CutObject):
     def reverse(self):
         self.plot = list(reversed(self.plot))
 
+    @property
     def start(self):
         try:
-            return Point(self.plot[0][:2])
+            return self.plot[0][:2]
         except IndexError:
             return None
 
+    @property
     def end(self):
         try:
-            return Point(self.plot[-1][:2])
+            return self.plot[-1][:2]
         except IndexError:
             return None
+
+    @start.setter
+    def start(self, value):
+        self._start_x = value[0]
+        self._start_y = value[1]
+
+    @end.setter
+    def end(self, value):
+        self._end_x = value[0]
+        self._end_y = value[1]
 
     def generator(self):
         return self.plot
 
 
+class DwellCut(CutObject):
+    def __init__(self, start_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            start_point,
+            start_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        yield "rapid_mode"
+        start = self.start
+        yield "move_abs", start[0], start[1]
+        yield "dwell", self.dwell_time
+
+
+class WaitCut(CutObject):
+    def __init__(self, wait, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            (0, 0),
+            (0, 0),
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.dwell_time = wait
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        yield "wait", self.dwell_time
+
+
+class InputCut(CutObject):
+    def __init__(
+        self,
+        input_mask,
+        input_value,
+        input_message=None,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            (0, 0),
+            (0, 0),
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.input_mask = input_mask
+        self.input_value = input_value
+        self.input_message = input_message
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+
+class OutputCut(CutObject):
+    def __init__(
+        self,
+        output_mask,
+        output_value,
+        output_message=None,
+        settings=None,
+        passes=1,
+        parent=None,
+    ):
+        CutObject.__init__(
+            self,
+            (0, 0),
+            (0, 0),
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.output_mask = output_mask
+        self.output_value = output_value
+        self.output_message = output_message
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+
 class PlotCut(CutObject):
     """
-    Plot cuts are a series of lineto informations with laser on and off info. These positions are not necessarily next
+    Plot cuts are a series of lineto values with laser on and off info. These positions are not necessarily next
     to each other and can be any distance apart. This is a compact way of writing a large series of line positions.
 
     There is a raster-create value.
     """
 
-    def __init__(self, settings=None):
-        CutObject.__init__(self, settings=settings)
+    def __init__(self, settings=None, passes=1):
+        CutObject.__init__(self, settings=settings, passes=passes)
         self.plot = []
         self.max_dx = None
         self.max_dy = None
@@ -893,49 +1000,57 @@ class PlotCut(CutObject):
         self.min_y = None
         self.max_x = None
         self.max_y = None
-        self.vertical_raster = False
-        self.horizontal_raster = False
+        self.v_raster = False
+        self.h_raster = False
         self.travels_top = False
         self.travels_bottom = False
         self.travels_right = False
         self.travels_left = False
+        self._calc_lengths = None
+        self._length = None
+        self.first = True  # Plot cuts are standalone
+        self.last = True
 
     def __len__(self):
         return len(self.plot)
 
     def __str__(self):
         parts = list()
-        parts.append("{points} points".format(points=len(self.plot)))
-        parts.append("xmin: {v}".format(v=self.min_x))
-        parts.append("ymin: {v}".format(v=self.min_y))
-        parts.append("xmax: {v}".format(v=self.max_x))
-        parts.append("ymax: {v}".format(v=self.max_y))
-        return "PlotCut(%s)" % ", ".join(parts)
+        parts.append(f"{len(self.plot)} points")
+        parts.append(f"xmin: {self.min_x}")
+        parts.append(f"ymin: {self.min_y}")
+        parts.append(f"xmax: {self.max_x}")
+        parts.append(f"ymax: {self.max_y}")
+        return f"PlotCut({', '.join(parts)})"
 
     def check_if_rasterable(self):
         """
-        Rasterable plotcuts must have a max step of less than 15 and must have an unused travel direction.
+        Rasterable plotcuts are heuristically defined as having a max step of less than 15 and
+        must have an unused travel direction.
 
         @return: whether the plot can travel
         """
-        self.settings.raster_alt = False
-        self.settings.raster_step = 0
-        self.settings.force_twitchless = True
-        if (
-            not self.travels_left
-            and not self.travels_right
-            and not self.travels_bottom
-            and not self.travels_top
-        ):
+        # Default to vector settings.
+        self.settings["_raster_alt"] = False
+        self.settings["_constant_move_x"] = False
+        self.settings["_constant_move_y"] = False
+        self.settings["raster_step"] = 0
+        if self.settings.get("speed", 0) < 80:
+            # Twitchless gets sketchy at 80.
+            self.settings["_force_twitchless"] = True
             return False
+            # if self.max_dy >= 15 and self.max_dy >= 15:
+            #     return False  # This is probably a vector.
+        # Above 80 we're likely dealing with a raster.
         if 0 < self.max_dx <= 15:
-            self.vertical_raster = True
-        elif 0 < self.max_dy <= 15:
-            self.horizontal_raster = True
-        else:
-            return False
-        self.settings.raster_step = min(self.max_dx, self.max_dy)
-        self.settings.raster_alt = True
+            self.v_raster = True
+            self.settings["_constant_move_y"] = True
+        if 0 < self.max_dy <= 15:
+            self.h_raster = True
+            self.settings["_constant_move_x"] = True
+        # if self.vertical_raster or self.horizontal_raster:
+        self.settings["raster_step"] = min(self.max_dx, self.max_dy)
+        self.settings["_raster_alt"] = True
         return True
 
     def plot_extend(self, plot):
@@ -943,6 +1058,8 @@ class PlotCut(CutObject):
             self.plot_append(x, y, laser)
 
     def plot_append(self, x, y, laser):
+        self._length = None
+        self._calc_lengths = None
         if self.plot:
             last_x, last_y, last_laser = self.plot[-1]
             dx = x - last_x
@@ -971,10 +1088,15 @@ class PlotCut(CutObject):
             self.max_y = y
 
     def major_axis(self):
-        if self.horizontal_raster:
-            return 0
-        if self.vertical_raster:
+        """
+        If both vertical and horizontal are set we prefer vertical as major axis because vertical rastering is heavier
+        with the movement of the gantry bar.
+        @return:
+        """
+        if self.v_raster:
             return 1
+        if self.h_raster:
+            return 0
 
         if len(self.plot) < 2:
             return 0
@@ -1039,14 +1161,18 @@ class PlotCut(CutObject):
         return length
 
     def reverse(self):
+        # Strictly speaking this is wrong. Point with power-to-value means that we need power n-1 to the number of
+        # The reverse would shift everything by 1 since all power-to are really power-from values.
         self.plot = list(reversed(self.plot))
 
+    @property
     def start(self):
         try:
             return Point(self.plot[0][:2])
         except IndexError:
             return None
 
+    @property
     def end(self):
         try:
             return Point(self.plot[-1][:2])
@@ -1058,59 +1184,49 @@ class PlotCut(CutObject):
         last_yy = None
         ix = 0
         iy = 0
-        # last_dx = None
-        # last_dy = None
         for x, y, on in self.plot:
             idx = int(round(x - ix))
             idy = int(round(y - iy))
             ix += idx
             iy += idy
             if last_xx is not None:
-                # if self.horizontal_raster and idx:
-                #     if idx > 0 > last_dx or idx < 0 < last_dx:
-                #         # If this idx is different direction as the last one, we step y first
-                #         if idy:
-                #             # step y
-                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
-                #                 yield zx, zy, on
-                #         # step x
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, iy, ix, iy):
-                #             yield zx, zy, on
-                #     else:
-                #         # If this idx is the same direction as the last one, we step x first
-                #         # step x
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
-                #             yield zx, zy, on
-                #         if idy:
-                #             # step y
-                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #                 yield zx, zy, on
-                # elif self.vertical_raster and idy:
-                #     if idy > 0 > last_dy or idy < 0 < last_dy:
-                #         # If this idy is different direction as the last one, we step x first
-                #         if idx:
-                #             # step x
-                #             for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, last_yy):
-                #                 yield zx, zy, on
-                #         # step y
-                #         for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #             yield zx, zy, on
-                #     else:
-                #         # If this idy is the same direction as the last one, we step y first
-                #         # step y
-                #         for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, last_xx, iy):
-                #             yield zx, zy, on
-                #         if idx:
-                #             #step y
-                #             for zx, zy in ZinglPlotter.plot_line(ix, last_yy, ix, iy):
-                #                 yield zx, zy, on
-                # else:
-                #     # Non-raster go directly to result.
                 for zx, zy in ZinglPlotter.plot_line(last_xx, last_yy, ix, iy):
                     yield zx, zy, on
             last_xx = ix
             last_yy = iy
-            # last_dx = idx
-            # last_dy = idy
 
         return self.plot
+
+    def point(self, t):
+        if len(self.plot) == 0:
+            raise ValueError
+        if t == 0:
+            return self.plot[0]
+        if t == 1:
+            return self.plot[-1]
+        if self._calc_lengths is None:
+            # Need to calculate lengths
+            lengths = list()
+            total_length = 0
+            for i in range(len(self.plot) - 1):
+                x0, y0, _ = self.plot[i]
+                x1, y1, _ = self.plot[i + 1]
+                length = abs(complex(x0, y0) - complex(x1, y1))
+                lengths.append(length)
+                total_length += length
+            self._calc_lengths = lengths
+            self._length = total_length
+        if self._length == 0:
+            # Degenerate fallback. (All points are coincident)
+            v = int((len(self.plot) - 1) * t)
+            return self.plot[v]
+        v = t * self._length
+        for length in self._calc_lengths:
+            if v < length:
+                x0, y0 = self.start
+                x1, y1 = self.end
+                x = x1 * v + x0
+                y = y1 * v + y0
+                return x, y
+            v -= length
+        raise ValueError

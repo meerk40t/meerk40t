@@ -1,25 +1,38 @@
-from math import ceil, floor, sqrt
+import platform
+from math import ceil, floor, isnan, sqrt
 
 import wx
 from PIL import Image
 
-from ..core.cutcode import CubicCut, CutCode, LineCut, QuadCut, RasterCut
-from ..core.elements import Node
-from ..svgelements import (
+from meerk40t.core.cutcode import (
+    CubicCut,
+    CutCode,
+    DwellCut,
+    InputCut,
+    LineCut,
+    OutputCut,
+    PlotCut,
+    QuadCut,
+    RasterCut,
+    RawCut,
+    WaitCut,
+)
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.svgelements import (
     Arc,
     Close,
     Color,
     CubicBezier,
-    Group,
     Line,
     Matrix,
     Move,
     Path,
     QuadraticBezier,
-    Shape,
-    SVGImage,
-    SVGText,
 )
+
+from ..core.units import PX_PER_INCH
+from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
+from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
 from .zmatrix import ZMatrix
 
@@ -37,8 +50,11 @@ DRAW_MODE_PATH = 0x000400
 DRAW_MODE_IMAGE = 0x000800
 DRAW_MODE_TEXT = 0x001000
 DRAW_MODE_BACKGROUND = 0x002000
+DRAW_MODE_POINTS = 0x004000
+DRAW_MODE_REGMARKS = 0x008000
+DRAW_MODE_VARIABLES = 0x010000
+
 DRAW_MODE_ICONS = 0x0040000
-DRAW_MODE_TREE = 0x0080000
 DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
@@ -56,6 +72,101 @@ def swizzlecolor(c):
         return None
 
 
+def as_wx_color(c):
+    if c is None:
+        return None
+    if isinstance(c, int):
+        c = Color(argb=c)
+    return wx.Colour(red=c.red, green=c.green, blue=c.blue, alpha=c.alpha)
+
+
+def svgfont_to_wx(textnode):
+    """
+    Translates all svg-text-properties to their wxfont-equivalents
+    @param textnode:
+    @return:
+    """
+    if not hasattr(textnode, "wxfont"):
+        textnode.wxfont = wx.Font()
+    wxfont = textnode.wxfont
+
+    try:
+        wxfont.SetNumericWeight(textnode.weight)  # Gets numeric weight.
+    except AttributeError:
+        # Running version wx4.0. No set Numeric Weight, can only set bold or normal.
+        weight = textnode.weight
+        wxfont.SetWeight(
+            wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
+        )  # Gets numeric weight.
+    # if the font_list is empty, then we do have a not properly intiialised textnode,
+    # that needs to be resolved...
+    if textnode.font_family is None:
+        wxfont_to_svg(textnode)
+
+    svg_to_wx_family(textnode, wxfont)
+    svg_to_wx_fontstyle(textnode, wxfont)
+
+    # A point is 1/72 of an inch
+    factor = 72 / PX_PER_INCH
+    font_size = textnode.font_size * factor
+    if font_size < 1:
+        if font_size > 0:
+            textnode.matrix.pre_scale(font_size, font_size)
+            font_size = 1
+            textnode.font_size = font_size  # No zero sized fonts.
+    try:
+        wxfont.SetFractionalPointSize(font_size)
+    except AttributeError:
+        wxfont.SetPointSize(int(font_size))
+    wxfont.SetUnderlined(textnode.underline)
+    wxfont.SetStrikethrough(textnode.strikethrough)
+
+
+def svg_to_wx_family(textnode, wxfont):
+    font_list = textnode.font_list
+    # if font_list is None:
+    #     print("Fontlist is empty...")
+    # else:
+    #     print ("Fontlist was: ", font_list)
+    for ff in font_list:
+        if ff == "fantasy":
+            family = wx.FONTFAMILY_DECORATIVE
+            wxfont.SetFamily(family)
+            return
+        elif ff == "serif":
+            family = wx.FONTFAMILY_ROMAN
+            wxfont.SetFamily(family)
+            return
+        elif ff == "cursive":
+            family = wx.FONTFAMILY_SCRIPT
+            wxfont.SetFamily(family)
+            return
+        elif ff == "sans-serif":
+            family = wx.FONTFAMILY_SWISS
+            wxfont.SetFamily(family)
+            return
+        elif ff == "monospace":
+            family = wx.FONTFAMILY_TELETYPE
+            wxfont.SetFamily(family)
+            return
+        if wxfont.SetFaceName(ff):
+            # We found a correct face name.
+            return
+
+
+def svg_to_wx_fontstyle(textnode, wxfont):
+    ff = textnode.font_style
+    if ff == "normal":
+        fontstyle = wx.FONTSTYLE_NORMAL
+    elif ff == "italic":
+        fontstyle = wx.FONTSTYLE_ITALIC
+    elif ff == "oblique":
+        fontstyle = wx.FONTSTYLE_SLANT
+    else:
+        fontstyle = wx.FONTSTYLE_NORMAL
+    wxfont.SetStyle(fontstyle)
+
+
 class LaserRender:
     """
     Laser Render provides GUI relevant methods of displaying the given elements.
@@ -66,52 +177,91 @@ class LaserRender:
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
+        (
+            self.fontdescent_factor,
+            self.fontdescent_delta,
+        ) = self._calc_font_descent_by_os()
 
-    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0):
+    def _calc_font_descent_by_os(self):
+        system = platform.system()
+        if system == "Darwin":
+            # to be verified
+            return 2.0, 0.5
+        elif system == "Windows":
+            return 2.0, 0.5
+        elif system == "Linux":
+            # Don't ask me why it's not 2.0...
+            # Might be just my GTK...
+            return 1.75, 0.45
+        else:
+            return 2.0, 0.5
+
+    def render(self, nodes, gc, draw_mode=None, zoomscale=1.0, alpha=255):
         """
         Render scene information.
 
-        :param nodes: Node types to render.
-        :param gc: graphics context
-        :param draw_mode: draw_mode set
-        :param zoomscale: set zoomscale at which this is drawn at
-        :return:
+        @param nodes: Node types to render.
+        @param gc: graphics context
+        @param draw_mode: draw_mode set
+        @param zoomscale: set zoomscale at which this is drawn at
+        @return:
         """
         if draw_mode is None:
             draw_mode = self.context.draw_mode
-
         if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
-            types = []
-            if draw_mode & DRAW_MODE_PATH == 0:
-                types.append(Path)
-            if draw_mode & DRAW_MODE_IMAGE == 0:
-                types.append(SVGImage)
-            if draw_mode & DRAW_MODE_TEXT == 0:
-                types.append(SVGText)
-            nodes = [e for e in nodes if type(e.object) in types]
+            if draw_mode & DRAW_MODE_PATH:  # Do not draw paths.
+                nodes = [e for e in nodes if e.type != "elem path"]
+            if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
+                nodes = [e for e in nodes if e.type != "elem image"]
+            if draw_mode & DRAW_MODE_TEXT:  # Do not draw text.
+                nodes = [e for e in nodes if e.type != "elem text"]
+            if draw_mode & DRAW_MODE_REGMARKS:  # Do not draw regmarked items.
+                nodes = [e for e in nodes if e._parent.type != "branch reg"]
+        _nodes = list(nodes)
+        variable_translation = draw_mode & DRAW_MODE_VARIABLES
+        nodecopy = [e for e in _nodes]
+        self.validate_text_nodes(nodecopy, variable_translation)
 
-        for node in nodes:
+        for node in _nodes:
+            if node.type == "reference":
+                self.render(
+                    [node.node],
+                    gc,
+                    draw_mode=draw_mode,
+                    zoomscale=zoomscale,
+                    alpha=alpha,
+                )
+                continue
+
             try:
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale)
+                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
             except AttributeError:
-                element = node.object
-                if isinstance(element, Path):
+                if node.type == "elem path":
                     node.draw = self.draw_path_node
-                elif isinstance(element, Shape):
+                elif node.type == "elem numpath":
+                    node.draw = self.draw_numpath_node
+                elif node.type == "elem point":
+                    node.draw = self.draw_point_node
+                elif node.type in (
+                    "elem rect",
+                    "elem line",
+                    "elem polyline",
+                    "elem ellipse",
+                ):
                     node.draw = self.draw_shape_node
-                elif isinstance(element, SVGImage):
+                elif node.type == "elem image":
                     node.draw = self.draw_image_node
-                elif isinstance(element, SVGText):
+                elif node.type == "elem text":
                     node.draw = self.draw_text_node
-                elif isinstance(element, Group):
-                    node.draw = self.draw_group_node
+                elif node.type == "cutcode":
+                    node.draw = self.draw_cutcode_node
                 else:
                     continue
-                node.draw(node, gc, draw_mode, zoomscale=zoomscale)
+                node.draw(node, gc, draw_mode, zoomscale=zoomscale, alpha=alpha)
 
     def make_path(self, gc, path):
         """
-        Takes an svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
         """
         p = gc.CreatePath()
         first_point = path.first_point
@@ -147,7 +297,90 @@ class LaserRender:
                     )
         return p
 
-    def set_pen(self, gc, stroke, width=1.0, alpha=None):
+    def make_numpath(self, gc, path):
+        """
+        Takes a svgelements.Path and converts it to a GraphicsContext.Graphics Path
+        """
+        p = gc.CreatePath()
+        for subpath in path.as_subpaths():
+            if len(subpath) == 0:
+                continue
+            end = None
+            for e in subpath.segments:
+                seg_type = int(e[2].real)
+                start = e[0]
+                if end != start:
+                    # Start point does not equal previous end point.
+                    p.MoveToPoint(start.real, start.imag)
+                c0 = e[1]
+                c1 = e[3]
+                end = e[4]
+
+                if seg_type in (TYPE_LINE, TYPE_RAMP):
+                    p.AddLineToPoint(end.real, end.imag)
+                elif seg_type == TYPE_QUAD:
+                    p.AddQuadCurveToPoint(c0.real, c0.imag, end.real, end.imag)
+                elif seg_type == TYPE_CUBIC:
+                    p.AddCurveToPoint(
+                        c0.real, c0.imag, c1.real, c1.imag, end.real, end.imag
+                    )
+                else:
+                    print(f"Unknown seg_type: {seg_type}")
+            if subpath.first_point == end:
+                p.CloseSubpath()
+
+        return p
+
+    def _set_linecap_by_node(self, node):
+        if not hasattr(node, "linecap") or node.linecap is None:
+            self.pen.SetCap(wx.CAP_ROUND)
+        else:
+            if node.linecap == Linecap.CAP_BUTT:
+
+                self.pen.SetCap(wx.CAP_BUTT)
+            elif node.linecap == Linecap.CAP_ROUND:
+                self.pen.SetCap(wx.CAP_ROUND)
+            elif node.linecap == Linecap.CAP_SQUARE:
+                self.pen.SetCap(wx.CAP_PROJECTING)
+            else:
+                self.pen.SetCap(wx.CAP_ROUND)
+
+    def _set_linejoin_by_node(self, node):
+        if not hasattr(node, "linejoin") or node.linejoin is None:
+            self.pen.SetJoin(wx.JOIN_MITER)
+        else:
+            if node.linejoin == Linejoin.JOIN_ARCS:
+                self.pen.SetJoin(wx.JOIN_ROUND)
+            elif node.linejoin == Linejoin.JOIN_BEVEL:
+                self.pen.SetJoin(wx.JOIN_BEVEL)
+            elif node.linejoin == Linejoin.JOIN_MITER:
+                self.pen.SetJoin(wx.JOIN_MITER)
+            elif node.linejoin == Linejoin.JOIN_MITER_CLIP:
+                self.pen.SetJoin(wx.JOIN_MITER)
+            else:
+                self.pen.SetJoin(wx.JOIN_ROUND)
+
+    def _get_fillstyle(self, node):
+        if not hasattr(node, "fillrule") or node.fillrule is None:
+            return wx.WINDING_RULE
+        else:
+            if node.fillrule == Fillrule.FILLRULE_EVENODD:
+                return wx.ODDEVEN_RULE
+            else:
+                return wx.WINDING_RULE
+
+    def _set_penwidth(self, width):
+        try:
+            if isnan(width):
+                width = 1.0
+            try:
+                self.pen.SetWidth(width)
+            except TypeError:
+                self.pen.SetWidth(int(width))
+        except OverflowError:
+            pass  # Exceeds 32 bit signed integer.
+
+    def set_pen(self, gc, stroke, alpha=None):
         c = stroke
         if c is not None and c != "none":
             swizzle_color = swizzlecolor(c)
@@ -155,13 +388,6 @@ class LaserRender:
                 alpha = c.alpha
             self.color.SetRGBA(swizzle_color | alpha << 24)  # wx has BBGGRR
             self.pen.SetColour(self.color)
-            try:
-                try:
-                    self.pen.SetWidth(width)
-                except TypeError:
-                    self.pen.SetWidth(int(width))
-            except OverflowError:
-                pass  # Exceeds 32 bit signed integer.
             gc.SetPen(self.pen)
         else:
             gc.SetPen(wx.TRANSPARENT_PEN)
@@ -178,39 +404,40 @@ class LaserRender:
         else:
             gc.SetBrush(wx.TRANSPARENT_BRUSH)
 
-    def set_element_pen(self, gc, element, zoomscale=1.0, width_scale=None):
-        try:
-            sw = element.stroke_width
-        except AttributeError:
-            sw = 1.0
-        if sw is None:
-            sw = 1.0
-        limit = zoomscale ** 0.5
-        try:
-            limit /= width_scale
-        except ZeroDivisionError:
-            pass
-        if sw < limit:
-            sw = limit
-        self.set_pen(gc, element.stroke, width=sw)
-
-    def set_element_brush(self, gc, element):
-        self.set_brush(gc, element.fill)
-
     def draw_cutcode_node(
-        self, node: Node, gc: wx.GraphicsContext, x: int = 0, y: int = 0
+        self,
+        node: Node,
+        gc: wx.GraphicsContext,
+        draw_mode,
+        zoomscale=1.0,
+        alpha=255,
+        x: int = 0,
+        y: int = 0,
     ):
-        cutcode = node.object
+        cutcode = node.cutcode
         self.draw_cutcode(cutcode, gc, x, y)
 
     def draw_cutcode(
         self, cutcode: CutCode, gc: wx.GraphicsContext, x: int = 0, y: int = 0
     ):
+        """
+        Draw cutcode object into wxPython graphics code.
+
+        This code accepts x,y offset values. The cutcode laser offset can be set with a
+        command with the rest of the cutcode remaining the same. So drawing the cutcode
+        requires knowing what, if any offset is currently being applied.
+
+        @param cutcode: flat cutcode object to draw.
+        @param gc: wx.graphics context
+        @param x: offset in x direction
+        @param y: offset in y direction
+        @return:
+        """
         p = None
         last_point = None
         color = None
         for cut in cutcode:
-            c = cut.settings.line_color
+            c = cut.line_color
             if c is not color:
                 color = c
                 last_point = None
@@ -218,20 +445,24 @@ class LaserRender:
                     gc.StrokePath(p)
                     del p
                 p = gc.CreatePath()
-                self.set_pen(gc, c, width=7.0, alpha=127)
-            start = cut.start()
-            end = cut.end()
+                self._set_penwidth(7.0)
+                self.set_pen(gc, c, alpha=127)
+            start = cut.start
+            end = cut.end
             if p is None:
                 p = gc.CreatePath()
             if last_point != start:
                 p.MoveToPoint(start[0] + x, start[1] + y)
             if isinstance(cut, LineCut):
+                # Standard line cut. Applies to path object.
                 p.AddLineToPoint(end[0] + x, end[1] + y)
             elif isinstance(cut, QuadCut):
+                # Standard quadratic bezier cut
                 p.AddQuadCurveToPoint(
                     cut.c()[0] + x, cut.c()[1] + y, end[0] + x, end[1] + y
                 )
             elif isinstance(cut, CubicCut):
+                # Standard cubic bezier cut
                 p.AddCurveToPoint(
                     cut.c1()[0] + x,
                     cut.c1()[1] + y,
@@ -241,198 +472,379 @@ class LaserRender:
                     end[1] + y,
                 )
             elif isinstance(cut, RasterCut):
+                # Rastercut object.
                 image = cut.image
                 gc.PushState()
-                matrix = Matrix()
-                matrix.post_translate(x, y)  # Add cutcode offset.
-
-                matrix.post_scale(
-                    cut.step
-                )  # Scale up the image by the step for simulation
-                matrix.post_translate(cut.tx, cut.ty)  # Adjust image xy
-                if matrix is not None and not matrix.is_identity():
-                    gc.ConcatTransform(
-                        wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
-                    )
-                cache = None
-                cache_id = -1
+                matrix = Matrix.scale(cut.step_x, cut.step_y)
+                matrix.post_translate(
+                    cut.offset_x + x, cut.offset_y + y
+                )  # Adjust image xy
+                gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
                 try:
                     cache = cut.cache
                     cache_id = cut.cache_id
                 except AttributeError:
-                    pass
+                    cache = None
+                    cache_id = -1
                 if cache_id != id(image):
+                    # Cached image is invalid.
                     cache = None
                 if cache is None:
+                    # No valid cache. Generate.
                     cut.c_width, cut.c_height = image.size
                     try:
-                        cut.cache = self.make_thumbnail(image, maximum=1000)
+                        cut.cache = self.make_thumbnail(image, maximum=5000)
                     except (MemoryError, RuntimeError):
                         cut.cache = None
                     cut.cache_id = id(image)
                 if cut.cache is not None:
+                    # Cache exists and is valid.
                     gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                    # gc.SetBrush(wx.RED_BRUSH) # TODO: TESTING
+                    # gc.DrawRectangle(0, 0, cut.c_width, cut.c_height) # TODO: TESTING
                 else:
+                    # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
                     gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
                     gc.DrawBitmap(
                         icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height
                     )
                 gc.PopState()
+            elif isinstance(cut, RawCut):
+                pass
+            elif isinstance(cut, PlotCut):
+                p.MoveToPoint(start[0] + x, start[1] + y)
+                for px, py, pon in cut.plot:
+                    if pon == 0:
+                        p.MoveToPoint(px + x, py + y)
+                    else:
+                        p.AddLineToPoint(px + x, py + y)
+            elif isinstance(cut, DwellCut):
+                pass
+            elif isinstance(cut, WaitCut):
+                pass
+            elif isinstance(cut, InputCut):
+                pass
+            elif isinstance(cut, OutputCut):
+                pass
             last_point = end
         if p is not None:
             gc.StrokePath(p)
             del p
 
-    def draw_group_node(self, node, gc, draw_mode, zoomscale=1.0):
-        pass
-
-    def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0):
+    def draw_shape_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
         """Default draw routine for the shape element."""
-        shape = node.object
         try:
-            matrix = shape.transform
-            width_scale = sqrt(abs(matrix.determinant))
+            matrix = node.matrix
         except AttributeError:
             matrix = None
-            width_scale = 1.0
         if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_path(gc, Path(shape))
+            cache = self.make_path(gc, Path(node.shape))
             node.cache = cache
-        gc.PushState()
-        if matrix is not None and not matrix.is_identity():
-            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, shape, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, shape)
-        if draw_mode & DRAW_MODE_FILLS == 0 and shape.fill is not None:
-            gc.FillPath(node.cache)
-        if draw_mode & DRAW_MODE_STROKES == 0 and shape.stroke is not None:
-            gc.StrokePath(node.cache)
-        gc.PopState()
+        self._set_linecap_by_node(node)
+        self._set_linejoin_by_node(node)
 
-    def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0):
-        """Default draw routine for the laser path element."""
-        path = node.object
-        try:
-            matrix = path.transform
-            width_scale = sqrt(abs(matrix.determinant))
-        except AttributeError:
-            matrix = None
-            width_scale = 1.0
-        if not hasattr(node, "cache") or node.cache is None:
-            cache = self.make_path(gc, path)
-            node.cache = cache
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, path, zoomscale=zoomscale, width_scale=width_scale)
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self.set_pen(gc, path.stroke, width=1)
-        self.set_element_brush(gc, path)
-        if draw_mode & DRAW_MODE_FILLS == 0 and path.fill is not None:
-            gc.FillPath(node.cache)
-        if draw_mode & DRAW_MODE_STROKES == 0 and path.stroke is not None:
+            self._set_penwidth(1000)
+        else:
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self.set_pen(
+            gc,
+            node.stroke,
+            alpha=alpha,
+        )
+        self.set_brush(gc, node.fill, alpha=alpha)
+        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
+            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
             gc.StrokePath(node.cache)
         gc.PopState()
 
-    def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0):
-        text = node.object
+    def draw_path_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """Default draw routine for the laser path element."""
         try:
-            matrix = text.transform
-            width_scale = sqrt(abs(matrix.determinant))
+            matrix = node.matrix
         except AttributeError:
             matrix = None
-            width_scale = 1.0
-        if hasattr(node, "wxfont"):
-            font = node.wxfont
-        else:
-            if text.font_size < 1:
-                if text.font_size > 0:
-                    text.transform.pre_scale(
-                        text.font_size, text.font_size, text.x, text.y
-                    )
-                text.font_size = 1  # No zero sized fonts.
-            try:
-                font = wx.Font(text.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
-            except TypeError:
-                font = wx.Font(int(text.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
-            try:
-                f = []
-                if text.font_family is not None:
-                    f.append(str(text.font_family))
-                if text.font_face is not None:
-                    f.append(str(text.font_face))
-                if text.font_weight is not None:
-                    f.append(str(text.font_weight))
-                f.append("%d" % text.font_size)
-                font.SetNativeFontInfoUserDesc(" ".join(f))
-            except Exception:
-                pass
-            node.wxfont = font
+        if not hasattr(node, "cache") or node.cache is None:
+            cache = self.make_path(gc, node.path)
+            node.cache = cache
+        self._set_linecap_by_node(node)
+        self._set_linejoin_by_node(node)
 
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        self.set_element_pen(gc, text, zoomscale=zoomscale, width_scale=width_scale)
-        self.set_element_brush(gc, text)
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth(1000)
+        else:
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self.set_pen(
+            gc,
+            node.stroke,
+            alpha=alpha,
+        )
+        self.set_brush(gc, node.fill, alpha=alpha)
+        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
+            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
+            gc.StrokePath(node.cache)
+        gc.PopState()
 
-        if text.fill is None or text.fill == "none":
+    def draw_numpath_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """Default draw routine for the laser path element."""
+        try:
+            matrix = node.matrix
+        except AttributeError:
+            matrix = None
+        if not hasattr(node, "cache") or node.cache is None:
+            cache = self.make_numpath(gc, node.path)
+            node.cache = cache
+        self._set_linecap_by_node(node)
+        self._set_linejoin_by_node(node)
+
+        gc.PushState()
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth(1000)
+        else:
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self.set_pen(
+            gc,
+            node.stroke,
+            alpha=alpha,
+        )
+        self.set_brush(gc, node.fill, alpha=alpha)
+        if draw_mode & DRAW_MODE_FILLS == 0 and node.fill is not None:
+            gc.FillPath(node.cache, fillStyle=self._get_fillstyle(node))
+        if draw_mode & DRAW_MODE_STROKES == 0 and node.stroke is not None:
+            gc.StrokePath(node.cache)
+        gc.PopState()
+
+    def draw_point_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        """Default draw routine for the laser path element."""
+        if draw_mode & DRAW_MODE_POINTS:
+            return
+        point = node.point
+        if point is None:
+            return
+        try:
+            matrix = node.matrix
+        except AttributeError:
+            matrix = None
+        if matrix is None:
+            return
+        gc.PushState()
+        gc.SetPen(wx.BLACK_PEN)
+        point = matrix.point_in_matrix_space(point)
+        node.point = point
+        matrix.reset()
+        dif = 5 * zoomscale
+        gc.StrokeLine(point.x - dif, point.y, point.x + dif, point.y)
+        gc.StrokeLine(point.x, point.y - dif, point.x, point.y + dif)
+        gc.PopState()
+
+    def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
+        text = node.text
+        if text is None or text == "":
+            return
+
+        try:
+            matrix = node.matrix
+        except AttributeError:
+            matrix = None
+
+        svgfont_to_wx(node)
+        font = node.wxfont
+
+        gc.PushState()
+        if matrix is not None and not matrix.is_identity():
+            gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+        if draw_mode & DRAW_MODE_LINEWIDTH:
+            self._set_penwidth(1000)
+        else:
+            self._set_penwidth(node.implied_stroke_width(zoomscale))
+        self.set_pen(
+            gc,
+            node.stroke,
+            alpha=alpha,
+        )
+        self.set_brush(gc, node.fill, alpha=255)
+
+        if node.fill is None or node.fill == "none":
             gc.SetFont(font, wx.BLACK)
         else:
-            gc.SetFont(font, wx.Colour(swizzlecolor(text.fill)))
+            gc.SetFont(font, as_wx_color(node.fill))
 
-        x = text.x
-        y = text.y
-        if text.text is not None:
-            text.width, text.height = gc.GetTextExtent(text.text)
-            if not hasattr(text, "anchor") or text.anchor == "start":
-                y -= text.height
-            elif text.anchor == "middle":
-                x -= text.width / 2
-                y -= text.height
-            elif text.anchor == "end":
-                x -= text.width
-                y -= text.height
-            gc.DrawText(text.text, x, y)
+        if draw_mode & DRAW_MODE_VARIABLES:
+            # Only if flag show the translated values
+            text = self.context.elements.mywordlist.translate(text)
+        if node.texttransform is not None:
+            ttf = node.texttransform.lower()
+            if ttf == "capitalize":
+                text = text.capitalize()
+            elif ttf == "uppercase":
+                text = text.upper()
+            if ttf == "lowercase":
+                text = text.lower()
+        # if node.width != f_width or node.height != f_height:
+        #     node._bounds_dirty = True
+        # print (f"node claims: {node.width} x {node.height} (+ offset of: {node.offset_x} x {node.offset_y})\ngc claims: {f_width} x {f_height}")
+        if node._bounds_dirty:
+            f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(
+                text
+            )
+        else:
+            f_height = node.height
+            f_width = node.width
+        # We do have a compensation factor to make sure we are drawing really at the edge..
+        dx = 0
+        dy = -f_height
+        if node.anchor == "middle":
+            dx -= f_width / 2
+        elif node.anchor == "end":
+            dx -= f_width
+        dx += node.offset_x
+        dy += node.offset_y
+        gc.DrawText(text, dx, dy)
         gc.PopState()
 
-    def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0):
-        image = node.object
-        try:
-            matrix = image.transform
-        except AttributeError:
-            matrix = None
+    def draw_image_node(self, node, gc, draw_mode, zoomscale=1.0, alpha=255):
+        image = node.active_image
+        matrix = node.active_matrix
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if draw_mode & DRAW_MODE_CACHE == 0:
-            cache = None
-            try:
-                cache = node.cache
-            except AttributeError:
-                pass
-            if cache is None:
-                try:
-                    max_allowed = node.max_allowed
-                except AttributeError:
-                    max_allowed = 2048
-                node.c_width, node.c_height = image.image.size
-                node.cache = self.make_thumbnail(
-                    image.image,
-                    maximum=max_allowed,
-                    alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
-                )
-            gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+        if node.process_image_failed:
+            image_width, image_height = image.size
+            gc.SetBrush(wx.RED_BRUSH)
+            gc.SetPen(wx.RED_PEN)
+            gc.DrawRectangle(0, 0, image_width, image_height)
+            gc.DrawBitmap(icons8_image_50.GetBitmap(), 0, 0, image_width, image_height)
         else:
-            node.c_width, node.c_height = image.image.size
-            cache = self.make_thumbnail(
-                image.image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
-            )
-            gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
+            if draw_mode & DRAW_MODE_CACHE == 0:
+                cache = None
+                try:
+                    cache = node.cache
+                except AttributeError:
+                    pass
+                if cache is None:
+                    try:
+                        max_allowed = node.max_allowed
+                    except AttributeError:
+                        max_allowed = 2048
+                    node.c_width, node.c_height = image.size
+                    node.cache = self.make_thumbnail(
+                        image,
+                        maximum=max_allowed,
+                        alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
+                    )
+                gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+            else:
+                node.c_width, node.c_height = image.size
+                try:
+                    cache = self.make_thumbnail(
+                        image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
+                    )
+                    gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
+                except MemoryError:
+                    pass
         gc.PopState()
+        txt = node.text
+        if txt is not None:
+            gc.PushState()
+            gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
+            font = wx.Font()
+            font.SetFractionalPointSize(20)
+            gc.SetFont(font, wx.BLACK)
+            gc.DrawText(txt, 30, 30)
+            gc.PopState()
+
+    def measure_text(self, node):
+        # A 'real' height routine needs to draw the string on an
+        # empty canvas and find the first and last dots on a line...
+        # We are creating a temporary bitmap and paint on it...
+        bmp = wx.Bitmap(1000, 500, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.Clear()
+        gc = wx.GraphicsContext.Create(dc)
+        draw_mode = self.context.draw_mode
+        if draw_mode & DRAW_MODE_VARIABLES:
+            # Only if flag show the translated values
+            text = self.context.elements.mywordlist.translate(node.text)
+            node.bounds_with_variables_translated = True
+        else:
+            text = node.text
+            node.bounds_with_variables_translated = False
+        if node.texttransform:
+            ttf = node.texttransform.lower()
+            if ttf == "capitalize":
+                text = text.capitalize()
+            elif ttf == "uppercase":
+                text = text.upper()
+            if ttf == "lowercase":
+                text = text.lower()
+        svgfont_to_wx(node)
+        font = node.wxfont
+        gc.SetFont(font, wx.WHITE)
+        gc.DrawText(text, 0, 0)
+        img = bmp.ConvertToImage()
+        buf = img.GetData()
+        image = Image.frombuffer(
+            "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+        )
+        # As a fallback, calculate these
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        offs_x = offs_y = 0
+        # print (f"textextent, Width={f_width}, Height={f_height}")
+        font_bb = image.getbbox()
+        if font_bb is not None:
+            # print(f"Pillow provides: {font_bb}")
+            f_width = font_bb[2] - font_bb[0]
+            f_height = font_bb[3] - font_bb[1]
+            offs_x = -1 * font_bb[0]
+            offs_y = -1 * font_bb[1]
+            # print (f"pillow, Width={f_width}, Height={f_height}")
+            # image.save(f"dbg_{text}.png")
+
+        if node.width != f_width or node.height != f_height:
+            node._bounds_dirty = True
+        node.width = f_width
+        node.height = f_height
+        node.offset_x = offs_x
+        node.offset_y = offs_y
+        __ = node.bounds
+        dc.SelectObject(wx.NullBitmap)
+        gc.Destroy()
+        del dc
+
+    def validate_text_nodes(self, nodes, translate_variables):
+        for item in nodes:
+            if item.type == "elem text" and (
+                item.width is None
+                or item.height is None
+                or item._bounds_dirty
+                or item.bounds_with_variables_translated != translate_variables
+            ):
+                # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
+                self.measure_text(item)
 
     def make_raster(
-        self, elements, bounds, width=None, height=None, bitmap=False, step=1
+        self,
+        nodes,
+        bounds,
+        width=None,
+        height=None,
+        bitmap=False,
+        step_x=1,
+        step_y=1,
+        keep_ratio=False,
     ):
         """
         Make Raster turns an iterable of elements and a bounds into an image of the designated size, taking into account
@@ -442,74 +854,87 @@ class LaserRender:
 
         This function requires both wxPython and Pillow.
 
-        :param elements: elements to render.
-        :param bounds: bounds of those elements for the viewport.
-        :param width: desired width of the resulting raster
-        :param height: desired height of the resulting raster
-        :param bitmap: bitmap to use rather than provisioning
-        :param step: raster step rate, int scale rate of the image.
-        :return:
+        @param nodes: elements to render.
+        @param bounds: bounds of those elements for the viewport.
+        @param width: desired width of the resulting raster
+        @param height: desired height of the resulting raster
+        @param bitmap: bitmap to use rather than provisioning
+        @param step_x: raster step rate, scale rate of the image.
+        @param step_y: raster step rate, scale rate of the image.
+        @param keep_ratio: get a picture with the same height / width
+               ratio as the original
+        @return:
         """
         if bounds is None:
             return None
-        xmin, ymin, xmax, ymax = bounds
-        xmax = ceil(xmax)
-        ymax = ceil(ymax)
-        xmin = floor(xmin)
-        ymin = floor(ymin)
+        x_min = float("inf")
+        y_min = float("inf")
+        x_max = -float("inf")
+        y_max = -float("inf")
+        if not isinstance(nodes, (tuple, list)):
+            _nodes = [nodes]
+        else:
+            _nodes = nodes
 
-        image_width = int(xmax - xmin)
-        if image_width == 0:
-            image_width = 1
+        # if it's a raster we will always translate text variables...
+        variable_translation = True
+        nodecopy = [e for e in _nodes]
+        self.validate_text_nodes(nodecopy, variable_translation)
 
-        image_height = int(ymax - ymin)
-        if image_height == 0:
-            image_height = 1
-
+        for item in _nodes:
+            bb = item.bounds
+            if bb[0] < x_min:
+                x_min = bb[0]
+            if bb[1] < y_min:
+                y_min = bb[1]
+            if bb[2] > x_max:
+                x_max = bb[2]
+            if bb[3] > y_max:
+                y_max = bb[3]
+        raster_width = x_max - x_min
+        raster_height = y_max - y_min
         if width is None:
-            width = image_width
+            width = raster_width / step_x
         if height is None:
-            height = image_height
-        # Scale physical image down by step amount.
-        width /= float(step)
-        height /= float(step)
-        width = int(width)
-        height = int(height)
-        if width <= 0:
-            width = 1
-        if height <= 0:
-            height = 1
-        bmp = wx.Bitmap(width, height, 32)
+            height = raster_height / step_y
+
+        bmp = wx.Bitmap(int(ceil(abs(width))), int(ceil(abs(height))), 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
 
         matrix = Matrix()
-        matrix.post_translate(-xmin, -ymin)
 
         # Scale affine matrix up by step amount scaled down.
-        scale_x = width / float(image_width)
-        scale_y = height / float(image_height)
-        scale = min(scale_x, scale_y)
-        matrix.post_scale(scale)
+        scale_x = width / raster_width
+        scale_y = height / raster_height
+        if keep_ratio:
+            scale_x = min(scale_x, scale_y)
+            scale_y = scale_x
+        matrix.post_translate(-x_min, -y_min)
+        matrix.post_scale(scale_x, scale_y)
+        if scale_y < 0:
+            matrix.pre_translate(0, -raster_height)
+        if scale_x < 0:
+            matrix.pre_translate(-raster_width, 0)
 
         gc = wx.GraphicsContext.Create(dc)
         gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
         gc.PushState()
         if not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if not isinstance(elements, (list, tuple)):
-            elements = [elements]
         gc.SetBrush(wx.WHITE_BRUSH)
-        gc.DrawRectangle(xmin - 1, ymin - 1, xmax + 1, ymax + 1)
-        self.render(elements, gc, draw_mode=DRAW_MODE_CACHE)
+        gc.DrawRectangle(x_min - 1, y_min - 1, x_max + 1, y_max + 1)
+        self.render(_nodes, gc, draw_mode=DRAW_MODE_CACHE | DRAW_MODE_VARIABLES)
         img = bmp.ConvertToImage()
         buf = img.GetData()
         image = Image.frombuffer(
             "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
         )
+
         gc.PopState()
+        dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
         del dc
         if bitmap:
@@ -542,7 +967,8 @@ class LaserRender:
             return wx.Bitmap.FromBufferRGBA(
                 width, height, pil_data.convert("RGBA").tobytes()
             )
-
+        if "transparency" in pil_data.info:
+            pil_data = pil_data.convert("RGBA")
         try:
             # If transparent we paste 0 into the pil_data
             mask = pil_data.getchannel("A").point(lambda e: 255 - e)

@@ -1,6 +1,6 @@
 import socket
 
-from .kernel import STATE_TERMINATE, Module
+from meerk40t.kernel import STATE_END, STATE_TERMINATE, Module
 
 
 def plugin(kernel, lifecycle=None):
@@ -39,18 +39,18 @@ def plugin(kernel, lifecycle=None):
                     root.close("console-server")
                     return
                 send = root.channel("console-server/send")
-                send.greet = _("%s %s Telnet Console.\r\n") % (
-                    kernel.name,
-                    kernel.version,
-                )
+                send.greet = _(
+                    "{kernel_name} {kernel_version} Telnet Console.\r\n"
+                ).format(kernel_name=kernel.name, kernel_version=kernel.version)
                 send.line_end = "\r\n"
 
                 recv = root.channel("console-server/recv")
                 recv.watch(root.console)
                 channel(
                     _(
-                        "%s %s console server on port: %d"
-                        % (kernel.name, kernel.version, port)
+                        "{name} {version} console server on port: {port}".format(
+                            name=kernel.name, version=kernel.version, port=port
+                        )
                     )
                 )
 
@@ -60,7 +60,7 @@ def plugin(kernel, lifecycle=None):
                     server.events_channel.watch(console)
 
             except (OSError, ValueError):
-                channel(_("Server failed on port: %d") % port)
+                channel(_("Server failed on port: {port}").format(port=port))
             return
 
 
@@ -76,32 +76,32 @@ class UDPServer(Module):
         """
         Laser Server init.
 
-        :param context: Context at which this module is attached.
-        :param name: Name of this module.
-        :param port: UDP listen port.
+        @param context: Context at which this module is attached.
+        @param name: Name of this module.
+        @param port: UDP listen port.
         """
         Module.__init__(self, context, name)
         self.port = port
-        self.events_channel = self.context.channel("server-udp-%d" % port)
+        self.events_channel = self.context.channel(f"server-udp-{port}")
 
         self.udp_address = udp_address
-        self.context.channel("%s/send" % name).watch(self.send)
-        self.recv = self.context.channel("%s/recv" % name)
+        self.context.channel(f"{name}/send").watch(self.send)
+        self.recv = self.context.channel(f"{name}/recv")
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(2)
         self.socket.bind(("", self.port))
-        self.context.threaded(self.run_udp_listener, thread_name=name)
+        self.context.threaded(self.run_udp_listener, thread_name=name, daemon=True)
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         _ = self.context._
-        self.context.channel("%s/send" % self.name).unwatch(
-            self.send
-        )  # We stop watching the send channel
+        self.context.channel(f"{self.name}/send").unwatch(self.send)
+        # We stop watching the `send channel`
         self.events_channel(_("Shutting down server."))
         if self.socket is not None:
             self.socket.close()
             self.socket = None
+        self.state = STATE_TERMINATE
 
     def send(self, message):
         _ = self.context._
@@ -117,13 +117,13 @@ class UDPServer(Module):
     def run_udp_listener(self):
         _ = self.context._
         try:
-            self.events_channel(_("UDP Socket(%d) Listening.") % self.port)
-            while True:
+            self.events_channel(
+                _("UDP Socket({port}) Listening.").format(port=self.port)
+            )
+            while self.state != STATE_END and self.state != STATE_TERMINATE:
                 try:
                     message, address = self.socket.recvfrom(1024)
                 except (socket.timeout, AttributeError):
-                    if self.state == STATE_TERMINATE:
-                        return
                     continue
                 if address is not None:
                     self.udp_address = address
@@ -141,24 +141,24 @@ class TCPServer(Module):
         """
         Laser Server init.
 
-        :param context: Context at which this module is attached.
-        :param name: Name of this module
-        :param port: Port being used for the server.
+        @param context: Context at which this module is attached.
+        @param name: Name of this module
+        @param port: Port being used for the server.
         """
         Module.__init__(self, context, name)
         self.port = port
 
         self.socket = None
-        self.events_channel = self.context.channel("server-tcp-%d" % port)
-        self.data_channel = self.context.channel("data-tcp-%d" % port)
+        self.events_channel = self.context.channel(f"server-tcp-{port}")
+        self.data_channel = self.context.channel(f"data-tcp-{port}")
         self.context.threaded(
-            self.run_tcp_delegater, thread_name="tcp-%d" % port, daemon=True
+            self.run_tcp_delegater, thread_name=f"tcp-{port}", daemon=True
         )
 
     def stop(self):
         self.state = STATE_TERMINATE
 
-    def finalize(self, *args, **kwargs):
+    def module_close(self, *args, **kwargs):
         _ = self.context._
         self.events_channel(_("Shutting down server."))
         self.state = STATE_TERMINATE
@@ -183,23 +183,29 @@ class TCPServer(Module):
         handle = 1
         while self.state != STATE_TERMINATE:
             self.events_channel(
-                _("Listening %s on port %d...") % (self.name, self.port)
+                _("Listening {name} on port {port}...").format(
+                    name=self.name, port=self.port
+                )
             )
             connection = None
-            addr = None
+            address = None
             try:
-                connection, addr = self.socket.accept()
-                self.events_channel(_("Socket Connected: %s") % str(addr))
+                connection, address = self.socket.accept()
+                self.events_channel(
+                    _("Socket Connected: {address}").format(address=address)
+                )
                 self.context.threaded(
-                    self.connection_handler(connection, addr),
-                    thread_name="handler-%d-%d" % (self.port, handle),
+                    self.connection_handler(connection, address),
+                    thread_name=f"handler-{self.port}-{handle}",
                     daemon=True,
                 )
                 handle += 1
             except socket.timeout:
                 pass
             except OSError:
-                self.events_channel(_("Socket was killed: %s") % str(addr))
+                self.events_channel(
+                    _("Socket was killed: {address}").format(address=address)
+                )
                 if connection is not None:
                     connection.close()
                 break
@@ -209,7 +215,7 @@ class TCPServer(Module):
         if self.socket is not None:
             self.socket.close()
 
-    def connection_handler(self, connection, addr):
+    def connection_handler(self, connection, address):
         """
         The TCP Connection Handle, handles all connections delegated by the tcp_run() method.
         The threaded context is entirely local and independent.
@@ -221,29 +227,33 @@ class TCPServer(Module):
                 if connection is not None:
                     try:
                         connection.send(bytes(e, "utf-8"))
-                        self.data_channel("<-- %s" % str(e))
+                        self.data_channel(f"<-- {str(e)}")
                     except (ConnectionAbortedError, ConnectionResetError):
                         connection.close()
 
-            recv = self.context.channel("%s/recv" % self.name)
-            send_channel_name = "%s/send" % self.name
+            recv = self.context.channel(f"{self.name}/recv")
+            send_channel_name = f"{self.name}/send"
             self.context.channel(send_channel_name).watch(send)
             while self.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)
                     if len(data_from_socket):
-                        self.data_channel("--> %s" % str(data_from_socket))
+                        self.data_channel(f"--> {str(data_from_socket)}")
                     else:
                         break
                     recv(data_from_socket)
                 except socket.timeout:
-                    self.events_channel(_("Connection to %s timed out.") % str(addr))
+                    self.events_channel(
+                        _("Connection to {address} timed out.").format(address=address)
+                    )
                     break
                 except socket.error:
                     if connection is not None:
                         connection.close()
                     break
             self.context.channel(send_channel_name).unwatch(send)
-            self.events_channel(_("Connection to %s was closed.") % str(addr))
+            self.events_channel(
+                _("Connection to {address} was closed.").format(address=address)
+            )
 
         return handle

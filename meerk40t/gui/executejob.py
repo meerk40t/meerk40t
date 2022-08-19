@@ -2,11 +2,13 @@ import math
 
 import wx
 
-from ..core.elements import LaserOperation
-from ..svgelements import Group, Length
-from .icons import icons8_laser_beam_52
+from meerk40t.kernel import signal_listener
+
+from ..core.node.node import Node
+from .choicepropertypanel import ChoicePropertyPanel
+from .icons import STD_ICON_SIZE, icons8_laser_beam_52
 from .mwindow import MWindow
-from .propertiespanel import PropertiesPanel
+from .wxutils import disable_window
 
 _ = wx.GetTranslation
 
@@ -21,33 +23,14 @@ class PlannerPanel(wx.Panel):
         self.context = context
 
         self.plan_name = plan_name
-
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
-        selected_spooler = self.context.root.active
-        spools = [str(i) for i in self.context.match("device", suffix=True)]
-        try:
-            index = spools.index(selected_spooler)
-        except ValueError:
-            index = 0
-        self.connected_name = spools[index]
-        self.connected_spooler, self.connected_driver, self.connected_output = (
-            None,
-            None,
-            None,
-        )
-        try:
-            (
-                self.connected_spooler,
-                self.connected_driver,
-                self.connected_output,
-            ) = self.available_devices[index]
-        except IndexError:
-            for m in self.Children:
-                if isinstance(m, wx.Window):
-                    m.Disable()
-        spools = [" -> ".join(map(repr, ad)) for ad in self.available_devices]
+        self.available_devices = list(self.context.kernel.services("device"))
+        self.selected_device = self.context.device
+        index = -1
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
+                index = i
+                break
+        spools = [s.label for s in self.available_devices]
 
         self.combo_device = wx.ComboBox(
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
@@ -56,10 +39,9 @@ class PlannerPanel(wx.Panel):
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
-        self.panel_operation = wx.Panel(self, wx.ID_ANY)
-        choices = self.context.registered["choices/optimize"][:7]
-        self.panel_optimize = PropertiesPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+        choices = self.context.lookup("choices/optimize")[:7]
+        self.panel_optimize = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
@@ -79,6 +61,8 @@ class PlannerPanel(wx.Panel):
         )
         self.Bind(wx.EVT_BUTTON, self.on_button_start, self.button_start)
         self.stage = 0
+        if index == -1:
+            disable_window(self)
 
     def __set_properties(self):
         # begin wxGlade: Preview.__set_properties
@@ -106,30 +90,37 @@ class PlannerPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: Preview.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
-        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_optimizations = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
-        )
+        # sizer_optimizations = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
+        # )
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 2, wx.EXPAND, 0)
         sizer_main.Add(self.list_command, 2, wx.EXPAND, 0)
+
+        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(self.panel_optimize, 1, 2, wx.EXPAND, 0)
+        sizer_options.Add(self.button_start, 1, wx.EXPAND, 0)
+
+        sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_frame.Add(sizer_main, 1, wx.EXPAND, 0)
+        sizer_frame.Add(sizer_options, 1, wx.EXPAND, 0)
 
-        sizer_frame.Add(self.panel_operation, 0, wx.EXPAND, 0)
-
-        sizer_optimizations.Add(self.panel_optimize)
-        sizer_options.Add(sizer_optimizations, 2, wx.EXPAND, 0)
-        sizer_options.Add(self.button_start, 3, wx.EXPAND, 0)
-        sizer_frame.Add(sizer_options, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_frame)
         self.Layout()
         # end wxGlade
 
     def jobchange_return_to_operations(self, event=None):
-        self.context("plan%s return clear\n" % (self.plan_name))
+        self.context(f"plan{self.plan_name} return clear\n")
 
     def jobchange_step_repeat(self, event=None):
+        elems = []
+        cutplan = self.context.planner.default_plan
+        for node in cutplan.plan:
+            if node.type.startswith("op"):
+                elems.extend(node.children)
+        if len(elems) == 0:
+            return
+
         dlg = wx.TextEntryDialog(
             self, _("How many copies wide?"), _("Enter Columns"), ""
         )
@@ -144,6 +135,8 @@ class PlannerPanel(wx.Panel):
             dlg.Destroy()
             return
         dlg.Destroy()
+        if cols == 0:
+            return
 
         dlg = wx.TextEntryDialog(self, _("How many copies high?"), _("Enter Rows"), "")
         if dlg.ShowModal() == wx.ID_OK:
@@ -156,14 +149,10 @@ class PlannerPanel(wx.Panel):
             dlg.Destroy()
             return
         dlg.Destroy()
+        if rows == 0:
+            return
 
-        elems = []
-        cutplan = self.context.default_plan()
-        for node in cutplan.plan:
-            if type(node) is LaserOperation:
-                objs = [e.object for e in node.children]
-                elems.extend(objs)
-        bounds = Group.union_bbox(elems)
+        bounds = Node.union_bounds(elems)
 
         try:
             width = math.ceil(bounds[2] - bounds[0])
@@ -171,119 +160,115 @@ class PlannerPanel(wx.Panel):
         except TypeError:
             width = None
             height = None
+        if cols > 1 or width is None:
+            dlg = wx.TextEntryDialog(
+                self,
+                _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 110%")
+                + "\n\n"
+                + _("This should be the item width + any gap."),
+                _("Enter X Delta"),
+                "",
+            )
 
-        dlg = wx.TextEntryDialog(
-            self,
-            _("How far apart are these copies width-wise? eg. 2in, 3cm, 50mm, 10%")
-            + "\n\n"
-            + _("This should be the item width + any gap."),
-            _("Enter X Delta"),
-            "",
-        )
-
-        if self.context:
-            conversion = self.context.units_convert
             name = self.context.units_name
-            if height:
-                height = "%.1f%s" % (height / conversion, name)
             if width:
-                width = "%.1f%s" % (width / conversion, name)
-        dlg.SetValue(str(width) if width is not None else "%f%%" % (100.0 / cols))
-        bed_dim = self.context.root
-        bed_dim.setting(int, "bed_width", 310)
-        bed_dim.setting(int, "bed_height", 210)
-        if dlg.ShowModal() == wx.ID_OK:
-            try:
-                x_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0,
-                    relative_length=width
-                    if width is not None
-                    else bed_dim.bed_width * MILS_PER_MM,
+                width = self.context.device.length(
+                    width,
+                    unitless=self.context.device.native_scale_x,
+                    new_units=name,
+                    digits=3,
                 )
-            except ValueError:
+            else:
+                width = f"{100.0 / rows:.2f}%"
+            dlg.SetValue(str(width))
+            if dlg.ShowModal() == wx.ID_OK:
+                try:
+                    x_distance = self.context.device.length(
+                        dlg.GetValue(),
+                        0,
+                        relative_length=width,
+                        as_float=True,
+                    )
+                except ValueError:
+                    dlg.Destroy()
+                    return
+            else:
                 dlg.Destroy()
                 return
-            if isinstance(x_distance, Length):
-                dlg.Destroy()
-                return
-        else:
             dlg.Destroy()
-            return
-        dlg.Destroy()
+        else:
+            x_distance = width
 
-        dlg = wx.TextEntryDialog(
-            self,
-            _("How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 10%")
-            + "\n\n"
-            + _("This should be the item height + any gap."),
-            _("Enter Y Delta"),
-            "",
-        )
-        dlg.SetValue(str(height) if height is not None else "%f%%" % (100.0 / rows))
-        if dlg.ShowModal() == wx.ID_OK:
-            try:
-                y_distance = Length(dlg.GetValue()).value(
-                    ppi=1000.0,
-                    relative_length=height
-                    if height is not None
-                    else bed_dim.bed_height * MILS_PER_MM,
+        if rows > 1:
+            dlg = wx.TextEntryDialog(
+                self,
+                _(
+                    "How far apart are these copies height-wise? eg. 2in, 3cm, 50mm, 110%"
                 )
-            except ValueError:
+                + "\n\n"
+                + _("This should be the item height + any gap."),
+                _("Enter Y Delta"),
+                "",
+            )
+            if height:
+                height = self.context.device.length(
+                    height,
+                    unitless=self.context.device.native_scale_y,
+                    new_units=name,
+                    digits=3,
+                )
+            else:
+                height = f"{100.0 / cols:.2f}%"
+            dlg.SetValue(str(height))
+            if dlg.ShowModal() == wx.ID_OK:
+                try:
+                    y_distance = self.context.device.length(
+                        dlg.GetValue(),
+                        1,
+                        relative_length=height,
+                        as_float=True,
+                    )
+                except ValueError:
+                    dlg.Destroy()
+                    return
+            else:
                 dlg.Destroy()
                 return
-            if isinstance(y_distance, Length):
-                dlg.Destroy()
-                return
-        else:
             dlg.Destroy()
-            return
-        dlg.Destroy()
+        else:
+            y_distance = height
+
         self.context(
-            "plan%s step_repeat %s %s %s %s\n"
-            % (self.plan_name, cols, rows, x_distance, y_distance)
+            f"plan{self.plan_name} step_repeat {cols} {rows} {x_distance} {y_distance}\n"
         )
 
     def jobadd_physicalhome(self, event=None):
-        self.context("plan%s command -o physicalhome\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o physicalhome\n")
         self.update_gui()
 
     def jobadd_home(self, event=None):
-        self.context("plan%s command -o home\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o home\n")
         self.update_gui()
 
     def jobadd_origin(self, event=None):
-        self.context("plan%s command -o origin\n" % self.plan_name)
-        self.update_gui()
-
-    def jobadd_wait(self, event=None):
-        self.context("plan%s command -o wait\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o origin\n")
         self.update_gui()
 
     def jobadd_beep(self, event=None):
-        self.context("plan%s command -o beep\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o beep\n")
         self.update_gui()
 
     def jobadd_interrupt(self, event=None):
-        self.context("plan%s command -o interrupt\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o interrupt\n")
         self.update_gui()
 
     def jobadd_command(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context("plan%s command -o console\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o console\n")
         self.update_gui()
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.available_devices = [
-            self.context.registered[i] for i in self.context.match("device")
-        ]
         index = self.combo_device.GetSelection()
-        (
-            self.connected_spooler,
-            self.connected_driver,
-            self.connected_output,
-        ) = self.available_devices[index]
-        self.connected_name = [
-            str(i) for i in self.context.match("device", suffix=True)
-        ][index]
+        self.selected_device = self.available_devices[index]
 
     def on_listbox_operation_click(self, event):  # wxGlade: JobInfo.<event_handler>
         event.Skip()
@@ -292,10 +277,10 @@ class PlannerPanel(wx.Panel):
         node_index = self.list_operations.GetSelection()
         if node_index == -1:
             return
-        cutplan = self.context.default_plan()
+        cutplan = self.context.planner.default_plan
         obj = cutplan.plan[node_index]
-        if isinstance(obj, LaserOperation):
-            self.context.open("window/OperationProperty", self, node=obj)
+        self.context.open("window/Properties", self)
+        # self.context.kernel.activate_instance(obj)
         event.Skip()
 
     def on_listbox_commands_click(self, event):  # wxGlade: JobInfo.<event_handler>
@@ -307,31 +292,31 @@ class PlannerPanel(wx.Panel):
     def on_button_start(self, event=None):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
             with wx.BusyInfo(_("Preprocessing...")):
-                self.context("plan%s copy preprocess\n" % self.plan_name)
-                cutplan = self.context.default_plan()
+                self.context(f"plan{self.plan_name} copy preprocess\n")
+                cutplan = self.context.planner.default_plan
                 if len(cutplan.commands) == 0:
-                    self.context("plan%s validate\n" % self.plan_name)
+                    self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 1:
             with wx.BusyInfo(_("Determining validity of operations...")):
-                self.context("plan%s preprocess\n" % self.plan_name)
-                cutplan = self.context.default_plan()
+                self.context(f"plan{self.plan_name} preprocess\n")
+                cutplan = self.context.planner.default_plan
                 if len(cutplan.commands) == 0:
-                    self.context("plan%s validate\n" % self.plan_name)
+                    self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 2:
             with wx.BusyInfo(_("Validating operation data...")):
-                self.context("plan%s validate\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 3:
             with wx.BusyInfo(_("Compiling cuts...")):
-                self.context("plan%s blob preopt\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} blob preopt\n")
         elif self.stage == 4:
             with wx.BusyInfo(_("Determining optimizations to perform...")):
-                self.context("plan%s preopt\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} preopt\n")
         elif self.stage == 5:
             with wx.BusyInfo(_("Performing Optimizations...")):
-                self.context("plan%s optimize\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} optimize\n")
         elif self.stage == 6:
             with wx.BusyInfo(_("Sending data to laser...")):
-                self.context("plan%s spool%s\n" % (self.plan_name, self.connected_name))
+                self.context(f"plan{self.plan_name} spool\n")
                 if self.context.auto_spooler:
                     self.context("window open JobSpooler\n")
                 try:
@@ -340,52 +325,20 @@ class PlannerPanel(wx.Panel):
                     pass
         self.update_gui()
 
-    def initialize(self):
-        rotary_context = self.context.get_context("rotary/1")
-        rotary_context.setting(bool, "rotary", False)
-        rotary_context.setting(float, "scale_x", 1.0)
-        rotary_context.setting(float, "scale_y", 1.0)
-        self.context.setting(int, "opt_closed_distance", 15)
-        self.context.setting(bool, "opt_merge_passes", False)
-        self.context.setting(bool, "opt_merge_ops", False)
-        self.context.setting(bool, "opt_reduce_travel", True)
-        self.context.setting(bool, "opt_complete_subpaths", False)
-        self.context.setting(bool, "opt_inner_first", True)
-        self.context.setting(bool, "opt_inners_grouped", False)
-        self.context.setting(bool, "opt_reduce_directions", False)
-        self.context.setting(bool, "opt_remove_overlap", False)
-        self.context.setting(bool, "opt_rapid_between", True)
-        self.context.setting(int, "opt_jog_minimum", 256)
-        self.context.setting(int, "opt_jog_mode", 0)
-
-        self.context.listen("element_property_reload", self.on_element_property_update)
-        self.context.listen("plan", self.plan_update)
-        #
-        # self.check_rapid_moves_between.SetValue(self.context.opt_rapid_between)
-        # self.check_reduce_travel_time.SetValue(self.context.opt_reduce_travel)
-        # self.check_merge_passes.SetValue(self.context.opt_merge_passes)
-        # self.check_merge_ops.SetValue(self.context.opt_merge_ops)
-        # self.check_merge_ops.Enable(self.context.opt_reduce_travel)
-        # self.check_merge_passes.Enable(self.context.opt_reduce_travel)
-        # self.check_cut_inner_first.SetValue(self.context.opt_inner_first)
-        # self.check_reduce_direction_changes.SetValue(self.context.opt_reduce_directions)
-        # self.check_remove_overlap_cuts.SetValue(self.context.opt_remove_overlap)
-
-        cutplan = self.context.default_plan()
+    def pane_show(self):
+        # self.context.setting(bool, "opt_rasters_split", True)
+        # TODO: OPT_RASTER_SPLIT
+        cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
-            self.context("plan%s copy preprocess\n" % self.plan_name)
+            self.context(f"plan{self.plan_name} copy preprocess\n")
 
         self.update_gui()
 
-    def finalize(self):
-        self.context("plan%s clear\n" % self.plan_name)
+    def pane_hide(self):
+        self.context(f"plan{self.plan_name} clear\n")
 
-        self.context.unlisten(
-            "element_property_reload", self.on_element_property_update
-        )
-        self.context.unlisten("plan", self.plan_update)
-
+    @signal_listener("plan")
     def plan_update(self, origin, *message):
         plan_name, stage = message[0], message[1]
         if stage is not None:
@@ -393,6 +346,7 @@ class PlannerPanel(wx.Panel):
         self.plan_name = plan_name
         self.update_gui()
 
+    @signal_listener("element_property_reload")
     def on_element_property_update(self, origin, *args):
         self.update_gui()
 
@@ -405,7 +359,7 @@ class PlannerPanel(wx.Panel):
 
         self.list_operations.Clear()
         self.list_command.Clear()
-        cutplan = self.context.default_plan()
+        cutplan = self.context.planner.default_plan
         if cutplan.plan is not None and len(cutplan.plan) != 0:
             self.list_operations.InsertItems([name_str(e) for e in cutplan.plan], 0)
         if cutplan.commands is not None and len(cutplan.commands) != 0:
@@ -451,13 +405,14 @@ class ExecuteJob(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(496, 573, *args, **kwds)
 
-        if len(args) >= 4:
+        if len(args) > 3:
             plan_name = args[3]
         else:
             plan_name = 0
         self.panel = PlannerPanel(
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
+        self.add_module_delegate(self.panel)
         self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
         self.panel.list_operations.Bind(
             wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations
@@ -486,16 +441,14 @@ class ExecuteJob(MWindow):
     def on_menu(self, event):
         from .wxutils import create_menu_for_choices
 
-        menu = create_menu_for_choices(self, self.context.registered["choices/planner"])
+        menu = create_menu_for_choices(self, self.context.lookup("choices/planner"))
         self.PopupMenu(menu)
         menu.Destroy()
 
     def create_menu(self, append):
         from .wxutils import create_menu_for_choices
 
-        wx_menu = create_menu_for_choices(
-            self, self.context.registered["choices/planner"]
-        )
+        wx_menu = create_menu_for_choices(self, self.context.lookup("choices/planner"))
         append(wx_menu, _("Automatic"))
 
         # ==========
@@ -513,11 +466,6 @@ class ExecuteJob(MWindow):
             wx.EVT_MENU,
             self.panel.jobadd_physicalhome,
             wx_menu.Append(wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.panel.jobadd_wait,
-            wx_menu.Append(wx.ID_ANY, _("Wait"), _("Add a wait")),
         )
         self.Bind(
             wx.EVT_MENU,
@@ -554,8 +502,21 @@ class ExecuteJob(MWindow):
             wx_menu.Append(wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")),
         )
 
+    @staticmethod
+    def sub_register(kernel):
+        kernel.register(
+            "button/project/ExecuteJob",
+            {
+                "label": _("Execute Job"),
+                "icon": icons8_laser_beam_52,
+                "tip": _("Execute the current laser project"),
+                "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
+                "size": STD_ICON_SIZE,
+            },
+        )
+
     def window_open(self):
-        self.panel.initialize()
+        self.panel.pane_show()
 
     def window_close(self):
-        self.panel.finalize()
+        self.panel.pane_hide()

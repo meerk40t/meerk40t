@@ -6,6 +6,9 @@ Some code is removed from a more prominent role elsewhere, others perform functi
 
 Many of these resemble addons that are built-in to meerk40t.
 
+## CAG (Computer Additive Geometry)
+The cag operations provide access to Clipper which is located in the tools section, this allows for clipping of shapes by other shapes.
+
 ## Embroider
 
 Embroider permits console calls to "embroider" which performs an Eulerian Fill operation on selected closed shapes.
@@ -17,6 +20,11 @@ Inkscape permits and refers to calls to Inkscape. Some operations with the Comma
 ## PathOptimize
 
 Path Optimize are the older path-based optimizations routines from 0.6.x that worked on Path objects themselves. With the switch to `CutCode` this is less needed, but still provided.
+
+## Updater
+
+Updater was/is intended to provide program update capabilities checking the github for later version of the MeerK40t.
+
 
 ## Vectrace
 
