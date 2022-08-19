@@ -111,9 +111,7 @@ def svgfont_to_wx(textnode):
     font_size = textnode.font_size * factor
     if font_size < 1:
         if font_size > 0:
-            textx = textnode.x
-            texty = textnode.y
-            textnode.matrix.pre_scale(font_size, font_size, textx, texty)
+            textnode.matrix.pre_scale(font_size, font_size)
             font_size = 1
             textnode.font_size = font_size  # No zero sized fonts.
     try:
@@ -502,6 +500,8 @@ class LaserRender:
                 if cut.cache is not None:
                     # Cache exists and is valid.
                     gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                    # gc.SetBrush(wx.RED_BRUSH) # TODO: TESTING
+                    # gc.DrawRectangle(0, 0, cut.c_width, cut.c_height) # TODO: TESTING
                 else:
                     # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
@@ -876,7 +876,7 @@ class LaserRender:
         else:
             _nodes = nodes
 
-        # if its a raster we will always translate text variables...
+        # if it's a raster we will always translate text variables...
         variable_translation = True
         nodecopy = [e for e in _nodes]
         self.validate_text_nodes(nodecopy, variable_translation)

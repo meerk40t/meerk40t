@@ -201,9 +201,9 @@ def get_code_from_speed(
     if raster_step != 0:
         # There is no C suffix notation for raster step.
         if isinstance(raster_step, tuple):
-            return f"V{encoded_speed}{acceleration:1d}G{raster_step[0]:03d}G{raster_step[1]:03d}"
+            return f"V{encoded_speed}{acceleration:1d}G{abs(raster_step[0]):03d}G{abs(raster_step[1]):03d}"
         else:
-            return f"V{encoded_speed}{acceleration:1d}G{raster_step:03d}"
+            return f"V{encoded_speed}{acceleration:1d}G{abs(raster_step):03d}"
 
     if d_ratio == 0 or board in ("A", "B", "M"):
         # We do not need the diagonal code.

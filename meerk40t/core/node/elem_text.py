@@ -3,7 +3,7 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_POINT
 from meerk40t.svgelements import Matrix
 
 REGEX_CSS_FONT = re.compile(
@@ -270,7 +270,7 @@ class TextNode(Node):
         if self.font_size:
             size = self.font_size
             try:
-                self.font_size = Length(self.font_size).pixels
+                self.font_size = Length(self.font_size, unitless=UNITS_PER_POINT).pt
                 if self.font_size == 0:
                     self.font_size = size
             except ValueError:
@@ -279,7 +279,11 @@ class TextNode(Node):
             height = self.line_height
             try:
                 self.line_height = float(
-                    Length(self.line_height, relative_length=self.font_size, unitless=1)
+                    Length(
+                        self.line_height,
+                        relative_length=f"{self.font_size}pt",
+                        unitless=UNITS_PER_POINT,
+                    ).pt
                 )
                 if self.line_height == 0:
                     self.line_height = height

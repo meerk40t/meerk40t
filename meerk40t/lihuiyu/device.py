@@ -962,7 +962,9 @@ class LihuiyuDriver(Parameters):
                 self.raster_mode()
                 if self._horizontal_major:
                     # Horizontal Rastering.
-                    if self.service.nse_raster or self.raster_alt:
+                    if self.service.nse_raster or self.service.settings.get(
+                        "_raster_alt", False
+                    ):
                         # Alt-Style Raster
                         if (dx > 0 and self._leftward) or (
                             dx < 0 and not self._leftward
@@ -974,7 +976,9 @@ class LihuiyuDriver(Parameters):
                             self.h_switch_g(dy)
                 else:
                     # Vertical Rastering.
-                    if self.service.nse_raster or self.raster_alt:
+                    if self.service.nse_raster or self.service.settings.get(
+                        "_raster_alt", False
+                    ):
                         # Alt-Style Raster
                         if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
                             self.v_switch(dx)
@@ -1350,7 +1354,7 @@ class LihuiyuDriver(Parameters):
         self.step_index = 0
         self.step = self.raster_step_x
         self.step_value_set = 0
-        if self.raster_alt:
+        if self.service.settings.get("_raster_alt", False):
             pass
         elif self.service.nse_raster and not self.service.nse_stepraster:
             pass
@@ -1359,7 +1363,10 @@ class LihuiyuDriver(Parameters):
             instance_step = self.step_value_set
 
         suffix_c = None
-        if (not self.service.twitches or self.force_twitchless) and not self.step:
+        if (
+            not self.service.twitches
+            or self.service.settings.get("_force_twitchless", False)
+        ) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
             self._leftward = self._request_leftward

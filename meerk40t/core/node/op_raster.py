@@ -280,17 +280,14 @@ class RasterOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-
-        # Calculate raster steps from DPI device context
-        step_x, step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
-        self.raster_step_x, self.raster_step_y = step_x, step_y
-
         if len(self.children) == 0:
             return
 
+        # Calculate raster steps from DPI device context
+        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
+
         make_raster = context.lookup("render-op/make_raster")
         if make_raster is None:
-
             def strip_rasters():
                 self.remove_node()
 
@@ -315,7 +312,7 @@ class RasterOpNode(Node, Parameters):
                 else:
                     img_mx.post_translate(0, bounds[3])
 
-            except AssertionError:
+            except (AssertionError, MemoryError):
                 raise CutPlanningFailedError("Raster too large.")
             image = image.convert("L")
             image_node = ImageNode(image=image, matrix=img_mx)

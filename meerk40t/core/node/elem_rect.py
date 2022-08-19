@@ -40,7 +40,7 @@ class RectNode(Node):
             else stroke_scale
         )
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
-        self.fillrule = Fillrule.FILLRULE_NONZERO if fillrule is None else fillrule
+        self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.lock = False
 
     def __repr__(self):
