@@ -465,8 +465,8 @@ class ConfigurationLaserPanel(wx.Panel):
 
     def on_button_set_home_current(self, event=None):
         current_x, current_y = self.context.device.current
-        self.context.home_x = f"{Length(amount=current_x).mm}.1fmm"
-        self.context.home_y = f"{Length(amount=current_y).mm}.1fmm"
+        self.context.home_x = f"{Length(amount=current_x).mm:.1f}mm"
+        self.context.home_y = f"{Length(amount=current_y).mm:.1f}mm"
         self.text_home_x.SetValue(self.context.home_x)
         self.text_home_y.SetValue(self.context.home_y)
 
