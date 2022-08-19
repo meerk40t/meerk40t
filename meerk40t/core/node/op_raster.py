@@ -332,6 +332,8 @@ class RasterOpNode(Node, Parameters):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
+        if len(self.children) == 0:
+            return
         settings = self.derive()
 
         # Set overscan
