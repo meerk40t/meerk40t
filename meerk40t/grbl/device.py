@@ -88,6 +88,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "subsection": "Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -96,26 +97,29 @@ class GRBLDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "subsection": "Dimensions",
             },
             {
                 "attr": "scale_x",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("X Scale Factor"),
+                "label": _("X-Axis"),
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
             },
             {
                 "attr": "scale_y",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("Y Scale Factor"),
+                "label": _("Y-Axis"),
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
             },
             {
                 "attr": "flip_x",
@@ -126,6 +130,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
+                "subsection": "Flip Axis",
             },
             {
                 "attr": "flip_y",
@@ -136,6 +141,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
+                "subsection": "Flip Axis",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -191,6 +197,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": str,
                 "label": _("COM Port"),
                 "tip": _("What com port does this device connect to?"),
+                "subsection": "Interface",
             },
             {
                 "attr": "baud_rate",
@@ -199,6 +206,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
+                "subsection": "Interface",
             },
             {
                 "attr": "planning_buffer_size",
