@@ -9,7 +9,7 @@ from random import randint, shuffle
 from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from meerk40t.kernel import CommandSyntaxError, Service, Settings, ConsoleFunction
 
 from ..numpath import Numpath
 from ..svgelements import (
@@ -321,6 +321,8 @@ class Elemental(Service):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
         )
+        self._undo_stack = []
+        self._undo_index = 0
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -328,6 +330,9 @@ class Elemental(Service):
         self._emphasized_bounds = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
+        self._save_restore_job = ConsoleFunction(
+            self, "save_restore_point\n", times=1
+        )
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -5620,7 +5625,7 @@ class Elemental(Service):
             del self._undo_stack[0 : self._undo_index]
             if len(self._undo_stack) > 25:
                 del self._undo_stack[25:]
-            self._undo_stack.insert(0, list(map(copy, self.elems())))
+            self._undo_stack.insert(0, self._tree.copy_of_tree())
             self._undo_index = 0
             return "undo", self._undo_stack[self._undo_index]
 
@@ -5637,10 +5642,8 @@ class Elemental(Service):
                 self._undo_index = len(self._undo_stack) - 1
                 channel("No undo available.")
                 return
-            self.clear_elements()
-            for e in undo:
-                self.add_elem(copy(e), True)
-            self.context.signal("refresh_scene")
+            self._tree = undo
+            self.signal("refresh_scene")
 
         @self.console_command(
             "redo",
@@ -5658,10 +5661,8 @@ class Elemental(Service):
                 self._undo_index = 0
                 channel("No redo available.")
                 return
-            self.clear_elements()
-            for e in redo:
-                self.add_elem(copy(e), True)
-            self.context.signal("refresh_scene")
+            self._tree = redo
+            self.signal("refresh_scene")
 
         @self.console_command(
             "undolist",
