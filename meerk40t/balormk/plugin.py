@@ -9,14 +9,10 @@ def plugin(kernel, lifecycle):
         except ImportError:
             return True
     if lifecycle == "register":
-        from meerk40t.balormk.main import BalorDevice
+        from meerk40t.balormk.device import BalorDevice
 
         kernel.register("provider/device/balor", BalorDevice)
     elif lifecycle == "preboot":
         suffix = "balor"
         for d in kernel.settings.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")

@@ -34,7 +34,7 @@ def register_panel_laser(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()
-        .MinSize(250, 210)
+        .MinSize(150, 210)
         .FloatingSize(400, 200)
         .MaxSize(500, 300)
         .Caption(_("Laser"))
@@ -42,7 +42,7 @@ def register_panel_laser(window, context):
         .Name("laser")
     )
     pane.control = notebook
-    pane.dock_proportion = 210
+    pane.dock_proportion = 150
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(optimize_panel, _("Optimize"))
 
@@ -56,6 +56,8 @@ def register_panel_laser(window, context):
             "type": bool,
             "label": _("Enable Laser Arm"),
             "tip": _("Enable Laser Panel Arm/Disarm feature."),
+            "page": "Laser",
+            "section": "General",
         },
     ]
     context.kernel.register_choices("preferences", choices)
@@ -235,7 +237,7 @@ class LaserPanel(wx.Panel):
             if not len(plan.plan):
                 self.text_plan.SetValue(_("--- Empty ---"))
             else:
-                self.text_plan.SetValue("%s: %s" % (str(stage), str(plan)))
+                self.text_plan.SetValue(f"{str(stage)}: {str(plan)}")
 
     @signal_listener("laserpane_arm")
     def check_laser_arm(self, *args):
@@ -297,6 +299,8 @@ class LaserPanel(wx.Panel):
                 self.context("planz clear copy preprocess validate blob spool\n")
         self.arm_toggle.SetValue(False)
         self.check_laser_arm()
+        if self.context.auto_spooler:
+            self.context("window open JobSpooler\n")
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -353,3 +357,6 @@ class LaserPanel(wx.Panel):
         self.selected_device.kernel.activate_service_path(
             "device", self.selected_device.path
         )
+        # Device change, so let's focus properly...
+        zl = self.context.zoom_level
+        self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")

@@ -42,9 +42,19 @@ class MeasureTool(ToolWidget):
             if self.font_size < 1.0:
                 self.font_size = 1.0  # Mac does not allow values lower than 1.
             try:
-                font = wx.Font(self.font_size, wx.SWISS, wx.NORMAL, wx.BOLD)
+                font = wx.Font(
+                    self.font_size,
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD,
+                )
             except TypeError:
-                font = wx.Font(int(self.font_size), wx.SWISS, wx.NORMAL, wx.BOLD)
+                font = wx.Font(
+                    int(self.font_size),
+                    wx.FONTFAMILY_SWISS,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_BOLD,
+                )
             gc.SetFont(font, self.scene.colors.color_measure_text)
 
             gc.SetPen(self.line_pen)
@@ -58,6 +68,8 @@ class MeasureTool(ToolWidget):
             area_y_x = 0
             # https://www.wikihow.com/Calculate-the-Area-of-a-Polygon
             idx = -1
+            last_x = 0
+            last_y = 0
             for pt in points:
                 idx += 1
                 # print("%d, %.1f, %.1f" % (idx, pt[0],pt[1]))
@@ -69,7 +81,7 @@ class MeasureTool(ToolWidget):
                 last_x = pt[0]
                 last_y = pt[1]
 
-            # Complet calculation of area by closng the loop
+            # Complete calculation of area by closing the loop
             area_x_y += last_x * points[0][1]
             area_y_x += last_y * points[0][0]
             area = 0.5 * abs(area_x_y - area_y_x)
@@ -84,7 +96,7 @@ class MeasureTool(ToolWidget):
             perimeter = 0
             for pt in points:
                 pt_count += 1
-                if not first_point is None:
+                if first_point is not None:
                     dx = pt[0] - first_point[0]
                     dy = pt[1] - first_point[1]
                     if dx == 0:
@@ -116,18 +128,15 @@ class MeasureTool(ToolWidget):
                 all_cy = all_cy / pt_count
                 # area is in base units^2, so back to units
 
-                base_square = float(Length("1{units}".format(units=units)))
+                base_square = float(Length(f"1{units}"))
                 base_square *= base_square
                 area = area / base_square
 
-                s_txt = "Area={area:.1f}{units}²\nPerimeter: {perim}".format(
-                    area=area,
-                    units=units,
-                    perim=str(
-                        Length(amount=perimeter, digits=1, preferred_units=units)
-                    ),
+                s_txt = (
+                    f"Area={area:.1f}{units}²\nPerimeter: "
+                    f"{str(Length(amount=perimeter, digits=1, preferred_units=units))}"
                 )
-                (t_width, t_height) = gc.GetTextExtent(s_txt)
+                t_width, t_height = gc.GetTextExtent(s_txt)
                 gc.DrawText(
                     s_txt,
                     all_cx - 0.5 * t_width,
@@ -137,30 +146,59 @@ class MeasureTool(ToolWidget):
             # Draw lines at last to make them more visible
             gc.DrawLines(points)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftclick":
-            self.point_series.append((space_pos[0], space_pos[1]))
+            if nearest_snap is None:
+                self.point_series.append((space_pos[0], space_pos[1]))
+            else:
+                self.point_series.append((nearest_snap[0], nearest_snap[1]))
             self.scene.tool_active = True
             response = RESPONSE_CONSUME
+        elif event_type == "leftdown":
+            self.scene.tool_active = True
+            if nearest_snap is None:
+                self.mouse_position = space_pos[0], space_pos[1]
+            else:
+                self.mouse_position = nearest_snap[0], nearest_snap[1]
+            if self.point_series:
+                self.scene.request_refresh()
+            response = RESPONSE_CONSUME
+        elif event_type in ("leftup", "move", "hover"):
+            if nearest_snap is None:
+                self.mouse_position = space_pos[0], space_pos[1]
+            else:
+                self.mouse_position = nearest_snap[0], nearest_snap[1]
+            if self.point_series:
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
         elif event_type == "rightdown":
             self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "hover":
-            self.mouse_position = space_pos[0], space_pos[1]
-            if self.point_series:
-                self.scene.request_refresh()
         elif event_type == "doubleclick":
             self.scene.tool_active = False
             self.point_series = []
             self.mouse_position = None
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "lost":
-            self.scene.tool_active = False
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
             self.point_series = []
             self.mouse_position = None
         return response

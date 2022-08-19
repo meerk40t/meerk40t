@@ -1,3 +1,5 @@
+import random
+
 import wx
 
 from meerk40t.svgelements import Color
@@ -32,9 +34,49 @@ class GuiColors:
             "guide3": "#A0A0A080",
         }
         for key in self.default_color:
-            self.context.setting(
-                str, "color_{key}".format(key=key), self.default_color[key]
+            self.context.setting(str, f"color_{key}", self.default_color[key])
+        self.sanity_check()
+
+    def sanity_check(self):
+        # Look at some color-combinations to see if there are identical colors, if that's the case
+        # then this is degenerate and will lead to default colors
+        def identical(color1, color2):
+            return color1.GetRGB() == color2.GetRGB()
+
+        bed_color = self.color_bed
+        fixed = 0
+        for key in (
+            "grid",
+            "guide",
+            "grid2",
+            "guide2",
+            "grid3",
+            "guide3",
+            "selection1",
+            "selection2",
+            "selection3",
+        ):
+            item_color = self._get_color(key)
+            if identical(bed_color, item_color):
+                fixed += 1
+                color_key = f"color_{key}"
+                setattr(self.context, color_key, self.default_color[key])
+        # if fixed>0:
+        # self.context("Reset %d colors to their defaults, as thye wre indistinguishable from the bed" % fixed)
+
+    def set_random_colors(self):
+        """
+        Reset all colors to random values...
+        """
+        for key in self.default_color:
+            color_key = f"color_{key}"
+            random_color = (
+                f"#"
+                f"{random.randint(0, 255):02X}"
+                f"{random.randint(0, 255):02X}"
+                f"{random.randint(0, 255):02X}"
             )
+            setattr(self.context, color_key, random_color)
 
     def set_default_colors(self):
         """

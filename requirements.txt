@@ -3,4 +3,5 @@ Pillow
 pyusb
 pyserial
 wxPython
-numpy
+ezdxf>=0.14
+opencv-python-headless

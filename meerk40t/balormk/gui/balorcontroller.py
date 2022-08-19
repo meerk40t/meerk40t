@@ -22,7 +22,6 @@ class BalorControllerPanel(wx.ScrolledWindow):
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
         self.log_append = ""
-        self.text_status = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
@@ -83,43 +82,61 @@ class BalorControllerPanel(wx.ScrolledWindow):
         except RuntimeError:
             pass
 
+    def set_button_connected(self):
+        self.button_device_connect.SetBackgroundColour("#00ff00")
+        self.button_device_connect.SetBitmap(
+            icons8_connected_50.GetBitmap(use_theme=False)
+        )
+        self.button_device_connect.Enable()
+
+    def set_button_disconnected(self):
+        self.button_device_connect.SetBackgroundColour("#dfdf00")
+        self.button_device_connect.SetBitmap(
+            icons8_disconnected_50.GetBitmap(use_theme=False)
+        )
+        self.button_device_connect.Enable()
+
     @signal_listener("pipe;usb_status")
     def on_usb_update(self, origin=None, status=None):
         if status is None:
             status = "Unknown"
         try:
-            connected = self.context.device.driver.connected
+            connected = self.service.connected
         except AttributeError:
             return
-        self.button_device_connect.SetLabel(status)
-        if connected:
-            self.button_device_connect.SetBackgroundColour("#00ff00")
-            self.button_device_connect.SetBitmap(
-                icons8_connected_50.GetBitmap(use_theme=False)
-            )
-            self.button_device_connect.Enable()
-        else:
-            self.button_device_connect.SetBackgroundColour("#dfdf00")
-            self.button_device_connect.SetBitmap(
-                icons8_disconnected_50.GetBitmap(use_theme=False)
-            )
-            self.button_device_connect.Enable()
+        try:
+            self.button_device_connect.SetLabel(status)
+            if connected:
+                self.set_button_connected()
+            else:
+                self.set_button_disconnected()
+        except RuntimeError:
+            pass
 
     def on_button_start_connection(self, event):  # wxGlade: Controller.<event_handler>
         try:
-            connected = self.context.device.driver.connected
+            connected = self.service.driver.connected
         except AttributeError:
             return
+        try:
+            if self.service.driver.connection.is_connecting:
+                self.service.driver.connection.abort_connect()
+                return
+        except AttributeError:
+            pass
+
         if connected:
             self.context("usb_disconnect\n")
         else:
             self.context("usb_connect\n")
 
     def pane_show(self):
-        self.context.channel("balor").watch(self.update_text)
+        name = self.service.label
+        self.context.channel(f"{name}/usb").watch(self.update_text)
 
     def pane_hide(self):
-        self.context.channel("balor").unwatch(self.update_text)
+        name = self.service.label
+        self.context.channel(f"{name}/usb").unwatch(self.update_text)
 
 
 class BalorController(MWindow):

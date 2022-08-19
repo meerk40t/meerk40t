@@ -37,12 +37,7 @@ class Segment:
         return 9
 
     def __str__(self):
-        return "Segment(%s,%s,%s,type='%s')" % (
-            str(self.a),
-            str(self.b),
-            str(self.index),
-            self.value,
-        )
+        return f"Segment({str(self.a)},{str(self.b)},{str(self.index)},type='{self.value}')"
 
     def __getitem__(self, item):
         if item == 0:
@@ -416,11 +411,14 @@ class GraphWalker:
         """
         for i in range(0, len(self.walk), 2):
             segment = self.walk[i - 1]
+            # The first time segment will be the last value (a node) which will set value to none. This is fine.
             point = self.walk[i]
             if segment is None:
                 points.append(None)
             else:
-                point.value = segment.value
+                point.value = (
+                    segment.value
+                )  # This doesn't work, nodes are repeated, so they can't store unique values.
             points.append(point)
 
     def remove_loop(self, from_pos, to_pos):
@@ -841,6 +839,19 @@ class EulerianFill:
     def __iadd__(self, other):
         self.outlines.append(other)
         return self
+
+    def estimate(self):
+        min_y = float("inf")
+        max_y = -float("inf")
+        for outline in self.outlines:
+            o_min_y = min([p[1] for p in outline])
+            o_max_y = max([p[1] for p in outline])
+            min_y = min(min_y, o_min_y)
+            max_y = max(max_y, o_max_y)
+        try:
+            return (max_y - min_y) / self.distance
+        except ZeroDivisionError:
+            return float("inf")
 
     def get_fill(self):
         min_y = float("inf")

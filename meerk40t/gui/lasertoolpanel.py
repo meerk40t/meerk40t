@@ -383,9 +383,9 @@ class LaserToolPanel(wx.Panel):
         else:
             p = self.context
             units = p.units_name
-            label_string = "({x}, {y})".format(
-                x=str(Length(amount=position[0], digits=1, preferred_units=units)),
-                y=str(Length(amount=position[1], digits=1, preferred_units=units)),
+            label_string = (
+                f"({str(Length(amount=position[0], digits=1, preferred_units=units))}, "
+                f"{str(Length(amount=position[1], digits=1, preferred_units=units))})"
             )
         if idx == 0:
             self.lbl_pos_1.Label = label_string
@@ -604,7 +604,7 @@ class LaserToolPanel(wx.Panel):
 
     def calculate_frame(self):
         result = False
-        if not self.coord_a is None and not self.coord_b is None:
+        if self.coord_a is not None and self.coord_b is not None:
             x0 = self.coord_a[0]
             x1 = self.coord_b[0]
             y0 = self.coord_a[1]
@@ -625,21 +625,16 @@ class LaserToolPanel(wx.Panel):
             units = p.units_name
             if self.check_circle.GetValue():
                 self.context(
-                    "circle {x} {y} 1mm stroke black\n".format(
-                        x=str(
-                            Length(amount=center[0], digits=5, preferred_units=units)
-                        ),
-                        y=str(
-                            Length(amount=center[1], digits=5, preferred_units=units)
-                        ),
-                    )
+                    f"circle "
+                    f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
+                    f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
+                    f"1mm stroke black\n"
                 )
 
             self.context(
-                "move_absolute {x} {y}\n".format(
-                    x=str(Length(amount=center[0], digits=5, preferred_units=units)),
-                    y=str(Length(amount=center[1], digits=5, preferred_units=units)),
-                )
+                f"move_absolute "
+                f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
+                f"{str(Length(amount=center[1], digits=5, preferred_units=units))}\n"
             )
         event.Skip()
 
@@ -650,21 +645,17 @@ class LaserToolPanel(wx.Panel):
             units = p.units_name
             if self.check_circle.GetValue():
                 self.context(
-                    "circle {x} {y} 1mm stroke black\n".format(
-                        x=str(
-                            Length(amount=center[0], digits=5, preferred_units=units)
-                        ),
-                        y=str(
-                            Length(amount=center[1], digits=5, preferred_units=units)
-                        ),
-                    )
+                    f"circle "
+                    f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
+                    f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
+                    f"1mm stroke black\n"
                 )
+            # TODO: Should this be else?
             self.context(
-                "circle {x} {y} {r}\n".format(
-                    x=str(Length(amount=center[0], digits=5, preferred_units=units)),
-                    y=str(Length(amount=center[1], digits=5, preferred_units=units)),
-                    r=str(Length(amount=radius, digits=5, preferred_units=units)),
-                )
+                f"circle "
+                f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
+                f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
+                f"{str(Length(amount=radius, digits=5, preferred_units=units))}\n"
             )
             if self.check_ref_circle.GetValue():
                 self.context("reference\n")
@@ -678,12 +669,11 @@ class LaserToolPanel(wx.Panel):
             units = p.units_name
 
             self.context(
-                "rect {x} {y} {wd} {ht}\n".format(
-                    x=str(Length(amount=left_top[0], digits=5, preferred_units=units)),
-                    y=str(Length(amount=left_top[1], digits=5, preferred_units=units)),
-                    wd=str(Length(amount=width, digits=5, preferred_units=units)),
-                    ht=str(Length(amount=height, digits=5, preferred_units=units)),
-                )
+                f"rect "
+                f"{str(Length(amount=left_top[0], digits=5, preferred_units=units))} "
+                f"{str(Length(amount=left_top[1], digits=5, preferred_units=units))} "
+                f"{str(Length(amount=width, digits=5, preferred_units=units))} "
+                f"{str(Length(amount=height, digits=5, preferred_units=units))}\n"
             )
             if self.check_ref_frame.GetValue():
                 self.context("reference\n")
@@ -710,23 +700,20 @@ class LaserToolPanel(wx.Panel):
 
             if self.check_square.GetValue():
                 self.context(
-                    "circle {x} {y} 1mm stroke black\n".format(
-                        x=str(
-                            Length(amount=center[0], digits=5, preferred_units=units)
-                        ),
-                        y=str(
-                            Length(amount=center[1], digits=5, preferred_units=units)
-                        ),
-                    )
+                    f"circle "
+                    f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
+                    f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
+                    f"1mm stroke black\n"
                 )
             self.context(
-                "rect {x} {y} {wd} {ht} rotate {angle}deg -x {x} -y {y}\n".format(
-                    x=str(Length(amount=center[0], digits=5, preferred_units=units)),
-                    y=str(Length(amount=center[1], digits=5, preferred_units=units)),
-                    wd=str(dim_x.length_mm),
-                    ht=str(dim_y.length_mm),
-                    angle=angle,
-                )
+                f"rect "
+                f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
+                f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
+                f"{str(dim_x.length_mm)} "
+                f"{str(dim_y.length_mm)} "
+                f"rotate {angle}deg "
+                f"-x {str(Length(amount=center[0], digits=5, preferred_units=units))} "
+                f"-y {str(Length(amount=center[1], digits=5, preferred_units=units))}\n"
             )
             if self.check_ref_square.GetValue():
                 self.context("reference\n")

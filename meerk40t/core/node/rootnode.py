@@ -1,3 +1,4 @@
+from meerk40t.core.node.blobnode import BlobNode
 from meerk40t.core.node.branch_elems import BranchElementsNode
 from meerk40t.core.node.branch_ops import BranchOperationsNode
 from meerk40t.core.node.branch_regmark import BranchRegmarkNode
@@ -5,6 +6,7 @@ from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.node.elem_ellipse import EllipseNode
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_line import LineNode
+from meerk40t.core.node.elem_numpath import NumpathNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.elem_point import PointNode
 from meerk40t.core.node.elem_polyline import PolylineNode
@@ -13,8 +15,8 @@ from meerk40t.core.node.elem_text import TextNode
 from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
+from meerk40t.core.node.layernode import LayerNode
 from meerk40t.core.node.node import Node
-from meerk40t.core.node.op_console import ConsoleOperation
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -22,6 +24,10 @@ from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.refnode import ReferenceNode
+from meerk40t.core.node.util_console import ConsoleOperation
+from meerk40t.core.node.util_input import InputOperation
+from meerk40t.core.node.util_output import OutputOperation
+from meerk40t.core.node.util_wait import WaitOperation
 
 
 class RootNode(Node):
@@ -33,7 +39,7 @@ class RootNode(Node):
 
     def __init__(self, context, **kwargs):
         _ = context._
-        super(RootNode, self).__init__(type="reference", **kwargs)
+        super(RootNode, self).__init__(type="root", **kwargs)
         self._root = self
         self.context = context
         self.listeners = []
@@ -45,9 +51,14 @@ class RootNode(Node):
             "op image": ImageOpNode,
             "op dots": DotsOpNode,
             "op hatch": HatchOpNode,
-            "op console": ConsoleOperation,
+            "util console": ConsoleOperation,
+            "util wait": WaitOperation,
+            "util input": InputOperation,
+            "util output": OutputOperation,
             "lasercode": LaserCodeNode,
+            "blob": BlobNode,
             "group": GroupNode,
+            "layer": LayerNode,
             "elem ellipse": EllipseNode,
             "elem line": LineNode,
             "elem rect": RectNode,
@@ -56,6 +67,7 @@ class RootNode(Node):
             "elem polyline": PolylineNode,
             "elem image": ImageNode,
             "elem text": TextNode,
+            "elem numpath": NumpathNode,
             "reference": ReferenceNode,
             "cutcode": CutNode,
             "branch ops": BranchOperationsNode,
@@ -68,7 +80,7 @@ class RootNode(Node):
         self.add(type="branch reg", label=_("Regmarks"))
 
     def __repr__(self):
-        return "RootNode(%s)" % (str(self.context))
+        return f"RootNode({str(self.context)})"
 
     def is_movable(self):
         return False

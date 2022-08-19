@@ -9,13 +9,19 @@ class BranchElementsNode(Node):
 
     def __init__(self, **kwargs):
         super(BranchElementsNode, self).__init__(**kwargs)
+        self._formatter = "{element_type}"
 
-    def __str__(self):
-        return "Elements"
+    def default_map(self, default_map=None):
+        default_map = super(BranchElementsNode, self).default_map(
+            default_map=default_map
+        )
+        default_map["element_type"] = "Elements"
+        return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         return False
 

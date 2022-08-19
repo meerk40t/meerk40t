@@ -52,7 +52,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements-gui.txt') }}
+        key: ${{ matrix.os }}-py${{ steps.full-python-version.outputs.version }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install Python dependencies
       run: |

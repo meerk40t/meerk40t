@@ -99,7 +99,7 @@ class CH341(Module, Handler):
     """
     Generic CH341 Module performs the interactions between the requested operations and several delegated backend ch341
     drivers. This permits interfacing with LibUsb, Windll or Mock Ch341 backends. In use-agnostic fashion, this should
-    be valid and acceptable for any CH341 interactions. CH341 chip interfacing is required for Lhystudios Controllers,
+    be valid and acceptable for any CH341 interactions. CH341 chip interfacing is required for Lihuiyu Controllers,
     Moshiboard Controllers, and other interactions such as a plugin that uses addition CH341 devices.
     """
 
@@ -169,12 +169,14 @@ class CH341(Module, Handler):
             chip_version = connection.get_chip_version()
         except AttributeError:
             return connection
-        self.channel(_("CH341 Chip Version: %d") % chip_version)
+        self.channel(
+            _("CH341 Chip Version: {chip_version}").format(chip_version=chip_version)
+        )
         self.context.signal("pipe;index", connection.index)
         self.context.signal("pipe;chipv", chip_version)
         self.context.signal("pipe;bus", connection.bus)
         self.context.signal("pipe;address", connection.address)
-        self.channel(_("Driver Detected: %s") % connection.driver_name)
+        self.channel(_("Driver Detected: {name}").format(name=connection.driver_name))
         self._state_change("STATE_CONNECTED")
         self.channel(_("Device Connected.\n"))
         return connection

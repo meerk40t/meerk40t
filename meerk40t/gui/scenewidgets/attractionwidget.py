@@ -3,11 +3,7 @@ from math import sqrt
 import wx
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.gui.scene.sceneconst import (
-    HITCHAIN_HIT,
-    RESPONSE_CHAIN,
-    RESPONSE_CHANGE_POSITION,
-)
+from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
 TYPE_BOUND = 0
@@ -38,9 +34,6 @@ class AttractionWidget(Widget):
         self.display_points = []
         self.show_attract_len = 0
         self.action_attract_len = 0
-        self.isShiftPressed = False
-        self.isCtrlPressed = False
-        self.isAltPressed = False
         self.show_snap_points = False
         self.scene.context.setting(bool, "snap_grid", True)
         self.scene.context.setting(bool, "snap_points", True)
@@ -61,12 +54,14 @@ class AttractionWidget(Widget):
         """
         return HITCHAIN_HIT
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+    ):
         """
         Event-Logic - just note the current position
         """
         response = RESPONSE_CHAIN
-        if not space_pos is None:
+        if space_pos is not None:
             self.my_x = space_pos[0]
             self.my_y = space_pos[1]
             self.calculate_display_points()
@@ -77,32 +72,15 @@ class AttractionWidget(Widget):
                 self.show_snap_points = True
             else:
                 self.show_snap_points = False
-        # print("Key-Down: %f - literal: %s" % (keycode, literal))
-        if event_type == "kb_shift_press":
-            if not self.isShiftPressed:  # ignore multiple calls
-                self.isShiftPressed = True
-        elif event_type == "kb_ctrl_press":
-            if not self.isCtrlPressed:  # ignore multiple calls
-                self.isCtrlPressed = True
-        elif event_type == "kb_alt_press":
-            if not self.isAltPressed:  # ignore multiple calls
-                self.isAltPressed = True
-        elif event_type == "kb_shift_release":
-            if self.isShiftPressed:  # ignore multiple calls
-                self.isShiftPressed = False
-        elif event_type == "kb_ctrl_release":
-            if self.isCtrlPressed:  # ignore multiple calls
-                self.isCtrlPressed = False
-        elif event_type == "kb_alt_release":
-            if self.isAltPressed:  # ignore multiple calls
-                self.isAltPressed = False
         elif event_type in (
             "leftdown",
             "leftup",
             "leftclick",
+            "move",
+            "hover",
         ):
             # Check whether shift key is pressed...
-            if not self.isShiftPressed:
+            if "shift" not in modifiers:
                 # Loop through display points
                 if len(self.display_points) > 0 and not self.my_x is None:
                     # Has to be lower than the action threshold
@@ -122,13 +100,13 @@ class AttractionWidget(Widget):
                     # print("Check complete: old x,y = %.1f, %.1f, new = %s,%s, delta=%.1f, threshold=%.1f"
                     #   % ( self.my_x, self.my_y, new_x, new_y, delta, self.action_attract_len, ))
                     # fmt:on
-                    if not new_x is None:
+                    if new_x is not None:
                         if (
                             abs(new_x - self.my_x) <= self.action_attract_len
                             and abs(new_y - self.my_y) <= self.action_attract_len
                         ):
                             # Is the distance small enough?
-                            response = (RESPONSE_CHANGE_POSITION, new_x, new_y)
+                            response = (RESPONSE_CHAIN, new_x, new_y)
 
         return response
 
@@ -282,7 +260,7 @@ class AttractionWidget(Widget):
                     elif pts[2] == TYPE_GRID:
                         self.draw_gridpoint(gc, pts[0], pts[1], closeup)
             # Draw the closest point
-            if not min_x is None:
+            if min_x is not None:
                 closeup = 2  # closest
                 if min_type in (TYPE_POINT, TYPE_BOUND):
                     self.draw_caret(gc, min_x, min_y, closeup)
@@ -313,6 +291,7 @@ class AttractionWidget(Widget):
             "bounds center_left": TYPE_MIDDLE,
             "bounds center_right": TYPE_MIDDLE,
             "endpoint": TYPE_POINT,
+            "point": TYPE_POINT,
         }
 
         for e in self.scene.context.elements.flat(types=elem_nodes):
@@ -322,14 +301,14 @@ class AttractionWidget(Widget):
                     try:
                         pt_type = translation_table[pt[2]]
                     except:
-                        print("Unknown type: %s" % pt[2])
+                        print(f"Unknown type: {pt[2]}")
                         pt_type = TYPE_POINT
                     self.attraction_points.append([pt[0], pt[1], pt_type, emph])
 
         end_time = time()
         # print(
-        #    "Ready, time needed: %.6f, attraction points added=%d"
-        #    % (end_time - start_time, len(self.attraction_points))
+        #   "Ready, time needed: %.6f, attraction points added=%d"
+        #   % (end_time - start_time, len(self.attraction_points))
         # )
 
     def calculate_display_points(self):
@@ -339,8 +318,6 @@ class AttractionWidget(Widget):
         self.display_points = []
         if self.attraction_points is None:
             self.calculate_attraction_points()
-        if self.scene.grid_points is None:
-            return
 
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
@@ -359,7 +336,12 @@ class AttractionWidget(Widget):
                     ):
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
-        if self.snap_grid and len(self.scene.grid_points) > 0 and not self.my_x is None:
+        if (
+            self.snap_grid
+            and self.scene.grid_points is not None
+            and len(self.scene.grid_points) > 0
+            and not self.my_x is None
+        ):
             for pts in self.scene.grid_points:
                 if (
                     abs(pts[0] - self.my_x) <= self.show_attract_len
@@ -386,7 +368,7 @@ class AttractionWidget(Widget):
             self.attraction_points = None
         elif signal in ("grid", "guide"):
             consumed = True
-            self.scene.grid_points = None
+            # self.scene.grid_points = None
         elif signal == "theme":
             consumed = True
             self.load_colors()

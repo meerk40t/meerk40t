@@ -12,7 +12,7 @@ import sys
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.0006 RC5"
+APPLICATION_VERSION = "0.8.0018 Beta10"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -114,9 +114,9 @@ def plugin(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
-        from .lihuiyu import device as lhystudios_driver
+        from .lihuiyu import device as lihuiyu
 
-        plugins.append(lhystudios_driver.plugin)
+        plugins.append(lihuiyu.plugin)
 
         from .moshi import device as moshi_driver
 
@@ -162,6 +162,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(svg_io.plugin)
 
+        from .fill import fills
+
+        plugins.append(fills.plugin)
+
         from .extra import vectrace
 
         plugins.append(vectrace.plugin)
@@ -169,6 +173,10 @@ def plugin(kernel, lifecycle):
         from .extra import inkscape
 
         plugins.append(inkscape.plugin)
+
+        from .extra import hershey
+
+        plugins.append(hershey.plugin)
 
         from .extra import embroider
 
@@ -216,6 +224,7 @@ def run():
     argv = sys.argv[1:]
     args = parser.parse_args(argv)
 
+    # Old python version checks. 2/3 compat code.
     if args.version:
         print("%s %s" % (APPLICATION_NAME, APPLICATION_VERSION))
         return

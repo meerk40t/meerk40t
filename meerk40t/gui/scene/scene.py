@@ -21,7 +21,6 @@ from meerk40t.gui.scene.sceneconst import (
     ORIENTATION_RELATIVE,
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
-    RESPONSE_CHANGE_POSITION,
     RESPONSE_CONSUME,
     RESPONSE_DROP,
 )
@@ -29,10 +28,138 @@ from meerk40t.gui.scene.scenespacewidget import SceneSpaceWidget
 from meerk40t.kernel import Job, Module
 from meerk40t.svgelements import Matrix, Point
 
-# from weakref import ref
-
-
 # TODO: _buffer can be updated partially rather than fully rewritten, especially with some layering.
+
+
+_reused_identity_widget = Matrix()
+XCELLS = 15
+YCELLS = 15
+
+
+class SceneToast:
+    """
+    SceneToast is drawn directly by the Scene. It creates a text message in a box that animates a fade.
+    """
+
+    def __init__(self, scene, left, top, right, bottom):
+        self.scene = scene
+        self.left = left
+        self.top = top
+        self.right = right
+        self.bottom = bottom
+        self.countdown = 0
+        self.message = None
+        self.token = None
+
+        self.brush = wx.Brush()
+        self.pen = wx.Pen()
+        self.font = wx.Font()
+        self.brush_color = wx.Colour()
+        self.pen_color = wx.Colour()
+        self.font_color = wx.Colour()
+
+        self.pen.SetWidth(10)
+        self.text_height = float("inf")
+        self.text_width = float("inf")
+
+        self.alpha = None
+        self.set_alpha(255)
+
+    def tick(self):
+        """
+        Each tick reduces countdown by 1. Once countdown is below 20 we call requests for animation.
+        @return:
+        """
+        self.countdown -= 1
+        if self.countdown <= 20:
+            self.scene.request_refresh_for_animation()
+        if self.countdown <= 0:
+            self.scene.request_refresh()
+            self.message = None
+            self.token = None
+        return self.countdown > 0
+
+    def set_alpha(self, alpha):
+        """
+        We set the alpha for all the colors.
+
+        @param alpha:
+        @return:
+        """
+        if alpha != self.alpha:
+            self.alpha = alpha
+            self.brush_color.SetRGBA(0xFFFFFF | alpha << 24)
+            self.pen_color.SetRGBA(0x70FF70 | alpha << 24)
+            self.font_color.SetRGBA(0x000000 | alpha << 24)
+            self.brush.SetColour(self.brush_color)
+            self.pen.SetColour(self.pen_color)
+
+    def draw(self, gc: wx.GraphicsContext):
+        if not self.message:
+            return
+        alpha = 255
+        if self.countdown <= 20:
+            alpha = int(self.countdown * 12.5)
+        self.set_alpha(alpha)
+
+        width = self.right - self.left
+        height = self.bottom - self.top
+        text_size = height
+
+        while self.text_height > height or self.text_width > width:
+            # If we do not fit in the box, decrease size
+            text_size *= 0.9
+            try:
+                self.font.SetFractionalPointSize(text_size)
+            except AttributeError:
+                self.font.SetPointSize(int(text_size))
+            gc.SetFont(self.font, self.font_color)
+            self.text_width, self.text_height = gc.GetTextExtent(self.message)
+        if text_size == height:
+            gc.SetFont(self.font, self.font_color)
+        gc.SetPen(self.pen)
+        gc.SetBrush(self.brush)
+        gc.DrawRectangle(
+            self.left, self.top, self.right - self.left, self.bottom - self.top
+        )
+
+        toast_x = self.left + (width - self.text_width) / 2.0
+        toast_y = self.top
+        gc.DrawText(self.message, toast_x, toast_y)
+
+    def start_threaded(self):
+        """
+        First start of threaded animate. Refresh to draw.
+        @return:
+        """
+        self.scene.request_refresh()
+
+    def stop_threaded(self):
+        """
+        Stop of threaded animate. Unset text dims and delete the toast.
+        @return:
+        """
+        self.scene._toast = None
+        self.text_height = float("inf")
+        self.text_width = float("inf")
+
+    def set_message(self, message, token=-1, duration=100):
+        """
+        Sets the message. If the token is different, we reset the text position.
+
+        We always reset the duration.
+
+        @param message:
+        @param token:
+        @param duration:
+        @return:
+        """
+        if token != self.token or token == -1:
+            self.text_height = float("inf")
+            self.text_width = float("inf")
+        self.message = message
+        self.token = token
+        self.countdown = duration
 
 
 class Scene(Module, Job):
@@ -53,7 +180,7 @@ class Scene(Module, Job):
         Module.__init__(self, context, path)
         Job.__init__(
             self,
-            job_name="Scene-%s" % path,
+            job_name=f"Scene-{path}",
             process=self.refresh_scene,
             conditional=lambda: self.screen_refresh_is_requested,
             run_main=True,
@@ -61,20 +188,19 @@ class Scene(Module, Job):
         self.log = context.channel("scene")
         self.log_events = context.channel("scene-events")
         self.gui = gui
-        self.matrix = Matrix()
         self.hittable_elements = list()
         self.hit_chain = list()
         self.widget_root = SceneSpaceWidget(self)
-        self.matrix_root = Matrix()
         self.screen_refresh_lock = threading.Lock()
         self.interval = 1.0 / 60.0  # 60fps
         self.last_position = None
-        self.time = None
-        self.distance = None
+        self._down_start_time = None
+        self._down_start_pos = None
         self._cursor = None
         self._reference = None  # Reference Object
         self.attraction_points = []  # Clear all
         self.compute = True
+        self.has_background = False
 
         self.colors = GuiColors(self.context)
 
@@ -97,7 +223,19 @@ class Scene(Module, Job):
         self.reset_grids()
 
         self.tool_active = False
+        self.active_tool = "none"
         self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
+
+        self._animating = list()
+        self._animate_lock = threading.Lock()
+        self._adding_widgets = list()
+        self._animate_job = Job(
+            self._animate_scene,
+            job_name=f"Animate-Scene{path}",
+            run_main=True,
+            interval=1.0 / 60.0,
+        )
+        self._toast = None
 
     def reset_grids(self):
         self.draw_grid_primary = True
@@ -170,9 +308,7 @@ class Scene(Module, Job):
         dy = 0
         if self.has_magnets() and self.magnet_attraction > 0:
             if self.tick_distance > 0:
-                s = "{amount}{units}".format(
-                    amount=self.tick_distance, units=self.context.units_name
-                )
+                s = f"{self.tick_distance}{self.context.units_name}"
                 len_tick = float(Length(s))
                 # Attraction length is 1/3, 4/3, 9/3 of a grid-unit
                 # fmt: off
@@ -195,32 +331,32 @@ class Scene(Module, Job):
             )
             if delta_x3 < delta_x1 and delta_x3 < delta_x2:
                 if delta_x3 < attraction_len:
-                    if not x3 is None:
+                    if x3 is not None:
                         dx = x3 - (bounds[0] + bounds[2]) / 2
                         # print("X Take center , x=%.1f, dx=%.1f" % ((bounds[0] + bounds[2]) / 2, dx)
             elif delta_x1 < delta_x2 and delta_x1 < delta_x3:
                 if delta_x1 < attraction_len:
-                    if not x1 is None:
+                    if x1 is not None:
                         dx = x1 - bounds[0]
                         # print("X Take left side, x=%.1f, dx=%.1f" % (bounds[0], dx))
             elif delta_x2 < delta_x1 and delta_x2 < delta_x3:
                 if delta_x2 < attraction_len:
-                    if not x2 is None:
+                    if x2 is not None:
                         dx = x2 - bounds[2]
                         # print("X Take right side, x=%.1f, dx=%.1f" % (bounds[2], dx))
             if delta_y3 < delta_y1 and delta_y3 < delta_y2:
                 if delta_y3 < attraction_len:
-                    if not y3 is None:
+                    if y3 is not None:
                         dy = y3 - (bounds[1] + bounds[3]) / 2
                         # print("Y Take center , x=%.1f, dx=%.1f" % ((bounds[1] + bounds[3]) / 2, dy))
             elif delta_y1 < delta_y2 and delta_y1 < delta_y3:
                 if delta_y1 < attraction_len:
-                    if not y1 is None:
+                    if y1 is not None:
                         dy = y1 - bounds[1]
                         # print("Y Take top side, y=%.1f, dy=%.1f" % (bounds[1], dy))
             elif delta_y2 < delta_y1 and delta_y2 < delta_y3:
                 if delta_y2 < attraction_len:
-                    if not y2 is None:
+                    if y2 is not None:
                         dy = y2 - bounds[3]
                         # print("Y Take bottom side, y=%.1f, dy=%.1f" % (bounds[3], dy))
 
@@ -236,7 +372,6 @@ class Scene(Module, Job):
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)
         context.setting(bool, "mouse_wheel_pan", False)
-        context.setting(float, "zoom_factor", 0.1)
         context.setting(float, "pan_factor", 25.0)
         context.setting(int, "fps", 40)
         if context.fps <= 0:
@@ -298,6 +433,44 @@ class Scene(Module, Job):
         except AttributeError:
             pass
 
+    def animate(self, widget):
+        with self._animate_lock:
+            if widget not in self._adding_widgets:
+                self._adding_widgets.append(widget)
+        if self.log:
+            self.log("Start Animation...")
+        self.context.schedule(self._animate_job)
+
+    def _animate_scene(self, *args, **kwargs):
+        if self.log:
+            self.log("Animating Scene...")
+        if self._adding_widgets:
+            with self._animate_lock:
+                for widget in self._adding_widgets:
+                    self._animating.append(widget)
+                    try:
+                        widget.start_threaded()
+                    except AttributeError:
+                        pass
+                self._adding_widgets.clear()
+        if self._animating:
+            for idx in range(len(self._animating) - 1, -1, -1):
+                widget = self._animating[idx]
+                try:
+                    more = widget.tick()
+                    if not more:
+                        try:
+                            widget.stop_threaded()
+                        except AttributeError:
+                            pass
+                        del self._animating[idx]
+                except AttributeError:
+                    pass
+        if not self._animating:
+            self._animate_job.cancel()
+            if self.log:
+                self.log("Removing Animation...")
+
     def refresh_scene(self, *args, **kwargs):
         """
         Called by the Scheduler at a given the specified framerate.
@@ -305,7 +478,10 @@ class Scene(Module, Job):
         """
         if self.screen_refresh_is_requested:
             if self.screen_refresh_lock.acquire(timeout=0.2):
-                self.update_buffer_ui_thread()
+                try:
+                    self.update_buffer_ui_thread()
+                except RuntimeError:
+                    return
                 self.gui.Refresh()
                 self.gui.Update()
                 self.screen_refresh_is_requested = False
@@ -332,7 +508,7 @@ class Scene(Module, Job):
         gc = wx.GraphicsContext.Create(dc)
         gc.Size = dc.Size
 
-        font = wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD)
+        font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         gc.SetFont(font, wx.BLACK)
         self.draw(gc)
         if dm & DRAW_MODE_INVERT != 0:
@@ -340,6 +516,29 @@ class Scene(Module, Job):
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
         del dc
+
+    def toast(self, message, token=-1):
+        if self._toast is None:
+            self._toast = SceneToast(
+                self, self.x(0.1), self.y(0.8), self.x(0.9), self.y(0.9)
+            )
+            self._toast.set_message(message, token)
+            self.animate(self._toast)
+        else:
+            self._toast.set_message(message, token)
+            self.animate(self._toast)
+
+    def x(self, v):
+        width, height = self.gui.ClientSize
+        return width * v
+
+    def y(self, v):
+        width, height = self.gui.ClientSize
+        return height * v
+
+    def cell(self):
+        width, height = self.gui.ClientSize
+        return min(width / XCELLS, height / YCELLS)
 
     def _signal_widget(self, widget, *args, **kwargs):
         """
@@ -353,9 +552,6 @@ class Scene(Module, Job):
             if w is None:
                 continue
             self._signal_widget(w, *args, **kwargs)
-
-    def animate_tick(self):
-        pass
 
     def notify_added_to_parent(self, parent):
         """
@@ -401,6 +597,8 @@ class Scene(Module, Job):
             self.widget_root.draw(canvas)
             if self.log:
                 self.log("Redraw Canvas")
+        if self._toast is not None:
+            self._toast.draw(canvas)
 
     def convert_scene_to_window(self, position):
         """
@@ -424,7 +622,7 @@ class Scene(Module, Job):
         This is dynamically rebuilt on the mouse event.
         """
         self.hittable_elements.clear()
-        self.rebuild_hit_chain(self.widget_root, self.matrix_root)
+        self.rebuild_hit_chain(self.widget_root, _reused_identity_widget)
 
     def rebuild_hit_chain(self, current_widget, current_matrix=None):
         """
@@ -483,7 +681,7 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type=""):
+    def event(self, window_pos, event_type="", nearest_snap=None, modifiers=None):
         """
         Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
 
@@ -496,12 +694,12 @@ class Scene(Module, Job):
         RESPONSE_CONSUME: Consumes the event and prevents any event further in the hitchain from getting the event
         RESPONSE_CHAIN: Permit the event to move to the next event in the hitchain
         RESPONSE_DROP: Remove this item from the hitchain and continue to process the events. Future events will not
-        RESPONSE_CHANGE_POSITION: like CONSUME but a new position needs to be passed to the next widgets (used for attraction)
         consider the dropped element within the hitchain.
         """
-        need_refresh = False
         if self.log_events:
-            self.log_events("%s: %s" % (event_type, str(window_pos)))
+            self.log_events(
+                f"{event_type}: {str(window_pos)} {str(nearest_snap)} {str(modifiers)}"
+            )
 
         if window_pos is None:
             # Capture Lost
@@ -509,7 +707,13 @@ class Scene(Module, Job):
                 if hit is None:
                     continue  # Element was dropped.
                 current_widget, current_matrix = hit
-                current_widget.event(None, None, event_type)
+                current_widget.event(
+                    window_pos=None,
+                    scene_pos=None,
+                    event_type=event_type,
+                    nearest_snap=None,
+                    modifiers=None,
+                )
             return
         if self.last_position is None:
             self.last_position = window_pos
@@ -530,12 +734,8 @@ class Scene(Module, Job):
             previous_top_element = None
 
         if event_type in (
-            "kb_shift_release",
-            "kb_shift_press",
-            "kb_ctrl_release",
-            "kb_ctrl_press",
-            "kb_alt_release",
-            "kb_alt_press",
+            "key_down",
+            "key_up",
         ):
             # print("Keyboard-Event raised: %s" % event_type)
             self.rebuild_hittable_chain()
@@ -554,11 +754,30 @@ class Scene(Module, Job):
                         sdx,
                         sdy,
                     )
-                try:
-                    # We ignore the 'consume' etc. for the time being...
-                    response = current_widget.event(window_pos, space_pos, event_type)
-                except AttributeError:
-                    pass
+                response = current_widget.event(
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type=event_type,
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
+                )
+
+                if response == RESPONSE_ABORT:
+                    self.hit_chain.clear()
+                    return
+                elif response == RESPONSE_CONSUME:
+                    # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
+                    #      widgetname = type(current_widget).__name__
+                    #      print("Event %s was consumed by %s" % (event_type, widgetname))
+                    return
+                elif response == RESPONSE_CHAIN:
+                    continue
+                elif response == RESPONSE_DROP:
+                    # self.hit_chain[i] = None
+                    continue
+                #
+                # if response == RESPONSE_ABORT:
+                #     self.hit_chain.clear()
             return
 
         if event_type in (
@@ -569,10 +788,10 @@ class Scene(Module, Job):
             "wheelup",
             "hover",
         ):
-            self.time = time.time()
+            self._down_start_time = time.time()
+            self._down_start_pos = window_pos
             self.rebuild_hittable_chain()
             self.find_hit_chain(window_pos)
-        # old_debug = ""
         for i, hit in enumerate(self.hit_chain):
             if hit is None:
                 continue  # Element was dropped.
@@ -593,10 +812,6 @@ class Scene(Module, Job):
                     sdx,
                     sdy,
                 )
-            # debug_str = "%.1f, %.1f" % (space_pos[0], space_pos[1])
-            # if debug_str != old_debug:
-            #   old_debug = debug_str
-            #   print("Space-Pos changed for widget %d: %s" % (i, debug_str))
 
             if (
                 i == 0
@@ -605,38 +820,103 @@ class Scene(Module, Job):
             ):
                 if previous_top_element is not None:
                     if self.log_events:
-                        self.log_events(
-                            "Converted %s: %s" % ("hover_end", str(window_pos))
-                        )
-                    previous_top_element.event(window_pos, window_pos, "hover_end")
-                current_widget.event(window_pos, space_pos, "hover_start")
-                if self.log_events:
-                    self.log_events(
-                        "Converted %s: %s" % ("hover_start", str(window_pos))
+                        self.log_events(f"Converted hover_end: {str(window_pos)}")
+                    previous_top_element.event(
+                        window_pos=window_pos,
+                        space_pos=space_pos,
+                        event_type="hover_end",
+                        nearest_snap=None,
+                        modifiers=modifiers,
                     )
-                previous_top_element = current_widget
-            delta_time = time.time() - self.time
-            if (
-                event_type == "leftup" and delta_time <= 0.30
-            ):  # Anything within 0.3 seconds will be converted to a leftclick
-                response = current_widget.event(window_pos, space_pos, "leftclick")
+                current_widget.event(
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type="hover_start",
+                    nearest_snap=None,
+                    modifiers=modifiers,
+                )
                 if self.log_events:
-                    self.log_events("Converted %s: %s" % ("leftclick", str(window_pos)))
+                    self.log_events(f"Converted hover_start: {str(window_pos)}")
+                previous_top_element = current_widget
+            if (
+                event_type == "leftup"
+                and time.time() - self._down_start_time <= 0.30
+                and abs(complex(*window_pos[:2]) - complex(*self._down_start_pos[:2]))
+                < 50
+            ):  # Anything within 0.3 seconds will be converted to a leftclick
+                response = current_widget.event(
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type="leftclick",
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
+                )
+                if self.log_events:
+                    self.log_events(f"Converted leftclick: {str(window_pos)}")
             elif event_type == "leftup":
                 if self.log_events:
                     self.log_events(
-                        "Did not convert to click, event of my own right, %.2f"
-                        % delta_time
+                        f"Did not convert to click, {time.time() - self._down_start_time}"
                     )
-                response = current_widget.event(window_pos, space_pos, event_type)
+                response = current_widget.event(
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type=event_type,
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
+                )
                 # print ("Leftup called for widget #%d" % i )
                 # print (response)
             else:
-                response = current_widget.event(window_pos, space_pos, event_type)
+                response = current_widget.event(
+                    window_pos=window_pos,
+                    space_pos=space_pos,
+                    event_type=event_type,
+                    nearest_snap=nearest_snap,
+                    modifiers=modifiers,
+                )
 
+            ##################
+            # PROCESS RESPONSE
+            ##################
             if type(response) is tuple:
+                # We get two additional parameters which are the screen location of the nearest snap point
                 params = response[1:]
                 response = response[0]
+                if len(params) > 1:
+                    new_x_space = params[0]
+                    new_y_space = params[1]
+                    new_x = window_pos[0]
+                    new_y = window_pos[1]
+                    snap_x = None
+                    snap_y = None
+
+                    sdx = new_x_space - space_pos[0]
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdx *= current_matrix.value_scale_x()
+                    snap_x = window_pos[0] + sdx
+                    sdy = new_y_space - space_pos[1]
+                    if current_matrix is not None and not current_matrix.is_identity():
+                        sdy *= current_matrix.value_scale_y()
+                    # print("Shift x by %.1f pixel (%.1f), Shift y by %.1f pixel (%.1f)" % (sdx, odx, sdy, ody))
+                    snap_y = window_pos[1] + sdy
+
+                    dx = new_x - self.last_position[0]
+                    dy = new_y - self.last_position[1]
+                    if snap_x is None:
+                        nearest_snap = None
+                    else:
+                        # We are providing the space and screen coordinates
+                        snap_space = current_matrix.point_in_inverse_space(
+                            (snap_x, snap_y)
+                        )
+                        nearest_snap = (
+                            snap_space[0],
+                            snap_space[1],
+                            snap_x,
+                            snap_y,
+                        )
+                        # print ("Snap provided", nearest_snap)
             else:
                 params = None
 
@@ -644,56 +924,17 @@ class Scene(Module, Job):
                 self.hit_chain.clear()
                 return
             elif response == RESPONSE_CONSUME:
-                # if event_type == "leftdown":
-                #    print("Event was consumed by %s" % widgetname)
+                # if event_type in ("leftdown", "middledown", "middleup", "leftup", "move", "leftclick"):
+                #      widgetname = type(current_widget).__name__
+                #      print("Event %s was consumed by %s" % (event_type, widgetname))
                 return
             elif response == RESPONSE_CHAIN:
                 continue
             elif response == RESPONSE_DROP:
                 self.hit_chain[i] = None
-            elif response == RESPONSE_CHANGE_POSITION:
-                # New position has been given:
-                # print("New position")
-                if not params is None:
-                    new_x_space = params[0]
-                    new_y_space = params[1]
-                # print("Newx=%s, newy=%s" % (new_x_space, new_y_space))
-                new_x = window_pos[0]
-                new_y = window_pos[1]
-                if not new_x_space is None:
-                    sdx = new_x_space - space_pos[0]
-                    odx = sdx
-                    if current_matrix is not None and not current_matrix.is_identity():
-                        sdx *= current_matrix.value_scale_x()
-                    # print("Shift x by %.1f pixel (%.1f)" % (sdx, odx))
-                    new_x = window_pos[0] + sdx
-                    sdy = new_y_space - space_pos[1]
-                    ody = sdy
-                    if current_matrix is not None and not current_matrix.is_identity():
-                        sdy *= current_matrix.value_scale_y()
-                    # print("Shift y by %.1f pixel (%.1f)" % (sdy, ody))
-                    new_y = window_pos[1] + sdy
-
-                dx = new_x - self.last_position[0]
-                dy = new_y - self.last_position[1]
-                window_pos = (
-                    new_x,
-                    new_y,
-                    self.last_position[0],
-                    self.last_position[1],
-                    dx,
-                    dy,
-                )
-                self.last_position = window_pos
-                new_x_space = None
-                new_y_space = None
-                need_refresh = True
                 continue
             else:
                 break
-        if need_refresh:
-            self.screen_refresh_is_requested = True
-            self.refresh_scene()
 
     def cursor(self, cursor, always=False):
         """
@@ -737,7 +978,7 @@ class Scene(Module, Job):
         if new_cursor != self._cursor or always:
             self._cursor = new_cursor
             self.gui.scene_panel.SetCursor(wx.Cursor(self._cursor))
-            self.log("Cursor changed to %s" % cursor)
+            self.log(f"Cursor changed to {cursor}")
 
     def add_scenewidget(self, widget, properties=ORIENTATION_RELATIVE):
         """

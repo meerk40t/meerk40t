@@ -3,7 +3,7 @@ from meerk40t.kernel import signal_listener
 
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
-        return service.has_feature("wx")
+        return not service.has_feature("wx")
     if lifecycle == "service":
         return "provider/device/moshi"
     if lifecycle == "added":

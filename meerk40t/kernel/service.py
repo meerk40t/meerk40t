@@ -37,9 +37,7 @@ class Service(Context):
     def __str__(self):
         if hasattr(self, "label"):
             return self.label
-        return "Service('{path}', {rpath})".format(
-            path=self._path, rpath=self.registered_path
-        )
+        return f"Service('{self._path}', {self.registered_path})"
 
     def service_attach(self, *args, **kwargs):
         pass
@@ -133,7 +131,7 @@ class Service(Context):
         @param choices: list of choices
         @return:
         """
-        key = "choices/%s" % sheet
+        key = f"choices/{sheet}"
         if key in self._registered:
             others = self._registered[key]
             others.extend(choices)

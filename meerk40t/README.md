@@ -57,11 +57,16 @@ The main file deals with the CLI for Meerk40t as well as loading and processing 
 The svgelements file is a directly included version of the svgelements project
 [https://github.com/meerk40t/svgelements](https://github.com/meerk40t/svgelements)
 which deals with the high fidelity parsing of SVG data and geometric rendering.
-It implements the core parts of SVG v1.1,
-and provides a number of robust objects like `Angle`, `Length`, `Color`, `Point` and `Matrix`
-which are used throughout MeerK40t.
+It implements the core parts of SVG v1.1 and SVG 2.0  and provides a number of robust objects like `Angle`, `Length`, `Color`, `Point` and `Matrix` which are used throughout MeerK40t.
+
 The Paths are used as the elements for vector shapes.
-Images are the regular values for the images within MeerK40t.
-Many commands accept Angles and Lengths as real values.
+
+Many commands accept Angles and Lengths as real values. Though the Length is now preferred used within core/units.py.
+
 The Viewbox functions is used to do things like center the camera image in the window.
-These are fundamental objects within MeerK40t.
+
+Many of these are fundamental objects within MeerK40t. 
+
+## numpath (Experimental)
+
+Numpath is a path type object made with numpy. The goal is to permit replacing most of cutcode with an object-type that could also work within the front-end. All numpath objects consist of 5 complex values, with symmetric object orders. The center value, the 3rd in the list of five, is a value of type/reference where the reference is a lookup for the particular settings. This should permit a single numpath to replace a all of cutcode in a single well-defined object. 

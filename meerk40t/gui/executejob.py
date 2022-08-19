@@ -6,7 +6,7 @@ from meerk40t.kernel import signal_listener
 
 from ..core.node.node import Node
 from .choicepropertypanel import ChoicePropertyPanel
-from .icons import icons8_laser_beam_52
+from .icons import STD_ICON_SIZE, icons8_laser_beam_52
 from .mwindow import MWindow
 from .wxutils import disable_window
 
@@ -39,10 +39,9 @@ class PlannerPanel(wx.Panel):
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
-        self.panel_operation = wx.Panel(self, wx.ID_ANY)
         choices = self.context.lookup("choices/optimize")[:7]
         self.panel_optimize = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
         self.button_start = wx.Button(self, wx.ID_ANY, _("Start"))
 
@@ -91,28 +90,27 @@ class PlannerPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: Preview.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
-        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_optimizations = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
-        )
+        # sizer_optimizations = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, _("Optimizations")), wx.VERTICAL
+        # )
         sizer_main = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_main.Add(self.list_operations, 2, wx.EXPAND, 0)
         sizer_main.Add(self.list_command, 2, wx.EXPAND, 0)
+
+        sizer_options = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(self.panel_optimize, 1, 2, wx.EXPAND, 0)
+        sizer_options.Add(self.button_start, 1, wx.EXPAND, 0)
+
+        sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
         sizer_frame.Add(sizer_main, 1, wx.EXPAND, 0)
+        sizer_frame.Add(sizer_options, 1, wx.EXPAND, 0)
 
-        sizer_frame.Add(self.panel_operation, 0, wx.EXPAND, 0)
-
-        sizer_optimizations.Add(self.panel_optimize)
-        sizer_options.Add(sizer_optimizations, 2, wx.EXPAND, 0)
-        sizer_options.Add(self.button_start, 3, wx.EXPAND, 0)
-        sizer_frame.Add(sizer_options, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_frame)
         self.Layout()
         # end wxGlade
 
     def jobchange_return_to_operations(self, event=None):
-        self.context("plan%s return clear\n" % (self.plan_name))
+        self.context(f"plan{self.plan_name} return clear\n")
 
     def jobchange_step_repeat(self, event=None):
         elems = []
@@ -181,7 +179,7 @@ class PlannerPanel(wx.Panel):
                     digits=3,
                 )
             else:
-                width = "%.2f%%" % (100.0 / rows)
+                width = f"{100.0 / rows:.2f}%"
             dlg.SetValue(str(width))
             if dlg.ShowModal() == wx.ID_OK:
                 try:
@@ -220,7 +218,7 @@ class PlannerPanel(wx.Panel):
                     digits=3,
                 )
             else:
-                height = "%.2f%%" % (100.0 / cols)
+                height = f"{100.0 / cols:.2f}%"
             dlg.SetValue(str(height))
             if dlg.ShowModal() == wx.ID_OK:
                 try:
@@ -241,36 +239,31 @@ class PlannerPanel(wx.Panel):
             y_distance = height
 
         self.context(
-            "plan%s step_repeat %s %s %s %s\n"
-            % (self.plan_name, cols, rows, x_distance, y_distance)
+            f"plan{self.plan_name} step_repeat {cols} {rows} {x_distance} {y_distance}\n"
         )
 
     def jobadd_physicalhome(self, event=None):
-        self.context("plan%s command -o physicalhome\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o physicalhome\n")
         self.update_gui()
 
     def jobadd_home(self, event=None):
-        self.context("plan%s command -o home\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o home\n")
         self.update_gui()
 
     def jobadd_origin(self, event=None):
-        self.context("plan%s command -o origin\n" % self.plan_name)
-        self.update_gui()
-
-    def jobadd_wait(self, event=None):
-        self.context("plan%s command -o wait\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o origin\n")
         self.update_gui()
 
     def jobadd_beep(self, event=None):
-        self.context("plan%s command -o beep\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o beep\n")
         self.update_gui()
 
     def jobadd_interrupt(self, event=None):
-        self.context("plan%s command -o interrupt\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o interrupt\n")
         self.update_gui()
 
     def jobadd_command(self, event=None):  # wxGlade: Preview.<event_handler>
-        self.context("plan%s command -o console\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} command -o console\n")
         self.update_gui()
 
     def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
@@ -299,31 +292,31 @@ class PlannerPanel(wx.Panel):
     def on_button_start(self, event=None):  # wxGlade: Preview.<event_handler>
         if self.stage == 0:
             with wx.BusyInfo(_("Preprocessing...")):
-                self.context("plan%s copy preprocess\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} copy preprocess\n")
                 cutplan = self.context.planner.default_plan
                 if len(cutplan.commands) == 0:
-                    self.context("plan%s validate\n" % self.plan_name)
+                    self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 1:
             with wx.BusyInfo(_("Determining validity of operations...")):
-                self.context("plan%s preprocess\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} preprocess\n")
                 cutplan = self.context.planner.default_plan
                 if len(cutplan.commands) == 0:
-                    self.context("plan%s validate\n" % self.plan_name)
+                    self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 2:
             with wx.BusyInfo(_("Validating operation data...")):
-                self.context("plan%s validate\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} validate\n")
         elif self.stage == 3:
             with wx.BusyInfo(_("Compiling cuts...")):
-                self.context("plan%s blob preopt\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} blob preopt\n")
         elif self.stage == 4:
             with wx.BusyInfo(_("Determining optimizations to perform...")):
-                self.context("plan%s preopt\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} preopt\n")
         elif self.stage == 5:
             with wx.BusyInfo(_("Performing Optimizations...")):
-                self.context("plan%s optimize\n" % self.plan_name)
+                self.context(f"plan{self.plan_name} optimize\n")
         elif self.stage == 6:
             with wx.BusyInfo(_("Sending data to laser...")):
-                self.context("plan%s spool\n" % (self.plan_name))
+                self.context(f"plan{self.plan_name} spool\n")
                 if self.context.auto_spooler:
                     self.context("window open JobSpooler\n")
                 try:
@@ -338,12 +331,12 @@ class PlannerPanel(wx.Panel):
         cutplan = self.context.planner.default_plan
         self.Children[0].SetFocus()
         if len(cutplan.plan) == 0 and len(cutplan.commands) == 0:
-            self.context("plan%s copy preprocess\n" % self.plan_name)
+            self.context(f"plan{self.plan_name} copy preprocess\n")
 
         self.update_gui()
 
     def pane_hide(self):
-        self.context("plan%s clear\n" % self.plan_name)
+        self.context(f"plan{self.plan_name} clear\n")
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
@@ -476,11 +469,6 @@ class ExecuteJob(MWindow):
         )
         self.Bind(
             wx.EVT_MENU,
-            self.panel.jobadd_wait,
-            wx_menu.Append(wx.ID_ANY, _("Wait"), _("Add a wait")),
-        )
-        self.Bind(
-            wx.EVT_MENU,
             self.panel.jobadd_beep,
             wx_menu.Append(wx.ID_ANY, _("Beep"), _("Add a beep")),
         )
@@ -523,6 +511,7 @@ class ExecuteJob(MWindow):
                 "icon": icons8_laser_beam_52,
                 "tip": _("Execute the current laser project"),
                 "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
+                "size": STD_ICON_SIZE,
             },
         )
 

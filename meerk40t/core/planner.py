@@ -130,6 +130,8 @@ def plugin(kernel, lifecycle=None):
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
                 ),
+                "page": "Optimizations",
+                "section": "",
             },
             {
                 "attr": "opt_complete_subpaths",
@@ -155,6 +157,8 @@ def plugin(kernel, lifecycle=None):
                     + "It may also avoid minor differences in total burn depth "
                     + "at the point the burns join. "
                 ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_merge_passes",
@@ -181,6 +185,8 @@ def plugin(kernel, lifecycle=None):
                     + "and this can result in greater charring "
                     + "or even an increased risk of the material catching fire."
                 ),
+                "page": "Optimizations",
+                "section": "Merging",
             },
             {
                 "attr": "opt_merge_ops",
@@ -203,6 +209,8 @@ def plugin(kernel, lifecycle=None):
                     "If you have a complex design with many paths across multiple consecutive burn operations, "
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
+                "page": "Optimizations",
+                "section": "Merging",
             },
             {
                 "attr": "opt_inner_first",
@@ -222,6 +230,8 @@ def plugin(kernel, lifecycle=None):
                     + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
                     + "* If you are using multiple passes, check Merge Passes"
                 ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_inners_grouped",
@@ -248,6 +258,8 @@ def plugin(kernel, lifecycle=None):
                     + "inner elements may span multiple design pieces, "
                     + "in which case they may be optimised together."
                 ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_closed_distance",
@@ -258,6 +270,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
+                "page": "Optimizations",
+                "section": "",
             },
         ]
         kernel.register_choices("optimize", choices)
@@ -275,13 +289,14 @@ def plugin(kernel, lifecycle=None):
 
     elif lifecycle == "poststart":
         planner = kernel.planner
-        if hasattr(kernel.args, "auto") and kernel.args.auto:
+        auto = hasattr(kernel.args, "auto") and kernel.args.auto
+        if auto:
             planner("plan copy preprocess validate blob preopt optimize\n")
-        if hasattr(kernel.args, "origin") and kernel.args.origin:
-            planner("plan append origin\n")
-        if hasattr(kernel.args, "quit") and kernel.args.quit:
-            planner("plan append shutdown\n")
-        planner("plan spool\n")
+            if hasattr(kernel.args, "origin") and kernel.args.origin:
+                planner("plan append origin\n")
+            if hasattr(kernel.args, "quit") and kernel.args.quit:
+                planner("plan append shutdown\n")
+            planner("plan spool\n")
 
 
 class Planner(Service):
@@ -323,7 +338,6 @@ class Planner(Service):
         self.register("plan/home", home)
         self.register("plan/origin", origin)
         self.register("plan/unlock", unlock)
-        self.register("plan/wait", wait)
         self.register("plan/beep", beep)
         self.register("function/interrupt", interrupt_text)
         self.register("plan/interrupt", interrupt)
@@ -359,7 +373,7 @@ class Planner(Service):
             """
             if alias is None:
                 raise CommandSyntaxError
-            plan_command = "plan/%s" % alias
+            plan_command = f"plan/{alias}"
             if self.lookup(plan_command) is not None:
                 raise CommandSyntaxError(
                     _("You may not overwrite an already used alias.")
@@ -407,14 +421,14 @@ class Planner(Service):
                 channel(_("----------"))
                 channel(_("Plan:"))
                 for i, plan_name in enumerate(cutplan.name):
-                    channel("%d: %s" % (i, plan_name))
+                    channel(f"{i}: {plan_name}")
                 channel(_("----------"))
-                channel(_("Plan %s:" % self._default_plan))
+                channel(_("Plan {plan}:").format(plan=self._default_plan))
                 for i, op_name in enumerate(cutplan.plan):
-                    channel("%d: %s" % (i, op_name))
-                channel(_("Commands %s:" % self._default_plan))
+                    channel(f"{i}: {op_name}")
+                channel(_("Commands {plan}:").format(plan=self._default_plan))
                 for i, cmd_name in enumerate(cutplan.commands):
-                    channel("%d: %s" % (i, cmd_name))
+                    channel(f"{i}: {cmd_name}")
                 channel(_("----------"))
 
             return "plan", cutplan
@@ -429,14 +443,14 @@ class Planner(Service):
             channel(_("----------"))
             channel(_("Plan:"))
             for i, plan_name in enumerate(self._plan):
-                channel("%d: %s" % (i, plan_name))
+                channel(f"{i}: {plan_name}")
             channel(_("----------"))
-            channel(_("Plan %s:" % data.name))
+            channel(_("Plan {plan}:").format(plan=data.name))
             for i, op_name in enumerate(data.plan):
-                channel("%d: %s" % (i, op_name))
-            channel(_("Commands %s:" % data.name))
+                channel(f"{i}: {op_name}")
+            channel(_("Commands {plan}:").format(plan=data.name))
             for i, cmd_name in enumerate(data.commands):
-                channel("%d: %s" % (i, cmd_name))
+                channel(f"{i}: {cmd_name}")
             channel(_("----------"))
             return data_type, data
 
@@ -487,7 +501,10 @@ class Planner(Service):
                     "op dots",
                     "op hatch",
                     "cutcode",
-                    "op console",
+                    "util console",
+                    "util wait",
+                    "util input",
+                    "util output",
                     "lasercode",
                     "blob",
                 ),
@@ -506,9 +523,6 @@ class Planner(Service):
                 if c.type == "cutcode":
                     # CutNodes are denuded into normal objects.
                     c = c.cutcode
-                elif c.type == "blob":
-                    # BlobNodes are denuded into normal objects.
-                    c = c.blob
                 copy_c = copy(c)
                 try:
                     copy_c.copy_children_as_real(c)
@@ -729,9 +743,9 @@ class Planner(Service):
                 # exceptions need to be narrow not global in scope.
                 # try:
                 if x_distance is None:
-                    x_distance = "%f%%" % (100.0 / (cols + 1))
+                    x_distance = f"{100.0 / (cols + 1)}%"
                 if y_distance is None:
-                    y_distance = "%f%%" % (100.0 / (rows + 1))
+                    y_distance = f"{100.0 / (rows + 1)}%"
             # except Exception:
             # pass
             x_last = 0
@@ -753,7 +767,10 @@ class Planner(Service):
                     y_last = y_pos
                     x_pos += x_distance
                 y_pos += y_distance
+            y_pos -= y_distance
+            x_pos -= x_distance
             if x_pos != 0 or y_pos != 0:
+                data.plan.append(origin)
                 data.plan.append(offset(-x_pos, -y_pos))
             data.plan.extend(post_plan)
             self.signal("plan", data.name, None)
@@ -784,7 +801,7 @@ class Planner(Service):
                     ),
                 ):
                     copy_c = copy(c)
-                    operations.add(copy_c, type="op")
+                    operations.add_node(copy_c)
             channel(_("Returned Operations."))
             self.signal("plan", data.name, None)
             return data_type, data
@@ -882,7 +899,7 @@ class offset:
         self.y = y
 
     def __str__(self):
-        return "offset_value (%.1f, %.1f)" % (self.x, self.y)
+        return f"offset_value ({self.x:.1f}, {self.y:.1f})"
 
     def __call__(self, *args):
         if len(args) > 1:
@@ -890,12 +907,6 @@ class offset:
             self.y = args[1]
         yield "wait_finish"
         yield "set_position", -int(self.x), -int(self.y)
-
-
-def wait():
-    wait_amount = 5.0
-    yield "wait_finish"
-    yield "wait", wait_amount
 
 
 def beep():

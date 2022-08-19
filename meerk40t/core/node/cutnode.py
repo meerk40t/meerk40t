@@ -12,13 +12,10 @@ class CutNode(Node):
         super().__init__(type="cutcode", **kwargs)
         self.output = True
         self.cutcode = cutcode
+        self._formatter = "{element_type}"
 
     def __repr__(self):
-        return "CutNode('%s', %s, %s)" % (
-            self.type,
-            str(self.cutcode),
-            str(self._parent),
-        )
+        return f"CutNode('{self.type}', {str(self.cutcode)}, {str(self._parent)})"
 
     def __copy__(self):
         return CutNode(self.cutcode)
@@ -31,7 +28,7 @@ class CutNode(Node):
         default_map["element_type"] = "Cutcode"
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         return False
 
     def as_cutobjects(self, closed_distance=15):

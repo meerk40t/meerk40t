@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
     RESPONSE_CHAIN,
@@ -28,8 +29,24 @@ class CircleTool(ToolWidget):
             y0 = min(self.p1.imag, self.p2.imag)
             x1 = max(self.p1.real, self.p2.real)
             y1 = max(self.p1.imag, self.p2.imag)
+            if self.scene.context.elements.default_stroke is None:
+                self.pen.SetColour(wx.BLUE)
+            else:
+                self.pen.SetColour(
+                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+                )
             gc.SetPen(self.pen)
-            gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            if self.scene.context.elements.default_fill is None:
+                gc.SetBrush(wx.TRANSPARENT_BRUSH)
+            else:
+                gc.SetBrush(
+                    wx.Brush(
+                        wx.Colour(
+                            swizzlecolor(self.scene.context.elements.default_fill)
+                        ),
+                        wx.BRUSHSTYLE_SOLID,
+                    )
+                )
             ellipse = Circle(
                 (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
             )
@@ -38,22 +55,47 @@ class CircleTool(ToolWidget):
             if bbox is not None:
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
+    ):
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             self.scene.tool_active = True
-            self.p1 = complex(space_pos[0], space_pos[1])
+            if nearest_snap is None:
+                self.p1 = complex(space_pos[0], space_pos[1])
+            else:
+                self.p1 = complex(nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            self.p2 = complex(space_pos[0], space_pos[1])
+            if self.p1 is not None:
+                if nearest_snap is None:
+                    self.p2 = complex(space_pos[0], space_pos[1])
+                else:
+                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+        elif event_type == "leftclick":
+            # Dear user: that's too quick for my taste - take your time...
+            self.p1 = None
+            self.p2 = None
+            self.scene.tool_active = False
             self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+            response = RESPONSE_ABORT
         elif event_type == "leftup":
             self.scene.tool_active = False
             try:
                 if self.p1 is None:
                     return
-                self.p2 = complex(space_pos[0], space_pos[1])
+                if nearest_snap is None:
+                    self.p2 = complex(space_pos[0], space_pos[1])
+                else:
+                    self.p2 = complex(nearest_snap[0], nearest_snap[1])
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
@@ -69,14 +111,26 @@ class CircleTool(ToolWidget):
                 if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
                     node = elements.elem_branch.add(shape=ellipse, type="elem ellipse")
-                    elements.classify([node])
-                    self.notify_created()
+                    if self.scene.context.elements.default_stroke is not None:
+                        node.stroke = self.scene.context.elements.default_stroke
+                    if self.scene.context.elements.default_fill is not None:
+                        node.fill = self.scene.context.elements.default_fill
+                    if elements.classify_new:
+                        elements.classify([node])
+                    self.notify_created(node)
                 self.p1 = None
                 self.p2 = None
             except IndexError:
                 pass
             self.scene.request_refresh()
             response = RESPONSE_ABORT
-        elif event_type == "lost":
-            self.scene.tool_active = False
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            self.p1 = None
+            self.p2 = None
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response

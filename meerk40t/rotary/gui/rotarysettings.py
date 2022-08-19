@@ -8,11 +8,12 @@ import wx
 
 from meerk40t.gui.icons import icons8_roll_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
 
 _ = wx.GetTranslation
 
 
-class RotarySettingsPanel(wx.Panel):
+class RotarySettingsPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -20,8 +21,12 @@ class RotarySettingsPanel(wx.Panel):
 
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.Children[0].SetFocus()
-        self.text_rotary_scaley = wx.TextCtrl(self, wx.ID_ANY, "1.0")
-        self.text_rotary_scalex = wx.TextCtrl(self, wx.ID_ANY, "1.0")
+        self.text_rotary_scaley = TextCtrl(
+            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_rotary_scalex = TextCtrl(
+            self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
+        )
         # self.checkbox_rotary_loop = wx.CheckBox(self, wx.ID_ANY, _("Field Loop"))
         # self.text_rotary_rotation = wx.TextCtrl(self, wx.ID_ANY, "360.0")
         # self.checkbox_rotary_roller = wx.CheckBox(self, wx.ID_ANY, _("Uses Roller"))
@@ -32,10 +37,12 @@ class RotarySettingsPanel(wx.Panel):
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
-        self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_y, self.text_rotary_scaley)
-        self.Bind(wx.EVT_TEXT, self.on_text_rotary_scale_x, self.text_rotary_scalex)
+        self.text_rotary_scalex.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_x)
+        self.text_rotary_scalex.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_x)
+        self.text_rotary_scaley.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_y)
+        self.text_rotary_scaley.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_y)
         # self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_loop, self.checkbox_rotary_loop)
-        # self.Bind(wx.EVT_TEXT, self.on_text_rotation, self.text_rotary_rotation)
+        # self.text_rotary_rotation.Bind(wx.EVT_TEXT, self.on_text_rotation)
         # self.Bind(
         #     wx.EVT_CHECKBOX, self.on_check_rotary_roller, self.checkbox_rotary_roller
         # )
@@ -49,6 +56,7 @@ class RotarySettingsPanel(wx.Panel):
         #     self.on_text_rotary_object_circumference,
         #     self.text_rotary_object_circumference,
         # )
+        self.SetupScrolling()
 
     def pane_show(self):
         self.text_rotary_scalex.SetValue(str(self.rotary.scale_x))

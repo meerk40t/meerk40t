@@ -9,6 +9,7 @@ import wx
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import icons8_administrative_tools_50
 from .mwindow import MWindow
+from .wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
@@ -28,12 +29,11 @@ class PreferencesUnitsPanel(wx.Panel):
             self,
             wx.ID_ANY,
             _("Units"),
-            choices=[_("mm"), _("cm"), _("inch"), _("steps")],
+            choices=[_("mm"), _("cm"), _("inch"), _("mils")],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
         self.radio_units.SetToolTip(_("Set default units for guides"))
-        self.radio_units.SetSelection(0)
         sizer_1.Add(self.radio_units, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_1)
@@ -41,10 +41,8 @@ class PreferencesUnitsPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_RADIOBOX, self.on_radio_units, self.radio_units)
-        # end wxGlade
 
-        self.context.setting(int, "units_index", 0)
-        self.radio_units.SetSelection(self.context.units_index)
+        self.radio_units.SetSelection(self._get_units_index())
 
     def on_radio_units(self, event):
         if event.Int == 0:
@@ -56,27 +54,36 @@ class PreferencesUnitsPanel(wx.Panel):
         elif event.Int == 3:
             self.set_mil()
 
+    def _get_units_index(self):
+        p = self.context.root
+        units = p.units_name
+        if units == "mm":
+            return 0
+        if units == "cm":
+            return 1
+        if units == "inch":
+            return 2
+        if units == "mil":
+            return 3
+        return 0
+
     def set_inch(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "inch"
         p.signal("units", p.units_name)
 
     def set_mil(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "mil"
         p.signal("mil", p.units_name)
 
     def set_cm(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "cm"
         p.signal("cm", p.units_name)
 
     def set_mm(self):
-        context_root = self.context.root
-        p = context_root
+        p = self.context.root
         p.units_name = "mm"
         p.signal("mm", p.units_name)
 
@@ -103,7 +110,9 @@ class PreferencesLanguagePanel(wx.Panel):
         self.combo_language = wx.ComboBox(
             self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY
         )
-        self.combo_language.SetToolTip(_("Select the desired language to use."))
+        self.combo_language.SetToolTip(
+            _("Select the desired language to use (requires a restart to take effect).")
+        )
         sizer_2.Add(self.combo_language, 0, 0, 0)
 
         self.SetSizer(sizer_2)
@@ -150,27 +159,31 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.combo_svg_ppi.SetToolTip(
             _("Select the Pixels Per Inch to use when loading an SVG file")
         )
-        sizer_3.Add(self.combo_svg_ppi, 0, 0, 0)
+        sizer_3.Add(self.combo_svg_ppi, 0, wx.EXPAND, 0)
 
         sizer_3.Add((20, 20), 0, 0, 0)
 
-        self.text_svg_ppi = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_svg_ppi.SetMinSize((60, 23))
+        self.text_svg_ppi = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER, limited=True
+        )
+        # self.text_svg_ppi.SetMinSize((60, 23))
         self.text_svg_ppi.SetToolTip(
             _("Custom Pixels Per Inch to use when loading an SVG file")
         )
-        sizer_3.Add(self.text_svg_ppi, 1, 0, 0)
+        sizer_3.Add(self.text_svg_ppi, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_3)
 
         self.Layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
-        self.Bind(wx.EVT_TEXT, self.on_text_svg_ppi, self.text_svg_ppi)
+        self.text_svg_ppi.Bind(wx.EVT_TEXT_ENTER, self.on_text_svg_ppi)
+        self.text_svg_ppi.Bind(wx.EVT_KILL_FOCUS, self.on_text_svg_ppi)
         # end wxGlade
 
         context.elements.setting(float, "svg_ppi", 96.0)
         self.text_svg_ppi.SetValue(str(context.elements.svg_ppi))
+        self.on_text_svg_ppi(None)
 
     def on_combo_svg_ppi(self, event=None):
         elements = self.context.elements
@@ -227,6 +240,15 @@ class PreferencesMain(wx.Panel):
         self.panel_ppi = PreferencesPixelsPerInchPanel(self, wx.ID_ANY, context=context)
         sizer_main.Add(self.panel_ppi, 0, wx.EXPAND, 0)
 
+        self.panel_pref1 = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=context,
+            choices="preferences",
+            constraint=("-Classification", "-Gui", "-Scene"),
+        )
+        sizer_main.Add(self.panel_pref1, 1, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
 
         self.Layout()
@@ -243,15 +265,10 @@ class PreferencesPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
 
-        sizer_settings = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_settings = wx.BoxSizer(wx.VERTICAL)
 
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=context)
         sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
-
-        self.checklist_options = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=context, choices="preferences"
-        )
-        sizer_settings.Add(self.checklist_options, 2, wx.EXPAND, 0)
 
         self.SetSizer(sizer_settings)
 
@@ -263,7 +280,7 @@ class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
             565,
-            367,
+            400,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
@@ -272,9 +289,54 @@ class Preferences(MWindow):
             | (wx.RESIZE_BORDER if platform.system() != "Darwin" else 0),
             **kwds,
         )
+        self.notebook_main = wx.aui.AuiNotebook(
+            self,
+            -1,
+            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | wx.aui.AUI_NB_SCROLL_BUTTONS
+            | wx.aui.AUI_NB_TAB_SPLIT
+            | wx.aui.AUI_NB_TAB_MOVE,
+        )
 
-        self.panel = PreferencesPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
+        self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+
+        self.panel_classification = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint=("Classification"),
+        )
+        self.panel_classification.SetupScrolling()
+
+        self.panel_gui = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint=("Gui"),
+        )
+        self.panel_gui.SetupScrolling()
+
+        self.panel_scene = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices="preferences",
+            constraint=("Scene"),
+        )
+        self.panel_scene.SetupScrolling()
+
+        self.notebook_main.AddPage(self.panel_main, _("General"))
+        self.notebook_main.AddPage(self.panel_classification, _("Classification"))
+        self.notebook_main.AddPage(self.panel_gui, _("GUI"))
+        self.notebook_main.AddPage(self.panel_scene, _("Scene"))
+        self.Layout()
+
+        self.add_module_delegate(self.panel_main)
+        self.add_module_delegate(self.panel_classification)
+        self.add_module_delegate(self.panel_gui)
+        self.add_module_delegate(self.panel_scene)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)

@@ -36,16 +36,30 @@ class VectorTool(ToolWidget):
             gc.DrawPath(gpath)
             del gpath
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
+    ):
         response = RESPONSE_CHAIN
 
         if event_type == "leftclick":
             self.scene.tool_active = True
             if self.path is None:
                 self.path = Path(stroke="blue", stroke_width=1000)
-                self.path.move((space_pos[0], space_pos[1]))
+                if nearest_snap is None:
+                    self.path.move((space_pos[0], space_pos[1]))
+                else:
+                    self.path.move((nearest_snap[0], nearest_snap[1]))
             else:
-                self.path.line((space_pos[0], space_pos[1]))
+                if nearest_snap is None:
+                    self.path.line((space_pos[0], space_pos[1]))
+                else:
+                    self.path.line((nearest_snap[0], nearest_snap[1]))
             self.c0 = None
             response = RESPONSE_CONSUME
         elif event_type == "rightdown":
@@ -56,13 +70,19 @@ class VectorTool(ToolWidget):
             response = RESPONSE_CONSUME
         elif event_type == "leftdown":
             self.scene.tool_active = True
-            self.c0 = (space_pos[0], space_pos[1])
+            if nearest_snap is None:
+                self.c0 = (space_pos[0], space_pos[1])
+            else:
+                self.c0 = (nearest_snap[0], nearest_snap[1])
             response = RESPONSE_CONSUME
         elif event_type == "move":
-            self.c0 = (space_pos[0], space_pos[1])
+            if nearest_snap is None:
+                self.c0 = (space_pos[0], space_pos[1])
+            else:
+                self.c0 = (nearest_snap[0], nearest_snap[1])
             if self.path:
                 self.scene.request_refresh()
-            response = RESPONSE_CONSUME
+                response = RESPONSE_CONSUME
         elif event_type == "leftup":
             self.scene.tool_active = False
             if self.c0 is not None and self.path:
@@ -74,7 +94,10 @@ class VectorTool(ToolWidget):
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
         elif event_type == "hover":
-            self.mouse_position = space_pos[0], space_pos[1]
+            if nearest_snap is None:
+                self.mouse_position = space_pos[0], space_pos[1]
+            else:
+                self.mouse_position = nearest_snap[0], nearest_snap[1]
             if self.path:
                 self.scene.request_refresh()
         elif event_type == "doubleclick":
@@ -83,11 +106,18 @@ class VectorTool(ToolWidget):
             if len(t) != 0:
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(path=t, type="elem path")
-                elements.classify([node])
+                if elements.classify_new:
+                    elements.classify([node])
+                self.notify_created(node)
             self.path = None
             self.mouse_position = None
-            self.notify_created()
             response = RESPONSE_CONSUME
-        elif event_type == "lost":
-            self.scene.tool_active = False
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
+            self.path = None
         return response

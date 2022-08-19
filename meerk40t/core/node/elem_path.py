@@ -1,6 +1,8 @@
 from copy import copy
+from math import sqrt
 
-from meerk40t.core.node.node import Node, Linejoin, Linecap
+from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
+from meerk40t.svgelements import SVG_ATTR_VECTOR_EFFECT, SVG_VALUE_NON_SCALING_STROKE
 
 
 class PathNode(Node):
@@ -15,38 +17,28 @@ class PathNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        linecap = None,
-        linejoin = None,
+        stroke_scale=None,
+        linecap=None,
+        linejoin=None,
+        fillrule=None,
         **kwargs,
     ):
         super(PathNode, self).__init__(type="elem path")
+        self._formatter = "{element_type} {id} {stroke}"
         self.path = path
         self.settings = kwargs
-        if matrix is None:
-            self.matrix = path.transform
-        else:
-            self.matrix = matrix
-        if fill is None:
-            self.fill = path.fill
-        else:
-            self.fill = fill
-        if stroke is None:
-            self.stroke = path.stroke
-        else:
-            self.stroke = stroke
-        if stroke_width is None:
-            self.stroke_width = path.stroke_width
-        else:
-            self.stroke_width = stroke_width
-        if linecap is None:
-            self.linecap = Linecap.CAP_BUTT
-        else:
-            self.linecap = linecap
-        if linejoin is None:
-            self.linejoin = Linejoin.JOIN_MITER
-        else:
-            self.linejoin = linejoin
-
+        self.matrix = path.transform if matrix is None else matrix
+        self.fill = path.fill if fill is None else fill
+        self.stroke = path.stroke if stroke is None else stroke
+        self.stroke_width = path.stroke_width if stroke_width is None else stroke_width
+        self._stroke_scaled = (
+            (path.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
+            if stroke_scale is None
+            else stroke_scale
+        )
+        self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
+        self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
+        self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.lock = False
 
     def __copy__(self):
@@ -56,31 +48,54 @@ class PathNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            stroke_scale=self._stroke_scaled,
+            linecap=self.linecap,
+            linejoin=self.linejoin,
+            fillrule=self.fillrule,
             **self.settings,
         )
 
     def __repr__(self):
-        return "%s('%s', %s, %s)" % (
-            self.__class__.__name__,
-            self.type,
-            str(len(self.path)),
-            str(self._parent),
-        )
+        return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
+
+    @property
+    def stroke_scaled(self):
+        return self._stroke_scaled
+
+    @stroke_scaled.setter
+    def stroke_scaled(self, v):
+        if not v and self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width *= sqrt(abs(matrix.determinant))
+        if v and not self._stroke_scaled:
+            matrix = self.matrix
+            self.stroke_width /= sqrt(abs(matrix.determinant))
+        self._stroke_scaled = v
+
+    def implied_stroke_width(self, zoomscale=1.0):
+        """If the stroke is not scaled, the matrix scale will scale the stroke, and we
+        need to countermand that scaling by dividing by the square root of the absolute
+        value of the determinant of the local matrix (1d matrix scaling)"""
+        scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
+        sw = self.stroke_width / scalefactor
+        limit = 25 * sqrt(zoomscale) * scalefactor
+        if sw < limit:
+            sw = limit
+        return sw
 
     @property
     def bounds(self):
         if self._bounds_dirty:
-            self.path.transform = self.matrix
-            self.path.stroke_width = self.stroke_width
+            self._sync_svg()
             self._bounds = self.path.bbox(with_stroke=True)
             self._bounds_dirty = False
         return self._bounds
 
     def preprocess(self, context, matrix, commands):
+        self.stroke_scaled = True
         self.matrix *= matrix
-        self.path.transform = self.matrix
-        self.path.stroke_width = self.stroke_width
-        self._bounds_dirty = True
+        self.stroke_scaled = False
+        self._sync_svg()
 
     def default_map(self, default_map=None):
         default_map = super(PathNode, self).default_map(default_map=default_map)
@@ -92,10 +107,11 @@ class PathNode(Node):
         default_map["matrix"] = self.matrix
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         # Dragging element into element.
         if drag_node.type.startswith("elem"):
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         return False
 
@@ -131,9 +147,14 @@ class PathNode(Node):
     def add_point(self, point, index=None):
         return False
 
-    def as_path(self):
+    def _sync_svg(self):
+        self.path.values[SVG_ATTR_VECTOR_EFFECT] = (
+            SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+        )
         self.path.transform = self.matrix
         self.path.stroke_width = self.stroke_width
-        self.path.linecap = self.linecap
-        self.path.linejoin = self.linejoin
+        self._bounds_dirty = True
+
+    def as_path(self):
+        self._sync_svg()
         return abs(self.path)

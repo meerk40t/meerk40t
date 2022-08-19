@@ -7,7 +7,6 @@ from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import Length
-from meerk40t.image.actualize import actualize
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 MILS_IN_MM = 39.3701
@@ -27,8 +26,10 @@ class RasterOpNode(Node, Parameters):
                 del kwargs["type"]
         Node.__init__(self, type="op raster", **kwargs)
         Parameters.__init__(self, None, **kwargs)
+        self._formatter = (
+            "{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {color}"
+        )
         self.settings.update(kwargs)
-        self._status_value = "Queued"
 
         if len(args) == 1:
             obj = args[0]
@@ -36,46 +37,36 @@ class RasterOpNode(Node, Parameters):
                 self.settings = dict(obj.settings)
             elif isinstance(obj, dict):
                 self.settings.update(obj)
+        self._allowed_elements_dnd = (
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+            "elem dot",
+            "elem text",
+            "elem image",
+        )
+        # Which elements do we consider for automatic classification?
+        self._allowed_elements = (
+            "elem ellipse",
+            "elem path",
+            "elem polyline",
+            "elem rect",
+            "elem line",
+            "elem text",
+            "elem image",
+        )
+        # To which attributes does the classification color check respond
+        # Can be extended / reduced by add_color_attribute / remove_color_attribute
+        self.allowed_attributes = [
+            "fill",
+        ]  # comma is relevant
+        # Is this op out of useful bounds?
+        self.dangerous = False
 
     def __repr__(self):
         return "RasterOp()"
-
-    def __str__(self):
-        parts = list()
-        if not self.output:
-            parts.append("(Disabled)")
-        if self.default:
-            parts.append("✓")
-        if self.passes_custom and self.passes != 1:
-            parts.append("%dX" % self.passes)
-        parts.append(f"Raster{self.dpi}")
-        if self.speed is not None:
-            parts.append(f"{float(self.speed):g}mm/s")
-        if self.frequency is not None:
-            parts.append(f"{float(self.frequency):g}kHz")
-        if self.raster_swing:
-            raster_dir = "-"
-        else:
-            raster_dir = "="
-        if self.raster_direction == 0:
-            raster_dir += "T2B"
-        elif self.raster_direction == 1:
-            raster_dir += "B2T"
-        elif self.raster_direction == 2:
-            raster_dir += "R2L"
-        elif self.raster_direction == 3:
-            raster_dir += "L2R"
-        elif self.raster_direction == 4:
-            raster_dir += "X"
-        else:
-            raster_dir += str(self.raster_direction)
-        parts.append(raster_dir)
-        if self.power is not None:
-            parts.append(f"{float(self.power):g}ppi")
-        parts.append(f"±{self.overscan}")
-        if self.acceleration_custom:
-            parts.append(f"a:{self.acceleration}")
-        return " ".join(parts)
 
     def __copy__(self):
         return RasterOpNode(self)
@@ -87,16 +78,24 @@ class RasterOpNode(Node, Parameters):
             self._bounds_dirty = False
         return self._bounds
 
+    # def is_dangerous(self, minpower, maxspeed):
+    #     result = False
+    #     if maxspeed is not None and self.speed > maxspeed:
+    #         result = True
+    #     if minpower is not None and self.power < minpower:
+    #         result = True
+    #     self.dangerous = result
+
     def default_map(self, default_map=None):
         default_map = super(RasterOpNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Raster"
+        default_map["danger"] = "❌" if self.dangerous else ""
+        default_map["defop"] = "✓" if self.default else ""
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["pass"] = (
             f"{self.passes}X " if self.passes_custom and self.passes != 1 else ""
         )
-        default_map["penpass"] = (
-            f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
-        )
+        default_map["penpass"] = f"(p:{self.penbox_pass}) " if self.penbox_pass else ""
         default_map["penvalue"] = (
             f"(v:{self.penbox_value}) " if self.penbox_value else ""
         )
@@ -120,38 +119,113 @@ class RasterOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
+        ct = 0
+        t = ""
+        s = ""
+        for cc in self.allowed_attributes:
+            if len(cc) > 0:
+                t += cc[0].upper()
+                ct += 1
+        if ct > 0:
+            s = self.color.hex + "-" + t
+        default_map["colcode"] = s
+        default_map["opstop"] = "❌" if self.stopop else ""
         default_map.update(self.settings)
+        default_map["color"] = self.color.hexrgb if self.color is not None else ""
+        default_map["overscan"] = f"±{self.overscan}"
         return default_map
 
-    def drop(self, drag_node):
+    def drop(self, drag_node, modify=True):
         if drag_node.type.startswith("elem"):
-            if drag_node.type == "elem image":
-                return False
+            # if drag_node.type == "elem image":
+            #     return False
             # Dragging element onto operation adds that element to the op.
-            self.add_reference(drag_node, pos=0)
+            if modify:
+                self.add_reference(drag_node, pos=0)
             return True
         elif drag_node.type == "reference":
-            # Disallow drop of image refelems onto a Dot op.
-            if drag_node.type == "elem image":
-                return False
+            # # Disallow drop of image refelems onto a Dot op.
+            # if drag_node.type == "elem image":
+            #     return False
             # Move a refelem to end of op.
-            self.append_child(drag_node)
+            if modify:
+                self.append_child(drag_node)
             return True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
-            self.insert_sibling(drag_node)
+            if modify:
+                self.insert_sibling(drag_node)
             return True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
             for e in drag_node.flat("elem"):
                 # Disallow drop of image elems onto a Dot op.
-                if drag_node.type == "elem image":
-                    continue
+                # if drag_node.type == "elem image":
+                #     continue
                 # Add element to operation
-                self.add_reference(e)
+                if modify:
+                    self.add_reference(e)
                 some_nodes = True
             return some_nodes
         return False
+
+    def has_color_attribute(self, attribute):
+        return attribute in self.allowed_attributes
+
+    def add_color_attribute(self, attribute):
+        if not attribute in self.allowed_attributes:
+            self.allowed_attributes.append(attribute)
+
+    def remove_color_attribute(self, attribute):
+        if attribute in self.allowed_attributes:
+            self.allowed_attributes.remove(attribute)
+
+    def valid_node(self, node):
+        return True
+
+    def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        def matching_color(col1, col2):
+            result = False
+            if col1 is None and col2 is None:
+                result = True
+            elif (
+                col1 is not None
+                and col1.argb is not None
+                and col2 is not None
+                and col2.argb is not None
+            ):
+                if fuzzy:
+                    distance = Color.distance(col1, col2)
+                    result = distance < fuzzydistance
+                else:
+                    result = col1 == col2
+            return result
+
+        if node.type in self._allowed_elements:
+            if not self.default:
+                if len(self.allowed_attributes) > 0:
+                    for attribute in self.allowed_attributes:
+                        if (
+                            hasattr(node, attribute)
+                            and getattr(node, attribute) is not None
+                        ):
+                            plain_color_op = abs(self.color)
+                            plain_color_node = abs(getattr(node, attribute))
+                            if matching_color(plain_color_op, plain_color_node):
+                                if self.valid_node(node):
+                                    self.add_reference(node)
+                                # Have classified but more classification might be needed
+                                return True, self.stopop
+                else:  # empty ? Anything goes
+                    if self.valid_node(node):
+                        self.add_reference(node)
+                    # Have classified but more classification might be needed
+                    return True, self.stopop
+            elif self.default and usedefault:
+                # Have classified but more classification might be needed
+                if self.valid_node(node):
+                    return True, self.stopop
+        return False, False
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
@@ -187,13 +261,11 @@ class RasterOpNode(Node, Parameters):
                 node.image.width * node.image.height * step_x / MILS_IN_MM * self.speed
             )
             estimate += node.image.height * step_y / MILS_IN_MM * self.speed
+        if self.passes_custom and self.passes != 1:
+            estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
-        return "%s:%s:%s" % (
-            int(hours),
-            str(int(minutes)).zfill(2),
-            str(int(seconds)).zfill(2),
-        )
+        return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
     def preprocess(self, context, matrix, commands):
         """
@@ -208,45 +280,14 @@ class RasterOpNode(Node, Parameters):
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))
-        dpi = self.dpi
-        oneinch_x = float(Length("1in"))
-        oneinch_y = float(Length("1in"))
-        transformed_step = matrix.transform_vector([oneinch_x, oneinch_y])
-        self.raster_step_x = transformed_step[0] / dpi
-        self.raster_step_y = transformed_step[1] / dpi
-
         if len(self.children) == 0:
             return
-        if len(self.children) == 1 and self.children[0].type == "elem image":
-            dpi = float(self.settings.get("dpi", 500))
-            oneinch_x = context.device.physical_to_device_length("1in", 0)[0]
-            oneinch_y = context.device.physical_to_device_length(0, "1in")[1]
-            step_x = float(oneinch_x / dpi)
-            step_y = float(oneinch_y / dpi)
-            self.settings["raster_step_x"] = step_x
-            self.settings["raster_step_y"] = step_y
-            node = self.children[0]
-            node.step_x = step_x
-            node.step_y = step_y
-            m = node.matrix
-            # Transformation must be uniform to permit native rastering.
-            if m.a != step_x or m.b != 0.0 or m.c != 0.0 or m.d != step_y:
 
-                def actualize_raster_image(image_node, s_x, s_y):
-                    def actualize_raster_image_node():
-                        image_node.image, image_node.matrix = actualize(
-                            image_node.image, image_node.matrix, step_x=s_x, step_y=s_y
-                        )
-                        image_node.cache = None
-
-                    return actualize_raster_image_node()
-
-                commands.append(actualize_raster_image(node, step_x, step_y))
-            return
+        # Calculate raster steps from DPI device context
+        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
 
         make_raster = context.lookup("render-op/make_raster")
         if make_raster is None:
-
             def strip_rasters():
                 self.remove_node()
 
@@ -257,31 +298,29 @@ class RasterOpNode(Node, Parameters):
             step_x = self.raster_step_x
             step_y = self.raster_step_y
             bounds = self.bounds
+            img_mx = Matrix.scale(step_x, step_y)
             try:
                 image = make_raster(
                     list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
                 )
-            except AssertionError:
+                if step_x > 0:
+                    img_mx.post_translate(bounds[0], 0)
+                else:
+                    img_mx.post_translate(bounds[2], 0)
+                if step_y > 0:
+                    img_mx.post_translate(0, bounds[1])
+                else:
+                    img_mx.post_translate(0, bounds[3])
+
+            except (AssertionError, MemoryError):
                 raise CutPlanningFailedError("Raster too large.")
-            if image.width == 1 and image.height == 1:
-                # TODO: Solve this is a less kludgy manner. The call to make the image can fail the first time
-                #  around because the renderer is what sets the size of the text. If the size hasn't already
-                #  been set, the initial bounds are wrong.
-                bounds = self.bounds
-                try:
-                    image = make_raster(
-                        list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
-                    )
-                except AssertionError:
-                    raise CutPlanningFailedError("Raster too large.")
             image = image.convert("L")
-            matrix = Matrix.scale(step_x, step_y)
-            matrix.post_translate(bounds[0], bounds[1])
-            image_node = ImageNode(
-                image=image, matrix=matrix, step_x=step_x, step_y=step_y
-            )
+            image_node = ImageNode(image=image, matrix=img_mx)
             self.children.clear()
             self.add_node(image_node)
+            image_node.step_x = step_x
+            image_node.step_y = step_y
+            image_node.process_image()
 
         commands.append(make_image)
 
@@ -304,6 +343,10 @@ class RasterOpNode(Node, Parameters):
         # Set steps
         step_x = self.raster_step_x
         step_y = self.raster_step_y
+        assert step_x != 0
+        assert step_y != 0
+        settings["raster_step_x"] = step_x
+        settings["raster_step_x"] = step_y
 
         # Set variables by direction
         direction = self.raster_direction
@@ -331,14 +374,9 @@ class RasterOpNode(Node, Parameters):
                 continue
 
             # Perform correct actualization
-            osx = image_node.step_x
-            osy = image_node.step_y
             image_node.step_x = step_x
             image_node.step_y = step_y
-            if image_node.needs_actualization():
-                image_node.make_actual()
-            image_node.step_x = osx
-            image_node.step_y = osy
+            image_node.process_image()
 
             # Set variables
             matrix = image_node.matrix

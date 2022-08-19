@@ -1,13 +1,15 @@
 import wx
 
-from ...svgelements import SVG_ATTR_ID
+from meerk40t.gui.wxutils import ScrolledPanel
+
+# from ...svgelements import SVG_ATTR_ID
 from ..icons import icons8_group_objects_50
 from ..mwindow import MWindow
 
 _ = wx.GetTranslation
 
 
-class GroupPropertiesPanel(wx.Panel):
+class GroupPropertiesPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
@@ -15,8 +17,8 @@ class GroupPropertiesPanel(wx.Panel):
 
         self.node = node
 
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "")
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         self.__set_properties()
         self.__do_layout()
@@ -33,10 +35,10 @@ class GroupPropertiesPanel(wx.Panel):
         except AttributeError:
             pass
 
-        self.Bind(wx.EVT_TEXT, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change, self.text_id)
-        self.Bind(wx.EVT_TEXT, self.on_text_label_change, self.text_label)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change, self.text_label)
+        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
+        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
+        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
+        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
         # end wxGlade
 
     def __set_properties(self):
@@ -50,9 +52,9 @@ class GroupPropertiesPanel(wx.Panel):
         )
         sizer_1 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL)
         sizer_1.Add(self.text_id, 0, wx.EXPAND, 0)
-        sizer_8.Add(sizer_1, 1, wx.EXPAND, 0)
+        sizer_8.Add(sizer_1, 0, wx.EXPAND, 0)
         sizer_2.Add(self.text_label, 0, wx.EXPAND, 0)
-        sizer_8.Add(sizer_2, 1, wx.EXPAND, 0)
+        sizer_8.Add(sizer_2, 0, wx.EXPAND, 0)
         sizer_8.Add((0, 0), 0, 0, 0)
         self.SetSizer(sizer_8)
         self.Layout()
@@ -62,8 +64,8 @@ class GroupPropertiesPanel(wx.Panel):
     def on_text_id_change(self, event=None):  # wxGlade: ElementProperty.<event_handler>
         try:
             self.node.id = self.text_id.GetValue()
-            self.node.values[SVG_ATTR_ID] = self.node.id
-            # self.context.signal("element_property_update", self.element)
+            # self.node.values[SVG_ATTR_ID] = self.node.id
+            self.context.signal("element_property_update", self.node)
         except AttributeError:
             pass
 
@@ -71,7 +73,11 @@ class GroupPropertiesPanel(wx.Panel):
         self, event=None
     ):  # wxGlade: ElementProperty.<event_handler>
         if len(self.text_label.GetValue()):
-            self.node.label = self.text_label.GetValue()
+            try:
+                self.node.label = self.text_label.GetValue()
+            except AttributeError:
+                # Can throw an error if non valid
+                pass
         else:
             self.node.label = None
         self.context.elements.signal("element_property_update", self.node)

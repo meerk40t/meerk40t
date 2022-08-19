@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from meerk40t.core.units import Length, ViewPort, UNITS_PER_MIL
+from meerk40t.core.units import UNITS_PER_MIL, Length, ViewPort
 
 
 class TestViewport(unittest.TestCase):

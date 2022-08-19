@@ -18,12 +18,16 @@ class ToolWidget(Widget):
         self.pen = wx.Pen()
         self.pen.SetColour(wx.BLUE)
         self.pen.SetWidth(1000)
+        # Set proper default values for cap and join
+        # as MKs defaults differ from wxPythons...
+        self.pen.SetCap(wx.CAP_BUTT)
+        self.pen.SetJoin(wx.JOIN_MITER)
 
     def hit(self):
         return HITCHAIN_HIT
 
-    def notify_created(self):
-        self.scene.context.signal("element_added")
+    def notify_created(self, node=None):
+        self.scene.context.signal("element_added", node)
 
     def process_draw(self, gc):
         self.brush.draw(gc)

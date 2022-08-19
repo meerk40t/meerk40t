@@ -37,18 +37,6 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 pass
             self.remove_module_delegate(p)
-        nodes = list(self.context.elements.flat(selected=True, cascade=False))
-        if nodes is None:
-            return
-        pages_to_instance = []
-        for node in nodes:
-            for property_sheet in self.context.lookup_all(
-                "property/{class_name}/.*".format(class_name=node.__class__.__name__)
-            ):
-                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
-                    node
-                ):
-                    pages_to_instance.append((property_sheet, node))
 
         def sort_priority(prop):
             prop_sheet, node = prop
@@ -58,7 +46,21 @@ class PropertyWindow(MWindow):
                 else 0
             )
 
-        pages_to_instance.sort(key=sort_priority)
+        nodes = list(self.context.elements.flat(selected=True, cascade=False))
+        if nodes is None:
+            return
+        pages_to_instance = []
+        for node in nodes:
+            pages_in_node = []
+            for property_sheet in self.context.lookup_all(
+                f"property/{node.__class__.__name__}/.*"
+            ):
+                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                    node
+                ):
+                    pages_in_node.append((property_sheet, node))
+            pages_in_node.sort(key=sort_priority)
+            pages_to_instance.extend(pages_in_node)
 
         self.window_close()
         # self.panel_instances.clear()
@@ -84,6 +86,10 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 pass
             page_panel.Layout()
+            try:
+                page_panel.SetupScrolling()
+            except AttributeError:
+                pass
 
         self.Layout()
 

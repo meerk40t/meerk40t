@@ -1,14 +1,12 @@
 import unittest
-
-from meerk40t.core.node.node import Node
 from test import bootstrap
 
+from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.svgelements import Circle, Rect
 
 
 class TestElements(unittest.TestCase):
-
     def test_elements_type(self):
         """
         Tests some generic elements commands and validates output as correct type
@@ -22,7 +20,9 @@ class TestElements(unittest.TestCase):
 
         try:
             for cmd, path, command in kernel.find("command/elements.*"):
-                kernel.console("element* " + command.split("/")[-1] + " validate_type\n")
+                kernel.console(
+                    "element* " + command.split("/")[-1] + " validate_type\n"
+                )
         finally:
             kernel.shutdown()
 
@@ -60,7 +60,7 @@ class TestElements(unittest.TestCase):
                         r=1000 * UNITS_PER_MIL,
                     ),
                 )
-                self.assertEqual(node.stroke, "black")
+                self.assertEqual(node.stroke, "blue")
         finally:
             kernel.shutdown()
 

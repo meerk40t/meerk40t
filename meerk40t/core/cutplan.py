@@ -46,7 +46,7 @@ class CutPlan:
         parts = list()
         parts.append(self.name)
         if len(self.plan):
-            parts.append("#%d" % len(self.plan))
+            parts.append(f"#{len(self.plan)}")
             for p in self.plan:
                 try:
                     parts.append(p.__name__)
@@ -145,20 +145,21 @@ class CutPlan:
             return
         context = self.context
 
+        # Break plan operations into merge groups.
         grouped_plan = list()
-        last_type = ""
-        group = [self.plan[0]]
-        for c in self.plan[1:]:
-            if hasattr(c, "type"):
-                c_type = c.type
-            else:
-                c_type = type(c).__name__
-            if c_type.startswith("op") != last_type.startswith("op"):
-                grouped_plan.append(group)
-                group = []
+        last_type = None
+        group = list()
+        for c in self.plan:
+            c_type = c.type if hasattr(c, "type") else type(c).__name__
+            if last_type is not None:
+                if c_type.startswith("op") != last_type.startswith("op"):
+                    # This is not able to be merged
+                    grouped_plan.append(group)
+                    group = list()
             group.append(c)
             last_type = c_type
-        grouped_plan.append(group)
+        if group:
+            grouped_plan.append(group)
 
         # If Merge operations and not merge passes we need to iterate passes first and operations second
         passes_first = context.opt_merge_ops and not context.opt_merge_passes
@@ -173,12 +174,12 @@ class CutPlan:
                     if not hasattr(op, "type"):
                         blob_plan.append(op)
                         continue
-                    if not op.type.startswith("op") or op.type == "op console":
+                    if (
+                        not op.type.startswith("op")
+                        and not op.type.startswith("util")
+                        or op.type == "util console"
+                    ):
                         blob_plan.append(op)
-                        continue
-                    if op.type == "op dots":
-                        if pass_idx == 0:
-                            blob_plan.append(op)
                         continue
                     copies = op.implicit_passes
                     if passes_first:
@@ -302,6 +303,7 @@ class CutPlan:
 
         elif context.opt_inner_first:
             self.commands.append(self.optimize_cuts)
+        self.commands.append(self.merge_cutcode)
         if context.opt_reduce_directions:
             pass
         if context.opt_remove_overlap:
@@ -358,6 +360,18 @@ class CutPlan:
                     grouped_inner=grouped_inner,
                 )
                 last = self.plan[i].end
+
+    def merge_cutcode(self):
+        """
+        Merge all adjacent optimized cutcode into single cutcode objects.
+        @return:
+        """
+        for i in range(len(self.plan) - 1, 0, -1):
+            cur = self.plan[i]
+            prev = self.plan[i - 1]
+            if isinstance(cur, CutCode) and isinstance(prev, CutCode):
+                prev.extend(cur)
+                del self.plan[i]
 
     def clear(self):
         self.plan.clear()
@@ -538,13 +552,8 @@ def inner_first_ident(context: CutGroup, channel=None):
     if channel:
         end_times = times()
         channel(
-            (
-                "Inner paths identified in {elapsed:.3f} elapsed seconds "
-                + "using {cpu:.3f} seconds CPU"
-            ).format(
-                elapsed=time() - start_time,
-                cpu=end_times[0] - start_times[0],
-            )
+            f"Inner paths identified in {time() - start_time:.3f} elapsed seconds "
+            f"using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
     return context
 
@@ -571,7 +580,7 @@ def short_travel_cutcode(
         start_time = time()
         start_times = times()
         channel("Executing Greedy Short-Travel optimization")
-        channel("Length at start: {length:.0f} steps".format(length=start_length))
+        channel(f"Length at start: {start_length:.0f} steps")
 
     curr = context.start
     if curr is None:
@@ -596,7 +605,7 @@ def short_travel_cutcode(
             if last_segment.normal:
                 # Attempt to initialize value to next segment in subpath
                 cut = last_segment.next
-                if cut and cut.burns_done < cut.passes:
+                if cut and cut.burns_done < cut.implicit_passes:
                     closest = cut
                     backwards = False
                     start = closest.start
@@ -604,7 +613,7 @@ def short_travel_cutcode(
             else:
                 # Attempt to initialize value to previous segment in subpath
                 cut = last_segment.previous
-                if cut and cut.burns_done < cut.passes:
+                if cut and cut.burns_done < cut.implicit_passes:
                     closest = cut
                     backwards = True
                     end = closest.end
@@ -612,7 +621,7 @@ def short_travel_cutcode(
             # Gap or continuing on path not permitted, try reversing
             if (
                 distance > 50
-                and last_segment.burns_done < last_segment.passes
+                and last_segment.burns_done < last_segment.implicit_passes
                 and last_segment.reversible()
                 and last_segment.next is not None
             ):
@@ -686,22 +695,23 @@ def short_travel_cutcode(
         end = c.end
         curr = complex(end[0], end[1])
         ordered.append(c)
-
-    ordered._start_x, ordered._start_y = context.start
+    if context.start is not None:
+        ordered._start_x, ordered._start_y = context.start
+    else:
+        ordered._start_x = 0
+        ordered._start_y = 0
     if channel:
         end_times = times()
         end_length = ordered.length_travel(True)
+        try:
+            delta = (end_length - start_length) / start_length
+        except ZeroDivisionError:
+            delta = 0
         channel(
-            (
-                "Length at end: {length:.0f} steps ({delta:+.0%}), "
-                + "optimized in {elapsed:.3f} elapsed seconds "
-                + "using {cpu:.3f} seconds CPU"
-            ).format(
-                length=end_length,
-                delta=(end_length - start_length) / start_length,
-                elapsed=time() - start_time,
-                cpu=end_times[0] - start_times[0],
-            )
+            f"Length at end: {end_length:.0f} steps "
+            f"({delta:+.0%}), "
+            f"optimized in {time() - start_time:.3f} "
+            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
     return ordered
 
@@ -731,7 +741,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         start_time = time()
         start_times = times()
         channel("Executing 2-Opt Short-Travel optimization")
-        channel("Length at start: {length:.0f} steps".format(length=start_length))
+        channel(f"Length at start: {start_length:.0f} steps")
 
     ordered = CutCode(context.flat())
     length = len(ordered)
@@ -762,8 +772,7 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         dists = np.abs(starts - ends)
         dist_sum = dists.sum() + abs(curr - endpoints[0][0])
         channel(
-            "optimize: laser-off distance is %f. %.02f%% done with pass %d/%d"
-            % (dist_sum, 100 * pos / length, current_pass, passes)
+            f"optimize: laser-off distance is {dist_sum}. {100 * pos / length:.02f}% done with pass {current_pass}/{passes}"
         )
 
     improved = True
@@ -835,16 +844,10 @@ def short_travel_cutcode_2opt(context: CutCode, passes: int = 50, channel=None):
         end_times = times()
         end_length = ordered.length_travel(True)
         channel(
-            (
-                "Length at end: {length:.0f} steps ({delta:+.0%}), "
-                + "optimized in {elapsed:.3f} elapsed seconds "
-                + "using {cpu:.3f} seconds CPU"
-            ).format(
-                length=end_length,
-                delta=(end_length - start_length) / start_length,
-                elapsed=time() - start_time,
-                cpu=end_times[0] - start_times[0],
-            )
+            f"Length at end: {end_length:.0f} steps "
+            f"({(end_length - start_length) / start_length:+.0%}), "
+            f"optimized in {time() - start_time:.3f} "
+            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} seconds CPU"
         )
     return ordered
 
@@ -863,7 +866,7 @@ def inner_selection_cutcode(
         start_time = time()
         start_times = times()
         channel("Executing Inner Selection-Only optimization")
-        channel("Length at start: {length:.0f} steps".format(length=start_length))
+        channel(f"Length at start: {start_length:.0f} steps")
 
     for c in context.flat():
         c.burns_done = 0
@@ -883,17 +886,10 @@ def inner_selection_cutcode(
         end_times = times()
         end_length = ordered.length_travel(True)
         channel(
-            (
-                "Length at end: {length:.0f} steps ({delta:+.0%}), "
-                + "optimized in {elapsed:.3f} elapsed seconds "
-                + "using {cpu:.3f} seconds CPU "
-                + "in {iterations} iterations"
-            ).format(
-                length=end_length,
-                delta=(end_length - start_length) / start_length,
-                elapsed=time() - start_time,
-                cpu=end_times[0] - start_times[0],
-                iterations=iterations,
-            )
+            f"Length at end: {end_length:.0f} steps "
+            f"({(end_length - start_length) / start_length:+.0%}), "
+            f"optimized in {time() - start_time:.3f} "
+            f"elapsed seconds using {end_times[0] - start_times[0]:.3f} "
+            f"seconds CPU in {iterations} iterations"
         )
     return ordered

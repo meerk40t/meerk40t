@@ -163,7 +163,7 @@ class Camera(Service):
             return
         self.signal(
             "warning",
-            _("Success. %d images so far.") % len(self._object_points),
+            _("Success. {count} images so far.").format(count=len(self._object_points)),
             _("Image Captured"),
             4 | 2048,
         )
@@ -187,7 +187,7 @@ class Camera(Service):
                 self.quit_thread = False
             self.camera_thread = self.threaded(
                 self.threaded_image_fetcher,
-                thread_name="CameraFetcher-%s-%s" % (self._path, self.uri),
+                thread_name=f"CameraFetcher-{self._path}-{self.uri}",
             )
 
     def close_camera(self):
@@ -270,7 +270,7 @@ class Camera(Service):
         uri = self.uri
         self.signal("camera_reconnect")
         self.capture = cv2.VideoCapture(uri)
-        channel("Capture: %s" % str(self.capture))
+        channel(f"Capture: {str(self.capture)}")
         if self.capture is None:
             return False
         return True
@@ -285,13 +285,13 @@ class Camera(Service):
             self.connection_attempts = 0
             self.frame_attempts = 0
             uri = self.uri
-            channel("URI: %s" % str(uri))
+            channel(f"URI: {str(uri)}")
             if uri is None:
                 return
-            channel("Connecting %s" % str(uri))
+            channel(f"Connecting {str(uri)}")
             self.signal("camera_state", 1)
             self.capture = cv2.VideoCapture(uri)
-            channel("Capture: %s" % str(self.capture))
+            channel(f"Capture: {str(self.capture)}")
 
             while not self.quit_thread:
                 if self.connection_attempts > self.max_tries_connect:
@@ -299,51 +299,51 @@ class Camera(Service):
                 if self.capture is None:
                     return  # No capture the thread dies.
                 try:
-                    channel("Grabbing Frame: %s" % str(uri))
+                    channel(f"Grabbing Frame: {str(uri)}")
                     ret = self.capture.grab()
                 except AttributeError:
                     time.sleep(0.2)
-                    channel("Grab Failed, trying Reconnect: %s" % str(uri))
+                    channel(f"Grab Failed, trying Reconnect: {str(uri)}")
                     if self._attempt_recovery():
                         continue
                     else:
                         return
 
                 for i in range(self.max_tries_frame):
-                    channel("Retrieving Frame: %s" % str(uri))
+                    channel(f"Retrieving Frame: {str(uri)}")
                     try:
                         ret, frame = self.capture.retrieve()
                     except cv2.error:
                         ret, frame = False, None
                     if not ret or frame is None:
-                        channel("Failed Retry: %s" % str(uri))
+                        channel(f"Failed Retry: {str(uri)}")
                         time.sleep(0.1)
                     else:
                         break
                 if not ret:  # Try auto-reconnect.
                     time.sleep(0.2)
-                    channel("Frame Failed, trying Reconnect: %s" % str(uri))
+                    channel(f"Frame Failed, trying Reconnect: {str(uri)}")
                     if self._attempt_recovery():
                         continue
                     else:
                         return
-                channel("Frame Success: %s" % str(uri))
+                channel(f"Frame Success: {str(uri)}")
                 self.connection_attempts = 0
 
                 self.last_raw = self.current_raw
                 self.current_raw = frame
                 self.frame_index += 1
                 self.process_frame()
-                channel("Processing Frame: %s" % str(uri))
+                channel(f"Processing Frame: {str(uri)}")
 
             if self.capture is not None:
-                channel("Releasing Capture: %s" % str(uri))
+                channel(f"Releasing Capture: {str(uri)}")
                 self.capture.release()
                 self.capture = None
-                channel("Released: %s" % str(uri))
+                channel(f"Released: {str(uri)}")
         if self is not None:
             self.signal("camera_state", 0)
-        channel("Camera Thread Exiting: %s" % str(uri))
+        channel(f"Camera Thread Exiting: {str(uri)}")
 
     def reset_perspective(self):
         """

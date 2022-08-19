@@ -26,7 +26,7 @@ from .service import Service
 from .settings import Settings
 from .states import *
 
-KERNEL_VERSION = "0.0.1"
+KERNEL_VERSION = "0.0.2"
 
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
@@ -58,7 +58,7 @@ class Kernel(Settings):
         Settings.__init__(
             self,
             self.name,
-            "{profile}.cfg".format(name=name, profile=profile, version=version),
+            f"{profile}.cfg",
         )
         self.settings = self
 
@@ -100,7 +100,8 @@ class Kernel(Settings):
         self.translation = lambda e: e
 
         # The function used to process the signals. This is useful if signals should be kept to a single thread.
-        self.run_later = lambda execute, op: execute(op)
+        self.scheduler_handles_main_thread_jobs = True
+        self.scheduler_handles_default_thread_jobs = True
 
         self.state = STATE_INITIALIZE
 
@@ -122,14 +123,7 @@ class Kernel(Settings):
         self.channels = {}
 
         # Console Commands.
-        self.commands = []
-        self.console_job = Job(
-            job_name="kernel.console.ticks",
-            process=self._console_job_tick,
-            interval=0.05,
-        )
         self._console_buffer = ""
-        self.queue = []
         self._console_channel = self.channel("console", timestamp=True, ansi=True)
         self.console_channel_file = None
 
@@ -148,8 +142,7 @@ class Kernel(Settings):
             original = os.getcwd()
             os.chdir(get_safe_path(self.name, True))
             print(
-                "Changing working directory from %s to %s."
-                % (str(original), str(os.getcwd()))
+                f"Changing working directory from {str(original)} to {str(os.getcwd())}."
             )
             return open(*args)
 
@@ -162,9 +155,7 @@ class Kernel(Settings):
         """
         import types
 
-        filename = "{name}-debug-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-            name=self.name, date=datetime.now()
-        )
+        filename = f"{self.name}-debug-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
         debug_file = self.open_safe(filename, "a")
         debug_file.write("\n\n\n")
 
@@ -175,17 +166,13 @@ class Kernel(Settings):
 
                 kwargs_repr = ["%s=%s" % (k, v) for k, v in kwargs.items()]
                 signature = ", ".join(args_repr + kwargs_repr)
-                start = "Calling %s.%s(%s)" % (str(obj), func.__name__, signature)
+                start = f"Calling {str(obj)}.{func.__name__}({signature})"
                 debug_file.write(start + "\n")
                 print(start)
                 t = time.time()
                 value = func(*args, **kwargs)
                 t = time.time() - t
-                finish = "    %s returned %s after %fms" % (
-                    func.__name__,
-                    value,
-                    t * 1000,
-                )
+                finish = f"    {func.__name__} returned {value} after {t * 1000}ms"
                 print(finish)
                 debug_file.write(finish + "\n")
                 debug_file.flush()
@@ -258,14 +245,12 @@ class Kernel(Settings):
         """
         if active:
             try:
-                return self._registered["service/{domain}/active".format(domain=domain)]
+                return self._registered[f"service/{domain}/active"]
             except KeyError:
                 return None
         else:
             try:
-                return self._registered[
-                    "service/{domain}/available".format(domain=domain)
-                ]
+                return self._registered[f"service/{domain}/available"]
             except KeyError:
                 return []
 
@@ -323,7 +308,7 @@ class Kernel(Settings):
 
         services.append(service)
         service.registered_path = registered_path
-        self.register("service/{domain}/available".format(domain=domain), services)
+        self.register(f"service/{domain}/available", services)
         self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ADDED)
         if activate:
             self.activate(domain, service)
@@ -386,7 +371,7 @@ class Kernel(Settings):
         self.deactivate(domain)
 
         # Set service and attach.
-        self.register("service/{domain}/active".format(domain=domain), service)
+        self.register(f"service/{domain}/active", service)
 
         self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ATTACHED)
 
@@ -401,7 +386,7 @@ class Kernel(Settings):
         self.lookup_changes(list(service._registered))
 
         # Signal activation
-        self.signal("activate;{domain}".format(domain=domain), "/", service)
+        self.signal(f"activate;{domain}", "/", service)
 
         if assigned:
             self.set_service_lifecycle(service, LIFECYCLE_SERVICE_ASSIGNED)
@@ -425,9 +410,7 @@ class Kernel(Settings):
                 # For every registered context, set the given domain to None.
                 context = self.contexts[context_name]
                 setattr(context, domain, None)
-            self.signal(
-                "deactivate;{domain}".format(domain=domain), "/", previous_active
-            )
+            self.signal(f"deactivate;{domain}", "/", previous_active)
 
     # ==========
     # DELEGATES API
@@ -531,7 +514,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PRECLI <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRECLI
                 if channel:
-                    channel("kernel-precli: {object}".format(object=str(k)))
+                    channel(f"kernel-precli: {str(k)}")
                 if hasattr(k, "precli"):
                     k.precli()
         if start < LIFECYCLE_KERNEL_PRECLI <= end:
@@ -544,7 +527,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_CLI <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CLI
                 if channel:
-                    channel("kernel-cli: {object}".format(object=str(k)))
+                    channel(f"kernel-cli: {str(k)}")
                 if hasattr(k, "cli"):
                     k.cli()
         if start < LIFECYCLE_KERNEL_CLI <= end:
@@ -558,7 +541,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_INVALIDATE <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_INVALIDATE
                 if channel:
-                    channel("kernel-invalidate: {object}".format(object=str(k)))
+                    channel(f"kernel-invalidate: {str(k)}")
                 if hasattr(k, "invalidate"):
                     k.invalidate()
         if start < LIFECYCLE_KERNEL_INVALIDATE <= end:
@@ -587,7 +570,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PREREGISTER <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREREGISTER
                 if channel:
-                    channel("kernel-preregister: {object}".format(object=str(k)))
+                    channel(f"kernel-preregister: {str(k)}")
                 if hasattr(k, "preregister"):
                     k.preregister()
         if start < LIFECYCLE_KERNEL_PREREGISTER <= end:
@@ -600,7 +583,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_REGISTER <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_REGISTER
                 if channel:
-                    channel("kernel-registration: {object}".format(object=str(k)))
+                    channel(f"kernel-registration: {str(k)}")
                 if hasattr(k, "registration"):
                     k.registration()
         if start < LIFECYCLE_KERNEL_REGISTER <= end:
@@ -613,7 +596,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_CONFIGURE <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_CONFIGURE
                 if channel:
-                    channel("kernel-configure: {object}".format(object=str(k)))
+                    channel(f"kernel-configure: {str(k)}")
                 if hasattr(k, "configure"):
                     k.configure()
         if start < LIFECYCLE_KERNEL_CONFIGURE <= end:
@@ -626,7 +609,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PREBOOT <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREBOOT
                 if channel:
-                    channel("kernel-preboot: {object}".format(object=str(k)))
+                    channel(f"kernel-preboot: {str(k)}")
                 if hasattr(k, "preboot"):
                     k.preboot()
         if start < LIFECYCLE_KERNEL_PREBOOT <= end:
@@ -639,7 +622,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_BOOT <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_BOOT
                 if channel:
-                    channel("kernel-boot: {object} boot".format(object=str(k)))
+                    channel(f"kernel-boot: {str(k)} boot")
                 if hasattr(k, "boot"):
                     k.boot()
                 self._signal_attach(k)
@@ -654,7 +637,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_POSTBOOT <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTBOOT
                 if channel:
-                    channel("kernel-postboot: {object}".format(object=str(k)))
+                    channel(f"kernel-postboot: {str(k)}")
                 if hasattr(k, "postboot"):
                     k.postboot()
         if start < LIFECYCLE_KERNEL_POSTBOOT <= end:
@@ -667,7 +650,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PRESTART <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESTART
                 if channel:
-                    channel("kernel-prestart: {object}".format(object=str(k)))
+                    channel(f"kernel-prestart: {str(k)}")
                 if hasattr(k, "prestart"):
                     k.prestart()
         if start < LIFECYCLE_KERNEL_PRESTART <= end:
@@ -680,7 +663,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_START <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_START
                 if channel:
-                    channel("kernel-start: {object}".format(object=str(k)))
+                    channel(f"kernel-start: {str(k)}")
                 if hasattr(k, "start"):
                     k.start()
         if start < LIFECYCLE_KERNEL_START <= end:
@@ -693,7 +676,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_POSTSTART <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTSTART
                 if channel:
-                    channel("kernel-poststart: {object}".format(object=str(k)))
+                    channel(f"kernel-poststart: {str(k)}")
                 if hasattr(k, "poststart"):
                     k.poststart()
         if start < LIFECYCLE_KERNEL_POSTSTART <= end:
@@ -706,7 +689,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_READY <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_READY
                 if channel:
-                    channel("kernel-ready: {object}".format(object=str(k)))
+                    channel(f"kernel-ready: {str(k)}")
                 if hasattr(k, "ready"):
                     k.ready()
         if start < LIFECYCLE_KERNEL_READY <= end:
@@ -719,7 +702,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_FINISHED <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_FINISHED
                 if channel:
-                    channel("kernel-finished: {object}".format(object=str(k)))
+                    channel(f"kernel-finished: {str(k)}")
                 if hasattr(k, "finished"):
                     k.finished()
         if start < LIFECYCLE_KERNEL_FINISHED <= end:
@@ -732,7 +715,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PREMAIN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PREMAIN
                 if channel:
-                    channel("kernel-premain: {object}".format(object=str(k)))
+                    channel(f"kernel-premain: {str(k)}")
                 if hasattr(k, "premain"):
                     k.premain()
         if start < LIFECYCLE_KERNEL_PREMAIN <= end:
@@ -745,7 +728,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_MAINLOOP <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_MAINLOOP
                 if channel:
-                    channel("kernel-mainloop: {object}".format(object=str(k)))
+                    channel(f"kernel-mainloop: {str(k)}")
                 if hasattr(k, "mainloop"):
                     k.mainloop()
         if start < LIFECYCLE_KERNEL_MAINLOOP <= end:
@@ -758,7 +741,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_POSTMAIN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_POSTMAIN
                 if channel:
-                    channel("kernel-postmain: {object}".format(object=str(k)))
+                    channel(f"kernel-postmain: {str(k)}")
                 if hasattr(k, "postmain"):
                     k.postmain()
         if start < LIFECYCLE_KERNEL_POSTMAIN <= end:
@@ -776,7 +759,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_PRESHUTDOWN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_PRESHUTDOWN
                 if channel:
-                    channel("kernel-preshutdown: {object}".format(object=str(k)))
+                    channel(f"kernel-preshutdown: {str(k)}")
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "preshutdown"):
@@ -791,7 +774,7 @@ class Kernel(Settings):
             if klp(k) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
                 k._kernel_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
-                    channel("kernel-shutdown: {object}".format(object=str(k)))
+                    channel(f"kernel-shutdown: {str(k)}")
                 self._signal_detach(k)
                 self._lookup_detach(k)
                 if hasattr(k, "shutdown"):
@@ -824,7 +807,7 @@ class Kernel(Settings):
             if slp(s) < LIFECYCLE_SERVICE_ADDED <= end:
                 s._service_lifecycle = LIFECYCLE_SERVICE_ADDED
                 if channel:
-                    channel("service-added: {object}".format(object=str(s)))
+                    channel(f"service-added: {str(s)}")
                 if hasattr(s, "added"):
                     s.added(*args, **kwargs)
 
@@ -832,7 +815,7 @@ class Kernel(Settings):
         if start < LIFECYCLE_SERVICE_ADDED <= end:
             start = LIFECYCLE_SERVICE_ADDED
             if channel:
-                channel("(plugin) service-added: {object}".format(object=str(service)))
+                channel(f"(plugin) service-added: {str(service)}")
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "added")
@@ -850,7 +833,7 @@ class Kernel(Settings):
             ):  # starting attached
                 s._service_lifecycle = LIFECYCLE_SERVICE_DETACHED
                 if channel:
-                    channel("service-service_detach: {object}".format(object=str(s)))
+                    channel(f"service-service_detach: {str(s)}")
                 if hasattr(s, "service_detach"):
                     s.service_detach(*args, **kwargs)
                 self._signal_detach(s)
@@ -859,11 +842,7 @@ class Kernel(Settings):
         # Update plugin: service_detach
         if start in attached_positions and end not in attached_positions:
             if channel:
-                channel(
-                    "(plugin) service-service_detach: {object}".format(
-                        object=str(service)
-                    )
-                )
+                channel(f"(plugin) service-service_detach: {str(service)}")
             start = LIFECYCLE_SERVICE_DETACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
@@ -878,7 +857,7 @@ class Kernel(Settings):
             ):  # ending attached
                 s._service_lifecycle = LIFECYCLE_SERVICE_ATTACHED
                 if channel:
-                    channel("service-service_attach: {object}".format(object=str(s)))
+                    channel(f"service-service_attach: {str(s)}")
                 if hasattr(s, "service_attach"):
                     s.service_attach(*args, **kwargs)
                 self._signal_attach(s)
@@ -887,11 +866,7 @@ class Kernel(Settings):
         # Update plugin: service_attach
         if start not in attached_positions and end in attached_positions:
             if channel:
-                channel(
-                    "(plugin) service-service_attach: {object}".format(
-                        object=str(service)
-                    )
-                )
+                channel(f"(plugin) service-service_attach: {str(service)}")
             start = LIFECYCLE_SERVICE_ATTACHED
             try:
                 for plugin in self._service_plugins[service.registered_path]:
@@ -907,7 +882,7 @@ class Kernel(Settings):
             ):
                 s._service_lifecycle = LIFECYCLE_SERVICE_ASSIGNED
                 if channel:
-                    channel("service-assigned: {object}".format(object=str(s)))
+                    channel(f"service-assigned: {str(s)}")
                 if hasattr(s, "assigned"):
                     s.assigned(*args, **kwargs)
 
@@ -915,9 +890,7 @@ class Kernel(Settings):
         if start == LIFECYCLE_SERVICE_ATTACHED and end == LIFECYCLE_SERVICE_ASSIGNED:
             start = LIFECYCLE_SERVICE_ASSIGNED
             if channel:
-                channel(
-                    "(plugin) service-assigned: {object}".format(object=str(service))
-                )
+                channel(f"(plugin) service-assigned: {str(service)}")
             try:
                 for plugin in self._service_plugins[service.registered_path]:
                     plugin(service, "assigned")
@@ -929,16 +902,14 @@ class Kernel(Settings):
             if slp(s) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
                 s._service_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
-                    channel("service-shutdown: {object}".format(object=str(s)))
+                    channel(f"service-shutdown: {str(s)}")
                 if hasattr(s, "shutdown"):
                     s.shutdown(*args, **kwargs)
 
         # Update plugin: shutdown
         if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
             if channel:
-                channel(
-                    "(plugin) service-shutdown: {object}".format(object=str(service))
-                )
+                channel(f"(plugin) service-shutdown: {str(service)}")
             start = LIFECYCLE_KERNEL_SHUTDOWN
             self.remove_service(service)
             try:
@@ -974,7 +945,7 @@ class Kernel(Settings):
             if mlp(m) < LIFECYCLE_MODULE_OPENED <= end:
                 m._module_lifecycle = LIFECYCLE_MODULE_OPENED
                 if channel:
-                    channel("module-module_open: {object}".format(object=str(m)))
+                    channel(f"module-module_open: {str(m)}")
                 if hasattr(m, "module_open"):
                     m.module_open(*args, **kwargs)
                 self._signal_attach(m)
@@ -983,9 +954,7 @@ class Kernel(Settings):
         # Update plugin: opened
         if start < LIFECYCLE_MODULE_OPENED <= end:
             if channel:
-                channel(
-                    "(plugin) module-module_open: {object}".format(object=str(module))
-                )
+                channel(f"(plugin) module-module_open: {str(module)})")
             module.context.opened[module.name] = module
             try:
                 for plugin in self._module_plugins[module.registered_path]:
@@ -998,7 +967,7 @@ class Kernel(Settings):
             if mlp(m) < LIFECYCLE_MODULE_CLOSED <= end:
                 m._module_lifecycle = LIFECYCLE_MODULE_CLOSED
                 if channel:
-                    channel("module-module_closed: {object}".format(object=str(m)))
+                    channel(f"module-module_closed: {str(m)}")
                 if hasattr(m, "module_close"):
                     m.module_close(*args, **kwargs)
                 self._signal_detach(m)
@@ -1007,9 +976,7 @@ class Kernel(Settings):
         # Update plugin: closed
         if start < LIFECYCLE_MODULE_CLOSED <= end:
             if channel:
-                channel(
-                    "(plugin) module-module_close: {object}".format(object=str(module))
-                )
+                channel(f"(plugin) module-module_close: {str(module)}")
             try:
                 # If this is a module, we remove it from opened.
                 del module.context.opened[module.name]
@@ -1026,14 +993,14 @@ class Kernel(Settings):
             if mlp(m) < LIFECYCLE_KERNEL_SHUTDOWN <= end:
                 m._module_lifecycle = LIFECYCLE_KERNEL_SHUTDOWN
                 if channel:
-                    channel("module-shutdown: {object}".format(object=str(m)))
+                    channel(f"module-shutdown: {str(m)}")
                 if hasattr(m, "shutdown"):
                     m.shutdown()
 
         # Update plugin: shutdown
         if start < LIFECYCLE_KERNEL_SHUTDOWN <= end:
             if channel:
-                channel("(plugin) module-shutdown: {object}".format(object=str(module)))
+                channel(f"(plugin) module-shutdown: {str(module)}")
             try:
                 for plugin in self._module_plugins[module.registered_path]:
                     plugin(module, "shutdown")
@@ -1092,7 +1059,7 @@ class Kernel(Settings):
                 try:
                     attr = v[0]
                     value = v[1]
-                    self.console("set %s %s\n" % (attr, value))
+                    self.console(f"set {attr} {value}\n")
                 except IndexError:
                     break
 
@@ -1157,8 +1124,9 @@ class Kernel(Settings):
                 obj = context.opened[opened_name]
                 if channel:
                     channel(
-                        _("%s: Finalizing Module %s: %s")
-                        % (str(context), opened_name, str(obj))
+                        _("{context}: Finalizing Module {path}: {object}").format(
+                            context=str(context), path=opened_name, object=str(obj)
+                        )
                     )
                 self.set_module_lifecycle(
                     obj,
@@ -1200,7 +1168,11 @@ class Kernel(Settings):
 
         def signal(code, path, *message):
             if channel:
-                channel(_("Suspended Signal: %s for %s" % (code, message)))
+                channel(
+                    _("Suspended Signal: {signal} for {message}").format(
+                        signal=code, message=message
+                    )
+                )
 
         # pylint: disable=method-hidden
         self.signal = signal  # redefine signal function, hidden by design
@@ -1209,7 +1181,7 @@ class Kernel(Settings):
             if channel:
                 for c in code.split("\n"):
                     if c:
-                        channel(_("Suspended Command: %s" % c))
+                        channel(_("Suspended Command: {c}").format(c=c))
 
         # pylint: disable=method-hidden
         self.console = console  # redefine console signal, hidden by design
@@ -1222,11 +1194,17 @@ class Kernel(Settings):
             if context is None:
                 continue
             if channel:
-                channel(_("Saving Context State: '%s'") % str(context))
+                channel(
+                    _("Saving Context State: '{context}'").format(context=str(context))
+                )
             context.flush()
             del self.contexts[context_name]
             if channel:
-                channel(_("Context Shutdown Finished: '%s'") % str(context))
+                channel(
+                    _("Context Shutdown Finished: '{context}'").format(
+                        context=str(context)
+                    )
+                )
         self.write_configuration()
         try:
             del self._config_dict
@@ -1247,22 +1225,31 @@ class Kernel(Settings):
                 thread = self.threads[thread_name]
             except KeyError:
                 if channel:
-                    channel(_("Thread %s exited safely") % thread_name)
+                    channel(_("Thread {name} exited safely").format(name=thread_name))
                 continue
 
             if not thread.is_alive:
                 if channel:
                     channel(
-                        _("WARNING: Dead thread %s still registered to %s.")
-                        % (thread_name, str(thread))
+                        _(
+                            "WARNING: Dead thread {name} still registered to {object}."
+                        ).format(name=thread_name, object=str(thread))
                     )
                 continue
             if channel:
-                channel(_("Finishing Thread %s for %s") % (thread_name, str(thread)))
+                channel(
+                    _("Finishing Thread {name} for {object}").format(
+                        name=thread_name, object=str(thread)
+                    )
+                )
             try:
                 if thread is threading.currentThread():
                     if channel:
-                        channel(_("%s is the current shutdown thread") % thread_name)
+                        channel(
+                            _("{name} is the current shutdown thread").format(
+                                name=thread_name
+                            )
+                        )
                     continue
                 if channel:
                     channel(_("Asking thread to stop."))
@@ -1271,17 +1258,24 @@ class Kernel(Settings):
                 pass
             if not thread.daemon:
                 if channel:
-                    channel(_("Waiting for thread %s: %s") % (thread_name, str(thread)))
+                    channel(
+                        _("Waiting for thread {name}: {object}").format(
+                            name=thread_name, object=str(thread)
+                        )
+                    )
                 thread.join()
                 if channel:
                     channel(
-                        _("Thread %s has finished. %s") % (thread_name, str(thread))
+                        _("Thread {name} has finished. {object}").format(
+                            name=thread_name, object=str(thread)
+                        )
                     )
             else:
                 if channel:
                     channel(
-                        _("Thread %s is daemon. It will die automatically: %s")
-                        % (thread_name, str(thread))
+                        _(
+                            "Thread {name} is daemon. It will die automatically: {object}"
+                        ).format(name=thread_name, object=str(thread))
                     )
         if thread_count == 0:
             if channel:
@@ -1291,8 +1285,9 @@ class Kernel(Settings):
             if len(listener):
                 if channel:
                     channel(
-                        _("WARNING: Listener '%s' still registered to %s.")
-                        % (key, str(listener))
+                        _(
+                            "WARNING: Listener '{listener}' still registered to {object}."
+                        ).format(listener=key, object=str(listener))
                     )
         self._last_message = {}
         self.listeners = {}
@@ -1367,9 +1362,9 @@ class Kernel(Settings):
             return None
 
     def has_feature(self, *args):
-        for a in args:
+        for feature in args:
             try:
-                v = self._registered["feature/{feature}".format(feature=a)]
+                v = self._registered[f"feature/{feature}"]
             except KeyError:
                 return False
             if not v:
@@ -1377,7 +1372,7 @@ class Kernel(Settings):
         return True
 
     def set_feature(self, feature):
-        self._registered["feature/{feature}".format(feature=feature)] = True
+        self._registered[f"feature/{feature}"] = True
 
     def lookup_all(self, *args):
         """
@@ -1462,8 +1457,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            "Changed all: %s (%s)"
-            % (str(paths), str(threading.currentThread().getName()))
+            f"Changed all: {str(paths)} ({str(threading.currentThread().getName())})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1478,7 +1472,7 @@ class Kernel(Settings):
         @return:
         """
         self.channel("lookup")(
-            "Changed %s (%s)" % (str(path), str(threading.currentThread().getName()))
+            f"Changed {str(path)} ({str(threading.currentThread().getName())})"
         )
         with self._lookup_lock:
             if not self._dirty_paths:
@@ -1500,13 +1494,12 @@ class Kernel(Settings):
         channel = self.channel("lookup")
         if channel:
             channel(
-                "Lookup Change Processing (%s)"
-                % (str(threading.currentThread().getName()))
+                f"Lookup Change Processing ({str(threading.currentThread().getName())})"
             )
         with self._lookup_lock:
             for matchtext in self.lookups:
                 if channel:
-                    channel("Checking: %s" % matchtext)
+                    channel(f"Checking: {matchtext}")
                 listeners = self.lookups[matchtext]
                 try:
                     previous_matches = self.lookup_previous[matchtext]
@@ -1517,18 +1510,18 @@ class Kernel(Settings):
                 ):
                     continue
                 if channel:
-                    channel("Differences for %s" % matchtext)
+                    channel(f"Differences for {matchtext}")
                 new_matches = list(self.find(matchtext))
                 if previous_matches != new_matches:
                     if channel:
-                        channel("Values differ. %s" % matchtext)
+                        channel(f"Values differ. {matchtext}")
                     self.lookup_previous[matchtext] = new_matches
                     for listener in listeners:
                         funct, lso = listener
                         funct(new_matches, previous_matches)
                 else:
                     if channel:
-                        channel("Values identical: %s" % matchtext)
+                        channel(f"Values identical: {matchtext}")
             self._dirty_paths.clear()
 
     def register(self, path: str, obj: Any) -> None:
@@ -1616,29 +1609,31 @@ class Kernel(Settings):
             thread_name = func.__name__
         try:
             old_thread = self.threads[thread_name]
-            channel(_("Thread: %s already exists. Waiting..." % thread_name))
+            channel(
+                _("Thread: {name} already exists. Waiting...").format(name=thread_name)
+            )
             old_thread.join()
             # We must wait for the old thread to complete before running. Lock.
         except KeyError:
             # No current thread
             pass
         thread = Thread(name=thread_name)
-        channel(_("Thread: %s, Initialized" % thread_name))
+        channel(_("Thread: {name}, Initialized").format(name=thread_name))
 
         def run():
             func_result = None
-            channel(_("Thread: %s, Set" % thread_name))
+            channel(_("Thread: {name}, Set").format(name=thread_name))
             try:
-                channel(_("Thread: %s, Start" % thread_name))
+                channel(_("Thread: {name}, Start").format(name=thread_name))
                 func_result = func(*args)
-                channel(_("Thread: %s, End " % thread_name))
+                channel(_("Thread: {name}, End ").format(name=thread_name))
             except Exception:
-                channel(_("Thread: %s, Exception-End" % thread_name))
+                channel(_("Thread: {name}, Exception-End").format(name=thread_name))
                 import sys
 
                 channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
-            channel(_("Thread: %s, Unset" % thread_name))
+            channel(_("Thread: {name}, Unset").format(name=thread_name))
             del self.threads[thread_name]
             if result is not None:
                 result(func_result)
@@ -1675,6 +1670,53 @@ class Kernel(Settings):
     # SCHEDULER
     # ==========
 
+    def scheduler_main(self, *args):
+        self.schedule_run(defaults=False, mains=True)
+
+    def scheduler_default(self, *args):
+        self.schedule_run(defaults=True, mains=False)
+
+    def schedule_run(self, defaults=True, mains=True):
+        """
+        Single run of scheduler jobs.
+        @return:
+        """
+        jobs = self.jobs
+        for job_name in list(jobs):
+            try:
+                job = jobs[job_name]
+            except KeyError:
+                continue  # Job was removed during execution.
+
+            # Checking if jobs should run.
+            if job.run_main:
+                if not mains:
+                    # Do not attempt to run mains.
+                    continue
+            else:
+                if not defaults:
+                    # Do not attempt to run defaults.
+                    continue
+            if job.scheduled:
+                job._next_run = 0  # Set to zero while running.
+                if job._remaining is not None:
+                    job._remaining = job._remaining - 1
+                    if job._remaining <= 0:
+                        del jobs[job_name]
+                    if job._remaining < 0:
+                        continue
+                try:
+                    if job.args is None:
+                        job.process()
+                    else:
+                        job.process(*job.args)
+                except Exception:
+                    import sys
+
+                    sys.excepthook(*sys.exc_info())
+                job._last_run = time.time()
+                job._next_run += job._last_run + job.interval
+
     def run(self, *args) -> None:
         """
         Scheduler main loop.
@@ -1686,43 +1728,15 @@ class Kernel(Settings):
         self.state = STATE_ACTIVE
         while self.state != STATE_END:
             time.sleep(0.005)  # 200 ticks a second.
-            if self.state == STATE_TERMINATE:
-                break
             while self.state == STATE_PAUSE:
                 # The scheduler is paused.
                 time.sleep(0.1)
             if self.state == STATE_TERMINATE:
                 break
-            jobs = self.jobs
-            for job_name in list(jobs):
-                try:
-                    job = jobs[job_name]
-                except KeyError:
-                    continue  # Job was removed during execution.
-
-                # Checking if jobs should run.
-                if job.scheduled:
-                    job._next_run = 0  # Set to zero while running.
-                    if job._remaining is not None:
-                        job._remaining = job._remaining - 1
-                        if job._remaining <= 0:
-                            del jobs[job_name]
-                        if job._remaining < 0:
-                            continue
-                    try:
-                        if job.run_main and self.run_later is not None:
-                            self.run_later(job.process, job.args)
-                        else:
-                            if job.args is None:
-                                job.process()
-                            else:
-                                job.process(*job.args)
-                    except Exception:
-                        import sys
-
-                        sys.excepthook(*sys.exc_info())
-                    job._last_run = time.time()
-                    job._next_run += job._last_run + job.interval
+            self.schedule_run(
+                self.scheduler_handles_default_thread_jobs,
+                self.scheduler_handles_main_thread_jobs,
+            )
         self.state = STATE_END
 
     def schedule(self, job: "Job") -> "Job":
@@ -1730,7 +1744,7 @@ class Kernel(Settings):
             job.reset()
             # Could be recurring job. Reset on reschedule.
         except AttributeError:
-            return
+            pass
         self.jobs[job.job_name] = job
         return job
 
@@ -1787,9 +1801,9 @@ class Kernel(Settings):
     ):
         if name is None or len(name) == 0:
             i = 1
-            while "timer%d" % i in self.jobs:
+            while f"timer{i}" in self.jobs:
                 i += 1
-            name = "timer%d" % i
+            name = f"timer{i}"
         if not name.startswith("timer"):
             name = "timer" + name
         if times == 0:
@@ -1872,7 +1886,9 @@ class Kernel(Settings):
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     removed = False
+                    ct = 0
                     for i, listen in enumerate(listeners):
+                        ct += 1
                         listen_funct, listen_lso = listen
                         if (listen_funct == remove_funct or remove_funct is None) and (
                             listen_lso is remove_lso or remove_lso is None
@@ -1881,7 +1897,12 @@ class Kernel(Settings):
                             removed = True
                             break
                     if not removed:
-                        print("Value error removing: %s  %s" % (str(listeners), signal))
+                        # This occurs if we attempt to remove a listener which does not exist.
+                        # This is not a useless error but rather a symptom of another bug.
+                        # This should not occur, if it does, something is desynced attempting
+                        # to double remove. Which could also mean listeners are stuck listening
+                        # to places they should not which can cause other errors.
+                        print("Error removing: %s  %s" % (str(listeners), signal))
 
         # Process signals.
         signal_channel = self.channel("signals")
@@ -1893,14 +1914,8 @@ class Kernel(Settings):
                     listener(origin, *message)
                     if signal_channel:
                         signal_channel(
-                            "Signal: %s %s: %s:%s%s"
-                            % (
-                                origin,
-                                signal,
-                                listener.__module__,
-                                listener.__name__,
-                                str(message),
-                            )
+                            f"Signal: {origin} {signal}: "
+                            f"{listener.__module__}:{listener.__name__}{str(message)}"
                         )
             self._last_message[signal] = payload
         self._is_queue_processing = False
@@ -2036,42 +2051,6 @@ class Kernel(Settings):
             self._console_buffer = self._console_buffer[pos + 1 :]
             self._console_parse(command, channel=self._console_channel)
 
-    def _console_job_tick(self) -> None:
-        """
-        Processes the console_job ticks. This executes any outstanding queued commands and any looped commands.
-
-        @return:
-        """
-        for command in self.commands:
-            self._console_parse(command, channel=self._console_channel)
-        if len(self.queue):
-            for command in self.queue:
-                self._console_parse(command, channel=self._console_channel)
-            self.queue.clear()
-        if len(self.commands) == 0 and len(self.queue) == 0:
-            self.unschedule(self.console_job)
-
-    def _console_queue(self, command: str) -> None:
-        self.queue = [
-            c for c in self.queue if c != command
-        ]  # Only allow 1 copy of any command.
-        self.queue.append(command)
-        if self.console_job not in self.jobs:
-            self.add_job(self.console_job)
-
-    def _tick_command(self, command: str) -> None:
-        self.commands = [
-            c for c in self.commands if c != command
-        ]  # Only allow 1 copy of any command.
-        self.commands.append(command)
-        if self.console_job not in self.jobs:
-            self.schedule(self.console_job)
-
-    def _untick_command(self, command: str) -> None:
-        self.commands = [c for c in self.commands if c != command]
-        if len(self.commands) == 0:
-            self.unschedule(self.console_job)
-
     def _console_interface(self, command: str):
         pass
 
@@ -2083,7 +2062,7 @@ class Kernel(Settings):
         if text.startswith("."):
             text = text[1:]
         else:
-            channel("[blue][bold][raw]%s[/raw]" % text, indent=False, ansi=True)
+            channel(f"[blue][bold][raw]{text}[/raw]", indent=False, ansi=True)
 
         data = None  # Initial data is null
         input_type = None  # Initial type is None
@@ -2133,7 +2112,10 @@ class Kernel(Settings):
                     if str(e):
                         message = str(e)
                     channel(
-                        "[red][bold]" + _("Syntax Error (%s): %s") % (command, message),
+                        "[red][bold]"
+                        + _("Syntax Error ({command}): {message}").format(
+                            command=command, message=message
+                        ),
                         ansi=True,
                     )
                     return None
@@ -2149,8 +2131,9 @@ class Kernel(Settings):
                     ctx_name = input_type
                 channel(
                     "[red][bold]"
-                    + _("%s is not a registered command in this context: %s")
-                    % (command, ctx_name),
+                    + _(
+                        "{command} is not a registered command in this context: {context}"
+                    ).format(command=command, context=ctx_name),
                     ansi=True,
                 )
                 return None
@@ -2172,7 +2155,7 @@ class Kernel(Settings):
         @param choices: choices being registered
         @return:
         """
-        key = "choices/%s" % sheet
+        key = f"choices/{sheet}"
         if key in self._registered:
             others = self._registered[key]
             others.extend(choices)
@@ -2198,6 +2181,7 @@ class Kernel(Settings):
                 "type": bool,
                 "label": _("Print Shutdown"),
                 "tip": _("Print shutdown log when closed."),
+                "page": "Options",
             },
         ]
         self.register_choices("preferences", choices)
@@ -2237,7 +2221,7 @@ class Kernel(Settings):
                     for a in func.arguments:
                         arg_name = a.get("name", "")
                         arg_type = a.get("type", type(None)).__name__
-                        help_args.append("<%s:%s>" % (arg_name, arg_type))
+                        help_args.append(f"<{arg_name}:{arg_type}>")
                     if found:
                         channel("\n")
                     if func.long_help is not None:
@@ -2246,37 +2230,38 @@ class Kernel(Settings):
                         )
                         channel("\n")
 
-                    channel("\t%s %s" % (command_item, " ".join(help_args)))
+                    channel(f"\t{command_item} {' '.join(help_args)}")
                     channel(
-                        "\t(%s) -> %s -> (%s)"
-                        % (input_type, command_item, func.output_type)
+                        f"\t({input_type}) -> {command_item} -> ({func.output_type})"
                     )
                     for a in func.arguments:
                         arg_name = a.get("name", "")
                         arg_type = a.get("type", type(None)).__name__
                         arg_help = a.get("help")
-                        arg_help = (
-                            ":\n\t\t%s" % arg_help if arg_help is not None else ""
-                        )
+                        arg_help = f":\n\t\t{arg_help if arg_help is not None else ''}"
                         channel(
-                            _("\tArgument: %s '%s'%s") % (arg_type, arg_name, arg_help)
+                            _("\tArgument: {type} '{name}'{help}").format(
+                                type=arg_type, name=arg_name, help=arg_help
+                            )
                         )
                     for b in func.options:
                         opt_name = b.get("name", "")
                         opt_short = b.get("short", "")
                         opt_type = b.get("type", type(None)).__name__
                         opt_help = b.get("help")
-                        opt_help = (
-                            ":\n\t\t%s" % opt_help if opt_help is not None else ""
-                        )
+                        opt_help = f":\n\t\t{opt_help if opt_help is not None else ''}"
                         channel(
-                            _("\tOption: %s ('--%s', '-%s')%s")
-                            % (opt_type, opt_name, opt_short, opt_help)
+                            _("\tOption: {type} ('--{name}', '-{short}'){help}").format(
+                                type=opt_type,
+                                name=opt_name,
+                                short=opt_short,
+                                help=opt_help,
+                            )
                         )
                     found = True
                 if found:
                     return
-                channel(_("No extended help for: %s") % extended_help)
+                channel(_("No extended help for: {name}").format(name=extended_help))
                 return
 
             matches = list(self.match("command/.*/.*"))
@@ -2293,16 +2278,87 @@ class Kernel(Settings):
                     continue
                 if previous_input_type != input_type:
                     command_class = input_type if input_type != "None" else _("Base")
-                    channel(_("--- %s Commands ---") % command_class)
+                    channel(
+                        _("--- {category} Commands ---").format(category=command_class)
+                    )
                     previous_input_type = input_type
 
                 help_attribute = func.help
                 if func.hidden:
                     continue
                 if help_attribute is not None:
-                    channel("%s %s" % (command_item.ljust(15), help_attribute))
+                    channel(f"{command_item.ljust(15)} {help_attribute}")
                 else:
                     channel(command_name.split("/")[-1])
+
+        @self.console_argument("substr", type=str)
+        @self.console_command(("find", "??"), hidden=False, help=_("find <substr>"))
+        def find_command(channel, _, substr, **kwargs):
+            """
+            'find' will display the list of accepted commands that contain a given substr.
+            """
+            allcommands = []
+            allparams = []
+            if substr is not None:
+                found = False
+
+                matches = list(self.match("command/.*/.*"))
+                matches.sort()
+                for command_name in matches:
+                    parts = command_name.split("/")
+                    input_type = parts[1]
+                    command_item = parts[2]
+                    if input_type == "None":
+                        s = command_item
+                    else:
+                        s = input_type + " " + command_item
+                    if substr in command_item:
+                        allcommands.append(s)
+                        found = True
+                    func = self.lookup(command_name)
+                    subfound = False
+                    for a in func.arguments:
+                        arg_name = a.get("name", "")
+                        s += " " + arg_name
+                        if substr in arg_name:
+                            subfound = True
+                    if subfound:
+                        allparams.append(s)
+                        found = True
+                if found:
+                    if len(allcommands) > 0:
+                        s = "Commands:\n"
+                        for entry in allcommands:
+                            s = (
+                                s
+                                + entry.replace(substr, "[red]" + substr + "[normal]")
+                                + "\n"
+                            )
+                        channel(s, ansi=True)
+                    if len(allparams) > 0:
+                        s = "Params:\n"
+                        for entry in allparams:
+                            s = (
+                                s
+                                + entry.replace(substr, "[red]" + substr + "[normal]")
+                                + "\n"
+                            )
+                        channel(s, ansi=True)
+
+                else:
+                    channel(
+                        _(
+                            "No commands found that contained: [red]{string}[normal]"
+                        ).format(string=substr),
+                        ansi=True,
+                    )
+                return
+            else:
+                channel(
+                    _(
+                        "If you want to have a list of all available commands, just type 'help'"
+                    )
+                )
 
         # ==========
         # THREADS SCHEDULER
@@ -2318,7 +2374,7 @@ class Kernel(Settings):
             for i, thread_name in enumerate(list(self.threads)):
                 thread = self.threads[thread_name]
                 parts = list()
-                parts.append("%d:" % (i + 1))
+                parts.append(f"{i + 1}:")
                 parts.append(str(thread))
                 if thread.is_alive:
                     parts.append(_("is alive."))
@@ -2332,16 +2388,18 @@ class Kernel(Settings):
             for i, job_name in enumerate(self.jobs):
                 job = self.jobs[job_name]
                 parts = list()
-                parts.append("%d:" % (i + 1))
+                parts.append(f"{i + 1}:")
                 parts.append(str(job))
                 if job.times is None:
                     parts.append(_("forever,"))
                 else:
-                    parts.append(_("%d times,") % job.times)
+                    parts.append(_("{times} times,").format(times=job.times))
                 if job.interval is None:
                     parts.append(_("never"))
                 else:
-                    parts.append(_("each %f seconds") % job.interval)
+                    parts.append(
+                        _("each {interval} seconds").format(interval=job.interval)
+                    )
                 channel(" ".join(parts))
             channel(_("----------"))
 
@@ -2352,19 +2410,6 @@ class Kernel(Settings):
         def echo_to_console(channel, remainder=None, **kwargs):
             if remainder:
                 channel(remainder)
-
-        @self.console_command("loop", help=_("loop <command>"))
-        def loop(remainder=None, **kwargs):
-            if remainder:
-                self._tick_command(remainder)
-
-        @self.console_command("end", help=_("end <commmand>"))
-        def end(remainder=None, **kwargs):
-            if remainder:
-                self._untick_command(remainder)
-            else:
-                self.commands.clear()
-                self.schedule(self.console_job)
 
         @self.console_option(
             "off", "o", action="store_true", help=_("Turn this timer off")
@@ -2412,17 +2457,23 @@ class Kernel(Settings):
                     i += 1
                     job = self.jobs[job_name]
                     parts = list()
-                    parts.append("%d:" % i)
+                    parts.append(f"{i}:")
                     parts.append(job_name)
-                    parts.append('"%s"' % str(job))
+                    parts.append(f'"{str(job)}"')
                     if job.times is None:
                         parts.append(_("forever,"))
                     else:
-                        parts.append(_("%d times,") % job.times)
+                        parts.append(
+                            _("{index}/{total} times,").format(
+                                index=job.times - job.remaining, total=job.times
+                            )
+                        )
                     if job.interval is None:
                         parts.append(_("never"))
                     else:
-                        parts.append(_("each %f seconds") % job.interval)
+                        parts.append(
+                            _("each {interval} seconds").format(interval=job.interval)
+                        )
                     if job.run_main:
                         parts.append(_("- gui"))
                     channel(" ".join(parts))
@@ -2441,9 +2492,9 @@ class Kernel(Settings):
                     obj = self.jobs[command]
                     obj.cancel()
                     self.unschedule(obj)
-                    channel(_("Timer '%s' canceled." % name))
+                    channel(_("Timer '{name}' canceled.").format(name=name))
                 except KeyError:
-                    channel(_("Timer '%s' does not exist." % name))
+                    channel(_("Timer '{name}' does not exist.").format(name=name))
                 return
             try:
                 times = int(times)
@@ -2475,6 +2526,7 @@ class Kernel(Settings):
                 _("App: {name} {version}.").format(name=self.name, version=self.version)
             )
 
+        @self.console_command("beep", _("Perform beep"))
         def beep(channel, _, **kwargs):
             OS_NAME = platform.system()
             if OS_NAME == "Windows":
@@ -2488,8 +2540,27 @@ class Kernel(Settings):
             elif OS_NAME == "Darwin":  # Mac
 
                 os.system("afplay /System/Library/Sounds/Ping.aiff")
+            elif OS_NAME == "Linux":
+
+                print("\a")  # Beep.
+                os.system('say "Ding"')
+
             else:  # Assuming other linux like system
                 print("\a")  # Beep.
+
+        @self.console_argument(
+            "sleeptime", type=float, help=_("Wait time in seconds"), default=1
+        )
+        @self.console_command(
+            "wait", _("Wait for given amount of time."), all_arguments_required=True
+        )
+        def wait(channel, _, sleeptime, **kwargs):
+            """
+            Provide a wait time. This is executed within the current thread. If called from the gui thread this will
+            lag the redrawing of frames etc. This command is intended to be called by drivers or in other special
+            events where calling the console commands is entirely acceptable.
+            """
+            time.sleep(sleeptime)
 
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
@@ -2504,12 +2575,18 @@ class Kernel(Settings):
                     if match.match(r):
                         obj = service._registered[r]
                         channel(
-                            _("%s, %d: %s type of %s") % (domain, i + 1, r, str(obj))
+                            _("{domain}, {index}: {object} type of {type}").format(
+                                domain=domain, index=i + 1, object=r, type=str(obj)
+                            )
                         )
             for i, r in enumerate(self._registered):
                 if match.match(r):
                     obj = self._registered[r]
-                    channel(_("%s, %d: %s type of %s") % ("kernel", i + 1, r, str(obj)))
+                    channel(
+                        _("{domain}, {index}: {object} type of {type}").format(
+                            domain="kernel", index=i + 1, object=r, type=str(obj)
+                        )
+                    )
             channel(_("----------"))
 
         @self.console_command("context", _("context"))
@@ -2525,27 +2602,17 @@ class Kernel(Settings):
                 plugins = self._kernel_plugins
                 channel(_("Kernel Plugins:"))
                 for name in plugins:
-                    channel(
-                        "{path}: {value}".format(path="kernel", value=name.__module__)
-                    )
+                    channel(f"kernel: {name.__module__}")
                 channel(_("Service Plugins:"))
                 for path in self._service_plugins:
                     plugins = self._service_plugins[path]
                     for name in plugins:
-                        channel(
-                            "{path}: {value}".format(
-                                path=str(path), value=name.__module__
-                            )
-                        )
+                        channel(f"{str(path)}: {name.__module__}")
                 channel(_("Module Plugins:"))
                 for path in self._module_plugins:
                     plugins = self._module_plugins[path]
                     for name in plugins:
-                        channel(
-                            "{path}: {value}".format(
-                                path=str(path), value=name.__module__
-                            )
-                        )
+                        channel(f"{str(path)}: {name.__module__}")
             return
 
         @self.console_option(
@@ -2557,17 +2624,23 @@ class Kernel(Settings):
                 channel(_("----------"))
                 channel(_("Modules Registered:"))
                 for i, name in enumerate(self.match("module")):
-                    channel("%d: %s" % (i + 1, name))
+                    channel(f"{i + 1}: {name}")
                 channel(_("----------"))
                 for i, name in enumerate(self.contexts):
                     context = self.contexts[name]
                     if len(context.opened) == 0:
                         continue
-                    channel(_("Loaded Modules in Context %s:") % str(context.path))
+                    channel(
+                        _("Loaded Modules in Context {context}:").format(
+                            context=str(context.path)
+                        )
+                    )
                     for j, jname in enumerate(context.opened):
                         module = context.opened[jname]
                         channel(
-                            _("%d: %s as type of %s") % (j + 1, jname, type(module))
+                            _("{index}: {object} type of {type}").format(
+                                index=j + 1, object=jname, type=type(module)
+                            )
                         )
                     channel(_("----------"))
                     return
@@ -2588,13 +2661,13 @@ class Kernel(Settings):
                     else:
                         path_context.open(index)
                 else:
-                    channel(_("Module '%s' not found.") % index)
+                    channel(_("Module '{name}' not found.").format(name=index))
             elif value == "close":
                 index = args[1]
                 if index in path_context.opened:
                     path_context.close(index)
                 else:
-                    channel(_("Module '%s' not found.") % index)
+                    channel(_("Module '{name}' not found.").format(name=index))
             return
 
         # ==========
@@ -2612,7 +2685,7 @@ class Kernel(Settings):
                 channel(_("----------"))
                 channel(_("Service Providers:"))
                 for i, name in enumerate(self.match("provider")):
-                    channel("%d: %s" % (i + 1, name))
+                    channel(f"{i + 1}: {name}")
                 channel(_("----------"))
                 channel(_("Services:"))
                 for i, value in enumerate(self.services_available()):
@@ -2652,6 +2725,9 @@ class Kernel(Settings):
 
         @self.console_argument("name", help="Name of service to start")
         @self.console_option(
+            "label", "l", help="optional label for the service to start"
+        )
+        @self.console_option(
             "path", "p", help="optional forced path initialize location"
         )
         @self.console_option(
@@ -2665,12 +2741,12 @@ class Kernel(Settings):
             "start", input_type="service", help=_("Initialize a provider")
         )
         def service_init(
-            channel, _, data=None, name=None, path=None, init=None, **kwargs
+            channel, _, data=None, name=None, label=None, path=None, init=None, **kwargs
         ):
             domain, available, active = data
             if name is None:
                 raise CommandSyntaxError
-            provider_path = "provider/{domain}/{name}".format(domain=domain, name=name)
+            provider_path = f"provider/{domain}/{name}"
             provider = self.lookup(provider_path)
             if provider is None:
                 raise CommandSyntaxError("Bad provider.")
@@ -2684,6 +2760,8 @@ class Kernel(Settings):
                 i += 1
 
             service = provider(self, service_path)
+            if label is not None and hasattr(service, "label"):
+                service.label = label
             self.add_service(domain, service, provider_path)
             if init is True:
                 self.activate(domain, service, assigned=True)
@@ -2707,7 +2785,7 @@ class Kernel(Settings):
                     origin = name[:find]
                     text = name[find + 1 :]
                     if text:
-                        channel("%d - %s: %s" % (i + 1, origin, text))
+                        channel(f"{i + 1} - {origin}: {text}")
                 channel(_("----------"))
             return "batch", batch
 
@@ -2732,17 +2810,42 @@ class Kernel(Settings):
         @self.console_command(
             "remove",
             input_type="batch",
-            help=_("delete line located at specific index'"),
+            help=_("delete line located at specific index"),
+            all_arguments_required=True,
         )
         def batch_remove(channel, _, data=None, index=None, **kwargs):
-            if index is None:
-                raise CommandSyntaxError
             try:
                 self.batch_remove(index - 1)
             except IndexError:
-                raise CommandSyntaxError(
-                    "Index out of bounds (1-{length})".format(length=len(data))
+                raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
+
+        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_command(
+            "run",
+            input_type="batch",
+            help=_("execute line located at specific index"),
+            all_arguments_required=True,
+        )
+        def batch_run(channel, _, data=None, index=None, **kwargs):
+            try:
+                self.batch_execute(index - 1)
+            except IndexError:
+                raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
+
+        @self.console_argument("index", type=int, help="line to delete")
+        @self.console_command(
+            ("disable", "enable"),
+            input_type="batch",
+            help=_("disable/enable the command at the particular index"),
+            all_arguments_required=True,
+        )
+        def batch_disable_enable(command, channel, _, data=None, index=None, **kwargs):
+            try:
+                self.batch_set_origin(
+                    index - 1, "disable" if command == "disable" else "cmd"
                 )
+            except IndexError:
+                raise CommandSyntaxError(f"Index out of bounds (1-{len(data)})")
 
         # ==========
         # CHANNEL COMMANDS
@@ -2759,11 +2862,10 @@ class Kernel(Settings):
                 channel(_("Channels Active:"))
                 for i, name in enumerate(self.channels):
                     channel_name = self.channels[name]
-                    if self._console_channel in channel_name.watchers:
-                        is_watched = "* "
-                    else:
-                        is_watched = "  "
-                    channel("%s%d: %s" % (is_watched, i + 1, name))
+                    is_watched = (
+                        "*" if self._console_channel in channel_name.watchers else " "
+                    )
+                    channel(f"{is_watched} {i + 1}: {name}")
             return "channel", 0
 
         @self.console_command(
@@ -2777,11 +2879,10 @@ class Kernel(Settings):
             channel(_("Channels Active:"))
             for i, name in enumerate(self.channels):
                 channel_name = self.channels[name]
-                if self._console_channel in channel_name.watchers:
-                    is_watched = "* "
-                else:
-                    is_watched = "  "
-                channel("%s%d: %s" % (is_watched, i + 1, name))
+                is_watched = (
+                    "* " if self._console_channel in channel_name.watchers else "  "
+                )
+                channel(f"{is_watched}{i + 1}: {name}")
             return "channel", 0
 
         @self.console_argument("channel_name", help=_("name of the channel"))
@@ -2795,11 +2896,19 @@ class Kernel(Settings):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
 
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             if channel_name == "console":
                 channel(_("Infinite Loop Error."))
             else:
                 self.channel(channel_name).watch(self._console_channel)
-                channel(_("Watching Channel: %s") % channel_name)
+                channel(_("Watching Channel: {name}").format(name=channel_name))
             return "channel", channel_name
 
         @self.console_argument("channel_name", help=_("channel name"))
@@ -2812,12 +2921,21 @@ class Kernel(Settings):
         def channel_close(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             try:
                 self.channel(channel_name).unwatch(self._console_channel)
-                channel(_("No Longer Watching Channel: %s") % channel_name)
+                channel(
+                    _("No Longer Watching Channel: {name}").format(name=channel_name)
+                )
             except (KeyError, ValueError):
-                channel(_("Channel %s is not opened.") % channel_name)
+                channel(_("Channel {name} is not opened.").format(name=channel_name))
             return "channel", channel_name
 
         @self.console_argument("channel_name", help=_("channel name"))
@@ -2830,8 +2948,15 @@ class Kernel(Settings):
         def channel_print(channel, _, channel_name, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
-            channel(_("Printing Channel: %s") % channel_name)
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
+            channel(_("Printing Channel: {name}").format(name=channel_name))
             self.channel(channel_name).watch(print)
             return "channel", channel_name
 
@@ -2853,20 +2978,27 @@ class Kernel(Settings):
             """
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
-
+            try:
+                v = int(channel_name) - 1
+                for i, name in enumerate(self.channels):
+                    if v == i:
+                        channel_name = name
+                        break
+            except ValueError:
+                pass
             if filename is None:
-                filename = "MeerK40t-channel-{date:%Y-%m-%d_%H_%M_%S}.txt".format(
-                    date=datetime.now()
-                )
-            channel(_("Opening file: %s") % filename)
+                filename = f"MeerK40t-channel-{datetime.now():%Y-%m-%d_%H_%M_%S}.txt"
+            channel(_("Opening file: {filename}").format(filename=filename))
             console_channel_file = self.open_safe(filename, "a")
             for cn in channel_name.split(","):
                 channel(
-                    _("Recording Channel: %s to file %s") % (channel_name, filename)
+                    _("Recording Channel: {name} to file {filename}").format(
+                        name=channel_name, filename=filename
+                    )
                 )
 
                 def _console_file_write(v):
-                    console_channel_file.write("%s\r\n" % v)
+                    console_channel_file.write(f"{v}\r\n")
                     console_channel_file.flush()
 
                 self.channel(cn).watch(_console_file_write)
@@ -2889,7 +3021,7 @@ class Kernel(Settings):
                         v, (int, float, str, bool)
                     ):
                         continue
-                    channel('"%s" := %s' % (attr, str(v)))
+                    channel(f'"{attr}" := {str(v)}')
                 return
             if len(args) >= 2:
                 attr = args[0]
@@ -2961,6 +3093,14 @@ class Kernel(Settings):
                     )
                 )
                 return
+            if directory == "`":
+                self.current_directory = get_safe_path(self.name)
+                channel(
+                    _("Configuration Directory: {dir}").format(
+                        dir=str(self.current_directory)
+                    )
+                )
+                return
             if directory == "@":
                 import sys
 
@@ -2985,7 +3125,7 @@ class Kernel(Settings):
     def batch_add(self, command, origin="default", index=None):
         root = self.root
         batch = [b for b in root.setting(str, "batch", "").split(";") if b]
-        batch_command = "{origin} {command}".format(origin=origin, command=command)
+        batch_command = f"{origin} {command}"
         if index is not None:
             batch.insert(index, batch_command)
         else:
@@ -2998,6 +3138,23 @@ class Kernel(Settings):
         del batch[index]
         self.root.batch = ";".join(batch)
 
+    def batch_set_origin(self, index, new_origin):
+        root = self.root
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
+        b = batch[index]
+        find = b.find(" ")
+        command = b[find + 1 :]
+        batch[index] = f"{new_origin} {command}"
+        self.root.batch = ";".join(batch)
+
+    def batch_execute(self, index):
+        root = self.root
+        batch = [b for b in root.setting(str, "batch", "").split(";") if b]
+        b = batch[index]
+        find = b.find(" ")
+        command = b[find + 1 :]
+        root(f"{command}\n")
+
     def batch_boot(self):
         root = self.root
         if root.setting(str, "batch", None) is None:
@@ -3005,8 +3162,11 @@ class Kernel(Settings):
         for b in root.batch.split(";"):
             if b:
                 find = b.find(" ")
-                text = b[find + 1 :]
-                root("{batch}\n".format(batch=text))
+                origin = b[:find]
+                if origin == "disable":
+                    continue
+                command = b[find + 1 :]
+                root(f"{command}\n")
 
     # ==========
     # KERNEL REPLACEABLE

@@ -1,7 +1,6 @@
 import functools
 import os.path
 import re
-from datetime import datetime
 from copy import copy
 from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from os.path import realpath
@@ -12,12 +11,24 @@ from numpy import linspace
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
-from ..svgelements import Angle, Color, Matrix, SVGElement, Viewbox
+from ..numpath import Numpath
+from ..svgelements import (
+    SVG_RULE_EVENODD,
+    SVG_RULE_NONZERO,
+    Angle,
+    Close,
+    Color,
+    CubicBezier,
+    Line,
+    Matrix,
+    QuadraticBezier,
+    SVGElement,
+    Viewbox,
+)
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
-from .node.node import Node, Linecap, Linejoin
-from .node.op_console import ConsoleOperation
+from .node.node import Fillrule, Linecap, Linejoin, Node
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
 from .node.op_engrave import EngraveOpNode
@@ -25,13 +36,61 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from .wordlist import Wordlist
-from .units import UNITS_PER_PIXEL, Length
 
 
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
-    if lifecycle == "register":
+    if lifecycle == "preregister":
+        kernel.register(
+            "format/op cut",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}",
+        )
+        kernel.register(
+            "format/op engrave",
+            "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}",
+        )
+        kernel.register(
+            "format/op hatch",
+            "{danger}{defop}{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {colcode} {opstop}",
+        )
+        kernel.register(
+            "format/op raster",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {colcode} {opstop}",
+        )
+        kernel.register(
+            "format/op image",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {opstop}",
+        )
+        kernel.register(
+            "format/op dots",
+            "{danger}{defop}{enabled}{pass}{element_type} {dwell_time}ms dwell {opstop}",
+        )
+
+        kernel.register("format/util console", "{enabled}{command}")
+        kernel.register("format/util wait", "{enabled}{element_type} {wait}")
+        kernel.register("format/util output", "{enabled}{element_type} {bits}")
+        kernel.register("format/util input", "{enabled}{element_type} {bits}")
+        kernel.register("format/layer", "{element_type} {name}")
+        kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem image", "{element_type} {label} {width}x{height}")
+        kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem polyline", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem rect", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem text", "{element_type} {id} {label}: {text}")
+        kernel.register("format/reference", "*{reference}")
+        kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
+        kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
+        kernel.register("format/file", "{element_type}: {filename}")
+        kernel.register("format/lasercode", "{element_type} {command_count}")
+        kernel.register("format/cutcode", "{element_type}")
+        kernel.register("format/branch ops", _("Operations {loops}"))
+        kernel.register("format/branch elems", _("Elements"))
+        kernel.register("format/branch reg", _("Regmarks"))
+    elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
         # kernel.add_service("elements", Elemental(kernel,1))
     elif lifecycle == "postboot":
@@ -42,10 +101,10 @@ def plugin(kernel, lifecycle=None):
                 "object": elements,
                 "default": True,
                 "type": bool,
-                "label": _("Default Operation Other/Red/Blue"),
-                "tip": _(
-                    "Sets Operations to Other/Red/Blue if loaded with no operations."
-                ),
+                "label": _("Default Operation Empty"),
+                "tip": _("Leave empty operations or default Other/Red/Blue"),
+                "page": "Classification",
+                "section": "",
             },
             {
                 "attr": "classify_reverse",
@@ -56,6 +115,8 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
+                "page": "Classification",
+                "section": "",
             },
             {
                 "attr": "legacy_classification",
@@ -66,6 +127,128 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Use the legacy classification algorithm rather than the modern classification algorithm."
                 ),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_new",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Classify newly created elements"),
+                "tip": _(
+                    "MK will immediately try to classify an element as soon as it is created,"
+                )
+                + "\n"
+                + _(
+                    "if you want to defer this to apply manual classification, then untick this option."
+                ),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_fuzzy",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Fuzzy color-logic"),
+                "tip": _(
+                    "Unticked: Classify elements into operations with an *exact* color match"
+                )
+                + "\n"
+                + _("Ticked: Allow a certain color-distance for classification"),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_fuzzydistance",
+                "object": elements,
+                "default": 100,
+                "type": float,
+                "label": _("Color distance"),
+                "style": "combosmall",
+                "choices": [
+                    0,
+                    100,
+                    200,
+                    400,
+                ],
+                "conditional": (elements, "classify_fuzzy"),
+                "tip": _(
+                    "The color distance of an element to an operations that will still allow classifiation"
+                )
+                + "\n"
+                + _(
+                    "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
+                ),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_default",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Assign to default operations"),
+                "tip": _("If classification did not find a match,")
+                + "\n"
+                + _("either with color matching (exact or fuzzy, see above)")
+                + "\n"
+                + _("then it will try to assign it to matching 'default' operation"),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_autogenerate",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Autogenerate Operations"),
+                "tip": _("If classification did not find a match,")
+                + "\n"
+                + _("either with color matching (exact or fuzzy, see above)")
+                + "\n"
+                + _("or by assigning to a default operation (see above),")
+                + "\n"
+                + _("then MeerK40t can create a matching operation for you."),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_auto_inherit",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Autoinherit for empty operation"),
+                "tip": _(
+                    "If you drag and drop an element into an operation to assign it there,"
+                )
+                + "\n"
+                + _(
+                    "then the op can (if this option is ticked) inherit the color from the element"
+                )
+                + "\n"
+                + _(
+                    "and adopt not only the dragged element but all elements with the same color"
+                )
+                + "\n"
+                + _(
+                    "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+                ),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "lock_allows_move",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Locked element may move"),
+                "tip": _(
+                    "Locked elements cannot be modified, but can still be moved if this option is checked."
+                ),
+                "page": "Scene",
+                "section": "General",
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -136,7 +319,7 @@ class Elemental(Service):
 
     def __init__(self, kernel, index=None, *args, **kwargs):
         Service.__init__(
-            self, kernel, "elements" if index is None else "elements%d" % index
+            self, kernel, "elements" if index is None else f"elements{index}"
         )
         self._clipboard = {}
         self._clipboard_default = "0"
@@ -148,6 +331,15 @@ class Elemental(Service):
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
+        self.setting(bool, "classify_fuzzy", False)
+        self.setting(float, "classify_fuzzydistance", 100.0)
+        self.setting(bool, "classify_autogenerate", True)
+        self.setting(bool, "classify_inherit_stroke", False)
+        self.setting(bool, "classify_inherit_fill", False)
+        self.setting(bool, "classify_inherit_exclusive", True)
+        self.setting(bool, "classify_auto_inherit", False)
+        self.setting(bool, "classify_default", True)
+        self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
         self.setting(float, "svg_ppi", 96.0)
@@ -168,8 +360,35 @@ class Elemental(Service):
         self.load_persistent_operations("previous")
 
         ops = list(self.ops())
-        if not len(ops) and self.operation_default_empty:
-            self.load_default()
+        if not len(ops) and not self.operation_default_empty:
+            self.load_default(performclassify=False)
+
+        self._default_stroke = None
+        self._default_fill = None
+
+    @property
+    def default_stroke(self):
+        if self._default_stroke is None:
+            mystroke = Color("blue")
+        else:
+            mystroke = self._default_stroke
+        return mystroke
+
+    @default_stroke.setter
+    def default_stroke(self, color):
+        if color is None:
+            # Intentionally so
+            self._default_stroke = "none"
+        else:
+            self._default_stroke = color
+
+    @property
+    def default_fill(self):
+        return self._default_fill
+
+    @default_fill.setter
+    def default_fill(self, color):
+        self._default_fill = color
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -179,17 +398,18 @@ class Elemental(Service):
             box = list()
             for i in range(length):
                 penbox = dict()
-                settings.read_persistent_string_dict(f'{pen} {i}', penbox, suffix=True)
+                settings.read_persistent_string_dict(f"{pen} {i}", penbox, suffix=True)
                 box.append(penbox)
             self.penbox[pen] = box
 
     def save_persistent_penbox(self):
+        sections = {}
         for section in self.penbox:
-            sections = {section: len(self.penbox[section])}
+            sections[section] = len(self.penbox[section])
         self.pen_data.write_persistent_dict("pens", sections)
         for section in self.penbox:
             for i, p in enumerate(self.penbox[section]):
-                self.pen_data.write_persistent_dict(f'{section} {i}', p)
+                self.pen_data.write_persistent_dict(f"{section} {i}", p)
 
     def wordlist_fetch(self, key):
         try:
@@ -203,7 +423,6 @@ class Elemental(Service):
         except IndexError:
             wordlist[0] = 1
             return wordlist[wordlist[0]]
-
 
     def index_range(self, index_string):
         """
@@ -242,9 +461,219 @@ class Elemental(Service):
         if "%" in v:
             lly = Length(v, relative_length=self.device.height)
         else:
-            lly = Length("1{unit}".format(unit=llx._preferred_units))
+            lly = Length(f"1{llx._preferred_units}")
         ly = float(lly)
         return lx * ly
+
+    def has_clipboard(self):
+        """
+        Returns the amount of elements in the clipboard
+        """
+        # TODO: this counts the clipboard not returns whether it exists
+        destination = self._clipboard_default
+        try:
+            num = len(self._clipboard[destination])
+        except (TypeError, KeyError):
+            num = 0
+        return num
+
+    ### Operation tools
+
+    def assign_operation(
+        self,
+        op_assign,
+        data,
+        impose="none",
+        attrib=None,
+        similar=False,
+        exclusive=False,
+    ):
+        # op_assign:    operation to assign to
+        # data:         nodes to assign to as minimum (will be extened is similar=True, see below)
+        # impose:       - if "to_op" will use attrib-color (see below),
+        #                 to impose the first evidence of color in data on the targetop
+        #               - if "to_elem" will impose the color of the operation and make it the color of the
+        #                 element attrib (ie stroke or fill)
+        #               - anything else: leave all colors unchanged
+        # attrib:       one of 'stroke', 'fill' to establish the source color
+        # similar:      will use attrib (see above) to establish similar elements (having (nearly) the same
+        #               color) and assign those as well
+        # exclusive:    will delete all other assignments of the source elements in other operations if True
+        if len(data) == 0:
+            return
+        # some validation...
+        if impose is not None:
+            impose = impose.lower()
+            if impose in ("to_op", "to_elem"):
+                if attrib is None:
+                    impose = None
+            else:
+                impose = None
+        if attrib is None:
+            similar = False
+        # print ("parameters:")
+        # print ("Impose=%s, operation=%s" % (impose, op_assign) )
+        # print ("similar=%s, attrib=%s" % (similar, attrib) )
+        # print ("exclusive=%s" % exclusive )
+        first_color = None
+        target_color = None
+        has_a_color = False
+        # No need to check, if no one needs it...
+        if impose == "to_elem":
+            target_color = op_assign.color
+
+        if impose == "to_op" or similar:
+            # Let's establish the color first
+            # Look for the first element that has stroke/fill
+            for n in data:
+                if hasattr(n, attrib):
+                    c = getattr(n, attrib)
+                    # We accept stroke none or fill none as well!
+                    has_a_color = True
+                    try:
+                        if c is not None and c.argb is not None:
+                            first_color = c
+                    except (AttributeError, ValueError):
+                        first_color = None
+                        # Strange....
+                        has_a_color = False
+                    if has_a_color:
+                        break
+            if impose == "to_op":
+                target_color = first_color
+
+        if impose == "to_op" and target_color is not None:
+            op_assign.color = target_color
+            if hasattr(op_assign, "add_color_attribute"):  # not true for image
+                op_assign.remove_color_attribute("stroke")
+                op_assign.remove_color_attribute("fill")
+                op_assign.add_color_attribute(attrib)
+        # If we havent identified a color, then similar makes no sense
+        if not has_a_color:
+            similar = False
+        # print ("We have now established the following:")
+        # print ("Impose=%s, operation=%s" % (impose, op_assign) )
+        # print ("Firstcolor=%s, targetcolor=%s" % (first_color, target_color) )
+        # print ("Similar=%s, # data=%d" % (similar, len(data)) )
+        if similar:
+            # Now that we have the colors lets iterate through all elements
+            fuzzy = self.classify_fuzzy
+            fuzzydistance = self.classify_fuzzydistance
+            for n in self.flat(types=elem_nodes):
+                addit = False
+                if hasattr(n, attrib):
+                    c = getattr(n, attrib)
+                    try:
+                        if c is not None and c.argb is not None:
+                            pass
+                        else:
+                            c = None
+                    except AttributeError:
+                        c = None
+                    if c is not None and first_color is not None:
+                        if fuzzy:
+                            if Color.distance(first_color, c) <= fuzzydistance:
+                                addit = True
+                        else:
+                            if c == first_color:
+                                addit = True
+                    elif c is None and first_color is None:
+                        addit = True
+                if addit and n not in data:
+                    data.append(n)
+
+        needs_refresh = False
+        for n in data:
+            if op_assign.drop(n, modify=False):
+                if exclusive:
+                    for ref in list(n._references):
+                        ref.remove_node()
+                op_assign.drop(n, modify=True)
+                if impose == "to_elem" and target_color is not None:
+                    if hasattr(n, attrib):
+                        setattr(n, attrib, target_color)
+                        needs_refresh = True
+        # Refresh the operation so any changes like color materialize...
+        self.signal("element_property_reload", op_assign)
+        if needs_refresh:
+            # We changed elems, so update the tree and the scene
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+
+    def get_information(self, elem, density=None):
+        this_area = 0
+        this_length = 0
+        if elem is None:
+            return this_area, this_length
+        try:
+            path = elem.as_path()
+        except AttributeError:
+            path = None
+        if density is None:
+            interpolation = 100
+        else:
+            interpolation = density
+
+        subject_polygons = []
+        if path is not None:
+            for subpath in path.as_subpaths():
+                subj = Path(subpath).npoint(linspace(0, 1, interpolation))
+
+                subj.reshape((2, interpolation))
+                s = list(map(Point, subj))
+                subject_polygons.append(s)
+        else:
+            try:
+                bb = elem.bounds
+            except:
+                # Even bounds failed, next element please
+                return this_area, this_length
+            s = [
+                Point(bb[0], bb[1]),
+                Point(bb[2], bb[1]),
+                Point(bb[2], bb[3]),
+                Point(bb[1], bb[3]),
+            ]
+            subject_polygons.append(s)
+
+        if len(subject_polygons) > 0:
+            idx = len(subject_polygons[0]) - 1
+            if (
+                subject_polygons[0][0].x != subject_polygons[0][idx].x
+                or subject_polygons[0][0].y != subject_polygons[0][idx].y
+            ):
+                # not identical, so close the loop
+                subject_polygons.append(
+                    Point(subject_polygons[0][0].x, subject_polygons[0][0].y)
+                )
+
+        if len(subject_polygons) > 0:
+            # idx = 0
+            # for pt in subject_polygons[0]:
+            #     if pt.x > 1.0E8 or pt.y > 1.0E8:
+            #         print ("Rather high [%d]: x=%.1f, y=%.1f" % (idx, pt.x, pt.y))
+            #     idx += 1
+            idx = -1
+            area_x_y = 0
+            area_y_x = 0
+            for pt in subject_polygons[0]:
+                if pt is None or pt.x is None or pt.y is None:
+                    continue
+                if abs(pt.x) > 1.0e8 or abs(pt.y) > 1.0e8:
+                    # this does not seem to be a valid coord...
+                    continue
+                idx += 1
+                if idx > 0:
+                    dx = pt.x - last_x
+                    dy = pt.y - last_y
+                    this_length += sqrt(dx * dx + dy * dy)
+                    area_x_y += last_x * pt.y
+                    area_y_x += last_y * pt.x
+                last_x = pt.x
+                last_y = pt.y
+            this_area = 0.5 * abs(area_x_y - area_y_x)
+
+        return this_area, this_length
 
     def _init_commands(self, kernel):
 
@@ -268,9 +697,10 @@ class Elemental(Service):
                 channel(_("No such file."))
                 return
             try:
+                channel(_("loading..."))
                 result = self.load(new_file)
                 if result:
-                    channel(_("loading..."))
+                    channel(_("Done."))
             except AttributeError:
                 raise CommandSyntaxError(_("Loading files was not defined"))
             return "file", new_file
@@ -284,7 +714,7 @@ class Elemental(Service):
             help=_("Wordlist base operation"),
             output_type="wordlist",
         )
-        def wordlist(command, channel, _, remainder = None, **kwargs):
+        def wordlist_base(command, channel, _, remainder=None, **kwargs):
             return "wordlist", ""
 
         @self.console_argument("key", help=_("Wordlist value"))
@@ -295,9 +725,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_add(
-            command, channel, _, key=None, value=None, **kwargs
-        ):
+        def wordlist_add(command, channel, _, key=None, value=None, **kwargs):
             if key is not None:
                 if value is None:
                     value = ""
@@ -312,9 +740,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_addcounter(
-            command, channel, _, key=None, value=None, **kwargs
-        ):
+        def wordlist_addcounter(command, channel, _, key=None, value=None, **kwargs):
             if key is not None:
                 if value is None:
                     value = 1
@@ -334,9 +760,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_get(
-            command, channel, _, key=None, index=None, **kwargs
-        ):
+        def wordlist_get(command, channel, _, key=None, index=None, **kwargs):
             if key is not None:
                 result = self.mywordlist.fetch_value(skey=key, idx=index)
                 channel(str(result))
@@ -363,26 +787,24 @@ class Elemental(Service):
                 channel(_("Not enough parameters given"))
             return "wordlist", key
 
-        @self.console_argument("key", help=_("Individual wordlist value (use @ALL for all)"))
-        @self.console_argument("index", help=_("index to use"))
+        @self.console_argument(
+            "key", help=_("Individual wordlist value (use @ALL for all)")
+        )
+        @self.console_argument("index", help=_("index to use, or +2 to increment by 2"))
         @self.console_command(
             "index",
             help=_("sets index in wordlist"),
             input_type="wordlist",
             output_type="wordlist",
+            all_arguments_required=True,
         )
-        def wordlist_index(
-            command, channel, _, key=None, index=None, **kwargs
-        ):
-            if key is not None and index is not None:
-                try:
-                    index = int(index)
-                except ValueError:
-                    index = 0
-                self.mywordlist.set_index(skey=key,idx=index)
+        def wordlist_index(command, channel, _, key=None, index=None, **kwargs):
+            self.mywordlist.set_index(skey=key, idx=index)
             return "wordlist", key
 
-        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
+        @self.console_argument(
+            "filename", help=_("Wordlist file (if empty use mk40-default)")
+        )
         @self.console_command(
             "restore",
             help=_("Loads a previously saved wordlist"),
@@ -393,7 +815,7 @@ class Elemental(Service):
             command, channel, _, filename=None, remainder=None, **kwargs
         ):
             new_file = filename
-            if not filename is None:
+            if filename is not None:
                 new_file = os.path.join(self.kernel.current_directory, filename)
                 if not os.path.exists(new_file):
                     channel(_("No such file."))
@@ -401,8 +823,9 @@ class Elemental(Service):
             self.mywordlist.load_data(new_file)
             return "wordlist", ""
 
-
-        @self.console_argument("filename", help=_("Wordlist file (if empty use mk40-default)"))
+        @self.console_argument(
+            "filename", help=_("Wordlist file (if empty use mk40-default)")
+        )
         @self.console_command(
             "backup",
             help=_("Saves the current wordlist"),
@@ -413,7 +836,7 @@ class Elemental(Service):
             command, channel, _, filename=None, remainder=None, **kwargs
         ):
             new_file = filename
-            if not filename is None:
+            if filename is not None:
                 new_file = os.path.join(self.kernel.current_directory, filename)
 
             self.mywordlist.save_data(new_file)
@@ -426,9 +849,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_list(
-            command, channel, _, key=None, **kwargs
-        ):
+        def wordlist_list(command, channel, _, key=None, **kwargs):
             channel("----------")
             if key is None:
                 for skey in self.mywordlist.content:
@@ -436,11 +857,15 @@ class Elemental(Service):
             else:
                 if key in self.mywordlist.content:
                     wordlist = self.mywordlist.content[key]
-                    channel(_("Wordlist %s (Type=%d, Index=%d)):") % (key, wordlist[0], wordlist[1]-2))
+                    channel(
+                        _("Wordlist {name} (Type={type}, Index={index})):").format(
+                            name=key, type=wordlist[0], index=wordlist[1] - 2
+                        )
+                    )
                     for idx, value in enumerate(wordlist[2:]):
-                        channel("#%d: %s" % (idx, str(value)))
+                        channel(f"#{idx}: {str(value)}")
                 else:
-                    channel(_("There is no such pattern %s") % key )
+                    channel(_("There is no such pattern {name}").format(name=key))
             channel("----------")
             return "wordlist", key
 
@@ -451,9 +876,7 @@ class Elemental(Service):
             input_type="wordlist",
             output_type="wordlist",
         )
-        def wordlist_load(
-            command, channel, _, filename=None, **kwargs
-        ):
+        def wordlist_load(command, channel, _, filename=None, **kwargs):
             if filename is None:
                 channel(_("No file specified."))
                 return
@@ -463,10 +886,10 @@ class Elemental(Service):
                 return
 
             rows, columns, names = self.mywordlist.load_csv_file(new_file)
-            channel (_("Rows added: %d") % rows)
-            channel (_("Values added: %d") % columns)
+            channel(_("Rows added: {rows}").format(rows=rows))
+            channel(_("Values added: {values}").format(columns=columns))
             for name in names:
-                channel ("  " + name)
+                channel("  " + name)
             return "wordlist", names
 
         # ==========
@@ -665,11 +1088,7 @@ class Elemental(Service):
             for section in self.op_data.section_set():
                 for subsect in self.op_data.derivable(section):
                     label = self.op_data.read_persistent(str, subsect, "label", "-")
-                    channel(
-                        "{subsection}: {label}".format(
-                            section=section, subsection=subsect, label=label
-                        )
-                    )
+                    channel(f"{subsect}: {label}")
             channel("----------")
 
         # ==========
@@ -683,7 +1102,9 @@ class Elemental(Service):
             input_type="ops",
             output_type="ops",
         )
-        def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+        def penbox_pass(
+            command, channel, _, key=None, remainder=None, data=None, **kwargs
+        ):
             if data is not None:
                 if key is not None:
                     for op in data:
@@ -703,7 +1124,7 @@ class Elemental(Service):
                                 else:
                                     channel(f"{str(op)} penbox_pass is set to {key}.")
                             except AttributeError:
-                                pass # No op.settings.
+                                pass  # No op.settings.
                         channel("----------")
             return "ops", data
 
@@ -714,7 +1135,9 @@ class Elemental(Service):
             input_type="ops",
             output_type="ops",
         )
-        def penbox_value(command, channel, _, key=None, remainder=None, data=None, **kwargs):
+        def penbox_value(
+            command, channel, _, key=None, remainder=None, data=None, **kwargs
+        ):
             if data is not None:
                 if key is not None:
                     for op in data:
@@ -734,10 +1157,9 @@ class Elemental(Service):
                                 else:
                                     channel(f"{str(op)} penbox_value is set to {key}.")
                             except AttributeError:
-                                pass # No op.settings.
+                                pass  # No op.settings.
                         channel("----------")
             return "ops", data
-
 
         # ==========
         # OPERATION BASE
@@ -791,7 +1213,7 @@ class Elemental(Service):
                     op = self.get_op(value)
                     op_values.append(op)
                 except IndexError:
-                    channel(_("index %d out of range") % value)
+                    channel(_("index {index} out of range").format(index=value))
             return "ops", op_values
 
         @self.console_command(
@@ -916,19 +1338,19 @@ class Elemental(Service):
             operand = list()
 
             def filter_parser(text: str):
-                pos = 0
+                p = 0
                 limit = len(text)
-                while pos < limit:
-                    match = filter_re.match(text, pos)
+                while p < limit:
+                    match = filter_re.match(text, p)
                     if match is None:
                         break  # No more matches.
-                    kind = match.lastgroup
-                    start = pos
-                    pos = match.end()
-                    if kind == "SKIP":
+                    _kind = match.lastgroup
+                    _start = p
+                    p = match.end()
+                    if _kind == "SKIP":
                         continue
-                    value = match.group()
-                    yield kind, value, start, pos
+                    _value = match.group()
+                    yield _kind, _value, _start, p
 
             def solve_to(order: int):
                 try:
@@ -1015,7 +1437,7 @@ class Elemental(Service):
             for op_obj in data:
                 i = index_ops.index(op_obj)
                 select_piece = "*" if op_obj.emphasized else " "
-                name = "%s %d: %s" % (select_piece, i, str(op_obj))
+                name = f"{select_piece} {i}: {str(op_obj)}"
                 channel(name)
                 if isinstance(op_obj, list):
                     for q, oe in enumerate(op_obj):
@@ -1030,14 +1452,7 @@ class Elemental(Service):
                             else oe.fill.hex
                         )
                         ident_piece = str(oe.id)
-                        name = "%s%d: %s-%s s:%s f:%s" % (
-                            "".ljust(5),
-                            q,
-                            str(type(oe).__name__),
-                            ident_piece,
-                            stroke_piece,
-                            fill_piece,
-                        )
+                        name = f"{''.ljust(5)}{q}: {str(type(oe).__name__)}-{ident_piece} s:{stroke_piece} f:{fill_piece}"
                         channel(name)
             channel("----------")
 
@@ -1189,7 +1604,11 @@ class Elemental(Service):
                 for op in data:
                     if op.type in ("op raster", "op image"):
                         dpi = op.dpi
-                        channel(_("Step for %s is currently: %d") % (str(op), dpi))
+                        channel(
+                            _("Step for {name} is currently: {dpi}").format(
+                                name=str(op), dpi=dpi
+                            )
+                        )
                         found = True
                 if not found:
                     channel(_("No raster operations selected."))
@@ -1231,7 +1650,11 @@ class Elemental(Service):
             if speed is None:
                 for op in data:
                     old = op.speed
-                    channel(_("Speed for '%s' is currently: %f") % (str(op), old))
+                    channel(
+                        _("Speed for '{name}' is currently: {speed}").format(
+                            name=str(op), speed=old
+                        )
+                    )
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -1261,7 +1684,11 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.speed = s
-                channel(_("Speed for '%s' updated %f -> %f") % (str(op), old, s))
+                channel(
+                    _("Speed for '{name}' updated {old_speed} -> {speed}").format(
+                        name=str(op), old_speed=old, speed=s
+                    )
+                )
                 op.notify_update()
             return "ops", data
 
@@ -1298,7 +1725,11 @@ class Elemental(Service):
             if power is None:
                 for op in data:
                     old = op.power
-                    channel(_("Power for '%s' is currently: %d") % (str(op), old))
+                    channel(
+                        _("Power for '{name}' is currently: {power}").format(
+                            name=str(op), power=old
+                        )
+                    )
                 return
             delta = 0
             for op in data:
@@ -1315,7 +1746,11 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.power = s
-                channel(_("Power for '%s' updated %d -> %d") % (str(op), old, s))
+                channel(
+                    _("Power for '{name}' updated {old_power} -> {power}").format(
+                        name=str(op), old_power=old, power=s
+                    )
+                )
                 op.notify_update()
             return "ops", data
 
@@ -1352,7 +1787,11 @@ class Elemental(Service):
             if frequency is None:
                 for op in data:
                     old = op.frequency
-                    channel(_("Frequency for '%s' is currently: %f") % (str(op), old))
+                    channel(
+                        _("Frequency for '{name}' is currently: {frequency}").format(
+                            name=str(op), frequency=old
+                        )
+                    )
                 return
             delta = 0
             for op in data:
@@ -1367,7 +1806,11 @@ class Elemental(Service):
                 if s < 0:
                     s = 0
                 op.frequency = s
-                channel(_("Frequency for '%s' updated %f -> %f") % (str(op), old, s))
+                channel(
+                    _(
+                        "Frequency for '{name}' updated {old_frequency} -> {frequency}"
+                    ).format(name=str(op), old_frequency=old, frequency=s)
+                )
                 op.notify_update()
             return "ops", data
 
@@ -1380,7 +1823,9 @@ class Elemental(Service):
                 for op in data:
                     old_passes = op.passes
                     channel(
-                        _("Passes for '%s' is currently: %d") % (str(op), old_passes)
+                        _("Passes for '{name}' is currently: {passes}").format(
+                            name=str(op), passes=old_passes
+                        )
                     )
                 return
             for op in data:
@@ -1389,8 +1834,9 @@ class Elemental(Service):
                 if passes >= 1:
                     op.passes_custom = True
                 channel(
-                    _("Passes for '%s' updated %d -> %d")
-                    % (str(op), old_passes, passes)
+                    _("Passes for '{name}' updated {old_passes} -> {passes}").format(
+                        name=str(op), old_passes=old_passes, passes=passes
+                    )
                 )
                 op.notify_update()
             return "ops", data
@@ -1432,7 +1878,9 @@ class Elemental(Service):
                 for op in data:
                     old = op.hatch_distance
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s") % (str(op), old)
+                        _(
+                            "Hatch Distance for '{name}' is currently: {distance}"
+                        ).format(name=str(op), distance=old)
                     )
                 return
             delta = 0
@@ -1449,8 +1897,9 @@ class Elemental(Service):
                     s = 0
                 op.hatch_distance = Length(amount=s).length_mm
                 channel(
-                    _("Hatch Distance for '%s' updated %s -> %s")
-                    % (str(op), old, op.hatch_distance)
+                    _(
+                        "Hatch Distance for '{name}' updated {old_distance} -> {distance}"
+                    ).format(name=str(op), old_distance=old, distance=op.hatch_distance)
                 )
                 op.notify_update()
             return "ops", data
@@ -1495,8 +1944,11 @@ class Elemental(Service):
                         f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
                     )
                     channel(
-                        _("Hatch Distance for '%s' is currently: %s (%s)")
-                        % (str(op), old, old_hatch_angle_deg)
+                        _(
+                            "Hatch Angle for '{name}' is currently: {angle} ({angle_degree})"
+                        ).format(
+                            name=str(op), angle=old, angle_degree=old_hatch_angle_deg
+                        )
                     )
                 return
             delta = 0
@@ -1515,12 +1967,13 @@ class Elemental(Service):
                 new_hatch_angle_deg = f"{s.as_degrees:.4f}deg"
 
                 channel(
-                    _("Hatch Angle for '%s' updated %s -> %s (%s)")
-                    % (
-                        str(op),
-                        f"{old.as_turns:.4f}turn",
-                        new_hatch_angle_turn,
-                        new_hatch_angle_deg,
+                    _(
+                        "Hatch Angle for '{name}' updated {old_angle} -> {angle} ({angle_degree})"
+                    ).format(
+                        name=str(op),
+                        old_angle=f"{old.as_turns:.4f}turn",
+                        angle=new_hatch_angle_turn,
+                        angle_degree=new_hatch_angle_deg,
                     )
                 )
                 op.notify_update()
@@ -1534,9 +1987,19 @@ class Elemental(Service):
         )
         def op_disable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.output = False
-                channel(_("Operation '%s' disabled.") % str(op))
-                op.notify_update()
+                no_op = True
+                if hasattr(op, "output"):
+                    try:
+                        op.output = False
+                        channel(_("Operation '{name}' disabled.").format(name=str(op)))
+                        op.notify_update()
+                        no_op = False
+                    except AttributeError:
+                        pass
+                if no_op:
+                    channel(
+                        _("Operation '{name}' can't be disabled.").format(name=str(op))
+                    )
             return "ops", data
 
         @self.console_command(
@@ -1547,27 +2010,97 @@ class Elemental(Service):
         )
         def op_enable(command, channel, _, data=None, **kwrgs):
             for op in data:
-                op.output = True
-                channel(_("Operation '%s' enabled.") % str(op))
-                op.notify_update()
+                no_op = True
+                if hasattr(op, "output"):
+                    try:
+                        op.output = True
+                        channel(_("Operation '{name}' enabled.").format(name=str(op)))
+                        op.notify_update()
+                        no_op = False
+                    except AttributeError:
+                        pass
+                if no_op:
+                    channel(
+                        _("Operation '{name}' can't be enabled.").format(name=str(op))
+                    )
             return "ops", data
 
         # ==========
         # ELEMENT/OPERATION SUBCOMMANDS
         # ==========
         @self.console_command(
+            "lock",
+            help=_("Lock element (protect from manipulation)"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def e_lock(data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                e.lock = True
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+            return "elements", data
+
+        @self.console_command(
+            "unlock",
+            help=_("Unlock element (allow manipulation)"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def e_unlock(data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                if hasattr(e, "lock"):
+                    e.lock = False
+            self.signal("element_property_update", data)
+            self.signal("refresh_scene", "Scene")
+            return "elements", data
+
+        @self.console_option(
+            "dx", "x", help=_("copy offset x (for elems)"), type=Length, default=0
+        )
+        @self.console_option(
+            "dy", "y", help=_("copy offset y (for elems)"), type=Length, default=0
+        )
+        @self.console_command(
             "copy",
             help=_("Duplicate elements"),
             input_type=("elements", "ops"),
             output_type=("elements", "ops"),
         )
-        def e_copy(data=None, data_type=None, **kwargs):
-            add_elem = list(map(copy, data))
+        def e_copy(data=None, data_type=None, dx=None, dy=None, **kwargs):
+            if data is None:
+                # Take tree selection for ops, scene selection for elements
+                if data_type == "ops":
+                    data = list(self.ops(selected=True))
+                else:
+                    data = list(self.elems(emphasized=True))
+
             if data_type == "ops":
+                add_elem = list(map(copy, data))
                 self.add_ops(add_elem)
+                return "ops", add_elem
             else:
-                self.add_elems(add_elem)
-            return data_type, add_elem
+                if dx is None:
+                    x_pos = 0
+                else:
+                    x_pos = dx
+                if dy is None:
+                    y_pos = 0
+                else:
+                    y_pos = dy
+                add_elem = list(map(copy, data))
+                if x_pos != 0 or y_pos != 0:
+                    matrix = Matrix.translate(dx, dy)
+                for e in add_elem:
+                    if x_pos != 0 or y_pos != 0:
+                        e.matrix *= matrix
+                    self.elem_branch.add_node(e)
+                self.signal("refresh_scene", "Scene")
+                return "elements", add_elem
 
         @self.console_command(
             "delete", help=_("Delete elements"), input_type=("elements", "ops")
@@ -1633,8 +2166,53 @@ class Elemental(Service):
                     e = self.get_elem(value)
                     elements_list.append(e)
                 except IndexError:
-                    channel(_("index %d out of range") % value)
+                    channel(_("index {index} out of range").format(index=value))
             return "elements", elements_list
+
+        # ==========
+        # REGMARK COMMANDS
+        # ==========
+        def move_nodes_to(target, nodes):
+            for elem in nodes:
+                target.drop(elem)
+
+        @self.console_argument("cmd", type=str, help=_("free, clear, add"))
+        @self.console_command(
+            "regmark",
+            help=_("regmark cmd"),
+            input_type=(None, "elements"),
+            output_type="elements",
+            all_arguments_required=True,
+        )
+        def regmark(command, channel, _, data, cmd=None, **kwargs):
+            # Move regmarks into the regular element tree and vice versa
+            if cmd == "free":
+                target = self.elem_branch
+            else:
+                target = self.reg_branch
+
+            if data is None:
+                data = list()
+                if cmd == "free":
+                    for item in list(self.regmarks()):
+                        data.append(item)
+                else:
+                    for item in list(self.elems(emphasized=True)):
+                        data.append(item)
+            if cmd in ("free", "add"):
+                if len(data) == 0:
+                    channel(_("No elements to transfer"))
+                else:
+                    move_nodes_to(target, data)
+            elif cmd == "clear":
+                self.clear_regmarks()
+                data = None
+            else:
+                # Unknown command
+                channel(_("Invalid command, use one of add, free, clear"))
+                data = None
+            self.signal("tree_changed")
+            return "elements", data
 
         # ==========
         # ELEMENT SUBCOMMANDS
@@ -1746,9 +2324,9 @@ class Elemental(Service):
                 if len(name) > 50:
                     name = name[:50] + "…"
                 if e.emphasized:
-                    channel("%d: * %s" % (i, name))
+                    channel(f"{i}: * {name}")
                 else:
-                    channel("%d: %s" % (i, name))
+                    channel(f"{i}: {name}")
             channel("----------")
             return "elements", data
 
@@ -1792,7 +2370,8 @@ class Elemental(Service):
             self.remove_elements(data)
             node = self.elem_branch.add(path=super_element, type="elem path")
             node.emphasized = True
-            self.classify([node])
+            if self.classify_new:
+                self.classify([node])
             return "elements", [node]
 
         @self.console_command(
@@ -1817,7 +2396,8 @@ class Elemental(Service):
                     elements.append(subelement)
                     group_node.add(path=subelement, type="elem path")
                 elements_nodes.append(group_node)
-                self.classify(elements)
+                if self.classify_new:
+                    self.classify(elements)
             return "elements", elements_nodes
 
         # ==========
@@ -1842,13 +2422,24 @@ class Elemental(Service):
                 data = list(self.elems(emphasized=True))
 
             # Element conversion.
+            # We need to establish, if for a given node within a group all it's siblings are selected as well,
+            # if that's the case then use the parent instead
             d = list()
             elem_branch = self.elem_branch
             for node in data:
-                while node.parent and node.parent is not elem_branch:
-                    node = node.parent
-                if node not in d:
-                    d.append(node)
+                snode = node
+                if snode.parent and snode.parent is not elem_branch:
+                    # I need all other siblings
+                    singular = False
+                    for n in list(node.parent.children):
+                        if n not in data:
+                            singular = True
+                            break
+                    if not singular:
+                        while snode.parent and snode.parent is not elem_branch:
+                            snode = snode.parent
+                if snode is not None and snode not in d:
+                    d.append(snode)
             data = d
             return "align", data
 
@@ -1865,10 +2456,21 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             top_edge = min([e[1] for e in boundary_points])
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
+
             for node in data:
                 subbox = node.bounds
                 top = subbox[1] - top_edge
-                matrix = "translate(0, %f)" % -top
+                matrix = f"translate(0, {-top})"
                 if top != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -1891,10 +2493,21 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 bottom = subbox[3] - bottom_edge
-                matrix = "translate(0, %f)" % -bottom
+                matrix = f"translate(0, {-bottom})"
                 if bottom != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -1917,10 +2530,21 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             left_edge = min([e[0] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 left = subbox[0] - left_edge
-                matrix = "translate(%f, 0)" % -left
+                matrix = f"translate({-left}, 0)"
                 if left != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -1943,10 +2567,21 @@ class Elemental(Service):
             if not len(boundary_points):
                 return
             right_edge = max([e[2] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 right = subbox[2] - right_edge
-                matrix = "translate(%f, 0)" % -right
+                matrix = f"translate({-right}, 0)"
                 if right != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -1972,11 +2607,22 @@ class Elemental(Service):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = "translate(%f, %f)" % (-dx, -dy)
+                matrix = f"translate({-dx}, {-dy})"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -1986,8 +2632,218 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
-            "centerv",
-            help=_("align elements at center vertical"),
+            "bedtop",
+            help=_("align elements at top edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = 0
+            dy = -1.0 * top_edge
+            matrix = f"translate({dx}, {dy})"
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedbottom",
+            help=_("align elements at bottom edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = 0
+            dy = device_height - bottom_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
+            matrix = f"translate({dx}, {dy})"
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedleft",
+            help=_("align elements at left edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = -1 * left_edge
+            dy = 0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
+            matrix = f"translate({dx}, {dy})"
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedright",
+            help=_("align elements at right edge of bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = device_width - right_edge
+            dy = 0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
+            matrix = f"translate({dx}, {dy})"
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "bedcenter",
+            help=_("align elements at bedcenter"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align(command, channel, _, data=None, **kwargs):
+            boundary_points = []
+            for node in data:
+                boundary_points.append(node.bounds)
+            if not len(boundary_points):
+                return
+            left_edge = min([e[0] for e in boundary_points])
+            top_edge = min([e[1] for e in boundary_points])
+            right_edge = max([e[2] for e in boundary_points])
+            bottom_edge = max([e[3] for e in boundary_points])
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            dx = (device_width - left_edge - right_edge) / 2.0
+            dy = (device_height - top_edge - bottom_edge) / 2.0
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
+            matrix = f"translate({dx}, {dy})"
+            for node in data:
+                for q in node.flat(types=elem_nodes):
+                    try:
+                        q.matrix *= matrix
+                        q.modified()
+                    except AttributeError:
+                        continue
+            self.signal("tree_changed")
+            return "align", data
+
+        @self.console_command(
+            "centerh",
+            help=_("align elements at center horizontally"),
             input_type="align",
             output_type="align",
         )
@@ -1999,10 +2855,21 @@ class Elemental(Service):
                 return
             left_edge = min([e[0] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                matrix = "translate(%f, 0)" % -dx
+                matrix = f"translate({-dx}, 0)"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -2012,8 +2879,8 @@ class Elemental(Service):
             return "align", data
 
         @self.console_command(
-            "centerh",
-            help=_("align elements at center horizontal"),
+            "centerv",
+            help=_("align elements at center vertically"),
             input_type="align",
             output_type="align",
         )
@@ -2025,10 +2892,21 @@ class Elemental(Service):
                 return
             top_edge = min([e[1] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = "translate(0, %f)" % -dy
+                matrix = f"translate(0, {-dy})"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -2061,10 +2939,21 @@ class Elemental(Service):
             distributed_distance = dim_available / (len(data) - 1)
             data.sort(key=lambda n: n.bounds[0])  # sort by left edge
             dim_pos = left_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 delta = subbox[0] - dim_pos
-                matrix = "translate(%f, 0)" % -delta
+                matrix = f"translate({-delta}, 0)"
                 if delta != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -2099,10 +2988,21 @@ class Elemental(Service):
             distributed_distance = dim_available / (len(data) - 1)
             data.sort(key=lambda n: n.bounds[1])  # sort by top edge
             dim_pos = top_edge
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 subbox = node.bounds
                 delta = subbox[1] - dim_pos
-                matrix = "translate(0, %f)" % -delta
+                matrix = f"translate(0, {-delta})"
                 if delta != 0:
                     for q in node.flat(types=elem_nodes):
                         try:
@@ -2113,6 +3013,7 @@ class Elemental(Service):
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
             return "align", data
 
+        # --------------------
         @self.console_command(
             "bedcenter",
             help=_("align elements to bedcenter"),
@@ -2129,12 +3030,23 @@ class Elemental(Service):
             top_edge = min([e[1] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
+                return
             for node in data:
                 device_width = self.length_x("100%")
                 device_height = self.length_y("100%")
                 dx = (device_width - left_edge - right_edge) / 2.0
                 dy = (device_height - top_edge - bottom_edge) / 2.0
-                matrix = "translate(%f, %f)" % (dx, dy)
+                matrix = f"translate({dx}, {dy})"
                 for q in node.flat(types=elem_nodes):
                     try:
                         q.matrix *= matrix
@@ -2196,6 +3108,17 @@ class Elemental(Service):
             for node in data:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
+                return
+
+            haslock = False
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    haslock = True
+                    break
+            if haslock:
+                channel(
+                    _("Your selection contains a locked element, that cannot be moved")
+                )
                 return
             left_edge = min([e[0] for e in boundary_points])
             top_edge = min([e[1] for e in boundary_points])
@@ -2417,15 +3340,11 @@ class Elemental(Service):
                         x_pos = -1 * radius
                         y_pos = 0
                         # e *= "translate(%f, %f)" % (x_pos, y_pos)
-                        e *= "rotate(%frad, %f, %f)" % (
-                            currentangle,
-                            center_x,
-                            center_y,
-                        )
+                        e *= f"rotate({currentangle}rad, {center_x}, {center_y})"
                     else:
                         x_pos = -1 * radius + radius * cos(currentangle)
                         y_pos = radius * sin(currentangle)
-                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= f"translate({x_pos}, {y_pos})"
 
                 self.add_elems(add_elem)
                 data_out.extend(add_elem)
@@ -2515,16 +3434,12 @@ class Elemental(Service):
                     if rotate:
                         x_pos = radius
                         y_pos = 0
-                        e *= "translate(%f, %f)" % (x_pos, y_pos)
-                        e *= "rotate(%frad, %f, %f)" % (
-                            currentangle,
-                            center_x,
-                            center_y,
-                        )
+                        e *= f"translate({x_pos}, {y_pos})"
+                        e *= f"rotate({currentangle}rad, {center_x}, {center_y})"
                     else:
                         x_pos = radius * cos(currentangle)
                         y_pos = radius * sin(currentangle)
-                        e *= "translate(%f, %f)" % (x_pos, y_pos)
+                        e *= f"translate({x_pos}, {y_pos})"
 
                 self.add_elems(add_elem)
                 data_out.extend(add_elem)
@@ -2655,7 +3570,7 @@ class Elemental(Service):
                     density = 1
 
                 # Do we have to consider the radius value as the length of one corner?
-                if not side_length is None:
+                if side_length is not None:
                     # Let's recalculate the radius then...
                     # d_oc = s * csc( pi / n)
                     radius = 0.5 * radius / sin(pi / corners)
@@ -2729,28 +3644,29 @@ class Elemental(Service):
                         j = i + 2
                         if gcd(j, corners) == 1:
                             if ct % 3 == 0:
-                                possible_combinations += "\n shape %d ... -d %d" % (
-                                    corners,
-                                    j,
+                                possible_combinations += (
+                                    f"\n shape {corners} ... -d {j}"
                                 )
                             else:
-                                possible_combinations += ", shape %d ... -d %d " % (
-                                    corners,
-                                    j,
+                                possible_combinations += (
+                                    f", shape {corners} ... -d {j} "
                                 )
                             ct += 1
                     channel(
-                        _("Just for info: we have missed %d vertices...")
-                        % (corners - len(star_points))
+                        _("Just for info: we have missed {count} vertices...").format(
+                            count=(corners - len(star_points))
+                        )
                     )
                     channel(
-                        _("To hit all, the density parameters should be e.g. %s")
-                        % possible_combinations
+                        _(
+                            "To hit all, the density parameters should be e.g. {combinations}"
+                        ).format(combinations=possible_combinations)
                     )
 
             poly_path = Polygon(star_points)
             node = self.elem_branch.add(shape=poly_path, type="elem polyline")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -2758,14 +3674,14 @@ class Elemental(Service):
             data.append(poly_path)
             return "elements", data
 
-        @self.console_option("step", "s", default=2.0, type=float)
+        @self.console_option("dpi", "d", default=500, type=float)
         @self.console_command(
             "render",
             help=_("Convert given elements to a raster image"),
             input_type=(None, "elements"),
             output_type="image",
         )
-        def make_raster_image(command, channel, _, step=2.0, data=None, **kwargs):
+        def render_elements(command, channel, _, dpi=500.0, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
             reverse = self.classify_reverse
@@ -2775,27 +3691,34 @@ class Elemental(Service):
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
+
             bounds = Node.union_bounds(data)
             if bounds is None:
                 return
-            if step <= 0:
-                step = 1
             xmin, ymin, xmax, ymax = bounds
             if isinf(xmin):
                 channel(_("No bounds for selected elements."))
                 return
-            image = make_raster(
-                [n.node for n in data],
-                bounds,
-                step_x=step,
-                step_y=step,
-            )
+            width = xmax - xmin
+            height = ymax - ymin
 
-            matrix = Matrix()
-            matrix.post_scale(step, step)
-            matrix.post_translate(xmin, ymin)
-            image_node = ImageNode(image=image, matrix=matrix, step_x=step, step_y=step)
+            dots_per_units = dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+            matrix = Matrix.scale(width / new_width, height / new_height)
+            matrix.post_translate(bounds[0], bounds[1])
+
+            image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
             self.elem_branch.add_node(image_node)
+            self.signal("refresh_scene", "Scene")
+
             return "image", [image_node]
 
         # ==========
@@ -2817,9 +3740,11 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(
-                shape=circ, type="elem ellipse", stroke=Color("black")
+                shape=circ,
+                type="elem ellipse",
+                stroke=self.default_stroke,
+                fill=self.default_fill,
             )
-            # node.stroke = Color("black")
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -2841,7 +3766,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=circ, type="elem ellipse")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -2870,7 +3796,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=ellip, type="elem ellipse")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -2927,7 +3854,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=rect, type="elem rect")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -2952,7 +3880,7 @@ class Elemental(Service):
             """
             simple_line = SimpleLine(x0, y0, x1, y1)
             node = self.elem_branch.add(shape=simple_line, type="elem line")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -2960,7 +3888,9 @@ class Elemental(Service):
             data.append(node)
             return "elements", data
 
-        @self.console_option("size", "s", type=float, help=_("font size to for object"))
+        @self.console_option(
+            "size", "s", type=float, default=16, help=_("font size to for object")
+        )
         @self.console_argument("text", type=str, help=_("quoted string of text"))
         @self.console_command(
             "text",
@@ -2974,19 +3904,51 @@ class Elemental(Service):
             if text is None:
                 channel(_("No text specified"))
                 return
-            svg_text = SVGText(text)
-            if size is not None:
-                svg_text.font_size = size
-            svg_text *= "scale({scale})".format(scale=UNITS_PER_PIXEL)
             node = self.elem_branch.add(
-                text=svg_text, matrix=svg_text.transform, type="elem text"
+                text=text, matrix=Matrix(f"scale({UNITS_PER_PIXEL})"), type="elem text"
             )
-            node.stroke = Color("black")
+            node.font_size = size
+            node.stroke = self.default_stroke
             self.set_emphasis([node])
             node.focus()
             if data is None:
                 data = list()
             data.append(node)
+            return "elements", data
+
+        @self.console_argument(
+            "anchor", type=str, default="start", help=_("set text anchor")
+        )
+        @self.console_command(
+            "text-anchor",
+            help=_("set text object text-anchor; start, middle, end"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            hidden=True,
+            output_type="elements",
+        )
+        def element_text_anchor(command, channel, _, data, anchor=None, **kwargs):
+            if anchor not in ("start", "middle", "end"):
+                raise CommandSyntaxError(
+                    _("Only 'start', 'middle', and 'end' are valid anchors.")
+                )
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    continue
+                if e.type == "elem text":
+                    old_anchor = e.anchor
+                    e.anchor = anchor
+                    channel(f"Node {e} anchor changed from {old_anchor} to {anchor}")
+
+                e.altered()
             return "elements", data
 
         @self.console_argument(
@@ -3014,7 +3976,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=shape, type="elem polyline")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3033,6 +3996,69 @@ class Elemental(Service):
             for e in data:
                 paths.append(abs(Path(e)))
             return "shapes", paths
+
+        @self.console_command(
+            "numpath",
+            help=_("Convert any element nodes to numpath nodes"),
+            input_type="elements",
+            output_type="elements",
+        )
+        def element_path_convert(data, **kwargs):
+            if data is None:
+                return "elements", data
+            if len(data) == 0:
+                return "elements", data
+            numpath = Numpath()
+            for node in data:
+                try:
+                    e = node.as_path()
+                except AttributeError:
+                    continue
+                for seg in e:
+                    if isinstance(seg, Line):
+                        numpath.line(complex(seg.start), complex(seg.end))
+                    elif isinstance(seg, QuadraticBezier):
+                        numpath.quad(
+                            complex(seg.start), complex(seg.control), complex(seg.end)
+                        )
+                    elif isinstance(seg, CubicBezier):
+                        numpath.cubic(
+                            complex(seg.start),
+                            complex(seg.control1),
+                            complex(seg.control2),
+                            complex(seg.end),
+                        )
+                    elif isinstance(seg, Close):
+                        numpath.close()
+                        numpath.end()
+                numpath.end()
+            if len(numpath) == 0:
+                return "elements", data
+            try:
+                fillrule = data[0].fillrule
+            except AttributeError:
+                fillrule = None
+            try:
+                cap = data[0].linecap
+            except AttributeError:
+                cap = None
+            try:
+                join = data[0].linejoin
+            except AttributeError:
+                join = None
+            node = self.elem_branch.add(
+                path=numpath,
+                type="elem numpath",
+                stroke=data[0].stroke,
+                fill=data[0].fill,
+                fillrule=fillrule,
+                linecap=cap,
+                linejoin=join,
+            )
+            self.set_emphasis([node])
+            node.focus()
+            data.append(node)
+            return "elements", data
 
         @self.console_command(
             "path",
@@ -3063,12 +4089,13 @@ class Elemental(Service):
                 raise CommandSyntaxError(_("Not a valid path_d string"))
             try:
                 path = Path(path_d)
-                path *= "Scale({scale})".format(scale=UNITS_PER_PIXEL)
+                path *= f"Scale({UNITS_PER_PIXEL})"
             except ValueError:
                 raise CommandSyntaxError(_("Not a valid path_d string (try quotes)"))
 
             node = self.elem_branch.add(path=path, type="elem path")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3103,10 +4130,31 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.stroke is None or e.stroke == "none":
-                        channel(_("%d: stroke = none - %s") % (i, name))
+                    if not hasattr(e, "stroke_width"):
+                        pass
+                    elif not hasattr(e, "stroke_scaled"):
+                        channel(
+                            _(
+                                "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
+                            ).format(index=i, stroke_width="None", name=name)
+                        )
                     else:
-                        channel(_("%d: stroke = %s - %s") % (i, e.stroke_width, name))
+                        if e.stroke_scaled:
+                            channel(
+                                _(
+                                    "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
+                                ).format(
+                                    index=i, stroke_width=e.stroke_width, name=name
+                                )
+                            )
+                        else:
+                            channel(
+                                _(
+                                    "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
+                                ).format(
+                                    index=i, stroke_width=e.stroke_width, name=name
+                                )
+                            )
                     i += 1
                 channel("----------")
                 return
@@ -3115,13 +4163,42 @@ class Elemental(Service):
                 channel(_("No selected elements."))
                 return
             for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    continue
                 e.stroke_width = stroke_width
+                e.altered()
+            return "elements", data
+
+        @self.console_command(
+            ("enable_stroke_scale", "disable_stroke_scale"),
+            help=_("stroke-width <length>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            hidden=True,
+            output_type="elements",
+        )
+        def element_stroke_scale_enable(command, channel, _, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    continue
+                e.stroke_scaled = command == "enable_stroke_scale"
                 e.altered()
             return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
-            "cap", type=str, help=_("Linecap to apply to the path (one of butt, round, square)")
+            "cap",
+            type=str,
+            help=_("Linecap to apply to the path (one of butt, round, square)"),
         )
         @self.console_command(
             "linecap",
@@ -3148,7 +4225,7 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
             if cap is None:
                 channel("----------")
                 channel(_("Linecaps:"))
@@ -3164,7 +4241,11 @@ class Elemental(Service):
                             capname = "butt"
                         else:
                             capname = "round"
-                        channel(_("%d: linecap = %s - %s") % (i, capname, name))
+                        channel(
+                            _("{index}: linecap = {linecap} - {name}").format(
+                                index=i, linecap=capname, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
@@ -3176,16 +4257,27 @@ class Elemental(Service):
                     capvalue = Linecap.CAP_ROUND
                 elif cap.lower() == "square":
                     capvalue = Linecap.CAP_SQUARE
-                if not capvalue is None:
+                if capvalue is not None:
                     for e in apply:
                         if hasattr(e, "linecap"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(
+                                    _("Can't modify a locked element: {name}").format(
+                                        str(e)
+                                    )
+                                )
+                                continue
                             e.linecap = capvalue
                             e.altered()
                 return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
-            "join", type=str, help=_("jointype to apply to the path (one of arcs, bevel, miter, miter-clip, round)")
+            "join",
+            type=str,
+            help=_(
+                "jointype to apply to the path (one of arcs, bevel, miter, miter-clip, round)"
+            ),
         )
         @self.console_command(
             "linejoin",
@@ -3212,7 +4304,7 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
             if join is None:
                 channel("----------")
                 channel(_("Linejoins:"))
@@ -3232,7 +4324,11 @@ class Elemental(Service):
                             joinname = "miter"
                         elif e.linejoin == Linejoin.JOIN_ROUND:
                             joinname = "round"
-                        channel(_("%d: linejoin = %s - %s") % (i, joinname, name))
+                        channel(
+                            _("{index}: linejoin = {linejoin} - {name}").format(
+                                index=i, linejoin=joinname, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
@@ -3248,28 +4344,39 @@ class Elemental(Service):
                     joinvalue = Linejoin.JOIN_MITER_CLIP
                 elif join.lower() == "round":
                     joinvalue = Linejoin.JOIN_ROUND
-                if not joinvalue is None:
+                if joinvalue is not None:
                     for e in apply:
                         if hasattr(e, "linejoin"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(
+                                    _("Can't modify a locked element: {name}").format(
+                                        str(e)
+                                    )
+                                )
+                                continue
                             e.linejoin = joinvalue
                             e.altered()
                 return "elements", data
 
         @self.console_option("filter", "f", type=str, help="Filter indexes")
         @self.console_argument(
-            "color", type=Color, help=_("Color to color the given stroke")
+            "rule",
+            type=str,
+            help=_(
+                "rule to apply to fill the path (one of {nonzero}, {evenodd})"
+            ).format(nonzero=SVG_RULE_NONZERO, evenodd=SVG_RULE_EVENODD),
         )
         @self.console_command(
-            "stroke",
-            help=_("stroke <svg color>"),
+            "fillrule",
+            help=_("fillrule <rule>"),
             input_type=(
                 None,
                 "elements",
             ),
             output_type="elements",
         )
-        def element_stroke(
-            command, channel, _, color, data=None, filter=None, **kwargs
+        def element_rule(
+            command, channel, _, rule=None, data=None, filter=None, **kwargs
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -3284,46 +4391,72 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
-            if color is None:
+                        channel(_("index {index} out of range").format(index=value))
+            if rule is None:
                 channel("----------")
-                channel(_("Stroke Values:"))
+                channel(_("fillrules:"))
                 i = 0
                 for e in self.elems():
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.stroke is None or e.stroke == "none":
-                        channel(_("%d: stroke = none - %s") % (i, name))
-                    else:
-                        channel(_("%d: stroke = %s - %s") % (i, e.stroke.hex, name))
+                    if hasattr(e, "fillrule"):
+                        if e.fillrule == Fillrule.FILLRULE_EVENODD:
+                            rulename = SVG_RULE_EVENODD
+                        elif e.fillrule == Fillrule.FILLRULE_NONZERO:
+                            rulename = SVG_RULE_NONZERO
+                        channel(
+                            _("{index}: fillrule = {fillrule} - {name}").format(
+                                index=i, fillrule=rulename, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return
-            elif color == "none":
-                for e in apply:
-                    e.stroke = None
-                    e.altered()
             else:
-                for e in apply:
-                    e.stroke = Color(color)
-                    e.altered()
-            return "elements", data
+                rulevalue = None
+                if rule.lower() == SVG_RULE_EVENODD:
+                    rulevalue = Fillrule.FILLRULE_EVENODD
+                elif rule.lower() == SVG_RULE_NONZERO:
+                    rulevalue = Fillrule.FILLRULE_NONZERO
+                if rulevalue is not None:
+                    for e in apply:
+                        if hasattr(e, "fillrule"):
+                            if hasattr(e, "lock") and e.lock:
+                                channel(
+                                    _("Can't modify a locked element: {name}").format(
+                                        str(e)
+                                    )
+                                )
+                                continue
+                            e.fillrule = rulevalue
+                            e.altered()
+                return "elements", data
 
+        @self.console_option(
+            "classify", "c", type=bool, action="store_true", help="Reclassify element"
+        )
         @self.console_option("filter", "f", type=str, help="Filter indexes")
-        @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
+        @self.console_argument(
+            "color", type=Color, help=_("Color to color the given stroke")
+        )
         @self.console_command(
-            "fill",
-            help=_("fill <svg color>"),
+            "stroke",
+            help=_("stroke <svg color>"),
             input_type=(
                 None,
                 "elements",
             ),
             output_type="elements",
         )
-        def element_fill(command, channel, _, color, data=None, filter=None, **kwargs):
+        def element_stroke(
+            command, channel, _, color, data=None, classify=None, filter=None, **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
             apply = data
             if filter is not None:
                 apply = list()
@@ -3335,7 +4468,96 @@ class Elemental(Service):
                     try:
                         apply.append(data[value])
                     except IndexError:
-                        channel(_("index %d out of range") % value)
+                        channel(_("index {index} out of range").format(index=value))
+            if color is None:
+                channel("----------")
+                channel(_("Stroke Values:"))
+                i = 0
+                for e in self.elems():
+                    name = str(e)
+                    if len(name) > 50:
+                        name = name[:50] + "…"
+                    if not hasattr(e, "stroke"):
+                        pass
+                    elif hasattr(e, "stroke") and e.stroke is None or e.stroke == "none":
+                        channel(
+                            _("{index}: stroke = none - {name}").format(
+                                index=i, name=name
+                            )
+                        )
+                    else:
+                        channel(
+                            _("{index}: stroke = {stroke} - {name}").format(
+                                index=i, stroke=e.stroke.hex, name=name
+                            )
+                        )
+                    i += 1
+                channel("----------")
+                return
+            elif color == "none":
+                for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
+                        continue
+                    e.stroke = None
+                    e.altered()
+            else:
+                for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
+                        continue
+                    e.stroke = Color(color)
+                    e.altered()
+            if classify is None:
+                classify = False
+            if classify:
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                # self.signal("rebuild_tree")
+                self.signal("refresh_tree", apply)
+            return "elements", data
+
+        @self.console_option(
+            "classify", "c", type=bool, action="store_true", help="Reclassify element"
+        )
+        @self.console_option("filter", "f", type=str, help="Filter indexes")
+        @self.console_argument("color", type=Color, help=_("Color to set the fill to"))
+        @self.console_command(
+            "fill",
+            help=_("fill <svg color>"),
+            input_type=(
+                None,
+                "elements",
+            ),
+            output_type="elements",
+        )
+        def element_fill(
+            command, channel, _, color, data=None, classify=None, filter=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
+            apply = data
+            if filter is not None:
+                apply = list()
+                for value in filter.split(","):
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue
+                    try:
+                        apply.append(data[value])
+                    except IndexError:
+                        channel(_("index {index} out of range").format(index=value))
             if color is None:
                 channel("----------")
                 channel(_("Fill Values:"))
@@ -3344,21 +4566,51 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.fill is None or e.fill == "none":
-                        channel(_("%d: fill = none - %s") % (i, name))
+                    if not hasattr(e, "fill"):
+                        pass
+                    elif e.fill is None or e.fill == "none":
+                        channel(
+                            _("{index}: fill = none - {name}").format(
+                                index=i, name=name
+                            )
+                        )
                     else:
-                        channel(_("%d: fill = %s - %s") % (i, e.fill.hex, name))
+                        channel(
+                            _("{index}: fill = {fill} - {name}").format(
+                                index=i, fill=e.fill.hex, name=name
+                            )
+                        )
                     i += 1
                 channel("----------")
                 return "elements", data
             elif color == "none":
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
+                        continue
                     e.fill = None
                     e.altered()
             else:
                 for e in apply:
+                    if hasattr(e, "lock") and e.lock:
+                        channel(
+                            _("Can't modify a locked element: {name}").format(str(e))
+                        )
+                        continue
                     e.fill = Color(color)
                     e.altered()
+            if classify is None:
+                classify = False
+            if classify:
+                self.remove_elements_from_operations(apply)
+                self.classify(apply)
+                if was_emphasized:
+                    for e in apply:
+                        e.emphasized = True
+                self.signal("refresh_tree", apply)
+            #                self.signal("rebuild_tree")
             return "elements", data
 
         @self.console_argument(
@@ -3401,16 +4653,17 @@ class Elemental(Service):
             width += x_offset * 2
             height += y_offset * 2
 
-            element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            node = self.elem_branch.add(shape=element, type="elem ellipse")
+            _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
+            node = self.elem_branch.add(shape=_element, type="elem ellipse")
             node.stroke = Color("red")
             self.set_emphasis([node])
             node.focus()
-            self.classify([node])
+            if self.classify_new:
+                self.classify([node])
 
             if data is None:
                 data = list()
-            data.append(element)
+            data.append(_element)
             return "elements", data
 
         @self.console_argument("angle", type=Angle.parse, help=_("angle to rotate by"))
@@ -3452,8 +4705,9 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        _("%d: rotate(%fturn) - %s")
-                        % (i, node.matrix.rotation.as_turns, name)
+                        _("{index}: rotate({angle}turn) - {name}").format(
+                            index=i, angle=node.matrix.rotation.as_turns, name=name
+                        )
                     )
                     i += 1
                 channel("----------")
@@ -3474,15 +4728,12 @@ class Elemental(Service):
                 cx = (bounds[2] + bounds[0]) / 2.0
             if cy is None:
                 cy = (bounds[3] + bounds[1]) / 2.0
-            matrix = Matrix("rotate(%fdeg,%f,%f)" % (rot, cx, cy))
+            matrix = Matrix(f"rotate({rot}deg,{cx},{cy})")
             try:
                 if not absolute:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
+                        if hasattr(node, "lock") and node.lock:
+                            continue
 
                         node.matrix *= matrix
                         node.modified()
@@ -3490,9 +4741,7 @@ class Elemental(Service):
                     for node in data:
                         start_angle = node.matrix.rotation
                         amount = rot - start_angle
-                        matrix = Matrix(
-                            "rotate(%f,%f,%f)" % (Angle(amount).as_degrees, cx, cy)
-                        )
+                        matrix = Matrix(f"rotate({Angle(amount).as_degrees},{cx},{cy})")
                         node.matrix *= matrix
                         node.modified()
             except ValueError:
@@ -3541,13 +4790,7 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        "%d: scale(%f, %f) - %s"
-                        % (
-                            i,
-                            node.matrix.value_scale_x(),
-                            node.matrix.value_scale_x(),
-                            name,
-                        )
+                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_x()}) - {name}"
                     )
                     i += 1
                 channel("----------")
@@ -3567,31 +4810,23 @@ class Elemental(Service):
             if scale_x == 0 or scale_y == 0:
                 channel(_("Scaling by Zero Error"))
                 return
-            matrix = Matrix("scale(%f,%f,%f,%f)" % (scale_x, scale_y, px, py))
+            matrix = Matrix(f"scale({scale_x},{scale_y},{px},{py})")
             try:
                 if not absolute:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
+                        if hasattr(node, "lock") and node.lock:
+                            continue
                         node.matrix *= matrix
                         node.modified()
                 else:
                     for node in data:
-                        try:
-                            if node.lock:
-                                continue
-                        except AttributeError:
-                            pass
-
+                        if hasattr(node, "lock") and node.lock:
+                            continue
                         osx = node.matrix.value_scale_x()
                         osy = node.matrix.value_scale_y()
                         nsx = scale_x / osx
                         nsy = scale_y / osy
-                        matrix = Matrix("scale(%f,%f,%f,%f)" % (nsx, nsy, px, px))
+                        matrix = Matrix(f"scale({nsx},{nsy},{px},{px})")
                         node.matrix *= matrix
                         node.modified()
             except ValueError:
@@ -3601,20 +4836,26 @@ class Elemental(Service):
         @self.console_option(
             "new_area", "n", type=self.area, help=_("provide a new area to cover")
         )
+        @self.console_option(
+            "density", "d", type=int, help=_("Defines the interpolation density")
+        )
         @self.console_command(
             "area",
             help=_("provides information about/changes the area of a selected element"),
             input_type=(None, "elements"),
-            output_type=("elements"),
+            output_type="elements",
         )
         def element_area(
             command,
             channel,
             _,
             new_area=None,
+            density=None,
             data=None,
             **kwargs,
         ):
+            if density is None:
+                density = 200
             if new_area is None:
                 display_only = True
             else:
@@ -3630,71 +4871,23 @@ class Elemental(Service):
             total_area = 0
             if display_only:
                 channel("----------")
-                channel(_("Area values:"))
+                channel(_("Area values (Density={density})").format(density=density))
+
             units = ("mm", "cm", "in")
             square_unit = [0] * len(units)
             for idx, u in enumerate(units):
-                value = float(Length("1{unit}".format(unit=u)))
+                value = float(Length(f"1{u}"))
                 square_unit[idx] = value * value
 
             i = 0
             for elem in data:
-                this_area = 0
-                try:
-                    path = elem.as_path()
-                except AttributeError:
-                    path = None
-
-                subject_polygons = []
-                if not path is None:
-                    for subpath in path.as_subpaths():
-                        subj = Path(subpath).npoint(linspace(0, 1, 1000))
-                        subj.reshape((2, 1000))
-                        s = list(map(Point, subj))
-                        subject_polygons.append(s)
-                else:
-                    try:
-                        bb = elem.bounds
-                    except:
-                        # Even bounds failed, next element please
-                        continue
-                    s = [
-                        Point(bb[0], bb[1]),
-                        Point(bb[2], bb[1]),
-                        Point(bb[2], bb[3]),
-                        Point(bb[1], bb[3]),
-                    ]
-                    subject_polygons.append(s)
-
-                if len(subject_polygons) > 0:
-                    idx = len(subject_polygons[0]) - 1
-                    if (
-                        subject_polygons[0][0].x != subject_polygons[0][idx].x
-                        or subject_polygons[0][0].y != subject_polygons[0][idx].y
-                    ):
-                        # not identical, so close the loop
-                        subject_polygons.append(
-                            Point(subject_polygons[0][0].x, subject_polygons[0][0].y)
-                        )
-
-                if len(subject_polygons) > 0:
-                    idx = -1
-                    area_x_y = 0
-                    area_y_x = 0
-                    for pt in subject_polygons[0]:
-                        idx += 1
-                        if idx > 0:
-                            area_x_y += last_x * pt.y
-                            area_y_x += last_y * pt.x
-                        last_x = pt.x
-                        last_y = pt.y
-                    this_area = 0.5 * abs(area_x_y - area_y_x)
+                this_area, this_length = self.get_information(elem, density=density)
 
                 if display_only:
                     name = str(elem)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel("%d: %s" % (i, name))
+                    channel(f"{i}: {name}")
                     for idx, u in enumerate(units):
                         this_area_local = this_area / square_unit[idx]
                         channel(
@@ -3712,7 +4905,7 @@ class Elemental(Service):
                     return
 
                 ratio = sqrt(new_area / total_area)
-                self("scale %f\n" % ratio)
+                self(f"scale {ratio}\n")
 
             return "elements", data
             # Do we have a new value to set? If yes scale by sqrt(of the fraction)
@@ -3744,12 +4937,13 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        _("%d: translate(%f, %f) - %s")
-                        % (
-                            i,
-                            node.matrix.value_trans_x(),
-                            node.matrix.value_trans_y(),
-                            name,
+                        _(
+                            "{index}: translate({translate_x}, {translate_y}) - {name}"
+                        ).format(
+                            index=i,
+                            translate_x=node.matrix.value_trans_x(),
+                            translate_y=node.matrix.value_trans_y(),
+                            name=name,
                         )
                     )
                     i += 1
@@ -3768,10 +4962,23 @@ class Elemental(Service):
             try:
                 if not absolute:
                     for node in data:
+                        if (
+                            hasattr(node, "lock")
+                            and node.lock
+                            and not self.lock_allows_move
+                        ):
+                            continue
+
                         node.matrix *= matrix
                         node.modified()
                 else:
                     for node in data:
+                        if (
+                            hasattr(node, "lock")
+                            and node.lock
+                            and not self.lock_allows_move
+                        ):
+                            continue
                         otx = node.matrix.value_trans_x()
                         oty = node.matrix.value_trans_y()
                         ntx = tx - otx
@@ -3803,6 +5010,12 @@ class Elemental(Service):
                 ntx = tx - otx
                 nty = ty - oty
                 for node in data:
+                    if (
+                        hasattr(node, "lock")
+                        and node.lock
+                        and not self.lock_allows_move
+                    ):
+                        continue
                     node.matrix.post_translate(ntx, nty)
                     node.modified()
             except ValueError:
@@ -3850,19 +5063,14 @@ class Elemental(Service):
                     return
 
                 matrix = Matrix(
-                    "translate(%f,%f) scale(%f,%f) translate(%f,%f)"
-                    % (x_pos, y_pos, sx, sy, -x, -y)
+                    f"translate({x_pos},{y_pos}) scale({sx},{sy}) translate({-x},{-y})"
                 )
                 if data is None:
                     data = list(self.elems(emphasized=True))
                 for node in data:
-                    try:
-                        if node.lock:
-                            channel(_("resize: cannot resize a locked image"))
-                            return
-                    except AttributeError:
-                        pass
-                for node in data:
+                    if hasattr(node, "lock") and node.lock:
+                        channel(_("resize: cannot resize a locked element"))
+                        continue
                     node.matrix *= matrix
                     node.modified()
                 return "elements", data
@@ -3892,7 +5100,7 @@ class Elemental(Service):
                     name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel("%d: %s - %s" % (i, str(node.matrix), name))
+                    channel(f"{i}: {str(node.matrix)} - {name}")
                     i += 1
                 channel("----------")
                 return
@@ -3914,12 +5122,8 @@ class Elemental(Service):
                     ty,
                 )
                 for node in data:
-                    try:
-                        if node.lock:
-                            continue
-                    except AttributeError:
-                        pass
-
+                    if hasattr(node, "lock") and node.lock:
+                        continue
                     node.matrix = Matrix(m)
                     node.modified()
             except ValueError:
@@ -3936,6 +5140,26 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
             for e in data:
+                if hasattr(e, "lock") and e.lock:
+                    continue
+                name = str(e)
+                if len(name) > 50:
+                    name = name[:50] + "…"
+                channel(_("reset - {name}").format(name=name))
+                e.matrix.reset()
+                e.modified()
+            return "elements", data
+
+        @self.console_command(
+            "reify",
+            help=_("reify affine transformations"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_reify(command, channel, _, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
                 try:
                     if e.lock:
                         continue
@@ -3945,34 +5169,14 @@ class Elemental(Service):
                 name = str(e)
                 if len(name) > 50:
                     name = name[:50] + "…"
-                channel(_("reset - %s") % name)
-                e.matrix.reset()
-                e.modified()
-            return "elements", data
+                try:
+                    e.shape.reify()
+                    e.altered()
+                    channel(_("reified - %s") % name)
+                except AttributeError as err:
+                    channel(_("Couldn't reify - %s - %s") % (name, err))
 
-        # @self.console_command(
-        #     "reify",
-        #     help=_("reify affine transformations"),
-        #     input_type=(None, "elements"),
-        #     output_type="elements",
-        # )
-        # def element_reify(command, channel, _, data=None, **kwargs):
-        #     if data is None:
-        #         data = list(self.elems(emphasized=True))
-        #     for e in data:
-        #         try:
-        #             if e.lock:
-        #                 continue
-        #         except AttributeError:
-        #             pass
-        #
-        #         name = str(e)
-        #         if len(name) > 50:
-        #             name = name[:50] + "…"
-        #         channel(_("reified - %s") % name)
-        #         e.reify()
-        #         e.altered()
-        #     return "elements", data
+            return "elements", data
 
         @self.console_command(
             "classify",
@@ -3983,10 +5187,17 @@ class Elemental(Service):
         def element_classify(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             self.classify(data)
+            if was_emphasized:
+                for e in data:
+                    e.emphasized = True
+
             return "elements", data
 
         @self.console_command(
@@ -3998,10 +5209,17 @@ class Elemental(Service):
         def declassify(command, channel, _, data=None, **kwargs):
             if data is None:
                 data = list(self.elems(emphasized=True))
+                was_emphasized = True
+            else:
+                was_emphasized = False
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
             self.remove_elements_from_operations(data)
+            # restore emphasized flag as it is relevant for subsequent operations
+            if was_emphasized:
+                for e in data:
+                    e.emphasized = True
             return "elements", data
 
         # ==========
@@ -4025,14 +5243,7 @@ class Elemental(Service):
                     p = list(path)
                     p.append(str(i))
                     channel(
-                        "%s: %s - %s %s - %s"
-                        % (
-                            ".".join(p).ljust(10),
-                            str(n._bounds),
-                            str(n._bounds_dirty),
-                            str(n.type),
-                            str(n.label[:16]),
-                        )
+                        f"{'.'.join(p).ljust(10)}: {str(n._bounds)} - {str(n._bounds_dirty)} {str(n.type)} - {str(str(n)[:16])}"
                     )
                     b_list(p, n)
 
@@ -4041,7 +5252,7 @@ class Elemental(Service):
                 if d.type == "root":
                     channel(_("Tree:"))
                 else:
-                    channel("%s:" % d.label)
+                    channel(f"{str(d)}:")
                 b_list([], d)
                 channel("----------")
 
@@ -4067,8 +5278,7 @@ class Elemental(Service):
                     else:
                         j = ":"
                     channel(
-                        "%s%s %s - %s"
-                        % (".".join(p).ljust(10), j, str(n.type), str(n.label))
+                        f"{'.'.join(p).ljust(10)}{j} {str(n.type)} - {str(n.label)}"
                     )
                     t_list(p, n)
 
@@ -4077,7 +5287,7 @@ class Elemental(Service):
                 if d.type == "root":
                     channel(_("Tree:"))
                 else:
-                    channel("%s:" % d.label)
+                    channel(f"{d.label}:")
                 t_list([], d)
                 channel("----------")
 
@@ -4123,7 +5333,7 @@ class Elemental(Service):
         ):
             """
             Create menu for a particular node.
-            Processes submenus, references, radio_state as needed.
+            Processes submenus, references, radio_state and check_state as needed.
             """
             try:
                 menu_node = self._tree
@@ -4166,9 +5376,10 @@ class Elemental(Service):
                 else:
                     if func.separate_before:
                         menu_context.append(("------", None))
-                    menu_context.append(
-                        (func.real_name, menu_functions(func, menu_node))
-                    )
+                    n = func.real_name
+                    if hasattr(func, "check_state") and func.check_state:
+                        n = "✓" + n
+                    menu_context.append((n, menu_functions(func, menu_node)))
                 if func.separate_after:
                     menu_context.append(("------", None))
             if execute is not None:
@@ -4178,20 +5389,20 @@ class Elemental(Service):
                         name, cmd = execute_command
                         execute_command = cmd[int(n)]
                     name, cmd = execute_command
-                    channel("Executing %s: %s" % (name, str(cmd)))
+                    channel(f"Executing {name}: {str(cmd)}")
                     cmd()
                 except (IndexError, AttributeError, ValueError, TypeError):
                     raise CommandSyntaxError
             else:
 
-                def m_list(path, menu):
-                    for i, n in enumerate(menu):
+                def m_list(path, _menu):
+                    for i, _n in enumerate(_menu):
                         p = list(path)
                         p.append(str(i))
-                        name, submenu = n
-                        channel("%s: %s" % (".".join(p).ljust(10), str(name)))
-                        if isinstance(submenu, list):
-                            m_list(p, submenu)
+                        _name, _submenu = _n
+                        channel(f"{'.'.join(p).ljust(10)}: {str(_name)}")
+                        if isinstance(_submenu, list):
+                            m_list(p, _submenu)
 
                 m_list([], menu)
 
@@ -4207,6 +5418,9 @@ class Elemental(Service):
             """
             Set tree list to selected node
             """
+            # print ("selected")
+            # for n in self.flat():
+            #     print ("Node: %s, selected=%s, emphasized=%s" % (n.type, n.selected, n.emphasized))
             return "tree", list(self.flat(selected=True))
 
         @self.console_command(
@@ -4256,9 +5470,128 @@ class Elemental(Service):
             Delete nodes.
             Structural nodes such as root, elements branch, and operations branch are not able to be deleted
             """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
+            if len(data) == 0:
+                channel(_("Nothing to delete"))
+                return
+            # print ("Delete called with data:")
+            # for n in data:
+            #     print ("Node: %s, sel=%s, emp=%s" % (n.type, n.selected, n.emphasized))
+            typecount = [0, 0, 0, 0, 0]
+            todelete = [[], [], [], [], []]
+            nodetypes = ("Operations", "References", "Elements", "Regmarks", "Branches")
+            regmk = list(self.regmarks())
+            for node in data:
+                if node.type in op_nodes:
+                    typecount[0] += 1
+                    todelete[0].append(node)
+                elif node.type == "reference":
+                    typecount[1] += 1
+                    todelete[1].append(node)
+                elif node.type in elem_group_nodes:
+                    if node in regmk:
+                        typecount[3] += 1
+                        todelete[3].append(node)
+                    else:
+                        if hasattr(node, "lock") and node.lock:
+                            # Don't delete locked nodes
+                            continue
+                        typecount[2] += 1
+                        todelete[2].append(node)
+                else:  # branches etc...
+                    typecount[4] += 1
+            # print ("Types: ops=%d, refs=%d, elems=%d, regmarks=%d, branches=%d" %
+            #     (typecount[0], typecount[1], typecount[2], typecount[3], typecount[4]))
+            single = False
+            if (
+                typecount[0] > 0
+                and typecount[1] == 0
+                and typecount[2] == 0
+                and typecount[3] == 0
+            ):
+                single = True
+                entry = 0
+            elif (
+                typecount[1] > 0
+                and typecount[0] == 0
+                and typecount[2] == 0
+                and typecount[3] == 0
+            ):
+                single = True
+                entry = 1
+            elif (
+                typecount[2] > 0
+                and typecount[0] == 0
+                and typecount[1] == 0
+                and typecount[3] == 0
+            ):
+                single = True
+                entry = 2
+            elif (
+                typecount[3] > 0
+                and typecount[0] == 0
+                and typecount[1] == 0
+                and typecount[2] == 0
+            ):
+                single = True
+                entry = 3
+            if not single:
+                if typecount[3] > 0:
+                    # regmarks take precedence, the least dangereous delete
+                    entry = 3
+                elif typecount[1] > 0:
+                    # refs next
+                    entry = 1
+                elif typecount[0] > 0:
+                    # ops next
+                    entry = 0
+                else:
+                    # Not sure why and when this suposed to happen?
+                    entry = 2
+                channel(
+                    _(
+                        "There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4})."
+                    ).format(
+                        c1=typecount[0],
+                        c2=typecount[1],
+                        c3=typecount[2],
+                        c4=typecount[3],
+                    )
+                    + "\n"
+                    + _("Only nodes of type {nodetype} were deleted.").format(
+                        nodetype=nodetypes[entry]
+                    )
+                    + "\n"
+                    + _(
+                        "If you want to remove all nodes regardless of their type, consider: 'tree selected remove'"
+                    )
+                )
+            # print ("Want to delete %d" % entry)
+            # for n in todelete[entry]:
+            #     print ("Node to delete: %s" % n.type)
+            self.remove_nodes(todelete[entry])
+            self.validate_selected_area()
+            self.signal("tree_changed")
+            self.signal("refresh_scene", "Scene")
+            return "tree", [self._tree]
+
+        @self.console_command(
+            "remove",
+            help=_("forcefully deletes all given nodes"),
+            input_type="tree",
+            output_type="tree",
+        )
+        def remove(channel, _, data=None, **kwargs):
+            """
+            Delete nodes.
+            Structural nodes such as root, elements branch, and operations branch are not able to be deleted
+            """
+            # This is an unusually dangerous operation, so if we have multiple node types, like ops + elements
+            # then we would 'only' delete those where we have the least danger, so that regmarks < operations < elements
             self.remove_nodes(data)
             self.signal("tree_changed")
-            self.signal("refresh_scene", 0)
+            self.signal("refresh_scene", "Scene")
             return "tree", [self._tree]
 
         @self.console_command(
@@ -4329,19 +5662,18 @@ class Elemental(Service):
             destination = self._clipboard_default
             try:
                 pasted = [copy(e) for e in self._clipboard[destination]]
-            except KeyError:
+            except (TypeError, KeyError):
                 channel(_("Error: Clipboard Empty"))
                 return
             if dx != 0 or dy != 0:
-                matrix = Matrix(
-                    "translate({dx}, {dy})".format(dx=float(dx), dy=float(dy))
-                )
+                matrix = Matrix.translate(float(dx), float(dy))
                 for node in pasted:
                     node.matrix *= matrix
-            group = self.elem_branch.add(type="group", label="Group")
+            group = self.elem_branch.add(type="group", label="Group", id="Copy")
             for p in pasted:
                 group.add_node(copy(p))
             self.set_emphasis([group])
+            self.signal("refresh_tree", group)
             return "elements", pasted
 
         @self.console_command(
@@ -4364,7 +5696,10 @@ class Elemental(Service):
         )
         def clipboard_clear(data=None, **kwargs):
             destination = self._clipboard_default
-            old = self._clipboard[destination]
+            try:
+                old = self._clipboard[destination]
+            except KeyError:
+                old = None
             self._clipboard[destination] = None
             return "elements", old
 
@@ -4386,7 +5721,9 @@ class Elemental(Service):
         def clipboard_list(command, channel, _, **kwargs):
             for v in self._clipboard:
                 k = self._clipboard[v]
-                channel("%s: %s" % (str(v).ljust(5), str(k)))
+                channel(f"{str(v).ljust(5)}: {str(k)}")
+            num = self.has_clipboard()
+            channel(_("Clipboard-Entries: {index}").format(index=num))
 
         # ==========
         # NOTES COMMANDS
@@ -4396,17 +5733,17 @@ class Elemental(Service):
         )
         @self.console_command("note", help=_("note <note>"))
         def note(command, channel, _, append=False, remainder=None, **kwargs):
-            note = remainder
-            if note is None:
+            _note = remainder
+            if _note is None:
                 if self.note is None:
                     channel(_("No Note."))
                 else:
                     channel(str(self.note))
             else:
                 if append:
-                    self.note += "\n" + note
+                    self.note += "\n" + _note
                 else:
-                    self.note = note
+                    self.note = _note
                 channel(_("Note Set."))
                 channel(str(self.note))
 
@@ -4559,7 +5896,7 @@ class Elemental(Service):
                         path = node.as_path()
                     except AttributeError:
                         path = None
-                    if not path is None:
+                    if path is not None:
                         p = path.first_point
                         pts += [(p.x, p.y)]
                         for segment in path:
@@ -4573,13 +5910,13 @@ class Elemental(Service):
                             (bounds[2], bounds[1]),
                             (bounds[2], bounds[3]),
                         ]
-                elif method in ("complex"):
+                elif method == "complex":
                     try:
                         path = node.as_path()
                     except AttributeError:
                         path = None
 
-                    if not path is None:
+                    if path is not None:
                         for subpath in path.as_subpaths():
                             psp = Path(subpath)
                             p = psp.first_point
@@ -4639,7 +5976,8 @@ class Elemental(Service):
             return hull
 
         @self.console_argument(
-            "method", help=_("Method to use (one of segment, quick, hull, complex)")
+            "method",
+            help=_("Method to use (one of quick, hull, complex, segment, circle)"),
         )
         @self.console_argument("resolution")
         @self.console_command(
@@ -4653,10 +5991,10 @@ class Elemental(Service):
             if method is None:
                 method = "quick"
             method = method.lower()
-            if not method in ("segment", "quick", "hull", "complex"):
+            if not method in ("segment", "quick", "hull", "complex", "circle"):
                 channel(
                     _(
-                        "Invalid method, please use one of segment, quick, hull, complex."
+                        "Invalid method, please use one of quick, hull, complex, segment, circle."
                     )
                 )
                 return
@@ -4672,12 +6010,12 @@ class Elemental(Service):
                 channel(_("No elements bounds to trace."))
                 return
 
-            def run_shape(spooler, hull):
+            def run_shape(_spooler, _hull):
                 def trace_hull():
                     yield "wait_finish"
                     yield "rapid_mode"
                     idx = 0
-                    for p in hull:
+                    for p in _hull:
                         idx += 1
                         yield (
                             "move_abs",
@@ -4685,7 +6023,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                spooler.job(trace_hull)
+                _spooler.laserjob(list(trace_hull()))
 
             run_shape(spooler, hull)
 
@@ -4716,7 +6054,6 @@ class Elemental(Service):
                 )
                 return
 
-            spooler = self.device.spooler
             if data is None:
                 data = list(self.elems(emphasized=True))
             hull = generate_hull_shape(method, data, resolution=resolution)
@@ -4728,7 +6065,8 @@ class Elemental(Service):
                 channel(_("Shape is degenerate."))
                 return "elements", data
             node = self.elem_branch.add(shape=shape, type="elem polyline")
-            node.stroke = Color("black")
+            node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             data.append(node)
@@ -4739,6 +6077,7 @@ class Elemental(Service):
     def _init_tree(self, kernel):
 
         _ = kernel.translation
+
         # --------------------------- TREE OPERATIONS ---------------------------
 
         def is_regmark(node):
@@ -4756,24 +6095,24 @@ class Elemental(Service):
                 if not node.matrix.is_identity():
                     result = True
             except AttributeError:
-                # There was an error druing check for matrix.is_identity
+                # There was an error during check for matrix.is_identity
                 pass
             return result
 
         @self.tree_separator_after()
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) == 1)
-        @self.tree_operation(
-            _("Operation properties"), node_type=operate_nodes, help=""
-        )
+        @self.tree_operation(_("Operation properties"), node_type=op_nodes, help="")
         def operation_property(node, **kwargs):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(node)
 
         @self.tree_separator_after()
-        @self.tree_operation(_("Edit"), node_type="op console", help="")
+        @self.tree_operation(_("Edit"), node_type="util console", help="")
         def edit_console_command(node, **kwargs):
-            self.open("window/ConsoleProperty", self.gui, node=node)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -4823,45 +6162,123 @@ class Elemental(Service):
                 node.insert_sibling(n)
             node.remove_node()  # Removing group/file node.
 
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
+        @self.tree_operation(
+            _("Elements in scene..."), node_type=elem_nodes, help="", enable=False
+        )
+        def element_label(node, **kwargs):
+            return
+
         @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_operation(_("Group elements"), node_type=elem_nodes, help="")
         def group_elements(node, **kwargs):
-            # group_node = node.parent.add_sibling(node, type="group", name="Group")
             group_node = node.parent.add(type="group", label="Group")
             for e in list(self.elems(emphasized=True)):
                 group_node.append_child(e)
 
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=op_nodes))
+            )
+            >= 1
+        )
+        @self.tree_operation(
+            _("Remove all items from operation"), node_type=op_parent_nodes, help=""
+        )
+        def clear_all_op_entries(node, **kwargs):
+            data = list()
+            removed = False
+            for item in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+                data.append(item)
+            for item in data:
+                removed = True
+                item.remove_all_children()
+            if removed:
+                self.signal("tree_changed")
+
+        @self.tree_conditional(lambda node: hasattr(node, "output"))
         @self.tree_operation(_("Enable/Disable ops"), node_type=op_nodes, help="")
         def toggle_n_operations(node, **kwargs):
             for n in self.ops(emphasized=True):
-                n.output = not n.output
-                n.notify_update()
+                if hasattr(n, "output"):
+                    try:
+                        n.output = not n.output
+                        n.notify_update()
+                    except AttributeError:
+                        pass
 
-        # TODO: Restore convert node type ability
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Image"), node_type=operate_nodes, help="")
-        # def convert_operation_image(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Image"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Raster"), node_type=operate_nodes, help="")
-        # def convert_operation_raster(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Raster"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Engrave"), node_type=operate_nodes, help="")
-        # def convert_operation_engrave(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Engrave"
-        #
-        # @self.tree_submenu(_("Convert operation"))
-        # @self.tree_operation(_("Convert to Cut"), node_type=operate_nodes, help="")
-        # def convert_operation_cut(node, **kwargs):
-        #     for n in self.ops(emphasized=True):
-        #         n.operation = "Cut"
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Image"), node_type=op_parent_nodes, help="")
+        def convert_operation_image(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op image"
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Raster"), node_type=op_parent_nodes, help="")
+        def convert_operation_raster(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op raster"
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(
+            _("Convert to Engrave"), node_type=op_parent_nodes, help=""
+        )
+        def convert_operation_engrave(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op engrave"
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Cut"), node_type=op_parent_nodes, help="")
+        def convert_operation_cut(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op cut"
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Hatch"), node_type=op_parent_nodes, help="")
+        def convert_operation_hatch(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op hatch"
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
+
+        @self.tree_submenu(_("Convert operation"))
+        @self.tree_operation(_("Convert to Dots"), node_type=op_parent_nodes, help="")
+        def convert_operation_dots(node, **kwargs):
+            for n in list(self.ops(emphasized=True)):
+                new_settings = dict(n.settings)
+                new_settings["type"] = "op dots"
+                n.replace_node(keep_children=True, **new_settings)
+            self.signal("rebuild_tree")
+
+        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_operation(_("Set to None"), node_type="elem image", help="")
+        def image_rasterwizard_apply_none(node, **kwargs):
+            node.operations = []
+            node.update(self)
+
+        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_values(
+            "script", values=list(self.match("raster_script", suffix=True))
+        )
+        @self.tree_operation(_("Apply: {script}"), node_type="elem image", help="")
+        def image_rasterwizard_apply(node, script=None, **kwargs):
+            raster_script = self.lookup(f"raster_script/{script}")
+            node.operations = raster_script
+            node.update(self)
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
@@ -4870,7 +6287,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (50, 75, 100, 150, 200, 250, 300, 350))
         @self.tree_operation(
-            _("%smm/s") % "{speed}", node_type=("op raster", "op image"), help=""
+            _("{speed}mm/s"), node_type=("op raster", "op image"), help=""
         )
         def set_speed_raster(node, speed=150, **kwargs):
             node.speed = float(speed)
@@ -4880,7 +6297,7 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_values("speed", (5, 10, 15, 20, 25, 30, 35, 40))
         @self.tree_operation(
-            _("%smm/s") % "{speed}",
+            _("{speed}mm/s"),
             node_type=("op cut", "op engrave", "op hatch"),
             help="",
         )
@@ -4893,9 +6310,9 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Power"))
         @self.tree_radio(radio_match)
-        @self.tree_values("power", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("power", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
-            _("%sppi") % "{power}",
+            _("{power}ppi"),
             node_type=("op cut", "op raster", "op image", "op engrave", "op hatch"),
             help="",
         )
@@ -4903,14 +6320,14 @@ class Elemental(Service):
             node.power = float(power)
             self.signal("element_property_reload", node)
 
-        def radio_match(node, i=100, **kwargs):
-            return node.dpi == i
+        def radio_match(node, dpi=100, **kwargs):
+            return node.dpi == dpi
 
         @self.tree_submenu(_("DPI"))
         @self.tree_radio(radio_match)
-        @self.tree_values("dpi", (100, 250, 333, 500, 666, 750, 1000))
+        @self.tree_values("dpi", (100, 250, 333, 500, 667, 750, 1000))
         @self.tree_operation(
-            _("DPI %s") % "{dpi}",
+            _("DPI {dpi}"),
             node_type=("op raster", "elem image"),
             help=_("Change dpi values"),
         )
@@ -4927,17 +6344,17 @@ class Elemental(Service):
         @self.tree_radio(radio_match)
         @self.tree_iterate("passvalue", 1, 10)
         @self.tree_operation(
-            _("Passes %s") % "{passvalue}", node_type=operate_nodes, help=""
+            _("Passes {passvalue}"), node_type=op_parent_nodes, help=""
         )
         def set_n_passes(node, passvalue=1, **kwargs):
             node.passes = passvalue
             node.passes_custom = passvalue != 1
             self.signal("element_property_reload", node)
 
-        @self.tree_separator_after()
+        @self.tree_separator_before()
         @self.tree_operation(
             _("Execute operation(s)"),
-            node_type=operate_nodes,
+            node_type=op_nodes,
             help=_("Execute Job for the selected operation(s)."),
         )
         def execute_job(node, **kwargs):
@@ -4948,7 +6365,7 @@ class Elemental(Service):
         @self.tree_separator_after()
         @self.tree_operation(
             _("Simulate operation(s)"),
-            node_type=operate_nodes,
+            node_type=op_nodes,
             help=_("Run simulation for the selected operation(s)"),
         )
         def compile_and_simulate(node, **kwargs):
@@ -4972,53 +6389,169 @@ class Elemental(Service):
         # ==========
         # REMOVE MULTI (Tree Selected)
         # ==========
+        # Calculate the amount of selected nodes in the tree:
+        # If there are ops selected then they take precedence
+        # and will only be counted
+
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
-                )
+                list(self.flat(selected=True, cascade=False, types="reference"))
             )
-            > 1
+            >= 1
         )
         @self.tree_calc(
             "ecount",
             lambda i: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
-                )
+                list(self.flat(selected=True, cascade=False, types="reference"))
             ),
         )
         @self.tree_operation(
-            _("Remove %s selected items") % "{ecount}",
-            node_type=non_structural_nodes,
+            _("Remove {ecount} selected items from operations"),
+            node_type="reference",
             help="",
         )
-        def remove_multi_nodes(node, **kwargs):
-            nodes = list(
-                self.flat(selected=True, cascade=False, types=non_structural_nodes)
-            )
+        def remove_multi_references(node, **kwargs):
+            nodes = list(self.flat(selected=True, cascade=False, types="reference"))
             for node in nodes:
                 if node.parent is not None:  # May have already removed.
                     node.remove_node()
             self.set_emphasis(None)
 
+        # @self.tree_conditional(
+        #     lambda cond: len(
+        #         list(self.flat(selected=True, cascade=False, types=operate_nodes))
+        #     )
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else len(
+        #         list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
+        #     )
+        #     > 1
+        # )
+        # @self.tree_calc(
+        #     "ecount",
+        #     lambda i: len(
+        #         list(self.flat(selected=True, cascade=False, types=operate_nodes))
+        #     )
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else len(
+        #         list(self.flat(selected=True, cascade=False, types=elem_group_nodes))
+        #     ),
+        # )
+        # @self.tree_calc(
+        #     "rcount",
+        #     lambda i: len(
+        #         list(self.flat(selected=True, cascade=False, types=("reference")))
+        #     ),
+        # )
+        # @self.tree_calc(
+        #     "eloc",
+        #     lambda s: "operations"
+        #     if len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #     > 0
+        #     else "element-list",
+        # )
+        # @self.tree_operation(
+        #     _("Delete %s selected items from %s (Ref=%s)") % ("{ecount}", "{eloc}", "{rcount}"),
+        #     node_type=non_structural_nodes,
+        #     help="",
+        # )
+        # def remove_multi_nodes(node, **kwargs):
+        #     if (
+        #         len(list(self.flat(selected=True, cascade=False, types=operate_nodes)))
+        #         > 0
+        #     ):
+        #         types = operate_nodes
+        #     else:
+        #         types = elem_group_nodes
+        #     nodes = list(self.flat(selected=True, cascade=False, types=types))
+        #     for node in nodes:
+        #         # If we are selecting an operation / an element within an operation, then it
+        #         # also selects/emphasizes the contained elements in the elements branch...
+        #         # So both will be deleted...
+        #         # To circumvent this, we inquire once more the selected status...
+        #         if node.selected:
+        #             if node.parent is not None:  # May have already removed.
+        #                 node.remove_node()
+        #     self.set_emphasis(None)
+
         # ==========
-        # REMOVE SINGLE (Tree Selected)
+        # REMOVE SINGLE (Tree Selected - ELEMENT)
         # ==========
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_conditional(
             lambda cond: len(
-                list(
-                    self.flat(selected=True, cascade=False, types=non_structural_nodes)
-                )
+                list(self.flat(selected=True, cascade=False, types=elem_nodes))
             )
             == 1
         )
         @self.tree_operation(
-            _("Remove '%s'") % "{name}",
-            node_type=non_structural_nodes,
+            _("Delete element '{name}' fully"),
+            node_type=elem_nodes,
+            help="",
+        )
+        def remove_type_elem(node, **kwargs):
+            if hasattr(node, "lock") and node.lock:
+                pass
+            else:
+                node.remove_node()
+                self.set_emphasis(None)
+
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=op_nodes))
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Delete operation '{name}' fully"),
+            node_type=op_nodes,
             help="",
         )
         def remove_type_op(node, **kwargs):
+
+            node.remove_node()
+            self.set_emphasis(None)
+            self.signal("operation_removed")
+
+        def contains_no_locked_items():
+            nolock = True
+            for e in list(self.flat(selected=True, cascade=True)):
+                if hasattr(e, "lock") and e.lock:
+                    nolock = False
+                    break
+            return nolock
+
+        @self.tree_conditional(lambda cond: contains_no_locked_items())
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=("file", "group")))
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Delete group '{name}' and all its child-elements fully"),
+            node_type="group",
+            help="",
+        )
+        def remove_type_grp(node, **kwargs):
+            node.remove_node()
+            self.set_emphasis(None)
+
+        @self.tree_conditional(lambda cond: contains_no_locked_items())
+        @self.tree_conditional(
+            lambda cond: len(
+                list(self.flat(selected=True, cascade=False, types=("file", "group")))
+            )
+            == 1
+        )
+        @self.tree_operation(
+            _("Remove loaded file '{name}' and all its child-elements fully"),
+            node_type="file",
+            help="",
+        )
+        def remove_type_file(node, **kwargs):
             node.remove_node()
             self.set_emphasis(None)
 
@@ -5038,7 +6571,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: len(list(self.ops(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.ops(emphasized=True))))
         @self.tree_operation(
-            _("Remove %s operations") % "{ecount}",
+            _("Delete {ecount} operations"),
             node_type=(
                 "op cut",
                 "op raster",
@@ -5046,7 +6579,10 @@ class Elemental(Service):
                 "op engrave",
                 "op dots",
                 "op hatch",
-                "op console",
+                "util console",
+                "util wait",
+                "util output",
+                "util input",
                 "lasercode",
                 "cutcode",
                 "blob",
@@ -5059,10 +6595,11 @@ class Elemental(Service):
         # ==========
         # REMOVE ELEMENTS
         # ==========
-        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 0)
+        # More than one, special case == 1 already dealt with
+        @self.tree_conditional(lambda node: len(list(self.elems(emphasized=True))) > 1)
         @self.tree_calc("ecount", lambda i: len(list(self.elems(emphasized=True))))
         @self.tree_operation(
-            _("Remove %s elements") % "{ecount}",
+            _("Delete {ecount} elements, as selected in scene"),
             node_type=elem_group_nodes,
             help="",
         )
@@ -5079,6 +6616,20 @@ class Elemental(Service):
         )
         def lasercode2cut(node, **kwargs):
             node.replace_node(CutCode.from_lasercode(node.commands), type="cutcode")
+
+        @self.tree_conditional_try(
+            lambda node: kernel.lookup(f"parser/{node.data_type}") is not None
+        )
+        @self.tree_operation(
+            _("Convert to Elements"),
+            node_type="blob",
+            help="Convert blob to elements ",
+        )
+        def blob2path(node, **kwargs):
+            parser_class = kernel.lookup(f"parser/{node.data_type}")
+            parser = parser_class()
+            parser.parse(node.data, self)
+            return True
 
         @self.tree_conditional_try(lambda node: hasattr(node, "as_cutobjects"))
         @self.tree_operation(
@@ -5105,21 +6656,23 @@ class Elemental(Service):
                 n.focus()
 
         @self.tree_submenu(_("Clone reference"))
-        @self.tree_operation(_("Make 1 copy"), node_type="reference", help="")
+        @self.tree_operation(_("Make 1 copy"), node_type=("reference",), help="")
         def clone_single_element_op(node, **kwargs):
             clone_element_op(node, copies=1, **kwargs)
 
         @self.tree_submenu(_("Clone reference"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type="reference", help=""
+            _("Make {copies} copies"), node_type=("reference",), help=""
         )
         def clone_element_op(node, copies=1, **kwargs):
-            index = node.parent.children.index(node)
-            for i in range(copies):
-                node.parent.add_reference(node.node, type="reference", pos=index)
-            node.modified()
-            self.signal("rebuild_tree")
+            nodes = list(self.flat(selected=True, cascade=False, types="reference"))
+            for snode in nodes:
+                index = snode.parent.children.index(snode)
+                for i in range(copies):
+                    snode.parent.add_reference(snode.node, pos=index)
+                snode.modified()
+            self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_operation(
@@ -5140,7 +6693,7 @@ class Elemental(Service):
         )
         def reverse_layer_order(node, **kwargs):
             node.reverse()
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree", list(self.flat(types="reference")))
 
         @self.tree_separator_after()
         @self.tree_operation(
@@ -5149,7 +6702,7 @@ class Elemental(Service):
         def refresh_clasifications(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree", list(self.flat(types="reference")))
 
         materials = [
             _("Wood"),
@@ -5181,41 +6734,40 @@ class Elemental(Service):
 
         @self.tree_submenu(_("Load"))
         @self.tree_values("opname", values=self.op_data.section_set)
-        @self.tree_operation(_("%s") % "{opname}", node_type="branch ops", help="")
+        @self.tree_operation("{opname}", node_type="branch ops", help="")
         def load_ops(node, opname, **kwargs):
-            self("material load %s\n" % opname)
+            self(f"material load {opname}\n")
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Load"))
         @self.tree_operation(_("Other/Blue/Red"), node_type="branch ops", help="")
         def default_classifications(node, **kwargs):
-            self.load_default()
+            self.load_default(performclassify=True)
 
         @self.tree_submenu(_("Load"))
         @self.tree_separator_after()
         @self.tree_operation(_("Basic"), node_type="branch ops", help="")
         def basic_classifications(node, **kwargs):
-            self.load_default2()
+            self.load_default2(performclassify=True)
 
         @self.tree_submenu(_("Save"))
         @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation("{opname}", node_type="branch ops", help="")
         def save_materials(node, opname="saved", **kwargs):
-            self("material save %s\n" % opname)
+            self(f"material save {opname}\n")
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Save"))
         @self.tree_prompt("opname", _("Name to store current operations under?"))
         @self.tree_operation("New", node_type="branch ops", help="")
         def save_material_custom(node, opname, **kwargs):
-            if opname is not None:
-                self("material save %s\n" % opname.replace(" ", "_"))
+            self(f"material save {opname.replace(' ', '_')}\n")
 
         @self.tree_submenu(_("Delete"))
         @self.tree_values("opname", values=self.op_data.section_set)
         @self.tree_operation("{opname}", node_type="branch ops", help="")
         def remove_ops(node, opname="saved", **kwargs):
-            self("material delete %s\n" % opname)
+            self(f"material delete {opname}\n")
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Append operation"))
@@ -5243,13 +6795,18 @@ class Elemental(Service):
         def append_operation_hatch(node, pos=None, **kwargs):
             self.add_op(HatchOpNode(), pos=pos)
 
+        @self.tree_submenu(_("Append operation"))
+        @self.tree_operation(_("Append Dots"), node_type="branch ops", help="")
+        def append_operation_dots(node, pos=None, **kwargs):
+            self.add_op(DotsOpNode(), pos=pos)
+
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("home -f"),
-                type="op console",
+                type="util console",
                 pos=pos,
+                command="home -f",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
@@ -5258,27 +6815,61 @@ class Elemental(Service):
         )
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("move_abs 0 0"),
-                type="op console",
+                type="util console",
                 pos=pos,
+                command="move_abs 0 0",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Beep"), node_type="branch ops", help="")
         def append_operation_beep(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("beep"),
-                type="op console",
+                type="util console",
                 pos=pos,
+                command="beep",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Interrupt"), node_type="branch ops", help="")
         def append_operation_interrupt(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation('interrupt "Spooling was interrupted"'),
-                type="op console",
+                type="util console",
                 pos=pos,
+                command='interrupt "Spooling was interrupted"',
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_prompt(
+            "wait_time", _("Wait for how long (in seconds)?"), data_type=float
+        )
+        @self.tree_operation(_("Append Wait"), node_type="branch ops", help="")
+        def append_operation_wait(node, wait_time, pos=None, **kwargs):
+            self.op_branch.add(
+                type="util wait",
+                pos=pos,
+                wait=wait_time,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Output"), node_type="branch ops", help="")
+        def append_operation_output(node, pos=None, **kwargs):
+            self.op_branch.add(
+                type="util output",
+                pos=pos,
+                output_mask=0,
+                output_value=0,
+                output_message=None,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(_("Append Input"), node_type="branch ops", help="")
+        def append_operation_input(node, pos=None, **kwargs):
+            self.op_branch.add(
+                type="util input",
+                pos=pos,
+                input_mask=0,
+                input_value=0,
+                input_message=None,
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
@@ -5294,9 +6885,19 @@ class Elemental(Service):
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
-                ConsoleOperation("quit"),
-                type="op console",
+                type="util console",
                 pos=pos,
+                command="quit",
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_prompt("opname", _("Console command to append to operations?"))
+        @self.tree_operation(_("Append Console"), node_type="branch ops", help="")
+        def append_operation_custom(node, opname, pos=None, **kwargs):
+            self.op_branch.add(
+                type="util console",
+                pos=pos,
+                command=opname,
             )
 
         @self.tree_operation(
@@ -5306,11 +6907,11 @@ class Elemental(Service):
             elems = list(self.elems())
             self.remove_elements_from_operations(elems)
             self.classify(list(self.elems()))
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree")
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
-            node_type=operate_nodes,
+            node_type=op_nodes,
             help=_("duplicate operation nodes"),
         )
         def duplicate_operation(node, **kwargs):
@@ -5327,6 +6928,7 @@ class Elemental(Service):
                         copy_op.add_reference(child.node)
                     except AttributeError:
                         pass
+            self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: node.count_children() > 1)
         @self.tree_submenu(_("Passes"))
@@ -5342,7 +6944,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Passes"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Add %s passes") % "{copies}",
+            _("Add {copies} passes"),
             node_type=("op image", "op engrave", "op cut", "op hatch"),
             help="",
         )
@@ -5376,7 +6978,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
         @self.tree_operation(
-            _("Duplicate elements %s times") % "{copies}",
+            _("Duplicate elements {copies} times"),
             node_type=("op image", "op engrave", "op cut"),
             help="",
         )
@@ -5385,7 +6987,7 @@ class Elemental(Service):
             add_nodes *= copies
             for n in add_nodes:
                 node.add_reference(n.node)
-            self.signal("rebuild_tree")
+            self.signal("refresh_tree")
 
         @self.tree_operation(
             _("Make raster image"),
@@ -5393,34 +6995,38 @@ class Elemental(Service):
             help=_("Convert a vector element into a raster element."),
         )
         def make_raster_image(node, **kwargs):
-            bounds = node.bounds
-            if bounds is None:
+            data = list(node.flat(types=elem_ref_nodes))
+            if len(data) == 0:
                 return
-            xmin, ymin, xmax, ymax = bounds
-            xmin, ymin = self.device.scene_to_device_position(xmin, ymin)
-            xmax, ymax = self.device.scene_to_device_position(xmax, ymax)
-            dpi = node.dpi
-            oneinch_x = self.device.physical_to_device_length("1in", 0)[0]
-            oneinch_y = self.device.physical_to_device_length(0, "1in")[1]
-            step_x = float(oneinch_x / dpi)
-            step_y = float(oneinch_y / dpi)
+            try:
+                bounds = Node.union_bounds(data)
+                width = bounds[2] - bounds[0]
+                height = bounds[3] - bounds[1]
+            except TypeError:
+                raise CommandSyntaxError
             make_raster = self.lookup("render-op/make_raster")
+            if not make_raster:
+                raise ValueError("No renderer is registered to perform render.")
+
+            dots_per_units = node.dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+
             image = make_raster(
-                list(node.flat(types=elem_ref_nodes)),
-                (xmin, ymin, xmax, ymax),
-                step_x=step_x,
-                step_y=step_y,
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
             )
-            matrix = Matrix(self.device.device_to_scene_matrix())
-            matrix.post_scale(step_x, step_y)
-            matrix.post_translate(xmin, ymin)
-            image_node = ImageNode(
-                image=image, matrix=matrix, step_x=step_x, step_y=step_y
-            )
+            matrix = Matrix.scale(width / new_width, height / new_height)
+            matrix.post_translate(bounds[0], bounds[1])
+
+            image_node = ImageNode(image=image, matrix=matrix, dpi=node.dpi)
             self.elem_branch.add_node(image_node)
             node.add_reference(image_node)
+            self.signal("refresh_scene", "Scene")
 
-        def add_after_index(self, node=None):
+        def add_after_index(node=None):
             try:
                 if node is None:
                     node = list(self.ops(emphasized=True))[-1]
@@ -5430,50 +7036,80 @@ class Elemental(Service):
                 return None
 
         @self.tree_separator_before()
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Image"), node_type=operate_nodes, help="")
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Image"), node_type=op_nodes, help="")
         def add_operation_image(node, **kwargs):
-            append_operation_image(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_image(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Raster"), node_type=operate_nodes, help="")
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Raster"), node_type=op_nodes, help="")
         def add_operation_raster(node, **kwargs):
-            append_operation_raster(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_raster(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Engrave"), node_type=operate_nodes, help="")
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Engrave"), node_type=op_nodes, help="")
         def add_operation_engrave(node, **kwargs):
-            append_operation_engrave(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_engrave(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add operation"))
-        @self.tree_operation(_("Add Cut"), node_type=operate_nodes, help="")
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Cut"), node_type=op_nodes, help="")
         def add_operation_cut(node, **kwargs):
-            append_operation_cut(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_cut(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Hatch"), node_type=op_nodes, help="")
+        def add_operation_hatch(node, **kwargs):
+            append_operation_hatch(node, pos=add_after_index(node), **kwargs)
+
+        @self.tree_submenu(_("Insert operation"))
+        @self.tree_operation(_("Add Dots"), node_type=op_nodes, help="")
+        def add_operation_dots(node, **kwargs):
+            append_operation_dots(node, pos=add_after_index(node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home"), node_type=op_nodes, help="")
         def add_operation_home(node, **kwargs):
-            append_operation_home(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_home(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
-            append_operation_origin(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_origin(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
         def add_operation_beep(node, **kwargs):
-            append_operation_beep(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_beep(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Interrupt"), node_type=op_nodes, help="")
         def add_operation_interrupt(node, **kwargs):
-            append_operation_interrupt(node, pos=add_after_index(self, node), **kwargs)
+            append_operation_interrupt(node, pos=add_after_index(node), **kwargs)
 
-        @self.tree_submenu(_("Add special operation(s)"))
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_prompt(
+            "wait_time", _("Wait for how long (in seconds)?"), data_type=float
+        )
+        @self.tree_operation(_("Add Wait"), node_type=op_nodes, help="")
+        def add_operation_wait(node, wait_time, **kwargs):
+            append_operation_wait(
+                node, wait_time=wait_time, pos=add_after_index(node), **kwargs
+            )
+
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Output"), node_type=op_nodes, help="")
+        def add_operation_output(node, **kwargs):
+            append_operation_output(node, pos=add_after_index(node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Input"), node_type=op_nodes, help="")
+        def add_operation_input(node, **kwargs):
+            append_operation_input(node, pos=add_after_index(node), **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Home/Beep/Interrupt"), node_type=op_nodes, help="")
         def add_operation_home_beep_interrupt(node, **kwargs):
-            pos = add_after_index(self, node)
+            pos = add_after_index(node)
             append_operation_home(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
@@ -5482,7 +7118,7 @@ class Elemental(Service):
                 pos += 1
             append_operation_interrupt(node, pos=pos, **kwargs)
 
-        @self.tree_operation(_("Reload '%s'") % "{name}", node_type="file", help="")
+        @self.tree_operation(_("Reload '{name}'"), node_type="file", help="")
         def reload_file(node, **kwargs):
             filepath = node.filepath
             node.remove_node()
@@ -5505,15 +7141,95 @@ class Elemental(Service):
             if system == "Darwin":
                 from os import system as open_in_shell
 
-                open_in_shell("open '{file}'".format(file=normalized))
+                open_in_shell(f"open '{normalized}'")
             elif system == "Windows":
                 from os import startfile as open_in_shell
 
-                open_in_shell('"{file}"'.format(file=normalized))
+                open_in_shell(f'"{normalized}"')
             else:
                 from os import system as open_in_shell
 
-                open_in_shell("xdg-open '{file}'".format(file=normalized))
+                open_in_shell(f"xdg-open '{normalized}'")
+
+        def get_values():
+            return [o for o in self.ops() if o.type.startswith("op")]
+
+        @self.tree_conditional(lambda node: not is_regmark(node))
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_values("op_assign", values=get_values)
+        @self.tree_operation("{op_assign}", node_type=elem_nodes, help="")
+        def menu_assign_operations(node, op_assign, **kwargs):
+            if self.classify_inherit_stroke:
+                impose = "to_op"
+                attrib = "stroke"
+                similar = True
+            elif self.classify_inherit_fill:
+                impose = "to_op"
+                attrib = "fill"
+                similar = True
+            else:
+                impose = None
+                attrib = None
+                similar = False
+            exclusive = self.classify_inherit_exclusive
+            data = list(self.elems(emphasized=True))
+            self.assign_operation(
+                op_assign=op_assign,
+                data=data,
+                impose=impose,
+                attrib=attrib,
+                similar=similar,
+                exclusive=exclusive,
+            )
+
+        def exclusive_match(node, **kwargs):
+            return self.classify_inherit_exclusive
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(exclusive_match)
+        @self.tree_operation(
+            _("Exclusive assignment"),
+            node_type=elem_nodes,
+            help=_(
+                "An assignment will remove all other classifications of this element if checked"
+            ),
+        )
+        def set_assign_option_exclusive(node, **kwargs):
+            self.classify_inherit_exclusive = not self.classify_inherit_exclusive
+
+        def stroke_match(node, **kwargs):
+            return self.classify_inherit_stroke
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(stroke_match)
+        @self.tree_operation(
+            _("Inherit stroke and classify similar"),
+            node_type=elem_nodes,
+            help=_("Operation will inherit element stroke color"),
+        )
+        def set_assign_option_stroke(node, **kwargs):
+            self.classify_inherit_stroke = not self.classify_inherit_stroke
+            # Poor mans radio
+            if self.classify_inherit_stroke:
+                self.classify_inherit_fill = False
+
+        def fill_match(node, **kwargs):
+            return self.classify_inherit_fill
+
+        @self.tree_submenu(_("Assign Operation"))
+        @self.tree_check(fill_match)
+        @self.tree_operation(
+            _("Inherit fill and classify similar"),
+            node_type=elem_nodes,
+            help=_("Operation will inherit element fill color"),
+        )
+        def set_assign_option_fill(node, **kwargs):
+            self.classify_inherit_fill = not self.classify_inherit_fill
+            # Poor mans radio
+            if self.classify_inherit_fill:
+                self.classify_inherit_stroke = False
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
@@ -5524,9 +7240,7 @@ class Elemental(Service):
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Duplicate element(s)"))
         @self.tree_iterate("copies", 2, 10)
-        @self.tree_operation(
-            _("Make %s copies") % "{copies}", node_type=elem_nodes, help=""
-        )
+        @self.tree_operation(_("Make {copies} copies"), node_type=elem_nodes, help="")
         def duplicate_element_n(node, copies, **kwargs):
             copy_nodes = list()
             for e in list(self.elems(emphasized=True)):
@@ -5537,7 +7251,8 @@ class Elemental(Service):
                     node.parent.add_node(copy_node)
                     copy_nodes.append(copy_node)
 
-            self.classify(copy_nodes)
+            if self.classify_new:
+                self.classify(copy_nodes)
 
             self.set_emphasis(None)
 
@@ -5572,7 +7287,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("scale -1 1 %f %f\n" % (center_x, center_y))
+            self(f"scale -1 1 {center_x} {center_y}\n")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_submenu(_("Flip"))
@@ -5588,15 +7303,15 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("scale 1 -1 %f %f\n" % (center_x, center_y))
+            self(f"scale 1 -1 {center_x} {center_y}\n")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_submenu(_("Scale"))
         @self.tree_iterate("scale", 25, 1, -1)
-        @self.tree_calc("scale_percent", lambda i: "%0.f" % (600.0 / float(i)))
+        @self.tree_calc("scale_percent", lambda i: f"{(600.0 / float(i)):.2f}")
         @self.tree_operation(
-            _("Scale %s%%") % "{scale_percent}",
+            _("Scale {scale_percent}%"),
             node_type=elem_group_nodes,
             help=_("Scale Element"),
         )
@@ -5607,7 +7322,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("scale %f %f %f %f\n" % (scale, scale, center_x, center_y))
+            self(f"scale {scale} {scale} {center_x} {center_y}\n")
 
         # @self.tree_conditional(lambda node: isinstance(node.object, SVGElement))
         @self.tree_conditional(lambda node: not is_regmark(node))
@@ -5644,9 +7359,7 @@ class Elemental(Service):
                 -90,
             ),
         )
-        @self.tree_operation(
-            _("Rotate %s°") % ("{angle}"), node_type=elem_group_nodes, help=""
-        )
+        @self.tree_operation(_("Rotate {angle}°"), node_type=elem_group_nodes, help="")
         def rotate_elem_amount(node, angle, **kwargs):
             turns = float(angle) / 360.0
             bounds = node.bounds
@@ -5654,7 +7367,7 @@ class Elemental(Service):
                 return
             center_x = (bounds[2] + bounds[0]) / 2.0
             center_y = (bounds[3] + bounds[1]) / 2.0
-            self("rotate %fturn %f %f\n" % (turns, center_x, center_y))
+            self(f"rotate {turns}turn {center_x} {center_y}\n")
             self.signal("ext-modified")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
@@ -5691,67 +7404,82 @@ class Elemental(Service):
         def merge_elements(node, **kwargs):
             self("element merge\n")
 
+        @self.tree_conditional(lambda node: node.lock)
+        @self.tree_separator_before()
+        @self.tree_operation(
+            _("Unlock element, allows manipulation"), node_type=elem_nodes, help=""
+        )
+        def element_unlock_manipulations(node, **kwargs):
+            self("element unlock\n")
+
+        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_separator_before()
+        @self.tree_operation(
+            _("Lock elements, prevents manipulations"), node_type=elem_nodes, help=""
+        )
+        def element_lock_manipulations(node, **kwargs):
+            self("element lock\n")
+
+        @self.tree_conditional(lambda node: node.type == "branch reg")
+        @self.tree_separator_before()
+        @self.tree_operation(
+            _("Toggle visibility of regmarks"), node_type="branch reg", help=""
+        )
+        def toggle_visibility(node, **kwargs):
+            self.signal("toggle_regmarks")
+
         @self.tree_conditional(lambda node: is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(
             _("Move back to elements"), node_type=elem_group_nodes, help=""
         )
-        def move_back(node, copies=1, **kwargs):
+        def move_back(node, **kwargs):
             # Drag and Drop
+            signal_needed = False
             drop_node = self.elem_branch
-            drop_node.drop(node)
-            self.signal("tree_changed")
+            data = list()
+            for item in list(self.regmarks()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                drop_node.drop(item)
+                signal_needed = True
+            if signal_needed:
+                self.signal("tree_changed")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_separator_before()
         @self.tree_operation(_("Move to regmarks"), node_type=elem_group_nodes, help="")
-        def move_to_regmark(node, copies=1, **kwargs):
+        def move_to_regmark(node, **kwargs):
             # Drag and Drop
+            signal_needed = False
             drop_node = self.reg_branch
+            data = list()
+            for item in list(self.elems_nodes()):
+                if item.selected:
+                    data.append(item)
+            for item in data:
+                # No usecase for having a locked regmark element
+                if hasattr(item, "lock"):
+                    item.lock = False
+                drop_node.drop(item)
+                signal_needed = True
+            if signal_needed:
+                self.signal("tree_changed")
             drop_node.drop(node)
             self.signal("tree_changed")
 
-        def radio_match(node, i=0, **kwargs):
-            if "raster_step_x" in node.settings:
-                step_x = float(node.settings["raster_step_x"])
-            else:
-                step_y = 1.0
-            if "raster_step_y" in node.settings:
-                step_x = float(node.settings["raster_step_y"])
-            else:
-                step_y = 1.0
-            if i == step_x and i == step_y:
-                m = node.matrix
-                if m.a == step_x or m.b == 0.0 or m.c == 0.0 or m.d == step_y:
-                    return True
-            return False
-
-        @self.tree_separator_before()
-        @self.tree_submenu(_("Step"))
-        @self.tree_radio(radio_match)
-        @self.tree_iterate("i", 1, 10)
-        @self.tree_operation(_("Step %s") % "{i}", node_type="elem image", help="")
-        def set_step_n_elem(node, i=1, **kwargs):
-            step_value = i
-            node.step_x = step_value
-            node.step_y = step_value
-            m = node.matrix
-            tx = m.e
-            ty = m.f
-            node.matrix = Matrix.scale(float(step_value), float(step_value))
-            node.matrix.post_translate(tx, ty)
-            node.modified()
-            self.signal("element_property_reload", node)
-
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_conditional_try(lambda node: not node.lock)
         @self.tree_operation(_("Actualize pixels"), node_type="elem image", help="")
         def image_actualize_pixels(node, **kwargs):
             self("image resample\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Z-depth divide"))
         @self.tree_iterate("divide", 2, 10)
         @self.tree_operation(
-            _("Divide into %s images") % "{divide}", node_type="elem image", help=""
+            _("Divide into {divide} images"), node_type="elem image", help=""
         )
         def image_zdepth(node, divide=1, **kwargs):
             if node.image.mode != "RGBA":
@@ -5760,39 +7488,51 @@ class Elemental(Service):
             for i in range(0, divide):
                 threshold_min = i * band
                 threshold_max = threshold_min + band
-                self("image threshold %f %f\n" % (threshold_min, threshold_max))
+                self(f"image threshold {threshold_min} {threshold_max}\n")
 
-        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_conditional(lambda node: node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Unlock manipulations"), node_type="elem image", help="")
         def image_unlock_manipulations(node, **kwargs):
             self("image unlock\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
+        @self.tree_submenu(_("Image"))
+        @self.tree_operation(_("Lock manipulations"), node_type="elem image", help="")
+        def image_lock_manipulations(node, **kwargs):
+            self("image lock\n")
+
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Dither to 1 bit"), node_type="elem image", help="")
         def image_dither(node, **kwargs):
             self("image dither\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Invert image"), node_type="elem image", help="")
         def image_invert(node, **kwargs):
             self("image invert\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Mirror horizontal"), node_type="elem image", help="")
         def image_mirror(node, **kwargs):
             self("image mirror\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Flip vertical"), node_type="elem image", help="")
         def image_flip(node, **kwargs):
             self("image flip\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CW"), node_type="elem image", help="")
         def image_cw(node, **kwargs):
             self("image cw\n")
 
+        @self.tree_conditional(lambda node: not node.lock)
         @self.tree_submenu(_("Image"))
         @self.tree_operation(_("Rotate 90° CCW"), node_type="elem image", help="")
         def image_ccw(node, **kwargs):
@@ -5802,38 +7542,6 @@ class Elemental(Service):
         @self.tree_operation(_("Save output.png"), node_type="elem image", help="")
         def image_save(node, **kwargs):
             self("image save output.png\n")
-
-        @self.tree_submenu(_("RasterWizard"))
-        @self.tree_values(
-            "script", values=list(self.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("RasterWizard: %s") % "{script}", node_type="elem image", help=""
-        )
-        def image_rasterwizard_open(node, script=None, **kwargs):
-            self("window open RasterWizard %s\n" % script)
-
-        @self.tree_submenu(_("Apply raster script"))
-        @self.tree_values(
-            "script", values=list(self.match("raster_script", suffix=True))
-        )
-        @self.tree_operation(
-            _("Apply: %s") % "{script}", node_type="elem image", help=""
-        )
-        def image_rasterwizard_apply(node, script=None, **kwargs):
-            self("image wizard %s\n" % script)
-
-        @self.tree_conditional_try(lambda node: hasattr(node, "as_elements"))
-        @self.tree_operation(_("Convert to SVG"), node_type=op_nodes, help="")
-        def cutcode_convert_svg(node, **kwargs):
-            # Todo: unsure if still works
-            self.add_elems(list(node.as_elements()))
-
-        @self.tree_conditional_try(lambda node: hasattr(node, "generate"))
-        @self.tree_operation(_("Process as Operation"), node_type=op_nodes, help="")
-        def cutcode_operation(node, **kwargs):
-            # Todo: unsure if still works
-            self.add_op(node)
 
         @self.tree_conditional(lambda node: len(node.children) > 0)
         @self.tree_separator_before()
@@ -5898,7 +7606,10 @@ class Elemental(Service):
         settings = self.op_data
         settings.clear_persistent(name)
         for i, op in enumerate(self.ops()):
-            section = "%s %06i" % (name, i)
+            if hasattr(op, "allow_save"):
+                if not op.allow_save():
+                    continue
+            section = f"{name} {i:06d}"
             settings.write_persistent(section, "type", op.type)
             op.save(settings, section)
 
@@ -5939,7 +7650,7 @@ class Elemental(Service):
     def unlisten_tree(self, listener):
         self._tree.unlisten(listener)
 
-    def load_default(self):
+    def load_default(self, performclassify=True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -5952,9 +7663,10 @@ class Elemental(Service):
         self.add_op(RasterOpNode())
         self.add_op(EngraveOpNode())
         self.add_op(CutOpNode())
-        self.classify(list(self.elems()))
+        if performclassify:
+            self.classify(list(self.elems()))
 
-    def load_default2(self):
+    def load_default2(self, performclassify=True):
         self.clear_operations()
         self.add_op(
             ImageOpNode(
@@ -5971,7 +7683,8 @@ class Elemental(Service):
         self.add_op(EngraveOpNode(color="cyan"))
         self.add_op(EngraveOpNode(color="yellow"))
         self.add_op(CutOpNode())
-        self.classify(list(self.elems()))
+        if performclassify:
+            self.classify(list(self.elems()))
 
     def tree_operations_for_node(self, node):
         for func, m, sname in self.find("tree", node.type, ".*"):
@@ -5992,8 +7705,12 @@ class Elemental(Service):
             if reject:
                 continue
             func_dict = {
-                "name": str(node.label),
-                "label": str(node.label),
+                "name": str(node.name)
+                if (hasattr(node, "name") and node.name is not None)
+                else str(node.label),
+                "label": str(node.name)
+                if (hasattr(node, "name") and node.name is not None)
+                else str(node.label),
             }
 
             iterator = func.values
@@ -6023,10 +7740,16 @@ class Elemental(Service):
                         func.radio_state = False
                 else:
                     func.radio_state = None
+                if hasattr(func, "check") and func.check is not None:
+                    try:
+                        func.check_state = func.check(node, **func_dict)
+                    except:
+                        func.check_state = False
+                else:
+                    func.check_state = None
                 name = func.name.format_map(func_dict)
                 func.func_dict = func_dict
                 func.real_name = name
-
                 yield func
 
     def flat(self, **kwargs):
@@ -6062,6 +7785,14 @@ class Elemental(Service):
     def tree_radio(radio_function):
         def decor(func):
             func.radio = radio_function
+            return func
+
+        return decor
+
+    @staticmethod
+    def tree_check(check_function):
+        def decor(func):
+            func.check = check_function
             return func
 
         return decor
@@ -6128,7 +7859,7 @@ class Elemental(Service):
 
         return decor
 
-    def tree_operation(self, name, node_type=None, help=None, **kwargs):
+    def tree_operation(self, name, node_type=None, help=None, enable=True, **kwargs):
         def decorator(func):
             @functools.wraps(func)
             def inner(node, **ik):
@@ -6154,13 +7885,14 @@ class Elemental(Service):
             inner.user_prompt = list()
             inner.calcs = list()
             inner.values = [0]
+            inner.enabled = enable
             registered_name = inner.__name__
 
             for _in in ins:
-                p = "tree/%s/%s" % (_in, registered_name)
+                p = f"tree/{_in}/{registered_name}"
                 if p in self._registered:
                     raise NameError(
-                        "A function of this name was already registered: %s" % p
+                        f"A function of this name was already registered: {p}"
                     )
                 self.register(p, inner)
             return inner
@@ -6249,8 +7981,8 @@ class Elemental(Service):
     def count_op(self, **kwargs):
         return len(list(self.ops(**kwargs)))
 
-    def get(self, obj=None, type=None):
-        return self._tree.get(obj=obj, type=type)
+    def get(self, type=None):
+        return self._tree.get(type=type)
 
     def get_op(self, index, **kwargs):
         for i, op in enumerate(self.ops(**kwargs)):
@@ -6277,6 +8009,7 @@ class Elemental(Service):
         """
         operation_branch = self._tree.get(type="branch ops")
         operation_branch.add_node(op, pos=pos)
+        self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
         operation_branch = self._tree.get(type="branch ops")
@@ -6284,6 +8017,7 @@ class Elemental(Service):
         for op in adding_ops:
             operation_branch.add_node(op)
             items.append(op)
+        self.signal("add_operation", items)
         return items
 
     def add_elems(self, adding_elements, classify=False, branch_type="branch elems"):
@@ -6297,7 +8031,9 @@ class Elemental(Service):
         """
         branch = self._tree.get(type=branch_type)
         items = []
+        ct = 0
         for element in adding_elements:
+            ct += 1
             node_type = get_type_from_element(element)
             if node_type:
                 items.append(branch.add(element, type=node_type))
@@ -6312,6 +8048,7 @@ class Elemental(Service):
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children()
+        self.signal("operation_removed")
 
     def clear_elements(self):
         elements = self._tree.get(type="branch elems")
@@ -6338,6 +8075,107 @@ class Elemental(Service):
     def clear_note(self):
         self.note = None
 
+    # def drag_and_drop(self, dragging_nodes, drop_node, inheritance_mode="auto", inherit_stroke = True, inherit_fill = True):
+
+    #     print ("elements d+d called")
+    #     if inheritance_mode.lower() == "auto":
+    #     elif inheritance_mode.lower() =
+    #     if inherit_stroke is None:
+    #         inh_stroke = False
+    #     else:
+    #         inh_stroke = inherit_stroke
+    #     if inherit_fill is None:
+    #         inh_fill = False
+    #     else:
+    #         inh_fill = inherit_fill
+
+    #     data = dragging_nodes
+    #     success = False
+    #     special_occasion = False
+    #     if drop_node.type.startswith("op"):
+    #         if len(drop_node.children) == 0 and self.classify_auto_inherit:
+    #             # only for empty operations!
+    #             # Let's establish the colors first
+    #             first_color_stroke = None
+    #             first_color_fill = None
+    #             # Look for the first element that has stroke/fill
+    #             for n in data:
+    #                 if first_color_stroke is None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+    #                     first_color_stroke = n.stroke
+    #                 if first_color_fill is None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+    #                     first_color_fill = n.fill
+    #                 canbreak = first_color_fill is not None or first_color_stroke is not None
+    #                 if canbreak:
+    #                     break
+    #             if hasattr(drop_node, "color") and (first_color_fill is not None or first_color_stroke is not None):
+    #                 # Well if you have both options, then you get that
+    #                 # color that is present, precedence for fill
+    #                 if first_color_fill is not None:
+    #                     col = first_color_fill
+    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
+    #                         drop_node.add_color_attribute("fill")
+    #                         drop_node.remove_color_attribute("stroke")
+    #                 else:
+    #                     col = first_color_stroke
+    #                     if hasattr(drop_node, "add_color_attribute"): # not true for image
+    #                         drop_node.add_color_attribute("stroke")
+    #                         drop_node.remove_color_attribute("fill")
+    #                 drop_node.color = col
+
+    #             # Now that we have the colors lets iterate through all elements
+    #             fuzzy = self.classify_fuzzy
+    #             fuzzydistance = self.classify_fuzzydistance
+    #             for n in self.flat(types=elem_nodes):
+    #                 addit = False
+    #                 if inh_stroke and first_color_stroke is not None and hasattr(n, "stroke") and n.stroke is not None and n.stroke.argb is not None:
+    #                     if fuzzy:
+    #                         if Color.distance(first_color_stroke, n.stroke) <= fuzzydistance:
+    #                             addit = True
+    #                     else:
+    #                         if n.stroke == first_color_stroke:
+    #                             addit = True
+    #                 if inh_fill and first_color_fill is not None and hasattr(n, "fill") and n.fill is not None and n.fill.argb is not None:
+    #                     if fuzzy:
+    #                         if Color.distance(first_color_fill, n.fill) <= fuzzydistance:
+    #                             addit = True
+    #                     else:
+    #                         if n.fill == first_color_fill:
+    #                             addit = True
+    #                 # print ("Checked %s and will addit=%s" % (n.type, addit))
+    #                 if addit and n not in data:
+    #                     data.append(n)
+    #     for drag_node in data:
+    #         if drop_node is drag_node:
+    #             continue
+    #         if drop_node.drop(drag_node, modify=False):
+    #             if special_occasion:
+    #                 for ref in list(drag_node._references):
+    #                     ref.remove_node()
+    #             drop_node.drop(drag_node, modify=True)
+    #             success = True
+
+    #     # Refresh the target node so any changes like color materialize...
+    #     self.signal("element_property_reload", drop_node)
+    #     return success
+
+    def drag_and_drop(self, dragging_nodes, drop_node):
+        data = dragging_nodes
+        success = False
+        special_occasion = False
+        for drag_node in data:
+            if drop_node is drag_node:
+                continue
+            if drop_node.drop(drag_node, modify=False):
+                if special_occasion:
+                    for ref in list(drag_node._references):
+                        ref.remove_node()
+                drop_node.drop(drag_node, modify=True)
+                success = True
+
+        # Refresh the target node so any changes like color materialize...
+        self.signal("element_property_reload", drop_node)
+        return success
+
     def remove_nodes(self, node_list):
         for node in node_list:
             for n in node.flat():
@@ -6353,6 +8191,11 @@ class Elemental(Service):
 
     def remove_elements(self, element_node_list):
         for elem in element_node_list:
+            try:
+                if hasattr(elem, "lock") and elem.lock:
+                    continue
+            except AttributeError:
+                pass
             elem.remove_node(references=True)
         self.validate_selected_area()
 
@@ -6361,7 +8204,7 @@ class Elemental(Service):
             for i, o in enumerate(list(self.ops())):
                 if o is op:
                     o.remove_node()
-            self.signal("operation_removed", op)
+            self.signal("operation_removed")
 
     def remove_elements_from_operations(self, elements_list):
         for node in elements_list:
@@ -6459,6 +8302,8 @@ class Elemental(Service):
                 s.highlighted = False
             if s.targeted:
                 s.targeted = False
+            if s.selected:
+                s.selected = False
 
             in_list = emphasize is not None and s in emphasize
             if s.emphasized:
@@ -6467,6 +8312,7 @@ class Elemental(Service):
             else:
                 if in_list:
                     s.emphasized = True
+                    s.selected = True
         if emphasize is not None:
             for e in emphasize:
                 if e.type == "reference":
@@ -6474,6 +8320,7 @@ class Elemental(Service):
                     e.highlighted = True
                 else:
                     e.emphasized = True
+                    e.selected = True
                 # if hasattr(e, "object"):
                 #     self.target_clones(self._tree, e, e.object)
                 self.highlight_children(e)
@@ -6500,10 +8347,18 @@ class Elemental(Service):
 
     def move_emphasized(self, dx, dy):
         for node in self.elems(emphasized=True):
+            if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                continue
             node.matrix.post_translate(dx, dy)
             node.modified()
 
-    def set_emphasized_by_position(self, position, keep_old_selection=False):
+    def set_emphasized_by_position(
+        self,
+        position,
+        keep_old_selection=False,
+        use_smallest=False,
+        exit_over_selection=False,
+    ):
         def contains(box, x, y=None):
             if y is None:
                 y = x[1]
@@ -6511,106 +8366,128 @@ class Elemental(Service):
             return box[0] <= x <= box[2] and box[1] <= y <= box[3]
 
         if self.has_emphasis():
-            if self._emphasized_bounds is not None and contains(
-                self._emphasized_bounds, position
+            if (
+                self._emphasized_bounds is not None
+                and contains(self._emphasized_bounds, position)
+                and exit_over_selection
             ):
                 return  # Select by position aborted since selection position within current select bounds.
-        for e in self.elems_nodes(depth=1, cascade=False):
+        # Remember previous selection, in case we need to append...
+        e_list = []
+        f_list = []  # found elements...
+        if keep_old_selection:
+            for node in self.elems(emphasized=True):
+                e_list.append(node)
+        for node in self.elems_nodes(emphasized=False):
             try:
-                bounds = e.bounds
+                bounds = node.bounds
             except AttributeError:
                 continue  # No bounds.
             if bounds is None:
                 continue
             if contains(bounds, position):
-                e_list = []
-                if keep_old_selection:
-                    for node in self.elems(emphasized=True):
-                        e_list.append(node)
-                    if self._emphasized_bounds is not None:
-                        cc = self._emphasized_bounds
-                        bounds = (
-                            min(bounds[0], cc[0]),
-                            min(bounds[1], cc[1]),
-                            max(bounds[2], cc[2]),
-                            max(bounds[3], cc[3]),
-                        )
+                f_list.append(node)
+
+        if len(f_list) > 0:
+            # We checked that before, f_list contains only elements with valid bounds...
+            e = None
+            if use_smallest:
+                e_area = float("inf")
+            else:
+                e_area = -float("inf")
+            for node in f_list:
+                cc = node.bounds
+                f_area = (cc[2] - cc[0]) * (cc[3] - cc[1])
+                if use_smallest:
+                    if f_area < e_area:
+                        e_area = f_area
+                        e = node
+                else:
+                    if f_area > e_area:
+                        e_area = f_area
+                        e = node
+            if e is not None:
+                bounds = e.bounds
                 e_list.append(e)
-                self._emphasized_bounds = bounds
-                self.set_emphasis(e_list)
-                return
-        self._emphasized_bounds = None
-        self.set_emphasis(None)
+                if self._emphasized_bounds is not None:
+                    cc = self._emphasized_bounds
+                    bounds = (
+                        min(bounds[0], cc[0]),
+                        min(bounds[1], cc[1]),
+                        max(bounds[2], cc[2]),
+                        max(bounds[3], cc[3]),
+                    )
+        if len(e_list) > 0:
+            self._emphasized_bounds = bounds
+            self.set_emphasis(e_list)
+        else:
+            self._emphasized_bounds = None
+            self.set_emphasis(None)
 
     def classify(self, elements, operations=None, add_op_function=None):
         """
-        Classify does the placement of elements within operations.
-        "Image" is the default for images.
-        Typically,
-        If element strokes are red they get classed as cut operations
-        If they are otherwise they get classed as engrave.
-        However, this differs based on the ops in question.
         @param elements: list of elements to classify.
         @param operations: operations list to classify into.
-        @param add_op_function: function to add a new operation, because of a lack of classification options.
+        @param add_op_function: function to add a new operation,
+                because of a lack of classification options.
         @return:
         """
         if elements is None:
             return
+
+        if not len(list(self.ops())) and not self.operation_default_empty:
+            self.load_default(performclassify=False)
         reverse = self.classify_reverse
+        fuzzy = self.classify_fuzzy
+        fuzzydistance = self.classify_fuzzydistance
+        usedefault = self.classify_default
+        autogen = self.classify_autogenerate
         if reverse:
             elements = reversed(elements)
         if operations is None:
             operations = list(self.ops())
         if add_op_function is None:
             add_op_function = self.add_op
+
         for node in elements:
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
             was_classified = False
-            # image_added code removed because it could never be used
             for op in operations:
-                if op.type == "op raster":
-                    if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and (op.color == node.stroke or op.default)
-                    ):
-                        op.add_reference(node)
-                        was_classified = True
-                    elif node.type == "elem image":
-                        op.add_reference(node)
-                        was_classified = True
-                    elif node.type == "elem text":
-                        op.add_reference(node)
-                        was_classified = True
-                    elif (
-                        hasattr(node, "fill")
-                        and node.fill is not None
-                        and node.fill.argb is not None
-                    ):
-                        op.add_reference(node)
-                        was_classified = True
-                elif op.type in ("op engrave", "op cut", "op hatch"):
-                    if (
-                        hasattr(node, "stroke")
-                        and node.stroke is not None
-                        and op.color == node.stroke
-                    ) or op.default:
-                        op.add_reference(node)
-                        was_classified = True
-                elif op.type == "op image" and node.type == "elem image":
-                    op.add_reference(node)
+                if hasattr(op, "classify"):
+                    classified, should_break = op.classify(
+                        node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=False
+                    )
+                else:
+                    continue
+                if classified:
                     was_classified = True
-                    break  # May only classify in one image operation.
-                elif op.type == "op dots" and node.type == "elem point":
-                    op.add_reference(node)
-                    was_classified = True
-                    break  # May only classify in Dots.
+                if should_break:
+                    break
 
-            if not was_classified:
+            ######################
+            # NON-CLASSIFIED ELEMENTS
+            ######################
+            if not was_classified and usedefault:
+                # let's iterate through the default ops and add them
+                for op in operations:
+                    if hasattr(op, "classify"):
+                        classified, should_break = op.classify(
+                            node,
+                            fuzzy=fuzzy,
+                            fuzzydistance=fuzzydistance,
+                            usedefault=True,
+                        )
+                    else:
+                        continue
+                    if classified:
+                        was_classified = True
+                    if should_break:
+                        break
+            if not was_classified and autogen:
+                # Despite all efforts we couldn't classify the element, so let's add an op
                 op = None
                 if node.type == "elem image":
                     op = ImageOpNode(output=False)
@@ -6619,22 +8496,60 @@ class Elemental(Service):
                 elif (
                     hasattr(node, "stroke")
                     and node.stroke is not None
-                    and node.stroke.value is not None
+                    and node.stroke.argb is not None
                 ):
-                    op = EngraveOpNode(color=node.stroke, speed=35.0)
-                if op is not None:
-                    add_op_function(op)
-                    op.add_reference(node)
-                    operations.append(op)
-                if (
+                    if fuzzy:
+                        is_cut = Color.distance("red", node.stroke) <= fuzzydistance
+                    else:
+                        is_cut = Color("red") == node.stroke
+                    if is_cut:
+                        op = CutOpNode(color=Color("red"), speed=5.0)
+                    else:
+                        op = EngraveOpNode(color=node.stroke, speed=35.0)
+                elif (
                     hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    op = RasterOpNode(color=0, output=False)
-                    add_op_function(op)
+                    op = RasterOpNode(color=0, output=True)
+
+                if op is not None:
+                    # Lets make sure we don't have something like that already
+                    already_found = False
+                    for testop in self.ops():
+                        if type(op) == type(testop):
+                            sameop = True
+                        else:
+                            sameop = False
+                        samecolor = False
+                        if hasattr(op, "color") and hasattr(testop, "color"):
+                            # print ("Comparing color %s to %s" % ( op.color, testop.color ))
+                            if op.color == testop.color:
+                                samecolor = True
+                        elif hasattr(op, "color") != hasattr(testop, "color"):
+                            samecolor = False
+                        else:
+                            samecolor = True
+                        samespeed = False
+                        if hasattr(op, "speed") and hasattr(testop, "speed"):
+                            if op.speed == testop.speed:
+                                samespeed = True
+                        elif hasattr(op, "speed") != hasattr(testop, "speed"):
+                            samespeed = False
+                        else:
+                            samespeed = True
+                        # print ("Compare: %s to %s - op=%s, col=%s, speed=%s" % (type(op).__name__, type(testop).__name__, sameop, samecolor, samespeed))
+                        if sameop and samecolor and samespeed:
+                            already_found = True
+                            op = testop
+                            break
+                    if not already_found:
+                        if hasattr(op, "output"):
+                            op.output = True
+                        add_op_function(op)
+                        operations.append(op)
+                        already_found = True
                     op.add_reference(node)
-                    operations.append(op)
 
     def add_classify_op(self, op):
         """
@@ -7335,16 +9250,17 @@ class Elemental(Service):
     #         for op in default_raster_ops:
     #             op.add_reference(element.node, pos=element_pos)
 
-    @staticmethod
-    def element_label_id(element, short=True):
-        if element.node is None:
-            if short:
-                return element.id
-            return "{id}: {path}".format(id=element.id, path=str(element))
-        elif ":" in element.node.label and short:
-            return element.node.label.split(":", 1)[0]
-        else:
-            return element.node.label
+    # No longer used and still uses old element.node syntax
+    # @staticmethod
+    # def element_label_id(element, short=True):
+    #     if element.node is None:
+    #         if short:
+    #             return element.id
+    #         return f"{element.id}: {str(element)}"
+    #     elif ":" in element.node.label and short:
+    #         return element.node.label.split(":", 1)[0]
+    #     else:
+    #         return element.node.label
 
     @staticmethod
     def bbox_overlap(b1, b2):
@@ -7373,7 +9289,9 @@ class Elemental(Service):
             for description, extensions, mimetype in loader.load_types():
                 if str(pathname).lower().endswith(extensions):
                     try:
+                        self.signal("freeze_tree", True)
                         results = loader.load(self, self, pathname, **kwargs)
+                        self.signal("freeze_tree", False)
                     except FileNotFoundError:
                         return False
                     except BadFileError as e:
@@ -7396,23 +9314,23 @@ class Elemental(Service):
             for loader, loader_name, sname in kernel.find("load"):
                 for description, extensions, mimetype in loader.load_types():
                     for ext in extensions:
-                        exts.append("*.%s" % ext)
+                        exts.append(f"*.{ext}")
             filetypes.append(";".join(exts))
         for loader, loader_name, sname in kernel.find("load"):
             for description, extensions, mimetype in loader.load_types():
                 exts = []
                 for ext in extensions:
-                    exts.append("*.%s" % ext)
-                filetypes.append("%s (%s)" % (description, extensions[0]))
+                    exts.append(f"*.{ext}")
+                filetypes.append(f"{description} ({extensions[0]})")
                 filetypes.append(";".join(exts))
         return "|".join(filetypes)
 
-    def save(self, pathname):
+    def save(self, pathname, version="default"):
         kernel = self.kernel
         for saver, save_name, sname in kernel.find("save"):
-            for description, extension, mimetype in saver.save_types():
-                if pathname.lower().endswith(extension):
-                    saver.save(self, pathname, "default")
+            for description, extension, mimetype, _version in saver.save_types():
+                if pathname.lower().endswith(extension) and _version == version:
+                    saver.save(self, pathname, version)
                     return True
         return False
 
@@ -7420,7 +9338,7 @@ class Elemental(Service):
         kernel = self.kernel
         filetypes = []
         for saver, save_name, sname in kernel.find("save"):
-            for description, extension, mimetype in saver.save_types():
-                filetypes.append("%s (%s)" % (description, extension))
-                filetypes.append("*.%s" % extension)
+            for description, extension, mimetype, _version in saver.save_types():
+                filetypes.append(f"{description} ({extension})")
+                filetypes.append(f"*.{extension}")
         return "|".join(filetypes)

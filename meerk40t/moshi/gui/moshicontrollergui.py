@@ -75,14 +75,30 @@ class MoshiControllerPanel(wx.Panel):
         self.set_widgets()
 
     def __set_properties(self):
-        self.SetFont(wx.Font(9, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI"))
+        self.SetFont(
+            wx.Font(
+                9,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
+        )
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetForegroundColour(wx.BLACK)
         self.button_device_connect.SetBitmap(
             icons8_disconnected_50.GetBitmap(use_theme=False)
         )
         self.button_device_connect.SetFont(
-            wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, 0, "Segoe UI")
+            wx.Font(
+                12,
+                wx.FONTFAMILY_DEFAULT,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+                0,
+                "Segoe UI",
+            )
         )
         self.button_device_connect.SetToolTip(
             _("Force connection/disconnection from the device.")
@@ -229,7 +245,7 @@ class MoshiControllerPanel(wx.Panel):
 
     def pane_show(self):
         active = self.context.path.split("/")[-1]
-        self.context.channel("%s/usb" % active, buffer_size=500).watch(self.update_text)
+        self.context.channel(f"{active}/usb", buffer_size=500).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
         self.context.listen("pipe;usb_status", self.on_connection_status_change)
         self.context.listen("pipe;state", self.on_connection_state_change)
@@ -237,7 +253,7 @@ class MoshiControllerPanel(wx.Panel):
 
     def pane_hide(self):
         active = self.context.path.split("/")[-1]
-        self.context.channel("%s/usb" % active).unwatch(self.update_text)
+        self.context.channel(f"{active}/usb").unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
         self.context.unlisten("pipe;usb_status", self.on_connection_status_change)
         self.context.unlisten("pipe;state", self.on_connection_state_change)
@@ -380,15 +396,11 @@ class MoshiControllerPanel(wx.Panel):
     def on_check_mock_usb(self, event=None):
         self.context.mock = self.checkbox_mock_usb.GetValue()
 
-    def on_button_start_controller(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_button_start_controller(self, event=None):
         print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
 
-    def on_check_show_usb_log(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_check_show_usb_log(self, event=None):
         on = self.checkbox_show_usb_log.GetValue()
         self.text_usb_log.Show(on)
         self.context.show_usb_log = bool(on)
@@ -461,37 +473,31 @@ class MoshiControllerGui(MWindow):
     def window_preserve(self):
         return False
 
-    def on_menu_usb_reset(self, event):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_usb_reset(self, event):
         try:
             self.context("usb_reset\n")
         except AttributeError:
             pass
 
-    def on_menu_usb_release(
-        self, event
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_usb_release(self, event):
         try:
             self.context("usb_release\n")
         except AttributeError:
             pass
 
-    def on_menu_pause(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_pause(self, event=None):
         try:
             self.context("pause\n")
         except AttributeError:
             pass
 
-    def on_menu_stop(self, event=None):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_stop(self, event=None):
         try:
             self.context("estop\n")
         except AttributeError:
             pass
 
-    def on_menu_bufferview(
-        self, event=None
-    ):  # wxGlade: LhystudiosController.<event_handler>
+    def on_menu_bufferview(self, event=None):
         self.context("window open BufferView\n")
 
     def on_menu_freemotor(self, event):  # wxGlade: MoshiControllerGui.<event_handler>

@@ -78,6 +78,7 @@ class PlotPlanner(Parameters):
 
         self.pos_x = None
         self.pos_y = None
+        self.settings_then_jog = False
 
     def push(self, plot):
         self.abort = False
@@ -166,13 +167,22 @@ class PlotPlanner(Parameters):
                 self.pos_y = self.single.single_y
 
             # Jog was needed.
-            if jog:
-                yield new_start_x, new_start_y, jog
-                self.warp(new_start_x, new_start_y)
+            if self.settings_then_jog:
+                if cut.settings is not self.settings:
+                    self.settings = cut.settings
+                    yield None, None, PLOT_SETTING
 
-            if cut.settings is not self.settings:
-                self.settings = cut.settings
-                yield None, None, PLOT_SETTING
+                if jog:
+                    yield new_start_x, new_start_y, jog
+                    self.warp(new_start_x, new_start_y)
+            else:
+                if jog:
+                    yield new_start_x, new_start_y, jog
+                    self.warp(new_start_x, new_start_y)
+
+                if cut.settings is not self.settings:
+                    self.settings = cut.settings
+                    yield None, None, PLOT_SETTING
 
             if jog or self.raster_step_x != 0:
                 # set the directions. Post Jog, Post Settings.
@@ -213,7 +223,7 @@ class PlotPlanner(Parameters):
 
         def debug(plot, manipulator):
             for q in plot:
-                print("Manipulator: %s, %s" % (str(q), str(manipulator)))
+                print(f"Manipulator: {str(q)}, {str(manipulator)}")
                 yield q
 
         if self.single is not None:
@@ -307,11 +317,7 @@ class Single(PlotManipulation):
         self.single_y = None
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.single_x),
-            str(self.single_y),
-        )
+        return f"{self.__class__.__name__}({str(self.single_x)},{str(self.single_y)})"
 
     def process(self, plot):
         """
@@ -349,8 +355,7 @@ class Single(PlotManipulation):
             if total_dy * dx != total_dx * dy:
                 # Check for cross-equality.
                 raise ValueError(
-                    "Must be uniformly diagonal or orthogonal: (%d, %d) is not."
-                    % (total_dx, total_dy)
+                    f"Must be uniformly diagonal or orthogonal: ({total_dx}, {total_dy}) is not."
                 )
             cx = self.single_x
             cy = self.single_y
@@ -386,11 +391,7 @@ class Smooth(PlotManipulation):
         self.smooth_y = None
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.smooth_x),
-            str(self.smooth_y),
-        )
+        return f"{self.__class__.__name__}({str(self.smooth_x)},{str(self.smooth_y)})"
 
     def flushed(self):
         return (
@@ -402,8 +403,7 @@ class Smooth(PlotManipulation):
 
     def process(self, plot):
         """
-
-        @param plot: single stepped plots to be smoothed into orth/diag sequences.
+        @param plot: Smooth attempts to smooth out values
         @return:
         """
         px = None
@@ -414,7 +414,9 @@ class Smooth(PlotManipulation):
                 yield from self.flush()
                 yield x, y, on
                 continue
-            if not self.planner.constant_move_x and not self.planner.constant_move_y:
+            if not self.planner.settings.get(
+                "_constant_move_x", False
+            ) and not self.planner.settings.get("_constant_move_y", False):
                 yield x, y, on
                 continue  # We are not smoothing.
             if px is not None and py is not None:
@@ -432,14 +434,15 @@ class Smooth(PlotManipulation):
             self.goal_y = y
             self.goal_on = on
             if total_dx == 0 and total_dy == 0:
+                yield x, y, on
                 continue
             dx = 1 if total_dx > 0 else 0 if total_dx == 0 else -1
             dy = 1 if total_dy > 0 else 0 if total_dy == 0 else -1
-            if self.planner.constant_move_x and dx == 0:
+            if self.planner.settings.get("_constant_move_x", False) and dx == 0:
                 # If we are moving x and, we don't move x: skip.
                 if abs(total_dy) < self.planner.smooth_limit:
                     continue
-            if self.planner.constant_move_y and dy == 0:
+            if self.planner.settings.get("_constant_move_y", False) and dy == 0:
                 if abs(total_dx) < self.planner.smooth_limit:
                     continue
             self.smooth_x += dx
@@ -456,6 +459,8 @@ class Smooth(PlotManipulation):
                 self.smooth_x, self.smooth_y, self.goal_x, self.goal_y
             ):
                 yield x, y, self.goal_on
+            self.smooth_x = None
+            self.smooth_y = None
             self.goal_x = None
             self.goal_y = None
             self.goal_on = None
@@ -478,11 +483,7 @@ class PPI(PlotManipulation):
         self.dot_left = 0
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.ppi_total),
-            str(self.dot_left),
-        )
+        return f"{self.__class__.__name__}({str(self.ppi_total)},{str(self.dot_left)})"
 
     def process(self, plot):
         """
@@ -529,11 +530,7 @@ class Shift(PlotManipulation):
         self.shift_pixels = 0
 
     def __str__(self):
-        return "%s(%s,%s)" % (
-            self.__class__.__name__,
-            str(self.shift_buffer),
-            bin(self.shift_pixels),
-        )
+        return f"{self.__class__.__name__}({str(self.shift_buffer)},{bin(self.shift_pixels)})"
 
     def process(self, plot):
         """
@@ -607,13 +604,7 @@ class Group(PlotManipulation):
         self.group_dy = 0
 
     def __str__(self):
-        return "%s(%s,%s,%s,%s)" % (
-            self.__class__.__name__,
-            str(self.group_x),
-            str(self.group_y),
-            str(self.group_dx),
-            str(self.group_dy),
-        )
+        return f"{self.__class__.__name__}({str(self.group_x)},{str(self.group_y)},{str(self.group_dx)},{str(self.group_dy)})"
 
     def flushed(self):
         return (
@@ -679,7 +670,7 @@ class Group(PlotManipulation):
             if abs(self.group_dx) > 1 or abs(self.group_dy) > 1:
                 # The last step was not valid. Group() requires single step values.
                 raise ValueError(
-                    "dx(%d) or dy(%d) exceeds 1" % (self.group_dx, self.group_dy)
+                    f"dx({self.group_dx}) or dy({self.group_dy}) exceeds 1"
                 )
             # Save our buffered position.
             self.group_x = x
@@ -742,7 +733,7 @@ def grouped(plot):
         group_dy = y - group_y
         if abs(group_dx) > 1 or abs(group_dy) > 1:
             # The last step was not valid.
-            raise ValueError("dx(%d) or dy(%d) exceeds 1" % (group_dx, group_dy))
+            raise ValueError(f"dx({group_dx}) or dy({group_dy}) exceeds 1")
         group_x = x
         group_y = y
     # There are no more plots.

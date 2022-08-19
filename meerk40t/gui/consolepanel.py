@@ -1,7 +1,12 @@
 import wx
-from wx import aui, richtext
+from wx import aui
 
-from meerk40t.gui.icons import icons8_console_50
+try:
+    from wx import richtext
+except ImportError:
+    print("import of wx.richtext for console failed, using default console window")
+
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_console_50
 from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -278,7 +283,11 @@ class ConsolePanel(wx.ScrolledWindow):
         @param lines:
         @return:
         """
-        self.text_main.SetInsertionPointEnd()
+        try:
+            self.text_main.SetInsertionPointEnd()
+        except RuntimeError:
+            # Console is shutdown.
+            return
         ansi = False
         ansi_text = ""
         text = ""
@@ -294,6 +303,7 @@ class ConsolePanel(wx.ScrolledWindow):
                     text = ""
                 self.text_main.Newline()
                 self.text_main.BeginStyle(self.style)
+                continue  # New Line is already processed.
             if b == 27:
                 ansi = True
             if ansi:
@@ -388,6 +398,7 @@ class Console(MWindow):
                 "icon": icons8_console_50,
                 "tip": _("Open Console Window"),
                 "action": lambda v: kernel.console("window toggle Console\n"),
+                "size": STD_ICON_SIZE,
             },
         )
 

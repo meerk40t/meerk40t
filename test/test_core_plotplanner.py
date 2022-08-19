@@ -3,15 +3,14 @@ import unittest
 
 from PIL import Image, ImageDraw
 
-from meerk40t.core.cutcode import CutCode, LineCut, Parameters
+from meerk40t.core.cutcode import CutCode, LineCut
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-
 from meerk40t.core.plotplanner import PlotPlanner
 from meerk40t.device.basedevice import PLOT_AXIS, PLOT_SETTING
-from meerk40t.svgelements import Circle, Path, Point, Matrix
+from meerk40t.svgelements import Circle, Matrix, Path, Point
 
 
 class TestPlotplanner(unittest.TestCase):
@@ -20,7 +19,7 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        settings = {"power": 1000, "constant_move_x": True}
+        settings = {"power": 1000, "_constant_move_x": True}
         plan = PlotPlanner(settings, ppi=False)
         plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
         plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
@@ -57,7 +56,7 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        settings = {"power": 500, "constant_move_x": True}
+        settings = {"power": 500, "_constant_move_x": True}
         plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(20, 2), settings=settings))
         plan.push(LineCut(Point(20, 2), Point(20, 5), settings=settings))
@@ -98,7 +97,7 @@ class TestPlotplanner(unittest.TestCase):
         With smooth_raster set to 2 we should never have x = 0. The x should *always* be in motion.
         @return:
         """
-        settings = {"power": 1000, "constant_move_y": True}
+        settings = {"power": 1000, "_constant_move_y": True}
         plan = PlotPlanner(settings)
         plan.push(LineCut(Point(0, 0), Point(2, 20), settings=settings))
         plan.push(LineCut(Point(2, 20), Point(5, 20), settings=settings))
@@ -135,7 +134,7 @@ class TestPlotplanner(unittest.TestCase):
         With raster_smooth set to 1 we should smooth the x axis so that no y=0 occurs.
         @return:
         """
-        settings = {"power": 1000, "constant_move_x": True, "constant_move_y": True}
+        settings = {"power": 1000, "_constant_move_x": True, "_constant_move_y": True}
         plan = PlotPlanner(settings)
         self.constant_move_x = True
         self.constant_move_y = True
@@ -190,9 +189,15 @@ class TestPlotplanner(unittest.TestCase):
             for i in range(10):
                 goal_x = random.randint(0, 100)
                 goal_y = random.randint(0, 100)
+                start_x = random.randint(0, 100)
+                start_y = random.randint(0, 100)
+                while start_x == goal_x and start_y == goal_y:
+                    # If exactly equal go ahead and randomize again.
+                    start_x = random.randint(0, 100)
+                    start_y = random.randint(0, 100)
                 plan.push(
                     LineCut(
-                        Point(random.randint(0, 100), random.randint(0, 100)),
+                        Point(start_x, start_y),
                         Point(goal_x, goal_y),
                         settings=settings,
                     )
@@ -359,10 +364,18 @@ class TestPlotplanner(unittest.TestCase):
         draw = ImageDraw.Draw(image)
         draw.ellipse((0, 0, 255, 255), "black")
         image = image.convert("L")
-        rasterop.add_node(ImageNode(image=image, step_x=1, step_y=1, matrix=Matrix()))
+        inode = ImageNode(image=image, dpi=1000.0, matrix=Matrix())
+        inode.step_x = 1
+        inode.step_y = 1
+        inode.process_image()
+        rasterop.add_node(inode)
+        rasterop.raster_step_x = 1
+        rasterop.raster_step_y = 1
 
         vectorop = EngraveOpNode()
-        vectorop.add_node(PathNode(path=Path(Circle(cx=127, cy=127, r=128)), fill="black"))
+        vectorop.add_node(
+            PathNode(path=Path(Circle(cx=127, cy=127, r=128)), fill="black")
+        )
         cutcode = CutCode()
         cutcode.extend(vectorop.as_cutobjects())
         cutcode.extend(rasterop.as_cutobjects())

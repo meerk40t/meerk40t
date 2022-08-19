@@ -14,6 +14,16 @@ from meerk40t.kernel import (
     Service,
 )
 
+from ..core.cutcode import (
+    CubicCut,
+    DwellCut,
+    InputCut,
+    LineCut,
+    OutputCut,
+    QuadCut,
+    WaitCut,
+)
+from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, ViewPort
@@ -58,11 +68,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "preboot":
         suffix = "moshi"
         for d in kernel.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")
 
 
 def get_code_string_from_moshicode(code):
@@ -80,7 +86,7 @@ def get_code_string_from_moshicode(code):
     elif code == 0:
         return "USB Failed"
     else:
-        return "UNK %02x" % code
+        return f"UNK {code:02x}"
 
 
 class MoshiDevice(Service, ViewPort):
@@ -104,17 +110,24 @@ class MoshiDevice(Service, ViewPort):
 
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
-        self.setting(int, "home_adjust_x", 0)
-        self.setting(int, "home_adjust_y", 0)
+        self.setting(str, "home_x", "0mm")
+        self.setting(str, "home_y", "0mm")
         self.setting(bool, "enable_raster", True)
 
         self.setting(int, "packet_count", 0)
         self.setting(int, "rejected_count", 0)
-        self.setting(str, "label", path)
         self.setting(int, "rapid_speed", 40)
 
         _ = self._
         choices = [
+            {
+                "attr": "label",
+                "object": self,
+                "default": path,
+                "type": str,
+                "label": _("Label"),
+                "tip": _("What is this device called."),
+            },
             {
                 "attr": "bedwidth",
                 "object": self,
@@ -151,17 +164,60 @@ class MoshiDevice(Service, ViewPort):
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
             },
+            {
+                "attr": "interpolate",
+                "object": self,
+                "default": 50,
+                "type": int,
+                "label": _("Curve Interpolation"),
+                "tip": _("Distance of the curve interpolation in mils"),
+            },
+            {
+                "attr": "mock",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Run mock-usb backend"),
+                "tip": _(
+                    "This starts connects to fake software laser rather than real one for debugging."
+                ),
+            },
         ]
         self.register_choices("bed_dim", choices)
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
         ViewPort.__init__(
             self,
             self.bedwidth,
             self.bedheight,
             user_scale_x=self.scale_x,
             user_scale_y=self.scale_y,
+            native_scale_x=UNITS_PER_MIL,
+            native_scale_y=UNITS_PER_MIL,
+            # flip_x=self.flip_x,
+            # flip_y=self.flip_y,
+            # swap_xy=self.swap_xy,
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
         )
 
-        self.settings = dict()
         self.state = 0
 
         self.driver = MoshiDriver(self)
@@ -174,34 +230,6 @@ class MoshiDevice(Service, ViewPort):
         self.add_service_delegate(self.spooler)
 
         _ = self.kernel.translation
-
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-
-            return "spooler", spooler
 
         @self.console_command("usb_connect", help=_("Connect USB"))
         def usb_connect(command, channel, _, **kwargs):
@@ -289,21 +317,14 @@ class MoshiDevice(Service, ViewPort):
         return self.controller.viewbuffer()
 
     @property
-    def current_x(self):
+    def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in units for the current known position.
         """
-        return float(self.driver.native_x * UNITS_PER_MIL) / self.scale_x
-
-    @property
-    def current_y(self):
-        """
-        @return: the location in nm for the current known y value.
-        """
-        return float(self.driver.native_y * UNITS_PER_MIL) / self.scale_y
+        return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
 
-class MoshiDriver:
+class MoshiDriver(Parameters):
     """
     A driver takes spoolable commands and turns those commands into states and code in a language
     agnostic fashion. The Moshiboard Driver overloads the Driver class to take spoolable values from
@@ -312,17 +333,17 @@ class MoshiDriver:
     """
 
     def __init__(self, service, channel=None, *args, **kwargs):
+        super().__init__()
         self.service = service
         self.name = str(self.service)
         self.state = 0
-
-        self.settings = dict()
 
         self.native_x = 0
         self.native_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_data = None
+        self.queue = list()
 
         self.program = MoshiBlob()
 
@@ -330,18 +351,21 @@ class MoshiDriver:
         self.hold = False
         self.paused = False
 
+        self.current_steps = 0
+        self.total_steps = 0
+
         self.service._buffer_size = 0
 
         self.preferred_offset_x = 0
         self.preferred_offset_y = 0
 
         name = self.service.label
-        self.pipe_channel = service.channel("%s/events" % name)
+        self.pipe_channel = service.channel(f"{name}/events")
 
     def __repr__(self):
-        return "MoshiDriver(%s)" % self.name
+        return f"MoshiDriver({self.name})"
 
-    def hold_work(self):
+    def hold_work(self, priority):
         """
         Required.
 
@@ -349,16 +373,7 @@ class MoshiDriver:
 
         @return: hold?
         """
-        return self.hold or self.paused
-
-    def hold_idle(self):
-        """
-        Required.
-
-        Spooler check. Should the idle job be processed or held.
-        @return:
-        """
-        return False
+        return priority <= 0 and (self.paused or self.hold)
 
     def laser_off(self, *values):
         """
@@ -384,7 +399,7 @@ class MoshiDriver:
         @param plot:
         @return:
         """
-        self.plot_planner.push(plot)
+        self.queue.append(plot)
 
     def plot_start(self):
         """
@@ -392,26 +407,129 @@ class MoshiDriver:
 
         @return:
         """
-        if self.plot_data is None:
-            self.plot_data = self.plot_planner.gen()
-        self.plotplanner_process()
+        # preprocess queue to establish steps
+        assessment_start = time.time()
+        dummy_planner = PlotPlanner(self.settings)
+        self.current_steps = 0
+        self.total_steps = 0
+        for q in self.queue:
+            if isinstance(q, LineCut):
+                self.total_steps += 1
+            elif isinstance(q, (QuadCut, CubicCut)):
+                interp = self.service.interpolate
+                step_size = 1.0 / float(interp)
+                t = step_size
+                for p in range(int(interp)):
+                    self.total_steps += 1
+                    t += step_size
+            elif isinstance(q, WaitCut):
+                self.total_steps += 1
+            elif isinstance(q, DwellCut):
+                self.total_steps += 1
+                # Moshi cannot fire in place.
+            elif isinstance(q, (InputCut, OutputCut)):
+                self.total_steps += 1
+            else:
+                dummy_planner.push(q)
+                dummy_data = list(dummy_planner.gen())
+                self.total_steps += len(dummy_data)
+                dummy_planner.clear()
+        # print ("Moshi-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+
+        for q in self.queue:
+            x = self.native_x
+            y = self.native_y
+            start_x, start_y = q.start
+            if x != start_x or y != start_y:
+                self._goto_absolute(start_x, start_y, 0)
+            self.settings.update(q.settings)
+            if isinstance(q, LineCut):
+                self.current_steps += 1
+                self._goto_absolute(*q.end, 1)
+            elif isinstance(q, (QuadCut, CubicCut)):
+                interp = self.service.interpolate
+                step_size = 1.0 / float(interp)
+                t = step_size
+                for p in range(int(interp)):
+                    self.current_steps += 1
+                    while self.hold_work(0):
+                        time.sleep(0.05)
+                    self._goto_absolute(*q.point(t), 1)
+                    t += step_size
+                last_x, last_y = q.end
+                self._goto_absolute(last_x, last_y, 1)
+            elif isinstance(q, WaitCut):
+                self.current_steps += 1
+                # Moshi has no forced wait functionality.
+                self.wait_finish()
+                self.wait(q.dwell_time)
+            elif isinstance(q, DwellCut):
+                self.current_steps += 1
+                # Moshi cannot fire in place.
+                pass
+            elif isinstance(q, (InputCut, OutputCut)):
+                self.current_steps += 1
+                # Moshi has no core GPIO functionality
+                pass
+            else:
+                self.plot_planner.push(q)
+                for x, y, on in self.plot_data:
+                    self.current_steps += 1
+                    if self.hold_work(0):
+                        time.sleep(0.05)
+                        continue
+                    on = int(on)
+                    if on > 1:
+                        # Special Command.
+                        if on & (
+                            PLOT_RAPID | PLOT_JOG
+                        ):  # Plot planner requests position change.
+                            # self.rapid_jog(x, y)
+                            self.native_x = x
+                            self.native_y = y
+                            if self.state != DRIVER_STATE_RAPID:
+                                self._move_absolute(x, y)
+                            continue
+                        elif on & PLOT_FINISH:  # Plot planner is ending.
+                            self.finished_mode()
+                            break
+                        elif on & PLOT_START:
+                            self._ensure_program_or_raster_mode(
+                                self.preferred_offset_x,
+                                self.preferred_offset_y,
+                                self.native_x,
+                                self.native_y,
+                            )
+                        elif on & PLOT_LEFT_UPPER:
+                            self.preferred_offset_x = x
+                            self.preferred_offset_y = y
+                        elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                            p_set = self.plot_planner.settings
+                            s_set = self.settings
+                            if p_set.power != s_set.power:
+                                self._set_power(p_set.power)
+                            if (
+                                p_set.speed != s_set.speed
+                                or p_set.raster_step_x != s_set.raster_step_x
+                                or p_set.raster_step_y != s_set.raster_step_y
+                            ):
+                                self._set_speed(p_set.speed)
+                                self._set_step(p_set.raster_step_x, p_set.raster_step_y)
+                                self.rapid_mode()
+                            self.settings.update(p_set.settings)
+                        continue
+                    self._goto_absolute(x, y, on & 1)
+        self.queue.clear()
+        self.current_steps = 0
+        self.total_steps = 0
 
     def move_abs(self, x, y):
-        # TODO: mimic lihuiyu code for device_in_physical space
-        x = self.service.length(x, 0)
-        y = self.service.length(y, 1)
-        x = int(round(self.service.scale_x * x / UNITS_PER_MIL))
-        y = int(round(self.service.scale_y * y / UNITS_PER_MIL))
+        x, y = self.service.physical_to_device_position(x, y, 1)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
-        self.rapid_mode()
 
     def move_rel(self, dx, dy):
-        # TODO: mimic lihuiyu code for device_in_physical space
-        dx = self.service.length(dx, 0)
-        dy = self.service.length(dy, 1)
-        dx = int(round(self.service.scale_x * dx / UNITS_PER_MIL))
-        dy = int(round(self.service.scale_y * dy / UNITS_PER_MIL))
+        dx, dy = self.service.physical_to_device_length(dx, dy, 1)
         self.rapid_mode()
         x = self.native_x + dx
         y = self.native_y + dy
@@ -423,21 +541,23 @@ class MoshiDriver:
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        x, y = self.calc_home_position()
+        adjust_x = self.service.home_x
+        adjust_y = self.service.home_y
         try:
-            x = int(values[0])
-        except (ValueError, IndexError):
+            adjust_x = values[0]
+            adjust_y = values[1]
+        except IndexError:
             pass
-        try:
-            y = int(values[1])
-        except (ValueError, IndexError):
-            pass
+        adjust_x, adjust_y = self.service.physical_to_device_position(
+            adjust_x, adjust_y, 1
+        )
+
         self.rapid_mode()
-        self.settings.speed = 40
-        self.program_mode(x, y, x, y)
+        self.speed = 40
+        self.program_mode(adjust_x, adjust_y, adjust_x, adjust_y)
         self.rapid_mode()
-        self.native_x = x
-        self.native_y = y
+        self.native_x = adjust_x
+        self.native_y = adjust_y
 
     def unlock_rail(self):
         """
@@ -537,8 +657,8 @@ class MoshiDriver:
             move_x = offset_x
         if move_y is None:
             move_y = offset_y
-        if speed is None and self.settings.speed is not None:
-            speed = int(self.settings.speed)
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
         if speed is None:
             speed = 20
         if normal_speed is None:
@@ -592,8 +712,8 @@ class MoshiDriver:
             move_x = offset_x
         if move_y is None:
             move_y = offset_y
-        if speed is None and self.settings.speed is not None:
-            speed = int(self.settings.speed)
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
         if speed is None:
             speed = 160
         self.program.raster_speed(speed)
@@ -627,30 +747,31 @@ class MoshiDriver:
             self._set_step(value)
 
     def _set_power(self, power=1000.0):
-        self.settings.power = power
-        if self.settings.power > 1000.0:
-            self.settings.power = 1000.0
-        if self.settings.power <= 0:
-            self.settings.power = 0.0
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
 
     def _set_overscan(self, overscan=None):
-        self.settings.overscan = overscan
+        self.overscan = overscan
 
     def _set_speed(self, speed=None):
         """
         Set the speed for the driver.
         """
-        if self.settings.speed != speed:
-            self.settings.speed = speed
+        if self.speed != speed:
+            self.speed = speed
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def _set_step(self, step=None):
+    def _set_step(self, step_x=None, step_y=None):
         """
         Set the raster step for the driver.
         """
-        if self.settings.raster_step != step:
-            self.settings.raster_step = step
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
@@ -675,7 +796,7 @@ class MoshiDriver:
         @param t:
         @return:
         """
-        time.sleep(float(t))
+        time.sleep(float(t) / 1000.0)
 
     def wait_finish(self, *values):
         """
@@ -755,10 +876,10 @@ class MoshiDriver:
         @return:
         """
         parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.settings.speed)
-        parts.append("power=%d" % self.settings.power)
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.speed}")
+        parts.append(f"power={self.power}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -768,66 +889,6 @@ class MoshiDriver:
             self.service.controller.push_program(self.program)
             self.program = MoshiBlob()
             self.program.channel = self.pipe_channel
-
-    def plotplanner_process(self):
-        """
-        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
-        movements. Or updating the laser state based on the settings of the cutcode.
-
-        @return:
-        """
-        if self.plot_data is None:
-            return False
-        if self.hold:
-            return True
-
-        for x, y, on in self.plot_data:
-            if self.hold_work():
-                time.sleep(0.05)
-                continue
-            on = int(on)
-            if on > 1:
-                # Special Command.
-                if on & (
-                    PLOT_RAPID | PLOT_JOG
-                ):  # Plot planner requests position change.
-                    # self.rapid_jog(x, y)
-                    self.native_x = x
-                    self.native_y = y
-                    if self.state != DRIVER_STATE_RAPID:
-                        self._move_absolute(x, y)
-                    continue
-                elif on & PLOT_FINISH:  # Plot planner is ending.
-                    self.finished_mode()
-                    break
-                elif on & PLOT_START:
-                    self._ensure_program_or_raster_mode(
-                        self.preferred_offset_x,
-                        self.preferred_offset_y,
-                        self.native_x,
-                        self.native_y,
-                    )
-                elif on & PLOT_LEFT_UPPER:
-                    self.preferred_offset_x = x
-                    self.preferred_offset_y = y
-                elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                    p_set = self.plot_planner.settings
-                    s_set = self.settings
-                    if p_set.power != s_set.power:
-                        self._set_power(p_set.power)
-                    if (
-                        p_set.speed != s_set.speed
-                        or p_set.raster_step_x != s_set.raster_step_x
-                        or p_set.raster_step_y != s_set.raster_step_y
-                    ):
-                        self._set_speed(p_set.speed)
-                        self._set_step(p_set.raster_step)
-                        self.rapid_mode()
-                    self.settings.set_values(p_set)
-                continue
-            self._goto_absolute(x, y, on & 1)
-        self.plot_data = None
-        return False
 
     def _ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
         """
@@ -840,7 +901,7 @@ class MoshiDriver:
             x1 = x
         if y1 is None:
             y1 = y
-        if self.settings.raster_step == 0:
+        if self.raster_step_x == 0 and self.raster_step_y == 0:
             self.program_mode(x, y, x1, y1)
         else:
             if self.service.enable_raster:
@@ -899,25 +960,11 @@ class MoshiDriver:
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
-    def calc_home_position(self):
-        """
-        Calculate the home position with the given home adjust and the corner the device is
-        expected to home to.
-        """
-        x = self.service.home_adjust_x
-        y = self.service.home_adjust_y
-
-        if self.service.home_right:
-            x += int(self.service.device.width)
-        if self.service.home_bottom:
-            y += int(self.service.device.height)
-        return x, y
-
     def laser_disable(self, *values):
-        self.settings.laser_enabled = False
+        self.laser_enabled = False
 
     def laser_enable(self, *values):
-        self.settings.laser_enabled = True
+        self.laser_enabled = True
 
 
 class MoshiController:
@@ -926,7 +973,7 @@ class MoshiController:
     according to established moshi protocols.
 
     The output device is concerned with sending the moshiblobs to the control board and control events and
-    to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lhystudios boards. Giving us
+    to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lihuiyu boards. Giving us
     access to both libusb drivers and windll drivers.
 
     The protocol for sending rasters is as follows:
@@ -971,10 +1018,10 @@ class MoshiController:
         self.abort_waiting = False
 
         name = self.context.label
-        self.pipe_channel = context.channel("%s/events" % name)
-        self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
-        self.usb_send_channel = context.channel("%s/usb_send" % name)
-        self.recv_channel = context.channel("%s/recv" % name)
+        self.pipe_channel = context.channel(f"{name}/events")
+        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = context.channel(f"{name}/usb_send")
+        self.recv_channel = context.channel(f"{name}/recv")
 
         self.ch341 = context.open("module/ch341", log=self.usb_log)
 
@@ -986,9 +1033,9 @@ class MoshiController:
         buffered data. Without this class the BufferView displays nothing. This is optional for any output
         device.
         """
-        buffer = "Current Working Buffer: %s\n" % str(self._buffer)
+        buffer = f"Current Working Buffer: {str(self._buffer)}\n"
         for p in self._programs:
-            buffer += "%s\n" % str(p.data)
+            buffer += f"{str(p.data)}\n"
         return buffer
 
     def added(self, *args, **kwargs):
@@ -1095,7 +1142,7 @@ class MoshiController:
             raise ConnectionError
 
     def push_program(self, program):
-        self.pipe_channel("Pushed: %s" % str(program.data))
+        self.pipe_channel(f"Pushed: {str(program.data)}")
         self._programs.append(program)
         self.start()
 
@@ -1114,7 +1161,7 @@ class MoshiController:
         if self._thread is None or not self._thread.is_alive():
             self._thread = self.context.threaded(
                 self._thread_data_send,
-                thread_name="MoshiPipe(%s)" % self.context.path,
+                thread_name=f"MoshiPipe({self.context.path})",
                 result=self.stop,
             )
             self.update_state(STATE_INITIALIZE)
@@ -1225,7 +1272,7 @@ class MoshiController:
         Main threaded function to send data. While the controller is working the thread
         will be doing work in this function.
         """
-        self.pipe_channel("Send Thread Start... %d" % len(self._programs))
+        self.pipe_channel(f"Send Thread Start... {len(self._programs)}")
         self._main_lock.acquire(True)
         self.count = 0
         self.is_shutdown = False
@@ -1254,7 +1301,7 @@ class MoshiController:
 
                 # Stage 1: Send Program.
                 self.context.signal("pipe;running", True)
-                self.pipe_channel("Sending Data... %d bytes" % len(self._buffer))
+                self.pipe_channel(f"Sending Data... {len(self._buffer)} bytes")
                 self._send_buffer()
                 self.update_status()
                 self.realtime_epilogue()

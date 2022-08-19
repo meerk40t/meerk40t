@@ -32,8 +32,11 @@ class DrawTool(ToolWidget):
                 return
         self.series.append(point)
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(
+        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+    ):
         # We don't set tool_active here, as this can't be properly honored...
+        # And we don't care about nearest_snap either...
         response = RESPONSE_CHAIN
         if self.series is None:
             self.series = []
@@ -46,9 +49,14 @@ class DrawTool(ToolWidget):
             self.add_point(space_pos[:2])
             self.scene.request_refresh()
             response = RESPONSE_CONSUME
-        elif event_type == "lost":
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.series = None
-            return RESPONSE_DROP
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         elif event_type == "leftup":
             try:
                 t = Path(stroke="blue", stroke_width=1000)
@@ -57,8 +65,9 @@ class DrawTool(ToolWidget):
                     t.line(m)
                 elements = self.scene.context.elements
                 node = elements.elem_branch.add(path=t, type="elem path")
-                elements.classify([node])
-                self.notify_created()
+                if elements.classify_new:
+                    elements.classify([node])
+                self.notify_created(node)
             except IndexError:
                 pass
             self.series = None

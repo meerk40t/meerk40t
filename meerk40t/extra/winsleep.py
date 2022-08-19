@@ -42,9 +42,9 @@ def on_usb_running(origin, value):
 
 
 def plugin(kernel, lifecycle):
-    if platform.system() != "Windows":
+    if lifecycle == "invalidate":
         # Plugin only matters for MSW platform
-        return
+        return platform.system() != "Windows"
     if lifecycle == "boot":
         context = kernel.root
 

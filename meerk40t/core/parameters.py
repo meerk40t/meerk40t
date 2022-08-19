@@ -9,12 +9,15 @@ INT_PARAMETERS = (
     "dot_length",
     "passes",
     "jog_distance",
-    "hatch_type",
     "raster_direction",
     "raster_preference_top",
     "raster_preference_right",
     "raster_preference_left",
     "raster_preference_bottom",
+    "input_mask",
+    "input_value",
+    "output_mask",
+    "output_value",
 )
 
 FLOAT_PARAMETERS = (
@@ -33,6 +36,7 @@ BOOL_PARAMETERS = (
     "acceleration_custom",
     "dratio_custom",
     "default",
+    "dangerous",
     "output",
     "laser_enabled",
     "job_enabled",
@@ -40,13 +44,23 @@ BOOL_PARAMETERS = (
     "shift_enabled",
     "raster_swing",
     "advanced",
-    "raster_alt",
-    "force_twitchless",
+    "stopop",
 )
 
-STRING_PARAMETERS = ("overscan", "hatch_distance", "hatch_angle", "penbox_value", "penbox_pass")
+STRING_PARAMETERS = (
+    "overscan",
+    "hatch_distance",
+    "hatch_angle",
+    "hatch_type",
+    "penbox_value",
+    "penbox_pass",
+    "output_message",
+    "input_message",
+)
 
 COLOR_PARAMETERS = ("color", "line_color")
+
+LIST_PARAMETERS = ("allowed_attributes",)
 
 
 class Parameters:
@@ -59,6 +73,7 @@ class Parameters:
     settings. Settings outside the scope of this class are still legal and will be passed to the drivers which
     may or may not implement or respect them.
     """
+
     def __init__(self, settings: Dict = None, **kwargs):
         self.settings = settings
         if self.settings is None:
@@ -93,6 +108,23 @@ class Parameters:
         for v in COLOR_PARAMETERS:
             if v in settings:
                 settings[v] = Color(settings[v])
+        for v in LIST_PARAMETERS:
+            if v in settings:
+                if isinstance(settings[v], str):
+                    myarr = []
+                    sett = settings[v]
+                    if sett != "":
+                        # First of all is it in he old format where we used eval?
+                        if sett.startswith("["):
+                            sett = sett[1:-1]
+                        if "'," in sett:
+                            slist = sett.split(",")
+                            for n in slist:
+                                n = n.strip().strip("'")
+                                myarr.append(n)
+                        else:
+                            myarr = [sett.strip().strip("'")]
+                    settings[v] = myarr
 
     @property
     def color(self):
@@ -135,6 +167,14 @@ class Parameters:
         self.settings["default"] = value
 
     @property
+    def allowed_attributes(self):
+        return self.settings.get("allowed_attributes", None)
+
+    @allowed_attributes.setter
+    def allowed_attributes(self, value):
+        self.settings["allowed_attributes"] = value
+
+    @property
     def output(self):
         return self.settings.get("output", True)
 
@@ -143,12 +183,16 @@ class Parameters:
         self.settings["output"] = value
 
     @property
+    def stopop(self):
+        return self.settings.get("stopop", False)
+
+    @stopop.setter
+    def stopop(self, value):
+        self.settings["stopop"] = value
+
+    @property
     def raster_step_x(self):
-        try:
-            type = self.type
-        except AttributeError:
-            type = None
-        return self.settings.get("raster_step_x", 2 if type == "op raster" else 0)
+        return self.settings.get("raster_step_x", 0)
 
     @raster_step_x.setter
     def raster_step_x(self, value):
@@ -156,15 +200,19 @@ class Parameters:
 
     @property
     def raster_step_y(self):
-        try:
-            type = self.type
-        except AttributeError:
-            type = None
-        return self.settings.get("raster_step_y", 2 if type == "op raster" else 0)
+        return self.settings.get("raster_step_y", 0)
 
     @raster_step_y.setter
     def raster_step_y(self, value):
         self.settings["raster_step_y"] = value
+
+    @property
+    def desc(self):
+        return self.settings.get("desc", "")
+
+    @desc.setter
+    def desc(self, value):
+        self.settings["desc"] = value
 
     @property
     def dpi(self):
@@ -332,7 +380,7 @@ class Parameters:
 
     @property
     def hatch_type(self):
-        return self.settings.get("hatch_type", 0)
+        return self.settings.get("hatch_type", "scanline")
 
     @hatch_type.setter
     def hatch_type(self, value):
@@ -345,14 +393,6 @@ class Parameters:
     @hatch_angle.setter
     def hatch_angle(self, value):
         self.settings["hatch_angle"] = value
-
-    @property
-    def hatch_angle_inc(self):
-        return self.settings.get("hatch_angle_inc", "0deg")
-
-    @hatch_angle_inc.setter
-    def hatch_angle_inc(self, value):
-        self.settings["hatch_angle_inc"] = value
 
     @property
     def hatch_distance(self):
@@ -382,6 +422,10 @@ class Parameters:
     def penbox_value(self, value):
         self.settings["penbox_value"] = value
 
+    #####################
+    # ACCEL PROPERTIES
+    #####################
+
     @property
     def acceleration(self):
         return self.settings.get("acceleration", 0)
@@ -404,6 +448,10 @@ class Parameters:
             return None
         return self.acceleration
 
+    #####################
+    # DRATIO PROPERTIES
+    #####################
+
     @property
     def dratio(self):
         return self.settings.get("dratio", 0.261)
@@ -425,6 +473,10 @@ class Parameters:
         if not self.dratio_custom:
             return None
         return self.dratio
+
+    #####################
+    # RASTER POSITION PROPERTIES
+    #####################
 
     @property
     def raster_preference_top(self):
@@ -458,6 +510,10 @@ class Parameters:
     def raster_preference_bottom(self, value):
         self.settings["raster_preference_bottom"] = value
 
+    #####################
+    # JOG PROPERTIES
+    #####################
+
     @property
     def jog_distance(self):
         return self.settings.get("jog_distance", 15)
@@ -474,6 +530,10 @@ class Parameters:
     def jog_enable(self, value):
         self.settings["jog_enable"] = value
 
+    #####################
+    # DWELL PROPERTIES
+    #####################
+
     @property
     def dwell_time(self):
         return self.settings.get("dwell_time", 50.0)
@@ -482,34 +542,58 @@ class Parameters:
     def dwell_time(self, value):
         self.settings["dwell_time"] = value
 
-    @property
-    def raster_alt(self):
-        return self.settings.get("raster_alt", False)
-
-    @raster_alt.setter
-    def raster_alt(self, value):
-        self.settings["raster_alt"] = value
+    #####################
+    # INPUT PROPERTIES
+    #####################
 
     @property
-    def force_twitchless(self):
-        return self.settings.get("force_twitchless", False)
+    def input_mask(self):
+        return self.settings.get("input_mask", 0)
 
-    @force_twitchless.setter
-    def force_twitchless(self, value):
-        self.settings["force_twitchless"] = value
-
-    @property
-    def constant_move_x(self):
-        return self.settings.get("constant_move_x", False)
-
-    @constant_move_x.setter
-    def constant_move_x(self, value):
-        self.settings["constant_move_x"] = value
+    @input_mask.setter
+    def input_mask(self, value):
+        self.settings["input_mask"] = value
 
     @property
-    def constant_move_y(self):
-        return self.settings.get("constant_move_y", False)
+    def input_value(self):
+        return self.settings.get("input_value", 0)
 
-    @constant_move_y.setter
-    def constant_move_y(self, value):
-        self.settings["constant_move_y"] = value
+    @input_value.setter
+    def input_value(self, value):
+        self.settings["input_value"] = value
+
+    @property
+    def input_message(self):
+        return self.settings.get("input_message", None)
+
+    @input_message.setter
+    def input_message(self, value):
+        self.settings["input_message"] = value
+
+    #####################
+    # OUTPUT PROPERTIES
+    #####################
+
+    @property
+    def output_mask(self):
+        return self.settings.get("output_mask", 0)
+
+    @output_mask.setter
+    def output_mask(self, value):
+        self.settings["output_mask"] = value
+
+    @property
+    def output_value(self):
+        return self.settings.get("output_value", 0)
+
+    @output_value.setter
+    def output_value(self, value):
+        self.settings["output_value"] = value
+
+    @property
+    def output_message(self):
+        return self.settings.get("output_message", None)
+
+    @output_message.setter
+    def output_message(self, value):
+        self.settings["output_message"] = value

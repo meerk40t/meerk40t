@@ -1,5 +1,6 @@
 import re
 from copy import copy
+from math import tau
 
 from meerk40t.svgelements import Matrix
 
@@ -16,7 +17,6 @@ NM_PER_uM = 1000
 NM_PER_MM = 1000000
 NM_PER_CM = 10000000
 NM_PER_PIXEL = NM_PER_INCH / DEFAULT_PPI
-PX_PER_uM = DEFAULT_PPI / NM_PER_INCH
 
 MIL_PER_INCH = 1000
 NM_PER_INCH = 2.54e7
@@ -40,6 +40,7 @@ UNITS_PER_MM = NATIVE_UNIT_PER_INCH / MM_PER_INCH
 UNITS_PER_CM = NATIVE_UNIT_PER_INCH / CM_PER_INCH
 UNITS_PER_NM = NATIVE_UNIT_PER_INCH / NM_PER_INCH
 UNITS_PER_PIXEL = NATIVE_UNIT_PER_INCH / DEFAULT_PPI
+UNITS_PER_POINT = UNITS_PER_PIXEL * 4.0 / 3.0
 PX_PER_UNIT = 1.0 / UNITS_PER_PIXEL
 
 UNITS_NANOMETER = 0
@@ -191,17 +192,9 @@ class ViewPort:
     def scene_to_device_matrix(self):
         ops = []
         if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append(
-                "scale({sx:.13f}, {sy:.13f})".format(
-                    sx=1.0 / self._scale_x, sy=1.0 / self._scale_y
-                )
-            )
+            ops.append(f"scale({1.0 / self._scale_x:.13f}, {1.0 / self._scale_y:.13f})")
         if self._offset_x != 0 or self._offset_y != 0:
-            ops.append(
-                "translate({dx:.13f}, {dy:.13f})".format(
-                    dx=self._offset_x, dy=self._offset_y
-                )
-            )
+            ops.append(f"translate({self._offset_x:.13f}, {self._offset_y:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
@@ -298,6 +291,31 @@ class ViewPort:
             self.unit_width,
             self.unit_height,
         )
+
+    def dpi_to_steps(self, dpi, matrix=None):
+        """
+        Converts a DPI to a given step amount within the device length values. So M2 Nano will have 1 step per mil,
+        the DPI of 500 therefore is step_x 2, step_y 2. A Galvo laser with a 200mm lens will have steps equal to
+        200mm/65536 ~= 0.12 mils. So a DPI of 500 needs a step size of ~16.65 for x and y. Since 500 DPI is one dot
+        per 2 mils.
+
+        Note, steps size can be negative if our driver is x or y flipped.
+
+        @param dpi:
+        @return:
+        """
+        # We require vectors so any positional offsets are non-contributing.
+        unit_x = UNITS_PER_INCH
+        unit_y = UNITS_PER_INCH
+        if matrix is None:
+            if self._matrix is None:
+                self.calculate_matrices()
+            matrix = self._matrix
+        oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
+        oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
+        step_x = float(oneinch_x / dpi)
+        step_y = float(oneinch_y / dpi)
+        return step_x, step_y
 
     @property
     def length_width(self):
@@ -404,24 +422,19 @@ class ViewPort:
             if scale_x == 1 and scale_y == 1:
                 return ""  # Nothing happens.
             else:
-                return "scale(%s, %s)" % (Length.str(scale_x), Length.str(scale_y))
+                return f"scale({scale_x:.12f}, {scale_y:.12f})"
         else:
             if scale_x == 1 and scale_y == 1:
-                return "translate(%s, %s)" % (
-                    Length.str(translate_x),
-                    Length.str(translate_y),
-                )
+                return f"translate({translate_x:.12f}, {translate_y:.12f})"
             else:
-                return "translate(%s, %s) scale(%s, %s)" % (
-                    Length.str(translate_x),
-                    Length.str(translate_y),
-                    Length.str(scale_x),
-                    Length.str(scale_y),
+                return (
+                    f"translate({translate_x:.12f}, {translate_y:.12f}) "
+                    f"scale({scale_x:.12f}, {scale_y:.12f})"
                 )
 
     @staticmethod
     def conversion(units, amount=1):
-        return Length("{amount}{units}".format(units=units, amount=amount)).preferred
+        return Length(f"{amount}{units}").preferred
 
 
 ACCEPTED_UNITS = ("", "cm", "mm", "in", "mil", "pt", "pc", "px", "%")
@@ -478,7 +491,7 @@ class Length(object):
             elif units == "px":
                 scale = UNITS_PER_PIXEL
             elif units == "pt":
-                scale = UNITS_PER_PIXEL * 1.3333
+                scale = UNITS_PER_POINT
             elif units == "pc":
                 scale = UNITS_PER_PIXEL * 16.0
             elif units == "%":
@@ -635,6 +648,8 @@ class Length(object):
             return self.mil
         elif self._preferred_units == "um":
             return self.um
+        elif self._preferred_units == "pt":
+            return self.pt
         else:
             return self.units
 
@@ -654,6 +669,8 @@ class Length(object):
             return self.length_mil
         elif self._preferred_units == "um":
             return self.length_um
+        elif self._preferred_units == "pt":
+            return self.length_pt
         else:
             return self.length_units
 
@@ -707,6 +724,13 @@ class Length(object):
         return amount
 
     @property
+    def pt(self):
+        amount = self._amount / UNITS_PER_POINT
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
     def units(self):
         amount = self._amount
         if self._digits:
@@ -715,38 +739,154 @@ class Length(object):
 
     @property
     def length_pixels(self):
-        return "{amount}px".format(amount=self.pixels)
+        return f"{self.pixels}px"
 
     @property
     def length_inches(self):
-        return "{amount}in".format(amount=self.inches)
+        return f"{self.inches}in"
 
     @property
     def length_cm(self):
-        return "{amount}cm".format(amount=self.cm)
+        return f"{self.cm}cm"
 
     @property
     def length_mm(self):
-        return "{amount}mm".format(amount=self.mm)
+        return f"{self.mm}mm"
 
     @property
     def length_nm(self):
-        return "{amount}nm".format(amount=self.nm)
+        return f"{self.nm}nm"
 
     @property
     def length_mil(self):
-        return "{amount}mil".format(amount=self.mil)
+        return f"{self.mil}mil"
 
     @property
     def length_um(self):
-        return "{amount}um".format(amount=self.um)
+        return f"{self.um}um"
+
+    @property
+    def length_pt(self):
+        return f"{self.pt}pt"
 
     @property
     def length_units(self):
-        return "{amount}".format(amount=self.units)
+        return f"{self.units}"
 
     def as_percent(self, relative_length):
         return 100.00 * self._amount / Length(relative_length).units
+
+
+class Angle(object):
+    """
+    Angle conversion and math, stores angle as a float in radians and
+    converts to other forms of angle. Failures to parse raise ValueError.
+    """
+
+    def __init__(self, angle, digits=None):
+        if isinstance(angle, Angle):
+            self._digits = angle._digits
+            self.angle = angle.angle
+            self.preferred_units = angle.preferred_units
+            return
+        self._digits = digits
+        if not isinstance(angle, str):
+            self.angle = float(angle)
+            self.preferred_units = "rad"
+            return
+        angle = angle.lower()
+        if angle.endswith("deg"):
+            self.angle = float(angle[:-3]) * tau / 360.0
+            self.preferred_units = "deg"
+        elif angle.endswith("grad"):
+            self.angle = float(angle[:-4]) * tau / 400.0
+            self.preferred_units = "grad"
+        elif angle.endswith("rad"):
+            # Must be after 'grad' since 'grad' ends with 'rad' too.
+            self.angle = float(angle[:-3])
+            self.preferred_units = "rad"
+        elif angle.endswith("turn"):
+            self.angle = float(angle[:-4]) * tau
+            self.preferred_units = "turn"
+        elif angle.endswith("%"):
+            self.angle = float(angle[:-1]) * tau / 100.0
+            self.preferred_units = "%"
+        else:
+            self.angle = float(angle)
+            self.preferred_units = "rad"
+
+    def __str__(self):
+        return self.angle_preferred
+
+    def __copy__(self):
+        return Angle(self.angle)
+
+    def __eq__(self, other):
+        if hasattr(other, "angle"):
+            other = other.angle
+        c1 = abs((self.angle % tau) - (other % tau)) <= 1e-11
+        return c1
+
+    def normalize(self):
+        self.angle /= tau
+
+    @property
+    def angle_preferred(self):
+        if self.preferred_units == "rad":
+            return self.angle_radians
+        elif self.preferred_units == "grad":
+            return self.angle_gradians
+        elif self.preferred_units == "deg":
+            return self.angle_degrees
+        elif self.preferred_units == "turn":
+            return self.angle_turns
+
+    @property
+    def radians(self):
+        amount = self.angle
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def degrees(self):
+        amount = self.angle * 360.0 / tau
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def gradians(self):
+        amount = self.angle * 400.0 / tau
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def turns(self):
+        amount = self.angle / tau
+        if self._digits:
+            amount = round(amount, self._digits)
+        return amount
+
+    @property
+    def angle_radians(self):
+        return f"{self.radians}rad"
+
+    @property
+    def angle_degrees(self):
+        return f"{self.degrees}deg"
+
+    @property
+    def angle_gradians(self):
+        return f"{self.gradians}grad"
+
+    @property
+    def angle_turns(self):
+        return f"{self.turns}turn"
+
+    def is_orthogonal(self):
+        return (self.angle % (tau / 4.0)) == 0
 
 
 # TODO: Add in speed for units. mm/s in/s mm/minute.

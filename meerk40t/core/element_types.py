@@ -8,7 +8,6 @@ from meerk40t.svgelements import (
     Rect,
     SimpleLine,
     SVGImage,
-    SVGText,
 )
 
 
@@ -27,8 +26,6 @@ def get_type_from_element(element):
         return "elem polyline"
     elif isinstance(element, Point):
         return "elem point"
-    elif isinstance(element, SVGText):
-        return "elem text"
 
 
 non_structural_nodes = (
@@ -38,7 +35,10 @@ non_structural_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
-    "op console",
+    "util console",
+    "util wait",
+    "util output",
+    "util input",
     "reference",
     "lasercode",
     "cutcode",
@@ -54,14 +54,13 @@ non_structural_nodes = (
     "file",
     "group",
 )
-operate_nodes = (
+op_parent_nodes = (
     "op cut",
     "op raster",
     "op image",
     "op engrave",
     "op dots",
     "op hatch",
-    "op console",
 )
 op_nodes = (
     "op cut",
@@ -70,12 +69,16 @@ op_nodes = (
     "op engrave",
     "op dots",
     "op hatch",
-    "op console",
+    "util console",
+    "util wait",
+    "util output",
+    "util input",
 )
 elem_nodes = (
     "elem ellipse",
     "elem image",
     "elem path",
+    "elem numpath",
     "elem point",
     "elem polyline",
     "elem rect",
@@ -86,6 +89,7 @@ elem_group_nodes = (
     "elem ellipse",
     "elem image",
     "elem path",
+    "elem numpath",
     "elem point",
     "elem polyline",
     "elem rect",
@@ -98,6 +102,7 @@ elem_ref_nodes = (
     "elem ellipse",
     "elem image",
     "elem path",
+    "elem numpath",
     "elem point",
     "elem polyline",
     "elem rect",

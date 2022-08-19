@@ -1,6 +1,7 @@
 import wx
 
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
+from meerk40t.gui.wxutils import ScrolledPanel
 
 from ...core.units import Length
 from ..balor_params import Parameters
@@ -8,7 +9,7 @@ from ..balor_params import Parameters
 _ = wx.GetTranslation
 
 
-class BalorOperationPanel(wx.Panel):
+class BalorOperationPanel(ScrolledPanel):
     name = "Balor"
 
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -37,30 +38,24 @@ class BalorOperationPanel(wx.Panel):
                 "label": _("Travel Speed"),
                 "tip": _("How fast do we travel when not cutting?"),
             },
-            # {
-            #     "attr": "laser_power",
-            #     "object": params,
-            #     "default": 50.0,
-            #     "type": float,
-            #     "label": _("Laser Power"),
-            #     "tip": _("How what power level do we cut at?"),
-            # },
-            # {
-            #     "attr": "cut_speed",
-            #     "object": params,
-            #     "default": 100.0,
-            #     "type": float,
-            #     "label": _("Cut Speed"),
-            #     "tip": _("How fast do we cut?"),
-            # },
-            # {
-            #     "attr": "q_switch_frequency",
-            #     "object": params,
-            #     "default": 30.0,
-            #     "type": float,
-            #     "label": _("Q Switch Frequency"),
-            #     "tip": _("QSwitch Frequency value"),
-            # },
+            {
+                "attr": "pulse_width_enabled",
+                "object": params,
+                "default": False,
+                "type": bool,
+                "conditional": (self.context.device, "pulse_width_enabled"),
+                "label": _("Enable Custom Pulse Width"),
+                "tip": _("Override the global pulse width setting (MOPA)"),
+            },
+            {
+                "attr": "pulse_width",
+                "object": params,
+                "default": self.context.device.default_pulse_width,
+                "type": int,
+                "conditional": (params, "pulse_width_enabled"),
+                "label": _("Set Pulse Width (ns)"),
+                "tip": _("Set the MOPA pulse width setting"),
+            },
             {
                 "attr": "timing_enabled",
                 "object": params,
@@ -137,14 +132,7 @@ class BalorOperationPanel(wx.Panel):
                 "default": "circle",
                 "type": str,
                 "style": "combo",
-                "choices": (
-                    "circle",
-                    "sawtooth",
-                    "sinewave",
-                    "jigsaw",
-                    "gear",
-                    "slowtooth",
-                ),
+                "choices": list(self.context.match("wobble", suffix=True)),
                 "conditional": (params, "wobble_enabled"),
                 "label": _("Wobble Pattern Type"),
                 "tip": _("Pattern type for the given wobble."),
@@ -152,10 +140,11 @@ class BalorOperationPanel(wx.Panel):
         ]
 
         self.panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+            self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer.Add(self.panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
 

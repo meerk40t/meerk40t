@@ -67,6 +67,25 @@ class DummyDevice(Service, ViewPort):
             },
         ]
         self.register_choices("bed_dim", choices)
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
         ViewPort.__init__(
             self,
             width=self.bedwidth,
@@ -88,7 +107,7 @@ class DummyDevice(Service, ViewPort):
             spooler = self.spooler
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
+                spooler.laserjob(data.plan)
                 channel(_("Spooled Plan."))
                 self.signal("plan", data.name, 6)
 
@@ -96,11 +115,11 @@ class DummyDevice(Service, ViewPort):
                 channel(_("----------"))
                 channel(_("Spoolers:"))
                 for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
+                    channel(f"{d}: {d_name}")
                 channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
+                channel(_("Spooler on device {name}:").format(name=str(self.label)))
                 for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
+                    channel(f"{s}: {op_name}")
                 channel(_("----------"))
 
             return "spooler", spooler

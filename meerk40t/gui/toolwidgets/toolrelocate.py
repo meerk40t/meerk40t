@@ -22,16 +22,33 @@ class RelocateTool(ToolWidget):
     def process_draw(self, gc: wx.GraphicsContext):
         pass
 
-    def event(self, window_pos=None, space_pos=None, event_type=None):
+    def event(
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
+    ):
         # Add snap behaviour
         response = RESPONSE_CHAIN
-        if event_type in ("hover", "hover_start"):
+        if event_type == "leftdown":
             self.scene.tool_active = True
-        elif event_type == "leftdown":
+            response = RESPONSE_CONSUME
+        elif event_type == "move":
+            if self.scene.tool_active:
+                response = RESPONSE_CONSUME
+        elif event_type in ("leftup", "leftclick"):
             bed_width = self.scene.context.device.unit_width
             bed_height = self.scene.context.device.unit_height
-            x = space_pos[0]
-            y = space_pos[1]
+            if nearest_snap is None:
+                x = space_pos[0]
+                y = space_pos[1]
+            else:
+                x = nearest_snap[0]
+                y = nearest_snap[1]
+
             if x > bed_width:
                 x = bed_width
             if y > bed_height:
@@ -42,9 +59,14 @@ class RelocateTool(ToolWidget):
                 y = 0
             x /= UNITS_PER_MM
             y /= UNITS_PER_MM
-            self.scene.context("move_absolute {x}mm {y}mm\n".format(x=x, y=y))
+            self.scene.context(f"move_absolute {x}mm {y}mm\n")
             response = RESPONSE_CONSUME
             self.scene.tool_active = False
-        elif event_type == "lost":
-            self.scene.tool_active = False
+        elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
+            if self.scene.tool_active:
+                self.scene.tool_active = False
+                self.scene.request_refresh()
+                response = RESPONSE_CONSUME
+            else:
+                response = RESPONSE_CHAIN
         return response

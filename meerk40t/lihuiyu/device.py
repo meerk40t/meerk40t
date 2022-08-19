@@ -21,6 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
+from ..core.cutcode import DwellCut, InputCut, OutputCut, WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -38,7 +39,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
 )
 from .laserspeed import LaserSpeed
-from .lhystudiosemulator import EgvLoader, LhystudiosEmulator
+from .lihuiyuemulator import EgvLoader, LihuiyuEmulator, LihuiyuParser
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -77,20 +78,17 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         kernel.register("load/EgvLoader", EgvLoader)
-        kernel.register("emulator/lhystudios", LhystudiosEmulator)
+        kernel.register("emulator/lihuiyu", LihuiyuEmulator)
+        kernel.register("parser/egv", LihuiyuParser)
     if lifecycle == "preboot":
         suffix = "lhystudios"
         for d in kernel.derivable(suffix):
-            kernel.root(
-                "service device start -p {path} {suffix}\n".format(
-                    path=d, suffix=suffix
-                )
-            )
+            kernel.root(f"service device start -p {d} {suffix}\n")
 
 
 class LihuiyuDevice(Service, ViewPort):
     """
-    LihuiyuDevice is driver for the M2 Nano and other classes of Lhystudios boards.
+    LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
     """
 
     def __init__(self, kernel, path, *args, **kwargs):
@@ -143,7 +141,25 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "flip_y", False)
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
-
+        # Tuple contains 4 value pairs: Speed Low, Speed High, Power Low, Power High, each with enabled, value
+        self.setting(
+            list, "dangerlevel_op_cut", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_engrave", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_hatch", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_raster", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_image", (False, 0, False, 0, False, 0, False, 0)
+        )
+        self.setting(
+            list, "dangerlevel_op_dots", (False, 0, False, 0, False, 0, False, 0)
+        )
         ViewPort.__init__(
             self,
             self.bedwidth,
@@ -167,8 +183,8 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "plot_shift", False)
 
         self.setting(bool, "strict", False)
-        self.setting(int, "home_adjust_x", 0)
-        self.setting(int, "home_adjust_y", 0)
+        self.setting(str, "home_x", "0mm")
+        self.setting(str, "home_y", "0mm")
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -207,49 +223,19 @@ class LihuiyuDevice(Service, ViewPort):
 
         self.state = 0
 
-        self.driver = LhystudiosDriver(self)
+        self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
 
         self.tcp = TCPOutput(self)
         self.add_service_delegate(self.tcp)
 
-        self.controller = LhystudiosController(self)
+        self.controller = LihuiyuController(self)
         self.add_service_delegate(self.controller)
 
         self.driver.out_pipe = self.controller if not self.networked else self.tcp
 
-        self.viewbuffer = ""
-
         _ = self.kernel.translation
-
-        @self.console_command(
-            "spool",
-            help=_("spool <command>"),
-            regex=True,
-            input_type=(None, "plan", "device"),
-            output_type="spooler",
-        )
-        def spool(command, channel, _, data=None, remainder=None, **kwgs):
-            spooler = self.spooler
-            if data is not None:
-                # If plan data is in data, then we copy that and move on to next step.
-                spooler.jobs(data.plan)
-                channel(_("Spooled Plan."))
-                self.signal("plan", data.name, 6)
-
-            if remainder is None:
-                channel(_("----------"))
-                channel(_("Spoolers:"))
-                for d, d_name in enumerate(self.match("device", suffix=True)):
-                    channel("%d: %s" % (d, d_name))
-                channel(_("----------"))
-                channel(_("Spooler on device %s:" % str(self.label)))
-                for s, op_name in enumerate(spooler.queue):
-                    channel("%d: %s" % (s, op_name))
-                channel(_("----------"))
-
-            return "spooler", spooler
 
         @self.console_option(
             "idonotlovemyhouse",
@@ -266,10 +252,11 @@ class LihuiyuDevice(Service, ViewPort):
             if time is None:
                 channel(_("Must specify a pulse time in milliseconds."))
                 return
-            value = time / 1000.0
-            if value > 1.0:
+            if time > 1000.0:
                 channel(
-                    _('"%s" exceeds 1 second limit to fire a standing laser.') % value
+                    _(
+                        '"{time}ms" exceeds 1 second limit to fire a standing laser.'
+                    ).format(time=time)
                 )
                 try:
                     if not idonotlovemyhouse:
@@ -280,11 +267,12 @@ class LihuiyuDevice(Service, ViewPort):
             def timed_fire():
                 yield "wait_finish"
                 yield "laser_on"
-                yield "wait", value
+                yield "wait", time
                 yield "laser_off"
 
-            if self.spooler.job_if_idle(timed_fire):
-                channel(_("Pulse laser for %f milliseconds") % (value * 1000.0))
+            if self.spooler.is_idle:
+                self.spooler.laserjob(list(timed_fire()))
+                channel(_("Pulse laser for {time} milliseconds").format(time=time))
             else:
                 channel(_("Pulse laser failed: Busy"))
             return
@@ -295,6 +283,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command(
             "move_at_speed",
             help=_("move_at_speed <speed> <dx> <dy>"),
+            all_arguments_required=True,
         )
         def move_speed(channel, _, speed, dx, dy, **kwgs):
             def move_at_speed():
@@ -303,7 +292,9 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "move_relative", dx.mil, dy.mil
                 yield "rapid_mode"
 
-            if not self.spooler.job_if_idle(move_at_speed):
+            if self.spooler.is_idle:
+                self.spooler.laserjob(list(move_at_speed()))
+            else:
                 channel(_("Busy"))
             return
 
@@ -316,7 +307,7 @@ class LihuiyuDevice(Service, ViewPort):
         )
         @self.console_argument("speed", type=str, help=_("Set the driver speed."))
         @self.console_command(
-            "speed", input_type="lhystudios", help=_("Set current speed of driver.")
+            "speed", input_type="lihuiyu", help=_("Set current speed of driver.")
         )
         def speed(
             command, channel, _, data=None, speed=None, difference=False, **kwargs
@@ -327,7 +318,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if current_speed is None:
                     channel(_("Speed is unset."))
                 else:
-                    channel(_("Speed set at: %f mm/s") % driver.settings.speed)
+                    channel(
+                        _("Speed set at: {speed} mm/s").format(
+                            speed=driver.settings.speed
+                        )
+                    )
                 return
             if speed.endswith("%"):
                 speed = speed[:-1]
@@ -346,7 +341,7 @@ class LihuiyuDevice(Service, ViewPort):
             elif percent:
                 s = driver.speed * (s / 100.0)
             driver.set_speed(s)
-            channel(_("Speed set at: %f mm/s") % driver.speed)
+            channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
         @self.console_command("power", help=_("Set Driver Power"))
@@ -356,7 +351,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if original_power is None:
                     channel(_("Power is not set."))
                 else:
-                    channel(_("Power set at: %d pulses per inch") % original_power)
+                    channel(
+                        _("Power set at: {power} pulses per inch").format(
+                            power=original_power
+                        )
+                    )
             else:
                 try:
                     self.driver.set_power(ppi)
@@ -379,7 +378,11 @@ class LihuiyuDevice(Service, ViewPort):
                 if self.driver.acceleration is None:
                     channel(_("Acceleration is set to default."))
                 else:
-                    channel(_("Acceleration: %d") % self.driver.acceleration)
+                    channel(
+                        _("Acceleration: {acceleration}").format(
+                            acceleration=self.driver.acceleration
+                        )
+                    )
 
             else:
                 try:
@@ -389,7 +392,11 @@ class LihuiyuDevice(Service, ViewPort):
                         channel(_("Acceleration is set to default."))
                         return
                     self.driver.set_acceleration(v)
-                    channel(_("Acceleration: %d") % self.driver.acceleration)
+                    channel(
+                        _("Acceleration: {acceleration}").format(
+                            acceleration=self.driver.acceleration
+                        )
+                    )
                 except ValueError:
                     channel(_("Invalid Acceleration [1-4]."))
                     return
@@ -441,7 +448,7 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwargs):
             self.driver.reset()
-            channel(_("Lhystudios Channel Aborted."))
+            channel(_("Lihuiyu Channel Aborted."))
 
         @self.console_argument(
             "rapid_x", type=float, help=_("limit x speed for rapid.")
@@ -461,10 +468,9 @@ class LihuiyuDevice(Service, ViewPort):
                 self.rapid_override_speed_x = rapid_x
                 self.rapid_override_speed_y = rapid_y
                 channel(
-                    _("Rapid Limit: %f, %f")
-                    % (
-                        self.rapid_override_speed_x,
-                        self.rapid_override_speed_y,
+                    _("Rapid Limit: {max_x}, {max_y}").format(
+                        max_x=self.rapid_override_speed_x,
+                        max_y=self.rapid_override_speed_y,
                     )
                 )
             else:
@@ -474,9 +480,9 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_argument("filename", type=str)
         @self.console_command(
             "egv_import",
-            help=_("Lhystudios Engrave Buffer Import. egv_import <egv_file>"),
+            help=_("Lihuiyu Engrave Buffer Import. egv_import <egv_file>"),
         )
-        def egv_import(filename, **kwargs):
+        def egv_import(channel, _, filename, **kwargs):
             if filename is None:
                 raise CommandSyntaxError
 
@@ -496,20 +502,23 @@ class LihuiyuDevice(Service, ViewPort):
                 skip(file, "\n", 3)
                 skip(file, "%", 5)
 
-            with open(filename, "r") as f:
-                skip_header(f)
-                while True:
-                    data = f.read(1024)
-                    if not data:
-                        break
-                    buffer = bytes(data, "utf8")
-                    self.out_pipe.write(buffer)
-                self.out_pipe.write(b"\n")
+            try:
+                with open(filename, "r") as f:
+                    skip_header(f)
+                    while True:
+                        data = f.read(1024)
+                        if not data:
+                            break
+                        buffer = bytes(data, "utf8")
+                        self.output.write(buffer)
+                    self.output.write(b"\n")
+            except (PermissionError, IOError, FileNotFoundError):
+                channel(_("Could not load: {filename}").format(filename=filename))
 
         @self.console_argument("filename", type=str)
         @self.console_command(
             "egv_export",
-            help=_("Lhystudios Engrave Buffer Export. egv_export <egv_file>"),
+            help=_("Lihuiyu Engrave Buffer Export. egv_export <egv_file>"),
         )
         def egv_export(channel, _, filename, **kwargs):
             if filename is None:
@@ -520,8 +529,7 @@ class LihuiyuDevice(Service, ViewPort):
                     f.write("File version: 1.0.01\n")
                     f.write("Copyright: Unknown\n")
                     f.write(
-                        "Creator-Software: %s v%s\n"
-                        % (self.kernel.name, self.kernel.version)
+                        f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n"
                     )
                     f.write("\n")
                     f.write("%0%0%0%0%\n")
@@ -529,15 +537,15 @@ class LihuiyuDevice(Service, ViewPort):
                     buffer += bytes(self.controller._queue)
                     f.write(buffer.decode("utf-8"))
             except (PermissionError, IOError):
-                channel(_("Could not save: %s" % filename))
+                channel(_("Could not save: {filename}").format(filename=filename))
 
         @self.console_command(
             "egv",
-            help=_("Lhystudios Engrave Code Sender. egv <lhymicro-gl>"),
+            help=_("Lihuiyu Engrave Code Sender. egv <lhymicro-gl>"),
         )
         def egv(command, channel, _, remainder=None, **kwargs):
             if not remainder:
-                channel("Lhystudios Engrave Code Sender. egv <lhymicro-gl>")
+                channel("Lihuiyu Engrave Code Sender. egv <lhymicro-gl>")
             else:
                 self.output.write(
                     bytes(remainder.replace("$", "\n").replace(" ", "\n"), "utf8")
@@ -561,19 +569,19 @@ class LihuiyuDevice(Service, ViewPort):
         def pipe_start(command, channel, _, **kwargs):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
-            channel(_("Lhystudios Channel Started."))
+            channel(_("Lihuiyu Channel Started."))
 
         @self.console_command("hold", help=_("Hold Controller"))
         def pipe_pause(command, channel, _, **kwargs):
             self.controller.update_state(STATE_PAUSE)
             self.controller.pause()
-            channel("Lhystudios Channel Paused.")
+            channel("Lihuiyu Channel Paused.")
 
         @self.console_command("resume", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, **kwargs):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
-            channel(_("Lhystudios Channel Resumed."))
+            channel(_("Lihuiyu Channel Resumed."))
 
         @self.console_command("usb_connect", help=_("Connects USB"))
         def usb_connect(command, channel, _, **kwargs):
@@ -638,26 +646,24 @@ class LihuiyuDevice(Service, ViewPort):
             channel, _, port=23, silent=False, watch=False, quit=False, **kwargs
         ):
             try:
-                server_name = "lhyserver%s" % self.path
+                server_name = f"lhyserver{self.path}"
                 output = self.controller
                 server = self.open_as("module/TCPServer", server_name, port=port)
                 if quit:
                     self.close(server_name)
                     return
-                channel(_("TCP Server for Lhystudios on port: %d" % port))
+                channel(_("TCP Server for lihuiyu on port: {port}").format(port=port))
                 if not silent:
                     console = kernel.channel("console")
                     server.events_channel.watch(console)
                     if watch:
                         server.data_channel.watch(console)
-                channel(_("Watching Channel: %s") % "server")
-                self.channel(
-                    "{server_name}/recv".format(server_name=server_name)
-                ).watch(output.write)
-                channel(_("Attached: %s" % repr(output)))
+                channel(_("Watching Channel: {channel}").format(channel="server"))
+                self.channel(f"{server_name}/recv").watch(output.write)
+                channel(_("Attached: {output}").format(output=repr(output)))
 
             except OSError:
-                channel(_("Server failed on port: %d") % port)
+                channel(_("Server failed on port: {port}").format(port=port))
             except KeyError:
                 channel(_("Server cannot be attached to any device."))
             return
@@ -665,8 +671,10 @@ class LihuiyuDevice(Service, ViewPort):
         @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
         def lhyemulator(channel, _, **kwargs):
             try:
-                self.open_as("emulator/lhystudios", "lhyemulator")
-                channel(_("Lhystudios Emulator attached to %s" % str(self)))
+                self.open_as("emulator/lihuiyu", "lhyemulator")
+                channel(
+                    _("Lihuiyu Emulator attached to {device}").format(device=str(self))
+                )
             except KeyError:
                 channel(_("Emulator cannot be attached to any device."))
             return
@@ -701,7 +709,7 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "move_abs", 3000, 3000
                 yield "wait_finish"
                 yield "laser_on"
-                yield "wait", 0.05
+                yield "wait", 50
                 yield "laser_off"
                 yield "wait_finish"
                 yield "set", "speed", 10.0
@@ -738,16 +746,20 @@ class LihuiyuDevice(Service, ViewPort):
                     yield "rapid_mode"
                     yield "wait_finish"
                     yield "laser_on"
-                    yield "wait", 0.05
+                    yield "wait", 50
                     yield "laser_off"
                     yield "wait_finish"
 
-            spooler.job(jog_transition_test)
+            spooler.laserjob(list(jog_transition_test()))
+
+    @property
+    def viewbuffer(self):
+        return self.driver.out_pipe.viewbuffer
 
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in scene units for the current known postion.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
@@ -763,9 +775,9 @@ class LihuiyuDevice(Service, ViewPort):
             return self.controller
 
 
-class LhystudiosDriver(Parameters):
+class LihuiyuDriver(Parameters):
     """
-    LhystudiosDriver provides Lhystudios specific coding for elements and sends it to the backend
+    LihuiyuDriver provides Lihuiyu specific coding for elements and sends it to the backend
     to write to the usb.
     """
 
@@ -796,6 +808,10 @@ class LhystudiosDriver(Parameters):
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = service.plot_shift
         self.plot_data = None
+
+        self.current_steps = 0
+        self.total_steps = 0
+        self.dummy_planner = PlotPlanner(self.settings)
 
         self.state = DRIVER_STATE_RAPID
         self.properties = 0
@@ -840,9 +856,12 @@ class LhystudiosDriver(Parameters):
         self.step_total = 0.0
 
     def __repr__(self):
-        return "LhystudiosDriver(%s)" % self.name
+        return f"LihuiyuDriver({self.name})"
 
-    def hold_work(self):
+    def __call__(self, e):
+        self.out_pipe.write(e)
+
+    def hold_work(self, priority):
         """
         Holds are criteria to use to pause the data interpretation. These halt the production of new data until the
         criteria is met. A hold is constant and will always halt the data while true. A temp_hold will be removed
@@ -850,6 +869,10 @@ class LhystudiosDriver(Parameters):
 
         @return: Whether data interpretation should hold.
         """
+        if priority > 0:
+            # Don't hold realtime work.
+            return False
+
         temp_hold = False
         fail_hold = False
         for i, hold in enumerate(self.temp_holds):
@@ -867,12 +890,6 @@ class LhystudiosDriver(Parameters):
                 return True
         return False
 
-    def hold_idle(self):
-        return False
-
-    def data_output(self, e):
-        self.out_pipe.write(e)
-
     def plotplanner_process(self):
         """
         Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
@@ -883,7 +900,8 @@ class LhystudiosDriver(Parameters):
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
-            while self.hold_work():
+            self.current_steps += 1
+            while self.hold_work(0):
                 time.sleep(0.05)
             sx = self.native_x
             sy = self.native_y
@@ -944,7 +962,9 @@ class LhystudiosDriver(Parameters):
                 self.raster_mode()
                 if self._horizontal_major:
                     # Horizontal Rastering.
-                    if self.service.nse_raster or self.raster_alt:
+                    if self.service.nse_raster or self.service.settings.get(
+                        "_raster_alt", False
+                    ):
                         # Alt-Style Raster
                         if (dx > 0 and self._leftward) or (
                             dx < 0 and not self._leftward
@@ -956,7 +976,9 @@ class LhystudiosDriver(Parameters):
                             self.h_switch_g(dy)
                 else:
                     # Vertical Rastering.
-                    if self.service.nse_raster or self.raster_alt:
+                    if self.service.nse_raster or self.service.settings.get(
+                        "_raster_alt", False
+                    ):
                         # Alt-Style Raster
                         if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
                             self.v_switch(dx)
@@ -972,11 +994,11 @@ class LhystudiosDriver(Parameters):
         return False
 
     def pause(self, *values):
-        self.data_output(b"~PN!\n~")
+        self(b"~PN!\n~")
         self.is_paused = True
 
     def resume(self, *values):
-        self.data_output(b"~PN&\n~")
+        self(b"~PN&\n~")
         self.is_paused = False
 
     def reset(self):
@@ -986,7 +1008,7 @@ class LhystudiosDriver(Parameters):
         self.temp_holds.clear()
 
         self.service.signal("pipe;buffer", 0)
-        self.data_output(b"~I*\n~")
+        self(b"~I*\n~")
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
@@ -994,7 +1016,7 @@ class LhystudiosDriver(Parameters):
 
     def blob(self, blob_type, data):
         if blob_type == "egv":
-            self.data_output(data)
+            self(data)
 
     def cut(self, x, y):
         self.goto(x, y, True)
@@ -1038,18 +1060,18 @@ class LhystudiosDriver(Parameters):
         self.laser = False
         if self._horizontal_major:
             if not self.is_left and dx >= 0:
-                self.data_output(self.CODE_LEFT)
+                self(self.CODE_LEFT)
             if not self.is_right and dx <= 0:
-                self.data_output(self.CODE_RIGHT)
+                self(self.CODE_RIGHT)
         else:
             if not self.is_top and dy >= 0:
-                self.data_output(self.CODE_TOP)
+                self(self.CODE_TOP)
             if not self.is_bottom and dy <= 0:
-                self.data_output(self.CODE_BOTTOM)
-        self.data_output(b"N")
+                self(self.CODE_BOTTOM)
+        self(b"N")
         self.goto_xy(dx, dy)
-        self.data_output(b"SE")
-        self.data_output(self.code_declare_directions())
+        self(b"SE")
+        self(self.code_declare_directions())
         self.state = original_state
 
     def move_abs(self, x, y):
@@ -1067,7 +1089,7 @@ class LhystudiosDriver(Parameters):
         self.raster_mode()
         self.wait_finish()
         self.laser_on()  # This can't be sent early since these are timed operations.
-        self.wait(time_in_ms / 1000.0)
+        self.wait(time_in_ms)
         self.laser_off()
 
     def move(self, x, y):
@@ -1127,15 +1149,15 @@ class LhystudiosDriver(Parameters):
                 self.goto_octent(0, dy, cut)
             self.rapid_mode()
         else:
-            self.data_output(b"I")
+            self(b"I")
             self.goto_xy(dx, dy)
-            self.data_output(b"S1P\n")
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
 
     def _commit_mode(self):
         # Unknown utility ported from deleted branch
-        self.data_output(b"N")
+        self(b"N")
         speed_code = LaserSpeed(
             self.service.board,
             self.speed,
@@ -1148,8 +1170,8 @@ class LhystudiosDriver(Parameters):
             raster_horizontal=True,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
-        self.data_output(b"SE")
+        self(speed_code)
+        self(b"SE")
         self.laser = False
 
     def goto_relative(self, dx, dy, cut):
@@ -1183,7 +1205,7 @@ class LhystudiosDriver(Parameters):
                 my = y
         elif self.state == DRIVER_STATE_FINISH:
             self.goto_xy(dx, dy)
-            self.data_output(b"N")
+            self(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
             self.mode_shift_on_the_fly(dx, dy)
 
@@ -1222,16 +1244,16 @@ class LhystudiosDriver(Parameters):
         if not self.laser:
             return False
         if self.state == DRIVER_STATE_RAPID:
-            self.data_output(b"I")
-            self.data_output(self.CODE_LASER_OFF)
-            self.data_output(b"S1P\n")
+            self(b"I")
+            self(self.CODE_LASER_OFF)
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-            self.data_output(self.CODE_LASER_OFF)
+            self(self.CODE_LASER_OFF)
         elif self.state == DRIVER_STATE_FINISH:
-            self.data_output(self.CODE_LASER_OFF)
-            self.data_output(b"N")
+            self(self.CODE_LASER_OFF)
+            self(b"N")
         self.laser = False
         return True
 
@@ -1239,16 +1261,16 @@ class LhystudiosDriver(Parameters):
         if self.laser:
             return False
         if self.state == DRIVER_STATE_RAPID:
-            self.data_output(b"I")
-            self.data_output(self.CODE_LASER_ON)
-            self.data_output(b"S1P\n")
+            self(b"I")
+            self(self.CODE_LASER_ON)
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
         elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-            self.data_output(self.CODE_LASER_ON)
+            self(self.CODE_LASER_ON)
         elif self.state == DRIVER_STATE_FINISH:
-            self.data_output(self.CODE_LASER_ON)
-            self.data_output(b"N")
+            self(self.CODE_LASER_ON)
+            self(b"N")
         self.laser = True
         return True
 
@@ -1256,15 +1278,15 @@ class LhystudiosDriver(Parameters):
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
-            self.data_output(b"S1P\n")
+            self(b"S1P\n")
             if not self.service.autolock:
-                self.data_output(b"IS2P\n")
+                self(b"IS2P\n")
         elif self.state in (
             DRIVER_STATE_PROGRAM,
             DRIVER_STATE_RASTER,
             DRIVER_STATE_MODECHANGE,
         ):
-            self.data_output(b"FNSE-\n")
+            self(b"FNSE-\n")
             self.laser = False
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
@@ -1282,7 +1304,7 @@ class LhystudiosDriver(Parameters):
         """
         dx = int(round(dx))
         dy = int(round(dy))
-        self.data_output(b"@NSE")
+        self(b"@NSE")
         self.laser = False
         self.state = DRIVER_STATE_RAPID
         self.program_mode(dx, dy)
@@ -1295,10 +1317,10 @@ class LhystudiosDriver(Parameters):
             DRIVER_STATE_RASTER,
             DRIVER_STATE_MODECHANGE,
         ):
-            self.data_output(b"@NSE")
+            self(b"@NSE")
             self.laser = False
         elif self.state == DRIVER_STATE_RAPID:
-            self.data_output(b"I")
+            self(b"I")
         self.state = DRIVER_STATE_FINISH
         self.service.signal("driver;mode", self.state)
 
@@ -1332,7 +1354,7 @@ class LhystudiosDriver(Parameters):
         self.step_index = 0
         self.step = self.raster_step_x
         self.step_value_set = 0
-        if self.raster_alt:
+        if self.service.settings.get("_raster_alt", False):
             pass
         elif self.service.nse_raster and not self.service.nse_stepraster:
             pass
@@ -1341,7 +1363,10 @@ class LhystudiosDriver(Parameters):
             instance_step = self.step_value_set
 
         suffix_c = None
-        if (not self.service.twitches or self.force_twitchless) and not self.step:
+        if (
+            not self.service.twitches
+            or self.service.settings.get("_force_twitchless", False)
+        ) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:
             self._leftward = self._request_leftward
@@ -1371,11 +1396,11 @@ class LhystudiosDriver(Parameters):
             raster_horizontal=self._horizontal_major,
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
-        self.data_output(speed_code)
+        self(speed_code)
         self.goto_xy(dx, dy)
-        self.data_output(b"N")
-        self.data_output(self.code_declare_directions())
-        self.data_output(b"S1E")
+        self(b"N")
+        self(self.code_declare_directions())
+        self(b"S1E")
         if self.step:
             self.state = DRIVER_STATE_RASTER
         else:
@@ -1407,20 +1432,20 @@ class LhystudiosDriver(Parameters):
 
         # We force reenforce directional move.
         if self._leftward:
-            self.data_output(self.CODE_LEFT)
+            self(self.CODE_LEFT)
         else:
-            self.data_output(self.CODE_RIGHT)
-        self.data_output(b"N")
+            self(self.CODE_RIGHT)
+        self(b"N")
         if delta != 0:
             if delta < 0:
-                self.data_output(self.CODE_TOP)
+                self(self.CODE_TOP)
                 self._topward = True
             else:
-                self.data_output(self.CODE_BOTTOM)
+                self(self.CODE_BOTTOM)
                 self._topward = False
-            self.data_output(lhymicro_distance(abs(delta)))
+            self(lhymicro_distance(abs(delta)))
             self.native_y += delta
-        self.data_output(b"SE")
+        self(b"SE")
         self.native_y += step_amount
 
         self._leftward = not self._leftward
@@ -1451,20 +1476,20 @@ class LhystudiosDriver(Parameters):
 
         # We force reenforce directional move.
         if self._topward:
-            self.data_output(self.CODE_TOP)
+            self(self.CODE_TOP)
         else:
-            self.data_output(self.CODE_BOTTOM)
-        self.data_output(b"N")
+            self(self.CODE_BOTTOM)
+        self(b"N")
         if delta != 0:
             if delta < 0:
-                self.data_output(self.CODE_LEFT)
+                self(self.CODE_LEFT)
                 self._leftward = True
             else:
-                self.data_output(self.CODE_RIGHT)
+                self(self.CODE_RIGHT)
                 self._leftward = False
-            self.data_output(lhymicro_distance(abs(delta)))
+            self(lhymicro_distance(abs(delta)))
             self.native_x += delta
-        self.data_output(b"SE")
+        self(b"SE")
         self.native_x += step_amount
         self._topward = not self._topward
         self._x_engaged = False
@@ -1499,10 +1524,10 @@ class LhystudiosDriver(Parameters):
 
         # We reverse direction and step.
         if self._leftward:
-            self.data_output(self.CODE_RIGHT)
+            self(self.CODE_RIGHT)
             self._leftward = False
         else:
-            self.data_output(self.CODE_LEFT)
+            self(self.CODE_LEFT)
             self._leftward = True
         self.native_y += step_amount
         self.laser = False
@@ -1535,10 +1560,10 @@ class LhystudiosDriver(Parameters):
 
         # We reverse direction and step.
         if self._topward:
-            self.data_output(self.CODE_BOTTOM)
+            self(self.CODE_BOTTOM)
             self._topward = False
         else:
-            self.data_output(self.CODE_TOP)
+            self(self.CODE_TOP)
             self._topward = True
         self.native_x += step_amount
         self.laser = False
@@ -1546,23 +1571,22 @@ class LhystudiosDriver(Parameters):
 
     def home(self, *values):
         self.rapid_mode()
-        self.data_output(b"IPP\n")
+        self(b"IPP\n")
         old_current = self.service.current
         self.native_x = 0
         self.native_y = 0
         self.reset_modes()
         self.state = DRIVER_STATE_RAPID
-        adjust_x = self.service.home_adjust_x
-        adjust_y = self.service.home_adjust_y
+        adjust_x = self.service.home_x
+        adjust_y = self.service.home_y
         try:
             adjust_x = values[0]
             adjust_y = values[1]
-            if isinstance(adjust_x, str):
-                # TODO: May require revision
-                adjust_x = self.service.length(adjust_x, 0, unitless=UNITS_PER_MIL)
-                adjust_y = self.service.length(adjust_y, 1, unitless=UNITS_PER_MIL)
         except IndexError:
             pass
+        adjust_x, adjust_y = self.service.physical_to_device_position(
+            adjust_x, adjust_y, 1
+        )
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
@@ -1580,14 +1604,14 @@ class LhystudiosDriver(Parameters):
 
     def lock_rail(self):
         self.rapid_mode()
-        self.data_output(b"IS1P\n")
+        self(b"IS1P\n")
 
     def unlock_rail(self, abort=False):
         self.rapid_mode()
-        self.data_output(b"IS2P\n")
+        self(b"IS2P\n")
 
     def abort(self):
-        self.data_output(b"I\n")
+        self(b"I\n")
 
     def reset_modes(self):
         self.laser = False
@@ -1606,28 +1630,28 @@ class LhystudiosDriver(Parameters):
             self.native_x += dx
             if dx > 0:  # Moving right
                 if not self.is_right or rapid:
-                    self.data_output(self.CODE_RIGHT)
+                    self(self.CODE_RIGHT)
                     self._leftward = False
             else:  # Moving left
                 if not self.is_left or rapid:
-                    self.data_output(self.CODE_LEFT)
+                    self(self.CODE_LEFT)
                     self._leftward = True
             self._x_engaged = True
             self._y_engaged = False
-            self.data_output(lhymicro_distance(abs(dx)))
+            self(lhymicro_distance(abs(dx)))
         if dy != 0:
             self.native_y += dy
             if dy > 0:  # Moving bottom
                 if not self.is_bottom or rapid:
-                    self.data_output(self.CODE_BOTTOM)
+                    self(self.CODE_BOTTOM)
                     self._topward = False
             else:  # Moving top
                 if not self.is_top or rapid:
-                    self.data_output(self.CODE_TOP)
+                    self(self.CODE_TOP)
                     self._topward = True
             self._x_engaged = False
             self._y_engaged = True
-            self.data_output(lhymicro_distance(abs(dy)))
+            self(lhymicro_distance(abs(dy)))
 
     def goto_octent(self, dx, dy, on):
         old_current = self.service.current
@@ -1642,24 +1666,24 @@ class LhystudiosDriver(Parameters):
             self._y_engaged = True
             if dx > 0:  # Moving right
                 if self._leftward:
-                    self.data_output(self.CODE_RIGHT)
+                    self(self.CODE_RIGHT)
                     self._leftward = False
             else:  # Moving left
                 if not self._leftward:
-                    self.data_output(self.CODE_LEFT)
+                    self(self.CODE_LEFT)
                     self._leftward = True
             if dy > 0:  # Moving bottom
                 if self._topward:
-                    self.data_output(self.CODE_BOTTOM)
+                    self(self.CODE_BOTTOM)
                     self._topward = False
             else:  # Moving top
                 if not self._topward:
-                    self.data_output(self.CODE_TOP)
+                    self(self.CODE_TOP)
                     self._topward = True
             self.native_x += dx
             self.native_y += dy
-            self.data_output(self.CODE_ANGLE)
-            self.data_output(lhymicro_distance(abs(dy)))
+            self(self.CODE_ANGLE)
+            self(lhymicro_distance(abs(dy)))
         else:
             self.goto_xy(dx, dy)
 
@@ -1716,11 +1740,42 @@ class LhystudiosDriver(Parameters):
         @param plot:
         @return:
         """
-        self.plot_planner.push(plot)
+        if isinstance(plot, InputCut):
+            self.plot_start()
+            self.wait_finish()
+            # We do not have any GPIO-output abilities
+        elif isinstance(plot, OutputCut):
+            self.plot_start()
+            self.wait_finish()
+            # We do not have any GPIO-input abilities
+        elif isinstance(plot, DwellCut):
+            self.plot_start()
+            self.rapid_mode()
+            start = plot.start
+            self.move_abs(start[0], start[1])
+            self.wait_finish()
+            self.dwell(plot.dwell_time)
+        elif isinstance(plot, WaitCut):
+            self.plot_start()
+            self.wait_finish()
+            self.wait(plot.dwell_time)
+        else:
+            self.plot_planner.push(plot)
+            # Mirror the stuff
+            self.dummy_planner.push(plot)
 
     def plot_start(self):
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
+
+            assessment_start = time.time()
+            dummy_data = list(self.dummy_planner.gen())
+            self.total_steps += len(dummy_data)
+            self.dummy_planner.clear()
+            # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+
+        self.current_steps = 0
+
         self.plotplanner_process()
 
     def set(self, attribute, value):
@@ -1764,7 +1819,7 @@ class LhystudiosDriver(Parameters):
         self.native_y = y
 
     def wait(self, t):
-        time.sleep(float(t))
+        time.sleep(float(t) / 1000.0)
 
     def wait_finish(self, *values):
         """Adds a temp hold requirement if the pipe has any data."""
@@ -1772,10 +1827,10 @@ class LhystudiosDriver(Parameters):
 
     def status(self):
         parts = list()
-        parts.append("x=%f" % self.native_x)
-        parts.append("y=%f" % self.native_y)
-        parts.append("speed=%f" % self.speed)
-        parts.append("power=%d" % self.power)
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.speed}")
+        parts.append(f"power={self.power}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
 
@@ -1819,14 +1874,10 @@ class LhystudiosDriver(Parameters):
         """
         self.service.signal(signal, *args)
 
-    @property
-    def type(self):
-        return "lhystudios"
 
-
-class LhystudiosController:
+class LihuiyuController:
     """
-    K40 Controller controls the Lhystudios boards sending any queued data to the USB when the signal is not busy.
+    K40 Controller controls the Lihuiyu boards sending any queued data to the USB when the signal is not busy.
 
     Opening and closing of the pipe are dealt with internally. There are three primary monitor data channels.
     'send', 'recv' and 'usb'. They display the reading and writing of information to/from the USB and the USB connection
@@ -1869,14 +1920,15 @@ class LhystudiosController:
         self.abort_waiting = False
 
         name = self.context.label
-        self.pipe_channel = context.channel("%s/events" % name)
-        self.usb_log = context.channel("%s/usb" % name, buffer_size=500)
-        self.usb_send_channel = context.channel("%s/usb_send" % name)
-        self.recv_channel = context.channel("%s/recv" % name)
+        self.pipe_channel = context.channel(f"{name}/events")
+        self.usb_log = context.channel(f"{name}/usb", buffer_size=500)
+        self.usb_send_channel = context.channel(f"{name}/usb_send")
+        self.recv_channel = context.channel(f"{name}/recv")
         self.usb_log.watch(lambda e: context.signal("pipe;usb_status", e))
         self.ch341 = context.open("module/ch341", log=self.usb_log)
         self.reset()
 
+    @property
     def viewbuffer(self):
         buffer = bytes(self._realtime_buffer) + bytes(self._buffer) + bytes(self._queue)
         try:
@@ -1901,7 +1953,7 @@ class LhystudiosController:
             self.realtime_write(b"\x18\n")
 
     def __repr__(self):
-        return "LhystudiosController(%s)" % str(self.context)
+        return f"LihuiyuController({str(self.context)})"
 
     def __len__(self):
         """Provides the length of the buffer of this device."""
@@ -1959,7 +2011,7 @@ class LhystudiosController:
             self.realtime_write(bytes_to_write)
             return self
 
-        self.pipe_channel("write(%s)" % str(bytes_to_write))
+        self.pipe_channel(f"write({str(bytes_to_write)})")
         self._queue_lock.acquire(True)
         self._queue += bytes_to_write
         self._queue_lock.release()
@@ -1990,7 +2042,7 @@ class LhystudiosController:
             if queue_bytes:
                 self.write(queue_bytes)
             return self
-        self.pipe_channel("realtime_write(%s)" % str(bytes_to_write))
+        self.pipe_channel(f"realtime_write({str(bytes_to_write)})")
         self._preempt_lock.acquire(True)
         self._preempt = bytearray(bytes_to_write) + self._preempt
         self._preempt_lock.release()
@@ -2009,7 +2061,7 @@ class LhystudiosController:
         ):
             self._thread = self.context.threaded(
                 self._thread_data_send,
-                thread_name="LhyPipe(%s)" % self.context.path,
+                thread_name=f"LhyPipe({self.context.path})",
                 result=self.stop,
             )
             self._thread.stop = self.stop
@@ -2154,6 +2206,8 @@ class LhystudiosController:
                     self.context.signal("pipe;state", "STATE_FAILED_RETRYING")
                 self.context.signal("pipe;failing", self.refuse_counts)
                 self.context.signal("pipe;running", False)
+                if self.is_shutdown:
+                    break  # Sometimes it could reset this and escape.
                 time.sleep(3)  # 3-second sleep on failed connection attempt.
                 continue
             except ConnectionError:
@@ -2179,7 +2233,6 @@ class LhystudiosController:
                 # No packet could be sent.
                 if self.state not in (
                     STATE_PAUSE,
-                    STATE_BUSY,
                     STATE_BUSY,
                     STATE_TERMINATE,
                 ):
@@ -2435,10 +2488,6 @@ class LhystudiosController:
                 return  # Wait abort was requested.
         self.update_state(original_state)
 
-    @property
-    def type(self):
-        return "lhystudios"
-
 
 class TCPOutput:
     def __init__(self, context, name=None):
@@ -2467,7 +2516,7 @@ class TCPOutput:
             self.service.signal("tcp;status", "address resolve error")
         except socket.herror as e:
             self.disconnect()
-            self.service.signal("tcp;status", "herror: %s" % str(e))
+            self.service.signal("tcp;status", f"herror: {str(e)}")
 
     def disconnect(self):
         self.service.signal("tcp;status", "disconnected")
@@ -2483,11 +2532,15 @@ class TCPOutput:
 
     realtime_write = write
 
+    @property
+    def viewbuffer(self):
+        return self.buffer.decode("utf8")
+
     def _start(self):
         if self.thread is None:
             self.thread = self.service.threaded(
                 self._sending,
-                thread_name="sender-{port}".format(port=self.service.port),
+                thread_name=f"sender-{self.service.port}",
                 result=self._stop,
             )
 
@@ -2522,12 +2575,10 @@ class TCPOutput:
 
     def __repr__(self):
         if self.name is not None:
-            return "TCPOutput('%s:%s','%s')" % (
-                self.service.address,
-                self.service.port,
-                self.name,
+            return (
+                f"TCPOutput('{self.service.address}:{self.service.port}','{self.name}')"
             )
-        return "TCPOutput('%s:%s')" % (self.service.address, self.service.port)
+        return f"TCPOutput('{self.service.address}:{self.service.port}')"
 
     def __len__(self):
         return len(self.buffer)
@@ -2549,7 +2600,7 @@ def get_code_string_from_code(code):
     elif code == 0:
         return "USB Failed"
     else:
-        return "UNK %02x" % code
+        return f"UNK {code:02x}"
 
 
 distance_lookup = [

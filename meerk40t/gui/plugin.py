@@ -38,13 +38,29 @@ def plugin(kernel, lifecycle):
         except ImportError:
             print("wxMeerK40t plugin could not load because wxPython is not installed.")
             return True
+        # Lets check whether we have an incompatible version of wxpython and python
+        # Python 3.10 onwards no longer supports automatic casts of decimals to ints:
+        # Builtin and extension functions that take integer arguments no longer accept
+        # Decimals, Fractions and other objects that can be converted to integers only
+        # with a loss (e.g. that have the __int__() method but do not have the __index__() method).
+        # wxpython up to 4.1.1 exposes this issue
+        try:
+            if wx.VERSION[:2] <= (4, 1):
+                testcase = wx.Size(0.5, 1)
+        except TypeError:
+            print(
+                """The version of wxPython you are running is incompatible with your current Python version.
+At the time of writing this is especially true for any Python version >= 3.10
+and a wxpython version <= 4.1.1."""
+            )
+            return True
         return False
     if not kernel.has_feature("wx"):
         return
     if lifecycle == "preregister":
+        from meerk40t.gui.fonts import wxfont_to_svg
         from meerk40t.gui.laserrender import LaserRender
         from meerk40t.gui.wxmeerk40t import wxMeerK40t
-        from meerk40t.gui.fonts import svgfont_to_wx, wxfont_to_svg
 
         kernel.register("module/wxMeerK40t", wxMeerK40t)
         kernel_root.open("module/wxMeerK40t")
@@ -52,7 +68,6 @@ def plugin(kernel, lifecycle):
         # Registers the render-op make_raster. This is used to do cut planning.
         renderer = LaserRender(kernel_root)
         kernel_root.register("render-op/make_raster", renderer.make_raster)
-        kernel_root.register("font/svg_to_wx", svgfont_to_wx)
         kernel_root.register("font/wx_to_svg", wxfont_to_svg)
     if lifecycle == "register":
 
@@ -82,6 +97,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
                 ),
+                "page": "Scene",
+                "section": "General",
             },
             {
                 "attr": "windows_save",
@@ -90,6 +107,8 @@ def plugin(kernel, lifecycle):
                 "type": bool,
                 "label": _("Save Window Positions"),
                 "tip": _("Open Windows at the same place they were last closed"),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "auto_spooler",
@@ -100,6 +119,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Open the Spooler window automatically when you Execute a Job"
                 ),
+                "page": "Laser",
+                "section": "General",
             },
             {
                 "attr": "mouse_wheel_pan",
@@ -115,6 +136,8 @@ def plugin(kernel, lifecycle):
                         ),
                     )
                 ),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "mouse_pan_invert",
@@ -125,6 +148,8 @@ def plugin(kernel, lifecycle):
                 "tip": _(
                     "Reverses the direction of the MouseWheel for horizontal & vertical pan"
                 ),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "mouse_zoom_invert",
@@ -133,6 +158,8 @@ def plugin(kernel, lifecycle):
                 "type": bool,
                 "label": _("Invert MouseWheel Zoom"),
                 "tip": _("Reverses the direction of the MouseWheel for zoom"),
+                "page": "Gui",
+                "section": "General",
             },
             {
                 "attr": "disable_tool_tips",
@@ -151,6 +178,8 @@ def plugin(kernel, lifecycle):
                         ),
                     )
                 ),
+                "page": "Gui",
+                "section": "General",
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -166,7 +195,7 @@ def plugin(kernel, lifecycle):
                 if dlg.ShowModal() == wx.ID_OK:
                     value = dlg.GetValue()
                 else:
-                    return
+                    return None
             try:
                 return data_type(value)
             except ValueError:
@@ -195,48 +224,18 @@ def plugin(kernel, lifecycle):
         kernel_root.planner.register("plan/interrupt", interrupt)
 
         if kernel._gui:
-
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
             for window in kernel.derivable("window"):
                 wsplit = window.split(":")
                 window_name = wsplit[0]
                 window_index = wsplit[-1] if len(wsplit) > 1 else None
-                if kernel.read_persistent(
-                    bool, "window/%s/open_on_start" % window, False
-                ):
+                if kernel.read_persistent(bool, window, "open_on_start", False):
                     if window_index is not None:
                         kernel.console(
-                            "window open -m {index} {window} {index}\n".format(
-                                index=window_index, window=window_name
-                            )
+                            f"window open -m {window_index} {window_name[7:]} {window_index}\n"
                         )
                     else:
-                        kernel.console(
-                            "window open {window}\n".format(window=window_name)
-                        )
-            # RC-REMOVE
-            kernel_root.setting(bool, "developer_mode", False)
-            if not kernel_root.developer_mode:
-                message = """This version of MeerK40t is unstable. It is intended primarily for testing purposes. Please report all problems, even small ones to the github issue opened for this version. Do not continue using this version if it is not the latest RC or if your work requires a more stable version.
-                
-                Open Issue Page?"""
-                caption = _("Release Candidate.")
-                import wx
-
-                style = wx.YES_NO | wx.CANCEL | wx.ICON_WARNING
-                dlg = wx.MessageDialog(
-                    None,
-                    message,
-                    caption=caption,
-                    style=style,
-                )
-                answer = dlg.ShowModal()
-                if answer in (wx.YES, wx.ID_YES):
-                    issue_page = "https://github.com/meerk40t/meerk40t/issues/967"
-                    import webbrowser
-
-                    webbrowser.open(issue_page, new=0, autoraise=True)
-            # END RC-REMOVE
+                        kernel.console(f"window open {window_name[7:]}\n")
 
             meerk40tgui.MainLoop()
