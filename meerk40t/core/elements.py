@@ -4748,8 +4748,8 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
-        @self.console_argument("scale_x", type=float, help=_("scale_x value"))
-        @self.console_argument("scale_y", type=float, help=_("scale_y value"))
+        @self.console_argument("scale_x", type=str, help=_("scale_x value"))
+        @self.console_argument("scale_y", type=str, help=_("scale_y value"))
         @self.console_option(
             "px", "x", type=self.length_x, help=_("scale x origin point")
         )
@@ -4790,7 +4790,7 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_x()}) - {name}"
+                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_y()}) - {name}"
                     )
                     i += 1
                 channel("----------")
@@ -4800,9 +4800,29 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            bounds = Node.union_bounds(data)
+            # print (f"Start: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+            factor = 1
+            if scale_x.endswith("%"):
+                factor = 0.01
+                scale_x = scale_x[:-1]
+            try:
+                scale_x = factor * float(scale_x)
+            except ValueError:
+                scale_x = 1
             if scale_y is None:
                 scale_y = scale_x
+            else:
+                factor = 1
+                if scale_y.endswith("%"):
+                    factor = 0.01
+                    scale_y = scale_y[:-1]
+                try:
+                    scale_y = factor * float(scale_y)
+                except ValueError:
+                    scale_y = 1
+            # print (f"End: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+
+            bounds = Node.union_bounds(data)
             if px is None:
                 px = (bounds[2] + bounds[0]) / 2.0
             if py is None:
