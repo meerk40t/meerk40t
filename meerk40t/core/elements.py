@@ -4130,8 +4130,9 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-
-                    if not hasattr(e, "stroke_scaled"):
+                    if not hasattr(e, "stroke_width"):
+                        pass
+                    elif not hasattr(e, "stroke_scaled"):
                         channel(
                             _(
                                 "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
@@ -4476,18 +4477,12 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.stroke is None or e.stroke == "none":
-                        channel(
-                            _("{index}: stroke = none - {name}").format(
-                                index=i, name=name
-                            )
-                        )
+                    if not hasattr(e, "stroke"):
+                        pass
+                    elif hasattr(e, "stroke") and e.stroke is None or e.stroke == "none":
+                        channel(f"{i}: stroke = none - {name}")
                     else:
-                        channel(
-                            _("{index}: stroke = {stroke} - {name}").format(
-                                index=i, stroke=e.stroke.hex, name=name
-                            )
-                        )
+                        channel(f"{i}: stroke = {e.stroke.hex} - {name}")
                     i += 1
                 channel("----------")
                 return
@@ -4563,7 +4558,9 @@ class Elemental(Service):
                     name = str(e)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    if e.fill is None or e.fill == "none":
+                    if not hasattr(e, "fill"):
+                        pass
+                    elif e.fill is None or e.fill == "none":
                         channel(
                             _("{index}: fill = none - {name}").format(
                                 index=i, name=name
@@ -4743,8 +4740,8 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
-        @self.console_argument("scale_x", type=float, help=_("scale_x value"))
-        @self.console_argument("scale_y", type=float, help=_("scale_y value"))
+        @self.console_argument("scale_x", type=str, help=_("scale_x value"))
+        @self.console_argument("scale_y", type=str, help=_("scale_y value"))
         @self.console_option(
             "px", "x", type=self.length_x, help=_("scale x origin point")
         )
@@ -4785,7 +4782,7 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_x()}) - {name}"
+                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_y()}) - {name}"
                     )
                     i += 1
                 channel("----------")
@@ -4795,9 +4792,29 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            bounds = Node.union_bounds(data)
+            # print (f"Start: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+            factor = 1
+            if scale_x.endswith("%"):
+                factor = 0.01
+                scale_x = scale_x[:-1]
+            try:
+                scale_x = factor * float(scale_x)
+            except ValueError:
+                scale_x = 1
             if scale_y is None:
                 scale_y = scale_x
+            else:
+                factor = 1
+                if scale_y.endswith("%"):
+                    factor = 0.01
+                    scale_y = scale_y[:-1]
+                try:
+                    scale_y = factor * float(scale_y)
+                except ValueError:
+                    scale_y = 1
+            # print (f"End: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+
+            bounds = Node.union_bounds(data)
             if px is None:
                 px = (bounds[2] + bounds[0]) / 2.0
             if py is None:
@@ -4931,16 +4948,7 @@ class Elemental(Service):
                     name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel(
-                        _(
-                            "{index}: translate({translate_x}, {translate_y}) - {name}"
-                        ).format(
-                            index=i,
-                            translate_x=node.matrix.value_trans_x(),
-                            translate_y=node.matrix.value_trans_y(),
-                            name=name,
-                        )
-                    )
+                    channel(f"{i}: translate({node.matrix.value_trans_x():.1f}, {node.matrix.value_trans_y():.1f}) - {name}")
                     i += 1
                 channel("----------")
                 return

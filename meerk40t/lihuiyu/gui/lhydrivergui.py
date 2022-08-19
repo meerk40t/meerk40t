@@ -244,7 +244,7 @@ class ConfigurationTcp(wx.Panel):
         sizer_13.Add(sizer_port, 1, wx.EXPAND, 0)
 
         self.text_port = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, check="int", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "", limited=True, check="int", style=wx.TE_PROCESS_ENTER,
         )
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
         sizer_port.Add(self.text_port, 1, wx.EXPAND, 0)
@@ -465,8 +465,8 @@ class ConfigurationLaserPanel(wx.Panel):
 
     def on_button_set_home_current(self, event=None):
         current_x, current_y = self.context.device.current
-        self.context.home_x = f"{Length(amount=current_x).mm}.1fmm"
-        self.context.home_y = f"{Length(amount=current_y).mm}.1fmm"
+        self.context.home_x = f"{Length(amount=current_x).mm:.1f}mm"
+        self.context.home_y = f"{Length(amount=current_y).mm:.1f}mm"
         self.text_home_x.SetValue(self.context.home_x)
         self.text_home_y.SetValue(self.context.home_y)
 
@@ -839,7 +839,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         h_sizer_y3.Add(h_sizer_y5, 0, wx.EXPAND, 0)
 
         self.text_minimum_jog_distance = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "", limited=True, style=wx.TE_PROCESS_ENTER,
         )
         h_sizer_y5.Add(self.text_minimum_jog_distance, 1, wx.EXPAND, 0)
 
@@ -849,7 +849,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
             _("Jog Method"),
             choices=[_("Default"), _("Reset"), _("Finish")],
             majorDimension=3,
-            style=wx.RA_SPECIFY_ROWS,
+            style=wx.RA_SPECIFY_COLS,   # wx.RA_SPECIFY_ROWS,
         )
         self.radio_box_jog_method.SetToolTip(
             _(
@@ -869,13 +869,14 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
         sizer_rapid_override.Add(self.check_override_rapid, 0, wx.EXPAND, 0)
 
+        sizer_speed_xy = wx.BoxSizer(wx.HORIZONTAL)
+
         sizer_36 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("X Travel Speed:")), wx.HORIZONTAL
         )
-        sizer_rapid_override.Add(sizer_36, 0, wx.EXPAND, 0)
 
         self.text_rapid_x = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER,
         )
         sizer_36.Add(self.text_rapid_x, 1, wx.EXPAND, 0)
 
@@ -885,7 +886,11 @@ class ConfigurationSetupPanel(ScrolledPanel):
         sizer_35 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Y Travel Speed:")), wx.HORIZONTAL
         )
-        sizer_rapid_override.Add(sizer_35, 0, wx.EXPAND, 0)
+
+        sizer_speed_xy.Add(sizer_36, 1, wx.EXPAND, 0)
+        sizer_speed_xy.Add(sizer_35, 1, wx.EXPAND, 0)
+
+        sizer_rapid_override.Add(sizer_speed_xy, 0, wx.EXPAND, 0)
 
         self.text_rapid_y = TextCtrl(
             self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER
@@ -1118,7 +1123,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.context.opt_jog_mode = self.radio_box_jog_method.GetSelection()
 
     def on_check_override_rapid(self, event):
-        self.check_override_rapid.SetValue(self.context.rapid_override)
+        self.context.rapid_override = self.check_override_rapid.GetValue()
 
     def on_text_rapid_x(self, event):
         event.Skip()
@@ -1179,7 +1184,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
 class LihuiyuDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(374, 734, *args, **kwds)
+        super().__init__(500, 750, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())

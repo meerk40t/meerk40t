@@ -128,12 +128,30 @@ class StrokeWidget(StatusBarWidget):
         self.combo_units.SetMinSize(wx.Size(30, -1))
         self.combo_units.SetMaxSize(wx.Size(120, -1))
         self.combo_units.SetSelection(0)
+
+        self.chk_scale = wx.CheckBox(self.parent, wx.ID_ANY, _("Scale"))
+        self.chk_scale.SetToolTip(
+            _("Toggle the behaviour of stroke-growth.") + "\n" +
+            _("Active: stroke width remains the same, regardless of the element size") + "\n" +
+            _("Inactive: stroke grows/shrink with scaled element")
+        )
+
         self.parent.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
         # self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
         self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
+        self.parent.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
         self.Add(self.strokewidth_label, 0, 0, 0)
-        self.Add(self.spin_width, 1, wx.EXPAND, 0)
-        self.Add(self.combo_units, 1, wx.EXPAND, 0)
+        self.Add(self.spin_width, 2, wx.EXPAND, 0)
+        self.Add(self.combo_units, 2, wx.EXPAND, 0)
+        self.Add(self.chk_scale, 1, wx.EXPAND, 0)
+
+    def on_chk_scale(self, event):
+        if self.startup:
+            return
+        if self.chk_scale.GetValue():
+            self.context("enable_stroke_scale")
+        else:
+            self.context("disable_stroke_scale")
 
     def on_stroke_width(self, event):
         if self.startup or self.combo_units.GetSelection() < 0:
@@ -151,10 +169,12 @@ class StrokeWidget(StatusBarWidget):
         if signal == "emphasized":
             value = self.context.elements.has_emphasis()
             sw_default = None
+            ck_default = True
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 if hasattr(e, "stroke_width"):
                     if sw_default is None:
                         sw_default = e.stroke_width
+                        ck_default = e.stroke_scaled
                         break
             if sw_default is not None:
                 # Set Values
@@ -163,4 +183,5 @@ class StrokeWidget(StatusBarWidget):
                 value = f"{sw_default / stdlen:.2f}"
                 self.spin_width.SetValue(value)
                 self.combo_units.SetSelection(self.choices.index("mm"))
+                self.chk_scale.SetValue(ck_default)
                 self.startup = False
