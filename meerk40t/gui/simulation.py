@@ -257,10 +257,8 @@ class SimulationPanel(wx.Panel, Job):
         self.hscene_sizer.Add(self.btn_slide_options, 0, wx.EXPAND, 0)
         self.hscene_sizer.Add(self.voption_sizer, 1, wx.EXPAND, 0)
 
-        v_sizer_main.Add(self.hscene_sizer, 3, wx.EXPAND, 0)
 
         h_sizer_scroll.Add(self.slider_progress, 1, wx.EXPAND, 0)
-        v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
 
         sizer_laser_distance.Add(self.text_distance_laser_step, 1, wx.EXPAND, 0)
         sizer_laser_distance.Add(self.text_distance_laser, 1, wx.EXPAND, 0)
@@ -297,9 +295,11 @@ class SimulationPanel(wx.Panel, Job):
         sizer_6.Add(self.button_spool, 0, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_6, 1, wx.EXPAND, 0)
 
+        v_sizer_main.Add(self.hscene_sizer, 1, wx.EXPAND, 0)
+        v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_text_1, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_text_2, 0, wx.EXPAND, 0)
-        v_sizer_main.Add(h_sizer_buttons, 1, wx.EXPAND, 0)
+        v_sizer_main.Add(h_sizer_buttons, 0, wx.EXPAND, 0)
         self.SetSizer(v_sizer_main)
         self.slided_in = True  # Hide initially
         self.Layout()
@@ -365,6 +365,11 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.widget_scene.request_refresh()
 
+    def fit_scene_to_panel(self):
+        bbox = self.context.device.bbox()
+        self.widget_scene.widget_root.focus_viewport_scene(bbox, self.view_pane.Size, 0.1)
+        self.widget_scene.request_refresh()
+
     def on_mouse_right_down(self, event=None):
         gui = self
         menu = wx.Menu()
@@ -428,6 +433,16 @@ class SimulationPanel(wx.Panel, Job):
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, self.remove_background, id=id5.GetId())
+        menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.fit_scene_to_panel(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom to Bed"),
+                _("View the whole laser bed"),
+            ),
+        )
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -620,7 +635,7 @@ class SimulationPanel(wx.Panel, Job):
         self.selected_device.kernel.activate_service_path(
             "device", self.selected_device.path
         )
-        self.widget_scene.request_refresh()
+        self.fit_scene_to_panel()
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.context(f"plan{self.plan_name} spool\n")
