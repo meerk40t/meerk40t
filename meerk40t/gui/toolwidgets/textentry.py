@@ -27,7 +27,6 @@ class TextEntryPanel(wx.Panel):
         self.default_font = wx.Font(
             14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
         )
-        self.result_text = ""
         self.result_font = self.default_font
         self.result_colour = wx.BLACK
         self.result_anchor = 0  # 0 = left, 1=center, 2=right
@@ -223,7 +222,7 @@ class TextEntryPanel(wx.Panel):
         sizer_h_okcancel = wx.StdDialogButtonSizer()
         sizer_v_main.Add(sizer_h_okcancel, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
 
-        self.button_OK.Enable(len(self.txt_Text.GetValue()) > 0)
+        self.button_OK.Enable(len(self.result_text) > 0)
         sizer_h_okcancel.AddButton(self.button_OK)
         sizer_h_okcancel.AddButton(self.button_CANCEL)
         sizer_h_okcancel.Realize()
@@ -294,9 +293,12 @@ class TextEntryPanel(wx.Panel):
         self.preview.Label = svalue
         for i in range(self.FONTHISTORY):
             self.last_font[i].Label = svalue
-        self.result_text = self.txt_Text.GetValue()
         self.button_OK.Enable(len(self.result_text) > 0)
         event.Skip()
+
+    @property
+    def result_text(self):
+        return self.txt_Text.GetValue()
 
     def on_choose_font(self, event):  # wxGlade: TextEntry.<event_handler>
         data = wx.FontData()
