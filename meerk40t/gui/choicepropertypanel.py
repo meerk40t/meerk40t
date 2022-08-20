@@ -263,6 +263,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Bool type objects get a checkbox.
                 control = wx.CheckBox(self, label=label)
                 control.SetValue(data)
+                control.SetMinSize(wx.Size(-1,23))
 
                 def on_checkbox_check(param, ctrl, obj):
                     def check(event=None):
