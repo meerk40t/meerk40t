@@ -117,7 +117,7 @@ class LaserToolPanel(wx.Panel):
             "Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\nMK will find the center for you and place the laser above it or will recreate the circle for futher processing."
         )
         img_instruction_1.SetToolTip(instructions)
-        sizer_9.Add(img_instruction_1, 1, 0, 0)sizer_4
+        sizer_9.Add(img_instruction_1, 1, 0, 0)
 
         sizer_chk = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_circle.Add(sizer_chk, 0, wx.EXPAND, 0)
