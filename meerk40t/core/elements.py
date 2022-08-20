@@ -2663,13 +2663,20 @@ class Elemental(Service):
                     _("Your selection contains a locked element, that cannot be moved")
                 )
                 return
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+            # Looping through all nodes with node.flat can provide
+            # multiple times a single node, as you may loop trhrough
+            # files and groups nested into each other.
+            # To avoid this we create a temporary set which by definition
+            # can only contain unique members
+            s = set()
+            for n in data:
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+            for q in s:
+                try:
+                    q.matrix *= matrix
+                    q.modified()
+                except AttributeError:
+                    continue
             self.signal("tree_changed")
             return "align", data
 
@@ -2705,13 +2712,20 @@ class Elemental(Service):
                 )
                 return
             matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+            # Looping through all nodes with node.flat can provide
+            # multiple times a single node, as you may loop trhrough
+            # files and groups nested into each other.
+            # To avoid this we create a temporary set which by definition
+            # can only contain unique members
+            s = set()
+            for n in data:
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+            for q in s:
+                try:
+                    q.matrix *= matrix
+                    q.modified()
+                except AttributeError:
+                    continue
             self.signal("tree_changed")
             return "align", data
 
@@ -2747,13 +2761,20 @@ class Elemental(Service):
                 )
                 return
             matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+            # Looping through all nodes with node.flat can provide
+            # multiple times a single node, as you may loop trhrough
+            # files and groups nested into each other.
+            # To avoid this we create a temporary set which by definition
+            # can only contain unique members
+            s = set()
+            for n in data:
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+            for q in s:
+                try:
+                    q.matrix *= matrix
+                    q.modified()
+                except AttributeError:
+                    continue
             self.signal("tree_changed")
             return "align", data
 
@@ -2789,13 +2810,20 @@ class Elemental(Service):
                 )
                 return
             matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+            # Looping through all nodes with node.flat can provide
+            # multiple times a single node, as you may loop trhrough
+            # files and groups nested into each other.
+            # To avoid this we create a temporary set which by definition
+            # can only contain unique members
+            s = set()
+            for n in data:
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+            for q in s:
+                try:
+                    q.matrix *= matrix
+                    q.modified()
+                except AttributeError:
+                    continue
             self.signal("tree_changed")
             return "align", data
 
@@ -2831,13 +2859,20 @@ class Elemental(Service):
                 )
                 return
             matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+            # Looping through all nodes with node.flat can provide
+            # multiple times a single node, as you may loop trhrough
+            # files and groups nested into each other.
+            # To avoid this we create a temporary set which by definition
+            # can only contain unique members
+            s = set()
+            for n in data:
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+            for q in s:
+                try:
+                    q.matrix *= matrix
+                    q.modified()
+                except AttributeError:
+                    continue
             self.signal("tree_changed")
             return "align", data
 
