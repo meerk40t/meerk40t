@@ -688,6 +688,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(
                     "Redlight preference will turn toggleable redlights on after a job completes."
                 ),
+                "priority": "0",
             },
         ]
         self.register_choices("balor-redlight", choices)
@@ -773,8 +774,10 @@ class BalorDevice(Service, ViewPort):
                 "default": 100.0,
                 "type": float,
                 "label": _("Laser On"),
+                "trailer": "µs",
                 "tip": _("Delay for the start of the laser"),
-                "subsection": "Laser Delay",
+                "subsection": "Delays",
+                "priority" : "00",
             },
             {
                 "attr": "delay_laser_off",
@@ -782,8 +785,10 @@ class BalorDevice(Service, ViewPort):
                 "default": 100.0,
                 "type": float,
                 "label": _("Laser Off"),
+                "trailer": "µs",
                 "tip": _("Delay amount for the end of the laser"),
-                "subsection": "Laser Delay",
+                "subsection": "Delays",
+                "priority" : "10",
             },
             {
                 "attr": "delay_polygon",
@@ -791,7 +796,10 @@ class BalorDevice(Service, ViewPort):
                 "default": 100.0,
                 "type": float,
                 "label": _("Polygon Delay"),
+                "trailer": "µs",
                 "tip": _("Delay amount between different points in the path travel."),
+                "subsection": "Delays",
+                "priority" : "30",
             },
             {
                 "attr": "delay_end",
@@ -799,7 +807,10 @@ class BalorDevice(Service, ViewPort):
                 "default": 300.0,
                 "type": float,
                 "label": _("End Delay"),
+                "trailer": "µs",
                 "tip": _("Delay amount for the end TC"),
+                "subsection": "Delays",
+                "priority" : "20",
             },
             {
                 "attr": "delay_jump_long",
@@ -807,6 +818,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 200.0,
                 "type": float,
                 "label": _("Long jump"),
+                "trailer": "µs",
                 "tip": _("Delay for a long jump distance"),
                 "subsection": "Jump-Delay",
             },
@@ -816,6 +828,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 8,
                 "type": float,
                 "label": _("Short jump"),
+                "trailer": "µs",
                 "tip": _("Delay for a short jump distance"),
                 "subsection": "Jump-Delay",
             },
@@ -833,7 +846,8 @@ class BalorDevice(Service, ViewPort):
                 "default": 8.0,
                 "type": float,
                 "label": _("Open MO delay"),
-                "tip": _("OpenMO delay in ms"),
+                 "trailer": "ms",
+               "tip": _("OpenMO delay in ms"),
             },
         ]
         self.register_choices("balor-global-timing", choices)

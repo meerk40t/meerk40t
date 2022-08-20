@@ -65,11 +65,18 @@ class ChoicePropertyPanel(ScrolledPanel):
                 dummy = c["page"]
             except KeyError:
                 c["page"] = ""
+            try:
+                dummy = c["priority"]
+            except KeyError:
+                c["priority"] = "ZZZZZZZZ"
         # print ("Choices: " , choices)
         prechoices = sorted(
             sorted(
-                sorted(choices, key=lambda d: d["subsection"]),
-                key=lambda d: d["section"]
+                sorted(
+                    sorted(choices, key=lambda d: d["subsection"]),
+                    key=lambda d: d["section"]
+                ),
+                key=lambda d: d["priority"]
             ),
             key=lambda d: d["page"]
         )
