@@ -54,6 +54,8 @@ class SpoolerPanel(wx.Panel):
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
+        self.btn_run_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
+        self.btn_run_stop = wx.Button(self, wx.ID_ANY, _("Abort"))
 
         self.list_job_spool = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
@@ -71,6 +73,8 @@ class SpoolerPanel(wx.Panel):
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
+        self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.btn_run_pause)
+        self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.btn_run_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
         self.Bind(
@@ -95,6 +99,8 @@ class SpoolerPanel(wx.Panel):
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
         self.combo_device.SetToolTip(_("Select the device"))
+        self.btn_run_stop.SetToolTip(_("Aborts the running job"))
+        self.btn_run_pause.SetToolTip(_("Pauses/Resumes the Laser"))
         self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
         self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
         self.list_job_spool.AppendColumn(
@@ -142,10 +148,15 @@ class SpoolerPanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: SpoolerPanel.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
-        sizer_frame.Add(self.combo_device, 0, wx.EXPAND, 0)
+        sizer_combo_cmds = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_combo_cmds.Add(self.combo_device, 1, wx.EXPAND, 0)
+        sizer_combo_cmds.Add(self.btn_run_pause, 0, wx.EXPAND, 0)
+        sizer_combo_cmds.Add(self.btn_run_stop, 0, wx.EXPAND, 0)
+
+        sizer_frame.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
         sizer_frame.Add(self.list_job_spool, 4, wx.EXPAND, 0)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(self.info_label, 1, wx.EXPAND, 0)
+        hsizer.Add(self.info_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hsizer.Add(self.btn_clear, 0, wx.EXPAND, 0)
         sizer_frame.Add(hsizer, 0, wx.EXPAND, 0)
         sizer_frame.Add(self.list_job_history, 2, wx.EXPAND, 0)
@@ -158,6 +169,12 @@ class SpoolerPanel(wx.Panel):
         self.history = []
         self.list_job_history.DeleteAllItems()
 
+    def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.context("pause\n")
+
+    def on_button_stop(self, event):  # wxGlade: LaserPanel.<event_handler>
+        self.context("estop\n")
+
     def on_combo_device(self, event=None):  # wxGlade: Spooler.<event_handler>
         index = self.combo_device.GetSelection()
         self.selected_device = self.available_devices[index]
@@ -165,6 +182,7 @@ class SpoolerPanel(wx.Panel):
         self.refresh_spooler_list()
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
+        # Todo: Drag to reprioritise jobs
         event.Skip()
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
