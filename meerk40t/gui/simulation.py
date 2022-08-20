@@ -561,6 +561,7 @@ class SimulationPanel(wx.Panel, Job):
             bbox, self.view_pane.Size, 0.1
         )
         self.update_fields()
+        self.panel_optimize.pane_show()
 
     def pane_hide(self):
         if self.auto_clear:
@@ -568,6 +569,7 @@ class SimulationPanel(wx.Panel, Job):
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
+        self.panel_optimize.pane_hide()
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
