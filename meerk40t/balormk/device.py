@@ -799,7 +799,7 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser On"),
                 "trailer": "µs",
-                "tip": _("Delay for the start of the laser"),
+                "tip": _("Start delay (Start TC) at the beginning of each mark command"),
                 "subsection": "Delays",
                 "priority" : "00",
             },
@@ -810,7 +810,7 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser Off"),
                 "trailer": "µs",
-                "tip": _("Delay amount for the end of the laser"),
+                "tip": _("The delay time of the laser shutting down after marking finished"),
                 "subsection": "Delays",
                 "priority" : "10",
             },
@@ -885,8 +885,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("First Pulse Killer"),
                 "trailer": "µs",
-                "tip": _(""),
-                "section": "First Pulse Killer"
+                "tip": _("First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"),
+                "section": "First Pulse Killer",
+                "hidden": 1,
             },
             {
                 "attr": "pwm_half_period",
@@ -894,7 +895,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 125,
                 "type": int,
                 "label": _("PWM Half Period"),
-                "tip": _(""),
+                "tip": _("Pulse Period: the frequency of the preionization signal"),
                 "subsection": "Pulse-Width-Modulation",
             },
             {
@@ -903,7 +904,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 125,
                 "type": int,
                 "label": _("PWM Pulse Width"),
-                "tip": _(""),
+                "tip": _("Pulse Width: the pulse width of the preionization signal"),
                 "subsection": "Pulse-Width-Modulation",
             },
             {
@@ -969,6 +970,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fpk2_p2",
@@ -979,6 +981,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fpk2_p3",
@@ -989,6 +992,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fpk2_p4",
@@ -999,6 +1003,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(""),
                 "section": "First Pulse Killer",
                 "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p1",
