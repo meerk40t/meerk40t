@@ -184,7 +184,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             weight = int(c.get("weight", 1))
             if weight < 0:
                 weight = 0
-            if not self.context.root.developer_mode and hidden:
+            developer_mode = self.context.root.setting(bool, "developer_mode", False)
+            if not developer_mode and hidden:
                 continue
             # get default value
             if hasattr(obj, attr):
