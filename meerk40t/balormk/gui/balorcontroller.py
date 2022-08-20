@@ -130,11 +130,11 @@ class BalorControllerPanel(wx.ScrolledWindow):
         else:
             self.context("usb_connect\n")
 
-    def pane_show(self):
+    def module_open(self):
         name = self.service.label
         self.context.channel(f"{name}/usb").watch(self.update_text)
 
-    def pane_hide(self):
+    def module_close(self):
         name = self.service.label
         self.context.channel(f"{name}/usb").unwatch(self.update_text)
 
@@ -143,15 +143,11 @@ class BalorController(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(499, 170, *args, **kwds)
         self.panel = BalorControllerPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         self.SetTitle(_("Balor-Controller"))
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
         self.Layout()
 
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
+    def delegates(self):
+        yield self.panel
