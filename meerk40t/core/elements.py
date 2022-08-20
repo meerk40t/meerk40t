@@ -7701,12 +7701,12 @@ class Elemental(Service):
     def altered(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
-        self.context.schedule(self._save_restore_job)
+        self.schedule(self._save_restore_job)
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
-        self.context.schedule(self._save_restore_job)
+        self.schedule(self._save_restore_job)
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
