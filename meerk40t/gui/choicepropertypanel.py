@@ -191,9 +191,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                 trailer = ""
             # Do we have a parameter to hide the control unless in expert mode
             try:
-                hidden = str(c["hidden"])
-                if hidden == "" or hidden=="0":
+                dummy= str(c["hidden"])
+                if dummy == "" or dummy=="0":
                     hidden = False
+                else:
+                    hidden = True
             except KeyError:
                 hidden = False
             # Do we have a parameter to affect the space consumption?

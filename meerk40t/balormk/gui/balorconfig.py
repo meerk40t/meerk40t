@@ -84,3 +84,22 @@ class BalorConfiguration(MWindow):
 
     def window_preserve(self):
         return False
+
+    def visible_choices(self, section):
+        result = False
+        devmode = self.context.root.developer_mode
+        choices = self.context.lookup("choices", section)
+        if choices is not None:
+            for item in choices:
+                try:
+                    dummy = str(item["hidden"])
+                    if dummy == "" or dummy=="0":
+                        hidden = False
+                    else:
+                        hidden = False if devmode else True
+                except KeyError:
+                    hidden = False
+                if not hidden:
+                    result = True
+                    break
+        return result
