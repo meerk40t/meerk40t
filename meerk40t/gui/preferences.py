@@ -252,7 +252,12 @@ class PreferencesMain(wx.Panel):
         self.SetSizer(sizer_main)
 
         self.Layout()
-        # end wxGlade
+
+    def delegates(self):
+        yield self.panel_units
+        yield self.panel_language
+        yield self.panel_ppi
+        yield self.panel_pref1
 
 
 # end of class PreferencesMain
@@ -273,7 +278,9 @@ class PreferencesPanel(wx.Panel):
         self.SetSizer(sizer_settings)
 
         self.Layout()
-        # end wxGlade
+
+    def delegates(self):
+        yield self.panel_main
 
 
 class Preferences(MWindow):
@@ -333,14 +340,16 @@ class Preferences(MWindow):
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.Layout()
 
-        self.add_module_delegate(self.panel_main)
-        self.add_module_delegate(self.panel_classification)
-        self.add_module_delegate(self.panel_gui)
-        self.add_module_delegate(self.panel_scene)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
+
+    def delegates(self):
+        yield self.panel_main
+        yield self.panel_classification
+        yield self.panel_gui
+        yield self.panel_scene
 
     @staticmethod
     def sub_register(kernel):
