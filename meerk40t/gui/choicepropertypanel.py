@@ -153,6 +153,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Bey default 0 as we are stacking up stuff
         expansion_flag = 0
         for i, c in enumerate(self.choices):
+
             if isinstance(c, tuple):
                 # If c is tuple
                 dict_c = dict()
@@ -187,7 +188,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 trailer = c["trailer"]
             except KeyError:
                 trailer = ""
-
+            try:
+                hidden = str(c["hidden"])
+                if hidden == "" or hidden=="0":
+                    hidden = False
+            except KeyError:
+                hidden = False
+            if not self.context.root.developer_mode and hidden:
+                continue
             # get default value
             if hasattr(obj, attr):
                 data = getattr(obj, attr)
