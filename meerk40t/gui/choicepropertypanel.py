@@ -176,7 +176,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             this_section = c.get("section", "")
             this_page = c.get("page", "")
             # Do we have a parameter to add a trailing label after the control
-            trailer = c.get("trailer", "")
+            trailer = c.get("trailer")
             # Do we have a parameter to hide the control unless in expert mode
             hidden = c.get("hidden", False)
             hidden = bool(hidden) if hidden != "False" else False  # bool("False") = True
@@ -253,6 +253,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     last_box = current_sec_sizer
                 current_sizer = last_box
 
+            control = None
+            control_sizer = None
             if data_type == bool:
                 # Bool type objects get a checkbox.
                 control = wx.CheckBox(self, label=label)
@@ -706,16 +708,20 @@ class ChoicePropertyPanel(ScrolledPanel):
             else:
                 # Requires a registered data_type
                 continue
-            if trailer != "":
-                trailerflag = wx.ALIGN_CENTER_VERTICAL
-                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + trailer)
-                control_sizer.Add(trailer_text, 0, trailerflag, 0)
+
+            if trailer and control_sizer:
+                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=f" {trailer}")
+                control_sizer.Add(trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+            if control is None:
+                continue  # We're binary or some other style without a specific control.
 
             # Get enabled value
             try:
                 enabled = c["enabled"]
                 control.Enable(enabled)
             except KeyError:
+                # Listen to establish whether this control should be enabled based on another control's value.
                 try:
                     conditional = c["conditional"]
                     c_obj, c_attr = conditional
@@ -724,9 +730,8 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     def on_enable_listener(param, ctrl, obj):
                         def listen(origin, value):
-                            enabled = bool(getattr(obj, param))
                             try:
-                                ctrl.Enable(enabled)
+                                ctrl.Enable(bool(getattr(obj, param)))
                             except RuntimeError:
                                 pass
 
@@ -737,10 +742,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     context.listen(c_attr, listener)
                 except KeyError:
                     pass
-            # Initially the above was only listening to related controls to establish
-            # whether one control should be enabled based on another controls value.
-            # Now we listen to 'ourselves' as well to learn about changes somewhere else...
 
+            # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist):
                 def listen_to_myself(origin, value):
                     # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
