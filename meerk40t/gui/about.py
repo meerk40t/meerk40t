@@ -291,8 +291,6 @@ class About(MWindow):
         self.notebook_main.AddPage(self.panel_about, _("About"))
         self.notebook_main.AddPage(self.panel_info, _("System-Information"))
 
-        self.add_module_delegate(self.panel_about)
-        self.add_module_delegate(self.panel_info)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_about_50.GetBitmap())
         self.SetIcon(_icon)
@@ -301,3 +299,7 @@ class About(MWindow):
         name = self.context.kernel.name
         version = self.context.kernel.version
         self.SetTitle(_("About {name} v{version}").format(name=name, version=version))
+
+    def delegate(self):
+        yield self.panel_about
+        yield self.panel_info
