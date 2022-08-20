@@ -52,12 +52,13 @@ class BalorConfiguration(MWindow):
 
         self.Layout()
 
-        self.add_module_delegate(self.panel_main)
-        self.add_module_delegate(self.panel_red)
-        self.add_module_delegate(self.panel_global)
-        self.add_module_delegate(self.panel_timing)
-        self.add_module_delegate(self.panel_extra)
-        self.add_module_delegate(self.panel_warn)
+    def delegates(self):
+        yield self.panel_main
+        yield self.panel_red
+        yield self.panel_global
+        yield self.panel_timing
+        yield self.panel_extra
+        yield self.panel_warn
 
     def window_close(self):
         self.context.unlisten("flip_x", self.on_viewport_update)
