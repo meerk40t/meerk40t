@@ -508,7 +508,7 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Enable Correction File"),
+                "label": _("Enable"),
                 "tip": _("Use correction file?"),
                 "section": "_00_General",
                 "subsection": "Correction File",
@@ -523,6 +523,7 @@ class BalorDevice(Service, ViewPort):
                 "conditional": (self, "corfile_enabled"),
                 "label": _("File"),
                 "tip": _("Provide a correction file for the machine"),
+                "weight": 3,
                 "section": "_00_General",
                 "subsection": "Correction File",
             },
@@ -693,10 +694,11 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": "0deg",
                 "type": Angle,
-                "label": _("Redlight Angle Offset"),
+                "label": _("Angle Offset"),
                 "tip": _(
                     "Offset the redlight positions by this angle, curving around center"
                 ),
+                "subsection": "Redlight-Offset",
             },
             {
                 "attr": "redlight_preferred",
