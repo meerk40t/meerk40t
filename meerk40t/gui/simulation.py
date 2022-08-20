@@ -15,7 +15,7 @@ from .icons import (
     icons8_play_50,
     icons8_route_50,
 )
-from .laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
+from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
@@ -328,6 +328,9 @@ class SimulationPanel(wx.Panel, Job):
             self.hscene_sizer.Layout()
             self.Layout()
 
+    def delegates(self):
+        yield self.panel_optimize
+
     def toggle_background(self, event):
         """
         Toggle the draw mode for the background
@@ -561,7 +564,6 @@ class SimulationPanel(wx.Panel, Job):
             bbox, self.view_pane.Size, 0.1
         )
         self.update_fields()
-        self.panel_optimize.pane_show()
 
     def pane_hide(self):
         if self.auto_clear:
@@ -569,7 +571,6 @@ class SimulationPanel(wx.Panel, Job):
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
-        self.panel_optimize.pane_hide()
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
@@ -790,11 +791,14 @@ class Simulation(MWindow):
             plan_name=plan_name,
             auto_clear=auto_clear,
         )
-        self.add_module_delegate(self.panel)
+        self.module_delegate()
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Simulation"))
+
+    def delegates(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):
