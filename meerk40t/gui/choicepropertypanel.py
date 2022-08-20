@@ -73,10 +73,10 @@ class ChoicePropertyPanel(ScrolledPanel):
         prechoices = sorted(
             sorted(
                 sorted(
-                    sorted(choices, key=lambda d: d["subsection"]),
-                    key=lambda d: d["section"],
+                    sorted(choices, key=lambda d: d["priority"]),
+                    key=lambda d: d["subsection"],
                 ),
-                key=lambda d: d["priority"],
+                key=lambda d: d["section"],
             ),
             key=lambda d: d["page"],
         )

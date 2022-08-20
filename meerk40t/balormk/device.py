@@ -543,6 +543,7 @@ class BalorDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("X-Axis"),
                 "tip": _("Offset in the X axis"),
+                "section": "_10_Parameters",
                 "subsection": "_25_Offset",
             },
             {
@@ -552,6 +553,7 @@ class BalorDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Y-Axis"),
                 "tip": _("Offset in the Y axis"),
+                "section": "_10_Parameters",
                 "subsection": "_25_Offset",
             },
             {
@@ -561,6 +563,7 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("X-Axis"),
                 "tip": _("Scale the X axis"),
+                "section": "_10_Parameters",
                 "subsection": "_20_Scale",
             },
             {
@@ -570,6 +573,7 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Y-Axis"),
                 "tip": _("Scale the Y axis"),
+                "section": "_10_Parameters",
                 "subsection": "_20_Scale",
             },
             {
@@ -579,6 +583,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the Balor device"),
+                "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -588,6 +593,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the Balor device"),
+                "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -597,6 +603,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Swap XY"),
                 "tip": _("Swap the X and Y axis for the device"),
+                "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
             },
             {
@@ -605,6 +612,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 50,
                 "type": int,
                 "label": _("Curve Interpolation"),
+                "section": "_10_Parameters",
                 "tip": _("Number of curve interpolation points"),
             },
             {
@@ -628,6 +636,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
+                "section": "_00_General",
             },
             {
                 "attr": "footpedal_pin",
@@ -636,6 +645,7 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Footpedal"),
                 "tip": _("What pin is your foot pedal hooked to on the GPIO"),
+                "section": "_10_Parameters",
                 "subsection": "_30_Pin-Index",
             },
             {
@@ -645,6 +655,7 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Redlight laser"),
                 "tip": _("What pin is your redlight hooked to on the GPIO"),
+                "section": "_10_Parameters",
                 "subsection": "_30_Pin-Index",
             },
         ]
