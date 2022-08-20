@@ -191,8 +191,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 trailer = ""
             # Do we have a parameter to hide the control unless in expert mode
             try:
-                dummy= str(c["hidden"])
-                if dummy == "" or dummy=="0":
+                dummy = str(c["hidden"])
+                if dummy == "" or dummy == "0":
                     hidden = False
                 else:
                     hidden = True
@@ -201,7 +201,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             # Do we have a parameter to affect the space consumption?
             try:
                 controlweight = int(c["weight"])
-                if controlweight<0:
+                if controlweight < 0:
                     controlweight = 0
             except KeyError:
                 controlweight = 1
@@ -283,7 +283,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 # Bool type objects get a checkbox.
                 control = wx.CheckBox(self, label=label)
                 control.SetValue(data)
-                control.SetMinSize(wx.Size(-1,23))
+                control.SetMinSize(wx.Size(-1, 23))
 
                 def on_checkbox_check(param, ctrl, obj):
                     def check(event=None):
@@ -338,7 +338,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_BUTTON,
                     on_button_filename(attr, control, obj, c.get("wildcard", "*")),
                 )
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type in (int, float) and data_style == "slider":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
@@ -375,7 +377,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_SLIDER,
                     on_slider(attr, control, obj, data_type),
                 )
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type in (str, int, float) and data_style == "combo":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
@@ -418,7 +422,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_COMBOBOX,
                     on_combo_text(attr, control, obj, data_type),
                 )
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type in (str, int, float) and data_style == "combosmall":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -471,7 +477,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_COMBOBOX,
                     on_combosmall_text(attr, control, obj, data_type),
                 )
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type == int and data_style == "binary":
                 mask = c.get("mask")
 
@@ -553,7 +561,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     bit_sizer.Add(control, 0, wx.EXPAND, 0)
                     control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
 
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(
@@ -596,7 +606,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
                 control_sizer = wx.StaticBoxSizer(
@@ -633,7 +645,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
                 control_sizer = wx.StaticBoxSizer(
@@ -670,7 +684,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
                 control_sizer = wx.StaticBoxSizer(
@@ -710,7 +726,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
                 control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
-                current_sizer.Add(control_sizer, expansion_flag * controlweight, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * controlweight, wx.EXPAND, 0
+                )
             else:
                 # Requires a registered data_type
                 continue
