@@ -41,22 +41,12 @@ class GRBLConfiguration(MWindow):
         self.notebook_main.AddPage(self.panel_global, _("Global Settings"))
         self.notebook_main.AddPage(self.panel_warn, _("Warning"))
         self.Layout()
-        self.add_module_delegate(self.panel_main)
-        self.add_module_delegate(self.panel_global)
-        self.add_module_delegate(self.panel_dim)
-        self.add_module_delegate(self.panel_warn)
 
-    def window_open(self):
-        self.panel_main.pane_show()
-        self.panel_global.pane_show()
-        self.panel_dim.pane_show()
-        self.panel_warn.pane_show()
-
-    def window_close(self):
-        self.panel_main.pane_hide()
-        self.panel_global.pane_hide()
-        self.panel_dim.pane_hide()
-        self.panel_warn.pane_hide()
+    def delegates(self):
+        yield self.panel_main
+        yield self.panel_global
+        yield self.panel_dim
+        yield self.panel_warn
 
     def window_preserve(self):
         return False
