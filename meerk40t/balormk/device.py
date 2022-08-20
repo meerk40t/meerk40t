@@ -802,6 +802,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Laser On"),
                 "trailer": "µs",
                 "tip": _("Start delay (Start TC) at the beginning of each mark command"),
+                "section": "_10_General",
                 "subsection": "Delays",
                 "priority" : "00",
             },
@@ -813,6 +814,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Laser Off"),
                 "trailer": "µs",
                 "tip": _("The delay time of the laser shutting down after marking finished"),
+                "section": "_10_General",
                 "subsection": "Delays",
                 "priority" : "10",
             },
@@ -824,6 +826,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Polygon Delay"),
                 "trailer": "µs",
                 "tip": _("Delay amount between different points in the path travel."),
+                "section": "_10_General",
                 "subsection": "Delays",
                 "priority" : "30",
             },
@@ -835,6 +838,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("End Delay"),
                 "trailer": "µs",
                 "tip": _("Delay amount for the end TC"),
+                "section": "_10_General",
                 "subsection": "Delays",
                 "priority" : "20",
             },
@@ -846,6 +850,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Long jump delay"),
                 "trailer": "µs",
                 "tip": _("Delay for a long jump distance"),
+                "section": "_10_General",
                 "subsection": "Jump-Settings",
             },
             {
@@ -856,6 +861,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Short jump delay"),
                 "trailer": "µs",
                 "tip": _("Delay for a short jump distance"),
+                "section": "_10_General",
                 "subsection": "Jump-Settings",
             },
             {
@@ -865,6 +871,7 @@ class BalorDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Long jump distance"),
                 "tip": _("Distance divide between long and short jump distances"),
+                "section": "_10_General",
                 "subsection": "Jump-Settings",
             },
             {
@@ -873,8 +880,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 8.0,
                 "type": float,
                 "label": _("Open MO delay"),
-                 "trailer": "ms",
-               "tip": _("OpenMO delay in ms"),
+                "trailer": "ms",
+                "tip": _("OpenMO delay in ms"),
+                "section": "_90_Other"
             },
         ]
         self.register_choices("balor-global-timing", choices)
