@@ -1015,6 +1015,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Param 1"),
                 "tip": _(""),
                 "subsection": "Fly Resolution",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p2",
@@ -1024,6 +1025,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Param 2"),
                 "tip": _(""),
                 "subsection": "Fly Resolution",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p3",
@@ -1033,6 +1035,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Param 3"),
                 "tip": _(""),
                 "subsection": "Fly Resolution",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p4",
@@ -1042,6 +1045,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Param 4"),
                 "tip": _(""),
                 "subsection": "Fly Resolution",
+                "hidden": 1,
             },
         ]
         self.register_choices("balor-extra", choices)
