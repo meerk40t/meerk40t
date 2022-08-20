@@ -119,20 +119,20 @@ class ChoicePropertyPanel(ScrolledPanel):
                     else:
                         dealt_with = True
                         # Section list
-                        startfrom = 0
-                        endat = len(prechoices)
+                        start_from = 0
+                        end_at = len(prechoices)
                         if constraint[0] >= 0:
-                            startfrom = constraint[0]
+                            start_from = constraint[0]
                         if len(constraint) > 1 and constraint[1] >= 0:
-                            endat = constraint[1]
-                        if startfrom < 0:
-                            startfrom = 0
-                        if endat > len(prechoices):
-                            endat = len(prechoices)
-                        if endat < startfrom:
-                            endat = len(prechoices)
+                            end_at = constraint[1]
+                        if start_from < 0:
+                            start_from = 0
+                        if end_at > len(prechoices):
+                            end_at = len(prechoices)
+                        if end_at < start_from:
+                            end_at = len(prechoices)
                         for i, c in enumerate(prechoices):
-                            if i >= startfrom and i < endat:
+                            if start_from <= i < end_at:
                                 self.choices.append(c)
         else:
             # Empty constraint
