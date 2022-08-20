@@ -18,6 +18,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
+from copy import copy
 from enum import Enum
 
 
@@ -86,6 +87,10 @@ class Node:
 
     def __repr__(self):
         return f"Node('{self.type}', {str(self._parent)})"
+
+    def __copy__(self):
+        n = Node(type=self.type)
+        return n
 
     def __str__(self):
         text = self._formatter
@@ -173,6 +178,24 @@ class Node:
             self.revalidate_points()
         self._points_dirty = False
         return self._points
+
+    def copy_of_tree(self, root=None):
+        """
+        Copy of tree creates a copy of a rooted tree at the current node. It should create a copy of the tree structure
+        with the children replaced with copied children and the parents replaced with copied parents and the root also
+        replaced with a copy of the root (assuming it was called at the rootnode).
+
+        @param root:
+        @return:
+        """
+        if root is None:
+            root = self
+        node = copy(self)
+        for c in self._children:
+            child = c.copy_of_tree(root=root)
+            node._children.append(child)
+            child._parent = node
+            child._root = root
 
     def create_label(self, text=None):
         if text is None:
