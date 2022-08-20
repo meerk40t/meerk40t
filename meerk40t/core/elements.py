@@ -2664,7 +2664,7 @@ class Elemental(Service):
                 )
                 return
             # Looping through all nodes with node.flat can provide
-            # multiple times a single node, as you may loop trhrough
+            # multiple times a single node, as you may loop through
             # files and groups nested into each other.
             # To avoid this we create a temporary set which by definition
             # can only contain unique members
@@ -2713,7 +2713,7 @@ class Elemental(Service):
                 return
             matrix = f"translate({dx}, {dy})"
             # Looping through all nodes with node.flat can provide
-            # multiple times a single node, as you may loop trhrough
+            # multiple times a single node, as you may loop through
             # files and groups nested into each other.
             # To avoid this we create a temporary set which by definition
             # can only contain unique members
@@ -2762,7 +2762,7 @@ class Elemental(Service):
                 return
             matrix = f"translate({dx}, {dy})"
             # Looping through all nodes with node.flat can provide
-            # multiple times a single node, as you may loop trhrough
+            # multiple times a single node, as you may loop through
             # files and groups nested into each other.
             # To avoid this we create a temporary set which by definition
             # can only contain unique members
@@ -2811,7 +2811,7 @@ class Elemental(Service):
                 return
             matrix = f"translate({dx}, {dy})"
             # Looping through all nodes with node.flat can provide
-            # multiple times a single node, as you may loop trhrough
+            # multiple times a single node, as you may loop through
             # files and groups nested into each other.
             # To avoid this we create a temporary set which by definition
             # can only contain unique members
@@ -2860,7 +2860,7 @@ class Elemental(Service):
                 return
             matrix = f"translate({dx}, {dy})"
             # Looping through all nodes with node.flat can provide
-            # multiple times a single node, as you may loop trhrough
+            # multiple times a single node, as you may loop through
             # files and groups nested into each other.
             # To avoid this we create a temporary set which by definition
             # can only contain unique members
