@@ -855,14 +855,8 @@ class ChoicePropertyPanel(ScrolledPanel):
         return result
 
     def module_open(self):
-        self.pane_show()
+        pass
 
     def module_close(self):
-        self.pane_hide()
-
-    def pane_hide(self):
         for attr, listener in self.listeners:
             self.context.unlisten(attr, listener)
-
-    def pane_show(self):
-        pass
