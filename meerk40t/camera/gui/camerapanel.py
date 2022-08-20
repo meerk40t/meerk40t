@@ -167,7 +167,7 @@ class CameraPanel(wx.Panel, Job):
             CamInterfaceWidget(self.widget_scene, self)
         )
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         if platform.system() == "Darwin" and not hasattr(self.camera, "_first"):
             self.camera(f"camera{self.index} start -t 1\n")
             self.camera._first = False
@@ -177,7 +177,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera.listen("camera;fps", self.on_fps_change)
         self.camera.listen("camera;stopped", self.on_camera_stop)
 
-    def pane_hide(self, *args):
+    def module_close(self, *args):
         self.camera(f"camera{self.index} stop\n")
         self.camera.unschedule(self)
         if not self.pane:
@@ -687,7 +687,6 @@ class CameraInterface(MWindow):
         super().__init__(640, 480, context, path, parent, **kwds)
         self.camera = self.context.get_context(f"camera/{index}")
         self.panel = CameraPanel(self, wx.ID_ANY, context=self.camera, index=index)
-        self.add_module_delegate(self.panel)
 
         # ==========
         # MENU BAR
@@ -746,11 +745,8 @@ class CameraInterface(MWindow):
 
         append(wxglade_tmp_menu, _("Camera"))
 
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
+    def delegates(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):
