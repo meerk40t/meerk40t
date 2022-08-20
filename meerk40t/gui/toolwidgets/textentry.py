@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.gui.fonts import wxfont_to_svg
-from meerk40t.gui.icons import icons8_keyboard_50
+from meerk40t.gui.icons import icons8_type_50
 from meerk40t.gui.laserrender import swizzlecolor, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Color, Matrix
@@ -473,7 +473,7 @@ class TextEntry(MWindow):
         self.panel = TextEntryPanel(self, wx.ID_ANY, context=self.context, x=x, y=y, default_string=default_string)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
+        _icon.CopyFromBitmap(icons8_type_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Add a Text-element"))
 
