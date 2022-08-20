@@ -45,23 +45,6 @@ class Module:
         shutdown or if this individual module is being closed on its own."""
         pass
 
-    def module_delegate(self, model=None, add=True, kernel=None):
-        if kernel is None:
-            kernel = self.context.kernel
-        if model is None:
-            model = self
-
-        try:
-            if model is not self:
-                if add:
-                    kernel.add_delegate(model, self)
-                else:
-                    kernel.remove_delegate(model, self)
-            for delegate in model.delegates():
-                self.module_delegate(model=delegate, add=add, kernel=kernel)
-        except AttributeError:
-            pass
-
     def add_module_delegate(self, delegate):
         self.context.kernel.add_delegate(delegate, self)
 
