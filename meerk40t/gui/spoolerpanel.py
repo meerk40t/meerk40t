@@ -55,9 +55,8 @@ class SpoolerPanel(wx.Panel):
         )
         self.combo_device.SetSelection(index)
         self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
-        self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
-        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25, use_theme=False))
+        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25))
         self.button_stop = wx.Button(self, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
