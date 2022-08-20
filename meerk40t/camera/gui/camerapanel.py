@@ -933,7 +933,7 @@ class CameraURIPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def pane_show(self):
+    def module_open(self):
         camera_root_context = self.context.get_context("camera")
         keylist = camera_root_context.kernel.read_persistent_string_dict(
             camera_root_context.path, suffix=True
@@ -944,7 +944,7 @@ class CameraURIPanel(wx.Panel):
             self.uri_list = [keylist[k] for k in keys]
             self.on_list_refresh()
 
-    def pane_hide(self):
+    def module_close(self):
         self.commit()
 
     def commit(self):
@@ -1066,8 +1066,5 @@ class CameraURI(MWindow):
         # begin wxGlade: CameraURI.__set_properties
         self.SetTitle(_("Camera URI"))
 
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
+    def delegates(self):
+        yield self.panel
