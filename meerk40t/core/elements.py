@@ -5667,10 +5667,10 @@ class Elemental(Service):
         @self.console_command(
             "undolist",
         )
-        def clipboard_list(command, channel, _, **kwgs):
+        def undo_list(command, channel, _, **kwgs):
             for i, v in enumerate(self._undo_stack):
                 q = "*" if i == self._undo_index else " "
-                channel("%s%s: undo %s elements" % (q, str(i).ljust(5), str(len(v))))
+                channel("%s%s: undo %s elements" % (q, str(i).ljust(5), str(v)))
 
         # ==========
         # CLIPBOARD COMMANDS
