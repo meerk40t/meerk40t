@@ -907,8 +907,15 @@ class LaserRender:
         matrix = Matrix()
 
         # Scale affine matrix up by step amount scaled down.
-        scale_x = width / raster_width
-        scale_y = height / raster_height
+        try:
+            scale_x = width / raster_width
+        except ZeroDivisionError:
+            scale_x = 1
+
+        try:
+            scale_y = height / raster_height
+        except ZeroDivisionError:
+            scale_y = 1
         if keep_ratio:
             scale_x = min(scale_x, scale_y)
             scale_y = scale_x
