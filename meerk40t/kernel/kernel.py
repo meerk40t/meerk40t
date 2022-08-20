@@ -1280,7 +1280,6 @@ class Kernel(Settings):
         if thread_count == 0:
             if channel:
                 channel(_("No threads required halting."))
-
         for key, listener in self.listeners.items():
             if len(listener):
                 if channel:
@@ -1835,6 +1834,71 @@ class Kernel(Settings):
         self._message_queue[code] = path, message
         self._signal_lock.release()
 
+    def _process_add_listeners(self):
+        # Process any adding listeners.
+
+        add = None
+        if len(self._adding_listeners) != 0:
+            add = self._adding_listeners
+            self._adding_listeners = []
+
+        if add is not None:
+            for signal, funct, lso in add:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    listeners.append((funct, lso))
+                else:
+                    self.listeners[signal] = [(funct, lso)]
+                if signal in self._last_message:
+                    origin, message = self._last_message[signal]
+                    funct(origin, *message)
+
+    def _process_remove_listeners(self):
+        # Process any removing listeners.
+        remove = None
+        if len(self._removing_listeners):
+            remove = self._removing_listeners
+            self._removing_listeners = []
+
+        if remove is not None:
+            for signal, remove_funct, remove_lso in remove:
+                if signal in self.listeners:
+                    listeners = self.listeners[signal]
+                    removed = False
+                    ct = 0
+                    for i, listen in enumerate(listeners):
+                        ct += 1
+                        listen_funct, listen_lso = listen
+                        if (listen_funct == remove_funct or remove_funct is None) and (
+                                listen_lso is remove_lso or remove_lso is None
+                        ):
+                            del listeners[i]
+                            removed = True
+                            break
+                    if not removed:
+                        # This occurs if we attempt to remove a listener which does not exist.
+                        # This is not a useless error but rather a symptom of another bug.
+                        # This should not occur, if it does, something is desynced attempting
+                        # to double remove. Which could also mean listeners are stuck listening
+                        # to places they should not which can cause other errors.
+                        print("Error removing: %s  %s" % (str(listeners), signal))
+
+    def _process_signal_queue(self, queue):
+        # Process signals.
+        signal_channel = self.channel("signals")
+        for signal, payload in queue.items():
+            origin, message = payload
+            if signal in self.listeners:
+                listeners = self.listeners[signal]
+                for listener, listen_lso in listeners:
+                    listener(origin, *message)
+                    if signal_channel:
+                        signal_channel(
+                            f"Signal: {origin} {signal}: "
+                            f"{listener.__module__}:{listener.__name__}{str(message)}"
+                        )
+            self._last_message[signal] = payload
+
     def process_queue(self, *args) -> None:
         """
         Performed in the run_later thread. Signal groups. Threadsafe.
@@ -1852,72 +1916,13 @@ class Kernel(Settings):
             return
         self._is_queue_processing = True
         self._signal_lock.acquire(True)
-
-        add = None
-        if len(self._adding_listeners) != 0:
-            add = self._adding_listeners
-            self._adding_listeners = []
-
-        remove = None
-        if len(self._removing_listeners):
-            remove = self._removing_listeners
-            self._removing_listeners = []
-
         queue = self._message_queue
         self._message_queue = {}
-
+        self._process_add_listeners()
+        self._process_remove_listeners()
         self._signal_lock.release()
 
-        # Process any adding listeners.
-        if add is not None:
-            for signal, funct, lso in add:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    listeners.append((funct, lso))
-                else:
-                    self.listeners[signal] = [(funct, lso)]
-                if signal in self._last_message:
-                    origin, message = self._last_message[signal]
-                    funct(origin, *message)
-
-        # Process any removing listeners.
-        if remove is not None:
-            for signal, remove_funct, remove_lso in remove:
-                if signal in self.listeners:
-                    listeners = self.listeners[signal]
-                    removed = False
-                    ct = 0
-                    for i, listen in enumerate(listeners):
-                        ct += 1
-                        listen_funct, listen_lso = listen
-                        if (listen_funct == remove_funct or remove_funct is None) and (
-                            listen_lso is remove_lso or remove_lso is None
-                        ):
-                            del listeners[i]
-                            removed = True
-                            break
-                    if not removed:
-                        # This occurs if we attempt to remove a listener which does not exist.
-                        # This is not a useless error but rather a symptom of another bug.
-                        # This should not occur, if it does, something is desynced attempting
-                        # to double remove. Which could also mean listeners are stuck listening
-                        # to places they should not which can cause other errors.
-                        print("Error removing: %s  %s" % (str(listeners), signal))
-
-        # Process signals.
-        signal_channel = self.channel("signals")
-        for signal, payload in queue.items():
-            origin, message = payload
-            if signal in self.listeners:
-                listeners = self.listeners[signal]
-                for listener, listen_lso in listeners:
-                    listener(origin, *message)
-                    if signal_channel:
-                        signal_channel(
-                            f"Signal: {origin} {signal}: "
-                            f"{listener.__module__}:{listener.__name__}{str(message)}"
-                        )
-            self._last_message[signal] = payload
+        self._process_signal_queue(queue)
         self._is_queue_processing = False
 
     def last_signal(self, signal: str) -> Optional[Tuple]:
