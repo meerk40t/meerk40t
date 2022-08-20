@@ -19,7 +19,7 @@ class BufferViewPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-    def pane_show(self):
+    def module_open(self):
         buffer = self.context.device.viewbuffer
         if buffer is None:
             buffer = _("Could not find buffer.\n")
@@ -58,9 +58,11 @@ class BufferView(MWindow):
         # begin wxGlade: BufferView.__set_properties
         self.SetTitle(_("BufferView"))
 
+    def delegate(self):
+        yield self.panel
+
     def window_preserve(self):
         return False
 
     def window_open(self):
         self.context.close(self.name)
-        self.panel.pane_show()
