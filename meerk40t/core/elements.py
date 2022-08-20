@@ -2411,7 +2411,7 @@ class Elemental(Service):
             input_type=("elements", None),
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, remainder=None, **kwargs):
+        def subtype_align_elements(command, channel, _, data=None, remainder=None, **kwargs):
             if not remainder:
                 channel(
                     "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
@@ -2449,7 +2449,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_top(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2486,7 +2486,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_bottom(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2523,7 +2523,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_left(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2560,7 +2560,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_right(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2597,7 +2597,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_center(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2637,7 +2637,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_bedtop(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2679,7 +2679,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_bedbottom(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2721,7 +2721,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_bedleft(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2763,7 +2763,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_bedright(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2805,7 +2805,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_bedcenter(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2847,7 +2847,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_centerh(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2884,7 +2884,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_centerv(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2921,7 +2921,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_spaceh(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2970,7 +2970,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_spacev(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -3011,49 +3011,6 @@ class Elemental(Service):
                         except AttributeError:
                             continue
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
-            return "align", data
-
-        # --------------------
-        @self.console_command(
-            "bedcenter",
-            help=_("align elements to bedcenter"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                device_width = self.length_x("100%")
-                device_height = self.length_y("100%")
-                dx = (device_width - left_edge - right_edge) / 2.0
-                dy = (device_height - top_edge - bottom_edge) / 2.0
-                matrix = f"translate({dx}, {dy})"
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            self.signal("tree_changed")
             return "align", data
 
         @self.console_argument(
