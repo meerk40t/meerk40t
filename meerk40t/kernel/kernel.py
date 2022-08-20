@@ -1280,6 +1280,9 @@ class Kernel(Settings):
         if thread_count == 0:
             if channel:
                 channel(_("No threads required halting."))
+
+        # Process any remove attempts that were occurred too late for standard removal.
+        self._process_remove_listeners()
         for key, listener in self.listeners.items():
             if len(listener):
                 if channel:
