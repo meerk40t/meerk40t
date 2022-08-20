@@ -1548,11 +1548,11 @@ class MeerK40t(MWindow):
                 window = pane.window
                 if hasattr(window, "pane_hide"):
                     window.pane_hide()
-                if isinstance(window, wx.aui.AuiNotebook):
-                    for i in range(window.GetPageCount()):
-                        page = window.GetPage(i)
-                        if hasattr(page, "pane_hide"):
-                            page.pane_hide()
+                # if isinstance(window, wx.aui.AuiNotebook):
+                #     for i in range(window.GetPageCount()):
+                #         page = window.GetPage(i)
+                #         if hasattr(page, "pane_hide"):
+                #             page.pane_hide()
 
     def on_panes_opened(self):
         for pane in self._mgr.GetAllPanes():
