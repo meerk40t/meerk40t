@@ -223,7 +223,7 @@ class TextEntryPanel(wx.Panel):
         sizer_h_okcancel = wx.StdDialogButtonSizer()
         sizer_v_main.Add(sizer_h_okcancel, 0, wx.ALIGN_RIGHT | wx.ALL, 4)
 
-        self.button_OK.Enable(False)
+        self.button_OK.Enable(len(self.txt_Text.GetValue()) > 0)
         sizer_h_okcancel.AddButton(self.button_OK)
         sizer_h_okcancel.AddButton(self.button_CANCEL)
         sizer_h_okcancel.Realize()
