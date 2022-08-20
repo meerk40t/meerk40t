@@ -962,7 +962,7 @@ class LihuiyuDriver(Parameters):
                 self.raster_mode()
                 if self._horizontal_major:
                     # Horizontal Rastering.
-                    if self.service.nse_raster or self.service.settings.get(
+                    if self.service.nse_raster or self.settings.get(
                         "_raster_alt", False
                     ):
                         # Alt-Style Raster
@@ -976,7 +976,7 @@ class LihuiyuDriver(Parameters):
                             self.h_switch_g(dy)
                 else:
                     # Vertical Rastering.
-                    if self.service.nse_raster or self.service.settings.get(
+                    if self.service.nse_raster or self.settings.get(
                         "_raster_alt", False
                     ):
                         # Alt-Style Raster
@@ -2111,6 +2111,7 @@ class LihuiyuController:
     def abort(self):
         self._buffer = bytearray()
         self._queue = bytearray()
+        self._realtime_buffer = bytearray()
         self.context.signal("pipe;buffer", 0)
         self.update_state(STATE_TERMINATE)
 
