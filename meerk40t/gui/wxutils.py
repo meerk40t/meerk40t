@@ -354,6 +354,13 @@ class TextCtrl(wx.TextCtrl):
         self._check = check
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
+        self.Bind(wx.EVT_KILL_FOCUS, self.on_leave)
+
+    def on_leave(self, event):
+        # Needs to be passed on
+        event.Skip()
+        self.SelectNone()
+
 
     def on_check(self, event):
         event.Skip()

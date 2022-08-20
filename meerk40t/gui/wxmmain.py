@@ -476,6 +476,7 @@ class MeerK40t(MWindow):
                 "tip": _("Shall the cursor snap to the next element point?"),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Element-Points",
             },
             {
                 "attr": "action_attract_len",
@@ -492,6 +493,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Element-Points",
             },
             {
                 "attr": "snap_grid",
@@ -502,6 +504,7 @@ class MeerK40t(MWindow):
                 "tip": _("Shall the cursor snap to the next grid intersection?"),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Grid",
             },
             {
                 "attr": "grid_attract_len",
@@ -518,6 +521,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Grid",
             },
         ]
         context.kernel.register_choices("preferences", choices)
