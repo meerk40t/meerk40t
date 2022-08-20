@@ -74,11 +74,11 @@ class ChoicePropertyPanel(ScrolledPanel):
             sorted(
                 sorted(
                     sorted(choices, key=lambda d: d["subsection"]),
-                    key=lambda d: d["section"]
+                    key=lambda d: d["section"],
                 ),
-                key=lambda d: d["priority"]
+                key=lambda d: d["priority"],
             ),
-            key=lambda d: d["page"]
+            key=lambda d: d["page"],
         )
         self.choices = list()
         dealt_with = False
@@ -214,11 +214,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 last_subsection = ""
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
                 last_box = wx.StaticBoxSizer(
-                    wx.StaticBox(self, id=wx.ID_ANY, label=_(this_page)), wx.VERTICAL
+                    wx.StaticBox(
+                        self, id=wx.ID_ANY, label=_(self.unsorted_label(this_page))
+                    ),
+                    wx.VERTICAL,
                 )
                 sizer_main.Add(last_box, 0, wx.EXPAND, 0)
                 current_main_sizer = last_box
-                current_secsizer = last_box
+                current_sec_sizer = last_box
                 current_sizer = last_box
 
             if last_section != this_section:
@@ -226,7 +229,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 last_subsection = ""
                 if this_section != "":
                     last_box = wx.StaticBoxSizer(
-                        wx.StaticBox(self, id=wx.ID_ANY, label=_(this_section)), wx.VERTICAL
+                        wx.StaticBox(
+                            self,
+                            id=wx.ID_ANY,
+                            label=_(self.unsorted_label(this_section)),
+                        ),
+                        wx.VERTICAL,
                     )
                     current_main_sizer.Add(last_box, 0, wx.EXPAND, 0)
                 else:
@@ -239,7 +247,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if this_subsection != "":
                     expansion_flag = 1
                     last_box = wx.StaticBoxSizer(
-                        wx.StaticBox(self, id=wx.ID_ANY, label=_(this_subsection)), wx.HORIZONTAL
+                        wx.StaticBox(
+                            self,
+                            id=wx.ID_ANY,
+                            label=_(self.unsorted_label(this_subsection)),
+                        ),
+                        wx.HORIZONTAL,
                     )
                     current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
                 else:
@@ -813,6 +826,16 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
+
+    @staticmethod
+    def unsorted_label(original):
+        # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+        result = original
+        if result.startswith("_"):
+            idx = result.find("_", 1)
+            if idx >= 0:
+                result = result[idx + 1 :]
+        return result
 
     def pane_hide(self):
         for attr, listener in self.listeners:
