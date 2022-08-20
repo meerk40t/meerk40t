@@ -4,7 +4,7 @@ from math import isinf
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_route_50
+from meerk40t.gui.icons import icons8_route_50, icons8_emergency_stop_button_50, icons8_pause_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import signal_listener
@@ -54,8 +54,14 @@ class SpoolerPanel(wx.Panel):
             self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
-        self.btn_run_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
-        self.btn_run_stop = wx.Button(self, wx.ID_ANY, _("Abort"))
+        self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
+        self.button_pause.SetForegroundColour(wx.BLACK)  # Dark Mode correction.
+        self.button_pause.SetToolTip(_("Pause/Resume the laser"))
+        self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25, use_theme=False))
+        self.button_stop = wx.Button(self, wx.ID_ANY, _("Abort"))
+        self.button_stop.SetToolTip(_("Stop the laser"))
+        self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
+        self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
 
         self.list_job_spool = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
@@ -73,8 +79,8 @@ class SpoolerPanel(wx.Panel):
         self.__do_layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
-        self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.btn_run_pause)
-        self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.btn_run_stop)
+        self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
+        self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
         self.Bind(
@@ -99,8 +105,6 @@ class SpoolerPanel(wx.Panel):
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
         self.combo_device.SetToolTip(_("Select the device"))
-        self.btn_run_stop.SetToolTip(_("Aborts the running job"))
-        self.btn_run_pause.SetToolTip(_("Pauses/Resumes the Laser"))
         self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
         self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
         self.list_job_spool.AppendColumn(
@@ -150,8 +154,8 @@ class SpoolerPanel(wx.Panel):
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_combo_cmds = wx.BoxSizer(wx.HORIZONTAL)
         sizer_combo_cmds.Add(self.combo_device, 1, wx.EXPAND, 0)
-        sizer_combo_cmds.Add(self.btn_run_pause, 0, wx.EXPAND, 0)
-        sizer_combo_cmds.Add(self.btn_run_stop, 0, wx.EXPAND, 0)
+        sizer_combo_cmds.Add(self.button_pause, 0, wx.EXPAND, 0)
+        sizer_combo_cmds.Add(self.button_stop, 0, wx.EXPAND, 0)
 
         sizer_frame.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
         sizer_frame.Add(self.list_job_spool, 4, wx.EXPAND, 0)
