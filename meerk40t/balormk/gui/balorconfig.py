@@ -4,6 +4,7 @@ from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -60,26 +61,8 @@ class BalorConfiguration(MWindow):
         yield self.panel_extra
         yield self.panel_warn
 
-    def window_close(self):
-        self.context.unlisten("flip_x", self.on_viewport_update)
-        self.context.unlisten("flip_y", self.on_viewport_update)
-        self.panel_main.pane_hide()
-        self.panel_red.pane_hide()
-        self.panel_global.pane_hide()
-        self.panel_timing.pane_hide()
-        self.panel_extra.pane_hide()
-        self.panel_warn.pane_hide()
-
-    def window_open(self):
-        self.context.listen("flip_x", self.on_viewport_update)
-        self.context.listen("flip_y", self.on_viewport_update)
-        self.panel_main.pane_show()
-        self.panel_red.pane_show()
-        self.panel_global.pane_show()
-        self.panel_timing.pane_show()
-        self.panel_extra.pane_show()
-        self.panel_warn.pane_show()
-
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
     def on_viewport_update(self, origin, *args):
         self.context("viewport_update\n")
 

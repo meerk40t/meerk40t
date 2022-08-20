@@ -258,9 +258,8 @@ class WarningPanel(wx.Panel):
             except KeyError:
                 pass
 
-    def pane_hide(self):
+    def module_close(self):
         pass
 
-    def pane_show(self):
+    def module_open(self):
         self.update_widgets()
-        pass
