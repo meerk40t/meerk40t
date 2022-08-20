@@ -196,6 +196,7 @@ class Node:
             node._children.append(child)
             child._parent = node
             child._root = root
+        return node
 
     def create_label(self, text=None):
         if text is None:
