@@ -295,7 +295,7 @@ class LaserToolPanel(wx.Panel):
             self.nb_square, wx.ID_ANY, _("Make reference")
         )
         sizer_chk_square.Add(self.check_ref_square, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        self.check_square = wx.CheckBox(self.nb_square, wx.ID_ANY, _("Mark Center"))
+        self.check_square = wx.CheckBox(self.nb_square, wx.ID_ANY, _("Mark Corner"))
         sizer_chk_square.Add(self.check_square, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_8 = wx.BoxSizer(wx.HORIZONTAL)
