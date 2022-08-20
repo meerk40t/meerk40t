@@ -508,6 +508,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Enable Correction File"),
                 "tip": _("Use correction file?"),
+                "subsection": "Correction File",
             },
             {
                 "attr": "corfile",
@@ -517,8 +518,9 @@ class BalorDevice(Service, ViewPort):
                 "style": "file",
                 "wildcard": "*.cor",
                 "conditional": (self, "corfile_enabled"),
-                "label": _("Correction File"),
+                "label": _("File"),
                 "tip": _("Provide a correction file for the machine"),
+                "subsection": "Correction File",
             },
             {
                 "attr": "lens_size",
@@ -571,6 +573,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the Balor device"),
+                "subsection": "Axis corrections",
             },
             {
                 "attr": "flip_y",
@@ -579,6 +582,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the Balor device"),
+                "subsection": "Axis corrections",
             },
             {
                 "attr": "swap_xy",
@@ -587,6 +591,7 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Swap XY"),
                 "tip": _("Swap the X and Y axis for the device"),
+                "subsection": "Axis corrections",
             },
             {
                 "attr": "interpolate",

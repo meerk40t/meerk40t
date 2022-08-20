@@ -34,8 +34,8 @@ def register_panel_laser(window, context):
     pane = (
         aui.AuiPaneInfo()
         .Left()
-        .MinSize(150, 210)
-        .FloatingSize(400, 200)
+        .MinSize(245, 210)
+        .FloatingSize(255, 270)
         .MaxSize(500, 300)
         .Caption(_("Laser"))
         .CaptionVisible(not context.pane_lock)
