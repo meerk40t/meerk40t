@@ -182,12 +182,12 @@ class LaserPanel(wx.Panel):
             _("Preserve the job between running, rerunning, and execution")
         )
         self.checkbox_hold.SetValue(self.context.laserpane_hold)
-        sizer_source.Add(self.checkbox_hold, 1, 0, 0)
+        sizer_source.Add(self.checkbox_hold, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
         self.checkbox_optimize.SetValue(1)
-        sizer_source.Add(self.checkbox_optimize, 1, 0, 0)
+        sizer_source.Add(self.checkbox_optimize, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(sizer_main)
         self.Layout()
