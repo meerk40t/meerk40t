@@ -139,12 +139,6 @@ class LhyAdvancedPanel(wx.Panel):
         )
         # end wxGlade
 
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
     def set_widgets(self, node):
         self.operation = node
         if self.operation.dratio is not None:

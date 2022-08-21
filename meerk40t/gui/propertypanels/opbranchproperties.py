@@ -53,17 +53,14 @@ class OpBranchPanel(wx.Panel):
 
         self.Layout()
 
+    def delegate(self):
+        yield self.panel
+
     @signal_listener("loop_continuous")
     @signal_listener("loop_n")
     @signal_listener("loop_enabled")
     def wait_changed(self, *args):
         self.context.elements.signal("element_property_update", self.operation)
-
-    def pane_hide(self):
-        self.panel.pane_hide()
-
-    def pane_show(self):
-        self.panel.pane_show()
 
     def set_widgets(self, node):
         self.operation = node

@@ -4,6 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -42,14 +43,6 @@ class DebugTreePanel(wx.Panel):
 
         self._update_position()
 
-    def pane_show(self, *args):
-        self.context.listen("emphasized", self._update_position)
-        self.context.listen("selected", self._update_position)
-
-    def pane_hide(self, *args):
-        self.context.unlisten("emphasized", self._update_position)
-        self.context.unlisten("selected", self._update_position)
-
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties
         self.lb_emphasized.SetToolTip(_("Emphasized nodes"))
@@ -76,6 +69,8 @@ class DebugTreePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    @signal_listener("emphasized")
+    @signal_listener("selected")
     def _update_position(self, *args):
         self.update_position(True)
 

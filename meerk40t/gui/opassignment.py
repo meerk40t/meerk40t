@@ -322,14 +322,6 @@ class OperationAssignPanel(wx.Panel):
     def on_rebuild(self, origin, *args):
         self.set_buttons()
 
-    def pane_show(self, *args):
-        # nothing yet
-        return
-
-    def pane_hide(self, *args):
-        # nothing yet
-        return
-
     def on_resize(self, event):
         if self.lastsize != event.Size:
             self.lastsize = event.Size

@@ -48,9 +48,6 @@ class KeymapPanel(wx.Panel):
         self.reload_keymap()
         self.Children[0].SetFocus()
 
-    def module_close(self):
-        pass
-
     def __set_properties(self):
         self.list_keymap.SetToolTip(_("What keys are bound to which actions?"))
         self.list_keymap.AppendColumn(_("Key"), format=wx.LIST_FORMAT_LEFT, width=140)
@@ -333,9 +330,3 @@ class Keymap(MWindow):
                 "action": lambda v: kernel.console("window toggle Keymap\n"),
             },
         )
-
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()

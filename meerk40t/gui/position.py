@@ -4,6 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_up_left_50
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -84,18 +85,6 @@ class PositionPanel(wx.Panel):
         self.position_units = self.context.units_name
         self._update_position()
 
-    def pane_show(self, *args):
-        self.context.listen("units", self.space_changed)
-        self.context.listen("emphasized", self._update_position)
-        self.context.listen("modified", self._update_position)
-        self.context.listen("altered", self._update_position)
-
-    def pane_hide(self, *args):
-        self.context.unlisten("units", self.space_changed)
-        self.context.unlisten("emphasized", self._update_position)
-        self.context.unlisten("modified", self._update_position)
-        self.context.unlisten("altered", self._update_position)
-
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties
         self.text_h.SetToolTip(_("New height (enter to apply)"))
@@ -166,6 +155,9 @@ class PositionPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    @signal_listener("emphasized")
+    @signal_listener("modified")
+    @signal_listener("altered")
     def _update_position(self, *args):
         self.update_position(True)
 
@@ -232,6 +224,7 @@ class PositionPanel(wx.Panel):
             self.text_h.SetValue(f"{self.position_h:.2f}")
         self.combo_box_units.SetSelection(self.choices.index(self.position_units))
 
+    @signal_listener("units")
     def space_changed(self, origin, *args):
         self.position_units = self.context.units_name
         self.update_position(True)

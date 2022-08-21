@@ -226,11 +226,8 @@ class SpoolerPanel(wx.Panel):
 
         return delete
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         self.refresh_spooler_list()
-
-    def pane_hide(self, *args):
-        pass
 
     @staticmethod
     def _name_str(named_obj):
@@ -427,9 +424,3 @@ class JobSpooler(MWindow):
                 "action": lambda v: kernel.console("window toggle JobSpooler\n"),
             },
         )
-
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()

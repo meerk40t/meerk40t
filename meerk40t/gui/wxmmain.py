@@ -1498,7 +1498,6 @@ class MeerK40t(MWindow):
         def unlock_pane(command, _, channel, **kwargs):
             self.on_pane_lock(None, lock=False)
 
-
     def on_pane_reset(self, event=None):
         self.on_panes_closed()
         self._mgr.LoadPerspective(self.default_perspective, update=True)

@@ -4,6 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -76,19 +77,12 @@ class ElementpropertyPanel(wx.Panel):
         self.panel_cap.fill_widgets(selection)
         self.panel_text.fill_widgets(selection)
 
-    def _update_position(self):
+    @signal_listener("emphasized")
+    @signal_listener("modified")
+    @signal_listener("altered")
+    def _update_position(self, *args):
         elems = list(self.context.elements.flat(types=elem_nodes, emphasized=True))
         self.fill_widgets(elems)
-
-    def pane_show(self, *args):
-        self.context.listen("emphasized", self._update_position)
-        self.context.listen("modified", self._update_position)
-        self.context.listen("altered", self._update_position)
-
-    def pane_hide(self, *args):
-        self.context.unlisten("emphasized", self._update_position)
-        self.context.unlisten("modified", self._update_position)
-        self.context.unlisten("altered", self._update_position)
 
     def __set_properties(self):
         # begin wxGlade: PositionPanel.__set_properties

@@ -9,6 +9,7 @@ from meerk40t.gui.icons import (
     instruction_frame,
     instruction_rectangle,
 )
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -708,13 +709,7 @@ class LaserToolPanel(wx.Panel):
                 self.context("reference\n")
         event.Skip()
 
-    def pane_show(self, *args):
-        self.context.listen("driver;position", self.on_update_laser)
-        self.context.listen("emulator;position", self.on_update_laser)
-
-    def pane_hide(self, *args):
-        self.context.unlisten("driver;position", self.on_update_laser)
-        self.context.unlisten("emulator;position", self.on_update_laser)
-
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
     def on_update_laser(self, origin, pos):
         self.laserposition = (pos[2], pos[3])

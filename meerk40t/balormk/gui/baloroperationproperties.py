@@ -150,11 +150,8 @@ class BalorOperationPanel(ScrolledPanel):
 
         self.Layout()
 
-    def pane_hide(self):
-        self.panel.pane_hide()
-
-    def pane_show(self):
-        self.panel.pane_show()
+    def delegate(self):
+        yield self.panel
 
     def set_widgets(self, node):
         self.operation = node

@@ -1829,9 +1829,3 @@ class Navigation(MWindow):
                 "action": lambda v: kernel.console("window toggle Navigation\n"),
             },
         )
-
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()

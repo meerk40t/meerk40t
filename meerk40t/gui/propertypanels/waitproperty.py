@@ -32,15 +32,12 @@ class WaitPropertyPanel(wx.Panel):
         self.SetSizer(main_sizer)
         self.Layout()
 
+    def delegate(self):
+        yield self.panel
+
     @signal_listener("wait")
     def wait_changed(self, *args):
         self.context.elements.signal("element_property_update", self.operation)
-
-    def pane_hide(self):
-        self.panel.pane_hide()
-
-    def pane_show(self):
-        self.panel.pane_show()
 
     def set_widgets(self, node):
         self.operation = node

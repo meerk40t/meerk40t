@@ -857,11 +857,6 @@ class RibbonPanel(wx.Panel):
 
         self.ensure_realize()
 
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
 
     # def on_page_changing(self, event):
     #     page = event.GetPage()

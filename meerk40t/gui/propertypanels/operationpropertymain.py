@@ -183,12 +183,6 @@ class LayerSettingPanel(wx.Panel):
         self.Bind(wx.EVT_CHECKBOX, self.on_check_default, self.checkbox_default)
         # end wxGlade
 
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
     def accepts(self, node):
         return node.type in (
             "op cut",
@@ -405,14 +399,6 @@ class SpeedPpiPanel(wx.Panel):
         self.text_frequency.Bind(wx.EVT_KILL_FOCUS, self.on_text_frequency)
         self.text_frequency.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency)
 
-        # end wxGlade
-
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
     def accepts(self, node):
         return node.type in (
             "op cut",
@@ -519,12 +505,6 @@ class PassesPanel(wx.Panel):
         self.text_passes.Bind(wx.EVT_TEXT_ENTER, self.on_text_passes)
         # end wxGlade
 
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
     def accepts(self, node):
         return node.type in (
             "op cut",
@@ -615,14 +595,6 @@ class InfoPanel(wx.Panel):
         self.SetSizer(sizer_info)
 
         self.Layout()
-
-        # end wxGlade
-
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
 
     def on_button_calculate(self, event):
         try:
@@ -733,13 +705,7 @@ class PanelStartPreference(wx.Panel):
             self.toggle_sliders = True
             self._toggle_sliders()
 
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
-    # @signal_listener("element_property_reload")
+    @signal_listener("element_property_reload")
     def on_element_property_reload(self, *args):
         self._toggle_sliders()
         self.raster_lines = None
@@ -1098,12 +1064,6 @@ class RasterSettingsPanel(wx.Panel):
         if not self.context.developer_mode:
             self.radio_directional_raster.Enable(False)
 
-    def pane_hide(self):
-        self.panel_start.pane_hide()
-
-    def pane_show(self):
-        self.panel_start.pane_show()
-
     def accepts(self, node):
         return node.type in (
             "op raster",
@@ -1272,11 +1232,6 @@ class HatchSettingsPanel(wx.Panel):
         self.travel_lines = None
         self.outline_lines = None
 
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
 
     def accepts(self, node):
         return node.type in ("op hatch",)
@@ -1519,12 +1474,6 @@ class DwellSettingsPanel(wx.Panel):
         self.text_dwelltime.Bind(wx.EVT_KILL_FOCUS, self.on_text_dwelltime)
         # end wxGlade
 
-    def pane_hide(self):
-        pass
-
-    def pane_show(self):
-        pass
-
     def accepts(self, node):
         return node.type in ("op dots",)
 
@@ -1601,36 +1550,14 @@ class ParameterPanel(ScrolledPanel):
         self.Layout()
         # end wxGlade
 
-    @signal_listener("element_property_reload")
-    def on_element_property_reload(self, origin=None, *args):
-        # if origin is None:
-        #     print ("EPR called with no origin")
-        # else:
-        #     print ("EPR called from:", args)
-        try:
-            self.raster_panel.panel_start.on_element_property_reload(*args)
-        except AttributeError:
-            pass
-        # if self.operation.type != "op hatch":
-        #     if self.hatch_panel.Shown:
-        #         self.hatch_panel.Hide()
-        # else:
-        #     if not self.hatch_panel.Shown:
-        #         self.hatch_panel.Show()
-        # if self.operation.type not in ("op raster", "op image"):
-        #     if self.raster_panel.Shown:
-        #         self.raster_panel.Hide()
-        # else:
-        #     if not self.raster_panel.Shown:
-        #         self.raster_panel.Show()
-        # if self.operation.type != "op dots":
-        #     if self.dwell_panel.Shown:
-        #         self.dwell_panel.Hide()
-        # else:
-        #     if not self.dwell_panel.Shown:
-        #         self.dwell_panel.Show()
-        self.set_widgets(self.operation)
-        self.Layout()
+    def delegate(self):
+        yield self.layer_panel
+        yield self.speedppi_panel
+        yield self.passes_panel
+        yield self.raster_panel
+        yield self.hatch_panel
+        yield self.dwell_panel
+        yield self.info_panel
 
     def set_widgets(self, node):
         self.operation = node
@@ -1641,24 +1568,3 @@ class ParameterPanel(ScrolledPanel):
         self.hatch_panel.set_widgets(node)
         self.dwell_panel.set_widgets(node)
         self.info_panel.set_widgets(node)
-
-    def pane_hide(self):
-        self.layer_panel.pane_hide()
-        self.speedppi_panel.pane_hide()
-        self.passes_panel.pane_hide()
-        self.raster_panel.pane_hide()
-        self.hatch_panel.pane_hide()
-        self.dwell_panel.pane_hide()
-        self.info_panel.pane_hide()
-
-    def pane_show(self):
-        self.layer_panel.pane_show()
-        self.speedppi_panel.pane_show()
-        self.passes_panel.pane_show()
-        self.raster_panel.pane_show()
-        self.hatch_panel.pane_show()
-        self.dwell_panel.pane_show()
-        self.info_panel.pane_show()
-
-
-# end of class ParameterPanel

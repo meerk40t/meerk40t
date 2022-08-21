@@ -157,8 +157,5 @@ class SnapOptionPanel(wx.Panel):
         self.slider_distance_points.SetValue(self.context.action_attract_len)
         self.slider_visibility.SetValue(self.context.show_attract_len)
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         self.update_values()
-
-    def pane_hide(self, *args):
-        pass

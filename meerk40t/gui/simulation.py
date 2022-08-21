@@ -556,7 +556,7 @@ class SimulationPanel(wx.Panel, Job):
             )
         self.refresh_my_plan()
 
-    def pane_show(self):
+    def module_open(self):
         self.context.setting(str, "units_name", "mm")
 
         bbox = self.context.device.bbox()
@@ -565,7 +565,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.update_fields()
 
-    def pane_hide(self):
+    def module_close(self):
         if self.auto_clear:
             self.context(f"plan{self.plan_name} clear\n")
         self.context.close("SimScene")
@@ -817,12 +817,6 @@ class Simulation(MWindow):
                 "size": STD_ICON_SIZE,
             },
         )
-
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):

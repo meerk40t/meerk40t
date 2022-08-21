@@ -640,12 +640,6 @@ class TextProperty(MWindow):
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)
 
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
-
     def window_preserve(self):
         return False
 
