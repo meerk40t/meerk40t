@@ -1498,44 +1498,6 @@ class MeerK40t(MWindow):
         def unlock_pane(command, _, channel, **kwargs):
             self.on_pane_lock(None, lock=False)
 
-        @context.console_argument("pane", help=_("pane to create"))
-        @context.console_command(
-            "create",
-            input_type="panes",
-            help=_("create a floating about pane"),
-        )
-        def create_pane(command, _, channel, pane=None, **kwargs):
-            if pane == "about":
-                from .about import AboutPanel as CreatePanel
-
-                caption = _("About")
-                width = 646
-                height = 519
-            elif pane == "preferences":
-                from .preferences import PreferencesPanel as CreatePanel
-
-                caption = _("Preferences")
-                width = 565
-                height = 327
-            else:
-                channel(_("Pane not found."))
-                return
-            panel = CreatePanel(self, context=context)
-            _pane = (
-                aui.AuiPaneInfo()
-                .Dockable(False)
-                .Float()
-                .Caption(caption)
-                .FloatingSize(width, height)
-                .Name(pane)
-                .CaptionVisible(True)
-            )
-            _pane.control = panel
-            self.on_pane_add(_pane)
-            if hasattr(panel, "pane_show"):
-                panel.pane_show()
-            self.context.register("pane/about", _pane)
-            self._mgr.Update()
 
     def on_pane_reset(self, event=None):
         self.on_panes_closed()
