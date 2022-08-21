@@ -26,58 +26,43 @@ class BalorConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
 
-        self.panel_main = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor"
+        options = (
+                ("balor", "Balor"),
+                ("balor-redlight", "Redlight"),
+                ("balor-global", "Global"),
+                ("balor-global-timing", "Timings"),
+                ("balor-extra", "Extras"),
         )
-        self.panel_red = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-redlight"
-        )
-        self.panel_global = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-global"
-        )
-        self.panel_timing = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-global-timing"
-        )
-        self.panel_extra = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-extra"
-        )
-        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
-
-        self.notebook_main.AddPage(self.panel_main, _("Balor"))
-        self.notebook_main.AddPage(self.panel_red, _("Redlight"))
-        self.notebook_main.AddPage(self.panel_global, _("Global"))
-        self.notebook_main.AddPage(self.panel_timing, _("Timings"))
-        self.notebook_main.AddPage(self.panel_extra, _("Extras"))
-        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+        self.panels = []
+        for item in options:
+            section = item[0]
+            pagetitle = _(item[1])
+            addpanel = self.visible_choices(section)
+            if addpanel:
+                newpanel = ChoicePropertyPanel(
+                    self, wx.ID_ANY, context=self.context, choices=section
+                )
+                self.panels.append(newpanel)
+                self.notebook_main.AddPage(newpanel, pagetitle)
+        newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Warning"))
 
         self.Layout()
-
-        self.add_module_delegate(self.panel_main)
-        self.add_module_delegate(self.panel_red)
-        self.add_module_delegate(self.panel_global)
-        self.add_module_delegate(self.panel_timing)
-        self.add_module_delegate(self.panel_extra)
-        self.add_module_delegate(self.panel_warn)
+        for panel in self.panels:
+            self.add_module_delegate(panel)
 
     def window_close(self):
         self.context.unlisten("flip_x", self.on_viewport_update)
         self.context.unlisten("flip_y", self.on_viewport_update)
-        self.panel_main.pane_hide()
-        self.panel_red.pane_hide()
-        self.panel_global.pane_hide()
-        self.panel_timing.pane_hide()
-        self.panel_extra.pane_hide()
-        self.panel_warn.pane_hide()
+        for panel in self.panels:
+            panel.pane_hide()
 
     def window_open(self):
         self.context.listen("flip_x", self.on_viewport_update)
         self.context.listen("flip_y", self.on_viewport_update)
-        self.panel_main.pane_show()
-        self.panel_red.pane_show()
-        self.panel_global.pane_show()
-        self.panel_timing.pane_show()
-        self.panel_extra.pane_show()
-        self.panel_warn.pane_show()
+        for panel in self.panels:
+            panel.pane_show()
 
     def on_viewport_update(self, origin, *args):
         self.context("viewport_update\n")
@@ -87,7 +72,7 @@ class BalorConfiguration(MWindow):
 
     def visible_choices(self, section):
         result = False
-        devmode = self.context.root.developer_mode
+        devmode = self.context.root.setting(bool, "developer_mode", False)
         choices = self.context.lookup("choices", section)
         if choices is not None:
             for item in choices:
