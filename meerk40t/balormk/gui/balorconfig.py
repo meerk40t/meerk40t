@@ -43,8 +43,8 @@ class BalorConfiguration(MWindow):
                 newpanel = ChoicePropertyPanel(
                     self, wx.ID_ANY, context=self.context, choices=section
                 )
-            self.panels.append(newpanel)
-            self.notebook_main.AddPage(newpanel, pagetitle)
+                self.panels.append(newpanel)
+                self.notebook_main.AddPage(newpanel, pagetitle)
         newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Warning"))
