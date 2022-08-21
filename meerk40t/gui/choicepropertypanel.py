@@ -31,7 +31,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         constraint=None,
         **kwds,
     ):
-        # constraints is either
+        # constraints are either
         # - None (default) - all choices will be display
         # - a pair of integers (start, end), from where to where (index) to display
         #   use case: display the first 10 entries constraint=(0, 9)
@@ -65,13 +65,20 @@ class ChoicePropertyPanel(ScrolledPanel):
                 dummy = c["page"]
             except KeyError:
                 c["page"] = ""
+            try:
+                dummy = c["priority"]
+            except KeyError:
+                c["priority"] = "ZZZZZZZZ"
         # print ("Choices: " , choices)
         prechoices = sorted(
             sorted(
-                sorted(choices, key=lambda d: d["subsection"]),
-                key=lambda d: d["section"]
+                sorted(
+                    sorted(choices, key=lambda d: d["priority"]),
+                    key=lambda d: d["subsection"],
+                ),
+                key=lambda d: d["section"],
             ),
-            key=lambda d: d["page"]
+            key=lambda d: d["page"],
         )
         self.choices = list()
         dealt_with = False
@@ -112,20 +119,20 @@ class ChoicePropertyPanel(ScrolledPanel):
                     else:
                         dealt_with = True
                         # Section list
-                        startfrom = 0
-                        endat = len(prechoices)
+                        start_from = 0
+                        end_at = len(prechoices)
                         if constraint[0] >= 0:
-                            startfrom = constraint[0]
+                            start_from = constraint[0]
                         if len(constraint) > 1 and constraint[1] >= 0:
-                            endat = constraint[1]
-                        if startfrom < 0:
-                            startfrom = 0
-                        if endat > len(prechoices):
-                            endat = len(prechoices)
-                        if endat < startfrom:
-                            endat = len(prechoices)
+                            end_at = constraint[1]
+                        if start_from < 0:
+                            start_from = 0
+                        if end_at > len(prechoices):
+                            end_at = len(prechoices)
+                        if end_at < start_from:
+                            end_at = len(prechoices)
                         for i, c in enumerate(prechoices):
-                            if i >= startfrom and i < endat:
+                            if start_from <= i < end_at:
                                 self.choices.append(c)
         else:
             # Empty constraint
@@ -146,6 +153,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Bey default 0 as we are stacking up stuff
         expansion_flag = 0
         for i, c in enumerate(self.choices):
+
             if isinstance(c, tuple):
                 # If c is tuple
                 dict_c = dict()
@@ -164,42 +172,36 @@ class ChoicePropertyPanel(ScrolledPanel):
                 obj = c["object"]
             except KeyError:
                 continue
-            try:
-                this_subsection = c["subsection"]
-            except KeyError:
-                this_subsection = ""
-            try:
-                this_section = c["section"]
-            except KeyError:
-                this_section = ""
-            try:
-                this_page = c["page"]
-            except KeyError:
-                this_page = ""
-            try:
-                trailer = c["trailer"]
-            except KeyError:
-                trailer = ""
-
+            this_subsection = c.get("subsection", "")
+            this_section = c.get("section", "")
+            this_page = c.get("page", "")
+            # Do we have a parameter to add a trailing label after the control
+            trailer = c.get("trailer")
+            # Do we have a parameter to hide the control unless in expert mode
+            hidden = c.get("hidden", False)
+            hidden = bool(hidden) if hidden != "False" else False  # bool("False") = True
+            # Do we have a parameter to affect the space consumption?
+            weight = int(c.get("weight", 1))
+            if weight < 0:
+                weight = 0
+            developer_mode = self.context.root.setting(bool, "developer_mode", False)
+            if not developer_mode and hidden:
+                continue
             # get default value
             if hasattr(obj, attr):
                 data = getattr(obj, attr)
             else:
-                # if obj can lack attr, default must have been assigned.
+                # if obj lacks attr, default must have been assigned.
                 try:
                     data = c["default"]
                 except KeyError:
+                    # This choice is in error.
                     continue
             data_style = c.get("style", None)
             data_type = type(data)
             data_type = c.get("type", data_type)
             choice_list = None
-            try:
-                # Get label
-                label = c["label"]
-            except KeyError:
-                # Undefined label is the attr
-                label = attr
+            label = c.get("label", attr)  # Undefined label is the attr
 
             if last_page != this_page:
                 expansion_flag = 0
@@ -207,11 +209,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 last_subsection = ""
                 # We could do a notebook, but let's choose a simple StaticBoxSizer instead...
                 last_box = wx.StaticBoxSizer(
-                    wx.StaticBox(self, id=wx.ID_ANY, label=_(this_page)), wx.VERTICAL
+                    wx.StaticBox(
+                        self, id=wx.ID_ANY, label=_(self.unsorted_label(this_page))
+                    ),
+                    wx.VERTICAL,
                 )
                 sizer_main.Add(last_box, 0, wx.EXPAND, 0)
                 current_main_sizer = last_box
-                current_secsizer = last_box
+                current_sec_sizer = last_box
                 current_sizer = last_box
 
             if last_section != this_section:
@@ -219,7 +224,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 last_subsection = ""
                 if this_section != "":
                     last_box = wx.StaticBoxSizer(
-                        wx.StaticBox(self, id=wx.ID_ANY, label=_(this_section)), wx.VERTICAL
+                        wx.StaticBox(
+                            self,
+                            id=wx.ID_ANY,
+                            label=_(self.unsorted_label(this_section)),
+                        ),
+                        wx.VERTICAL,
                     )
                     current_main_sizer.Add(last_box, 0, wx.EXPAND, 0)
                 else:
@@ -232,17 +242,25 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if this_subsection != "":
                     expansion_flag = 1
                     last_box = wx.StaticBoxSizer(
-                        wx.StaticBox(self, id=wx.ID_ANY, label=_(this_subsection)), wx.HORIZONTAL
+                        wx.StaticBox(
+                            self,
+                            id=wx.ID_ANY,
+                            label=_(self.unsorted_label(this_subsection)),
+                        ),
+                        wx.HORIZONTAL,
                     )
                     current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
                 else:
                     last_box = current_sec_sizer
                 current_sizer = last_box
 
+            control = None
+            control_sizer = None
             if data_type == bool:
                 # Bool type objects get a checkbox.
                 control = wx.CheckBox(self, label=label)
                 control.SetValue(data)
+                control.SetMinSize(wx.Size(-1, 23))
 
                 def on_checkbox_check(param, ctrl, obj):
                     def check(event=None):
@@ -255,7 +273,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
-                current_sizer.Add(control, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
@@ -297,7 +315,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_BUTTON,
                     on_button_filename(attr, control, obj, c.get("wildcard", "*")),
                 )
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type in (int, float) and data_style == "slider":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
@@ -334,7 +354,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_SLIDER,
                     on_slider(attr, control, obj, data_type),
                 )
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type in (str, int, float) and data_style == "combo":
                 control_sizer = wx.StaticBoxSizer(
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
@@ -377,7 +399,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_COMBOBOX,
                     on_combo_text(attr, control, obj, data_type),
                 )
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type in (str, int, float) and data_style == "combosmall":
                 control_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -430,7 +454,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.EVT_COMBOBOX,
                     on_combosmall_text(attr, control, obj, data_type),
                 )
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type == int and data_style == "binary":
                 mask = c.get("mask")
 
@@ -512,7 +538,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     bit_sizer.Add(control, 0, wx.EXPAND, 0)
                     control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
 
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(
@@ -555,7 +583,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
                 control_sizer = wx.StaticBoxSizer(
@@ -592,7 +622,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
                 control_sizer = wx.StaticBoxSizer(
@@ -629,7 +661,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.Bind(
                     wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
                 )
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
                 control_sizer = wx.StaticBoxSizer(
@@ -669,20 +703,26 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
                 control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
-                current_sizer.Add(control_sizer, expansion_flag, wx.EXPAND, 0)
+                current_sizer.Add(
+                    control_sizer, expansion_flag * weight, wx.EXPAND, 0
+                )
             else:
                 # Requires a registered data_type
                 continue
-            if trailer != "":
-                trailerflag = wx.ALIGN_CENTER_VERTICAL
-                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=" " + trailer)
-                control_sizer.Add(trailer_text, 0, trailerflag, 0)
+
+            if trailer and control_sizer:
+                trailer_text = wx.StaticText(self, id=wx.ID_ANY, label=f" {trailer}")
+                control_sizer.Add(trailer_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+            if control is None:
+                continue  # We're binary or some other style without a specific control.
 
             # Get enabled value
             try:
                 enabled = c["enabled"]
                 control.Enable(enabled)
             except KeyError:
+                # Listen to establish whether this control should be enabled based on another control's value.
                 try:
                     conditional = c["conditional"]
                     c_obj, c_attr = conditional
@@ -691,9 +731,8 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     def on_enable_listener(param, ctrl, obj):
                         def listen(origin, value):
-                            enabled = bool(getattr(obj, param))
                             try:
-                                ctrl.Enable(enabled)
+                                ctrl.Enable(bool(getattr(obj, param)))
                             except RuntimeError:
                                 pass
 
@@ -704,10 +743,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     context.listen(c_attr, listener)
                 except KeyError:
                     pass
-            # Initially the above was only listening to related controls to establish
-            # whether one control should be enabled based on another controls value.
-            # Now we listen to 'ourselves' as well to learn about changes somewhere else...
 
+            # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist):
                 def listen_to_myself(origin, value):
                     # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
@@ -729,8 +766,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
                     elif dtype == str and dstyle == "file":
-                        if ctrl.GetValue() != data:
-                            ctrl.SetValue(data)
+                        if ctrl.GetLabel() != data:
+                            ctrl.SetLabel(data)
                     elif dtype in (int, float) and dstyle == "slider":
                         if ctrl.GetValue() != data:
                             ctrl.SetValue(data)
@@ -806,6 +843,16 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
+
+    @staticmethod
+    def unsorted_label(original):
+        # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+        result = original
+        if result.startswith("_"):
+            idx = result.find("_", 1)
+            if idx >= 0:
+                result = result[idx + 1 :]
+        return result
 
     def pane_hide(self):
         for attr, listener in self.listeners:

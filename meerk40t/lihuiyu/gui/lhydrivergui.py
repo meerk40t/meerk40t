@@ -1184,7 +1184,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
 
 class LihuiyuDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(500, 750, *args, **kwds)
+        super().__init__(330, 630, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())

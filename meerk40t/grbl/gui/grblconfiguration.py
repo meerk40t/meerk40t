@@ -10,7 +10,7 @@ _ = wx.GetTranslation
 
 class GRBLConfiguration(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(374, 734, *args, **kwds)
+        super().__init__(345, 415, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
@@ -36,8 +36,8 @@ class GRBLConfiguration(MWindow):
             self, wx.ID_ANY, context=self.context, choices="bed_dim"
         )
         self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
-        self.notebook_main.AddPage(self.panel_main, _("GRBL-connection"))
-        self.notebook_main.AddPage(self.panel_dim, _("Bed Dim"))
+        self.notebook_main.AddPage(self.panel_main, _("Connection"))
+        self.notebook_main.AddPage(self.panel_dim, _("Dimensions"))
         self.notebook_main.AddPage(self.panel_global, _("Global Settings"))
         self.notebook_main.AddPage(self.panel_warn, _("Warning"))
         self.Layout()

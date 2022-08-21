@@ -136,8 +136,6 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_complete_subpaths",
                 "object": context,
-                # Default is false for backwards compatibility.
-                # Initial tests suggest that in most cases this actually results in shorter burn times.
                 "default": True,
                 "type": bool,
                 "label": _("Burn Complete Subpaths"),

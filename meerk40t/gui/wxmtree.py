@@ -779,6 +779,15 @@ class ShadowTree:
             raise ValueError("Item was None for node " + repr(node))
         if not item.IsOk():
             raise ValueError("Bad Item")
+        # We might need to update the decorations for all parent objects
+        e = node.parent
+        while e is not None:
+            if e.type in ("group", "file"):
+                self.update_decorations(e, force=True)
+            else:
+                break
+            e = e.parent
+
         node.unregister_object()
         self.wxtree.Delete(node.item)
         for i in self.wxtree.GetSelections():
@@ -837,6 +846,14 @@ class ShadowTree:
             tree.SetItemTextColour(node.item, wxcolor)
         except (AttributeError, KeyError, TypeError):
             pass
+        # We might need to update the decorations for all parent objects
+        e = node.parent
+        while e is not None:
+            if e.type in ("group", "file"):
+                self.update_decorations(e, force=True)
+            else:
+                break
+            e = e.parent
 
     def set_enhancements(self, node):
         """

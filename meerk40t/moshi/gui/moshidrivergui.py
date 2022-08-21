@@ -141,7 +141,7 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
 class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(335, 170, *args, **kwds)
+        super().__init__(305, 410, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())

@@ -102,6 +102,9 @@ class Node:
     def __eq__(self, other):
         return other is self
 
+    def __hash__(self):
+        return id(self)
+
     @property
     def children(self):
         return self._children
