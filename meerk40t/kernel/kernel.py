@@ -116,6 +116,8 @@ class Kernel(Settings):
         self._removing_listeners = []
         self._last_message = {}
         self._signal_lock = threading.Lock()
+        self._add_lock = threading.Lock()
+        self._remove_lock = threading.Lock()
         self._message_queue = {}
         self._is_queue_processing = False
 
@@ -1833,15 +1835,14 @@ class Kernel(Settings):
         @param path: Path of signal
         @param message: Message to send.
         """
-        self._signal_lock.acquire(True)
-        self._message_queue[code] = path, message
-        self._signal_lock.release()
+        with self._signal_lock:
+            self._message_queue[code] = path, message
 
     def _process_add_listeners(self):
         # Process any adding listeners.
-
-        add = None
-        if len(self._adding_listeners) != 0:
+        if not self._adding_listeners:
+            return
+        with self._add_lock:
             add = self._adding_listeners
             self._adding_listeners = []
 
@@ -1858,8 +1859,9 @@ class Kernel(Settings):
 
     def _process_remove_listeners(self):
         # Process any removing listeners.
-        remove = None
-        if len(self._removing_listeners):
+        if not self._removing_listeners:
+            return
+        with self._remove_lock:
             remove = self._removing_listeners
             self._removing_listeners = []
 
@@ -1918,12 +1920,11 @@ class Kernel(Settings):
         ):
             return
         self._is_queue_processing = True
-        self._signal_lock.acquire(True)
-        queue = self._message_queue
-        self._message_queue = {}
+        with self._signal_lock:
+            queue = self._message_queue
+            self._message_queue = {}
         self._process_add_listeners()
         self._process_remove_listeners()
-        self._signal_lock.release()
 
         self._process_signal_queue(queue)
         self._is_queue_processing = False
@@ -1954,9 +1955,8 @@ class Kernel(Settings):
         @param lifecycle_object:
         @return:
         """
-        self._signal_lock.acquire(True)
-        self._adding_listeners.append((signal, funct, lifecycle_object))
-        self._signal_lock.release()
+        with self._add_lock:
+            self._adding_listeners.append((signal, funct, lifecycle_object))
 
     def unlisten(
         self,
@@ -1972,9 +1972,8 @@ class Kernel(Settings):
         @param lifecycle_object:
         @return:
         """
-        self._signal_lock.acquire(True)
-        self._removing_listeners.append((signal, funct, lifecycle_object))
-        self._signal_lock.release()
+        with self._remove_lock:
+            self._removing_listeners.append((signal, funct, lifecycle_object))
 
     def _signal_attach(
         self,
@@ -2009,15 +2008,13 @@ class Kernel(Settings):
         @param cookie: cookie used to bind this listener.
         @return:
         """
-        self._signal_lock.acquire(True)
-
-        for signal in self.listeners:
-            listens = self.listeners[signal]
-            for listener, lso in listens:
-                if lso is cookie:
-                    self._removing_listeners.append((signal, listener, cookie))
-
-        self._signal_lock.release()
+        with self._remove_lock:
+            with self._signal_lock:
+                for signal in self.listeners:
+                    listens = self.listeners[signal]
+                    for listener, lso in listens:
+                        if lso is cookie:
+                            self._removing_listeners.append((signal, listener, cookie))
 
     # ==========
     # CHANNEL PROCESSING
