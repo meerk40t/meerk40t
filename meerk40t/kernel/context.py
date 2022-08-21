@@ -458,6 +458,30 @@ class Context:
         except AttributeError:
             pass
 
+    def _module_delegate(self, module, model=None, add=True):
+        """
+        Recursively find any delegates for a module yielded under `.delegate()`
+        @param module:
+        @param model:
+        @param add:
+        @return:
+        """
+        kernel = self.kernel
+        if model is None:
+            model = module
+
+        try:
+            if model is not module:
+                # We are the model we don't delegate to it.
+                if add:
+                    kernel.add_delegate(model, module)
+                else:
+                    kernel.remove_delegate(model, module)
+            for delegate in model.delegates():
+                self._module_delegate(module=module, model=delegate, add=add)
+        except AttributeError:
+            pass
+
     def close(self, instance_path: str, *args, **kwargs) -> None:
         """
         Closes an opened module instance. Located at the instance_path location.

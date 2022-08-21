@@ -26,6 +26,7 @@ class BalorConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+
         options = (
                 ("balor", "Balor"),
                 ("balor-redlight", "Redlight"),
@@ -37,7 +38,6 @@ class BalorConfiguration(MWindow):
         for item in options:
             section = item[0]
             pagetitle = _(item[1])
-            #
             addpanel = self.visible_choices(section)
             if addpanel:
                 newpanel = ChoicePropertyPanel(
@@ -66,7 +66,7 @@ class BalorConfiguration(MWindow):
 
     def visible_choices(self, section):
         result = False
-        devmode = self.context.root.developer_mode
+        devmode = self.context.root.setting(bool, "developer_mode", False)
         choices = self.context.lookup("choices", section)
         if choices is not None:
             for item in choices:
