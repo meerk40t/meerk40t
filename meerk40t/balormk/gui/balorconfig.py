@@ -26,40 +26,35 @@ class BalorConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
-
-        self.panel_main = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor"
+        options = (
+                ("balor", "Balor"),
+                ("balor-redlight", "Redlight"),
+                ("balor-global", "Global"),
+                ("balor-global-timing", "Timings"),
+                ("balor-extra", "Extras"),
         )
-        self.panel_red = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-redlight"
-        )
-        self.panel_global = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-global"
-        )
-        self.panel_timing = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-global-timing"
-        )
-        self.panel_extra = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices="balor-extra"
-        )
-        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
-
-        self.notebook_main.AddPage(self.panel_main, _("Balor"))
-        self.notebook_main.AddPage(self.panel_red, _("Redlight"))
-        self.notebook_main.AddPage(self.panel_global, _("Global"))
-        self.notebook_main.AddPage(self.panel_timing, _("Timings"))
-        self.notebook_main.AddPage(self.panel_extra, _("Extras"))
-        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+        self.panels = []
+        for item in options:
+            section = item[0]
+            pagetitle = _(item[1])
+            #
+            addpanel = self.visible_choices(section)
+            if addpanel:
+                newpanel = ChoicePropertyPanel(
+                    self, wx.ID_ANY, context=self.context, choices=section
+                )
+            self.panels.append(newpanel)
+            self.notebook_main.AddPage(newpanel, pagetitle)
+        newpanel = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Warning"))
 
         self.Layout()
 
+
     def delegates(self):
-        yield self.panel_main
-        yield self.panel_red
-        yield self.panel_global
-        yield self.panel_timing
-        yield self.panel_extra
-        yield self.panel_warn
+        for item in self.panels:
+            yield item
 
     @signal_listener("flip_x")
     @signal_listener("flip_y")
