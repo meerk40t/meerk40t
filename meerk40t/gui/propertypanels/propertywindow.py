@@ -27,6 +27,7 @@ class PropertyWindow(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.page_panel = None
         self.Layout()
 
     @signal_listener("selected")
@@ -65,8 +66,9 @@ class PropertyWindow(MWindow):
         self.window_close()
         # self.panel_instances.clear()
         self.notebook_main.DeleteAllPages()
+        self.page_panel = None
         for prop_sheet, instance in pages_to_instance:
-            page_panel = prop_sheet(
+            self.page_panel = prop_sheet(
                 self.notebook_main, wx.ID_ANY, context=self.context, node=instance
             )
             try:
@@ -74,24 +76,26 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 name = instance.__class__.__name__
 
-            self.notebook_main.AddPage(page_panel, name)
+            self.notebook_main.AddPage(self.page_panel, name)
             try:
-                page_panel.set_widgets(instance)
+                self.page_panel.set_widgets(instance)
             except AttributeError:
                 pass
-            self.add_module_delegate(page_panel)
-            self.panel_instances.append(page_panel)
+            self.panel_instances.append(self.page_panel)
             try:
-                page_panel.pane_show()
+                self.page_panel.pane_show()
             except AttributeError:
                 pass
-            page_panel.Layout()
+            self.page_panel.Layout()
             try:
-                page_panel.SetupScrolling()
+                self.page_panel.SetupScrolling()
             except AttributeError:
                 pass
 
         self.Layout()
+
+    def delegate(self):
+        yield self.page_panel
 
     @staticmethod
     def sub_register(kernel):

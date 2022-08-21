@@ -140,12 +140,6 @@ class TextEntryPanel(wx.Panel):
         self.setLogic()
         self.result = 0
 
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
-
     def setLayout(self):
         sizer_v_main = wx.BoxSizer(wx.VERTICAL)
 
@@ -473,11 +467,13 @@ class TextEntry(MWindow):
         y = 0 if len(args) <= 4 else float(args[4])
         default_string = "" if len(args) <= 5 else " ".join(args[5:])
         self.panel = TextEntryPanel(self, wx.ID_ANY, context=self.context, x=x, y=y, default_string=default_string)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_type_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Add a Text-element"))
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):
@@ -492,11 +488,7 @@ class TextEntry(MWindow):
         # )
         pass
 
-    def window_open(self):
-        self.panel.pane_show()
-
     def window_close(self):
-        self.panel.pane_hide()
         if self.panel.result == 1:
             text = self.panel.result_text
             elements = self.context.elements

@@ -44,11 +44,11 @@ class KeymapPanel(wx.Panel):
         self.text_key_name.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.key_pressed = False
 
-    def pane_show(self):
+    def module_open(self):
         self.reload_keymap()
         self.Children[0].SetFocus()
 
-    def pane_hide(self):
+    def module_close(self):
         pass
 
     def __set_properties(self):
@@ -313,12 +313,14 @@ class Keymap(MWindow):
         super().__init__(500, 530, *args, **kwds)
 
         self.panel = KeymapPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_keyboard_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Keymap Settings"))
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):

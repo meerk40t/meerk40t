@@ -90,11 +90,13 @@ class GroupProperty(MWindow):
         self.panel = GroupPropertiesPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_group_objects_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Group Properties"))
+
+    def delegate(self):
+        yield self.panel
 
     def window_preserve(self):
         return False

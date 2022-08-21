@@ -243,7 +243,7 @@ class MoshiControllerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def pane_show(self):
+    def module_open(self):
         active = self.context.path.split("/")[-1]
         self.context.channel(f"{active}/usb", buffer_size=500).watch(self.update_text)
         self.context.listen("pipe;status", self.update_status)
@@ -251,7 +251,7 @@ class MoshiControllerPanel(wx.Panel):
         self.context.listen("pipe;state", self.on_connection_state_change)
         self.context.listen("active", self.on_active_change)
 
-    def pane_hide(self):
+    def module_close(self):
         active = self.context.path.split("/")[-1]
         self.context.channel(f"{active}/usb").unwatch(self.update_text)
         self.context.unlisten("pipe;status", self.update_status)
@@ -428,7 +428,6 @@ class MoshiControllerGui(MWindow):
         # ==========
 
         self.panel = MoshiControllerPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -461,14 +460,11 @@ class MoshiControllerGui(MWindow):
         append(wxglade_tmp_menu, _("Views"))
         self.SetMenuBar(self.MoshiController_menubar)
 
+    def delegate(self):
+        yield self.panel
+
     def restore(self, *args, **kwargs):
         self.panel.set_widgets()
-
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
 
     def window_preserve(self):
         return False

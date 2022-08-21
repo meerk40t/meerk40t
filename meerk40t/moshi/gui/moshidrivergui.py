@@ -100,14 +100,7 @@ class MoshiConfigurationPanel(ScrolledPanel):
         self.Layout()
         # end wxGlade
 
-    def pane_show(self):
-        # self.context.listen("pipe;buffer", self.on_buffer_update)
-        self.context.listen("active", self.on_active_change)
-
-    def pane_hide(self):
-        # self.context.unlisten("pipe;buffer", self.on_buffer_update)
-        self.context.unlisten("active", self.on_active_change)
-
+    @signal_listener("active")
     def on_active_change(self, origin, active):
         # self.Close()
         pass
@@ -168,16 +161,9 @@ class MoshiDriverGui(MWindow):
 
         self.Layout()
 
-        self.add_module_delegate(self.ConfigurationPanel)
-        self.add_module_delegate(self.panel_warn)
-
-    def window_open(self):
-        self.ConfigurationPanel.pane_show()
-        self.panel_warn.pane_show()
-
-    def window_close(self):
-        self.ConfigurationPanel.pane_hide()
-        self.panel_warn.pane_hide()
+    def delegate(self):
+        yield self.ConfigurationPanel
+        yield self.panel_warn
 
     def window_preserve(self):
         return False

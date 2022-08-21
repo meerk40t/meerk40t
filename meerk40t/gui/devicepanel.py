@@ -105,7 +105,7 @@ class DevicePanel(wx.Panel):
         self.Parent.Bind(wx.EVT_SIZE, self.on_resize)
         # end wxGlade
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         self.refresh_device_tree()
         if len(self.devices) > 0:
             self.devices_list.Select(0, 1)
@@ -114,7 +114,7 @@ class DevicePanel(wx.Panel):
         self.on_resize(None)
         self.enable_controls()
 
-    def pane_hide(self, *args):
+    def module_close(self, *args):
         pass
 
     def on_resize(self, event):
@@ -361,11 +361,13 @@ class DeviceManager(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(653, 332, *args, **kwds)
         self.panel = DevicePanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_manager_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Devices"))
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):

@@ -27,12 +27,12 @@ class UsbConnectPanel(wx.Panel):
         self.pipe = None
         self._active_when_loaded = None
 
-    def pane_show(self):
+    def module_open(self):
         active = self.context.device.active
         self._active_when_loaded = active
         self.context.channel(f"{active}/usb", buffer_size=500).watch(self.update_text)
 
-    def pane_hide(self):
+    def module_close(self):
         active = self._active_when_loaded
         self.context.channel(f"{active}/usb").unwatch(self.update_text)
 
@@ -73,15 +73,11 @@ class UsbConnect(MWindow):
         super().__init__(915, 424, *args, **kwds)
 
         self.panel = UsbConnectPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_usb_connector_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Terminal.__set_properties
         self.SetTitle(_("UsbConnect"))
 
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
+    def delegate(self):
+        yield self.panel

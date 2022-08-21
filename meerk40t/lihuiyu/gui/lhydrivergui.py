@@ -169,14 +169,6 @@ class ConfigurationUsb(wx.Panel):
         self.check_serial_number.Enable(False)
         self.text_serial_number.Enable(False)
 
-    def pane_show(self):
-        # self.context.listen("pipe;buffer", self.on_buffer_update)
-        pass
-
-    def pane_hide(self):
-        # self.context.unlisten("pipe;buffer", self.on_buffer_update)
-        pass
-
     @signal_listener("pipe;buffer")
     def on_buffer_update(self, origin, value, *args):
         self.text_buffer_length.SetValue(str(value))
@@ -260,12 +252,6 @@ class ConfigurationTcp(wx.Panel):
         # end wxGlade
         self.text_port.SetValue(str(self.context.port))
         self.text_address.SetValue(self.context.address)
-
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
 
     def on_text_address(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
         event.Skip()
@@ -440,12 +426,6 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_scale_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_scale)
         self.text_scale_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_scale)
         self.text_scale_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_scale)
-
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
 
     def on_text_home_x(self, event=None):
         event.Skip()
@@ -693,10 +673,10 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             self.panel_tcp_config.Hide()
         self.SetupScrolling()
 
-    def pane_show(self):
-        self.ConfigurationLaserPanel.pane_show()
-        self.panel_usb_settings.pane_show()
-        self.panel_tcp_config.pane_show()
+    def delegate(self):
+        yield self.ConfigurationLaserPanel
+        yield self.panel_usb_settings
+        yield self.panel_tcp_config
 
     def pane_hide(self):
         self.ConfigurationLaserPanel.pane_hide()
@@ -1077,12 +1057,6 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_scale_speed.Enable(False)
         self.SetupScrolling()
 
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
-
     def on_check_fix_speeds(self, event=None):
         self.context.fix_speeds = self.check_fix_speeds.GetValue()
         self.text_fix_rated_speed.SetValue(
@@ -1216,19 +1190,10 @@ class LihuiyuDriverGui(MWindow):
 
         self.Layout()
 
-        self.add_module_delegate(self.ConfigurationPanel)
-        self.add_module_delegate(self.SetupPanel)
-        self.add_module_delegate(self.panel_warn)
-
-    def window_open(self):
-        self.SetupPanel.pane_show()
-        self.ConfigurationPanel.pane_show()
-        self.panel_warn.pane_show()
-
-    def window_close(self):
-        self.SetupPanel.pane_hide()
-        self.ConfigurationPanel.pane_hide()
-        self.panel_warn.pane_hide()
+    def delegate(self):
+        yield self.ConfigurationPanel
+        yield self.SetupPanel
+        yield self.panel_warn
 
     def window_preserve(self):
         return False

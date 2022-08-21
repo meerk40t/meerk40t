@@ -119,12 +119,6 @@ class TreePanel(wx.Panel):
             # Make sure the treectl can work on standard keys...
             event.Skip()
 
-    def pane_show(self):
-        pass
-
-    def pane_hide(self):
-        pass
-
     @signal_listener("select_emphasized_tree")
     def on_shadow_select_emphasized_tree(self, origin, *args):
         self.shadow_tree.select_in_tree_by_emphasis(origin, *args)
@@ -248,24 +242,13 @@ class ElementsTree(MWindow):
         super().__init__(423, 131, *args, **kwds)
 
         self.panel = TreePanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_smartphone_ram_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Tree"))
 
-    def window_open(self):
-        try:
-            self.panel.pane_show()
-        except AttributeError:
-            pass
-
-    def window_close(self):
-        try:
-            self.panel.pane_hide()
-        except AttributeError:
-            pass
-
+    def delegate(self):
+        yield self.panel
 
 class ShadowTree:
     """

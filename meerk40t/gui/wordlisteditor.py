@@ -129,12 +129,9 @@ class WordlistPanel(wx.Panel):
         self.btn_import.Enable(False)
         self.populate_gui()
 
-    def pane_show(self):
+    def module_open(self):
         self.populate_gui()
         self.grid_wordlist.SetFocus()
-
-    def pane_hide(self):
-        pass
 
     def refresh_grid_wordlist(self):
         self.grid_wordlist.ClearAll()
@@ -316,12 +313,14 @@ class WordlistEditor(MWindow):
         super().__init__(500, 530, *args, **kwds)
 
         self.panel = WordlistPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_curly_brackets_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: Keymap.__set_properties
         self.SetTitle(_("Wordlist Editor"))
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):
@@ -334,9 +333,3 @@ class WordlistEditor(MWindow):
                 "action": lambda v: kernel.console("window toggle Wordlist\n"),
             },
         )
-
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()

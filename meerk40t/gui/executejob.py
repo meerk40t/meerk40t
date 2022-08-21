@@ -325,7 +325,7 @@ class PlannerPanel(wx.Panel):
                     pass
         self.update_gui()
 
-    def pane_show(self):
+    def module_open(self):
         # self.context.setting(bool, "opt_rasters_split", True)
         # TODO: OPT_RASTER_SPLIT
         cutplan = self.context.planner.default_plan
@@ -335,7 +335,7 @@ class PlannerPanel(wx.Panel):
 
         self.update_gui()
 
-    def pane_hide(self):
+    def module_close(self):
         self.context(f"plan{self.plan_name} clear\n")
 
     @signal_listener("plan")
@@ -412,7 +412,6 @@ class ExecuteJob(MWindow):
         self.panel = PlannerPanel(
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
-        self.add_module_delegate(self.panel)
         self.panel.Bind(wx.EVT_RIGHT_DOWN, self.on_menu, self.panel)
         self.panel.list_operations.Bind(
             wx.EVT_RIGHT_DOWN, self.on_menu, self.panel.list_operations
@@ -501,6 +500,9 @@ class ExecuteJob(MWindow):
             self.panel.jobchange_step_repeat,
             wx_menu.Append(wx.ID_ANY, _("Step Repeat"), _("Execute Step Repeat")),
         )
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):

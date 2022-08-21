@@ -43,6 +43,7 @@ from meerk40t.gui.icons import (
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
+from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
@@ -627,16 +628,11 @@ class Drag(wx.Panel):
         self.context("trace quick\n")
         self.drag_ready(True)
 
-    def pane_show(self, *args):
-        self.context.listen("driver;position", self.on_update)
-        self.context.listen("emulator;position", self.on_update)
-
     # Not sure whether this is the right thing to do, if it's still locked and then
     # the pane gets hidden?! Let's call it a feature for now...
-    def pane_hide(self, *args):
-        self.context.unlisten("driver;position", self.on_update)
-        self.context.unlisten("emulator;position", self.on_update)
 
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
     def on_update(self, origin, pos):
         # bb = self.get_bbox()
         elements = self.context.elements
@@ -1152,18 +1148,14 @@ class SizePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def pane_show(self, *args):
-        self.context.listen("emphasized", self.on_emphasized_elements_changed)
-        self.context.listen("modified", self.on_modified_element)
+    def module_open(self, *args):
         self.update_sizes()
 
-    def pane_hide(self, *args):
-        self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        self.context.unlisten("modified", self.on_modified_element)
-
+    @signal_listener("modified")
     def on_modified_element(self, origin, *args):
         self.update_sizes()
 
+    @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, elements):
         self.update_sizes()
 
@@ -1517,18 +1509,14 @@ class Transform(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def pane_show(self, *args):
-        self.context.listen("emphasized", self.on_emphasized_elements_changed)
-        self.context.listen("modified", self.on_modified_element)
+    def module_open(self, *args):
         self.update_matrix_text()
 
-    def pane_hide(self, *args):
-        self.context.unlisten("emphasized", self.on_emphasized_elements_changed)
-        self.context.unlisten("modified", self.on_modified_element)
-
+    @signal_listener("modified")
     def on_modified_element(self, origin, *args):
         self.update_matrix_text()
 
+    @signal_listener("emphasized")
     def on_emphasized_elements_changed(self, origin, elements):
         self.select_ready(self.context.elements.has_emphasis())
         self.update_matrix_text()
@@ -1742,7 +1730,7 @@ class JogDistancePanel(wx.Panel):
         self.text_jog_amount.Bind(wx.EVT_KILL_FOCUS, self.on_text_jog_amount)
         # end wxGlade
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         self.text_jog_amount.SetValue(str(self.context.jog_amount))
         self.Children[0].SetFocus()
 
@@ -1805,19 +1793,8 @@ class NavigationPanel(wx.Panel):
         ]
         # end wxGlade
 
-    def pane_show(self):
-        for p in self.panels:
-            try:
-                p.pane_show()
-            except AttributeError:
-                pass
-
-    def pane_hide(self):
-        for p in self.panels:
-            try:
-                p.pane_hide()
-            except AttributeError:
-                pass
+    def delegate(self):
+        yield from self.panels
 
 
 class Navigation(MWindow):
@@ -1825,7 +1802,6 @@ class Navigation(MWindow):
         super().__init__(598, 429, *args, **kwds)
 
         self.panel = NavigationPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         iconsize = get_default_icon_size()
         minw = (3 + 3 + 3) * iconsize + 150
         minh = (4 + 1) * iconsize + 170
@@ -1836,6 +1812,9 @@ class Navigation(MWindow):
         self.SetIcon(_icon)
         # begin wxGlade: Navigation.__set_properties
         self.SetTitle(_("Navigation"))
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):

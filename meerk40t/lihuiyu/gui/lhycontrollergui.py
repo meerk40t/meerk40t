@@ -253,18 +253,12 @@ class LihuiyuControllerPanel(ScrolledPanel):
         # end wxGlade
 
     def module_open(self, *args, **kwargs):
-        self.pane_show()
-
-    def module_close(self, *args, **kwargs):
-        self.pane_hide()
-
-    def pane_show(self):
         self.context.channel(f"{self.context.label}/usb", buffer_size=500).watch(
             self.update_text
         )
         self.on_network_update()
 
-    def pane_hide(self):
+    def module_close(self, *args, **kwargs):
         self.context.channel(f"{self.context.label}/usb").unwatch(self.update_text)
 
     @signal_listener("network_update")
@@ -535,7 +529,6 @@ class LihuiyuControllerGui(MWindow):
         # ==========
 
         self.panel = LihuiyuControllerPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_connected_50.GetBitmap())
         self.SetIcon(_icon)
@@ -564,6 +557,9 @@ class LihuiyuControllerGui(MWindow):
         )
         self.Bind(wx.EVT_MENU, self.on_menu_bufferview, id=item.GetId())
         append(wxglade_tmp_menu, _("Views"))
+
+    def delegate(self):
+        yield self.panel
 
     def window_preserve(self):
         return False

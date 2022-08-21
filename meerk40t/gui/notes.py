@@ -70,14 +70,14 @@ class NotePanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         self.context.setting(bool, "auto_note", True)
         self.check_auto_open_notes.SetValue(self.context.elements.auto_note)
         if self.context.elements.note is not None:
             self.text_notes.SetValue(self.context.elements.note)
         self.context.listen("note", self.on_note_listen)
 
-    def pane_hide(self):
+    def module_close(self):
         self.context.unlisten("note", self.on_note_listen)
 
     def on_check_auto_note_open(self, event=None):  # wxGlade: Notes.<event_handler>
@@ -105,12 +105,14 @@ class Notes(MWindow):
         super().__init__(730, 621, *args, **kwds)
 
         self.panel = NotePanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_comments_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Notes"))
         self.Children[0].SetFocus()
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):

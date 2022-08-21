@@ -599,12 +599,9 @@ class MeerK40tScenePanel(wx.Panel):
             strength = 0
         self.scene.scene.magnet_attraction = strength
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         zl = self.context.zoom_level
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
-
-    def pane_hide(self, *args):
-        pass
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
@@ -722,15 +719,11 @@ class SceneWindow(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(1280, 800, *args, **kwds)
         self.panel = MeerK40tScenePanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icon_meerk40t.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Scene"))
         self.Layout()
 
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
+    def delegate(self):
+        yield self.panel

@@ -58,14 +58,11 @@ class RotarySettingsPanel(ScrolledPanel):
         # )
         self.SetupScrolling()
 
-    def pane_show(self):
+    def module_open(self):
         self.text_rotary_scalex.SetValue(str(self.rotary.scale_x))
         self.text_rotary_scaley.SetValue(str(self.rotary.scale_y))
         self.checkbox_rotary.SetValue(self.rotary.rotary_enabled)
         self.on_check_rotary(None)
-
-    def pane_hide(self):
-        pass
 
     def __set_properties(self):
         self.checkbox_rotary.SetFont(
@@ -197,15 +194,10 @@ class RotarySettings(MWindow):
         super().__init__(200, 125, *args, **kwds)
 
         self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context.rotary)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: RotarySettings.__set_properties
         self.SetTitle(_("RotarySettings"))
-
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
+    def delegate(self):
+        yield self.panel

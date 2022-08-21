@@ -5,6 +5,7 @@ import wx
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -310,14 +311,7 @@ class LihuiyuAccelerationChartPanel(ScrolledPanel):
         self.checkbox_raster_accel_enable.SetValue(context.raster_accel_table)
         self.checkbox_vector_accel_enable.SetValue(context.vector_accel_table)
 
-    def pane_show(self):
-        # self.context.listen("pipe;buffer", self.on_buffer_update)
-        self.context.listen("active", self.on_active_change)
-
-    def pane_hide(self):
-        # self.context.unlisten("pipe;buffer", self.on_buffer_update)
-        self.context.unlisten("active", self.on_active_change)
-
+    @signal_listener("active")
     def on_active_change(self, origin, active):
         # self.Close()
         pass
@@ -351,14 +345,10 @@ class LihuiyuAccelerationChart(MWindow):
         self.panel = LihuiyuAccelerationChartPanel(
             self, wx.ID_ANY, context=self.context
         )
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Acceleration Chart"))
 
-    def window_open(self):
-        self.panel.pane_show()
-
-    def window_close(self):
-        self.panel.pane_hide()
+    def delegate(self):
+        yield self.panel

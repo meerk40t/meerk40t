@@ -344,12 +344,13 @@ class ImageProperty(MWindow):
         self.panel = ImagePropertyPanel(
             self, wx.ID_ANY, context=self.context, node=node
         )
-        self.add_module_delegate(self.panel)
-        # begin wxGlade: ImageProperty.__set_properties
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Image Properties"))
+
+    def delegate(self):
+        yield self.panel
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

@@ -406,12 +406,14 @@ class JobSpooler(MWindow):
         self.panel = SpoolerPanel(
             self, wx.ID_ANY, context=self.context, selected_device=selected_device
         )
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_route_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Job Spooler"))
         self.Layout()
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):

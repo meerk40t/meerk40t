@@ -208,11 +208,8 @@ class TextPropertyPanel(ScrolledPanel):
             return True
         return False
 
-    def pane_show(self):
+    def module_open(self):
         self.set_widgets(self.node)
-
-    def pane_hide(self):
-        pass
 
     def set_widgets(self, node):
         if node is not None:
@@ -631,12 +628,14 @@ class TextProperty(MWindow):
         super().__init__(317, 360, *args, **kwds)
 
         self.panel = TextPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_text_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: TextProperty.__set_properties
         self.SetTitle(_("Text Properties"))
+
+    def delegate(self):
+        yield self.panel
 
     def restore(self, *args, node=None, **kwds):
         self.panel.set_widgets(node)

@@ -227,10 +227,10 @@ class ConsolePanel(wx.ScrolledWindow):
         self.Layout()
         # end wxGlade
 
-    def pane_show(self, *args):
+    def module_open(self, *args):
         self.context.channel("console").watch(self.update_text)
 
-    def pane_hide(self, *args):
+    def module_close(self, *args):
         self.context.channel("console").unwatch(self.update_text)
 
     def clear(self):
@@ -381,12 +381,14 @@ class Console(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(581, 410, *args, **kwds)
         self.panel = ConsolePanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_console_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Console"))
         self.Layout()
+
+    def delegate(self):
+        yield self.panel
 
     @staticmethod
     def sub_register(kernel):
