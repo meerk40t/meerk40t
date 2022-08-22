@@ -550,7 +550,7 @@ class SVGProcessor:
 
             decor = element.values.get("text-decoration", "").lower()
             node = context_node.add(
-                id=element.id,
+                id=ident,
                 text=element.text,
                 x=element.x,
                 y=element.y,
@@ -687,7 +687,7 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list)
         else:
-            # Check if SVGElement:  Note.
+            # SVGElement is type. Generic or unknown node type.
             tag = element.values.get(SVG_ATTR_TAG)
             # We need to reverse the meerk40t:... replacement that the routine had already applied:
             if tag is not None:
@@ -702,6 +702,7 @@ class SVGProcessor:
                     )
                     element.values[tag] = oldval
                     element.values[SVG_ATTR_TAG] = tag
+            # Check if note-type
             if tag in (MEERK40T_XMLS_ID + ":note", "note"):
                 self.elements.note = element.values.get(SVG_TAG_TEXT)
                 self.elements.signal("note", self.pathname)
@@ -715,44 +716,47 @@ class SVGProcessor:
                 node_type = f"op {op_type.lower()}"
                 element.values["attributes"]["type"] = node_type
 
-            if node_type is not None:
-                node_id = element.values.get("id")
+            if node_type is None:
+                # Type is not given. Abort.
+                return
+
+            node_id = element.values.get("id")
+            if tag in (f"{MEERK40T_XMLS_ID}:operation", "operation"):
                 # Check if SVGElement: operation
-                if tag in (MEERK40T_XMLS_ID + ":operation", "operation"):
-                    if not self.operations_cleared:
-                        self.elements.clear_operations()
-                        self.operations_cleared = True
+                if not self.operations_cleared:
+                    self.elements.clear_operations()
+                    self.operations_cleared = True
+                try:
+                    attrs = element.values["attributes"]
+                except KeyError:
+                    attrs = element.values
+                try:
                     try:
-                        attrs = element.values["attributes"]
+                        del attrs["type"]
                     except KeyError:
-                        attrs = element.values
-                    try:
-                        try:
-                            del attrs["type"]
-                        except KeyError:
-                            pass
-                        op = self.elements.op_branch.add(type=node_type, **attrs)
-                        op.validate()
-                        op.id = node_id
-                    except AttributeError:
-                        # This operation is invalid.
                         pass
+                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                    op.validate()
+                    op.id = node_id
+                except AttributeError:
+                    # This operation is invalid.
+                    pass
+            elif tag in (f"{MEERK40T_XMLS_ID}:element", "element"):
                 # Check if SVGElement: element
-                elif tag == "element":
-                    if "type" in element.values:
-                        del element.values["type"]
-                    if "fill" in element.values:
-                        element.values["fill"] = Color(element.values["fill"])
-                    if "stroke" in element.values:
-                        element.values["stroke"] = Color(element.values["stroke"])
-                    if "transform" in element.values:
-                        element.values["matrix"] = Matrix(element.values["transform"])
-                    elem = context_node.add(type=node_type, **element.values)
-                    try:
-                        elem.validate()
-                    except AttributeError:
-                        pass
-                    elem.id = node_id
+                if "type" in element.values:
+                    del element.values["type"]
+                if "fill" in element.values:
+                    element.values["fill"] = Color(element.values["fill"])
+                if "stroke" in element.values:
+                    element.values["stroke"] = Color(element.values["stroke"])
+                if "transform" in element.values:
+                    element.values["matrix"] = Matrix(element.values["transform"])
+                elem = context_node.add(type=node_type, **element.values)
+                try:
+                    elem.validate()
+                except AttributeError:
+                    pass
+                elem.id = node_id
 
 
 class SVGLoader:
