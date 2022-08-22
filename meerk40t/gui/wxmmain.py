@@ -311,7 +311,7 @@ class MeerK40t(MWindow):
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
-        context.setting(int, "zoom_level", 4)  # 4%
+        context.setting(int, "zoom_margin", 4)  # 4%
         # Standard-Icon-Sizes
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
@@ -359,7 +359,7 @@ class MeerK40t(MWindow):
 
         choices = [
             {
-                "attr": "zoom_level",
+                "attr": "zoom_margin",
                 "object": self.context.root,
                 "default": 4,
                 "trailer": "%",
@@ -380,9 +380,9 @@ class MeerK40t(MWindow):
                     20,
                     25,
                 ],
-                "label": _("Default zoom level:"),
+                "label": _("Default zoom margin:"),
                 "tip": _(
-                    "Default zoom level when changing zoom (automatically or via Ctrl-B)"
+                    "Default zoom margin when zoom focused on a location (automatically or via Ctrl-B)"
                 ),
                 "page": "Gui",
                 "section": "Zoom",
@@ -2595,7 +2595,7 @@ class MeerK40t(MWindow):
             return False
         else:
             if results:
-                zl = self.context.zoom_level
+                zl = self.context.zoom_margin
                 self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
                 self.set_file_as_recently_used(pathname)
@@ -2635,7 +2635,7 @@ class MeerK40t(MWindow):
             return
         self.Layout()
         if not self.context.disable_auto_zoom:
-            zl = self.context.zoom_level
+            zl = self.context.zoom_margin
             self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def on_focus_lost(self, event):
@@ -2705,7 +2705,7 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.on_click_zoom_bed(event=event)
         else:
-            zfact = self.context.zoom_level / 100.0
+            zfact = self.context.zoom_margin / 100.0
 
             x_delta = (bbox[2] - bbox[0]) * zfact
             y_delta = (bbox[3] - bbox[1]) * zfact
@@ -2725,14 +2725,14 @@ class MeerK40t(MWindow):
 
     def on_click_toggle_ui(self, event=None):
         self.context("pane toggleui\n")
-        zl = self.context.zoom_level
+        zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom scene to bed size.
         """
-        zoom = self.context.zoom_level
+        zoom = self.context.zoom_margin
         self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
 
     def toggle_draw_mode(self, bits):
