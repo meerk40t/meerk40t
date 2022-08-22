@@ -180,7 +180,10 @@ class InformationPanel(wx.Panel):
         info += f"Version: {uname.version}" + "\n"
         info += f"Machine: {uname.machine}" + "\n"
         info += f"Processor: {uname.processor}" + "\n"
-        info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
+        try:
+            info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
+        except socket.gaierror:
+            info += "Ip-Address: localhost"
         self.os_version.SetValue(info)
 
         info = f"{APPLICATION_NAME} v{APPLICATION_VERSION}"
