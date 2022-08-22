@@ -25,9 +25,11 @@ class RectNode(Node):
         linejoin=None,
         fillrule=None,
         settings=None,
+        **kwargs,
     ):
         if settings is None:
             settings = dict()
+        settings.update(kwargs)
         super(RectNode, self).__init__(type="elem rect", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape

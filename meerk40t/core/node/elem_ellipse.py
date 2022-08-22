@@ -24,9 +24,11 @@ class EllipseNode(Node):
         stroke_scale=None,
         fillrule=None,
         settings=None,
+        **kwargs,
     ):
         if settings is None:
             settings = dict()
+        settings.update(kwargs)
         super(EllipseNode, self).__init__(type="elem ellipse", **settings)
         self.__formatter = "{element_type} {id} {stroke}"
         self.shape = shape

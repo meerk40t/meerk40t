@@ -26,9 +26,11 @@ class LineNode(Node):
         linejoin=None,
         fillrule=None,
         settings=None,
+        **kwargs,
     ):
         if settings is None:
             settings = dict()
+        settings.update(kwargs)
         super(LineNode, self).__init__(type="elem line", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape

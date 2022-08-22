@@ -22,12 +22,13 @@ class NumpathNode(Node, Parameters):
         linejoin=Linejoin.JOIN_MITER,
         fillrule=Fillrule.FILLRULE_EVENODD,
         settings=None,
+        **kwargs,
     ):
         if settings is None:
             settings = dict()
+        settings.update(kwargs)
         super().__init__(*args, **settings)
         self._formatter = "{element_type} {id} {stroke}"
-        self.settings.update(settings)
         self.path = path
         if matrix is None:
             matrix = Matrix()

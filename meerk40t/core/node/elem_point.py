@@ -17,9 +17,11 @@ class PointNode(Node):
         stroke=None,
         stroke_width=None,
         settings=None,
+        **kwargs,
     ):
         if settings is None:
             settings = dict()
+        settings.update(kwargs)
         super(PointNode, self).__init__(type="elem point", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.point = point
