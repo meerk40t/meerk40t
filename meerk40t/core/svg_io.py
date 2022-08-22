@@ -550,6 +550,7 @@ class SVGProcessor:
 
             decor = element.values.get("text-decoration", "").lower()
             node = context_node.add(
+                id=element.id,
                 text=element.text,
                 x=element.x,
                 y=element.y,
