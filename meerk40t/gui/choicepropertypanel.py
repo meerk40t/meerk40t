@@ -841,12 +841,10 @@ class ChoicePropertyPanel(ScrolledPanel):
             )
             self.listeners.append((attr, update_listener))
             context.listen(attr, update_listener)
-
-            try:
+            tip = c.get("tip")
+            if tip and not context.root.disable_tool_tips:
                 # Set the tool tip if 'tip' is available
-                control.SetToolTip(c["tip"])
-            except KeyError:
-                pass
+                control.SetToolTip(tip)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection
