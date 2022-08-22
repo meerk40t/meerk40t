@@ -7,7 +7,14 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 HEADER_TEXT = _(
-    """MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\nParticipation in the project is highly encouraged. Past participation, and continuing participation is graciously thanked. This program is mostly the brainchild of Tatarize, who sincerely hopes his contributions will be but the barest trickle that becomes a raging river."""
+    """MeerK40t is a free MIT Licensed open source project
+for lasering on K40 Devices.
+
+Participation in the project is highly encouraged.
+Past participation, and continuing participation is graciously thanked.
+This program is mostly the brainchild of Tatarize,
+who sincerely hopes his contributions will be but the barest trickle
+that becomes a raging river."""
 )
 
 
