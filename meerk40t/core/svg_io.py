@@ -81,7 +81,8 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("SVG Viewport is Bed"),
                 "tip": _(
-                    "SVG files can be saved without real physical units. This setting uses the SVG viewport dimensions to scale the rest of the elements in the file"
+                    "SVG files can be saved without real physical units.\n"
+                    "This setting uses the SVG viewport dimensions to scale the rest of the elements in the file."
                 ),
                 "page": "Input/Output",
                 "section": "Input",
