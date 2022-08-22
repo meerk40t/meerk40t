@@ -116,7 +116,7 @@ class TextNode(Node):
             width=self.width,
             height=self.height,
             path=self.path,
-            **self.settings,
+            settings=self.settings,
         )
 
     @property
