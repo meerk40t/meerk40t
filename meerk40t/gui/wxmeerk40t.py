@@ -572,7 +572,7 @@ class wxMeerK40t(wx.App, Module):
                         # kernel.run_later(window_close, None)
                     else:
                         if wx.IsMainThread():
-                            window_open(window_open(), None)
+                            window_open(None, None)
                         else:
                             wx.CallAfter(window_open, None)
                         # kernel.run_later(window_open, None)
