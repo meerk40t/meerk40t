@@ -65,6 +65,7 @@ class AboutPanel(wx.Panel):
             wx.ID_ANY,
             HEADER_TEXT,
         )
+        self.meerk40t_about_text_header.Wrap(333)
         self.meerk40t_about_text_header.SetFont(
             wx.Font(
                 10,
