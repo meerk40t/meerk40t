@@ -1,3 +1,5 @@
+import platform
+
 import wx
 
 from meerk40t.core.units import Angle, Length
@@ -272,16 +274,17 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return check
 
-                def on_mouse_over_check(ctrl, tip):
-                    def mouse(event=None):
-                        ctrl.SetToolTip(tip)
-
-                    return mouse
-
-                tip = c.get("tip", None)
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
-                if tip:
-                    control.Bind(wx.EVT_MOTION, on_mouse_over_check(control, tip))
+                if platform.system() == "Linux":
+                    def on_mouse_over_check(ctrl, tooltip):
+                        def mouse(event=None):
+                            ctrl.SetToolTip(tooltip)
+
+                        return mouse
+
+                    tip = c.get("tip", None)
+                    if tip:
+                        control.Bind(wx.EVT_MOTION, on_mouse_over_check(control, tip))
 
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":
