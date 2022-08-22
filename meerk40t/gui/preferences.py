@@ -254,26 +254,35 @@ class PreferencesMain(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def delegates(self):
+        yield self.panel_ppi
+        yield self.panel_language
+        yield self.panel_units
+        yield self.panel_pref1
+
 
 # end of class PreferencesMain
 
-
-class PreferencesPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: PreferencesPanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-
-        sizer_settings = wx.BoxSizer(wx.VERTICAL)
-
-        self.panel_main = PreferencesMain(self, wx.ID_ANY, context=context)
-        sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_settings)
-
-        self.Layout()
-        # end wxGlade
+#
+# class PreferencesPanel(wx.Panel):
+#     def __init__(self, *args, context=None, **kwds):
+#         # begin wxGlade: PreferencesPanel.__init__
+#         kwds["style"] = kwds.get("style", 0)
+#         wx.Panel.__init__(self, *args, **kwds)
+#         self.context = context
+#
+#         sizer_settings = wx.BoxSizer(wx.VERTICAL)
+#
+#         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=context)
+#         sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
+#
+#         self.SetSizer(sizer_settings)
+#
+#         self.Layout()
+#         # end wxGlade
+#
+#     def delegates(self):
+#         yield self.panel_main
 
 
 class Preferences(MWindow):
@@ -298,7 +307,8 @@ class Preferences(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
 
-        self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+        # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+        self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
 
         self.panel_classification = ChoicePropertyPanel(
             self,
@@ -333,14 +343,16 @@ class Preferences(MWindow):
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
         self.Layout()
 
-        self.add_module_delegate(self.panel_main)
-        self.add_module_delegate(self.panel_classification)
-        self.add_module_delegate(self.panel_gui)
-        self.add_module_delegate(self.panel_scene)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
+
+    def delegates(self):
+        yield self.panel_main
+        yield self.panel_classification
+        yield self.panel_gui
+        yield self.panel_scene
 
     @staticmethod
     def sub_register(kernel):
