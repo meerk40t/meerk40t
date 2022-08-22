@@ -329,7 +329,7 @@ class PathPropertyPanel(ScrolledPanel):
             else:
                 self.node.fill = Color("none")
                 self.node.altered()
-        self.node.emphasized = True
+        self.context.elements.set_node_emphasis(self.node, True)
         self.Refresh()
         self.context("declassify\nclassify\n")
         self.context.elements.signal("element_property_update", self.node)

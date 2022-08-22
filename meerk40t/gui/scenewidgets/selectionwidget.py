@@ -1539,7 +1539,7 @@ class LockWidget(Widget):
 
 class RefAlign(wx.Dialog):
     """
-    RefAlign provides a dialog how to aligbn the selection in respect to the reference object
+    RefAlign provides a dialog how to align the selection in respect to the reference object
     """
 
     def __init__(self, context, *args, **kwds):
@@ -1808,46 +1808,31 @@ class SelectionWidget(Widget):
 
     def move_selection_to_ref(self, pos="c"):
         refob = self.scene.reference_object
+
         elements = self.scene.context.elements
         if refob is None:
             return
-        bb = refob.bounds
-
-        cc = elements.selected_area()
-
-        if bb is None or cc is None:
-            return
+        alignbounds = refob.bounds
+        posx = ""
+        posy = ""
         if "l" in pos:
-            tx = bb[0]
+            posx = "min"
         elif "r" in pos:
-            tx = bb[2] - (cc[2] - cc[0])
+            posx = "max"
         else:
-            tx = (bb[0] + bb[2]) / 2 - (cc[2] - cc[0]) / 2
-
+            posx = "center"
         if "t" in pos:
-            ty = bb[1]
+            posy = "min"
         elif "b" in pos:
-            ty = bb[3] - (cc[3] - cc[1])
+            posy = "max"
         else:
-            ty = (bb[1] + bb[3]) / 2 - (cc[3] - cc[1]) / 2
+            posy = "center"
 
-        dx = tx - cc[0]
-        dy = ty - cc[1]
-        # print ("Moving from (%.1f, %.1f) to (%.1f, %.1f) translate by (%.1f, %.1f)" % (cc[0], cc[1], tx, ty, dx, dy ))
+        data = [e for e in elements.flat(types=elem_nodes, emphasized=True) if e != refob]
 
-        for e in elements.flat(types=elem_nodes, emphasized=True):
-            # Here we ignore the lock-status of an element, as this is just a move...
-            allowlockmove = elements.lock_allows_move
-            if hasattr(e, "lock") and e.lock and not allowlockmove:
-                continue
-            if e is not refob:
-
-                e.matrix.post_translate(dx, dy)
-                try:
-                    e.invalidated_node()
-                except AttributeError:
-                    pass
-        elements.update_bounds([cc[0] + dx, cc[1] + dy, cc[2] + dx, cc[3] + dy])
+        elements.align_elements(data, alignbounds, posx, posy, False)
+        for q in data:
+            q.invalidated_node()
 
     def rotate_elements_if_needed(self, doit):
         if not doit:
@@ -1929,6 +1914,7 @@ class SelectionWidget(Widget):
             self.rotate_elements_if_needed(opt_rotate)
             self.scale_selection_to_ref(opt_scale)
             self.move_selection_to_ref(opt_pos)
+            self.scene.context.elements.validate_selected_area()
             self.scene.request_refresh()
 
     def become_reference(self, event):
