@@ -8071,6 +8071,9 @@ class Elemental(Service):
         if emphasize is not None:
             # Validate emphasize
             old_first = self.first_emphasized
+            if old_first is not None and not old_first.emphasized:
+                self.first_emphasized = None
+                old_first = None
             count = 0
             for e in emphasize:
                 count += 1
