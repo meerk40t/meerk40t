@@ -35,13 +35,6 @@ class AboutPanel(wx.Panel):
         name = self.context.kernel.name
         version = self.context.kernel.version
         self.meerk40t_about_version_text.SetLabelText(f"{name}\nv{version}")
-        self.Bind(wx.EVT_SIZE, self.on_size, self)
-
-    def on_size(self, event):
-        tw, th = self.meerk40t_about_text_header.Size
-        self.meerk40t_about_text_header.SetLabelText(HEADER_TEXT)
-        self.meerk40t_about_text_header.Wrap(min(tw, 333))
-        event.Skip()
 
     def __set_properties(self):
         self.bitmap_button_1.SetSize(self.bitmap_button_1.GetBestSize())
@@ -72,7 +65,6 @@ class AboutPanel(wx.Panel):
             wx.ID_ANY,
             HEADER_TEXT,
         )
-        self.meerk40t_about_text_header.Wrap(333)
         self.meerk40t_about_text_header.SetFont(
             wx.Font(
                 10,
