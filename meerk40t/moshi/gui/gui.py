@@ -18,6 +18,10 @@ def plugin(service, lifecycle):
 
         service.register("window/Controller", MoshiControllerGui)
         service.register("window/Configuration", MoshiDriverGui)
+
+        service.register("winpath/Controller", service)
+        service.register("winpath/Configuration", service)
+
         _ = service._
 
         service.register(
