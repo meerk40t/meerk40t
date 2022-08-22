@@ -539,8 +539,11 @@ class wxMeerK40t(wx.App, Module):
                 window_uri = window_class
                 window_class = context.lookup(window_uri)
 
-            if hasattr(window_class, "required_path"):
-                path = context.get_context(window_class.required_path)
+            new_path = context.lookup(f"winpath/{window}")
+            if new_path:
+                path = new_path
+            else:
+                path = context
 
             window_name = f"{window_uri}:{multi}" if multi is not None else window_uri
 
@@ -553,7 +556,7 @@ class wxMeerK40t(wx.App, Module):
                 channel(_("Window closed: {window}").format(window=window))
 
             if command == "open":
-                if context.lookup(window_uri) is not None:
+                if path.lookup(window_uri) is not None:
                     if wx.IsMainThread():
                         window_open(None)
                     else:
