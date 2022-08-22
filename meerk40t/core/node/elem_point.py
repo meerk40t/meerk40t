@@ -43,12 +43,13 @@ class PointNode(Node):
         )
 
     def validate(self):
-        if self.point is None:
-            self.point = Point(
-                float(self.settings.get("x", 0)), float(self.settings.get("y", 0))
-            )
         if self.matrix is None:
             self.matrix = Matrix()
+        if self.point is None:
+            x = float(self.settings.get("x", 0))
+            y = float(self.settings.get("y", 0))
+            self.matrix.pre_translate(x, y)
+            self.point = Point(0, 0)
 
     def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
