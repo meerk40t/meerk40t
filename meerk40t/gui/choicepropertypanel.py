@@ -274,7 +274,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 def on_mouse_over_check(ctrl, tip):
                     def mouse(event=None):
-                        ctrl.SetToolTipString(tip)
+                        ctrl.SetToolTip(tip)
 
                     return mouse
 
