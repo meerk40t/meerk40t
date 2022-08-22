@@ -12,6 +12,7 @@ class NumpathNode(Node, Parameters):
 
     def __init__(
         self,
+        *args,
         path=None,
         matrix=None,
         fill=None,
@@ -20,12 +21,13 @@ class NumpathNode(Node, Parameters):
         linecap=Linecap.CAP_BUTT,
         linejoin=Linejoin.JOIN_MITER,
         fillrule=Fillrule.FILLRULE_EVENODD,
-        *args,
-        **kwargs,
+        settings=None,
     ):
-        super().__init__(*args, **kwargs)
+        if settings is None:
+            settings = dict()
+        super().__init__(*args, **settings)
         self._formatter = "{element_type} {id} {stroke}"
-        self.settings.update(kwargs)
+        self.settings.update(settings)
         self.path = path
         if matrix is None:
             matrix = Matrix()
@@ -48,7 +50,7 @@ class NumpathNode(Node, Parameters):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
-            **self.settings,
+            settings=self.settings,
         )
 
     def __repr__(self):

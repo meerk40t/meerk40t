@@ -23,12 +23,14 @@ class EllipseNode(Node):
         stroke_width=None,
         stroke_scale=None,
         fillrule=None,
-        **kwargs,
+        settings=None,
     ):
-        super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
+        if settings is None:
+            settings = dict()
+        super(EllipseNode, self).__init__(type="elem ellipse", **settings)
         self.__formatter = "{element_type} {id} {stroke}"
         self.shape = shape
-        self.settings = kwargs
+        self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
         self.fill = shape.fill if fill is None else fill
         self.stroke = shape.stroke if stroke is None else stroke
@@ -53,7 +55,7 @@ class EllipseNode(Node):
             stroke_width=copy(self.stroke_width),
             stroke_scale=self._stroke_scaled,
             fillrule=self.fillrule,
-            **self.settings,
+            setting=self.settings,
         )
 
     @property

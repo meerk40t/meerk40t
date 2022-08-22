@@ -31,26 +31,28 @@ class ImageNode(Node):
         green=None,
         blue=None,
         lightness=None,
-        **kwargs,
+        settings=None,
     ):
-        super(ImageNode, self).__init__(type="elem image", **kwargs)
+        if settings is None:
+            settings = dict()
+        super(ImageNode, self).__init__(type="elem image", **settings)
         self.__formatter = "{element_type} {width}x{height}"
-        if "href" in kwargs:
+        if "href" in settings:
             self.matrix = Matrix()
             try:
                 from PIL import Image as PILImage
 
-                self.image = PILImage.open(kwargs["href"])
-                if "x" in kwargs:
-                    self.matrix.post_translate_x(kwargs["x"])
-                if "y" in kwargs:
-                    self.matrix.post_translate_x(kwargs["y"])
+                self.image = PILImage.open(settings["href"])
+                if "x" in settings:
+                    self.matrix.post_translate_x(settings["x"])
+                if "y" in settings:
+                    self.matrix.post_translate_x(settings["y"])
                 real_width, real_height = self.image.size
                 declared_width, declared_height = real_width, real_height
-                if "width" in kwargs:
-                    declared_width = kwargs["width"]
-                if "height" in kwargs:
-                    declared_height = kwargs["height"]
+                if "width" in settings:
+                    declared_width = settings["width"]
+                if "height" in settings:
+                    declared_height = settings["height"]
                 try:
                     sx = declared_width / real_width
                     sy = declared_height / real_height
@@ -63,7 +65,7 @@ class ImageNode(Node):
             self.image = image
             self.matrix = matrix
 
-        self.settings = kwargs
+        self.settings = settings
         self.overscan = overscan
         self.direction = direction
         self.dpi = dpi
@@ -107,7 +109,7 @@ class ImageNode(Node):
             green=self.green,
             blue=self.blue,
             lightness=self.lightness,
-            **self.settings,
+            settings=self.settings,
         )
 
     def __repr__(self):

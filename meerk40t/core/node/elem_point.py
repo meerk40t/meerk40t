@@ -16,13 +16,15 @@ class PointNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
-        **kwargs,
+        settings=None,
     ):
-        super(PointNode, self).__init__(type="elem point", **kwargs)
+        if settings is None:
+            settings = dict()
+        super(PointNode, self).__init__(type="elem point", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.point = point
         self.matrix = matrix
-        self.settings = kwargs
+        self.settings = settings
         self.fill = fill
         self.stroke = stroke
         self.stroke_width = stroke_width
@@ -35,7 +37,7 @@ class PointNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
-            **self.settings,
+            settings=self.settings,
         )
 
     def validate(self):
