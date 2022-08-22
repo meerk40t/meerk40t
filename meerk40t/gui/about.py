@@ -33,7 +33,7 @@ class AboutPanel(wx.Panel):
     def on_size(self, event):
         tw, th = self.meerk40t_about_text_header.Size
         self.meerk40t_about_text_header.SetLabelText(HEADER_TEXT)
-        self.meerk40t_about_text_header.Wrap(tw)
+        self.meerk40t_about_text_header.Wrap(min(tw,380))
         event.Skip()
 
     def __set_properties(self):
