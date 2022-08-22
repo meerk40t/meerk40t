@@ -7901,6 +7901,8 @@ class Elemental(Service):
         for node in self.flat():
             if node.id is None:
                 missing.append(node)
+            else:
+                uid[node.id] = node
         for m in missing:
             while f"meerk40t:{idx}" in uid:
                 idx += 1
