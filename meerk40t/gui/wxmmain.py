@@ -387,6 +387,32 @@ class MeerK40t(MWindow):
                 "page": "Gui",
                 "section": "Zoom",
             },
+            {
+                "attr": "zoom_factor",
+                "object": self.context.root,
+                "default": 0.1,
+                "trailer": "x",
+                "type": float,
+                "label": _("Default zoom factor:"),
+                "tip": _(
+                    "Default zoom factor controls how quick or fast zooming happens."
+                ),
+                "page": "Gui",
+                "section": "Zoom",
+            },
+            {
+                "attr": "pan_factor",
+                "object": self.context.root,
+                "default": 25.0,
+                "trailer": "px",
+                "type": float,
+                "label": _("Default pan factor:"),
+                "tip": _(
+                    "Default pan factor controls how quick panning happens."
+                ),
+                "page": "Gui",
+                "section": "Zoom",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
         choices = [
