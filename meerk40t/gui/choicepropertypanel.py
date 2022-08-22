@@ -854,6 +854,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
+        self._detached = False
 
     @staticmethod
     def unsorted_label(original):
@@ -865,9 +866,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 result = result[idx + 1 :]
         return result
 
+    def module_close(self):
+        self.pane_hide()
+
     def pane_hide(self):
-        for attr, listener in self.listeners:
-            self.context.unlisten(attr, listener)
+        if not self._detached:
+            for attr, listener in self.listeners:
+                self.context.unlisten(attr, listener)
+            self._detached = True
 
     def pane_show(self):
         pass
