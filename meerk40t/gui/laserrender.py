@@ -759,7 +759,7 @@ class LaserRender:
             gc.PushState()
             gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
             font = wx.Font()
-            font.SetFractionalPointSize(20)
+            font.SetPointSize(20)
             gc.SetFont(font, wx.BLACK)
             gc.DrawText(txt, 30, 30)
             gc.PopState()
