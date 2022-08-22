@@ -427,11 +427,36 @@ class Context:
 
         instance = open_object(self, instance_path, *args, **kwargs)
         instance.registered_path = registered_path
+        self._module_delegate(instance)
 
         # Call module_open lifecycle event.
         self.kernel.set_module_lifecycle(instance, LIFECYCLE_MODULE_OPENED)
 
         return instance
+
+    def _module_delegate(self, module, model=None, add=True):
+        """
+        Recursively find any delegates for a module yielded under `.delegate()`
+        @param module:
+        @param model:
+        @param add:
+        @return:
+        """
+        kernel = self.kernel
+        if model is None:
+            model = module
+
+        try:
+            if model is not module:
+                # We are the model we don't delegate to it.
+                if add:
+                    kernel.add_delegate(model, module)
+                else:
+                    kernel.remove_delegate(model, module)
+            for delegate in model.delegates():
+                self._module_delegate(module=module, model=delegate, add=add)
+        except AttributeError:
+            pass
 
     def close(self, instance_path: str, *args, **kwargs) -> None:
         """

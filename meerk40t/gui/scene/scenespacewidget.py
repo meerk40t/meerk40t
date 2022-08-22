@@ -75,7 +75,7 @@ class SceneSpaceWidget(Widget):
 
     @property
     def zoom_factor(self):
-        zf = 1.0 / self.scene.context.zoom_level
+        zf = self.scene.context.zoom_factor
         if self.scene.context.mouse_zoom_invert:
             zf = -zf
         zf += 1.0

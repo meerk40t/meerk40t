@@ -27,6 +27,9 @@ def plugin(service, lifecycle):
         service.register("window/Controller", BalorController)
         service.register("window/Configuration", BalorConfiguration)
 
+        service.register("winpath/Controller", service)
+        service.register("winpath/Configuration", service)
+
         _ = service.kernel.translation
 
         service.register(

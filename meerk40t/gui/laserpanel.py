@@ -358,5 +358,5 @@ class LaserPanel(wx.Panel):
             "device", self.selected_device.path
         )
         # Device change, so let's focus properly...
-        zl = self.context.zoom_level
+        zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")

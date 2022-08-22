@@ -19,6 +19,10 @@ def plugin(service, lifecycle):
 
         service.register("window/Serial-Controller", SerialController)
         service.register("window/Configuration", GRBLConfiguration)
+
+        service.register("winpath/Serial-Controller", service)
+        service.register("winpath/Configuration", service)
+
         _ = service._
 
         service.register(

@@ -21,12 +21,16 @@ class PathNode(Node):
         linecap=None,
         linejoin=None,
         fillrule=None,
+        settings=None,
         **kwargs,
     ):
+        if settings is None:
+            settings = dict()
+        settings.update(kwargs)
         super(PathNode, self).__init__(type="elem path")
         self._formatter = "{element_type} {id} {stroke}"
         self.path = path
-        self.settings = kwargs
+        self.settings = settings
         self.matrix = path.transform if matrix is None else matrix
         self.fill = path.fill if fill is None else fill
         self.stroke = path.stroke if stroke is None else stroke
@@ -52,7 +56,7 @@ class PathNode(Node):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
-            **self.settings,
+            settings=self.settings,
         )
 
     def __repr__(self):

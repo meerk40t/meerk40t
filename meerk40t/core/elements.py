@@ -7899,8 +7899,15 @@ class Elemental(Service):
         uid = {}
         missing = list()
         for node in self.flat():
+            if node.id in uid:
+                # ID already used. Clear.
+                node.id = None
             if node.id is None:
+                # Unused IDs need new IDs
                 missing.append(node)
+            else:
+                # Set this ID as used.
+                uid[node.id] = node
         for m in missing:
             while f"meerk40t:{idx}" in uid:
                 idx += 1

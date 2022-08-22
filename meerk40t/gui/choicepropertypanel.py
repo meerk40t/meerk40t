@@ -1,3 +1,5 @@
+import platform
+
 import wx
 
 from meerk40t.core.units import Angle, Length
@@ -273,6 +275,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
+                if platform.system() == "Linux" and not context.root.disable_tool_tips:
+                    def on_mouse_over_check(ctrl, tooltip):
+                        def mouse(event=None):
+                            ctrl.SetToolTip(tooltip)
+
+                        return mouse
+
+                    tip = c.get("tip", None)
+                    if tip:
+                        control.Bind(wx.EVT_MOTION, on_mouse_over_check(control, tip))
+
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":
                 control_sizer = wx.StaticBoxSizer(
@@ -828,12 +841,10 @@ class ChoicePropertyPanel(ScrolledPanel):
             )
             self.listeners.append((attr, update_listener))
             context.listen(attr, update_listener)
-
-            try:
+            tip = c.get("tip")
+            if tip and not context.root.disable_tool_tips:
                 # Set the tool tip if 'tip' is available
-                control.SetToolTip(c["tip"])
-            except KeyError:
-                pass
+                control.SetToolTip(tip)
             last_page = this_page
             last_section = this_section
             last_subsection = this_subsection
@@ -843,6 +854,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
+        self._detached = False
 
     @staticmethod
     def unsorted_label(original):
@@ -854,9 +866,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 result = result[idx + 1 :]
         return result
 
+    def module_close(self):
+        self.pane_hide()
+
     def pane_hide(self):
-        for attr, listener in self.listeners:
-            self.context.unlisten(attr, listener)
+        if not self._detached:
+            for attr, listener in self.listeners:
+                self.context.unlisten(attr, listener)
+            self._detached = True
 
     def pane_show(self):
         pass
