@@ -275,7 +275,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
-                if platform.system() == "Linux":
+                if platform.system() == "Linux" and not context.root.disable_tool_tips:
                     def on_mouse_over_check(ctrl, tooltip):
                         def mouse(event=None):
                             ctrl.SetToolTip(tooltip)
