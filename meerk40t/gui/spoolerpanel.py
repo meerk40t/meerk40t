@@ -377,9 +377,15 @@ class SpoolerPanel(wx.Panel):
         # 2) As this is a signal it may come later, ie the job has already finished
         #
         # The checks here are rather basic and need to be revisited
-
-        if len(spooler.queue) != self.list_job_spool.GetItemCount():
-            # Mismatch
+        # !!! TODO !!!
+        try:
+            if len(spooler.queue) != self.list_job_spool.GetItemCount():
+                # Mismatch
+                return
+        except RuntimeError:
+            # happens when a routine for a previous instance is called
+            #    RuntimeError: wrapped C/C++ object of type ListCtrl has been deleted
+            # This is a *very * crude workaround and needs to be revisited as well
             return
 
         self._last_invokation = dtime
