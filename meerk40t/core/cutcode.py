@@ -399,6 +399,13 @@ class CutCode(CutGroup):
         yield "plot_start"
 
     def length_travel(self, include_start=False, stop_at=-1):
+        """
+        Calculates the distance traveled between cutcode objects.
+
+        @param include_start: shoudl the distance include the start
+        @param stop_at: stop position
+        @return:
+        """
         cutcode = list(self.flat())
         if len(cutcode) == 0:
             return 0
@@ -420,6 +427,12 @@ class CutCode(CutGroup):
         return distance
 
     def length_cut(self, stop_at=-1):
+        """
+        Calculated the length of the cutcode code distance.
+
+        @param stop_at: stop index
+        @return:
+        """
         cutcode = list(self.flat())
         distance = 0
         if stop_at < 0:
@@ -432,6 +445,12 @@ class CutCode(CutGroup):
         return distance
 
     def extra_time(self, stop_at=-1):
+        """
+        Raw calculation of extra time within this cutcode objects.
+
+        @param stop_at:
+        @return:
+        """
         cutcode = list(self.flat())
         extra = 0
         if stop_at < 0:
@@ -439,11 +458,18 @@ class CutCode(CutGroup):
         if stop_at > len(cutcode):
             stop_at = len(cutcode)
         for i in range(0, stop_at):
-            curr = cutcode[i]
-            extra += curr.extra()
+            current = cutcode[i]
+            extra += current.extra()
         return extra
 
     def duration_cut(self, stop_at=None):
+        """
+        Time taken to cut this cutcode object. Since objects can cut at different speed each individual object
+        speed is taken into account.
+
+        @param stop_at: stop index
+        @return:
+        """
         cutcode = list(self.flat())
         duration = 0
         if stop_at is None:
