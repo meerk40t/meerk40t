@@ -16,8 +16,6 @@ from meerk40t.svgelements import (
     QuadraticBezier,
 )
 
-MILS_IN_MM = 39.3701
-
 
 class EngraveOpNode(Node, Parameters):
     """
@@ -243,7 +241,7 @@ class EngraveOpNode(Node, Parameters):
                 continue
             length = path.length(error=1e-2, min_depth=2)
             try:
-                estimate += length / (MILS_IN_MM * self.speed)
+                estimate += length / (UNITS_PER_MM * self.speed)
             except ZeroDivisionError:
                 estimate = float("inf")
         if self.passes_custom and self.passes != 1:

@@ -241,7 +241,7 @@ class CutOpNode(Node, Parameters):
             except AttributeError:
                 length = 0
             try:
-                estimate += length / (MILS_IN_MM * self.speed)
+                estimate += length / (UNITS_PER_MM * self.speed)
             except ZeroDivisionError:
                 estimate = float("inf")
         if self.passes_custom and self.passes != 1:
