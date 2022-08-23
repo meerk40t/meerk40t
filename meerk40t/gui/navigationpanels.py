@@ -47,10 +47,6 @@ from meerk40t.svgelements import Angle
 
 _ = wx.GetTranslation
 
-
-MILS_IN_MM = 39.3701
-
-
 def register_panel_navigation(window, context):
     panel = Drag(window, wx.ID_ANY, context=context)
     iconsize = get_default_icon_size()

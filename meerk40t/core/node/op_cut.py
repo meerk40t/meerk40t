@@ -16,8 +16,6 @@ from meerk40t.svgelements import (
     QuadraticBezier,
 )
 
-MILS_IN_MM = 39.3701
-
 
 class CutOpNode(Node, Parameters):
     """
