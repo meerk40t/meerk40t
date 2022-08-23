@@ -255,7 +255,6 @@ class SimulationPanel(wx.Panel, Job):
         self.hscene_sizer.Add(self.btn_slide_options, 0, wx.EXPAND, 0)
         self.hscene_sizer.Add(self.voption_sizer, 1, wx.EXPAND, 0)
 
-
         h_sizer_scroll.Add(self.slider_progress, 1, wx.EXPAND, 0)
 
         sizer_laser_distance.Add(self.text_distance_laser_step, 1, wx.EXPAND, 0)
@@ -485,9 +484,6 @@ class SimulationPanel(wx.Panel, Job):
         self.text_distance_travel_step.SetValue(f"{travel_mm:.2f}mm")
         self.text_distance_laser_step.SetValue(f"{cuts_mm:.2f}mm")
         self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
-
-        extra = self.cutcode.extra_time(stop_at=step)
-
         try:
             time_travel = self.cutcode.duration_travel(step)
             t_hours = int(time_travel // 3600)
@@ -496,6 +492,9 @@ class SimulationPanel(wx.Panel, Job):
             self.text_time_travel_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
+        except ZeroDivisionError:
+            time_travel = 0
+        try:
             time_cuts = self.cutcode.duration_cut(stop_at=step)
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
@@ -503,6 +502,10 @@ class SimulationPanel(wx.Panel, Job):
             self.text_time_laser_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
+        except ZeroDivisionError:
+            time_cuts = 0
+        try:
+            extra = self.cutcode.extra_time(stop_at=step)
             time_total = time_travel + time_cuts + extra
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
@@ -523,19 +526,24 @@ class SimulationPanel(wx.Panel, Job):
         self.text_distance_laser.SetValue(f"{cuts_mm:.2f}mm")
         self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
 
-        extra = self.cutcode.extra_time()
-
         try:
             time_travel = self.cutcode.duration_travel()
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
             self.text_time_travel.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
+        except ZeroDivisionError:
+            time_travel = 0
+        try:
             time_cuts = self.cutcode.duration_cut()
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
             self.text_time_laser.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
+        except ZeroDivisionError:
+            time_cuts = 0
+        try:
+            extra = self.cutcode.extra_time()
             time_total = time_travel + time_cuts + extra
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
