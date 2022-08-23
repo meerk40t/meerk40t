@@ -3430,6 +3430,8 @@ class Elemental(Service):
             dots_per_units = dpi / UNITS_PER_INCH
             new_width = width * dots_per_units
             new_height = height * dots_per_units
+            new_height = max(new_height, 1)
+            new_width = max(new_width, 1)
 
             image = make_raster(
                 data,
