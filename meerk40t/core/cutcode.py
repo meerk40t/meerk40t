@@ -456,8 +456,9 @@ class CutCode(CutGroup):
             stop_at = len(cutcode)
         for i in range(0, stop_at):
             curr = cutcode[i]
+            native_speed = curr.settings.get("native_speed", curr.speed)
             if curr.speed != 0:
-                distance += (curr.length() / MILS_IN_MM) / curr.speed
+                distance += curr.length() / native_speed
         return distance
 
     @classmethod
