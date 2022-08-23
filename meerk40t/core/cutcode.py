@@ -402,7 +402,7 @@ class CutCode(CutGroup):
         """
         Calculates the distance traveled between cutcode objects.
 
-        @param include_start: shoudl the distance include the start
+        @param include_start: should the distance include the start
         @param stop_at: stop position
         @return:
         """
@@ -476,7 +476,7 @@ class CutCode(CutGroup):
             stop_at = len(cutcode)
         if stop_at > len(cutcode):
             stop_at = len(cutcode)
-        for current in cutcode[0 : stop_at]:
+        for current in cutcode[0:stop_at]:
             native_speed = current.settings.get("native_speed", current.speed)
             if current.speed != 0:
                 duration += current.length() / native_speed
@@ -490,7 +490,17 @@ class CutCode(CutGroup):
         @return:
         """
         travel = self.length_travel()
-        rapid_speed = self.settings.get("native_rapid_speed", 0)
+        cutcode = list(self.flat())
+        if cutcode:
+            current = cutcode[0]
+            rapid_speed = current.settings.get(
+                "native_rapid_speed",
+                current.settings.get("native_speed", current.speed),
+            )
+        else:
+            rapid_speed = self.settings.get(
+                "native_rapid_speed", self.settings.get("native_speed", self.speed)
+            )
         return travel / rapid_speed
 
     @classmethod
