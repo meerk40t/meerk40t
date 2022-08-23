@@ -19,7 +19,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
 from enum import Enum
-
+from time import time
 
 # LINEJOIN
 # Value	arcs | bevel |miter | miter-clip | round
@@ -69,6 +69,7 @@ class Node:
 
         self._selected = False
         self._emphasized = False
+        self._emphasized_time = None
         self._highlighted = False
         self._target = False
 
@@ -133,8 +134,13 @@ class Node:
 
     @emphasized.setter
     def emphasized(self, value):
-        self._emphasized = value
+        if value != self._emphasized:
+            self._emphasized = value
+            self._emphasized_time = time() if value else None
         self.notify_emphasized(self)
+
+    def emphasized_since(self, reftime):
+        return 0 if self._emphasized_time is None else reftime - self._emphasized_time
 
     @property
     def selected(self):
