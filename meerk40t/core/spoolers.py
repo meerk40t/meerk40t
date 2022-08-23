@@ -446,6 +446,9 @@ class LaserJob:
             if hasattr(self._driver, "total_steps"):
                 total = self._driver.total_steps
                 current = self._driver.current_steps
+                # Safety belt, as we have disabled the logic partially
+                if total < current:
+                    total = current + 1
                 if current > 10 and total > 0:
                     # Arbitrary minimum steps (if too low, value is erratic)
                     ratio = total / current

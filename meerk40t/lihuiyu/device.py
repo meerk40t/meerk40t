@@ -1765,16 +1765,17 @@ class LihuiyuDriver(Parameters):
             self.dummy_planner.push(plot)
 
     def plot_start(self):
+        self.total_steps = 0
+        self.current_steps = 0
         if self.plot_data is None:
             self.plot_data = self.plot_planner.gen()
-
-            assessment_start = time.time()
-            dummy_data = list(self.dummy_planner.gen())
-            self.total_steps += len(dummy_data)
-            self.dummy_planner.clear()
-            # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
-
-        self.current_steps = 0
+            skip_calc = True
+            if not skip_calc:
+                assessment_start = time.time()
+                dummy_data = list(self.dummy_planner.gen())
+                self.total_steps += len(dummy_data)
+                self.dummy_planner.clear()
+                # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
         self.plotplanner_process()
 
