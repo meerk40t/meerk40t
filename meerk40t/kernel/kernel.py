@@ -2017,6 +2017,8 @@ class Kernel(Settings):
                     for listener, lso in listens:
                         if lso is cookie:
                             self._removing_listeners.append((signal, listener, cookie))
+        # if len(self._removing_listeners) != len(set(self._removing_listeners)):
+        #     print("Warning duplicate listener removing.")
 
     # ==========
     # CHANNEL PROCESSING
