@@ -18,8 +18,6 @@ properties for that cuts may need or use. Or which may be used by the CutPlanner
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
 
-MILS_IN_MM = 39.3701
-
 
 class CutObject(Parameters):
     """
