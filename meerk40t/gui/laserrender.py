@@ -897,7 +897,8 @@ class LaserRender:
             width = raster_width / step_x
         if height is None:
             height = raster_height / step_y
-
+        width = max(width, 1)
+        height = max(height, 1)
         bmp = wx.Bitmap(int(ceil(abs(width))), int(ceil(abs(height))), 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
