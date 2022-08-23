@@ -334,8 +334,6 @@ class CutCode(CutGroup):
     def __init__(self, seq=(), settings=None):
         CutGroup.__init__(self, None, seq, settings=settings)
         self.output = True
-
-        self.travel_speed = 20.0
         self.mode = None
 
     def __str__(self):
@@ -447,17 +445,27 @@ class CutCode(CutGroup):
 
     def duration_cut(self, stop_at=None):
         cutcode = list(self.flat())
-        distance = 0
+        duration = 0
         if stop_at is None:
             stop_at = len(cutcode)
         if stop_at > len(cutcode):
             stop_at = len(cutcode)
-        for i in range(0, stop_at):
-            curr = cutcode[i]
-            native_speed = curr.settings.get("native_speed", curr.speed)
-            if curr.speed != 0:
-                distance += curr.length() / native_speed
-        return distance
+        for current in cutcode[0 : stop_at]:
+            native_speed = current.settings.get("native_speed", current.speed)
+            if current.speed != 0:
+                duration += current.length() / native_speed
+        return duration
+
+    def duration_travel(self, stop_at=None):
+        """
+        Duration of travel time taken within the cutcode.
+
+        @param stop_at: stop index
+        @return:
+        """
+        travel = self.length_travel()
+        rapid_speed = self.settings.get("native_rapid_speed", 0)
+        return travel / rapid_speed
 
     @classmethod
     def from_lasercode(cls, lasercode):
