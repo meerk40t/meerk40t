@@ -478,7 +478,7 @@ class CutCode(CutGroup):
             stop_at = len(cutcode)
         for current in cutcode[0:stop_at]:
             native_speed = current.settings.get("native_speed", current.speed)
-            if current.speed != 0:
+            if native_speed != 0:
                 duration += current.length() / native_speed
         return duration
 
