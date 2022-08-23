@@ -383,7 +383,7 @@ class SpoolerPanel(wx.Panel):
                 minutes, seconds = divmod(remainder, 60)
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                 self.list_job_spool.SetItem(list_id, 6, runtime)
-            except AttributeError:
+            except (AttributeError, AssertionError):
                 self.list_job_spool.SetItem(list_id, 6, "-")
 
             # Estimate Time
@@ -393,7 +393,7 @@ class SpoolerPanel(wx.Panel):
                 minutes, seconds = divmod(remainder, 60)
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                 self.list_job_spool.SetItem(list_id, 7, runtime)
-            except AttributeError:
+            except (AttributeError, AssertionError):
                 self.list_job_spool.SetItem(list_id, 7, "-")
 
 
