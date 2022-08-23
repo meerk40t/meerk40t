@@ -891,8 +891,8 @@ class LaserRender:
                 x_max = bb[2]
             if bb[3] > y_max:
                 y_max = bb[3]
-        raster_width = x_max - x_min
-        raster_height = y_max - y_min
+        raster_width = max(x_max - x_min, 1)
+        raster_height = max(y_max - y_min, 1)
         if width is None:
             width = raster_width / step_x
         if height is None:
