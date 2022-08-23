@@ -331,6 +331,9 @@ class LaserJob:
         self._stopped = True
 
         self._estimate = 0
+        # THIS NEEDS TO BE AMENDED
+        # CUTCODE IS IN DEVICE UNITS.
+        # Device delivers two values:
         MILS_IN_MM = 39.3701
 
         for item in self.items:
@@ -456,6 +459,9 @@ class LaserJob:
             if hasattr(self._driver, "total_steps"):
                 total = self._driver.total_steps
                 current = self._driver.current_steps
+                # Safety belt, as we have disabled the logic partially
+                if total < current:
+                    total = current + 1
                 if current > 10 and total > 0:
                     # Arbitrary minimum steps (if too low, value is erratic)
                     ratio = total / current

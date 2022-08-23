@@ -735,9 +735,11 @@ class Elemental(Service):
 
         if individually:
             groupmatrix = ""
+            groupdx = 0
+            groupdy = 0
         else:
-            dx, dy = calc_dx_dy()
-            groupmatrix = f"translate({dx}, {dy})"
+            groupdx, groupdy = calc_dx_dy()
+            groupmatrix = f"translate({groupdx}, {groupdy})"
 
         # Looping through all nodes with node.flat can provide
         # multiple times a single node, as you may loop through
@@ -756,6 +758,8 @@ class Elemental(Service):
                 dx, dy = calc_dx_dy()
                 matrix = f"translate({dx}, {dy})"
             else:
+                dx = groupdx
+                dy = groupdy
                 matrix = groupmatrix
             if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
                 continue
