@@ -139,8 +139,19 @@ class Node:
             self._emphasized_time = time() if value else None
         self.notify_emphasized(self)
 
-    def emphasized_since(self, reftime):
-        return 0 if self._emphasized_time is None else reftime - self._emphasized_time
+    def emphasized_since(self, reftime=None, fullres=False):
+        # we intentionally reduce the resolution to 1/100 sec.
+        # to allow simultaneous assignments to return the same delta
+        factor = 100
+        if reftime is None:
+            reftime = time()
+        if self._emphasized_time is None:
+            delta = 0
+        else:
+            delta = reftime - self._emphasized_time
+            if not fullres:
+                delta = round(delta * factor) / factor
+        return delta
 
     @property
     def selected(self):
