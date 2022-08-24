@@ -89,8 +89,10 @@ class Node:
         return f"Node('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        n = Node(type=self.type)
-        return n
+        settings = {}
+        if hasattr(self, "settings"):
+            settings.update(self.settings)
+        return self.create(type=self.type, id=self.id, **settings)
 
     def __str__(self):
         text = self._formatter
