@@ -442,6 +442,17 @@ class MeerK40t(MWindow):
                 "page": "Scene",
                 "section": "General",
             },
+            {
+                "attr": "auto_select",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Auto-select element after creation"),
+                "tip": _(
+                    "Active: selects a newly created element (via one of the tools in the toolbar)"),
+                "page": "Scene",
+                "section": "General",
+            },
         ]
         context.kernel.register_choices("preferences", choices)
 

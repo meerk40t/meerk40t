@@ -28,7 +28,11 @@ class ToolWidget(Widget):
 
     def notify_created(self, node=None):
         self.scene.context.signal("element_added", node)
-        self.scene.context.elements.set_emphasis([node])
+        select_it = getattr(self.scene.context, "auto_select", True)
+        if select_it:
+            self.scene.context.elements.set_emphasis([node])
+        else:
+            self.scene.context.elements.set_emphasis(None)
         ## Make some final steps like deemphasize existing elements etc
 
     def process_draw(self, gc):
