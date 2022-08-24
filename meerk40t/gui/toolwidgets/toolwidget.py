@@ -28,6 +28,8 @@ class ToolWidget(Widget):
 
     def notify_created(self, node=None):
         self.scene.context.signal("element_added", node)
+        self.scene.context.elements.set_emphasis([node])
+        ## Make some final steps like deemphasize existing elements etc
 
     def process_draw(self, gc):
         self.brush.draw(gc)
