@@ -46,20 +46,12 @@ def plugin(kernel, lifecycle):
             )
 
             # reorder elements
-            first = elements.first_emphasized
-            if first is not None and first in data:
-                reordered = [first]
-                for node in data:
-                    if node != first:
-                        reordered.append(node)
-            else:
-                reordered = data
-
+            data.sort(key=lambda n: n.emphasized_time)
             last_polygon = None
             node = None
 
-            for i in range(len(reordered)):
-                node = reordered[i]
+            for i in range(len(data)):
+                node = data[i]
                 try:
                     path = node.as_path()
                 except AttributeError:
