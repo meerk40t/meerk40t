@@ -531,23 +531,26 @@ class Node:
             self._children.insert(pos, node)
         node.notify_attached(node, pos=pos)
 
+    def create(self,  type=None, id=None, pos=None, **kwargs):
+        node_class = self._root.bootstrap.get(type, Node)
+        node = node_class(**kwargs)
+        node.type = type
+        node.id = id
+        if self._root is not None:
+            self._root.notify_created(node)
+        return node
+
     def add(self, type=None, id=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
-        @param data_object:
         @param type:
-        @param label: display name for this node
+        @param id: node id
         @param pos:
         @return:
         """
-        node_class = self._root.bootstrap.get(type, Node)
-        node = node_class(**kwargs)
-        if self._root is not None:
-            self._root.notify_created(node)
-        node.type = type
-        node.id = id
+        node = self.create(type=type, id=id, pos=pos, **kwargs)
         node._parent = self
         node._root = self._root
         if pos is None:
