@@ -342,7 +342,6 @@ class MoshiDriver(Parameters):
         self.native_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
-        self.plot_data = None
         self.queue = list()
 
         self.program = MoshiBlob()
@@ -475,7 +474,7 @@ class MoshiDriver(Parameters):
                 pass
             else:
                 self.plot_planner.push(q)
-                for x, y, on in self.plot_data:
+                for x, y, on in self.plot_planner.gen():
                     self.current_steps += 1
                     if self.hold_work(0):
                         time.sleep(0.05)
