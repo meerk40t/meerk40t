@@ -139,6 +139,19 @@ class Node:
             self._emphasized_time = time() if value else None
         self.notify_emphasized(self)
 
+    @property
+    def emphasized_time(self):
+        # we intentionally reduce the resolution to 1/100 sec.
+        # to allow simultaneous assignments to return the same delta
+        factor = 100
+        if self._emphasized_time is None:
+            # Insanely high
+            result = float("inf")
+        else:
+            result = self._emphasized_time
+            result = round(result * factor) / factor
+        return result
+
     def emphasized_since(self, reftime=None, fullres=False):
         # we intentionally reduce the resolution to 1/100 sec.
         # to allow simultaneous assignments to return the same delta
