@@ -30,6 +30,7 @@ class ElementLightJob:
         self.quantization = quantization
         self.simulate = simulate
         self.priority = -1
+        self.label = "Element Light Job"
 
     def is_running(self):
         return not self.stopped and self.started
@@ -130,6 +131,7 @@ class LiveSelectionLightJob:
         self._current_points = None
         self._last_bounds = None
         self.priority = -1
+        self.label = "Live Selection Light Job"
 
     def is_running(self):
         return not self.stopped
@@ -269,6 +271,7 @@ class LiveFullLightJob:
         service.listen("emphasized", self.on_emphasis_changed)
         self._last_bounds = None
         self.priority = -1
+        self.label = "Live Full Light Job"
 
     def is_running(self):
         return not self.stopped
