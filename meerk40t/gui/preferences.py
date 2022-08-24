@@ -13,8 +13,6 @@ from .wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
-MILS_IN_MM = 39.3701
-
 
 class PreferencesUnitsPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

@@ -370,9 +370,24 @@ class SpoolerPanel(wx.Panel):
         spooler = self.selected_device.spooler
         if spooler is None:
             return
-        if len(spooler.queue) != self.list_job_spool.GetItemCount():
-            # Mismatch
+        # Two things (at least) could go wrong:
+        # 1) You are in the wrong queue, ie theres a job running in the background a
+        #    that provides an update but the user has changed the device so a different
+        #    queue is selected
+        # 2) As this is a signal it may come later, ie the job has already finished
+        #
+        # The checks here are rather basic and need to be revisited
+        # !!! TODO !!!
+        try:
+            if len(spooler.queue) != self.list_job_spool.GetItemCount():
+                # Mismatch
+                return
+        except RuntimeError:
+            # happens when a routine for a previous instance is called
+            #    RuntimeError: wrapped C/C++ object of type ListCtrl has been deleted
+            # This is a *very * crude workaround and needs to be revisited as well
             return
+
         self._last_invokation = dtime
         for idx, spool_obj in enumerate(spooler.queue):
             list_id = idx
@@ -382,9 +397,11 @@ class SpoolerPanel(wx.Panel):
                 hours, remainder = divmod(t, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-                self.list_job_spool.SetItem(list_id, 6, runtime)
-            except AttributeError:
-                self.list_job_spool.SetItem(list_id, 6, "-")
+                if list_id<self.list_job_spool.GetItemCount():
+                    self.list_job_spool.SetItem(list_id, 6, runtime)
+            except (AttributeError, AssertionError):
+                if list_id<self.list_job_spool.GetItemCount():
+                    self.list_job_spool.SetItem(list_id, 6, "-")
 
             # Estimate Time
             try:
@@ -392,9 +409,11 @@ class SpoolerPanel(wx.Panel):
                 hours, remainder = divmod(t, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-                self.list_job_spool.SetItem(list_id, 7, runtime)
-            except AttributeError:
-                self.list_job_spool.SetItem(list_id, 7, "-")
+                if list_id<self.list_job_spool.GetItemCount():
+                    self.list_job_spool.SetItem(list_id, 7, runtime)
+            except (AttributeError, AssertionError):
+                if list_id<self.list_job_spool.GetItemCount():
+                    self.list_job_spool.SetItem(list_id, 7, "-")
 
 
 class JobSpooler(MWindow):

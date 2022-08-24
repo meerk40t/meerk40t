@@ -6,10 +6,8 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_MM
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
-
-MILS_IN_MM = 39.3701
 
 
 class RasterOpNode(Node, Parameters):
@@ -258,9 +256,9 @@ class RasterOpNode(Node, Parameters):
             step_y = node.step_x
             step_x = node.step_y
             estimate += (
-                node.image.width * node.image.height * step_x / MILS_IN_MM * self.speed
+                node.image.width * node.image.height * step_x / UNITS_PER_MM * self.speed
             )
-            estimate += node.image.height * step_y / MILS_IN_MM * self.speed
+            estimate += node.image.height * step_y / UNITS_PER_MM * self.speed
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
@@ -277,6 +275,12 @@ class RasterOpNode(Node, Parameters):
         @param commands:
         @return:
         """
+
+        native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+        self.settings["native_mm"] = native_mm
+        self.settings["native_speed"] = self.speed * native_mm
+        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
+
         overscan = float(Length(self.settings.get("overscan", "1mm")))
         transformed_vector = matrix.transform_vector([0, overscan])
         self.overscan = abs(complex(transformed_vector[0], transformed_vector[1]))

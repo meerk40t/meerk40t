@@ -759,7 +759,7 @@ class LaserRender:
             gc.PushState()
             gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))
             font = wx.Font()
-            font.SetFractionalPointSize(20)
+            font.SetPointSize(20)
             gc.SetFont(font, wx.BLACK)
             gc.DrawText(txt, 30, 30)
             gc.PopState()
@@ -891,13 +891,14 @@ class LaserRender:
                 x_max = bb[2]
             if bb[3] > y_max:
                 y_max = bb[3]
-        raster_width = x_max - x_min
-        raster_height = y_max - y_min
+        raster_width = max(x_max - x_min, 1)
+        raster_height = max(y_max - y_min, 1)
         if width is None:
             width = raster_width / step_x
         if height is None:
             height = raster_height / step_y
-
+        width = max(width, 1)
+        height = max(height, 1)
         bmp = wx.Bitmap(int(ceil(abs(width))), int(ceil(abs(height))), 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)

@@ -1886,7 +1886,9 @@ class Kernel(Settings):
                         # This should not occur, if it does, something is desynced attempting
                         # to double remove. Which could also mean listeners are stuck listening
                         # to places they should not which can cause other errors.
-                        print("Error removing: %s  %s" % (str(listeners), signal))
+                        print(f"Error in {signal}, no {str(remove_funct)} matching {str(remove_lso)}")
+                        for index, listener in enumerate(listeners):
+                            print(f"{index}: {str(listener)}")
 
     def _process_signal_queue(self, queue):
         # Process signals.
@@ -2015,6 +2017,8 @@ class Kernel(Settings):
                     for listener, lso in listens:
                         if lso is cookie:
                             self._removing_listeners.append((signal, listener, cookie))
+        # if len(self._removing_listeners) != len(set(self._removing_listeners)):
+        #     print("Warning duplicate listener removing.")
 
     # ==========
     # CHANNEL PROCESSING
