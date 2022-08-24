@@ -156,9 +156,9 @@ class PositionPanel(wx.Panel):
         sizer_main.Add(sizer_h_all, 0, wx.EXPAND, 0)
 
         sizer_h_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_options.Add(self.chk_indivdually, 1, wx.EXPAND, 0)
-        sizer_h_options.Add(self.chk_lock, 1, wx.EXPAND, 0)
-        sizer_h_options.Add(self.combo_box_units, 0, wx.EXPAND, 0)
+        sizer_h_options.Add(self.chk_indivdually, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_options.Add(self.chk_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_options.Add(self.combo_box_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(sizer_h_options, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)

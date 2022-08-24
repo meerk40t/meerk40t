@@ -571,7 +571,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             _("Select the board to use. This has an effects the speedcodes used.")
         )
         self.combobox_board.SetSelection(0)
-        sizer_board.Add(self.combobox_board, 1, wx.EXPAND, 0)
+        sizer_board.Add(self.combobox_board, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
         sizer_config.Add(sizer_17, 1, wx.EXPAND, 0)

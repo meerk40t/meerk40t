@@ -152,7 +152,7 @@ class SpoolerPanel(wx.Panel):
         # begin wxGlade: SpoolerPanel.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_combo_cmds = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_combo_cmds.Add(self.combo_device, 1, wx.EXPAND, 0)
+        sizer_combo_cmds.Add(self.combo_device, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_combo_cmds.Add(self.button_pause, 0, wx.EXPAND, 0)
         sizer_combo_cmds.Add(self.button_stop, 0, wx.EXPAND, 0)
 

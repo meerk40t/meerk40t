@@ -407,7 +407,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return select
 
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
+                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
                     on_combo_text(attr, control, obj, data_type),
@@ -462,7 +462,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     label_text = wx.StaticText(self, id=wx.ID_ANY, label=label + " ")
                     # label_text.SetMinSize((-1, ht))
                     control_sizer.Add(label_text, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-                control_sizer.Add(control, 1, wx.EXPAND, 0)
+                control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
                     on_combosmall_text(attr, control, obj, data_type),

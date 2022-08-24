@@ -98,12 +98,12 @@ class LhyAdvancedPanel(wx.Panel):
 
         self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, "Dot Length")
         self.check_dot_length_custom.SetToolTip("Enable Dot Length")
-        sizer_20.Add(self.check_dot_length_custom, 1, 0, 0)
+        sizer_20.Add(self.check_dot_length_custom, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.text_dot_length = TextCtrl(
             self, wx.ID_ANY, "1", limited=True, check="int", style=wx.TE_PROCESS_ENTER
         )
         self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
-        sizer_20.Add(self.text_dot_length, 1, 0, 0)
+        sizer_20.Add(self.text_dot_length, 1, wx.EXPAND, 0)
 
         self.combo_dot_length_units = wx.ComboBox(
             self,
@@ -112,7 +112,7 @@ class LhyAdvancedPanel(wx.Panel):
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_dot_length_units.SetSelection(0)
-        sizer_20.Add(self.combo_dot_length_units, 0, 0, 0)
+        sizer_20.Add(self.combo_dot_length_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, "Pulse Grouping")
         self.check_shift_enabled.SetToolTip(OPERATION_SHIFT_TOOLTIP)

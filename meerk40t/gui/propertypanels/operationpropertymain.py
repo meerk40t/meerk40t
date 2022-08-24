@@ -1087,7 +1087,7 @@ class RasterSettingsPanel(wx.Panel):
         )
         self.combo_raster_direction.SetToolTip(OPERATION_RASTERDIRECTION_TOOLTIP)
         self.combo_raster_direction.SetSelection(0)
-        sizer_4.Add(self.combo_raster_direction, 1, 0, 0)
+        sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.radio_directional_raster = wx.RadioBox(
             self,

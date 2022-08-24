@@ -96,7 +96,7 @@ class LaserPanel(wx.Panel):
         )
         self.combo_devices.SetSelection(index)
 
-        sizer_devices.Add(self.combo_devices, 1, 0, 0)
+        sizer_devices.Add(self.combo_devices, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_control = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_control, 0, wx.EXPAND, 0)

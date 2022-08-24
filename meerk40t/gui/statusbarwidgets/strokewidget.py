@@ -141,9 +141,9 @@ class StrokeWidget(StatusBarWidget):
         self.parent.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.spin_width)
         self.parent.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
         self.Add(self.strokewidth_label, 0, 0, 0)
-        self.Add(self.spin_width, 2, wx.EXPAND, 0)
-        self.Add(self.combo_units, 2, wx.EXPAND, 0)
-        self.Add(self.chk_scale, 1, wx.EXPAND, 0)
+        self.Add(self.spin_width, 2, 0, 0)
+        self.Add(self.combo_units, 2, 0, 0)
+        self.Add(self.chk_scale, 1, 0, 0)
 
     def on_chk_scale(self, event):
         if self.startup:
