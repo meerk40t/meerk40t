@@ -1976,6 +1976,8 @@ class Kernel(Settings):
         """
         with self._remove_lock:
             self._removing_listeners.append((signal, funct, lifecycle_object))
+        # if len(self._removing_listeners) != len(set(self._removing_listeners)):
+        #     print("Warning duplicate listener removing.")
 
     def _signal_attach(
         self,
