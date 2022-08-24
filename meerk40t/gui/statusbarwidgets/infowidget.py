@@ -310,9 +310,15 @@ class BurnProgressPanel(SimpleInfoWidget):
                 self._queue_remaining += spool_obj.estimate_time()
             elif spool_obj.is_running():
                 self._queue_pos = idx + 1
-                self._job_label = spool_obj.label
+                try:
+                    self._job_label = spool_obj.label
+                except AttributeError:
+                    self._job_label = str(spool_obj)
                 self._job_active = True
-                self._job_loops = spool_obj.loops
+                try:
+                    self._job_loops = spool_obj.loops
+                except AttributeError:
+                    self._job_loops = 1
                 self._loops_executed = spool_obj.loops_executed
                 if hasattr(self._driver, "total_steps"):
                     self._job_len = self._driver.total_steps
