@@ -86,7 +86,7 @@ class Node:
         self.label = None
 
     def __repr__(self):
-        return f"Node('{self.type}', {str(self._parent)})"
+        return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
         settings = {}
