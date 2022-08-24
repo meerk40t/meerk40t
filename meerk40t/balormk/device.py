@@ -309,7 +309,6 @@ class LiveFullLightJob:
         self.stopped = False
         self.started = False
         self.changed = False
-        service.listen("emphasized", self.on_emphasis_changed)
         self._last_bounds = None
         self.priority = -1
         self.label = "Live Full Light Job"
@@ -323,6 +322,7 @@ class LiveFullLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.service.listen("emphasized", self.on_emphasis_changed)
         self.time_started = time.time()
         self.started = True
         connection = driver.connection
@@ -334,11 +334,11 @@ class LiveFullLightJob:
         connection.abort()
         self.stopped = True
         self.runtime += time.time() - self.time_started
+        self.service.unlisten("emphasized", self.on_emphasis_changed)
         return True
 
     def stop(self):
         self.stopped = True
-        self.service.unlisten("emphasized", self.on_emphasis_changed)
 
     def elapsed_time(self):
         """
