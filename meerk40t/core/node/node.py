@@ -197,9 +197,6 @@ class Node:
             root = self
         node = copy(self)
         for c in self._children:
-            if c.type == "reference":
-                # We can't copy a reference. It points to non-copied tree.
-                continue
             child = c.copy_of_tree(root=root)
             node._children.append(child)
             child._parent = node

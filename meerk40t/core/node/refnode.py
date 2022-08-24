@@ -17,6 +17,9 @@ class ReferenceNode(Node):
     def __repr__(self):
         return f"ReferenceNode('{self.type}', {str(self.node)}, {str(self._parent)})"
 
+    def __copy__(self):
+        return ReferenceNode(self.node)
+
     @property
     def bounds(self):
         return self.node.bounds
