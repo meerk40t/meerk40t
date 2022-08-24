@@ -480,21 +480,7 @@ class Node:
         @param pos:
         @return:
         """
-
-        node_class = self._root.bootstrap["reference"]
-        reference_node = node_class(node, **kwargs)
-        if self._root is not None:
-            self._root.notify_created(reference_node)
-        reference_node.type = "reference"
-        reference_node.id = node.id
-        reference_node._parent = self
-        reference_node._root = node._root
-        if pos is None:
-            self._children.append(reference_node)
-        else:
-            self._children.insert(pos, reference_node)
-        reference_node.notify_attached(reference_node, pos=pos)
-        return reference_node
+        return self.add(node=node, type="reference", pos=pos, **kwargs)
 
     def add_node(self, node, pos=None):
         if node._parent is not None:
