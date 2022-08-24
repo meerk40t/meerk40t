@@ -30,6 +30,7 @@ def plugin(kernel, lifecycle):
                 )
                 return "elements", []
 
+            elements = context.elements
             if command == "intersection":
                 ct = ClipType.Intersection
             elif command == "xor":
@@ -39,14 +40,26 @@ def plugin(kernel, lifecycle):
             else:  # difference
                 ct = ClipType.Difference
             solution_path = Path(
-                stroke=context.elements.default_stroke,
-                fill=context.elements.default_fill,
+                stroke=elements.default_stroke,
+                fill=elements.default_fill,
                 stroke_width=1000,
             )
+
+            # reorder elements
+            first = elements.first_emphasized
+            if first is not None and first in data:
+                reordered = [first]
+                for node in data:
+                    if node != first:
+                        reordered.append(node)
+            else:
+                reordered = data
+
             last_polygon = None
             node = None
-            for i in range(len(data)):
-                node = data[i]
+
+            for i in range(len(reordered)):
+                node = reordered[i]
                 try:
                     path = node.as_path()
                 except AttributeError:
@@ -78,12 +91,12 @@ def plugin(kernel, lifecycle):
                     solution_path += Path(r)
             if solution_path:
                 if node is None:
-                    new_node = context.elements.elem_branch.add(
+                    new_node = elements.elem_branch.add(
                         path=solution_path,
                         type="elem path",
                     )
                 else:
-                    new_node = context.elements.elem_branch.add(
+                    new_node = elements.elem_branch.add(
                         path=solution_path,
                         type="elem path",
                         stroke=node.stroke if node is not None else None,
@@ -91,7 +104,7 @@ def plugin(kernel, lifecycle):
                         stroke_width=node.stroke_width if node is not None else None,
                     )
                 context.signal("refresh_scene", "Scene")
-                context.elements.classify([new_node])
+                elements.classify([new_node])
                 return "elements", [node]
             else:
                 return "elements", []

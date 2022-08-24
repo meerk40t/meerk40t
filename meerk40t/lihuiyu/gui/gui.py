@@ -28,6 +28,12 @@ def plugin(service, lifecycle):
         service.register("window/Configuration", LihuiyuDriverGui)
         service.register("window/AccelerationChart", LihuiyuAccelerationChart)
         service.register("window/Network-Controller", TCPController)
+
+        service.register("winpath/Controller", service)
+        service.register("winpath/Configuration", service)
+        service.register("winpath/AccelerationChart", service)
+        service.register("winpath/Network-Controller", service)
+
         service.register("property/RasterOpNode/Lihuiyu", LhyAdvancedPanel)
         service.register("property/CutOpNode/Lihuiyu", LhyAdvancedPanel)
         service.register("property/EngraveOpNode/Lihuiyu", LhyAdvancedPanel)

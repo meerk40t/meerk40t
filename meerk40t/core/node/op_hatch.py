@@ -5,6 +5,7 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
+from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import Color, Path
 
 
@@ -274,6 +275,10 @@ class HatchOpNode(Node, Parameters):
         @param commands:
         @return:
         """
+        native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+        self.settings["native_mm"] = native_mm
+        self.settings["native_speed"] = self.speed * native_mm
+        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
 
         def hatch():
             settings = self.settings

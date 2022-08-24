@@ -55,9 +55,11 @@ class TextNode(Node):
         height=None,
         path=None,
         settings=None,
+        **kwargs,
     ):
         if settings is None:
             settings = dict()
+        settings.update(kwargs)
         super(TextNode, self).__init__(type="elem text", **settings)
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
@@ -116,7 +118,7 @@ class TextNode(Node):
             width=self.width,
             height=self.height,
             path=self.path,
-            **self.settings,
+            settings=self.settings,
         )
 
     @property

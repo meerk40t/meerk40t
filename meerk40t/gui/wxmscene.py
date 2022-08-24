@@ -5,7 +5,16 @@ from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import Length
-from meerk40t.gui.icons import icon_meerk40t, icons8_menu_50
+from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
+    icon_meerk40t,
+    icons8_menu_50,
+    icons8_r_black,
+    icons8_r_white,
+    icons8_reference,
+    icons8_bed_50,
+    icons8_ungroup_objects_50,
+)
 from meerk40t.gui.laserrender import DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
@@ -126,6 +135,57 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/vector", VectorTool)
         context.register("tool/measure", MeasureTool)
         context.register("tool/ribbon", RibbonTool)
+
+        buttonsize = int(STD_ICON_SIZE / 2)
+        context.kernel.register(
+            "button/align/refob",
+            {
+                "label": _("Ref. Obj."),
+                "icon": icons8_r_white,
+                "tip": _("Toggle Reference Object Status"),
+                "action": lambda v: self.toggle_ref_obj(),
+                "size": buttonsize,
+                "identifier": "refobj",
+                "rule_enabled": lambda cond: len(
+                    list(context.kernel.elements.elems(emphasized=True))
+                )
+                == 1,
+            },
+        )
+        # not yet working
+        # context.kernel.register(
+        #     "button/align/Target",
+        #     {
+        #         "label": _("Target"),
+        #         "tip": _("Toggle Reference Object Status"),
+        #         "icon": icons8_ungroup_objects_50,
+        #         "size": buttonsize,
+        #         "identifier": "target",
+        #         "default": "target0",
+        #         "multi": [
+        #             {
+        #                 "identifier": "target0",
+        #                 "label": _("Selection"),
+        #                 "icon": icons8_ungroup_objects_50,
+        #                 "action": self.set_align_target(0),
+        #             },
+        #             {
+        #                 "identifier": "target1",
+        #                 "label": _("Ref-Object"),
+        #                 "action": self.set_align_target(1),
+        #                 "icon": icons8_reference,
+        #                 "action": self.set_align_target(1),
+        #             },
+        #             {
+        #                 "identifier": "target2",
+        #                 "label": _("Bedsize"),
+        #                 "icon": icons8_bed_50,
+        #                 "action": self.set_align_target(2),
+        #             },
+        #         ],
+        #     },
+        # )
+        self._align_mode = 0  # 0 elements, 1 reference object, 2 bed
 
         @context.console_command("dialog_fps", hidden=True)
         def dialog_fps(**kwgs):
@@ -568,6 +628,24 @@ class MeerK40tScenePanel(wx.Panel):
                 else:
                     channel(_("Target needs to be one of primary, secondary, circular"))
 
+    def toggle_ref_obj(self):
+        for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
+            if self.widget_scene.reference_object == e:
+                self.widget_scene.reference_object = None
+            else:
+                self.widget_scene.reference_object = e
+            break
+        self.request_refresh()
+
+    def set_align_target(self, value=None):
+        # 0 elements, 1 reference object, 2 bed
+        if value is None:
+            self._align_mode += 1
+        else:
+            self._align_mode = value
+        if self._align_mode > 2 or self._align_mode < 0:
+            self._align_mode = 0
+
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
         if self._tool_widget is not None:
@@ -600,7 +678,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
-        zl = self.context.zoom_level
+        zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def pane_hide(self, *args):

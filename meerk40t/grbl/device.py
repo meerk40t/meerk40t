@@ -88,6 +88,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "subsection": "Dimensions",
             },
             {
                 "attr": "bedheight",
@@ -96,26 +97,29 @@ class GRBLDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "subsection": "Dimensions",
             },
             {
                 "attr": "scale_x",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("X Scale Factor"),
+                "label": _("X-Axis"),
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
             },
             {
                 "attr": "scale_y",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("Y Scale Factor"),
+                "label": _("Y-Axis"),
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
             },
             {
                 "attr": "flip_x",
@@ -126,6 +130,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
+                "subsection": "Flip Axis",
             },
             {
                 "attr": "flip_y",
@@ -136,6 +141,7 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
+                "subsection": "Flip Axis",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -191,6 +197,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": str,
                 "label": _("COM Port"),
                 "tip": _("What com port does this device connect to?"),
+                "subsection": "Interface",
             },
             {
                 "attr": "baud_rate",
@@ -199,6 +206,7 @@ class GRBLDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Baud Rate"),
                 "tip": _("Baud Rate of the device"),
+                "subsection": "Interface",
             },
             {
                 "attr": "planning_buffer_size",
@@ -562,37 +570,39 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        # preprocess queue to establish steps
-        assessment_start = time.time()
-        dummy_planner = PlotPlanner(
-            self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
-        )
-
         self.current_steps = 0
         self.total_steps = 0
-        for q in self.queue:
-            if isinstance(q, LineCut):
-                self.total_steps += 1
-            elif isinstance(q, (QuadCut, CubicCut)):
-                interp = self.service.interpolate
-                step_size = 1.0 / float(interp)
-                t = step_size
-                for p in range(int(interp)):
+        skip_calc = True
+        if not skip_calc:
+            # preprocess queue to establish steps
+            assessment_start = time.time()
+            dummy_planner = PlotPlanner(
+                self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+            )
+
+            for q in self.queue:
+                if isinstance(q, LineCut):
                     self.total_steps += 1
-                    t += step_size
-            elif isinstance(q, WaitCut):
-                self.total_steps += 1
-            elif isinstance(q, DwellCut):
-                self.total_steps += 1
-                # Moshi cannot fire in place.
-            elif isinstance(q, (InputCut, OutputCut)):
-                self.total_steps += 1
-            else:
-                dummy_planner.push(q)
-                dummy_data = list(dummy_planner.gen())
-                self.total_steps += len(dummy_data)
-                dummy_planner.clear()
-        # print ("GRBL-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+                elif isinstance(q, (QuadCut, CubicCut)):
+                    interp = self.service.interpolate
+                    step_size = 1.0 / float(interp)
+                    t = step_size
+                    for p in range(int(interp)):
+                        self.total_steps += 1
+                        t += step_size
+                elif isinstance(q, WaitCut):
+                    self.total_steps += 1
+                elif isinstance(q, DwellCut):
+                    self.total_steps += 1
+                    # Moshi cannot fire in place.
+                elif isinstance(q, (InputCut, OutputCut)):
+                    self.total_steps += 1
+                else:
+                    dummy_planner.push(q)
+                    dummy_data = list(dummy_planner.gen())
+                    self.total_steps += len(dummy_data)
+                    dummy_planner.clear()
+            # print ("GRBL-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
         self.g91_absolute()
         self.g94_feedrate()

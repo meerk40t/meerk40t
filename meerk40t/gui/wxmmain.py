@@ -306,12 +306,12 @@ class MeerK40t(MWindow):
     def register_options_and_choices(self, context):
         _ = context._
         context.setting(bool, "disable_tool_tips", False)
-        context.setting(bool, "disable_auto_zoom", False)
+        context.setting(bool, "maintain_zoom_resize", True)
         context.setting(bool, "enable_sel_move", True)
         context.setting(bool, "enable_sel_size", True)
         context.setting(bool, "enable_sel_rotate", True)
         context.setting(bool, "enable_sel_skew", False)
-        context.setting(int, "zoom_level", 4)  # 4%
+        context.setting(int, "zoom_margin", 4)  # 4%
         # Standard-Icon-Sizes
         # default, factor 1 - leave as is
         # small = factor 2/3, min_size = 32
@@ -359,7 +359,7 @@ class MeerK40t(MWindow):
 
         choices = [
             {
-                "attr": "zoom_level",
+                "attr": "zoom_margin",
                 "object": self.context.root,
                 "default": 4,
                 "trailer": "%",
@@ -380,9 +380,35 @@ class MeerK40t(MWindow):
                     20,
                     25,
                 ],
-                "label": _("Default zoom level:"),
+                "label": _("Default zoom margin:"),
                 "tip": _(
-                    "Default zoom level when changing zoom (automatically or via Ctrl-B)"
+                    "Default zoom margin when zoom focused on a location (automatically or via Ctrl-B)"
+                ),
+                "page": "Gui",
+                "section": "Zoom",
+            },
+            {
+                "attr": "zoom_factor",
+                "object": self.context.root,
+                "default": 0.1,
+                "trailer": "x",
+                "type": float,
+                "label": _("Default zoom factor:"),
+                "tip": _(
+                    "Default zoom factor controls how quick or fast zooming happens."
+                ),
+                "page": "Gui",
+                "section": "Zoom",
+            },
+            {
+                "attr": "pan_factor",
+                "object": self.context.root,
+                "default": 25.0,
+                "trailer": "px",
+                "type": float,
+                "label": _("Default pan factor:"),
+                "tip": _(
+                    "Default pan factor controls how quick panning happens."
                 ),
                 "page": "Gui",
                 "section": "Zoom",
@@ -391,12 +417,12 @@ class MeerK40t(MWindow):
         context.kernel.register_choices("preferences", choices)
         choices = [
             {
-                "attr": "disable_auto_zoom",
+                "attr": "maintain_zoom_resize",
                 "object": self.context.root,
-                "default": False,
+                "default": True,
                 "type": bool,
-                "label": _("Don't autoadjust zoom level"),
-                "tip": _("Don't autoadjust zoom level when resizing the main window"),
+                "label": _("Maintain zoom on resize"),
+                "tip": _("Autofocus bed when resizing the main window"),
                 "page": "Gui",
                 "section": "Zoom",
             },
@@ -476,6 +502,7 @@ class MeerK40t(MWindow):
                 "tip": _("Shall the cursor snap to the next element point?"),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Element-Points",
             },
             {
                 "attr": "action_attract_len",
@@ -492,6 +519,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Element-Points",
             },
             {
                 "attr": "snap_grid",
@@ -502,6 +530,7 @@ class MeerK40t(MWindow):
                 "tip": _("Shall the cursor snap to the next grid intersection?"),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Grid",
             },
             {
                 "attr": "grid_attract_len",
@@ -518,6 +547,7 @@ class MeerK40t(MWindow):
                 ),
                 "page": "Scene",
                 "section": "Snap-Options",
+                "subsection": "Grid",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -2565,7 +2595,7 @@ class MeerK40t(MWindow):
             return False
         else:
             if results:
-                zl = self.context.zoom_level
+                zl = self.context.zoom_margin
                 self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
                 self.set_file_as_recently_used(pathname)
@@ -2604,8 +2634,8 @@ class MeerK40t(MWindow):
         if self.context is None:
             return
         self.Layout()
-        if not self.context.disable_auto_zoom:
-            zl = self.context.zoom_level
+        if self.context.maintain_zoom_resize:
+            zl = self.context.zoom_margin
             self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def on_focus_lost(self, event):
@@ -2675,7 +2705,7 @@ class MeerK40t(MWindow):
         if bbox is None:
             self.on_click_zoom_bed(event=event)
         else:
-            zfact = self.context.zoom_level / 100.0
+            zfact = self.context.zoom_margin / 100.0
 
             x_delta = (bbox[2] - bbox[0]) * zfact
             y_delta = (bbox[3] - bbox[1]) * zfact
@@ -2695,14 +2725,14 @@ class MeerK40t(MWindow):
 
     def on_click_toggle_ui(self, event=None):
         self.context("pane toggleui\n")
-        zl = self.context.zoom_level
+        zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def on_click_zoom_bed(self, event=None):  # wxGlade: MeerK40t.<event_handler>
         """
         Zoom scene to bed size.
         """
-        zoom = self.context.zoom_level
+        zoom = self.context.zoom_margin
         self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
 
     def toggle_draw_mode(self, bits):

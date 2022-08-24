@@ -12,8 +12,6 @@ from .wxutils import disable_window
 
 _ = wx.GetTranslation
 
-MILS_PER_MM = 39.3701
-
 
 class PlannerPanel(wx.Panel):
     def __init__(self, *args, context=None, plan_name=None, **kwargs):

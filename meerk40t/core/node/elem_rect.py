@@ -24,12 +24,16 @@ class RectNode(Node):
         stroke_scale=None,
         linejoin=None,
         fillrule=None,
+        settings=None,
         **kwargs,
     ):
-        super(RectNode, self).__init__(type="elem rect", **kwargs)
+        if settings is None:
+            settings = dict()
+        settings.update(kwargs)
+        super(RectNode, self).__init__(type="elem rect", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape
-        self.settings = kwargs
+        self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
         self.fill = shape.fill if fill is None else fill
         self.stroke = shape.stroke if stroke is None else stroke
@@ -56,7 +60,7 @@ class RectNode(Node):
             stroke_scale=self._stroke_scaled,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
-            **self.settings,
+            settings=self.settings,
         )
 
     @property

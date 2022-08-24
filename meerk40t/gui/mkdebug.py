@@ -34,6 +34,7 @@ class DebugTreePanel(wx.Panel):
         self.context = context
         self.lb_selected = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
         self.lb_emphasized = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
+        self.txt_first = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -54,6 +55,7 @@ class DebugTreePanel(wx.Panel):
         # begin wxGlade: PositionPanel.__set_properties
         self.lb_emphasized.SetToolTip(_("Emphasized nodes"))
         self.lb_selected.SetToolTip(_("Selected nodes"))
+        self.txt_first.SetToolTip(_("Primus inter pares"))
         # end wxGlade
 
     def __do_layout(self):
@@ -67,7 +69,7 @@ class DebugTreePanel(wx.Panel):
         )
         sizer_1.Add(self.lb_selected, 1, wx.EXPAND, 0)
         sizer_2.Add(self.lb_emphasized, 1, wx.EXPAND, 0)
-
+        sizer_2.Add(self.txt_first, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_1, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_2, 1, wx.EXPAND, 0)
 
@@ -86,6 +88,13 @@ class DebugTreePanel(wx.Panel):
             txt1 += str(node) + "\n"
         for node in self.context.elements.flat(emphasized=True):
             txt2 += str(node) + "\n"
+        node = self.context.elements.first_emphasized
+        if node is None:
+            txt3 = ""
+        else:
+            txt3 = f"{node.id} - {node.type} {node.label}"
 
         self.lb_selected.SetValue(txt1)
         self.lb_emphasized.SetValue(txt2)
+
+        self.txt_first.SetValue(txt3)

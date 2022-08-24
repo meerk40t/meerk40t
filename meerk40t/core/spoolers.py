@@ -331,23 +331,13 @@ class LaserJob:
         self._stopped = True
 
         self._estimate = 0
-        MILS_IN_MM = 39.3701
 
         for item in self.items:
-            time_cuts = 0
-            time_travel = 0
-            time_extra = 0
             if isinstance(item, CutCode):
-                travel = item.length_travel()
-                cuts = item.length_cut()
-                travel /= MILS_IN_MM
-                cuts /= MILS_IN_MM
-                time_extra = item.extra_time()
-                if item.travel_speed is not None and item.travel_speed != 0:
-                    time_travel = travel / item.travel_speed
+                time_travel = item.duration_travel()
                 time_cuts = item.duration_cut()
-                time_total = time_travel + time_cuts + time_extra
-                self._estimate += time_total
+                time_extra = item.extra_time()
+                self._estimate += time_travel + time_cuts + time_extra
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
@@ -456,6 +446,9 @@ class LaserJob:
             if hasattr(self._driver, "total_steps"):
                 total = self._driver.total_steps
                 current = self._driver.current_steps
+                # Safety belt, as we have disabled the logic partially
+                if total < current:
+                    total = current + 1
                 if current > 10 and total > 0:
                     # Arbitrary minimum steps (if too low, value is erratic)
                     ratio = total / current

@@ -342,7 +342,32 @@ class SpeedPpiPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
+        speed_min = None
+        speed_max = None
+        power_min = None
+        power_max = None
 
+        op = node.type
+        if op.startswith("op "):   # Should, shouldnt it?
+            op = op[3:]
+        else:
+            op = ""
+        if op != "":
+            label = "dangerlevel_op_" + op
+            warning = [False, 0, False, 0, False, 0, False, 0]
+            if hasattr(self.context.device, label):
+                dummy = getattr(self.context.device, label)
+                if isinstance(dummy, (tuple, list)) and len(dummy) == len(warning):
+                    warning = dummy
+            if warning[0]:
+                power_min = warning[1]
+            if warning[2]:
+                power_max = warning[3]
+            if warning[4]:
+                speed_min = warning[5]
+            if warning[6]:
+                speed_max = warning[7]
+        # print (f"op='{op}', power={power_min}-{power_max}, speed={speed_min}-{speed_max}")
         speed_power_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         speed_sizer = wx.StaticBoxSizer(
@@ -358,6 +383,8 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
+        self.text_speed.set_error_level(0, None)
+        self.text_speed.set_warn_level(speed_min, speed_max)
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
@@ -374,6 +401,8 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
+        self.text_power.set_error_level(0, 1000)
+        self.text_power.set_warn_level(power_min, power_max)
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 

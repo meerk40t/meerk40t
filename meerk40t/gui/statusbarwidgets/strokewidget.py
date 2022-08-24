@@ -171,7 +171,7 @@ class StrokeWidget(StatusBarWidget):
             sw_default = None
             ck_default = True
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
-                if hasattr(e, "stroke_width"):
+                if hasattr(e, "stroke_width") and hasattr(e, "stroke_scaled"):
                     if sw_default is None:
                         sw_default = e.stroke_width
                         ck_default = e.stroke_scaled

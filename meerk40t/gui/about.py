@@ -6,6 +6,17 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
+HEADER_TEXT = _(
+    """MeerK40t is a free MIT Licensed open source project
+for lasering on K40 Devices.
+
+Participation in the project is highly encouraged.
+Past participation, and continuing participation is graciously thanked.
+This program is mostly the brainchild of Tatarize,
+who sincerely hopes his contributions will be but the barest trickle
+that becomes a raging river."""
+)
+
 
 class AboutPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -49,24 +60,12 @@ class AboutPanel(wx.Panel):
         vsizer_pic_iver.Add(self.meerk40t_about_version_text, 0, 0, 0)
         hsizer_pic_info.Add(vsizer_pic_iver, 0, wx.EXPAND, 0)
         hsizer_pic_info.AddSpacer(5)
-        meerk40t_about_text_header = wx.StaticText(
+        self.meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            _(
-                "MeerK40t is a free MIT Licensed open source project for lasering on K40 Devices.\n\n"
-            )
-            + _(
-                "Participation in the project is highly encouraged. Past participation, and "
-            )
-            + _(
-                "continuing participation is graciously thanked. This program is mostly the "
-            )
-            + _(
-                "brainchild of Tatarize, who sincerely hopes his contributions will be but "
-            )
-            + _("the barest trickle that becomes a raging river."),
+            HEADER_TEXT,
         )
-        meerk40t_about_text_header.SetFont(
+        self.meerk40t_about_text_header.SetFont(
             wx.Font(
                 10,
                 wx.FONTFAMILY_DEFAULT,
@@ -76,7 +75,7 @@ class AboutPanel(wx.Panel):
                 "Segoe UI",
             )
         )
-        hsizer_pic_info.Add(meerk40t_about_text_header, 1, wx.EXPAND, 0)
+        hsizer_pic_info.Add(self.meerk40t_about_text_header, 1, wx.EXPAND, 0)
         vsizer_main.Add(hsizer_pic_info, 1, wx.EXPAND, 0)
         # Simplify addition of future developers without need to translate every single time
         hall_of_fame = [
@@ -180,7 +179,10 @@ class InformationPanel(wx.Panel):
         info += f"Version: {uname.version}" + "\n"
         info += f"Machine: {uname.machine}" + "\n"
         info += f"Processor: {uname.processor}" + "\n"
-        info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
+        try:
+            info += f"Ip-Address: {socket.gethostbyname(socket.gethostname())}"
+        except socket.gaierror:
+            info += "Ip-Address: localhost"
         self.os_version.SetValue(info)
 
         info = f"{APPLICATION_NAME} v{APPLICATION_VERSION}"

@@ -352,34 +352,71 @@ class TextCtrl(wx.TextCtrl):
         if limited:
             self.SetMaxSize(wx.Size(100, -1))
         self._check = check
+        self.lower_limit_err = None
+        self.upper_limit_err = None
+        self.lower_limit_warn = None
+        self.upper_limit_warn = None
+        self.err_color = wx.RED
+        self.warn_color = wx.YELLOW
+
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
+        self.Bind(wx.EVT_KILL_FOCUS, self.on_leave)
+
+    def set_error_level(self, err_min, err_max):
+        self.lower_limit_err = err_min
+        self.upper_limit_err = err_max
+
+    def set_warn_level(self, warn_min, warn_max):
+        self.lower_limit_warn = warn_min
+        self.upper_limit_warn = warn_max
+
+    def on_leave(self, event):
+        # Needs to be passed on
+        event.Skip()
+        self.SelectNone()
+
 
     def on_check(self, event):
         event.Skip()
         try:
             txt = self.GetValue()
             if self._check == "float":
-                __ = float(txt)
+                dummy = float(txt)
             elif self._check == "percent":
                 if txt.endswith("%"):
-                    __ = float(txt[:-1]) / 100.0
+                    dummy = float(txt[:-1]) / 100.0
                 else:
-                    __ = float(txt)
+                    dummy = float(txt)
             elif self._check == "int":
-                __ = int(txt)
+                dummy = int(txt)
             elif self._check == "empty":
                 if len(txt) == 0:
                     raise ValueError
             elif self._check == "length":
-                __ = Length(txt)
+                dummy = Length(txt)
             elif self._check == "angle":
-                __ = Angle(txt)
-
-            self.SetBackgroundColour(None)
+                dummy = Angle(txt)
+            # we passed so far, thus the values are syntactically correct
+            # Now check for content compliance
+            allok = 0
+            if self.lower_limit_warn is not None and dummy < self.lower_limit_warn:
+                allok = 1
+            if self.upper_limit_warn is not None and dummy > self.upper_limit_warn:
+                allok = 1
+            if self.lower_limit_err is not None and dummy < self.lower_limit_err:
+                allok = 2
+            if self.upper_limit_err is not None and dummy > self.upper_limit_err:
+                allok = 2
+            if allok == 0:
+                self.SetBackgroundColour(None)
+            elif allok == 1:
+                self.SetBackgroundColour(self.warn_color)
+            elif allok == 2:
+                self.SetBackgroundColour(self.err_color)
             self.Refresh()
         except ValueError:
-            self.SetBackgroundColour(wx.RED)
+            self.SetBackgroundColour(self.err_color)
             self.Refresh()
 
 

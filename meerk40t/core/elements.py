@@ -370,6 +370,7 @@ class Elemental(Service):
 
         self._default_stroke = None
         self._default_fill = None
+        self._first_emphasized = None
 
     @property
     def default_stroke(self):
@@ -394,6 +395,25 @@ class Elemental(Service):
     @default_fill.setter
     def default_fill(self, color):
         self._default_fill = color
+
+    @property
+    def first_emphasized(self):
+        if not self.has_emphasis():
+            self._first_emphasized = None
+        return self._first_emphasized
+
+    @first_emphasized.setter
+    def first_emphasized(self, node):
+        self._first_emphasized = node
+
+    def set_node_emphasis(self, node, flag):
+        node.emphasized = flag
+        if flag:
+            if self._first_emphasized is None:
+                self._first_emphasized = node
+        else:
+            if self._first_emphasized is node:
+                self._first_emphasized = None
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -679,6 +699,84 @@ class Elemental(Service):
             this_area = 0.5 * abs(area_x_y - area_y_x)
 
         return this_area, this_length
+
+    def align_elements(self, data, alignbounds, positionx, positiony, individually):
+        ## data       : elements to align
+        ## alignbounds: boundary tuple (left, top, right, bottom)
+        ##              to which data needs to be aligned to
+        ## position   : one of "min", "max", "center"
+        ## indivdually: True, align every element of data to the edge
+        ##              False, align the group in total
+        def calc_dx_dy():
+            dx = 0
+            dy = 0
+            if positionx=="min":
+                dx = alignbounds[0] - left_edge
+            elif positionx=="max":
+                dx = alignbounds[2] - right_edge
+            elif positionx=="center":
+                dx = (alignbounds[2] + alignbounds[0]) / 2 - (right_edge + left_edge) / 2
+
+            if positiony=="min":
+                dy = alignbounds[1] - top_edge
+            elif positiony=="max":
+                dy = alignbounds[3] - bottom_edge
+            elif positiony=="center":
+                dy = (alignbounds[3] + alignbounds[1]) / 2 - (bottom_edge + top_edge) / 2
+            return dx, dy
+
+        # Selection boundaries
+        boundary_points = []
+        for node in data:
+            boundary_points.append(node.bounds)
+        if not len(boundary_points):
+            return
+        left_edge = min([e[0] for e in boundary_points])
+        top_edge = min([e[1] for e in boundary_points])
+        right_edge = max([e[2] for e in boundary_points])
+        bottom_edge = max([e[3] for e in boundary_points])
+        if alignbounds is None:
+            alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
+
+        if individually:
+            groupmatrix = ""
+            groupdx = 0
+            groupdy = 0
+        else:
+            groupdx, groupdy = calc_dx_dy()
+            groupmatrix = f"translate({groupdx}, {groupdy})"
+
+        # Looping through all nodes with node.flat can provide
+        # multiple times a single node, as you may loop through
+        # files and groups nested into each other.
+        # To avoid this we create a temporary set which by definition
+        # can only contain unique members
+        s = set()
+        for n in data:
+            s = s.union(n.flat(emphasized=True, types=elem_nodes))
+        for q in s:
+            if individually:
+                left_edge = q.bounds[0]
+                top_edge = q.bounds[1]
+                right_edge = q.bounds[2]
+                bottom_edge = q.bounds[3]
+                dx, dy = calc_dx_dy()
+                matrix = f"translate({dx}, {dy})"
+            else:
+                dx = groupdx
+                dy = groupdy
+                matrix = groupmatrix
+            if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
+                continue
+            else:
+                try:
+                    # q.matrix *= matrix
+                    q.matrix.post_translate(dx, dy)
+                    q.modified()
+                except AttributeError:
+                    continue
+        self.signal("tree_changed")
+
 
     def _init_commands(self, kernel):
 
@@ -2374,7 +2472,7 @@ class Elemental(Service):
                 super_element += path
             self.remove_elements(data)
             node = self.elem_branch.add(path=super_element, type="elem path")
-            node.emphasized = True
+            self.set_node_emphasis(node, True)
             if self.classify_new:
                 self.classify([node])
             return "elements", [node]
@@ -2416,7 +2514,7 @@ class Elemental(Service):
             input_type=("elements", None),
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, remainder=None, **kwargs):
+        def subtype_align_elements(command, channel, _, data=None, remainder=None, **kwargs):
             if not remainder:
                 channel(
                     "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
@@ -2454,35 +2552,9 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            top_edge = min([e[1] for e in boundary_points])
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-
-            for node in data:
-                subbox = node.bounds
-                top = subbox[1] - top_edge
-                matrix = f"translate(0, {-top})"
-                if top != 0:
-                    for q in node.flat(types=elem_nodes):
-                        try:
-                            q.matrix *= matrix
-                            q.modified()
-                        except AttributeError:
-                            continue
+        def subtype_align_top(command, channel, _, data=None, **kwargs):
+            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            self.align_elements(data, alignbounds, "", "min", True)
             return "align", data
 
         @self.console_command(
@@ -2491,35 +2563,9 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            bottom_edge = max([e[3] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                subbox = node.bounds
-                bottom = subbox[3] - bottom_edge
-                matrix = f"translate(0, {-bottom})"
-                if bottom != 0:
-                    for q in node.flat(types=elem_nodes):
-                        try:
-                            q.matrix *= matrix
-                            q.modified()
-                        except AttributeError:
-                            continue
+        def subtype_align_bottom(command, channel, _, data=None, **kwargs):
+            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            self.align_elements(data, alignbounds, "", "max", True)
             return "align", data
 
         @self.console_command(
@@ -2528,35 +2574,9 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                subbox = node.bounds
-                left = subbox[0] - left_edge
-                matrix = f"translate({-left}, 0)"
-                if left != 0:
-                    for q in node.flat(types=elem_nodes):
-                        try:
-                            q.matrix *= matrix
-                            q.modified()
-                        except AttributeError:
-                            continue
+        def subtype_align_left(command, channel, _, data=None, **kwargs):
+            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            self.align_elements(data, alignbounds, "min", "", True)
             return "align", data
 
         @self.console_command(
@@ -2565,35 +2585,9 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            right_edge = max([e[2] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                subbox = node.bounds
-                right = subbox[2] - right_edge
-                matrix = f"translate({-right}, 0)"
-                if right != 0:
-                    for q in node.flat(types=elem_nodes):
-                        try:
-                            q.matrix *= matrix
-                            q.modified()
-                        except AttributeError:
-                            continue
+        def subtype_align_right(command, channel, _, data=None, **kwargs):
+            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            self.align_elements(data, alignbounds, "max", "", True)
             return "align", data
 
         @self.console_command(
@@ -2602,38 +2596,9 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                subbox = node.bounds
-                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = f"translate({-dx}, {-dy})"
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+        def subtype_align_center(command, channel, _, data=None, **kwargs):
+            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            self.align_elements(data, alignbounds, "center", "center", True)
             return "align", data
 
         @self.console_command(
@@ -2642,40 +2607,11 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
+        def subtype_align_bedtop(command, channel, _, data=None, **kwargs):
             device_width = self.length_x("100%")
             device_height = self.length_y("100%")
-            dx = 0
-            dy = -1.0 * top_edge
-            matrix = f"translate({dx}, {dy})"
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            self.signal("tree_changed")
+            alignbounds = (0, 0, device_width, device_height)
+            self.align_elements(data, alignbounds, "", "min", False)
             return "align", data
 
         @self.console_command(
@@ -2684,40 +2620,11 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
+        def subtype_align_bedbottom(command, channel, _, data=None, **kwargs):
             device_width = self.length_x("100%")
             device_height = self.length_y("100%")
-            dx = 0
-            dy = device_height - bottom_edge
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            self.signal("tree_changed")
+            alignbounds = (0, 0, device_width, device_height)
+            self.align_elements(data, alignbounds, "", "max", False)
             return "align", data
 
         @self.console_command(
@@ -2726,40 +2633,11 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
+        def subtype_align_bedleft(command, channel, _, data=None, **kwargs):
             device_width = self.length_x("100%")
             device_height = self.length_y("100%")
-            dx = -1 * left_edge
-            dy = 0
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            self.signal("tree_changed")
+            alignbounds = (0, 0, device_width, device_height)
+            self.align_elements(data, alignbounds, "min", "", False)
             return "align", data
 
         @self.console_command(
@@ -2768,40 +2646,11 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
+        def subtype_align_bedright(command, channel, _, data=None, **kwargs):
             device_width = self.length_x("100%")
             device_height = self.length_y("100%")
-            dx = device_width - right_edge
-            dy = 0
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            self.signal("tree_changed")
+            alignbounds = (0, 0, device_width, device_height)
+            self.align_elements(data, alignbounds, "max", "", False)
             return "align", data
 
         @self.console_command(
@@ -2810,40 +2659,11 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
+        def subtype_align_bedcenter(command, channel, _, data=None, **kwargs):
             device_width = self.length_x("100%")
             device_height = self.length_y("100%")
-            dx = (device_width - left_edge - right_edge) / 2.0
-            dy = (device_height - top_edge - bottom_edge) / 2.0
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            matrix = f"translate({dx}, {dy})"
-            for node in data:
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            self.signal("tree_changed")
+            alignbounds = (0, 0, device_width, device_height)
+            self.align_elements(data, alignbounds, "center", "center", False)
             return "align", data
 
         @self.console_command(
@@ -2852,35 +2672,9 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                subbox = node.bounds
-                dx = (subbox[0] + subbox[2] - left_edge - right_edge) / 2.0
-                matrix = f"translate({-dx}, 0)"
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+        def subtype_align_centerh(command, channel, _, data=None, **kwargs):
+            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            self.align_elements(data, alignbounds, "center", "", True)
             return "align", data
 
         @self.console_command(
@@ -2889,35 +2683,9 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            top_edge = min([e[1] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                subbox = node.bounds
-                dy = (subbox[1] + subbox[3] - top_edge - bottom_edge) / 2.0
-                matrix = f"translate(0, {-dy})"
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
+        def subtype_align_centerv(command, channel, _, data=None, **kwargs):
+            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            self.align_elements(data, alignbounds, "", "center", True)
             return "align", data
 
         @self.console_command(
@@ -2926,7 +2694,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_spaceh(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -2975,7 +2743,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align(command, channel, _, data=None, **kwargs):
+        def subtype_align_spacev(command, channel, _, data=None, **kwargs):
             boundary_points = []
             for node in data:
                 boundary_points.append(node.bounds)
@@ -3016,49 +2784,6 @@ class Elemental(Service):
                         except AttributeError:
                             continue
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
-            return "align", data
-
-        # --------------------
-        @self.console_command(
-            "bedcenter",
-            help=_("align elements to bedcenter"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align(command, channel, _, data=None, **kwargs):
-            boundary_points = []
-            for node in data:
-                boundary_points.append(node.bounds)
-            if not len(boundary_points):
-                return
-            left_edge = min([e[0] for e in boundary_points])
-            top_edge = min([e[1] for e in boundary_points])
-            right_edge = max([e[2] for e in boundary_points])
-            bottom_edge = max([e[3] for e in boundary_points])
-
-            haslock = False
-            for node in data:
-                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
-                    haslock = True
-                    break
-            if haslock:
-                channel(
-                    _("Your selection contains a locked element, that cannot be moved")
-                )
-                return
-            for node in data:
-                device_width = self.length_x("100%")
-                device_height = self.length_y("100%")
-                dx = (device_width - left_edge - right_edge) / 2.0
-                dy = (device_height - top_edge - bottom_edge) / 2.0
-                matrix = f"translate({dx}, {dy})"
-                for q in node.flat(types=elem_nodes):
-                    try:
-                        q.matrix *= matrix
-                        q.modified()
-                    except AttributeError:
-                        continue
-            self.signal("tree_changed")
             return "align", data
 
         @self.console_argument(
@@ -3710,6 +3435,8 @@ class Elemental(Service):
             dots_per_units = dpi / UNITS_PER_INCH
             new_width = width * dots_per_units
             new_height = height * dots_per_units
+            new_height = max(new_height, 1)
+            new_width = max(new_width, 1)
 
             image = make_raster(
                 data,
@@ -4460,8 +4187,10 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
                 was_emphasized = True
+                old_first = self.first_emphasized
             else:
                 was_emphasized = False
+                old_first = None
             apply = data
             if filter is not None:
                 apply = list()
@@ -4485,17 +4214,9 @@ class Elemental(Service):
                     if not hasattr(e, "stroke"):
                         pass
                     elif hasattr(e, "stroke") and e.stroke is None or e.stroke == "none":
-                        channel(
-                            _("{index}: stroke = none - {name}").format(
-                                index=i, name=name
-                            )
-                        )
+                        channel(f"{i}: stroke = none - {name}")
                     else:
-                        channel(
-                            _("{index}: stroke = {stroke} - {name}").format(
-                                index=i, stroke=e.stroke.hex, name=name
-                            )
-                        )
+                        channel(f"{i}: stroke = {e.stroke.hex} - {name}")
                     i += 1
                 channel("----------")
                 return
@@ -4525,6 +4246,10 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                if old_first is not None and old_first in apply:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
                 # self.signal("rebuild_tree")
                 self.signal("refresh_tree", apply)
             return "elements", data
@@ -4549,8 +4274,10 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
                 was_emphasized = True
+                old_first = self.first_emphasized
             else:
                 was_emphasized = False
+                old_first = None
             apply = data
             if filter is not None:
                 apply = list()
@@ -4614,6 +4341,10 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                if old_first is not None and old_first in apply:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
                 self.signal("refresh_tree", apply)
             #                self.signal("rebuild_tree")
             return "elements", data
@@ -4753,8 +4484,8 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
-        @self.console_argument("scale_x", type=float, help=_("scale_x value"))
-        @self.console_argument("scale_y", type=float, help=_("scale_y value"))
+        @self.console_argument("scale_x", type=str, help=_("scale_x value"))
+        @self.console_argument("scale_y", type=str, help=_("scale_y value"))
         @self.console_option(
             "px", "x", type=self.length_x, help=_("scale x origin point")
         )
@@ -4795,7 +4526,7 @@ class Elemental(Service):
                     if len(name) > 50:
                         name = name[:50] + "…"
                     channel(
-                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_x()}) - {name}"
+                        f"{i}: scale({node.matrix.value_scale_x()}, {node.matrix.value_scale_y()}) - {name}"
                     )
                     i += 1
                 channel("----------")
@@ -4805,9 +4536,29 @@ class Elemental(Service):
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
-            bounds = Node.union_bounds(data)
+            # print (f"Start: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+            factor = 1
+            if scale_x.endswith("%"):
+                factor = 0.01
+                scale_x = scale_x[:-1]
+            try:
+                scale_x = factor * float(scale_x)
+            except ValueError:
+                scale_x = 1
             if scale_y is None:
                 scale_y = scale_x
+            else:
+                factor = 1
+                if scale_y.endswith("%"):
+                    factor = 0.01
+                    scale_y = scale_y[:-1]
+                try:
+                    scale_y = factor * float(scale_y)
+                except ValueError:
+                    scale_y = 1
+            # print (f"End: {scale_x} ({type(scale_x).__name__}), {scale_y} ({type(scale_y).__name__})")
+
+            bounds = Node.union_bounds(data)
             if px is None:
                 px = (bounds[2] + bounds[0]) / 2.0
             if py is None:
@@ -4941,16 +4692,7 @@ class Elemental(Service):
                     name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel(
-                        _(
-                            "{index}: translate({translate_x}, {translate_y}) - {name}"
-                        ).format(
-                            index=i,
-                            translate_x=node.matrix.value_trans_x(),
-                            translate_y=node.matrix.value_trans_y(),
-                            name=name,
-                        )
-                    )
+                    channel(f"{i}: translate({node.matrix.value_trans_x():.1f}, {node.matrix.value_trans_y():.1f}) - {name}")
                     i += 1
                 channel("----------")
                 return
@@ -5193,8 +4935,10 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
                 was_emphasized = True
+                old_first = self.first_emphasized
             else:
                 was_emphasized = False
+                old_first = None
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
@@ -5202,6 +4946,10 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if old_first is not None and old_first in data:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
 
             return "elements", data
 
@@ -5215,8 +4963,10 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
                 was_emphasized = True
+                old_first = self.first_emphasized
             else:
                 was_emphasized = False
+                old_first = None
             if len(data) == 0:
                 channel(_("No selected elements."))
                 return
@@ -5225,6 +4975,10 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if old_first is not None and old_first in data:
+                    self.first_emphasized = old_first
+                else:
+                    self.first_emphasized = None
             return "elements", data
 
         # ==========
@@ -6420,7 +6174,7 @@ class Elemental(Service):
             help=_("Execute Job for the selected operation(s)."),
         )
         def execute_job(node, **kwargs):
-            node.emphasized = True
+            self.set_node_emphasis(node, True)
             self("plan0 clear copy-selected\n")
             self("window open ExecuteJob 0\n")
 
@@ -6431,7 +6185,7 @@ class Elemental(Service):
             help=_("Run simulation for the selected operation(s)"),
         )
         def compile_and_simulate(node, **kwargs):
-            node.emphasized = True
+            self.set_node_emphasis(node, True)
             self("plan0 copy-selected preprocess validate blob preopt optimize\n")
             self("window open Simulation 0\n")
 
@@ -7968,8 +7722,15 @@ class Elemental(Service):
         uid = {}
         missing = list()
         for node in self.flat():
+            if node.id in uid:
+                # ID already used. Clear.
+                node.id = None
             if node.id is None:
+                # Unused IDs need new IDs
                 missing.append(node)
+            else:
+                # Set this ID as used.
+                uid[node.id] = node
         for m in missing:
             while f"meerk40t:{idx}" in uid:
                 idx += 1
@@ -8378,16 +8139,26 @@ class Elemental(Service):
                     s.emphasized = True
                     s.selected = True
         if emphasize is not None:
+            # Validate emphasize
+            old_first = self.first_emphasized
+            if old_first is not None and not old_first.emphasized:
+                self.first_emphasized = None
+                old_first = None
+            count = 0
             for e in emphasize:
+                count += 1
                 if e.type == "reference":
-                    e.node.emphasized = True
+                    self.set_node_emphasis(e.node, True)
                     e.highlighted = True
                 else:
-                    e.emphasized = True
+                    self.set_node_emphasis(e, True)
                     e.selected = True
                 # if hasattr(e, "object"):
                 #     self.target_clones(self._tree, e, e.object)
                 self.highlight_children(e)
+            if count>1 and old_first is None:
+                # It makes no sense to define a 'first' here, as all are equal
+                self.first_emphasized = None
 
     def center(self):
         bounds = self._emphasized_bounds
