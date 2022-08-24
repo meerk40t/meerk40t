@@ -203,6 +203,10 @@ class ViewPort:
             ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
 
+    def native_mm(self):
+        matrix = Matrix(self.scene_to_device_matrix())
+        return abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+
     def length(
         self,
         value,

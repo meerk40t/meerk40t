@@ -399,7 +399,7 @@ class SpoolerPanel(wx.Panel):
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                 if list_id<self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 6, runtime)
-            except AttributeError:
+            except (AttributeError, AssertionError):
                 if list_id<self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 6, "-")
 
@@ -411,7 +411,7 @@ class SpoolerPanel(wx.Panel):
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                 if list_id<self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 7, runtime)
-            except AttributeError:
+            except (AttributeError, AssertionError):
                 if list_id<self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 7, "-")
 

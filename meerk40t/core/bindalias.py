@@ -339,6 +339,24 @@ class Bind(Service):
             if value:
                 self.keymap[key] = value
 
+    def service_attach(self, *args, **kwargs):
+        if not len(self.keymap):
+            self.default_keymap()
+            return
+        # Remap "control+" to "ctrl+"
+        for key in list(self.keymap.keys()):
+            if key.startswith("control+"):
+                newkey = "ctrl+" + key[8:]
+                self.keymap[newkey] = self.keymap[key]
+                del self.keymap[key]
+        for key, values in DEFAULT_KEYMAP.items():
+            if key not in self.keymap or self.keymap[key] in values[1:]:
+                value = values[0]
+                if value:
+                    self.keymap[key] = value
+                elif key in self.keymap:
+                    del self.keymap[key]
+
 
 class Alias(Service):
     """
@@ -432,6 +450,18 @@ class Alias(Service):
             value = values[0]
             if value:
                 self.aliases[key] = value
+
+    def service_attach(self, *args, **kwargs):
+        if not len(self.aliases):
+            self.default_alias()
+            return
+        for key, values in DEFAULT_ALIAS.items():
+            if key not in self.aliases or self.aliases[key] in values[1:]:
+                value = values[0]
+                if value:
+                    self.aliases[key] = value
+                elif key in self.aliases:
+                    del self.aliases[key]
 
 
 def keymap_execute(context, keyvalue, keydown=True):

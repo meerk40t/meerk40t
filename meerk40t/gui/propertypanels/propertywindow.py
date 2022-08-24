@@ -112,5 +112,5 @@ class PropertyWindow(MWindow):
                 p.pane_hide()
             except AttributeError:
                 pass
-            self.remove_module_delegate(p)
+        # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()

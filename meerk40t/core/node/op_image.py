@@ -4,10 +4,8 @@ from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_MM
 from meerk40t.svgelements import Color, Path, Polygon
-
-MILS_IN_MM = 39.3701
 
 
 class ImageOpNode(Node, Parameters):
@@ -178,7 +176,7 @@ class ImageOpNode(Node, Parameters):
                 continue
             step = node.step_x
             estimate += (e.image_width * e.image_height * step) / (
-                MILS_IN_MM * self.speed
+                UNITS_PER_MM * self.speed
             )
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
