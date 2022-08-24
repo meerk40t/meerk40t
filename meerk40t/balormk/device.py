@@ -1,6 +1,7 @@
 import os
 import re
 import struct
+import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
@@ -31,6 +32,9 @@ class ElementLightJob:
         self.simulate = simulate
         self.priority = -1
         self.label = "Element Light Job"
+        self.time_submitted = time.time()
+        self.time_started = None
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped and self.started
@@ -47,10 +51,26 @@ class ElementLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
         return True
 
     def stop(self):
         self.stopped = True
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
 
     def process(self, con):
         if self.stopped:
@@ -132,6 +152,9 @@ class LiveSelectionLightJob:
         self._last_bounds = None
         self.priority = -1
         self.label = "Live Selection Light Job"
+        self.time_submitted = time.time()
+        self.time_started = None
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped
@@ -148,6 +171,7 @@ class LiveSelectionLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
         return True
 
     def update_points(self, bounds):
@@ -227,6 +251,21 @@ class LiveSelectionLightJob:
     def stop(self):
         self.stopped = True
 
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
+
     def process(self, con):
         if self.stopped:
             return False
@@ -272,6 +311,9 @@ class LiveFullLightJob:
         self._last_bounds = None
         self.priority = -1
         self.label = "Live Full Light Job"
+        self.time_submitted = time.time()
+        self.time_started = None
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped
@@ -288,11 +330,27 @@ class LiveFullLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
         return True
 
     def stop(self):
         self.stopped = True
         self.service.unlisten("emphasized", self.on_emphasis_changed)
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
 
     def on_emphasis_changed(self, *args):
         self.changed = True
