@@ -1227,7 +1227,7 @@ class BalorDevice(Service, ViewPort):
                     quantization=quantization,
                     simulate=True,
                 )
-            self.spooler.command("light_loop", self.job.process)
+            self.spooler.send(self.job)
 
         @self.console_command(
             "select-light", help=_("Execute selection light idle job")
@@ -1236,7 +1236,7 @@ class BalorDevice(Service, ViewPort):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveSelectionLightJob(self)
-            self.spooler.command("light_loop", self.job.process)
+            self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def full_light(**kwargs):
