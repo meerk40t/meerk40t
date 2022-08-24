@@ -3,6 +3,7 @@ import time
 import wx
 
 from ...core.element_types import elem_nodes
+from ...core.spoolers import LaserJob
 from ...core.units import Length
 from ..icons import icons8_up_50
 from .statusbarwidget import StatusBarWidget
@@ -308,17 +309,11 @@ class BurnProgressPanel(SimpleInfoWidget):
                 # We already have one, so these are the jobs still in the queue
                 # So we just add the time to the remaining...
                 self._queue_remaining += spool_obj.estimate_time()
-            elif spool_obj.is_running():
+            elif spool_obj.is_running() and isinstance(spool_obj, LaserJob):
                 self._queue_pos = idx + 1
-                try:
-                    self._job_label = spool_obj.label
-                except AttributeError:
-                    self._job_label = str(spool_obj)
+                self._job_label = spool_obj.label
                 self._job_active = True
-                try:
-                    self._job_loops = spool_obj.loops
-                except AttributeError:
-                    self._job_loops = 1
+                self._job_loops = spool_obj.loops
                 self._loops_executed = spool_obj.loops_executed
                 if hasattr(self._driver, "total_steps"):
                     self._job_len = self._driver.total_steps
