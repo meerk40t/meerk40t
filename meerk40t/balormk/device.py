@@ -33,7 +33,7 @@ class ElementLightJob:
         self.priority = -1
         self.label = "Element Light Job"
         self.time_submitted = time.time()
-        self.time_started = None
+        self.time_started = time.time()
         self.runtime = 0
 
     def is_running(self):
@@ -154,7 +154,7 @@ class LiveSelectionLightJob:
         self.priority = -1
         self.label = "Live Selection Light Job"
         self.time_submitted = time.time()
-        self.time_started = None
+        self.time_started = time.time()
         self.runtime = 0
 
     def is_running(self):
@@ -314,7 +314,7 @@ class LiveFullLightJob:
         self.priority = -1
         self.label = "Live Full Light Job"
         self.time_submitted = time.time()
-        self.time_started = None
+        self.time_started = time.time()
         self.runtime = 0
 
     def is_running(self):
