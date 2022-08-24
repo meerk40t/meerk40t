@@ -1,3 +1,4 @@
+from meerk40t.core.node.node import Node
 from meerk40t.core.node.blobnode import BlobNode
 from meerk40t.core.node.branch_elems import BranchElementsNode
 from meerk40t.core.node.branch_ops import BranchOperationsNode
@@ -16,7 +17,6 @@ from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
 from meerk40t.core.node.layernode import LayerNode
-from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -28,6 +28,39 @@ from meerk40t.core.node.util_console import ConsoleOperation
 from meerk40t.core.node.util_input import InputOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
+
+
+bootstrap = {
+    "op cut": CutOpNode,
+    "op engrave": EngraveOpNode,
+    "op raster": RasterOpNode,
+    "op image": ImageOpNode,
+    "op dots": DotsOpNode,
+    "op hatch": HatchOpNode,
+    "util console": ConsoleOperation,
+    "util wait": WaitOperation,
+    "util input": InputOperation,
+    "util output": OutputOperation,
+    "lasercode": LaserCodeNode,
+    "blob": BlobNode,
+    "group": GroupNode,
+    "layer": LayerNode,
+    "elem ellipse": EllipseNode,
+    "elem line": LineNode,
+    "elem rect": RectNode,
+    "elem path": PathNode,
+    "elem point": PointNode,
+    "elem polyline": PolylineNode,
+    "elem image": ImageNode,
+    "elem text": TextNode,
+    "elem numpath": NumpathNode,
+    "reference": ReferenceNode,
+    "cutcode": CutNode,
+    "branch ops": BranchOperationsNode,
+    "branch elems": BranchElementsNode,
+    "branch reg": BranchRegmarkNode,
+    "file": FileNode,
+}
 
 
 class RootNode(Node):
@@ -43,38 +76,7 @@ class RootNode(Node):
         self._root = self
         self.context = context
         self.listeners = []
-
-        self.bootstrap = {
-            "op cut": CutOpNode,
-            "op engrave": EngraveOpNode,
-            "op raster": RasterOpNode,
-            "op image": ImageOpNode,
-            "op dots": DotsOpNode,
-            "op hatch": HatchOpNode,
-            "util console": ConsoleOperation,
-            "util wait": WaitOperation,
-            "util input": InputOperation,
-            "util output": OutputOperation,
-            "lasercode": LaserCodeNode,
-            "blob": BlobNode,
-            "group": GroupNode,
-            "layer": LayerNode,
-            "elem ellipse": EllipseNode,
-            "elem line": LineNode,
-            "elem rect": RectNode,
-            "elem path": PathNode,
-            "elem point": PointNode,
-            "elem polyline": PolylineNode,
-            "elem image": ImageNode,
-            "elem text": TextNode,
-            "elem numpath": NumpathNode,
-            "reference": ReferenceNode,
-            "cutcode": CutNode,
-            "branch ops": BranchOperationsNode,
-            "branch elems": BranchElementsNode,
-            "branch reg": BranchRegmarkNode,
-            "file": FileNode,
-        }
+        self.bootstrap = bootstrap
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
