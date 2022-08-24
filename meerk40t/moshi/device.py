@@ -462,8 +462,8 @@ class MoshiDriver(Parameters):
             elif isinstance(q, WaitCut):
                 self.current_steps += 1
                 # Moshi has no forced wait functionality.
-                self.wait_finish()
-                self.wait(q.dwell_time)
+                # self.wait_finish()
+                # self.wait(q.dwell_time)
             elif isinstance(q, DwellCut):
                 self.current_steps += 1
                 # Moshi cannot fire in place.
