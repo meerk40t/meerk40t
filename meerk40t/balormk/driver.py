@@ -147,6 +147,9 @@ class BalorDriver:
             # print ("Balor-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
         con = self.connection
+        con._light_speed = None
+        con._dark_speed = None
+        con._goto_speed = None
         con.program_mode()
         self._list_bits = con._port_bits
         last_on = None
@@ -291,11 +294,9 @@ class BalorDriver:
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            con.list_jump_speed(self.service.default_rapid_speed)
                             con.goto(x, y)
                         continue
                     if on == 0:
-                        con.list_jump_speed(self.service.default_rapid_speed)
                         con.goto(x, y)
                     else:
                         # on is in range 0 exclusive and 1 inclusive.

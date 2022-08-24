@@ -334,6 +334,8 @@ class SpoolerPanel(wx.Panel):
             list_id = self.list_job_history.InsertItem(
                 self.list_job_history.GetItemCount(), f"#{idx}"
             )
+            if info[1] is None:
+                continue
             self.list_job_history.SetItem(list_id, 1, info[0])
             starttime = timestr(info[1], True)
             self.list_job_history.SetItem(list_id, 2, starttime)
