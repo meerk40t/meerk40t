@@ -5398,6 +5398,7 @@ class Elemental(Service):
                 return
             self._tree = undo
             self.signal("refresh_scene")
+            self.signal("rebuild_tree")
 
         @self.console_command(
             "redo",
@@ -5417,6 +5418,7 @@ class Elemental(Service):
                 return
             self._tree = redo
             self.signal("refresh_scene")
+            self.signal("rebuild_tree")
 
         @self.console_command(
             "undolist",
