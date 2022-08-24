@@ -38,10 +38,27 @@ class ColorWidget(StatusBarWidget):
             )
             wx_button.SetBackgroundColour(wx.Colour(colors[idx]))
             wx_button.SetMinSize(wx.Size(10, -1))
-            wx_button.SetToolTip(_("Set stroke-color (right click set fill color)"))
+            if idx == 0:
+                wx_button.SetToolTip(_("Clear stroke-color (right click clear fill color)"))
+            else:
+                wx_button.SetToolTip(_("Set stroke-color (right click set fill color)"))
             wx_button.Bind(wx.EVT_LEFT_DOWN, self.on_button_color_left)
             wx_button.Bind(wx.EVT_RIGHT_DOWN, self.on_button_color_right)
             self.button_color.append(wx_button)
+
+        xsize = 15
+        imgBit = wx.Bitmap(xsize, xsize)
+        dc = wx.MemoryDC(imgBit)
+        dc.SelectObject(imgBit)
+        dc.SetBackground(wx.WHITE_BRUSH)
+        dc.Clear()
+        dc.SetPen(wx.Pen(wx.RED, 2))
+        dc.DrawLine((0, 0), (xsize, xsize))
+        dc.DrawLine((xsize, 0), (0, xsize))
+        # Now release dc
+        dc.SelectObject(wx.NullBitmap)
+        self.button_color[0].SetBitmap(imgBit)
+
         for idx in range(len(colors)):
             self.Add(self.button_color[idx], 1, wx.EXPAND, 0)
 
