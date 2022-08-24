@@ -42,6 +42,7 @@ class ElementLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -162,6 +163,7 @@ class LiveSelectionLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -321,6 +323,7 @@ class LiveFullLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
