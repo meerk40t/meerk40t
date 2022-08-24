@@ -30,39 +30,6 @@ from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
 
 
-bootstrap = {
-    "op cut": CutOpNode,
-    "op engrave": EngraveOpNode,
-    "op raster": RasterOpNode,
-    "op image": ImageOpNode,
-    "op dots": DotsOpNode,
-    "op hatch": HatchOpNode,
-    "util console": ConsoleOperation,
-    "util wait": WaitOperation,
-    "util input": InputOperation,
-    "util output": OutputOperation,
-    "lasercode": LaserCodeNode,
-    "blob": BlobNode,
-    "group": GroupNode,
-    "layer": LayerNode,
-    "elem ellipse": EllipseNode,
-    "elem line": LineNode,
-    "elem rect": RectNode,
-    "elem path": PathNode,
-    "elem point": PointNode,
-    "elem polyline": PolylineNode,
-    "elem image": ImageNode,
-    "elem text": TextNode,
-    "elem numpath": NumpathNode,
-    "reference": ReferenceNode,
-    "cutcode": CutNode,
-    "branch ops": BranchOperationsNode,
-    "branch elems": BranchElementsNode,
-    "branch reg": BranchRegmarkNode,
-    "file": FileNode,
-}
-
-
 class RootNode(Node):
     """
     RootNode is one of the few directly declarable node-types and serves as the base type for all Node classes.
@@ -80,6 +47,9 @@ class RootNode(Node):
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
+
+    def __copy__(self):
+        return RootNode(self.context)
 
     def __repr__(self):
         return f"RootNode({str(self.context)})"
@@ -221,3 +191,38 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "focus"):
                 listen.focus(node, **kwargs)
+
+
+bootstrap = {
+    "root": RootNode,
+    "op cut": CutOpNode,
+    "op engrave": EngraveOpNode,
+    "op raster": RasterOpNode,
+    "op image": ImageOpNode,
+    "op dots": DotsOpNode,
+    "op hatch": HatchOpNode,
+    "util console": ConsoleOperation,
+    "util wait": WaitOperation,
+    "util input": InputOperation,
+    "util output": OutputOperation,
+    "lasercode": LaserCodeNode,
+    "blob": BlobNode,
+    "group": GroupNode,
+    "layer": LayerNode,
+    "elem ellipse": EllipseNode,
+    "elem line": LineNode,
+    "elem rect": RectNode,
+    "elem path": PathNode,
+    "elem point": PointNode,
+    "elem polyline": PolylineNode,
+    "elem image": ImageNode,
+    "elem text": TextNode,
+    "elem numpath": NumpathNode,
+    "reference": ReferenceNode,
+    "cutcode": CutNode,
+    "branch ops": BranchOperationsNode,
+    "branch elems": BranchElementsNode,
+    "branch reg": BranchRegmarkNode,
+    "file": FileNode,
+}
+
