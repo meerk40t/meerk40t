@@ -1364,8 +1364,7 @@ class LihuiyuDriver(Parameters):
 
         suffix_c = None
         if (
-            not self.service.twitches
-            or self.settings.get("_force_twitchless", False)
+            not self.service.twitches or self.settings.get("_force_twitchless", False)
         ) and not self.step:
             suffix_c = True
         if self._request_leftward is not None:

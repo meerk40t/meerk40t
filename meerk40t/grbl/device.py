@@ -577,7 +577,12 @@ class GRBLDriver(Parameters):
             # preprocess queue to establish steps
             assessment_start = time.time()
             dummy_planner = PlotPlanner(
-                self.settings, single=True, smooth=False, ppi=False, shift=False, group=True
+                self.settings,
+                single=True,
+                smooth=False,
+                ppi=False,
+                shift=False,
+                group=True,
             )
 
             for q in self.queue:

@@ -2,11 +2,11 @@ import wx
 
 from meerk40t.gui.wxutils import ScrolledPanel
 
+from ...core.units import Length
 from ...svgelements import Color
 from ..icons import icons8_vector_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
-from ...core.units import Length
 
 _ = wx.GetTranslation
 
@@ -59,7 +59,7 @@ class PathPropertyPanel(ScrolledPanel):
         # Property display
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
-        self.lbl_info_area   = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.lbl_info_area = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.btn_info_get = wx.Button(self, wx.ID_ANY, _("Retrieve"))
 
         self.__set_properties()

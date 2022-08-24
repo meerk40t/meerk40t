@@ -21,6 +21,7 @@ Tree Functions are to be stored: tree/command/type. These store many functions l
 from enum import Enum
 from time import time
 
+
 # LINEJOIN
 # Value	arcs | bevel |miter | miter-clip | round
 # Default value	miter

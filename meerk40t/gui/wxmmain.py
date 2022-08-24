@@ -407,9 +407,7 @@ class MeerK40t(MWindow):
                 "trailer": "px",
                 "type": float,
                 "label": _("Default pan factor:"),
-                "tip": _(
-                    "Default pan factor controls how quick panning happens."
-                ),
+                "tip": _("Default pan factor controls how quick panning happens."),
                 "page": "Gui",
                 "section": "Zoom",
             },
@@ -449,7 +447,8 @@ class MeerK40t(MWindow):
                 "type": bool,
                 "label": _("Auto-select element after creation"),
                 "tip": _(
-                    "Active: selects a newly created element (via one of the tools in the toolbar)"),
+                    "Active: selects a newly created element (via one of the tools in the toolbar)"
+                ),
                 "page": "Scene",
                 "section": "General",
             },

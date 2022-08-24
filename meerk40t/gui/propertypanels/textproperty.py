@@ -357,7 +357,9 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_attrib.Add(self.button_attrib_bold, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_attrib.Add(self.button_attrib_italic, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_attrib.Add(self.button_attrib_underline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_attrib.Add(self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(
+            self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
 
         sizer_colors = wx.BoxSizer(wx.HORIZONTAL)
 

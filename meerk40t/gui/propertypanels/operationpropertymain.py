@@ -348,7 +348,7 @@ class SpeedPpiPanel(wx.Panel):
         power_max = None
 
         op = node.type
-        if op.startswith("op "):   # Should, shouldnt it?
+        if op.startswith("op "):  # Should, shouldnt it?
             op = op[3:]
         else:
             op = ""

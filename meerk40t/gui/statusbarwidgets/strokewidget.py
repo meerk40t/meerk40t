@@ -39,7 +39,9 @@ class ColorWidget(StatusBarWidget):
             wx_button.SetBackgroundColour(wx.Colour(colors[idx]))
             wx_button.SetMinSize(wx.Size(10, -1))
             if idx == 0:
-                wx_button.SetToolTip(_("Clear stroke-color (right click clear fill color)"))
+                wx_button.SetToolTip(
+                    _("Clear stroke-color (right click clear fill color)")
+                )
             else:
                 wx_button.SetToolTip(_("Set stroke-color (right click set fill color)"))
             wx_button.Bind(wx.EVT_LEFT_DOWN, self.on_button_color_left)
@@ -148,9 +150,11 @@ class StrokeWidget(StatusBarWidget):
 
         self.chk_scale = wx.CheckBox(self.parent, wx.ID_ANY, _("Scale"))
         self.chk_scale.SetToolTip(
-            _("Toggle the behaviour of stroke-growth.") + "\n" +
-            _("Active: stroke width remains the same, regardless of the element size") + "\n" +
-            _("Inactive: stroke grows/shrink with scaled element")
+            _("Toggle the behaviour of stroke-growth.")
+            + "\n"
+            + _("Active: stroke width remains the same, regardless of the element size")
+            + "\n"
+            + _("Inactive: stroke grows/shrink with scaled element")
         )
 
         self.parent.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)

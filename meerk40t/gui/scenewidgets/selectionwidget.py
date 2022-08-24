@@ -1828,7 +1828,9 @@ class SelectionWidget(Widget):
         else:
             posy = "center"
 
-        data = [e for e in elements.flat(types=elem_nodes, emphasized=True) if e != refob]
+        data = [
+            e for e in elements.flat(types=elem_nodes, emphasized=True) if e != refob
+        ]
 
         elements.align_elements(data, alignbounds, posx, posy, False)
         for q in data:

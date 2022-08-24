@@ -8,11 +8,11 @@ from meerk40t.core.units import Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_meerk40t,
+    icons8_bed_50,
     icons8_menu_50,
     icons8_r_black,
     icons8_r_white,
     icons8_reference,
-    icons8_bed_50,
     icons8_ungroup_objects_50,
 )
 from meerk40t.gui.laserrender import DRAW_MODE_GUIDES, LaserRender

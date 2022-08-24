@@ -442,6 +442,7 @@ class TextCtrl(wx.TextCtrl):
             allok = 2
         self.warn_status = allok
 
+
 class ScrolledPanel(SP):
     """
     We sometimes delete things fast enough that they call _SetupAfter when dead and crash.
