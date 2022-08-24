@@ -4,7 +4,11 @@ from math import isinf
 import wx
 from wx import aui
 
-from meerk40t.gui.icons import icons8_route_50, icons8_emergency_stop_button_50, icons8_pause_50
+from meerk40t.gui.icons import (
+    icons8_emergency_stop_button_50,
+    icons8_pause_50,
+    icons8_route_50,
+)
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import signal_listener
@@ -152,7 +156,7 @@ class SpoolerPanel(wx.Panel):
         # begin wxGlade: SpoolerPanel.__do_layout
         sizer_frame = wx.BoxSizer(wx.VERTICAL)
         sizer_combo_cmds = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_combo_cmds.Add(self.combo_device, 1, wx.EXPAND, 0)
+        sizer_combo_cmds.Add(self.combo_device, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_combo_cmds.Add(self.button_pause, 0, wx.EXPAND, 0)
         sizer_combo_cmds.Add(self.button_stop, 0, wx.EXPAND, 0)
 
@@ -399,10 +403,10 @@ class SpoolerPanel(wx.Panel):
                 hours, remainder = divmod(t, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-                if list_id<self.list_job_spool.GetItemCount():
+                if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 6, runtime)
             except (AttributeError, AssertionError):
-                if list_id<self.list_job_spool.GetItemCount():
+                if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 6, "-")
 
             # Estimate Time
@@ -411,10 +415,10 @@ class SpoolerPanel(wx.Panel):
                 hours, remainder = divmod(t, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-                if list_id<self.list_job_spool.GetItemCount():
+                if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 7, runtime)
             except (AttributeError, AssertionError):
-                if list_id<self.list_job_spool.GetItemCount():
+                if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 7, "-")
 
 

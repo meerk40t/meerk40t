@@ -27,11 +27,11 @@ class BalorConfiguration(MWindow):
         )
 
         options = (
-                ("balor", "Balor"),
-                ("balor-redlight", "Redlight"),
-                ("balor-global", "Global"),
-                ("balor-global-timing", "Timings"),
-                ("balor-extra", "Extras"),
+            ("balor", "Balor"),
+            ("balor-redlight", "Redlight"),
+            ("balor-global", "Global"),
+            ("balor-global-timing", "Timings"),
+            ("balor-extra", "Extras"),
         )
         self.panels = []
         for item in options:
@@ -78,7 +78,7 @@ class BalorConfiguration(MWindow):
             for item in choices:
                 try:
                     dummy = str(item["hidden"])
-                    if dummy == "" or dummy=="0":
+                    if dummy == "" or dummy == "0":
                         hidden = False
                     else:
                         hidden = False if devmode else True

@@ -3,7 +3,7 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length, UNITS_PER_POINT
+from meerk40t.core.units import UNITS_PER_POINT, Length
 from meerk40t.svgelements import Matrix
 
 REGEX_CSS_FONT = re.compile(

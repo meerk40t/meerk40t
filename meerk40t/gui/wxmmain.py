@@ -407,9 +407,7 @@ class MeerK40t(MWindow):
                 "trailer": "px",
                 "type": float,
                 "label": _("Default pan factor:"),
-                "tip": _(
-                    "Default pan factor controls how quick panning happens."
-                ),
+                "tip": _("Default pan factor controls how quick panning happens."),
                 "page": "Gui",
                 "section": "Zoom",
             },
@@ -438,6 +436,18 @@ class MeerK40t(MWindow):
                 "label": _("Select smallest element on scene"),
                 "tip": _(
                     "Active: Single click selects the smallest element under cursor (ctrl+click selects the largest) / Inactive: Single click selects the largest element  (ctrl+click the smallest)."
+                ),
+                "page": "Scene",
+                "section": "General",
+            },
+            {
+                "attr": "auto_select",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Auto-select element after creation"),
+                "tip": _(
+                    "Active: selects a newly created element (via one of the tools in the toolbar)"
                 ),
                 "page": "Scene",
                 "section": "General",

@@ -705,19 +705,23 @@ class Elemental(Service):
         def calc_dx_dy():
             dx = 0
             dy = 0
-            if positionx=="min":
+            if positionx == "min":
                 dx = alignbounds[0] - left_edge
-            elif positionx=="max":
+            elif positionx == "max":
                 dx = alignbounds[2] - right_edge
-            elif positionx=="center":
-                dx = (alignbounds[2] + alignbounds[0]) / 2 - (right_edge + left_edge) / 2
+            elif positionx == "center":
+                dx = (alignbounds[2] + alignbounds[0]) / 2 - (
+                    right_edge + left_edge
+                ) / 2
 
-            if positiony=="min":
+            if positiony == "min":
                 dy = alignbounds[1] - top_edge
-            elif positiony=="max":
+            elif positiony == "max":
                 dy = alignbounds[3] - bottom_edge
-            elif positiony=="center":
-                dy = (alignbounds[3] + alignbounds[1]) / 2 - (bottom_edge + top_edge) / 2
+            elif positiony == "center":
+                dy = (alignbounds[3] + alignbounds[1]) / 2 - (
+                    bottom_edge + top_edge
+                ) / 2
             return dx, dy
 
         # Selection boundaries
@@ -771,7 +775,6 @@ class Elemental(Service):
                 except AttributeError:
                     continue
         self.signal("tree_changed")
-
 
     def _init_commands(self, kernel):
 
@@ -2509,7 +2512,9 @@ class Elemental(Service):
             input_type=("elements", None),
             output_type="align",
         )
-        def subtype_align_elements(command, channel, _, data=None, remainder=None, **kwargs):
+        def subtype_align_elements(
+            command, channel, _, data=None, remainder=None, **kwargs
+        ):
             if not remainder:
                 channel(
                     "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
@@ -2548,7 +2553,9 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_top(command, channel, _, data=None, **kwargs):
-            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            alignbounds = (
+                None if self.first_emphasized is None else self.first_emphasized.bounds
+            )
             self.align_elements(data, alignbounds, "", "min", True)
             return "align", data
 
@@ -2559,7 +2566,9 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_bottom(command, channel, _, data=None, **kwargs):
-            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            alignbounds = (
+                None if self.first_emphasized is None else self.first_emphasized.bounds
+            )
             self.align_elements(data, alignbounds, "", "max", True)
             return "align", data
 
@@ -2570,7 +2579,9 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_left(command, channel, _, data=None, **kwargs):
-            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            alignbounds = (
+                None if self.first_emphasized is None else self.first_emphasized.bounds
+            )
             self.align_elements(data, alignbounds, "min", "", True)
             return "align", data
 
@@ -2581,7 +2592,9 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_right(command, channel, _, data=None, **kwargs):
-            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            alignbounds = (
+                None if self.first_emphasized is None else self.first_emphasized.bounds
+            )
             self.align_elements(data, alignbounds, "max", "", True)
             return "align", data
 
@@ -2592,7 +2605,9 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_center(command, channel, _, data=None, **kwargs):
-            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            alignbounds = (
+                None if self.first_emphasized is None else self.first_emphasized.bounds
+            )
             self.align_elements(data, alignbounds, "center", "center", True)
             return "align", data
 
@@ -2668,7 +2683,9 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_centerh(command, channel, _, data=None, **kwargs):
-            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            alignbounds = (
+                None if self.first_emphasized is None else self.first_emphasized.bounds
+            )
             self.align_elements(data, alignbounds, "center", "", True)
             return "align", data
 
@@ -2679,7 +2696,9 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_centerv(command, channel, _, data=None, **kwargs):
-            alignbounds = None if self.first_emphasized is None else self.first_emphasized.bounds
+            alignbounds = (
+                None if self.first_emphasized is None else self.first_emphasized.bounds
+            )
             self.align_elements(data, alignbounds, "", "center", True)
             return "align", data
 
@@ -4208,7 +4227,9 @@ class Elemental(Service):
                         name = name[:50] + "…"
                     if not hasattr(e, "stroke"):
                         pass
-                    elif hasattr(e, "stroke") and e.stroke is None or e.stroke == "none":
+                    elif (
+                        hasattr(e, "stroke") and e.stroke is None or e.stroke == "none"
+                    ):
                         channel(f"{i}: stroke = none - {name}")
                     else:
                         channel(f"{i}: stroke = {e.stroke.hex} - {name}")
@@ -4687,7 +4708,9 @@ class Elemental(Service):
                     name = str(node)
                     if len(name) > 50:
                         name = name[:50] + "…"
-                    channel(f"{i}: translate({node.matrix.value_trans_x():.1f}, {node.matrix.value_trans_y():.1f}) - {name}")
+                    channel(
+                        f"{i}: translate({node.matrix.value_trans_x():.1f}, {node.matrix.value_trans_y():.1f}) - {name}"
+                    )
                     i += 1
                 channel("----------")
                 return
@@ -8092,7 +8115,7 @@ class Elemental(Service):
                 # if hasattr(e, "object"):
                 #     self.target_clones(self._tree, e, e.object)
                 self.highlight_children(e)
-            if count>1 and old_first is None:
+            if count > 1 and old_first is None:
                 # It makes no sense to define a 'first' here, as all are equal
                 self.first_emphasized = None
 

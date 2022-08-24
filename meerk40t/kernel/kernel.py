@@ -1875,7 +1875,7 @@ class Kernel(Settings):
                         ct += 1
                         listen_funct, listen_lso = listen
                         if (listen_funct == remove_funct or remove_funct is None) and (
-                                listen_lso is remove_lso or remove_lso is None
+                            listen_lso is remove_lso or remove_lso is None
                         ):
                             del listeners[i]
                             removed = True
@@ -1886,7 +1886,9 @@ class Kernel(Settings):
                         # This should not occur, if it does, something is desynced attempting
                         # to double remove. Which could also mean listeners are stuck listening
                         # to places they should not which can cause other errors.
-                        print(f"Error in {signal}, no {str(remove_funct)} matching {str(remove_lso)}")
+                        print(
+                            f"Error in {signal}, no {str(remove_funct)} matching {str(remove_lso)}"
+                        )
                         for index, listener in enumerate(listeners):
                             print(f"{index}: {str(listener)}")
 

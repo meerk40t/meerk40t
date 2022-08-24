@@ -364,7 +364,9 @@ class SimulationPanel(wx.Panel, Job):
 
     def fit_scene_to_panel(self):
         bbox = self.context.device.bbox()
-        self.widget_scene.widget_root.focus_viewport_scene(bbox, self.view_pane.Size, 0.1)
+        self.widget_scene.widget_root.focus_viewport_scene(
+            bbox, self.view_pane.Size, 0.1
+        )
         self.widget_scene.request_refresh()
 
     def on_mouse_right_down(self, event=None):

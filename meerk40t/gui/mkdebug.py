@@ -1,3 +1,5 @@
+import time
+
 import wx
 from wx import aui
 
@@ -82,17 +84,27 @@ class DebugTreePanel(wx.Panel):
         self.update_position(True)
 
     def update_position(self, reset):
+        def timestr(ts):
+            if ts is None:
+                return "---"
+            else:
+                return time.strftime("%H:%M:%S", time.localtime(ts))
+
         txt1 = ""
         txt2 = ""
         for node in self.context.elements.flat(selected=True):
             txt1 += str(node) + "\n"
-        for node in self.context.elements.flat(emphasized=True):
-            txt2 += str(node) + "\n"
-        node = self.context.elements.first_emphasized
+        data = self.context.elements.flat(emphasized=True)
+        for node in data:
+            txt2 += (
+                f"{node.id} - {node.type} {node.label} - {timestr(node._emphasized_time)}"
+                + "\n"
+            )
+        node = self.context.elements.first_emphasized  # (data)
         if node is None:
             txt3 = ""
         else:
-            txt3 = f"{node.id} - {node.type} {node.label}"
+            txt3 = f"{node.id} - {node.type} {node.label} - {timestr(node._emphasized_time)}"
 
         self.lb_selected.SetValue(txt1)
         self.lb_emphasized.SetValue(txt2)

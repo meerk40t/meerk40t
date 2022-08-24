@@ -244,7 +244,12 @@ class ConfigurationTcp(wx.Panel):
         sizer_13.Add(sizer_port, 1, wx.EXPAND, 0)
 
         self.text_port = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, check="int", style=wx.TE_PROCESS_ENTER,
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="int",
+            style=wx.TE_PROCESS_ENTER,
         )
         self.text_port.SetToolTip(_("Port for tcp connection on the server computer"))
         sizer_port.Add(self.text_port, 1, wx.EXPAND, 0)
@@ -571,7 +576,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
             _("Select the board to use. This has an effects the speedcodes used.")
         )
         self.combobox_board.SetSelection(0)
-        sizer_board.Add(self.combobox_board, 1, wx.EXPAND, 0)
+        sizer_board.Add(self.combobox_board, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_17 = wx.BoxSizer(wx.VERTICAL)
         sizer_config.Add(sizer_17, 1, wx.EXPAND, 0)
@@ -839,7 +844,11 @@ class ConfigurationSetupPanel(ScrolledPanel):
         h_sizer_y3.Add(h_sizer_y5, 0, wx.EXPAND, 0)
 
         self.text_minimum_jog_distance = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, style=wx.TE_PROCESS_ENTER,
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            style=wx.TE_PROCESS_ENTER,
         )
         h_sizer_y5.Add(self.text_minimum_jog_distance, 1, wx.EXPAND, 0)
 
@@ -849,7 +858,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
             _("Jog Method"),
             choices=[_("Default"), _("Reset"), _("Finish")],
             majorDimension=3,
-            style=wx.RA_SPECIFY_COLS,   # wx.RA_SPECIFY_ROWS,
+            style=wx.RA_SPECIFY_COLS,  # wx.RA_SPECIFY_ROWS,
         )
         self.radio_box_jog_method.SetToolTip(
             _(
@@ -876,7 +885,12 @@ class ConfigurationSetupPanel(ScrolledPanel):
         )
 
         self.text_rapid_x = TextCtrl(
-            self, wx.ID_ANY, "", limited=True, check="float", style=wx.TE_PROCESS_ENTER,
+            self,
+            wx.ID_ANY,
+            "",
+            limited=True,
+            check="float",
+            style=wx.TE_PROCESS_ENTER,
         )
         sizer_36.Add(self.text_rapid_x, 1, wx.EXPAND, 0)
 

@@ -6,7 +6,7 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length, UNITS_PER_MM
+from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
@@ -256,7 +256,11 @@ class RasterOpNode(Node, Parameters):
             step_y = node.step_x
             step_x = node.step_y
             estimate += (
-                node.image.width * node.image.height * step_x / UNITS_PER_MM * self.speed
+                node.image.width
+                * node.image.height
+                * step_x
+                / UNITS_PER_MM
+                * self.speed
             )
             estimate += node.image.height * step_y / UNITS_PER_MM * self.speed
         if self.passes_custom and self.passes != 1:
@@ -288,10 +292,13 @@ class RasterOpNode(Node, Parameters):
             return
 
         # Calculate raster steps from DPI device context
-        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(self.dpi, matrix=matrix)
+        self.raster_step_x, self.raster_step_y = context.device.dpi_to_steps(
+            self.dpi, matrix=matrix
+        )
 
         make_raster = context.lookup("render-op/make_raster")
         if make_raster is None:
+
             def strip_rasters():
                 self.remove_node()
 

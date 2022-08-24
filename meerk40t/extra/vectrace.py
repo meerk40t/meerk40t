@@ -27,7 +27,10 @@ def plugin(kernel, lifecycle=None):
                 path.transform *= Matrix(matrix)
                 paths.append(
                     elements.elem_branch.add(
-                        path=abs(path), stroke_width=0, stroke_scaled=False, type="elem path"
+                        path=abs(path),
+                        stroke_width=0,
+                        stroke_scaled=False,
+                        type="elem path",
                     )
                 )
             return "elements", paths

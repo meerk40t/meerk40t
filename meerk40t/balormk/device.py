@@ -865,10 +865,12 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser On"),
                 "trailer": "µs",
-                "tip": _("Start delay (Start TC) at the beginning of each mark command"),
+                "tip": _(
+                    "Start delay (Start TC) at the beginning of each mark command"
+                ),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "00",
+                "priority": "00",
             },
             {
                 "attr": "delay_laser_off",
@@ -877,10 +879,12 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser Off"),
                 "trailer": "µs",
-                "tip": _("The delay time of the laser shutting down after marking finished"),
+                "tip": _(
+                    "The delay time of the laser shutting down after marking finished"
+                ),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "10",
+                "priority": "10",
             },
             {
                 "attr": "delay_polygon",
@@ -892,7 +896,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Delay amount between different points in the path travel."),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "30",
+                "priority": "30",
             },
             {
                 "attr": "delay_end",
@@ -904,7 +908,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Delay amount for the end TC"),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "20",
+                "priority": "20",
             },
             {
                 "attr": "delay_jump_long",
@@ -946,7 +950,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Open MO delay"),
                 "trailer": "ms",
                 "tip": _("OpenMO delay in ms"),
-                "section": "_90_Other"
+                "section": "_90_Other",
             },
         ]
         self.register_choices("balor-global-timing", choices)
@@ -959,7 +963,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("First Pulse Killer"),
                 "trailer": "µs",
-                "tip": _("First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"),
+                "tip": _(
+                    "First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"
+                ),
                 "section": "First Pulse Killer",
                 "hidden": 1,
             },
