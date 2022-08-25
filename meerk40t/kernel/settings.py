@@ -137,7 +137,7 @@ class Settings:
         @param obj:
         @return:
         """
-        for key, value in obj.__dict__:
+        for key, value in obj.__dict__.items():
             if key.startswith("_"):
                 continue
             t = type(value) if value is not None else str
