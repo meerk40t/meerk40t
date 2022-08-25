@@ -356,9 +356,15 @@ class TextCtrl(wx.TextCtrl):
         self.upper_limit_err = None
         self.lower_limit_warn = None
         self.upper_limit_warn = None
-        self.err_color = wx.RED
-        self.warn_color = wx.YELLOW
-        self.modified_color = wx.GREEN
+        self._default_color_background = None
+        self._error_color_background = wx.RED
+        self._warn_color_background = wx.YELLOW
+        self._modify_color_background = None
+
+        self._default_color_foreground = None
+        self._error_color_foreground = None
+        self._warn_color_foreground = wx.BLACK
+        self._modify_color_foreground = None
         self._warn_status = "modified"
 
         if self._check is not None and self._check != "":
@@ -395,16 +401,21 @@ class TextCtrl(wx.TextCtrl):
     @warn_status.setter
     def warn_status(self, value):
         self._warn_status = value
+        background = self._default_color_background
+        foreground = self._default_color_foreground
         if value == "modified":
             # Is it modified?
             if self.IsModified():
-                self.SetBackgroundColour(self.modified_color)
-            else:
-                self.SetBackgroundColour(None)
+                background = self._modify_color_background
+                foreground = self._modify_color_foreground
         elif value == "warning":
-            self.SetBackgroundColour(self.warn_color)
+            background = self._warn_color_background
+            foreground = self._warn_color_foreground
         elif value == "error":
-            self.SetBackgroundColour(self.err_color)
+            background = self._error_color_background
+            foreground = self._error_color_foreground
+        self.SetBackgroundColour(background)
+        self.SetForegroundColour(foreground)
         self.Refresh()
 
     def on_check(self, event):
