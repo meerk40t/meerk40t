@@ -137,21 +137,15 @@ class Settings:
         @param obj:
         @return:
         """
-        props = []
-        for _class in obj.__class__.__mro__:
-            props.extend([k for k, v in vars(_class).items() if isinstance(v, property)])
-        for attr in dir(obj):
-            if attr.startswith("_"):
+        for key, value in obj.__dict__:
+            if key.startswith("_"):
                 continue
-            if attr in props:
-                continue
-            obj_value = getattr(obj, attr)
-            t = type(obj_value) if obj_value is not None else str
-            load_value = self.read_persistent(t, section, attr)
-            if load_value is None:
+            t = type(value) if value is not None else str
+            read_value = self.read_persistent(t, section, key)
+            if read_value is None:
                 continue
             try:
-                setattr(obj, attr, load_value)
+                setattr(obj, key, read_value)
             except AttributeError:
                 pass
 
