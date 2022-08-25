@@ -223,7 +223,9 @@ class Settings:
         @param obj: object whose attributes should be written
         @return:
         """
-        props = [k for k, v in vars(obj.__class__).items() if isinstance(v, property)]
+        props = []
+        for _class in obj.__class__.__mro__:
+            props.extend([k for k, v in vars(_class).items() if isinstance(v, property)])
         for attr in dir(obj):
             if attr.startswith("_"):
                 continue
