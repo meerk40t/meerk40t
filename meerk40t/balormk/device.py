@@ -511,7 +511,7 @@ class BalorDevice(Service, ViewPort):
         self.job = None
 
         _ = kernel.translation
-        self.register("frequency", (20, 200))
+        self.register("frequency", (0, 1000))
         self.register(
             "format/op cut",
             "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
