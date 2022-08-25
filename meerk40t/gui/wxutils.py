@@ -442,14 +442,15 @@ class TextCtrl(wx.TextCtrl):
                 dummy = Angle(txt)
             # we passed so far, thus the values are syntactically correct
             # Now check for content compliance
-            if self.lower_limit_warn is not None and dummy < self.lower_limit_warn:
-                status = "warning"
-            if self.upper_limit_warn is not None and dummy > self.upper_limit_warn:
-                status = "warning"
-            if self.lower_limit_err is not None and dummy < self.lower_limit_err:
-                status = "error"
-            if self.upper_limit_err is not None and dummy > self.upper_limit_err:
-                status = "error"
+            if dummy is not None:
+                if self.lower_limit_warn is not None and dummy < self.lower_limit_warn:
+                    status = "warning"
+                if self.upper_limit_warn is not None and dummy > self.upper_limit_warn:
+                    status = "warning"
+                if self.lower_limit_err is not None and dummy < self.lower_limit_err:
+                    status = "error"
+                if self.upper_limit_err is not None and dummy > self.upper_limit_err:
+                    status = "error"
         except ValueError:
             status = "error"
         self.warn_status = status
