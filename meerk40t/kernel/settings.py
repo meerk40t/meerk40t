@@ -210,9 +210,8 @@ class Settings:
         @param obj: object whose attributes should be written
         @return:
         """
-        for key in write_dict:
-            value = write_dict[key]
-            if value is None:
+        for key, value in write_dict.items():
+            if key.startswith("_"):
                 continue
             if isinstance(value, (int, bool, str, float)):
                 self.write_persistent(section, key, value)
@@ -225,19 +224,7 @@ class Settings:
         @param obj: object whose attributes should be written
         @return:
         """
-        props = []
-        for _class in obj.__class__.__mro__:
-            props.extend([k for k, v in vars(_class).items() if isinstance(v, property)])
-        for attr in dir(obj):
-            if attr.startswith("_"):
-                continue
-            if attr in props:
-                continue
-            value = getattr(obj, attr)
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, str, float, list, tuple)):
-                self.write_persistent(section, attr, value)
+        self.write_persistent_dict(section, obj.__dict__)
 
     def clear_persistent(self, section: str):
         """
