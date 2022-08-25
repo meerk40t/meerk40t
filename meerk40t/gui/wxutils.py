@@ -352,6 +352,8 @@ class TextCtrl(wx.TextCtrl):
         if limited:
             self.SetMaxSize(wx.Size(100, -1))
         self._check = check
+        self.lower_limit = None
+        self.upper_limit = None
         self.lower_limit_err = None
         self.upper_limit_err = None
         self.lower_limit_warn = None
@@ -378,6 +380,10 @@ class TextCtrl(wx.TextCtrl):
     def set_warn_level(self, warn_min, warn_max):
         self.lower_limit_warn = warn_min
         self.upper_limit_warn = warn_max
+
+    def set_range(self, range_min, range_max):
+        self.lower_limit = range_min
+        self.upper_limit = range_max
 
     def on_leave(self, event):
         # Needs to be passed on
@@ -443,6 +449,14 @@ class TextCtrl(wx.TextCtrl):
             # we passed so far, thus the values are syntactically correct
             # Now check for content compliance
             if value is not None:
+                if self.lower_limit is not None and value < self.lower_limit:
+                    value = self.lower_limit
+                    self.SetValue(str(value))
+                    status = "default"
+                if self.upper_limit is not None and value > self.upper_limit:
+                    value = self.upper_limit
+                    self.SetValue(str(value))
+                    status = "default"
                 if self.lower_limit_warn is not None and value < self.lower_limit_warn:
                     status = "warning"
                 if self.upper_limit_warn is not None and value > self.upper_limit_warn:
