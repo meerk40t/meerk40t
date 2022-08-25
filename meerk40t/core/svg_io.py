@@ -222,7 +222,11 @@ class SVGWriter:
                 element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
-                c.image.save(stream, format="PNG")
+                try:
+                    c.image.save(stream, format="PNG")
+                except OSError:
+                    # Edge condition if the original image was CMYK and never touched it can't encode to PNG
+                    c.image.convert("RGBA").save(stream, format="PNG")
                 subelement.set(
                     "xlink:href",
                     f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
