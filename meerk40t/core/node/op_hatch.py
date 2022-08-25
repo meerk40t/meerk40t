@@ -284,7 +284,10 @@ class HatchOpNode(Node, Parameters):
             settings = self.settings
             outlines = list()
             for node in self.children:
-                path = node.as_path()
+                try:
+                    path = node.as_path()
+                except AttributeError:
+                    continue
                 path.approximate_arcs_with_cubics()
                 self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():
