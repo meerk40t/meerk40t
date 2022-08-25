@@ -401,7 +401,7 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_power.set_error_level(0, 1000)
+        self.text_power.set_range(0, 1000)
         self.text_power.set_warn_level(power_min, power_max)
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
