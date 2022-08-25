@@ -43,6 +43,14 @@ OPERATION_POWER_TOOLTIP = _(
 Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines."""
 )
 
+
+OPERATION_FREQUENCY_TOOLTIP = _(
+    """Laser frequency in kHz.
+
+For lasers with frequencies that can be set."""
+)
+
+
 OPERATION_PASSES_TOOLTIP = _(
     """"How many times to repeat this operation?
 
@@ -419,7 +427,7 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        # self.text_frequency.SetToolTip(OPERATION_SPEED_TOOLTIP)
+        self.text_frequency.SetToolTip(OPERATION_FREQUENCY_TOOLTIP)
         frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
 
         self.SetSizer(speed_power_sizer)
