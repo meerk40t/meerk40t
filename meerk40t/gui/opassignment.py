@@ -105,7 +105,7 @@ class OperationAssignPanel(wx.Panel):
         self.sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.sizer_options = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_buttons = wx.FlexGridSizer(cols=8)
-        self.sizer_options.Add(self.cbo_apply_color, 1, wx.EXPAND, 0)
+        self.sizer_options.Add(self.cbo_apply_color, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_options.Add(self.chk_all_similar, 1, wx.EXPAND, 0)
         self.sizer_options.Add(self.chk_exclusive, 1, wx.EXPAND, 0)
 

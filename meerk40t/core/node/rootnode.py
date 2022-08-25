@@ -54,6 +54,9 @@ class RootNode(Node):
     def __repr__(self):
         return f"RootNode({str(self.context)})"
 
+    def __copy__(self):
+        return RootNode(self.context)
+
     def is_movable(self):
         return False
 

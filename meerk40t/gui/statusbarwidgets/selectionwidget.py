@@ -72,10 +72,10 @@ class SelectionWidget(StatusBarWidget):
         self.cb_rotate.SetToolTip(_("Toggle visibility of Rotation-handles"))
         self.cb_skew.SetToolTip(_("Toggle visibility of Skew-handles"))
         self.PrependSpacer(5)
-        self.Add(self.cb_move, 1, wx.EXPAND, 0)
-        self.Add(self.cb_handle, 1, wx.EXPAND, 0)
-        self.Add(self.cb_rotate, 1, wx.EXPAND, 0)
-        self.Add(self.cb_skew, 1, wx.EXPAND, 0)
+        self.Add(self.cb_move, 1, 0, 0)
+        self.Add(self.cb_handle, 1, 0, 0)
+        self.Add(self.cb_rotate, 1, 0, 0)
+        self.Add(self.cb_skew, 1, 0, 0)
 
     # the checkbox was clicked
     def on_toggle_move(self, event):

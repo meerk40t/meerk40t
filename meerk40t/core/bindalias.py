@@ -340,7 +340,7 @@ class Bind(Service):
             if value:
                 self.keymap[key] = value
 
-    def service_attach(self):
+    def service_attach(self, *args, **kwargs):
         if not len(self.keymap):
             self.default_keymap()
             return

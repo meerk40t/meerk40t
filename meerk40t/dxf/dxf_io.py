@@ -31,6 +31,7 @@ from ..svgelements import (
     Viewbox,
 )
 
+
 class DxfLoader:
     @staticmethod
     def load_types():

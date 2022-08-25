@@ -425,7 +425,7 @@ class LaserJob:
         if self.runtime != 0:
             result = self.runtime
         else:
-            if not self._stopped:
+            if self.is_running():
                 result = time.time() - self.time_started
         return result
 

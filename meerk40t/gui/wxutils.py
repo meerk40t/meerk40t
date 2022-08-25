@@ -358,6 +358,8 @@ class TextCtrl(wx.TextCtrl):
         self.upper_limit_warn = None
         self.err_color = wx.RED
         self.warn_color = wx.YELLOW
+        self.modified_color = wx.GREEN
+        self._warn_status = 0
 
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
@@ -375,10 +377,39 @@ class TextCtrl(wx.TextCtrl):
         # Needs to be passed on
         event.Skip()
         self.SelectNone()
+        # We assume its been dealt with, so we recolor...
+        self.SetModified(False)
+        self.warn_status = self._warn_status
 
+    def on_enter(self, event):
+        # Let others deal with it after me
+        event.Skip()
+        # We assume its been dealt with, so we recolor...
+        self.SetModified(False)
+        self.warn_status = self._warn_status
+
+    @property
+    def warn_status(self):
+        return self._warn_status
+
+    @warn_status.setter
+    def warn_status(self, value):
+        self._warn_status = value
+        if value == 0:
+            # Is it modified?
+            if self.IsModified():
+                self.SetBackgroundColour(self.modified_color)
+            else:
+                self.SetBackgroundColour(None)
+        elif value == 1:
+            self.SetBackgroundColour(self.warn_color)
+        elif value == 2:
+            self.SetBackgroundColour(self.err_color)
+        self.Refresh()
 
     def on_check(self, event):
         event.Skip()
+        allok = 0
         try:
             txt = self.GetValue()
             if self._check == "float":
@@ -392,14 +423,13 @@ class TextCtrl(wx.TextCtrl):
                 dummy = int(txt)
             elif self._check == "empty":
                 if len(txt) == 0:
-                    raise ValueError
+                    allok = 2
             elif self._check == "length":
                 dummy = Length(txt)
             elif self._check == "angle":
                 dummy = Angle(txt)
             # we passed so far, thus the values are syntactically correct
             # Now check for content compliance
-            allok = 0
             if self.lower_limit_warn is not None and dummy < self.lower_limit_warn:
                 allok = 1
             if self.upper_limit_warn is not None and dummy > self.upper_limit_warn:
@@ -408,16 +438,9 @@ class TextCtrl(wx.TextCtrl):
                 allok = 2
             if self.upper_limit_err is not None and dummy > self.upper_limit_err:
                 allok = 2
-            if allok == 0:
-                self.SetBackgroundColour(None)
-            elif allok == 1:
-                self.SetBackgroundColour(self.warn_color)
-            elif allok == 2:
-                self.SetBackgroundColour(self.err_color)
-            self.Refresh()
         except ValueError:
-            self.SetBackgroundColour(self.err_color)
-            self.Refresh()
+            allok = 2
+        self.warn_status = allok
 
 
 class ScrolledPanel(SP):

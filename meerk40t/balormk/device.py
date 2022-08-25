@@ -1,6 +1,7 @@
 import os
 import re
 import struct
+import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
@@ -30,6 +31,10 @@ class ElementLightJob:
         self.quantization = quantization
         self.simulate = simulate
         self.priority = -1
+        self.label = "Element Light Job"
+        self.time_submitted = time.time()
+        self.time_started = time.time()
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped and self.started
@@ -37,6 +42,7 @@ class ElementLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -46,10 +52,26 @@ class ElementLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
         return True
 
     def stop(self):
         self.stopped = True
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
 
     def process(self, con):
         if self.stopped:
@@ -130,6 +152,10 @@ class LiveSelectionLightJob:
         self._current_points = None
         self._last_bounds = None
         self.priority = -1
+        self.label = "Live Selection Light Job"
+        self.time_submitted = time.time()
+        self.time_started = time.time()
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped
@@ -137,6 +163,7 @@ class LiveSelectionLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -146,6 +173,7 @@ class LiveSelectionLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
         return True
 
     def update_points(self, bounds):
@@ -225,6 +253,21 @@ class LiveSelectionLightJob:
     def stop(self):
         self.stopped = True
 
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
+
     def process(self, con):
         if self.stopped:
             return False
@@ -266,9 +309,12 @@ class LiveFullLightJob:
         self.stopped = False
         self.started = False
         self.changed = False
-        service.listen("emphasized", self.on_emphasis_changed)
         self._last_bounds = None
         self.priority = -1
+        self.label = "Live Full Light Job"
+        self.time_submitted = time.time()
+        self.time_started = time.time()
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped
@@ -276,6 +322,8 @@ class LiveFullLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.service.listen("emphasized", self.on_emphasis_changed)
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -285,11 +333,27 @@ class LiveFullLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
+        self.service.unlisten("emphasized", self.on_emphasis_changed)
         return True
 
     def stop(self):
         self.stopped = True
-        self.service.unlisten("emphasized", self.on_emphasis_changed)
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
 
     def on_emphasis_changed(self, *args):
         self.changed = True
@@ -801,10 +865,12 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser On"),
                 "trailer": "µs",
-                "tip": _("Start delay (Start TC) at the beginning of each mark command"),
+                "tip": _(
+                    "Start delay (Start TC) at the beginning of each mark command"
+                ),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "00",
+                "priority": "00",
             },
             {
                 "attr": "delay_laser_off",
@@ -813,10 +879,12 @@ class BalorDevice(Service, ViewPort):
                 "type": float,
                 "label": _("Laser Off"),
                 "trailer": "µs",
-                "tip": _("The delay time of the laser shutting down after marking finished"),
+                "tip": _(
+                    "The delay time of the laser shutting down after marking finished"
+                ),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "10",
+                "priority": "10",
             },
             {
                 "attr": "delay_polygon",
@@ -828,7 +896,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Delay amount between different points in the path travel."),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "30",
+                "priority": "30",
             },
             {
                 "attr": "delay_end",
@@ -840,7 +908,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Delay amount for the end TC"),
                 "section": "_10_General",
                 "subsection": "Delays",
-                "priority" : "20",
+                "priority": "20",
             },
             {
                 "attr": "delay_jump_long",
@@ -882,7 +950,7 @@ class BalorDevice(Service, ViewPort):
                 "label": _("Open MO delay"),
                 "trailer": "ms",
                 "tip": _("OpenMO delay in ms"),
-                "section": "_90_Other"
+                "section": "_90_Other",
             },
         ]
         self.register_choices("balor-global-timing", choices)
@@ -895,7 +963,9 @@ class BalorDevice(Service, ViewPort):
                 "type": int,
                 "label": _("First Pulse Killer"),
                 "trailer": "µs",
-                "tip": _("First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"),
+                "tip": _(
+                    "First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"
+                ),
                 "section": "First Pulse Killer",
                 "hidden": 1,
             },
@@ -1163,7 +1233,7 @@ class BalorDevice(Service, ViewPort):
                     quantization=quantization,
                     simulate=True,
                 )
-            self.spooler.command("light_loop", self.job.process)
+            self.spooler.send(self.job)
 
         @self.console_command(
             "select-light", help=_("Execute selection light idle job")
@@ -1172,7 +1242,7 @@ class BalorDevice(Service, ViewPort):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveSelectionLightJob(self)
-            self.spooler.command("light_loop", self.job.process)
+            self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def full_light(**kwargs):

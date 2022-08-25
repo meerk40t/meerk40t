@@ -15,7 +15,7 @@ class InputPropertyPanel(wx.Panel):
         self.context = context
         self.operation = node
 
-        choices = [
+        self.choices = [
             {
                 "attr": "value",
                 # "mask": "mask",
@@ -29,7 +29,7 @@ class InputPropertyPanel(wx.Panel):
             },
         ]
         self.panel = ChoicePropertyPanel(
-            self, wx.ID_ANY, context=self.context, choices=choices
+            self, wx.ID_ANY, context=self.context, choices=self.choices
         )
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(main_sizer)
@@ -48,3 +48,11 @@ class InputPropertyPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.operation = node
+        for item in self.choices:
+            try:
+                item_att = item["attr"]
+            except KeyError:
+                continue
+            if hasattr(node, item_att):
+                item_value = getattr(node, item_att)
+                self.context.signal(item_att, item_value)

@@ -5,7 +5,7 @@ import wx
 from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.icons import icons8_type_50
-from meerk40t.gui.laserrender import swizzlecolor, LaserRender
+from meerk40t.gui.laserrender import LaserRender, swizzlecolor
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.svgelements import Color, Matrix
 
@@ -472,7 +472,14 @@ class TextEntry(MWindow):
         x = 0 if len(args) <= 3 else float(args[3])
         y = 0 if len(args) <= 4 else float(args[4])
         default_string = "" if len(args) <= 5 else " ".join(args[5:])
-        self.panel = TextEntryPanel(self, wx.ID_ANY, context=self.context, x=x, y=y, default_string=default_string)
+        self.panel = TextEntryPanel(
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            x=x,
+            y=y,
+            default_string=default_string,
+        )
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_type_50.GetBitmap())
@@ -513,7 +520,9 @@ class TextEntry(MWindow):
             color = Color(color, 1.0)
             node = elements.elem_branch.add(
                 text=text,
-                matrix=Matrix(f"translate({self.panel.x}, {self.panel.y}) scale({UNITS_PER_PIXEL})"),
+                matrix=Matrix(
+                    f"translate({self.panel.x}, {self.panel.y}) scale({UNITS_PER_PIXEL})"
+                ),
                 anchor=anchor,
                 fill=color,
                 type="elem text",

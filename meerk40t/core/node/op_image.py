@@ -4,7 +4,7 @@ from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length, UNITS_PER_MM
+from meerk40t.core.units import UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
 

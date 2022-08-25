@@ -233,8 +233,8 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_dither = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
         )
-        sizer_dither.Add(self.check_enable_dither, 0, 0, 0)
-        sizer_dither.Add(self.combo_dither, 0, wx.EXPAND, 0)
+        sizer_dither.Add(self.check_enable_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_dither.Add(self.combo_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_main.Add(sizer_dither, 0, wx.EXPAND, 0)
 
