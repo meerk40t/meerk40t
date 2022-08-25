@@ -423,33 +423,33 @@ class TextCtrl(wx.TextCtrl):
         status = "modified"
         try:
             txt = self.GetValue()
-            dummy = None
+            value = None
             if self._check == "float":
-                dummy = float(txt)
+                value = float(txt)
             elif self._check == "percent":
                 if txt.endswith("%"):
-                    dummy = float(txt[:-1]) / 100.0
+                    value = float(txt[:-1]) / 100.0
                 else:
-                    dummy = float(txt)
+                    value = float(txt)
             elif self._check == "int":
-                dummy = int(txt)
+                value = int(txt)
             elif self._check == "empty":
                 if len(txt) == 0:
                     status = "error"
             elif self._check == "length":
-                dummy = Length(txt)
+                value = Length(txt)
             elif self._check == "angle":
-                dummy = Angle(txt)
+                value = Angle(txt)
             # we passed so far, thus the values are syntactically correct
             # Now check for content compliance
-            if dummy is not None:
-                if self.lower_limit_warn is not None and dummy < self.lower_limit_warn:
+            if value is not None:
+                if self.lower_limit_warn is not None and value < self.lower_limit_warn:
                     status = "warning"
-                if self.upper_limit_warn is not None and dummy > self.upper_limit_warn:
+                if self.upper_limit_warn is not None and value > self.upper_limit_warn:
                     status = "warning"
-                if self.lower_limit_err is not None and dummy < self.lower_limit_err:
+                if self.lower_limit_err is not None and value < self.lower_limit_err:
                     status = "error"
-                if self.upper_limit_err is not None and dummy > self.upper_limit_err:
+                if self.upper_limit_err is not None and value > self.upper_limit_err:
                     status = "error"
         except ValueError:
             status = "error"
