@@ -4,7 +4,7 @@ import wx
 
 from meerk40t.core.units import Angle, Length
 from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl, CheckBox
 from meerk40t.kernel import Context
 from meerk40t.svgelements import Color
 
@@ -262,7 +262,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             control_sizer = None
             if data_type == bool:
                 # Bool type objects get a checkbox.
-                control = wx.CheckBox(self, label=label)
+                control = CheckBox(self, label=label)
                 control.SetValue(data)
                 control.SetMinSize(wx.Size(-1, 23))
 
@@ -277,17 +277,6 @@ class ChoicePropertyPanel(ScrolledPanel):
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
-                if platform.system() == "Linux" and not context.root.disable_tool_tips:
-
-                    def on_mouse_over_check(ctrl, tooltip):
-                        def mouse(event=None):
-                            ctrl.SetToolTip(tooltip)
-
-                        return mouse
-
-                    tip = c.get("tip", None)
-                    if tip:
-                        control.Bind(wx.EVT_MOTION, on_mouse_over_check(control, tip))
 
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":

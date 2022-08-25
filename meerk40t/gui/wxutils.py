@@ -1,7 +1,7 @@
 """
 Mixin functions for wxMeerk40t
 """
-
+import platform
 from typing import List
 
 import wx
@@ -453,6 +453,27 @@ class TextCtrl(wx.TextCtrl):
         except ValueError:
             status = "error"
         self.warn_status = status
+
+
+class CheckBox(wx.CheckBox):
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+
+                return mouse
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
 
 
 class ScrolledPanel(SP):
