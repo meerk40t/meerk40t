@@ -414,21 +414,26 @@ class SpeedPpiPanel(wx.Panel):
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
-        frequency_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Frequency (kHz)")), wx.HORIZONTAL
-        )
-        speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
+        freq = self.context.device.lookup("frequency")
+        if freq:
+            frequency_sizer = wx.StaticBoxSizer(
+                wx.StaticBox(self, wx.ID_ANY, _("Frequency (kHz)")), wx.HORIZONTAL
+            )
+            speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
 
-        self.text_frequency = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "20.0",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_frequency.SetToolTip(OPERATION_FREQUENCY_TOOLTIP)
-        frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
+            self.text_frequency = TextCtrl(
+                self,
+                wx.ID_ANY,
+                "20.0",
+                limited=True,
+                check="float",
+                style=wx.TE_PROCESS_ENTER,
+            )
+            self.text_frequency.SetToolTip(OPERATION_FREQUENCY_TOOLTIP)
+            self.text_frequency.set_warn_level(*freq)
+            frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
+        else:
+            self.text_frequency = None
 
         self.SetSizer(speed_power_sizer)
 
@@ -439,8 +444,9 @@ class SpeedPpiPanel(wx.Panel):
         self.text_power.Bind(wx.EVT_KILL_FOCUS, self.on_text_power)
         self.text_power.Bind(wx.EVT_TEXT_ENTER, self.on_text_power)
 
-        self.text_frequency.Bind(wx.EVT_KILL_FOCUS, self.on_text_frequency)
-        self.text_frequency.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency)
+        if self.text_frequency:
+            self.text_frequency.Bind(wx.EVT_KILL_FOCUS, self.on_text_frequency)
+            self.text_frequency.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency)
 
         # end wxGlade
 
@@ -470,7 +476,7 @@ class SpeedPpiPanel(wx.Panel):
         if self.operation.power is not None:
             self.update_power_label()
             set_ctrl_value(self.text_power, str(self.operation.power))
-        if self.operation.frequency is not None:
+        if self.operation.frequency is not None and self.text_frequency:
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
         self.Show()
 
