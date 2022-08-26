@@ -8952,6 +8952,8 @@ class SVG(Group):
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
                     textstyle = elem.text
+                    if textstyle is None:
+                        textstyle = ""
                     textstyle = re.sub(REGEX_CSS_COMMENT, "", textstyle)
                     assignments = list(re.findall(REGEX_CSS_STYLE, textstyle.strip()))
                     for key, value in assignments:
