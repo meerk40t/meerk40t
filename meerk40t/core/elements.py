@@ -473,10 +473,10 @@ class Elemental(Service):
         return float(Length(v))
 
     def length_x(self, v):
-        return float(Length(v, relative_length=self.device.width))
+        return float(Length(v, relative_length=self.device.width, unitless=1))
 
     def length_y(self, v):
-        return float(Length(v, relative_length=self.device.height))
+        return float(Length(v, relative_length=self.device.height, unitless=1))
 
     def area(self, v):
         llx = Length(v, relative_length=self.device.width)
@@ -739,6 +739,7 @@ class Elemental(Service):
         bottom_edge = max([e[3] for e in boundary_points])
         if alignbounds is None:
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
+        # print(f"Alignbounds: {alignbounds[0]:.1f},{alignbounds[1]:.1f},{alignbounds[2]:.1f},{alignbounds[3]:.1f}")
 
         if individually:
             groupmatrix = ""
