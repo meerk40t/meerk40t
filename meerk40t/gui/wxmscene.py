@@ -185,7 +185,9 @@ class MeerK40tScenePanel(wx.Panel):
         #         ],
         #     },
         # )
-        self._align_mode = 0  # 0 elements, 1 reference object, 2 bed
+
+        # Provide a reference to current scene in root context
+        setattr(self.context.root, "mainscene", self.widget_scene)
 
         @context.console_command("dialog_fps", hidden=True)
         def dialog_fps(**kwgs):
@@ -636,15 +638,6 @@ class MeerK40tScenePanel(wx.Panel):
                 self.widget_scene.reference_object = e
             break
         self.request_refresh()
-
-    def set_align_target(self, value=None):
-        # 0 elements, 1 reference object, 2 bed
-        if value is None:
-            self._align_mode += 1
-        else:
-            self._align_mode = value
-        if self._align_mode > 2 or self._align_mode < 0:
-            self._align_mode = 0
 
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
