@@ -367,34 +367,20 @@ class TextEntryPanel(wx.Panel):
             self.last_font[i].SetFont(font)
 
     def on_button_smaller(self, event):
-        try:
-            size = self.result_font.GetFractionalPointSize()
-        except AttributeError:
-            size = self.result_font.GetPointSize()
-
+        size = self.result_font.GetPointSize()
         size = size / 1.2
         if size < 4:
             size = 4
-        try:
-            self.result_font.SetFractionalPointSize(size)
-        except AttributeError:
-            self.result_font.SetPointSize(int(size))
+        self.result_font.SetPointSize(int(round(size)) if size > 1 else 1)
 
         self.preview.Font = self.result_font
         self.preview.Refresh()
         event.Skip()
 
     def on_button_larger(self, event):
-        try:
-            size = self.result_font.GetFractionalPointSize()
-        except AttributeError:
-            size = self.result_font.GetPointSize()
+        size = self.result_font.GetPointSize()
         size *= 1.2
-
-        try:
-            self.result_font.SetFractionalPointSize(size)
-        except AttributeError:
-            self.result_font.SetPointSize(int(size))
+        self.result_font.SetPointSize(int(round(size)) if size > 1 else 1)
 
         self.preview.Font = self.result_font
         self.preview.Refresh()

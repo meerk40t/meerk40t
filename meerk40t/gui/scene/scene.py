@@ -109,10 +109,7 @@ class SceneToast:
         while self.text_height > height or self.text_width > width:
             # If we do not fit in the box, decrease size
             text_size *= 0.9
-            try:
-                self.font.SetFractionalPointSize(text_size)
-            except AttributeError:
-                self.font.SetPointSize(int(text_size))
+            self.font.SetPointSize(int(round(text_size)) if text_size > 1 else 1)
             gc.SetFont(self.font, self.font_color)
             self.text_width, self.text_height = gc.GetTextExtent(self.message)
         if text_size == height:

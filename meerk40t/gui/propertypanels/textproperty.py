@@ -456,18 +456,12 @@ class TextPropertyPanel(ScrolledPanel):
             pass
 
     def on_button_smaller(self, event):
-        try:
-            size = self.node.wxfont.GetFractionalPointSize()
-        except AttributeError:
-            size = self.node.wxfont.GetPointSize()
+        size = self.node.wxfont.GetPointSize()
 
         size = size / 1.2
         if size < 4:
             size = 4
-        try:
-            self.node.wxfont.SetFractionalPointSize(size)
-        except AttributeError:
-            self.node.wxfont.SetPointSize(int(size))
+        self.node.wxfont.SetPointSize(int(round(size)) if size > 1 else 1)
 
         wxfont_to_svg(self.node)
         self.update_label()
@@ -475,17 +469,9 @@ class TextPropertyPanel(ScrolledPanel):
         event.Skip()
 
     def on_button_larger(self, event):
-        try:
-            size = self.node.wxfont.GetFractionalPointSize()
-        except AttributeError:
-            size = self.node.wxfont.GetPointSize()
+        size = self.node.wxfont.GetPointSize()
         size *= 1.2
-
-        try:
-            self.node.wxfont.SetFractionalPointSize(size)
-        except AttributeError:
-            self.node.wxfont.SetPointSize(int(size))
-
+        self.node.wxfont.SetPointSize(int(round(size)) if size > 1 else 1)
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()

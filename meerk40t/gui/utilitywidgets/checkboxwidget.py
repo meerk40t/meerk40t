@@ -70,10 +70,7 @@ class CheckboxWidget(Widget):
             height = self.bottom - self.top
             width = self.right - self.left
             text_size = height * 3.0 / 4.0  # px to pt conversion
-            try:
-                self.font.SetFractionalPointSize(text_size)
-            except AttributeError:
-                self.font.SetPointSize(int(text_size))
+            self.font.SetPointSize(int(round(text_size)) if text_size > 1 else 1)
             gc.SetFont(self.font, self.font_color)
             gc.DrawText(self.text, self.right + width * self._text_gap, self.top)
 
