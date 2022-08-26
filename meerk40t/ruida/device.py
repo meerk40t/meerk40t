@@ -1,4 +1,5 @@
 import os
+import random
 from io import BytesIO
 from typing import Tuple, Union
 
@@ -1206,9 +1207,8 @@ class RuidaEmulator(Module, Parameters):
             elif array[1] == 0x05 or array[1] == 0x54:
                 desc = "Read Run Info"
                 # len: 2
-                respond = b"\x04\x00"
+                respond = b"\xda\x05" + b"\x00" * 20
                 respond_desc = "Read Run Response"
-                # TODO: Requires Response
             elif array[1] == 0x06 or array[1] == 0x52:
                 desc = "Unknown/System Time."
             elif array[1] == 0x10 or array[1] == 0x53:
