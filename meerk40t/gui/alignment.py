@@ -220,7 +220,7 @@ class Alignment(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
             350,
-            330,
+            350,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
