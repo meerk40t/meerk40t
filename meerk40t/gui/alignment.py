@@ -66,7 +66,7 @@ class AlignmentPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_treatment.SetSelection(0)
-
+        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_align = wx.Button(self, wx.ID_ANY, "Align")
 
         sizer_main.Add(self.rbox_align_x, 0, wx.EXPAND, 0)
@@ -74,6 +74,7 @@ class AlignmentPanel(wx.Panel):
         sizer_main.Add(self.rbox_relation, 0, wx.EXPAND, 0)
         sizer_main.Add(self.rbox_treatment, 0, wx.EXPAND, 0)
         sizer_main.Add(self.btn_align, 0, 0, 0)
+        sizer_main.Add(self.lbl_info, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -81,8 +82,50 @@ class AlignmentPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_BUTTON, self.on_button_align, self.btn_align)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_x)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_y)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_relation)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
+
+    def validate_data(self, event):
+        event.Skip()
+        if self.context.elements.has_emphasis():
+            active = True
+            idx = self.rbox_treatment.GetSelection()
+            if idx==1:
+                asgroup = 1
+            else:
+                asgroup = 0
+            idx = self.rbox_align_x.GetSelection()
+            if idx < 0:
+                idx = 0
+            xpos = self.xyparam[idx]
+            idx = self.rbox_align_y.GetSelection()
+            if idx < 0:
+                idx = 0
+            ypos = self.xyparam[idx]
+
+            idx = self.rbox_align_y.GetSelection()
+            if idx < 0:
+                idx = 0
+            mode = self.xyparam[idx]
+
+            idx = self.rbox_relation.GetSelection()
+            if idx < 0:
+                idx = 0
+            mode = self.modeparam[idx]
+            if xpos=="none" and ypos=="none":
+                active = False
+            if mode=="default" and asgroup==1:
+                # That makes no sense...
+                active = False
+            # if self.scene.reference_object is None and mode=="ref":
+            #     active = False
+        else:
+            active = False
+        self.btn_align.Enable(active)
 
     def on_button_align(self, event):
         idx = self.rbox_treatment.GetSelection()
@@ -129,6 +172,20 @@ class AlignmentPanel(wx.Panel):
         self.rbox_align_y.Enable(has_emph)
         self.rbox_relation.Enable(has_emph)
         self.rbox_treatment.Enable(has_emph)
+        msg = ""
+        if has_emph:
+            data = list(self.context.elements.flat(emphasized=True))
+            count = len(data)
+            msg = _("Selected elements: {count}").format(count=count) + "\n"
+            if count>0:
+                data.sort(key=lambda n: n.emphasized_time)
+                node = data[0]
+                msg += _("First selected: {type} {lbl}").format(type=node.type, lbl=node.label) + "\n"
+                node = data[-1]
+                msg += _("Last selected: {type} {lbl}").format(type=node.type, lbl=node.label) + "\n"
+        self.lbl_info.SetLabel(msg)
+
+
         self.btn_align.Enable(has_emph)
 
 class DistributionPanel(wx.Panel):
