@@ -366,6 +366,9 @@ class Elemental(Service):
         self._default_stroke = None
         self._default_fill = None
         self._first_emphasized = None
+        self._align_mode = "default"
+        self._align_boundaries = None
+        self._align_stack = []
 
     @property
     def default_stroke(self):
@@ -2505,6 +2508,96 @@ class Elemental(Service):
         # ALIGN SUBTYPE
         # Align consist of top level node objects that can be manipulated within the scene.
         # ==========
+        @self.console_argument("modus", type=str)
+        @self.console_option("boundaries", "b", type=str, nargs=4)
+        @self.console_command(
+            "alignmode",
+            help=_("Sets the alignmode for all align-operations"),
+            input_type=None,
+            output_type=None,
+        )
+        def alignmode(
+            command, channel, _, modus=None, boundaries=None, remainder=None, **kwargs
+        ):
+            if modus is None:
+                channel(_("Current alignmode = {mode}").format(mode=self._align_mode))
+                if self._align_boundaries is not None:
+                    channel(
+                        _("Align boundaries = {bound}").format(
+                            bound=str(self._align_boundaries)
+                        )
+                    )
+                return
+            if modus == "push":
+                # Special command just push the current values on the stack
+                entry = (self._align_mode, self._align_boundaries)
+                self._align_stack.append(entry)
+                return
+            elif modus == "pop":
+                # Special command just get the last values from the stack
+                if len(self._align_stack) > 0:
+                    entry = self._align_stack[-1]
+                    self._align_mode = entry[0]
+                    self._align_boundaries = entry[1]
+                    self._align_stack.pop()
+                return
+            elif modus == "default":
+                # Alignment within selection - all equal
+                self._align_mode = modus
+                self._align_boundaries = None
+            elif modus == "first":
+                self._align_mode = modus
+                self._align_boundaries = None
+            elif modus == "last":
+                self._align_mode = modus
+                self._align_boundaries = None
+            elif modus == "bed":
+                self._align_mode = modus
+                device_width = self.length_x("100%")
+                device_height = self.length_y("100%")
+                self._align_boundaries = (0, 0, device_width, device_height)
+            elif modus == "ref":
+                # we need to parse the boundaries
+                if boundaries is None:
+                    channel(
+                        _(
+                            "You need to provide the boundaries for align-mode {mode}"
+                        ).format(mode=modus)
+                    )
+                    return
+                # try:
+                if len(boundaries) >= 4:
+                    abounds = (
+                        self.length_x(boundaries[0]),
+                        self.length_y(boundaries[1]),
+                        self.length_x(boundaries[2]),
+                        self.length_y(boundaries[3]),
+                    )
+                else:
+                    channel(
+                        _(
+                            "You need to provide the boundaries for align-mode {mode}"
+                        ).format(mode=modus)
+                    )
+                    return
+
+                self._align_mode = modus
+                self._align_boundaries = abounds
+            else:
+                s = "default, first, last, bed, ref"
+                channel(
+                    _("Invalid alignment type!")
+                    + "\n"
+                    + _("Needs to be one of {modes}").format(modes=s)
+                )
+                return
+            channel(_("New alignmode = {mode}").format(mode=self._align_mode))
+            if self._align_boundaries is not None:
+                channel(
+                    _("Align boundaries = {bound}").format(
+                        bound=str(self._align_boundaries)
+                    )
+                )
 
         @self.console_command(
             "align",
@@ -2546,160 +2639,222 @@ class Elemental(Service):
             data = d
             return "align", data
 
+        # This routine prepares the data according to some validation
+        # and definitions as defined in alignmode
+        def _align_xy(
+            command,
+            channel,
+            _,
+            data=None,
+            alignx=None,
+            aligny=None,
+            asgroup=None,
+            **kwargs,
+        ):
+            ## The complete validation stuff...
+            if data is None or len(data) == 0:
+                return
+            if alignx is None or aligny is None:
+                channel(_("You need to provide parameters for both x and y"))
+                return
+            flag = False
+            if asgroup is not None:
+                flag = asgroup != 0
+            # print(f"'{asgroup}, type={type(asgroup).__name__}, result={flag}")
+            individually = not flag
+            alignx = alignx.lower()
+            aligny = aligny.lower()
+            if not alignx in ("min", "max", "center", "none"):
+                channel(_("Invalid alignment parameter for x"))
+                return
+            if not aligny in ("min", "max", "center", "none"):
+                channel(_("Invalid alignment parameter for y"))
+                return
+            # channel(f"Parameters: x={alignx}, y={aligny}, group={asgroup}, indiv={individually}")
+            if self._align_mode == "default":
+                if len(data) < 2:
+                    channel(_("No sense in aligning an element to itself"))
+                    return
+                # boundaries are the selection boundaries,
+                # will be calculated later
+                align_bounds = None
+            elif self._align_mode == "first":
+                if len(data) < 2:
+                    channel(_("No sense in aligning an element to itself"))
+                    return
+                data.sort(key=lambda n: n.emphasized_time)
+                # Is there a noticeable difference?!
+                # If not then we fall back to default
+                if data[0].emphasized_time != data[1].emphasized_time:
+                    align_bounds = data[0].bounds
+                    data.pop(0)
+                else:
+                    align_bounds = None
+            elif self._align_mode == "last":
+                if len(data) < 2:
+                    channel(_("No sense in aligning an element to itself"))
+                    return
+                data.sort(reverse=True, key=lambda n: n.emphasized_time)
+                # Is there a noticeable difference?!
+                # If not then we fall back to default
+                if data[0].emphasized_time != data[1].emphasized_time:
+                    align_bounds = data[0].bounds
+                    data.pop(0)
+                else:
+                    align_bounds = None
+            elif self._align_mode == "bed":
+                align_bounds = self._align_boundaries
+            elif self._align_mode == "ref":
+                align_bounds = self._align_boundaries
+            self.align_elements(
+                data=data,
+                alignbounds=align_bounds,
+                positionx=alignx,
+                positiony=aligny,
+                individually=individually,
+            )
+
+        @self.console_argument(
+            "alignx", type=str, help=_("One of 'min', 'center', 'max', 'none'")
+        )
+        @self.console_argument(
+            "aligny", type=str, help=_("One of 'min', 'center', 'max', 'none'")
+        )
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
+        )
+        @self.console_command(
+            "xy",
+            help=_("align elements in x and y"),
+            input_type="align",
+            output_type="align",
+        )
+        def subtype_align_xy(
+            command,
+            channel,
+            _,
+            data=None,
+            alignx=None,
+            aligny=None,
+            asgroup=None,
+            **kwargs,
+        ):
+            _align_xy(command, channel, _, data, alignx, aligny, asgroup)
+            return "align", data
+
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
+        )
         @self.console_command(
             "top",
             help=_("align elements at top"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_top(command, channel, _, data=None, **kwargs):
-            alignbounds = (
-                None if self.first_emphasized is None else self.first_emphasized.bounds
-            )
-            self.align_elements(data, alignbounds, "", "min", True)
+        def subtype_align_top(command, channel, _, data=None, asgroup=None, **kwargs):
+            _align_xy(command, channel, _, data, "none", "min", asgroup)
             return "align", data
 
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
+        )
         @self.console_command(
             "bottom",
             help=_("align elements at bottom"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_bottom(command, channel, _, data=None, **kwargs):
-            alignbounds = (
-                None if self.first_emphasized is None else self.first_emphasized.bounds
-            )
-            self.align_elements(data, alignbounds, "", "max", True)
+        def subtype_align_bottom(
+            command, channel, _, data=None, asgroup=None, **kwargs
+        ):
+            _align_xy(command, channel, _, data, "none", "max", asgroup)
             return "align", data
 
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
+        )
         @self.console_command(
             "left",
             help=_("align elements at left"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_left(command, channel, _, data=None, **kwargs):
-            alignbounds = (
-                None if self.first_emphasized is None else self.first_emphasized.bounds
-            )
-            self.align_elements(data, alignbounds, "min", "", True)
+        def subtype_align_left(command, channel, _, data=None, asgroup=None, **kwargs):
+            _align_xy(command, channel, _, data, "min", "none", asgroup)
             return "align", data
 
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
+        )
         @self.console_command(
             "right",
             help=_("align elements at right"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_right(command, channel, _, data=None, **kwargs):
-            alignbounds = (
-                None if self.first_emphasized is None else self.first_emphasized.bounds
-            )
-            self.align_elements(data, alignbounds, "max", "", True)
+        def subtype_align_right(command, channel, _, data=None, asgroup=None, **kwargs):
+            _align_xy(command, channel, _, data, "max", "none", asgroup)
             return "align", data
 
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
+        )
         @self.console_command(
             "center",
             help=_("align elements at center"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_center(command, channel, _, data=None, **kwargs):
-            alignbounds = (
-                None if self.first_emphasized is None else self.first_emphasized.bounds
-            )
-            self.align_elements(data, alignbounds, "center", "center", True)
+        def subtype_align_center(
+            command, channel, _, data=None, asgroup=None, **kwargs
+        ):
+            _align_xy(command, channel, _, data, "center", "center", asgroup)
             return "align", data
 
-        @self.console_command(
-            "bedtop",
-            help=_("align elements at top edge of bed"),
-            input_type="align",
-            output_type="align",
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
         )
-        def subtype_align_bedtop(command, channel, _, data=None, **kwargs):
-            device_width = self.length_x("100%")
-            device_height = self.length_y("100%")
-            alignbounds = (0, 0, device_width, device_height)
-            self.align_elements(data, alignbounds, "", "min", False)
-            return "align", data
-
-        @self.console_command(
-            "bedbottom",
-            help=_("align elements at bottom edge of bed"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align_bedbottom(command, channel, _, data=None, **kwargs):
-            device_width = self.length_x("100%")
-            device_height = self.length_y("100%")
-            alignbounds = (0, 0, device_width, device_height)
-            self.align_elements(data, alignbounds, "", "max", False)
-            return "align", data
-
-        @self.console_command(
-            "bedleft",
-            help=_("align elements at left edge of bed"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align_bedleft(command, channel, _, data=None, **kwargs):
-            device_width = self.length_x("100%")
-            device_height = self.length_y("100%")
-            alignbounds = (0, 0, device_width, device_height)
-            self.align_elements(data, alignbounds, "min", "", False)
-            return "align", data
-
-        @self.console_command(
-            "bedright",
-            help=_("align elements at right edge of bed"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align_bedright(command, channel, _, data=None, **kwargs):
-            device_width = self.length_x("100%")
-            device_height = self.length_y("100%")
-            alignbounds = (0, 0, device_width, device_height)
-            self.align_elements(data, alignbounds, "max", "", False)
-            return "align", data
-
-        @self.console_command(
-            "bedcenter",
-            help=_("align elements at bedcenter"),
-            input_type="align",
-            output_type="align",
-        )
-        def subtype_align_bedcenter(command, channel, _, data=None, **kwargs):
-            device_width = self.length_x("100%")
-            device_height = self.length_y("100%")
-            alignbounds = (0, 0, device_width, device_height)
-            self.align_elements(data, alignbounds, "center", "center", False)
-            return "align", data
-
         @self.console_command(
             "centerh",
             help=_("align elements at center horizontally"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_centerh(command, channel, _, data=None, **kwargs):
-            alignbounds = (
-                None if self.first_emphasized is None else self.first_emphasized.bounds
-            )
-            self.align_elements(data, alignbounds, "center", "", True)
+        def subtype_align_centerh(
+            command, channel, _, data=None, asgroup=None, **kwargs
+        ):
+            _align_xy(command, channel, _, data, "center", "none", asgroup)
             return "align", data
 
+        @self.console_argument(
+            "asgroup",
+            type=int,
+            help=_("Treat selection as group (1) or as single elements (0)"),
+        )
         @self.console_command(
             "centerv",
-            help=_("align elements at center vertically"),
+            help=_("align elements at center verically"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_centerv(command, channel, _, data=None, **kwargs):
-            alignbounds = (
-                None if self.first_emphasized is None else self.first_emphasized.bounds
-            )
-            self.align_elements(data, alignbounds, "", "center", True)
+        def subtype_align_centerv(
+            command, channel, _, data=None, asgroup=None, **kwargs
+        ):
+            _align_xy(command, channel, _, data, "none", "center", asgroup)
             return "align", data
 
         @self.console_command(

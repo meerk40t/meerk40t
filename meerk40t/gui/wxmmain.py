@@ -61,6 +61,9 @@ from .icons import (
     icons8_ungroup_objects_50,
     icons8_vector_50,
     icons_centerize,
+    icons8_centerv_50,
+    icons8_centerh_50,
+    icons8_arrange_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_icon_appearance,
@@ -1006,14 +1009,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignLeft",
             {
-                "label": _("Align Left"),
+                "label": _("Left"),
                 "icon": icons8_align_left_50,
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align left\n"),
-                "right": lambda v: kernel.elements("align bedleft\n"),
-                "size": buttonsize,
+                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign left\nalignmode pop\n"),
+                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign left 1\nalignmode pop\n"),                "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1023,14 +1025,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignRight",
             {
-                "label": _("Align Right"),
+                "label": _("Right"),
                 "icon": icons8_align_right_50,
                 "tip": _(
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align right\n"),
-                "right": lambda v: kernel.elements("align bedright\n"),
-                "size": buttonsize,
+                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign right\nalignmode pop\n"),
+                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign right 1\nalignmode pop\n"),                "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1040,13 +1041,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignTop",
             {
-                "label": _("Align Top"),
+                "label": _("Top"),
                 "icon": icons8_align_top_50,
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align top\n"),
-                "right": lambda v: kernel.elements("align bedtop\n"),
+                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign top\nalignmode pop\n"),
+                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign top 1\nalignmode pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1057,13 +1058,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignBottom",
             {
-                "label": _("Align Bottom"),
+                "label": _("Bottom"),
                 "icon": icons8_align_bottom_50,
                 "tip": _(
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align bottom\n"),
-                "right": lambda v: kernel.elements("align bedbottom\n"),
+                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign bottom\nalignmode pop\n"),
+                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign bottom 1\nalignmode pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1072,15 +1073,32 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/align/AlignCenter",
+            "button/align/AlignCenterH",
             {
-                "label": _("Align Center"),
-                "icon": icons_centerize,
+                "label": _("Center X"),
+                "icon": icons8_centerh_50,
                 "tip": _(
-                    "Align selected elements at their center (right click: of the bed)"
+                    "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align center\n"),
-                "right": lambda v: kernel.elements("align bedcenter\n"),
+                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign centerh\nalignmode pop\n"),
+                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign centerh 1\nalignmode pop\n"),
+                "size": buttonsize,
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+            },
+        )
+        kernel.register(
+            "button/align/AlignCenterV",
+            {
+                "label": _("Center Y"),
+                "icon": icons8_centerv_50,
+                "tip": _(
+                    "Align selected elements at their center vertically (right click: of the bed)"
+                ),
+                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign centerv\nalignmode pop\n"),
+                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign centerv 1\nalignmode pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
