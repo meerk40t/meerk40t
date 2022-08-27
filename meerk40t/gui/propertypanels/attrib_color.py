@@ -68,6 +68,7 @@ class ColorPanel(wx.Panel):
                         color = swizzlecolor(rgb)
                         value = Color(color, 1.0)
                 setattr(self.node, self.attribute, value)
+                self.context.elements.signal("element_property_update", self.node)
                 if self.callback is not None:
                     self.callback()
                 self.mark_color(bidx)
@@ -133,3 +134,81 @@ class ColorPanel(wx.Panel):
             else:
                 label.SetLabel("")
         self.Layout()
+class IdPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = None
+        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_id = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
+        )
+        self.sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
+        self.sizer_label = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
+        )
+        self.sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(self.sizer_id, 1, wx.EXPAND, 0)
+        sizer_id_label.Add(self.sizer_label, 1, wx.EXPAND, 0)
+
+        main_sizer.Add(sizer_id_label, 0, wx.EXPAND, 0)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
+        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
+        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
+        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
+
+    def on_text_id_change(self, event=None):
+        try:
+            self.node.id = self.text_id.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
+
+    def on_text_label_change(self, event=None):
+        self.node.label = self.text_label.GetValue()
+        self.context.elements.signal("element_property_update", self.node)
+        # try:
+        #     self.node.label = self.text_label.GetValue()
+        #     self.context.elements.signal("element_property_update", self.node)
+        # except AttributeError:
+        #     pass
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        def mklabel(value):
+            res = ""
+            if value is not None:
+                res = str(value)
+            return res
+
+        self.node = node
+        # print(f"set_widget for {self.attribute} to {str(node)}")
+        vis1 = False
+        vis2 = False
+        if hasattr(self.node, "id"):
+            vis1 = True
+            self.text_id.SetValue(mklabel(node.id))
+        self.text_id.Show(vis1)
+        if hasattr(self.node, "label"):
+            vis2 = True
+            self.text_label.SetValue(mklabel(node.label))
+
+        self.text_label.Show(vis2)
+        if vis1 or vis2:
+            self.Show()
+        else:
+            self.Hide()

@@ -7,7 +7,7 @@ from ...svgelements import Color
 from ..icons import icons8_vector_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
-from .attrib_color import ColorPanel
+from .attrib_color import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
 
@@ -20,11 +20,9 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.node = node
 
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-
-        self.panel_stroke = ColorPanel(self, id=wx.ID_ANY, label="Stroke:", attribute="stroke", callback=self.callback_color)
-        self.panel_fill = ColorPanel(self, id=wx.ID_ANY, label="Fill:", attribute="fill", callback=self.callback_color)
+        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panel_stroke = ColorPanel(self, id=wx.ID_ANY, context=self.context, label="Stroke:", attribute="stroke", callback=self.callback_color)
+        self.panel_fill = ColorPanel(self, id=wx.ID_ANY, context=self.context, label="Fill:", attribute="fill", callback=self.callback_color)
 
         # Property display
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -36,11 +34,6 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.__set_properties()
         self.__do_layout()
-
-        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
-        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
-        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
-        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
 
         self.Bind(wx.EVT_BUTTON, self.on_btn_get_infos, self.btn_info_get)
 
@@ -84,27 +77,12 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_points.SetValue(f"{points:d}")
 
     def set_widgets(self, node):
+        self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
 
         if node is not None:
             self.node = node
-        try:
-            if self.node.stroke is not None and self.node.stroke != "none":
-                color = wx.Colour(swizzlecolor(self.node.stroke))
-                self.text_id.SetBackgroundColour(color)
-        except AttributeError:
-            pass
-        try:
-            if node.id is not None:
-                self.text_id.SetValue(str(node.id))
-        except AttributeError:
-            pass
-        try:
-            if node.label is not None:
-                self.text_label.SetValue(str(node.label))
-        except AttributeError:
-            pass
         self.lbl_info_area.SetValue("")
         self.lbl_info_length.SetValue("")
         self.lbl_info_points.SetValue("")
@@ -117,17 +95,6 @@ class PathPropertyPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: PathProperty.__do_layout
         sizer_v_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_id = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
-        )
-        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
-        sizer_label = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
-        )
-        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
 
         sizer_h_infos = wx.BoxSizer(wx.HORIZONTAL)
         sizer_info1 = wx.StaticBoxSizer(
@@ -150,7 +117,7 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_h_infos.Add(sizer_info3, 1, wx.EXPAND, 0)
         sizer_h_infos.Add(self.btn_info_get, 0, wx.EXPAND, 0)
 
-        sizer_v_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
+        sizer_v_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.panel_stroke, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.panel_fill, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.check_classify, 0, 0, 0)
@@ -160,25 +127,10 @@ class PathPropertyPanel(ScrolledPanel):
         self.Centre()
         # end wxGlade
 
-    def on_text_id_change(self, event=None):
-        try:
-            self.node.id = self.text_id.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
-
-    def on_text_label_change(self, event=None):
-        try:
-            self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
-
     def update_label(self):
         return
 
     def callback_color(self):
-
         self.node.altered()
         self.update_label()
         self.Refresh()
