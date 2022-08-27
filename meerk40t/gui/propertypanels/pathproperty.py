@@ -7,7 +7,7 @@ from ...svgelements import Color
 from ..icons import icons8_vector_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
-from .attrib_color import ColorPanel, IdPanel
+from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
 

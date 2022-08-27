@@ -9,7 +9,7 @@ from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
-from .attrib_color import ColorPanel
+from .attributes import ColorPanel, IdPanel
 
 _ = wx.GetTranslation
 
@@ -65,8 +65,6 @@ class TextPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
         self.context = context
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
         self.node = node
@@ -87,6 +85,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_choose_font = wx.BitmapButton(
             self, wx.ID_ANY, icons8_choose_font_50.GetBitmap()
         )
+        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context)
         self.panel_stroke = ColorPanel(self, id=wx.ID_ANY, label="Stroke:", attribute="stroke", callback=self.callback_color)
         self.panel_fill = ColorPanel(self, id=wx.ID_ANY, label="Fill:", attribute="fill", callback=self.callback_color)
 
@@ -129,11 +128,6 @@ class TextPropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
-        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
-        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
-        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
-
         self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_text)
 
         self.Bind(wx.EVT_COMBOBOX, self.on_font_choice, self.combo_font)
@@ -167,20 +161,11 @@ class TextPropertyPanel(ScrolledPanel):
         pass
 
     def set_widgets(self, node):
+        self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
         if node is not None:
             self.node = node
-        try:
-            if node.id is not None:
-                self.text_id.SetValue(str(node.id))
-        except AttributeError:
-            pass
-        try:
-            if node.label is not None:
-                self.text_label.SetValue(str(node.label))
-        except AttributeError:
-            pass
         try:
             if self.node.text is not None:
                 self.text_text.SetValue(self.node.text)
@@ -250,18 +235,7 @@ class TextPropertyPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: TextProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_id = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
-        )
-        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
-        sizer_label = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
-        )
-        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
 
         sizer_font = wx.BoxSizer(wx.HORIZONTAL)
         sizer_font.Add(self.label_fonttest, 1, wx.EXPAND, 0)
@@ -338,20 +312,6 @@ class TextPropertyPanel(ScrolledPanel):
     def refresh(self):
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
-
-    def on_text_id_change(self, event=None):
-        try:
-            self.node.id = self.text_id.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
-
-    def on_text_label_change(self, event=None):
-        try:
-            self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
 
     def on_button_smaller(self, event):
         try:

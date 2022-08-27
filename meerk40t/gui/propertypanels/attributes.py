@@ -134,6 +134,7 @@ class ColorPanel(wx.Panel):
             else:
                 label.SetLabel("")
         self.Layout()
+
 class IdPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -174,13 +175,11 @@ class IdPanel(wx.Panel):
             pass
 
     def on_text_label_change(self, event=None):
-        self.node.label = self.text_label.GetValue()
-        self.context.elements.signal("element_property_update", self.node)
-        # try:
-        #     self.node.label = self.text_label.GetValue()
-        #     self.context.elements.signal("element_property_update", self.node)
-        # except AttributeError:
-        #     pass
+        try:
+            self.node.label = self.text_label.GetValue()
+            self.context.elements.signal("element_property_update", self.node)
+        except AttributeError:
+            pass
 
     def pane_hide(self):
         pass
