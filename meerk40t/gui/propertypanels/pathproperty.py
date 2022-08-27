@@ -21,15 +21,31 @@ class PathPropertyPanel(ScrolledPanel):
         self.node = node
 
         self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context)
-        self.panel_stroke = ColorPanel(self, id=wx.ID_ANY, context=self.context, label="Stroke:", attribute="stroke", callback=self.callback_color)
-        self.panel_fill = ColorPanel(self, id=wx.ID_ANY, context=self.context, label="Fill:", attribute="fill", callback=self.callback_color)
+        self.panel_stroke = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            label="Stroke:",
+            attribute="stroke",
+            callback=self.callback_color,
+        )
+        self.panel_fill = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            label="Fill:",
+            attribute="fill",
+            callback=self.callback_color,
+        )
 
         # Property display
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_area = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.btn_info_get = wx.Button(self, wx.ID_ANY, _("Retrieve"))
-        self.check_classify = wx.CheckBox(self, wx.ID_ANY, _("Immediately classify after colour change"))
+        self.check_classify = wx.CheckBox(
+            self, wx.ID_ANY, _("Immediately classify after colour change")
+        )
         self.check_classify.SetValue(True)
 
         self.__set_properties()
@@ -141,6 +157,7 @@ class PathPropertyPanel(ScrolledPanel):
             self.context.elements.signal("element_property_update", self.node)
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
+
 
 class PathProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):

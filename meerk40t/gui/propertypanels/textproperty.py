@@ -86,8 +86,20 @@ class TextPropertyPanel(ScrolledPanel):
             self, wx.ID_ANY, icons8_choose_font_50.GetBitmap()
         )
         self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context)
-        self.panel_stroke = ColorPanel(self, id=wx.ID_ANY, label="Stroke:", attribute="stroke", callback=self.callback_color)
-        self.panel_fill = ColorPanel(self, id=wx.ID_ANY, label="Fill:", attribute="fill", callback=self.callback_color)
+        self.panel_stroke = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            label="Stroke:",
+            attribute="stroke",
+            callback=self.callback_color,
+        )
+        self.panel_fill = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            label="Fill:",
+            attribute="fill",
+            callback=self.callback_color,
+        )
 
         flist = wx.FontEnumerator()
         flist.EnumerateFacenames()
@@ -463,6 +475,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.node.altered()
         self.update_label()
         self.refresh()
+
 
 class TextProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
