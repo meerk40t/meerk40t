@@ -14,12 +14,14 @@ class ColorPanel(wx.Panel):
         if attribute is None:
             attribute = "stroke"
         self.attribute = attribute
+        self.label = label
+        self.node = None
 
+        self.header = wx.StaticBox(self, wx.ID_ANY, _(self.label))
         main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _(label)), wx.VERTICAL
+            self.header, wx.VERTICAL
         )
         color_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        label_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(color_sizer, 0, wx.EXPAND, 0)
         self.btn_color = []
         self.lbl_color = []
@@ -83,6 +85,7 @@ class ColorPanel(wx.Panel):
 
     def set_widgets(self, node):
         self.node = node
+        # print(f"set_widget for {self.attribute} to {str(node)}")
         if self.node is None or not self.accepts(node):
             self.Hide()
             return
@@ -90,20 +93,39 @@ class ColorPanel(wx.Panel):
         self.Show()
 
     def mark_color(self, idx):
-        if idx is None:    # Okay, we need to determine it ourselves
+        if self.node is None:
             idx = -1
+        else:
             value = getattr(self.node, self.attribute, None)
+            nodecol = None
             if value == "none":
                 value = None
-            if value is None:
-                idx = 0
-            else:
+            colinfo = "None"
+            if value is not None:
                 nodecol = wx.Colour(swizzlecolor(value))
-                for i, btn in enumerate(self.btn_color):
-                    col = self.btn_color[i].GetBackgroundColour()
-                    if nodecol == col:
-                        idx = i
-                        break
+                s = ""
+                try:
+                    s = nodecol.GetAsString(wx.C2S_NAME)
+                except AssertionError:
+                    s = ""
+                if s != "":
+                    s = s + " = " + value.hexrgb
+                else:
+                    s = value.hexrgb
+                colinfo = s
+            self.header.SetLabel(_(self.label)+ " (" + colinfo + ")")
+            self.header.Refresh()
+
+            if idx is None:    # Okay, we need to determine it ourselves
+                idx = -1
+                if value is None:
+                    idx = 0
+                else:
+                    for i, btn in enumerate(self.btn_color):
+                        col = self.btn_color[i].GetBackgroundColour()
+                        if nodecol == col:
+                            idx = i
+                            break
 
         for i, label in enumerate(self.lbl_color):
             if i == idx:
@@ -111,4 +133,3 @@ class ColorPanel(wx.Panel):
             else:
                 label.SetLabel("")
         self.Layout()
-
