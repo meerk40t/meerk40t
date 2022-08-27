@@ -10,6 +10,10 @@ from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from .node.util_console import ConsoleOperation
+from .node.util_input import InputOperation
+from .node.util_output import OutputOperation
+from .node.util_wait import WaitOperation
 
 from ..numpath import Numpath
 from ..svgelements import (
@@ -1631,6 +1635,12 @@ class Elemental(Service):
                     return DotsOpNode()
                 elif command == "hatch":
                     return HatchOpNode()
+                elif command == "waitop":
+                    return WaitOperation()
+                elif command == "outputop":
+                    return OutputOperation()
+                elif command == "inputop":
+                    return InputOperation()
                 else:
                     raise ValueError
 
@@ -1700,6 +1710,86 @@ class Elemental(Service):
                         op.add_reference(item)
                 op_list.append(op)
             return "ops", op_list
+
+
+        @self.console_argument(
+            "time",
+            type=float,
+            default=5,
+            help=_(
+                "Time for the given wait operation."
+            ),
+        )
+        @self.console_command(
+            "waitop",
+            help=_(
+                "<waitop> - Create new utility operation"
+            ),
+            input_type=None,
+            output_type="ops",
+        )
+        def makeop(
+            command,
+            time=None,
+            **kwargs,
+        ):
+            op = WaitOperation(wait=time)
+            self.add_op(op)
+            return "ops", [op]
+
+        @self.console_argument(
+            "mask",
+            type=int,
+            default=0,
+            help=_(
+                "binary input/output mask"
+            ),
+        )
+        @self.console_argument(
+            "value",
+            type=int,
+            default=0,
+            help=_(
+                "binary input/output value"
+            ),
+        )
+        @self.console_command(
+            ("outputop", "inputop"),
+            help=_(
+                "<outputop, inputop> - Create new utility operation"
+            ),
+            input_type=None,
+            output_type="ops",
+        )
+        def makeop(
+            command,
+            mask=None,
+            value=None,
+            **kwargs,
+        ):
+            if command == "inputop":
+                op = InputOperation(mask=mask, value=value)
+            else:
+                op = OutputOperation(mask=mask, value=value)
+
+            self.add_op(op)
+            return "ops", [op]
+
+        @self.console_command(
+            "consoleop",
+            help=_(
+                "<consoleop> - Create new utility operation"
+            ),
+        )
+        def makeop(
+                command,
+                remainder,
+                **kwargs,
+        ):
+            op = ConsoleOperation(command=remainder)
+
+            self.add_op(op)
+            return "ops", [op]
 
         @self.console_argument("dpi", type=int, help=_("raster dpi"))
         @self.console_command("dpi", help=_("dpi <raster-dpi>"), input_type="ops")
