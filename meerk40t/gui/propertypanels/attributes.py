@@ -5,7 +5,7 @@ from meerk40t.svgelements import Color
 _ = wx.GetTranslation
 
 class ColorPanel(wx.Panel):
-    def __init__(self, *args, context=None, label=None, attribute=None, callback=None, **kwds):
+    def __init__(self, *args, context=None, label=None, attribute=None, callback=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -15,7 +15,7 @@ class ColorPanel(wx.Panel):
             attribute = "stroke"
         self.attribute = attribute
         self.label = label
-        self.node = None
+        self.node = node
 
         self.header = wx.StaticBox(self, wx.ID_ANY, _(self.label))
         main_sizer = wx.StaticBoxSizer(
@@ -51,6 +51,7 @@ class ColorPanel(wx.Panel):
             self.btn_color[i].Bind(wx.EVT_BUTTON, self.on_button)
         self.SetSizer(main_sizer)
         self.Layout()
+        self.set_widgets(self.node)
 
     def on_button(self, event):
         button = event.GetEventObject()
@@ -136,12 +137,12 @@ class ColorPanel(wx.Panel):
         self.Layout()
 
 class IdPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
+    def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.node = None
+        self.node = node
         self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
@@ -166,6 +167,7 @@ class IdPanel(wx.Panel):
         self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
         self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
         self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
+        self.set_widgets(self.node)
 
     def on_text_id_change(self, event=None):
         try:

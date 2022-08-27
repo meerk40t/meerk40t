@@ -85,13 +85,16 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_choose_font = wx.BitmapButton(
             self, wx.ID_ANY, icons8_choose_font_50.GetBitmap()
         )
-        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panel_id = IdPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.panel_stroke = ColorPanel(
             self,
             id=wx.ID_ANY,
             label="Stroke:",
             attribute="stroke",
             callback=self.callback_color,
+            node=self.node,
         )
         self.panel_fill = ColorPanel(
             self,
@@ -99,6 +102,7 @@ class TextPropertyPanel(ScrolledPanel):
             label="Fill:",
             attribute="fill",
             callback=self.callback_color,
+            node=self.node,
         )
 
         flist = wx.FontEnumerator()

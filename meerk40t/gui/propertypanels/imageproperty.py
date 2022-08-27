@@ -5,6 +5,7 @@ from ...core.units import Length
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
 from ..wxutils import TextCtrl
+from .attributes import IdPanel
 
 _ = wx.GetTranslation
 
@@ -16,8 +17,7 @@ class ImagePropertyPanel(ScrolledPanel):
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.node = node
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
 
         self.text_dpi = TextCtrl(
             self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float"
@@ -76,10 +76,6 @@ class ImagePropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
-        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
-        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
-        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither
         )
@@ -133,20 +129,11 @@ class ImagePropertyPanel(ScrolledPanel):
         return False
 
     def set_widgets(self, node=None):
+        self.panel_id.set_widgets(node)
         if node is None:
             node = self.node
         if node is None:
             return
-        try:
-            if node.id is not None:
-                self.text_id.SetValue(str(node.id))
-        except AttributeError:
-            pass
-        try:
-            if node.label is not None:
-                self.text_label.SetValue(str(node.label))
-        except AttributeError:
-            pass
 
         self.text_dpi.SetValue(str(node.dpi))
         try:
@@ -193,18 +180,7 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_dim = wx.BoxSizer(wx.HORIZONTAL)
         sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_id = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
-        )
-        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
-        sizer_label = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
-        )
-        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
 
         sizer_dpi = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.VERTICAL
@@ -283,20 +259,6 @@ class ImagePropertyPanel(ScrolledPanel):
         self.Layout()
         self.Centre()
         # end wxGlade
-
-    def on_text_id_change(self, event=None):
-        try:
-            self.node.id = self.text_id.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
-
-    def on_text_label_change(self, event=None):
-        try:
-            self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
 
     def on_text_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
         new_step = float(self.text_dpi.GetValue())

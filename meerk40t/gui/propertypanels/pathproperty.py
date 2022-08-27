@@ -20,7 +20,7 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.node = node
 
-        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
         self.panel_stroke = ColorPanel(
             self,
             id=wx.ID_ANY,
@@ -28,6 +28,7 @@ class PathPropertyPanel(ScrolledPanel):
             label="Stroke:",
             attribute="stroke",
             callback=self.callback_color,
+            node=self.node,
         )
         self.panel_fill = ColorPanel(
             self,
@@ -36,6 +37,7 @@ class PathPropertyPanel(ScrolledPanel):
             label="Fill:",
             attribute="fill",
             callback=self.callback_color,
+            node=self.node,
         )
 
         # Property display
