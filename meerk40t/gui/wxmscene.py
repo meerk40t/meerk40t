@@ -152,39 +152,6 @@ class MeerK40tScenePanel(wx.Panel):
                 == 1,
             },
         )
-        # not yet working
-        # context.kernel.register(
-        #     "button/align/Target",
-        #     {
-        #         "label": _("Target"),
-        #         "tip": _("Toggle Reference Object Status"),
-        #         "icon": icons8_ungroup_objects_50,
-        #         "size": buttonsize,
-        #         "identifier": "target",
-        #         "default": "target0",
-        #         "multi": [
-        #             {
-        #                 "identifier": "target0",
-        #                 "label": _("Selection"),
-        #                 "icon": icons8_ungroup_objects_50,
-        #                 "action": self.set_align_target(0),
-        #             },
-        #             {
-        #                 "identifier": "target1",
-        #                 "label": _("Ref-Object"),
-        #                 "action": self.set_align_target(1),
-        #                 "icon": icons8_reference,
-        #                 "action": self.set_align_target(1),
-        #             },
-        #             {
-        #                 "identifier": "target2",
-        #                 "label": _("Bedsize"),
-        #                 "icon": icons8_bed_50,
-        #                 "action": self.set_align_target(2),
-        #             },
-        #         ],
-        #     },
-        # )
 
         # Provide a reference to current scene in root context
         setattr(self.context.root, "mainscene", self.widget_scene)
@@ -474,6 +441,8 @@ class MeerK40tScenePanel(wx.Panel):
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 self.widget_scene.reference_object = e
                 break
+            self.context.signal("reference")
+
 
         # Establishes commands
         @context.console_argument(
@@ -637,6 +606,7 @@ class MeerK40tScenePanel(wx.Panel):
             else:
                 self.widget_scene.reference_object = e
             break
+        self.context.signal("reference")
         self.request_refresh()
 
     @signal_listener("draw_mode")
