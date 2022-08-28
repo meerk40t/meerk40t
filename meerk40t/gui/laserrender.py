@@ -815,6 +815,8 @@ class LaserRender:
             node._bounds_dirty = True
         node.width = f_width
         node.height = f_height
+        node.descent = f_descent
+        node.leading = f_external_leading
         node.offset_x = offs_x
         node.offset_y = offs_y
         __ = node.bounds
