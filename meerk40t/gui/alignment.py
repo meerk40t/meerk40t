@@ -577,8 +577,8 @@ class DistributionPanel(wx.Panel):
         elif treatment == "bed":
             left_edge = 0
             top_edge = 0
-            right_edge = self.context.elements.length_x("100%")
-            bottom_edge = self.context.elements.length_y("100%")
+            right_edge = self.context.device.width
+            bottom_edge = self.context.device.height
             calc_basic()
         elif treatment == "ref":
             left_edge = self.scene.reference_object.bounds[0]
