@@ -1,4 +1,7 @@
+from math import sqrt
+
 import wx
+from numpy import linspace
 
 from meerk40t.svgelements import (
     Arc,
@@ -7,6 +10,7 @@ from meerk40t.svgelements import (
     Line,
     Move,
     Path,
+    Point,
     QuadraticBezier,
 )
 
@@ -100,6 +104,7 @@ class AlignmentPanel(wx.Panel):
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_relation)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
         has_emph = self.context.elements.has_emphasis()
+        self.restore_setting()
         self.show_stuff(has_emph)
 
     def validate_data(self, event=None):
@@ -183,6 +188,24 @@ class AlignmentPanel(wx.Panel):
                 mode = "default"
         self.context(f"alignmode {mode}{addition}")
         self.context(f"align xy {xpos} {ypos} {asgroup}")
+        self.save_setting()
+
+    def save_setting(self):
+        mysettings=(
+            self.rbox_treatment.GetSelection(),
+            self.rbox_align_x.GetSelection(),
+            self.rbox_align_y.GetSelection(),
+            self.rbox_relation.GetSelection(),
+        )
+        setattr(self.context, "align_setting", mysettings)
+
+    def restore_setting(self):
+        mysettings = getattr(self.context, "align_setting", None)
+        if mysettings is not None and len(mysettings) == 4:
+            self.rbox_treatment.SetSelection(mysettings[0])
+            self.rbox_align_x.SetSelection(mysettings[1])
+            self.rbox_align_y.SetSelection(mysettings[2])
+            self.rbox_relation.SetSelection(mysettings[3])
 
     def show_stuff(self, has_emph):
         self.rbox_align_x.Enable(has_emph)
@@ -319,6 +342,7 @@ class DistributionPanel(wx.Panel):
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_y)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_sort)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
+        self.restore_setting()
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
 
@@ -326,7 +350,7 @@ class DistributionPanel(wx.Panel):
         # Certain functionalities are not ready yet, so let's disable them
         self.rbox_dist_x.EnableItem(4, False)  # Space
         self.rbox_dist_y.EnableItem(4, False)  # Space
-        self.rbox_treatment.EnableItem(1, False)  # Shape
+        # self.rbox_treatment.EnableItem(1, False)  # Shape
         # self.rbox_treatment.EnableItem(2, False)    # Points
 
     def validate_data(self, event=None):
@@ -372,18 +396,17 @@ class DistributionPanel(wx.Panel):
                     active = False
         else:
             active = False
-        if active:
-            if treat in ("points", "path"):
-                self.check_inside_xy.Enable(False)
-                self.check_inside_xy.SetValue(False)
-            else:
-                self.check_inside_xy.Enable(True)
+        if treat in ("points", "shape"):
+            self.check_inside_xy.Enable(False)
+            self.check_inside_xy.SetValue(False)
+        else:
+            self.check_inside_xy.Enable(True)
 
         self.btn_dist.Enable(active)
         self.disable_wip()
 
     def calculate_basis(self, data, target, treatment):
-        def calc_points():
+        def calc_basic():
             # equidistant points in rectangle
             target.clear()
             x = left_edge
@@ -399,7 +422,7 @@ class DistributionPanel(wx.Panel):
                 target.append((x, y))
                 dlen -= 1
 
-        def calc_path():
+        def calc_points():
             first_point = path.first_point
             if first_point is not None:
                 pt = (first_point[0], first_point[1])
@@ -428,6 +451,107 @@ class DistributionPanel(wx.Panel):
                     if pt not in target:
                         target.append(pt)
 
+        def calc_path():
+            def closed_path():
+                p1 = path.first_point
+                p2 = path.current_point
+                # print (p1, p2)
+                # print (type(p1).__name__, type(p2).__name__)
+                return p1 == p2
+
+            def generate_polygon():
+                this_length = 0
+                interpolation = 100
+
+                polypoints.clear()
+                polygons = []
+                for subpath in path.as_subpaths():
+                    subj = Path(subpath).npoint(linspace(0, 1, interpolation))
+
+                    subj.reshape((2, interpolation))
+                    s = list(map(Point, subj))
+                    polygons.append(s)
+
+                if len(polygons) > 0:
+                    # idx = 0
+                    # for pt in polygons[0]:
+                    #     if pt.x > 1.0E8 or pt.y > 1.0E8:
+                    #         print ("Rather high [%d]: x=%.1f, y=%.1f" % (idx, pt.x, pt.y))
+                    #     idx += 1
+                    idx = -1
+                    for pt in polygons[0]:
+                        if pt is None or pt.x is None or pt.y is None:
+                            continue
+                        if abs(pt.x) > 1.0e8 or abs(pt.y) > 1.0e8:
+                            # this does not seem to be a valid coord...
+                            continue
+                        idx += 1
+                        if idx > 0:
+                            dx = pt.x - last_x
+                            dy = pt.y - last_y
+                            this_length += sqrt(dx * dx + dy * dy)
+                        polypoints.append((pt.x, pt.y, this_length))
+                        last_x = pt.x
+                        last_y = pt.y
+                return this_length
+
+            polypoints = []
+            poly_length = generate_polygon()
+            if len(polypoints) == 0:
+                # Degenerate !!
+                return
+            # Closed path? -> Different intermediary points
+            if closed_path():
+                segcount = len(data)
+            else:
+                segcount = len(data) - 1
+            if segcount <= 0:
+                segcount = 1
+            mylen = 0
+            mydelta = poly_length / segcount
+            lastx = 0
+            lasty = 0
+            lastlen = 0
+            segadded = 0
+            # print(f"Expected segcount= {segcount}")
+            # Now iterate over all points and establish the positions
+            idx = -1
+            for pt in polypoints:
+                x = pt[0]
+                y = pt[1]
+                plen = pt[2]
+                if abs(x) > 1.0e8 or abs(y) > 1.0e8:
+                    # this does not seem to be a valid coord...
+                    continue
+                idx += 1
+                # print(f"Compare {mylen:.1f} to {plen:.1f}")
+                if plen >= mylen:
+                    if idx != 0 and plen > mylen:
+                        # Adjust the point...
+                        if lastlen != plen:  # Only if different
+                            fract = (mylen - lastlen) / (plen - lastlen)
+                            x = lastx + fract * (x - lastx)
+                            y = lasty + fract * (y - lasty)
+                    newpt = (x, y)
+                    # print ("I would add another point...")
+                    if newpt not in target:
+                        # print ("..and added")
+                        target.append(newpt)
+                        segadded += 1
+                    mylen += mydelta
+                lastx = pt[0]
+                lasty = pt[1]
+                lastlen = pt[2]
+            # We may have slightly overshot, so in doubt add the last point
+            if segadded < segcount:
+                # print ("I would add to it the last point...")
+                newpt = (lastx, lasty)
+                if newpt not in target:
+                    # print ("..and added")
+                    segadded += 1
+                    target.append(newpt)
+            # print (f"Target points: {len(target)}")
+
         # "default", "shape", "points", "bed", "ref")
         if treatment == "ref" and self.scene.reference_object is None:
             treatment = "default"
@@ -442,20 +566,26 @@ class DistributionPanel(wx.Panel):
                 top_edge = min(top_edge, node.bounds[1])
                 right_edge = max(right_edge, node.bounds[2])
                 bottom_edge = max(bottom_edge, node.bounds[3])
-            calc_points()
+            calc_basic()
         elif treatment == "bed":
             left_edge = 0
             top_edge = 0
             right_edge = self.context.elements.length_x("100%")
             bottom_edge = self.context.elements.length_y("100%")
-            calc_points()
+            calc_basic()
         elif treatment == "ref":
             left_edge = self.scene.reference_object.bounds[0]
             top_edge = self.scene.reference_object.bounds[1]
             right_edge = self.scene.reference_object.bounds[2]
             bottom_edge = self.scene.reference_object.bounds[3]
-            calc_points()
+            calc_basic()
         elif treatment == "points":
+            # So what's the reference node? And delete it...
+            refnode = data[0]
+            data.pop(0)
+            path = refnode.as_path()
+            calc_points()
+        elif treatment == "shape":
             # So what's the reference node? And delete it...
             refnode = data[0]
             data.pop(0)
@@ -559,7 +689,7 @@ class DistributionPanel(wx.Panel):
         idx = max(0, self.rbox_sort.GetSelection())
         esort = self.sort_param[idx]
         remain_inside = bool(self.check_inside_xy.GetValue())
-        if treat in ("points", "path"):
+        if treat in ("points", "shape"):
             remain_inside = False
         # print(f"Params: x={xmode}, y={ymode}, sort={esort}, treat={treat}")
         # The elements...
@@ -568,6 +698,26 @@ class DistributionPanel(wx.Panel):
         self.prepare_data(data, esort)
         self.calculate_basis(data, target, treat)
         self.apply_results(data, target, xmode, ymode, remain_inside)
+        self.save_setting()
+
+    def save_setting(self):
+        mysettings=(
+            self.rbox_dist_x.GetSelection(),
+            self.rbox_dist_y.GetSelection(),
+            self.rbox_treatment.GetSelection(),
+            self.rbox_sort.GetSelection(),
+            self.check_inside_xy.GetValue(),
+        )
+        setattr(self.context, "distribute_setting", mysettings)
+
+    def restore_setting(self):
+        mysettings = getattr(self.context, "distribute_setting", None)
+        if mysettings is not None and len(mysettings) == 5:
+            self.rbox_dist_x.SetSelection(mysettings[0])
+            self.rbox_dist_y.SetSelection(mysettings[1])
+            self.rbox_treatment.SetSelection(mysettings[2])
+            self.rbox_sort.SetSelection(mysettings[3])
+            self.check_inside_xy.SetValue(mysettings[4])
 
     def show_stuff(self, has_emph):
         showit = has_emph
