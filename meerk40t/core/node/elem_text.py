@@ -53,6 +53,8 @@ class TextNode(Node):
         texttransform=None,
         width=None,
         height=None,
+        descent=None,
+        leading=None,
         path=None,
         settings=None,
         **kwargs,
@@ -98,6 +100,8 @@ class TextNode(Node):
 
         self.width = width
         self.height = height
+        self.descent = descent
+        self.leading = leading
         self.path = path
         self.lock = False
 
@@ -117,6 +121,8 @@ class TextNode(Node):
             texttransform=self.texttransform,
             width=self.width,
             height=self.height,
+            descent=self.descent,
+            leading=self.leading,
             path=self.path,
             settings=self.settings,
         )

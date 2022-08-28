@@ -105,19 +105,17 @@ def svgfont_to_wx(textnode):
 
     svg_to_wx_family(textnode, wxfont)
     svg_to_wx_fontstyle(textnode, wxfont)
-
-    # A point is 1/72 of an inch
-    factor = 72 / PX_PER_INCH
-    font_size = textnode.font_size * factor
-    if font_size < 1:
-        if font_size > 0:
-            textnode.matrix.pre_scale(font_size, font_size)
-            font_size = 1
-            textnode.font_size = font_size  # No zero sized fonts.
+    font_size = textnode.font_size
     try:
         wxfont.SetFractionalPointSize(font_size)
     except AttributeError:
-        wxfont.SetPointSize(int(font_size))
+        # If we cannot set the fractional point size, we scale up to adjust to fractional levels.
+        integer_font_size = int(round(font_size))
+        scale = font_size / integer_font_size
+        if scale != 1.0:
+            textnode.matrix.pre_scale(scale, scale)
+            textnode.font_size = integer_font_size
+        wxfont.SetPointSize(integer_font_size)
     wxfont.SetUnderlined(textnode.underline)
     wxfont.SetStrikethrough(textnode.strikethrough)
 
@@ -817,6 +815,8 @@ class LaserRender:
             node._bounds_dirty = True
         node.width = f_width
         node.height = f_height
+        node.descent = f_descent
+        node.leading = f_external_leading
         node.offset_x = offs_x
         node.offset_y = offs_y
         __ = node.bounds
