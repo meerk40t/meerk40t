@@ -338,21 +338,12 @@ class TextNode(Node):
                 with_stroke=with_stroke,
             )
 
-        if self.width:
-            width = self.width
-        else:
-            # Width is undefined, make an educated guess
-            width = len(self.text) * self.font_size
-
-        if self.height:
-            height = self.height
-        else:
-            # Height is undefined, make an educated guess
-            height = (
-                -self.line_height * len(list(self.text.split("\n"))) - self.font_size
-            )
-        ymin = -height
-        ymax = 0
+        width = self.width if self.width else len(self.text) * self.font_size
+        height = self.height if self.height else self.line_height * len(list(self.text.split("\n"))) - self.font_size
+        descent = self.descent if self.descent else height * 0.5
+        leading = self.leading if self.leading else 0
+        ymin = -height + descent + leading
+        ymax = descent
         if self.anchor == "middle":
             xmin = -width / 2
             xmax = width / 2
