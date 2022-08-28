@@ -181,7 +181,7 @@ def console_command(
 
                     if nargs == len(kwargs[key]):
                         # We have satisfied the nargs, next values.
-                        argument_index += 1
+                        argument_index += nargs
                         opt_index = argument_index
                 elif kind == "LONG" or kind == "OPT":
                     # is a --option or -o type option.
