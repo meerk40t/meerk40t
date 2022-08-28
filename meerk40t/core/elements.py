@@ -482,6 +482,14 @@ class Elemental(Service):
     def length_y(self, v):
         return float(Length(v, relative_length=self.device.height, unitless=1))
 
+    def bounds(self, x0, y0, x1, y1):
+        return (
+            float(Length(x0, relative_length=self.device.width, unitless=1)),
+            float(Length(y0, relative_length=self.device.height, unitless=1)),
+            float(Length(x1, relative_length=self.device.width, unitless=1)),
+            float(Length(y1, relative_length=self.device.height, unitless=1)),
+        )
+
     def area(self, v):
         llx = Length(v, relative_length=self.device.width)
         lx = float(llx)
@@ -1711,7 +1719,6 @@ class Elemental(Service):
                 op_list.append(op)
             return "ops", op_list
 
-
         @self.console_argument(
             "time",
             type=float,
@@ -2600,7 +2607,7 @@ class Elemental(Service):
         # Align consist of top level node objects that can be manipulated within the scene.
         # ==========
         @self.console_argument("modus", type=str)
-        @self.console_option("boundaries", "b", type=str, nargs=4)
+        @self.console_option("boundaries", "b", type=self.bounds, parallel_cast=True, nargs=4)
         @self.console_command(
             "alignmode",
             help=_("Sets the alignmode for all align-operations"),
