@@ -7,7 +7,7 @@ from ...svgelements import Color
 from ..icons import icons8_vector_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
-from .attributes import ColorPanel, IdPanel
+from .attributes import ColorPanel, IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
@@ -39,6 +39,7 @@ class PathPropertyPanel(ScrolledPanel):
             callback=self.callback_color,
             node=self.node,
         )
+        self.panel_xy = PositionSizePanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
 
         # Property display
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -98,6 +99,7 @@ class PathPropertyPanel(ScrolledPanel):
         self.panel_id.set_widgets(node)
         self.panel_stroke.set_widgets(node)
         self.panel_fill.set_widgets(node)
+        self.panel_xy.set_widgets(node)
 
         if node is not None:
             self.node = node
@@ -139,6 +141,7 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_v_main.Add(self.panel_stroke, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.panel_fill, 0, wx.EXPAND, 0)
         sizer_v_main.Add(self.check_classify, 0, 0, 0)
+        sizer_v_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
         sizer_v_main.Add(sizer_h_infos, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_v_main)
         self.Layout()
