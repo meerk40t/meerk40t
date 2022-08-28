@@ -354,8 +354,10 @@ class DistributionPanel(wx.Panel):
         # self.rbox_treatment.EnableItem(2, False)    # Points
 
     def validate_data(self, event=None):
+        obj = None
         if event is not None:
             event.Skip()
+            obj = event.GetEventObject()
         if self.context.elements.has_emphasis():
             active = True
             idx = max(0, self.rbox_treatment.GetSelection())
@@ -401,6 +403,10 @@ class DistributionPanel(wx.Panel):
             self.check_inside_xy.SetValue(False)
         else:
             self.check_inside_xy.Enable(True)
+        # Have we just selected the treatment? Then set something useful
+        if obj == self.rbox_treatment and xmode == "none" and ymode == "none":
+            self.rbox_dist_x.SetSelection(2)
+            self.rbox_dist_y.SetSelection(2)
 
         self.btn_dist.Enable(active)
         self.disable_wip()
@@ -525,7 +531,7 @@ class DistributionPanel(wx.Panel):
                     continue
                 idx += 1
                 # print(f"Compare {mylen:.1f} to {plen:.1f}")
-                if plen >= mylen:
+                while plen >= mylen:
                     if idx != 0 and plen > mylen:
                         # Adjust the point...
                         if lastlen != plen:  # Only if different
@@ -539,6 +545,7 @@ class DistributionPanel(wx.Panel):
                         target.append(newpt)
                         segadded += 1
                     mylen += mydelta
+
                 lastx = pt[0]
                 lasty = pt[1]
                 lastlen = pt[2]
