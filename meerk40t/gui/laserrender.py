@@ -106,9 +106,7 @@ def svgfont_to_wx(textnode):
     svg_to_wx_family(textnode, wxfont)
     svg_to_wx_fontstyle(textnode, wxfont)
 
-    # A point is 1/72 of an inch
-    factor = 72 / PX_PER_INCH
-    font_size = textnode.font_size * factor
+    font_size = textnode.font_size
     if font_size < 1:
         if font_size > 0:
             textnode.matrix.pre_scale(font_size, font_size)
