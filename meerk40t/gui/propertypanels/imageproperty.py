@@ -5,7 +5,7 @@ from ...core.units import Length
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
 from ..wxutils import TextCtrl
-from .attributes import IdPanel
+from .attributes import IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
@@ -22,14 +22,8 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_dpi = TextCtrl(
             self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float"
         )
-        self.text_x = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
-        self.text_y = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True)
-        self.text_width = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True
-        )
-        self.text_height = TextCtrl(
-            self, wx.ID_ANY, "", style=wx.TE_READONLY, limited=True
-        )
+
+        self.panel_xy = PositionSizePanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
 
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
@@ -130,36 +124,17 @@ class ImagePropertyPanel(ScrolledPanel):
 
     def set_widgets(self, node=None):
         self.panel_id.set_widgets(node)
+        self.panel_xy.set_widgets(node)
         if node is None:
             node = self.node
         if node is None:
             return
 
         self.text_dpi.SetValue(str(node.dpi))
-        try:
-            bounds = node.bounds
-            self.text_x.SetValue(
-                Length(amount=bounds[0], unitless=1, digits=2).length_mm
-            )
-            self.text_y.SetValue(
-                Length(amount=bounds[1], unitless=1, digits=2).length_mm
-            )
-            self.text_width.SetValue(
-                Length(amount=bounds[2] - bounds[0], unitless=1, digits=2).length_mm
-            )
-            self.text_height.SetValue(
-                Length(amount=bounds[3] - bounds[1], unitless=1, digits=2).length_mm
-            )
-        except AttributeError:
-            pass
         self.check_enable_dither.SetValue(node.dither)
         self.combo_dither.SetValue(node.dither_type)
 
     def __set_properties(self):
-        self.text_x.SetToolTip(_("X property of image"))
-        self.text_y.SetToolTip(_("Y property of image"))
-        self.text_width.SetToolTip(_("Width property of image"))
-        self.text_height.SetToolTip(_("Height property of image"))
         self.check_enable_dither.SetToolTip(_("Enable Dither"))
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
@@ -189,22 +164,6 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_dpi.Add(self.text_dpi, 0, 0, 0)
 
         sizer_main.Add(sizer_dpi, 0, wx.EXPAND, 0)
-        label_x = wx.StaticText(self, wx.ID_ANY, _("X:"))
-        label_y = wx.StaticText(self, wx.ID_ANY, _("Y:"))
-
-        sizer_xy.Add(label_x, 1, wx.EXPAND, 0)
-        sizer_xy.Add(self.text_x, 3, wx.EXPAND, 0)
-        sizer_xy.Add(label_y, 1, wx.EXPAND, 0)
-        sizer_xy.Add(self.text_y, 3, wx.EXPAND, 0)
-        sizer_main.Add(sizer_xy, 0, wx.EXPAND, 0)
-
-        label_w = wx.StaticText(self, wx.ID_ANY, _("Width:"))
-        label_h = wx.StaticText(self, wx.ID_ANY, _("Height:"))
-        sizer_dim.Add(label_w, 1, wx.EXPAND, 0)
-        sizer_dim.Add(self.text_width, 3, wx.EXPAND, 0)
-        sizer_dim.Add(label_h, 1, wx.EXPAND, 0)
-        sizer_dim.Add(self.text_height, 3, wx.EXPAND, 0)
-        sizer_main.Add(sizer_dim, 0, wx.EXPAND, 0)
 
         sizer_dither = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
@@ -255,6 +214,9 @@ class ImagePropertyPanel(ScrolledPanel):
         self.text_grayscale_lightness.SetMaxSize(wx.Size(70, -1))
 
         sizer_main.Add(sizer_grayscale, 0, wx.EXPAND, 0)
+
+        sizer_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()
