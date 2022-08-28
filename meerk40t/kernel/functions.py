@@ -143,6 +143,7 @@ def console_command(
             opt_index = 0
             pos = 0
             nargs = 0
+
             for kind, value, start, pos in _cmd_parser(remainder):
                 if kind == "PARAM":
                     # is a parameter-option
@@ -165,7 +166,11 @@ def console_command(
                         nargs = float("inf")
 
                     # Attempt cast to type.
-                    if "type" in k and value is not None:
+                    if (
+                        "type" in k
+                        and value is not None
+                        and not k.get("parallel_cast", False)
+                    ):
                         try:
                             value = k["type"](value)
                         except ValueError:
@@ -206,6 +211,7 @@ def console_command(
                             break
                     opt_index = argument_index
             if isinf(nargs):
+                # If the final number_args was infinite.
                 argument_index += 1
             if inner.all_arguments_required:
                 if argument_index != len(stack):
@@ -233,12 +239,20 @@ def console_command(
                         value = pk["type"](value)
                     kwargs[key] = value
 
-            # Any singleton list arguments should become their only element, unless nargs is set.
-            for a in range(len(stack)):
-                k = stack[a]
+            # Any parallel_cast opts should be cast in parallel
+            for k in options + arguments:
+                if not k.get("parallel_cast", False):
+                    continue
                 key = k["name"]
+                current = kwargs.get(key)
+                if "type" in k and isinstance(current, list):
+                    kwargs[key] = k["type"](*current)
+
+            # Any singleton list arguments should become their only element, unless nargs is set.
+            for k in stack:
                 if k.get("nargs") is not None:
                     continue
+                key = k["name"]
                 current = kwargs.get(key)
                 if isinstance(current, list):
                     if len(current) == 1:
