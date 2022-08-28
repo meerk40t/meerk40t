@@ -104,6 +104,7 @@ class AlignmentPanel(wx.Panel):
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_relation)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
         has_emph = self.context.elements.has_emphasis()
+        self.restore_setting()
         self.show_stuff(has_emph)
 
     def validate_data(self, event=None):
@@ -187,6 +188,24 @@ class AlignmentPanel(wx.Panel):
                 mode = "default"
         self.context(f"alignmode {mode}{addition}")
         self.context(f"align xy {xpos} {ypos} {asgroup}")
+        self.save_setting()
+
+    def save_setting(self):
+        mysettings=(
+            self.rbox_treatment.GetSelection(),
+            self.rbox_align_x.GetSelection(),
+            self.rbox_align_y.GetSelection(),
+            self.rbox_relation.GetSelection(),
+        )
+        setattr(self.context, "align_setting", mysettings)
+
+    def restore_setting(self):
+        mysettings = getattr(self.context, "align_setting", None)
+        if mysettings is not None and len(mysettings) == 4:
+            self.rbox_treatment.SetSelection(mysettings[0])
+            self.rbox_align_x.SetSelection(mysettings[1])
+            self.rbox_align_y.SetSelection(mysettings[2])
+            self.rbox_relation.SetSelection(mysettings[3])
 
     def show_stuff(self, has_emph):
         self.rbox_align_x.Enable(has_emph)
@@ -323,6 +342,7 @@ class DistributionPanel(wx.Panel):
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_y)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_sort)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
+        self.restore_setting()
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
 
@@ -530,7 +550,7 @@ class DistributionPanel(wx.Panel):
                     # print ("..and added")
                     segadded += 1
                     target.append(newpt)
-            print (f"Target points: {len(target)}")
+            # print (f"Target points: {len(target)}")
 
         # "default", "shape", "points", "bed", "ref")
         if treatment == "ref" and self.scene.reference_object is None:
@@ -678,6 +698,26 @@ class DistributionPanel(wx.Panel):
         self.prepare_data(data, esort)
         self.calculate_basis(data, target, treat)
         self.apply_results(data, target, xmode, ymode, remain_inside)
+        self.save_setting()
+
+    def save_setting(self):
+        mysettings=(
+            self.rbox_dist_x.GetSelection(),
+            self.rbox_dist_y.GetSelection(),
+            self.rbox_treatment.GetSelection(),
+            self.rbox_sort.GetSelection(),
+            self.check_inside_xy.GetValue(),
+        )
+        setattr(self.context, "distribute_setting", mysettings)
+
+    def restore_setting(self):
+        mysettings = getattr(self.context, "distribute_setting", None)
+        if mysettings is not None and len(mysettings) == 5:
+            self.rbox_dist_x.SetSelection(mysettings[0])
+            self.rbox_dist_y.SetSelection(mysettings[1])
+            self.rbox_treatment.SetSelection(mysettings[2])
+            self.rbox_sort.SetSelection(mysettings[3])
+            self.check_inside_xy.SetValue(mysettings[4])
 
     def show_stuff(self, has_emph):
         showit = has_emph
