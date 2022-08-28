@@ -4127,24 +4127,24 @@ class Elemental(Service):
                     elif not hasattr(e, "stroke_scaled"):
                         channel(
                             _(
-                                "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
-                            ).format(index=i, stroke_width="None", name=name)
+                                "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - scaled-stroke"
+                            ).format(index=i, stroke_width="None", implied_stroke_width="None", name=name)
                         )
                     else:
                         if e.stroke_scaled:
                             channel(
                                 _(
-                                    "{index}: stroke-width = {stroke_width} - {name} - scaled-stroke"
+                                    "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - scaled-stroke"
                                 ).format(
-                                    index=i, stroke_width=e.stroke_width, name=name
+                                    index=i, stroke_width=e.stroke_width, implied_stroke_width=e.implied_stroke_width(), name=name
                                 )
                             )
                         else:
                             channel(
                                 _(
-                                    "{index}: stroke-width = {stroke_width} - {name} - non-scaling-stroke"
+                                    "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - non-scaling-stroke"
                                 ).format(
-                                    index=i, stroke_width=e.stroke_width, name=name
+                                    index=i, stroke_width=e.stroke_width, implied_stroke_width=e.implied_stroke_width(), name=name
                                 )
                             )
                     i += 1
