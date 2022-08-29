@@ -3000,7 +3000,7 @@ class Elemental(Service):
 
         @self.console_command(
             "centerv",
-            help=_("align elements at center verically"),
+            help=_("align elements at center vertically"),
             input_type="align",
             output_type="align",
         )
