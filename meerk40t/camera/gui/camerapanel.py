@@ -177,6 +177,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera.listen("camera;fps", self.on_fps_change)
         self.camera.listen("camera;stopped", self.on_camera_stop)
         self.camera.gui = self
+        self.camera("camera focus -5% -5% 105% 105%\n")
 
     def pane_hide(self, *args):
         self.camera(f"camera{self.index} stop\n")
