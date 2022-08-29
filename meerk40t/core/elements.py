@@ -2559,10 +2559,16 @@ class Elemental(Service):
                     path = e.as_path()
                 except AttributeError:
                     continue
-                if super_element.stroke is None:
-                    super_element.stroke = e.stroke
-                if super_element.fill is None:
-                    super_element.fill = e.fill
+                try:
+                    if super_element.stroke is None:
+                        super_element.stroke = e.stroke
+                except AttributeError:
+                    pass
+                try:
+                    if super_element.fill is None:
+                        super_element.fill = e.fill
+                except AttributeError:
+                    pass
                 super_element += path
             self.remove_elements(data)
             node = self.elem_branch.add(path=super_element, type="elem path")
