@@ -2684,7 +2684,7 @@ class Elemental(Service):
             """
             mode, group, bound, elements = data
             self._align_stack.append((mode, group, bound))
-            return "align", (mode, bound, elements)
+            return "align", (mode, group, bound, elements)
 
         @self.console_command(
             "pop",
@@ -2940,7 +2940,7 @@ class Elemental(Service):
         )
         def subtype_align_top(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _, data, "none", "min", group)
+            _align_xy(channel, _,  mode, bound, elements, "none", "min", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2951,7 +2951,7 @@ class Elemental(Service):
         )
         def subtype_align_bottom(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _, data, "none", "max", group)
+            _align_xy(channel, _,  mode, bound, elements, "none", "max", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2962,7 +2962,7 @@ class Elemental(Service):
         )
         def subtype_align_left(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _, data, "min", "none", group)
+            _align_xy(channel, _,  mode, bound, elements, "min", "none", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2973,7 +2973,7 @@ class Elemental(Service):
         )
         def subtype_align_right(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _, data, "max", "none", group)
+            _align_xy( channel, _,  mode, bound, elements, "max", "none", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2984,7 +2984,7 @@ class Elemental(Service):
         )
         def subtype_align_center(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _, data, "center", "center", group)
+            _align_xy(command, channel, _,  mode, bound, elements, "center", "center", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2995,7 +2995,7 @@ class Elemental(Service):
         )
         def subtype_align_centerh(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _, data, "center", "none", group)
+            _align_xy(channel, _,  mode, bound, elements, "center", "none", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -3006,7 +3006,7 @@ class Elemental(Service):
         )
         def subtype_align_centerv(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _, data, "none", "center", group)
+            _align_xy(channel, _,  mode, bound, elements, "none", "center", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
