@@ -150,10 +150,7 @@ class AlignmentPanel(wx.Panel):
 
     def on_button_align(self, event):
         idx = self.rbox_treatment.GetSelection()
-        if idx == 1:
-            asgroup = 1
-        else:
-            asgroup = 0
+        group = idx == 1
         idx = self.rbox_align_x.GetSelection()
         if idx < 0:
             idx = 0
@@ -178,18 +175,12 @@ class AlignmentPanel(wx.Panel):
             if self.scene is not None:
                 node = self.scene.reference_object
                 if node is not None:
-                    addition = " --boundaries {x1},{y1},{x2},{y2}".format(
-                        x1=node.bounds[0],
-                        y1=node.bounds[1],
-                        x2=node.bounds[2],
-                        y2=node.bounds[3],
-                    )
+                    addition = f" --boundaries {node.bounds[0]},{node.bounds[1]},{node.bounds[2]},{node.bounds[3]}"
                 else:
                     mode = "default"
             else:
                 mode = "default"
-        self.context(f"alignmode {mode}{addition}")
-        self.context(f"align xy {xpos} {ypos} {asgroup}")
+        self.context(f"align {mode}{addition}{' group' if group else ''} xy {xpos} {ypos}")
         self.save_setting()
 
     def save_setting(self):

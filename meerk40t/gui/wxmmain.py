@@ -1014,8 +1014,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign left\nalignmode pop\n"),
-                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign left 1\nalignmode pop\n"),                "size": buttonsize,
+                "action": lambda v: kernel.elements("align push first individual left pop\n"),
+                "right": lambda v: kernel.elements("align push bed group left pop\n"),                "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1030,8 +1030,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign right\nalignmode pop\n"),
-                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign right 1\nalignmode pop\n"),                "size": buttonsize,
+                "action": lambda v: kernel.elements("align push first individual right pop\n"),
+                "right": lambda v: kernel.elements("align push bed group right pop\n"),                "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1046,8 +1046,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign top\nalignmode pop\n"),
-                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign top 1\nalignmode pop\n"),
+                "action": lambda v: kernel.elements("align push first individual top pop\n"),
+                "right": lambda v: kernel.elements("align push bed group top pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1063,8 +1063,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign bottom\nalignmode pop\n"),
-                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign bottom 1\nalignmode pop\n"),
+                "action": lambda v: kernel.elements("align push first individual bottom pop\n"),
+                "right": lambda v: kernel.elements("align push bed group bottom pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1080,8 +1080,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign centerh\nalignmode pop\n"),
-                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign centerh 1\nalignmode pop\n"),
+                "action": lambda v: kernel.elements("align push first individual centerh pop\n"),
+                "right": lambda v: kernel.elements("align push bed group centerh pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1097,8 +1097,8 @@ class MeerK40t(MWindow):
                 "tip": _(
                     "Align selected elements at their center vertically (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("alignmode push\nalignmode first\nalign centerv\nalignmode pop\n"),
-                "right": lambda v: kernel.elements("alignmode push\nalignmode bed\nalign centerv 1\nalignmode pop\n"),
+                "action": lambda v: kernel.elements("align push first individual centerv pop\n"),
+                "right": lambda v: kernel.elements("align push bed group centerv pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
