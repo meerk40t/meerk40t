@@ -114,6 +114,11 @@ class MeerK40tScenePanel(wx.Panel):
         sizer_2.Fit(self)
         self.Layout()
 
+        def charhook(event):
+            self.on_key_down(event)
+            self.on_key_up(event)
+
+        self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)

@@ -36,6 +36,10 @@ from meerk40t.kernel import CommandMatchRejected, Service
 # Later entries in the tuple are used to identify previous defaults and update them to current,
 # so do not delete these until a version change (like 0.8) results in completely new settings anyway.
 DEFAULT_KEYMAP = {
+    "right": ("translate 1mm 0",),
+    "left": ("translate -1mm 0",),
+    "up": ("translate 0 -1mm",),
+    "down": ("translate 0 1mm",),
     "a": ("+left",),
     "d": ("+right",),
     "w": ("+up",),
