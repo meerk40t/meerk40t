@@ -372,6 +372,7 @@ class Elemental(Service):
         self._first_emphasized = None
         self._align_mode = "default"
         self._align_boundaries = None
+        self._align_group = False
         self._align_stack = []
 
     @property
@@ -2613,155 +2614,107 @@ class Elemental(Service):
         # ==========
 
         def _align_xy(
-            command,
             channel,
             _,
-            data=None,
-            alignx=None,
-            aligny=None,
+            mode,
+            bounds,
+            elements,
+            align_x=None,
+            align_y=None,
             asgroup=None,
             **kwargs,
         ):
             """
-            This routine prepares the data according to some validation
-            and definitions as defined in alignmode
+            This routine prepares the data according to some validation.
 
-            @param command:
-            @param channel:
-            @param _:
-            @param data:
-            @param alignx:
-            @param aligny:
-            @param asgroup:
-            @param kwargs:
-            @return:
+            The complete validation stuff...
             """
-            ## The complete validation stuff...
-            if data is None or len(data) == 0:
+            if elements is None or len(elements) == 0:
                 return
-            if alignx is None or aligny is None:
+            if align_x is None or align_y is None:
                 channel(_("You need to provide parameters for both x and y"))
                 return
-            flag = False
-            if asgroup is not None:
-                flag = asgroup != 0
-            # print(f"'{asgroup}, type={type(asgroup).__name__}, result={flag}")
-            individually = not flag
-            alignx = alignx.lower()
-            aligny = aligny.lower()
-            if not alignx in ("min", "max", "center", "none"):
+            align_bounds = None
+            individually = asgroup == 0
+            align_x = align_x.lower()
+            align_y = align_y.lower()
+
+            if align_x not in ("min", "max", "center", "none"):
                 channel(_("Invalid alignment parameter for x"))
                 return
-            if not aligny in ("min", "max", "center", "none"):
+            if align_y not in ("min", "max", "center", "none"):
                 channel(_("Invalid alignment parameter for y"))
                 return
-            # channel(f"Parameters: x={alignx}, y={aligny}, group={asgroup}, indiv={individually}")
-            if self._align_mode == "default":
-                if len(data) < 2:
+            if mode == "default":
+                if len(elements) < 2:
                     channel(_("No sense in aligning an element to itself"))
                     return
                 # boundaries are the selection boundaries,
                 # will be calculated later
-                align_bounds = None
-            elif self._align_mode == "first":
-                if len(data) < 2:
+            elif mode == "first":
+                if len(elements) < 2:
                     channel(_("No sense in aligning an element to itself"))
                     return
-                data.sort(key=lambda n: n.emphasized_time)
+                elements.sort(key=lambda n: n.emphasized_time)
                 # Is there a noticeable difference?!
                 # If not then we fall back to default
-                if data[0].emphasized_time != data[1].emphasized_time:
-                    align_bounds = data[0].bounds
-                    data.pop(0)
-                else:
-                    align_bounds = None
-            elif self._align_mode == "last":
-                if len(data) < 2:
+                if elements[0].emphasized_time != elements[1].emphasized_time:
+                    align_bounds = elements[0].bounds
+                    elements.pop(0)
+            elif mode == "last":
+                if len(elements) < 2:
                     channel(_("No sense in aligning an element to itself"))
                     return
-                data.sort(reverse=True, key=lambda n: n.emphasized_time)
+                elements.sort(reverse=True, key=lambda n: n.emphasized_time)
                 # Is there a noticeable difference?!
                 # If not then we fall back to default
-                if data[0].emphasized_time != data[1].emphasized_time:
-                    align_bounds = data[0].bounds
-                    data.pop(0)
-                else:
-                    align_bounds = None
-            elif self._align_mode == "bed":
-                align_bounds = self._align_boundaries
-            elif self._align_mode == "ref":
-                align_bounds = self._align_boundaries
+                if elements[0].emphasized_time != elements[1].emphasized_time:
+                    align_bounds = elements[0].bounds
+                    elements.pop(0)
+            elif mode == "bed":
+                align_bounds = bounds
+            elif mode == "ref":
+                align_bounds = bounds
             self.align_elements(
-                data=data,
+                data=elements,
                 alignbounds=align_bounds,
-                positionx=alignx,
-                positiony=aligny,
+                positionx=align_x,
+                positiony=align_y,
                 individually=individually,
             )
 
+        @self.console_command(
+            "push",
+            help=_("pushes the current align mode to the stack"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_push(
+            channel, _, data, **kwargs
+        ):
+            """
+            Special command to push the current values on the stack
+            """
+            mode, group, bound, elements = data
+            self._align_stack.append((mode, group, bound))
+            return "align", (mode, bound, elements)
 
         @self.console_command(
-            "alignmode",
-            help=_("Sets the alignmode for all align-operations"),
-            input_type=None,
-            output_type=None,
+            "pop",
+            help=_("pushes the current align mode to the stack"),
+            input_type="align",
+            output_type="align",
         )
-        def alignmode(
-            command, channel, _, modus=None, boundaries=None, remainder=None, **kwargs
-        ):
-            if modus is None:
-                channel(_("Current alignmode = {mode}").format(mode=self._align_mode))
-                if self._align_boundaries is not None:
-                    channel(
-                        _("Align boundaries = {bound}").format(
-                            bound=str(self._align_boundaries)
-                        )
-                    )
-                return
-            if modus == "push":
-                # Special command just push the current values on the stack
-                self._align_stack.append((self._align_mode, self._align_boundaries))
-                return
-            elif modus == "pop":
-                # Special command just get the last values from the stack
-                if len(self._align_stack) > 0:
-                    self._align_mode, self._align_boundaries = self._align_stack.pop()
-                return
-            elif modus == "default":
-                # Alignment within selection - all equal
-                self._align_mode = modus
-                self._align_boundaries = None
-            elif modus == "first":
-                self._align_mode = modus
-                self._align_boundaries = None
-            elif modus == "last":
-                self._align_mode = modus
-                self._align_boundaries = None
-            elif modus == "bed":
-                self._align_mode = modus
-                device_width = self.length_x("100%")
-                device_height = self.length_y("100%")
-                self._align_boundaries = (0, 0, device_width, device_height)
-            elif modus == "ref":
-                # we need to parse the boundaries
-                if boundaries is None:
-                    channel(
-                        _(
-                            "You need to provide the boundaries for align-mode {mode}"
-                        ).format(mode=modus)
-                    )
-                    return
-
-                self._align_mode = modus
-                self._align_boundaries = boundaries
-            else:
-                s = "default, first, last, bed, ref"
-                channel(
-                    _("Invalid alignment type!")
-                    + "\n"
-                    + _("Needs to be one of {modes}").format(modes=s)
-                )
-                return
+        def alignmode_pop(channel, _, data, **kwargs):
+            """
+            Special command to push the current values on the stack
+            """
+            mode, group, bound, elements = data
+            if len(self._align_stack) > 0:
+                self._align_mode, self._align_group, self._align_boundaries = self._align_stack.pop()
+                mode = self._align_mode
+                group = self._align_group
+                bound = self._align_boundaries
             channel(_("New alignmode = {mode}").format(mode=self._align_mode))
             if self._align_boundaries is not None:
                 channel(
@@ -2769,6 +2722,150 @@ class Elemental(Service):
                         bound=str(self._align_boundaries)
                     )
                 )
+            return "align", (mode, group, bound, elements)
+
+
+        @self.console_command(
+            "group",
+            help=_("Set the requested alignment to treat selection as group"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_first(command, channel, _, data, **kwargs):
+            mode, group, bound, elements = data
+            group = True
+            return "align", (mode, group, bound, elements)
+
+
+        @self.console_command(
+            "individual",
+            help=_("Set the requested alignment to treat selection as individuals"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_first(command, channel, _, data, **kwargs):
+            mode, group, bound, elements = data
+            group = False
+            return "align", (mode, group, bound, elements)
+
+
+        @self.console_command(
+            "default",
+            help=_("align within selection - all equal"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_default(channel, _, data, **kwargs):
+            """
+            Set the alignment mode to default
+            """
+            mode, group, bound, elements = data
+            mode = "default"
+            bound = None
+            self._align_mode = mode
+            self._align_boundaries = bound
+            channel(_("New alignmode = {mode}").format(mode=self._align_mode))
+            if self._align_boundaries is not None:
+                channel(
+                    _("Align boundaries = {bound}").format(
+                        bound=str(self._align_boundaries)
+                    )
+                )
+            return "align", (mode, group, bound, elements)
+
+        @self.console_command(
+            "first",
+            help=_("Set the requested alignment to first element selected"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_first(command, channel, _, data, **kwargs):
+            mode, group, bound, elements = data
+            mode = "first"
+            bound = None
+            self._align_mode = mode
+            self._align_boundaries = bound
+            channel(_("New alignmode = {mode}").format(mode=self._align_mode))
+            if self._align_boundaries is not None:
+                channel(
+                    _("Align boundaries = {bound}").format(
+                        bound=str(self._align_boundaries)
+                    )
+                )
+            return "align", (mode, group, bound, elements)
+
+        @self.console_command(
+            "last",
+            help=_("Set the requested alignment to last element selected"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_last(command, channel, _, data, **kwargs):
+            mode, group, bound, elements = data
+            mode = "last"
+            bound = None
+            self._align_mode = mode
+            self._align_boundaries = bound
+            channel(_("New alignmode = {mode}").format(mode=self._align_mode))
+            if self._align_boundaries is not None:
+                channel(
+                    _("Align boundaries = {bound}").format(
+                        bound=str(self._align_boundaries)
+                    )
+                )
+            return "align", (mode, group, bound, elements)
+
+        @self.console_command(
+            "bed",
+            help=_("Set the requested alignment to within the bed"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_bed(channel, _, data, **kwargs):
+            mode, group, bound, elements = data
+            mode = "bed"
+            device_width = self.length_x("100%")
+            device_height = self.length_y("100%")
+            bound = (0, 0, device_width, device_height)
+            self._align_mode = mode
+            self._align_boundaries = bound
+            channel(_("New alignmode = {mode}").format(mode=self._align_mode))
+            if self._align_boundaries is not None:
+                channel(
+                    _("Align boundaries = {bound}").format(
+                        bound=str(self._align_boundaries)
+                    )
+                )
+            return "align", (mode, group, bound, elements)
+
+        @self.console_option("boundaries", "b", type=self.bounds, parallel_cast=True, nargs=4)
+        @self.console_command(
+            "ref",
+            help=_("Set the requested alignment to the reference object"),
+            input_type="align",
+            output_type="align",
+        )
+        def alignmode_ref(channel, _, data, boundaries, **kwargs):
+            mode, group, bound, elements = data
+            if boundaries is None:
+                channel(
+                    _(
+                        "You need to provide the boundaries for align-mode {mode}"
+                    ).format(mode="ref")
+                )
+                return
+            mode = "ref"
+            bound = boundaries
+            self._align_mode = mode
+            self._align_boundaries = bound
+            channel(_("New alignmode = {mode}").format(mode=self._align_mode))
+            if self._align_boundaries is not None:
+                channel(
+                    _("Align boundaries = {bound}").format(
+                        bound=str(self._align_boundaries)
+                    )
+                )
+            return "align", (mode, group, bound, elements)
 
         @self.console_command(
             "align",
@@ -2776,14 +2873,19 @@ class Elemental(Service):
             input_type=("elements", None),
             output_type="align",
         )
-        def subtype_align_elements(
+        def align_elements_base(
             command, channel, _, data=None, remainder=None, **kwargs
         ):
+            """
+            Base align commands. Triggers other base commands within the command context
+            'align'.
+            """
             if not remainder:
                 channel(
                     "top\nbottom\nleft\nright\ncenter\ncenterh\ncenterv\nspaceh\nspacev\n"
                     "<any valid svg:Preserve Aspect Ratio, eg xminymin>"
                 )
+                # Bunch of other things.
                 return
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -2808,18 +2910,13 @@ class Elemental(Service):
                 if snode is not None and snode not in d:
                     d.append(snode)
             data = d
-            return "align", (self._align_mode, self._align_boundaries, data)
+            return "align", (self._align_mode, self._align_group, self._align_boundaries, data)
 
         @self.console_argument(
             "alignx", type=str, help=_("One of 'min', 'center', 'max', 'none'")
         )
         @self.console_argument(
             "aligny", type=str, help=_("One of 'min', 'center', 'max', 'none'")
-        )
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
         )
         @self.console_command(
             "xy",
@@ -2834,32 +2931,23 @@ class Elemental(Service):
             data=None,
             alignx=None,
             aligny=None,
-            asgroup=None,
             **kwargs,
         ):
-            _align_xy(command, channel, _, data, alignx, aligny, asgroup)
-            return "align", data
+            mode, group, bound, elements = data
+            _align_xy(channel, _, mode, bound, elements, alignx, aligny, group)
+            return "align", (mode, group, bound, elements)
 
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
-        )
         @self.console_command(
             "top",
             help=_("align elements at top"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_top(command, channel, _, data=None, asgroup=None, **kwargs):
-            _align_xy(command, channel, _, data, "none", "min", asgroup)
-            return "align", data
+        def subtype_align_top(command, channel, _, data=None, **kwargs):
+            mode, group, bound, elements = data
+            _align_xy(command, channel, _, data, "none", "min", group)
+            return "align", (mode, group, bound, elements)
 
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
-        )
         @self.console_command(
             "bottom",
             help=_("align elements at bottom"),
@@ -2867,46 +2955,34 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_bottom(
-            command, channel, _, data=None, asgroup=None, **kwargs
+            command, channel, _, data=None, **kwargs
         ):
-            _align_xy(command, channel, _, data, "none", "max", asgroup)
-            return "align", data
+            mode, group, bound, elements = data
+            _align_xy(command, channel, _, data, "none", "max", group)
+            return "align", (mode, group, bound, elements)
 
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
-        )
         @self.console_command(
             "left",
             help=_("align elements at left"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_left(command, channel, _, data=None, asgroup=None, **kwargs):
-            _align_xy(command, channel, _, data, "min", "none", asgroup)
-            return "align", data
+        def subtype_align_left(command, channel, _, data=None, **kwargs):
+            mode, group, bound, elements = data
+            _align_xy(command, channel, _, data, "min", "none", group)
+            return "align", (mode, group, bound, elements)
 
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
-        )
         @self.console_command(
             "right",
             help=_("align elements at right"),
             input_type="align",
             output_type="align",
         )
-        def subtype_align_right(command, channel, _, data=None, asgroup=None, **kwargs):
-            _align_xy(command, channel, _, data, "max", "none", asgroup)
-            return "align", data
+        def subtype_align_right(command, channel, _, data=None, **kwargs):
+            mode, group, bound, elements = data
+            _align_xy(command, channel, _, data, "max", "none", group)
+            return "align", (mode, group, bound, elements)
 
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
-        )
         @self.console_command(
             "center",
             help=_("align elements at center"),
@@ -2914,16 +2990,12 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_center(
-            command, channel, _, data=None, asgroup=None, **kwargs
+            command, channel, _, data=None, **kwargs
         ):
-            _align_xy(command, channel, _, data, "center", "center", asgroup)
-            return "align", data
+            mode, group, bound, elements = data
+            _align_xy(command, channel, _, data, "center", "center", group)
+            return "align", (mode, group, bound, elements)
 
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
-        )
         @self.console_command(
             "centerh",
             help=_("align elements at center horizontally"),
@@ -2931,16 +3003,12 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_centerh(
-            command, channel, _, data=None, asgroup=None, **kwargs
+            command, channel, _, data=None, **kwargs
         ):
-            _align_xy(command, channel, _, data, "center", "none", asgroup)
-            return "align", data
+            mode, group, bound, elements = data
+            _align_xy(command, channel, _, data, "center", "none", group)
+            return "align", (mode, group, bound, elements)
 
-        @self.console_argument(
-            "asgroup",
-            type=int,
-            help=_("Treat selection as group (1) or as single elements (0)"),
-        )
         @self.console_command(
             "centerv",
             help=_("align elements at center verically"),
@@ -2948,10 +3016,11 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_centerv(
-            command, channel, _, data=None, asgroup=None, **kwargs
+            command, channel, _, data=None, **kwargs
         ):
-            _align_xy(command, channel, _, data, "none", "center", asgroup)
-            return "align", data
+            mode, group, bound, elements = data
+            _align_xy(command, channel, _, data, "none", "center", group)
+            return "align", (mode, group, bound, elements)
 
         @self.console_command(
             "spaceh",
@@ -2960,26 +3029,27 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_spaceh(command, channel, _, data=None, **kwargs):
+            mode, group, bound, elements = data
             boundary_points = []
-            for node in data:
+            for node in elements:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
-            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
-                return "align", data
+            if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", (mode, group, bound, elements)
             left_edge = min([e[0] for e in boundary_points])
             right_edge = max([e[2] for e in boundary_points])
             dim_total = right_edge - left_edge
             dim_available = dim_total
-            for node in data:
+            for node in elements:
                 bounds = node.bounds
                 dim_available -= bounds[2] - bounds[0]
-            distributed_distance = dim_available / (len(data) - 1)
-            data.sort(key=lambda n: n.bounds[0])  # sort by left edge
+            distributed_distance = dim_available / (len(elements) - 1)
+            elements.sort(key=lambda n: n.bounds[0])  # sort by left edge
             dim_pos = left_edge
 
             haslock = False
-            for node in data:
+            for node in elements:
                 if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     haslock = True
                     break
@@ -2988,7 +3058,7 @@ class Elemental(Service):
                     _("Your selection contains a locked element, that cannot be moved")
                 )
                 return
-            for node in data:
+            for node in elements:
                 subbox = node.bounds
                 delta = subbox[0] - dim_pos
                 matrix = f"translate({-delta}, 0)"
@@ -3000,7 +3070,7 @@ class Elemental(Service):
                         except AttributeError:
                             continue
                 dim_pos += subbox[2] - subbox[0] + distributed_distance
-            return "align", data
+            return "align", (mode, group, bound, elements)
 
         @self.console_command(
             "spacev",
@@ -3009,26 +3079,27 @@ class Elemental(Service):
             output_type="align",
         )
         def subtype_align_spacev(command, channel, _, data=None, **kwargs):
+            mode, group, bound, elements = data
             boundary_points = []
-            for node in data:
+            for node in elements:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
-            if len(data) <= 2:  # Cannot distribute 2 or fewer items.
-                return "align", data
+            if len(elements) <= 2:  # Cannot distribute 2 or fewer items.
+                return "align", (mode, group, bound, elements)
             top_edge = min([e[1] for e in boundary_points])
             bottom_edge = max([e[3] for e in boundary_points])
             dim_total = bottom_edge - top_edge
             dim_available = dim_total
-            for node in data:
+            for node in elements:
                 bounds = node.bounds
                 dim_available -= bounds[3] - bounds[1]
-            distributed_distance = dim_available / (len(data) - 1)
-            data.sort(key=lambda n: n.bounds[1])  # sort by top edge
+            distributed_distance = dim_available / (len(elements) - 1)
+            elements.sort(key=lambda n: n.bounds[1])  # sort by top edge
             dim_pos = top_edge
 
             haslock = False
-            for node in data:
+            for node in elements:
                 if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     haslock = True
                     break
@@ -3037,7 +3108,7 @@ class Elemental(Service):
                     _("Your selection contains a locked element, that cannot be moved")
                 )
                 return
-            for node in data:
+            for node in elements:
                 subbox = node.bounds
                 delta = subbox[1] - dim_pos
                 matrix = f"translate(0, {-delta})"
@@ -3049,7 +3120,7 @@ class Elemental(Service):
                         except AttributeError:
                             continue
                 dim_pos += subbox[3] - subbox[1] + distributed_distance
-            return "align", data
+            return "align", (mode, group, bound, elements)
 
         @self.console_argument(
             "preserve_aspect_ratio",
@@ -3098,15 +3169,15 @@ class Elemental(Service):
             "xmaxymax slice",
             "none"
             """
-
+            mode, group, bound, elements = data
             boundary_points = []
-            for node in data:
+            for node in elements:
                 boundary_points.append(node.bounds)
             if not len(boundary_points):
                 return
 
             haslock = False
-            for node in data:
+            for node in elements:
                 if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     haslock = True
                     break
@@ -3150,7 +3221,7 @@ class Elemental(Service):
                 "xmaxymax slice",
                 "none",
             ):
-                for node in data:
+                for node in elements:
                     device_width = self.length_x("100%")
                     device_height = self.length_y("100%")
 
@@ -3173,7 +3244,11 @@ class Elemental(Service):
                             continue
                     for q in node.flat(types=("file", "group")):
                         q.modified()
-            return "align", data
+            return "align", (mode, group, bound, elements)
+
+        # ==========
+        # GRID SUBTYPE
+        # ==========
 
         @self.console_argument("c", type=int, help=_("Number of columns"))
         @self.console_argument("r", type=int, help=_("Number of rows"))
