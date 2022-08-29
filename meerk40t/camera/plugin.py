@@ -122,8 +122,8 @@ def plugin(kernel, lifecycle=None):
             data.autonormal = False
             return "camera", data
 
-        @kernel.console_argument("width", "w", type=int, help="force the camera width")
-        @kernel.console_argument("height", "h", type=int, help="force the camera height")
+        @kernel.console_argument("width", type=int, help="force the camera width")
+        @kernel.console_argument("height", type=int, help="force the camera height")
         @kernel.console_command(
             "size",
             help="force set camera size",
