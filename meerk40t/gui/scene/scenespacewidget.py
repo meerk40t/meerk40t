@@ -120,7 +120,7 @@ class SceneSpaceWidget(Widget):
                 )
                 self.scene.request_refresh()
             return RESPONSE_CONSUME
-        elif event_type == "rightdown" and "alt" in modifiers:
+        elif (event_type == "rightdown" and "alt" in modifiers) or (event_type == "middledown" and "ctrl" in modifiers):
             self._previous_zoom = 1.0
             self._placement_event = space_pos
             self._placement_event_type = "zoom"
@@ -151,6 +151,7 @@ class SceneSpaceWidget(Widget):
         elif event_type == "middledown":
             return RESPONSE_CONSUME
         elif event_type == "middleup":
+            self._placement_event_type = None
             return RESPONSE_CONSUME
         elif event_type == "gesture-start":
             self._previous_zoom = 1.0
