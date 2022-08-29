@@ -90,8 +90,8 @@ def plugin(kernel, lifecycle=None):
                     if watch:
                         server.events_channel.watch(console)
 
-                emulator.flip_x = flip_x
-                emulator.flip_y = flip_y
+                emulator.scale_x = flip_x
+                emulator.scale_y = flip_y
                 emulator.home_adjust = (adjust_x, adjust_y)
 
                 ctx.channel("grbl/recv").watch(emulator.write)
