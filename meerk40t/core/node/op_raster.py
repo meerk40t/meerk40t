@@ -6,7 +6,7 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MM, Length
+from meerk40t.core.units import UNITS_PER_MM, Length, UNITS_PER_INCH, MM_PER_INCH
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
@@ -55,7 +55,7 @@ class RasterOpNode(Node, Parameters):
             "elem text",
             "elem image",
         )
-        # To which attributes does the classification color check respond
+        # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
         self.allowed_attributes = [
             "fill",
@@ -250,19 +250,21 @@ class RasterOpNode(Node, Parameters):
 
     def time_estimate(self):
         estimate = 0
-        for node in self.children:
-            if node.type != "elem image":
-                continue
-            step_y = node.step_x
-            step_x = node.step_y
-            estimate += (
-                node.image.width
-                * node.image.height
-                * step_x
-                / UNITS_PER_MM
-                * self.speed
-            )
-            estimate += node.image.height * step_y / UNITS_PER_MM * self.speed
+        dpi = self.dpi
+        min_x, min_y, max_x, max_y = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        width_in_inches = (max_x - min_x) / UNITS_PER_INCH
+        height_in_inches = (max_y - min_y) / UNITS_PER_INCH
+        speed_in_per_s = self.speed / MM_PER_INCH
+        if self.raster_direction in (0, 1, 4):
+            scanlines = height_in_inches * dpi
+            if self.raster_swing:
+                scanlines *= 2
+            estimate += scanlines * width_in_inches / speed_in_per_s + height_in_inches / speed_in_per_s
+        if self.raster_direction in (2, 3, 4):
+            scanlines = width_in_inches * dpi
+            if self.raster_swing:
+                scanlines *= 2
+            estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
         hours, remainder = divmod(estimate, 3600)
