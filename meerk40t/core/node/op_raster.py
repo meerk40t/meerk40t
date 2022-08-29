@@ -57,9 +57,9 @@ class RasterOpNode(Node, Parameters):
         )
         # To which attributes does the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
-        self.allowed_attributes = [
-            "fill",
-        ]  # comma is relevant
+        # An empty set indicates all nodes will be allowed
+        self.allowed_attributes = []
+        # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
 
