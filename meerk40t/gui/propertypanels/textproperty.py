@@ -313,6 +313,8 @@ class TextPropertyPanel(ScrolledPanel):
                     pass
         except AttributeError:
             pass
+        self.text_text.SetFocus()
+        self.text_text.SelectAll()
 
     def __set_properties(self):
 
@@ -657,10 +659,13 @@ class TextPropertyPanel(ScrolledPanel):
         self.update_label()
         self.refresh()
 
-    @signal_listener("textselect")
-    def on_signal_select(self, origin, *args):
-        self.text_text.SelectAll()
-        self.text_text.SetFocus()
+    # @signal_listener("textselect")
+    # def on_signal_select(self, origin, *args):
+    #     try:
+    #         self.text_text.SelectAll()
+    #         self.text_text.SetFocus()
+    #     except RuntimeError:
+    #         pass
 
 class TextProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
