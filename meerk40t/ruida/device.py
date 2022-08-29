@@ -2212,10 +2212,10 @@ class RDLoader:
         yield "RDWorks File", ("rd",), "application/x-rd"
 
     @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
+    def load(kernel, service, pathname, **kwargs):
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            op_branch = elements_modifier.get(type="branch ops")
+            op_branch = service.get(type="branch ops")
             op_branch.add(
                 data=bytearray(f.read()), data_type="ruida", type="blob", name=basename
             )
