@@ -176,6 +176,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera.schedule(self)
         self.camera.listen("camera;fps", self.on_fps_change)
         self.camera.listen("camera;stopped", self.on_camera_stop)
+        self.camera.gui = self
 
     def pane_hide(self, *args):
         self.camera(f"camera{self.index} stop\n")
@@ -185,6 +186,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera.unlisten("camera;fps", self.on_fps_change)
         self.camera.unlisten("camera;stopped", self.on_camera_stop)
         self.camera.signal("camera;stopped", self.index)
+        self.camera.gui = None
 
     def on_camera_stop(self, origin, index):
         if index == self.index:
