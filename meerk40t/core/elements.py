@@ -2628,16 +2628,12 @@ class Elemental(Service):
                 return
             if modus == "push":
                 # Special command just push the current values on the stack
-                entry = (self._align_mode, self._align_boundaries)
-                self._align_stack.append(entry)
+                self._align_stack.append((self._align_mode, self._align_boundaries))
                 return
             elif modus == "pop":
                 # Special command just get the last values from the stack
                 if len(self._align_stack) > 0:
-                    entry = self._align_stack[-1]
-                    self._align_mode = entry[0]
-                    self._align_boundaries = entry[1]
-                    self._align_stack.pop()
+                    self._align_mode, self._align_boundaries = self._align_stack.pop()
                 return
             elif modus == "default":
                 # Alignment within selection - all equal
