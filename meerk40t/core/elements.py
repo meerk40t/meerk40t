@@ -2606,8 +2606,95 @@ class Elemental(Service):
         # ALIGN SUBTYPE
         # Align consist of top level node objects that can be manipulated within the scene.
         # ==========
-        @self.console_argument("modus", type=str)
-        @self.console_option("boundaries", "b", type=self.bounds, parallel_cast=True, nargs=4)
+
+        def _align_xy(
+            command,
+            channel,
+            _,
+            data=None,
+            alignx=None,
+            aligny=None,
+            asgroup=None,
+            **kwargs,
+        ):
+            """
+            This routine prepares the data according to some validation
+            and definitions as defined in alignmode
+
+            @param command:
+            @param channel:
+            @param _:
+            @param data:
+            @param alignx:
+            @param aligny:
+            @param asgroup:
+            @param kwargs:
+            @return:
+            """
+            ## The complete validation stuff...
+            if data is None or len(data) == 0:
+                return
+            if alignx is None or aligny is None:
+                channel(_("You need to provide parameters for both x and y"))
+                return
+            flag = False
+            if asgroup is not None:
+                flag = asgroup != 0
+            # print(f"'{asgroup}, type={type(asgroup).__name__}, result={flag}")
+            individually = not flag
+            alignx = alignx.lower()
+            aligny = aligny.lower()
+            if not alignx in ("min", "max", "center", "none"):
+                channel(_("Invalid alignment parameter for x"))
+                return
+            if not aligny in ("min", "max", "center", "none"):
+                channel(_("Invalid alignment parameter for y"))
+                return
+            # channel(f"Parameters: x={alignx}, y={aligny}, group={asgroup}, indiv={individually}")
+            if self._align_mode == "default":
+                if len(data) < 2:
+                    channel(_("No sense in aligning an element to itself"))
+                    return
+                # boundaries are the selection boundaries,
+                # will be calculated later
+                align_bounds = None
+            elif self._align_mode == "first":
+                if len(data) < 2:
+                    channel(_("No sense in aligning an element to itself"))
+                    return
+                data.sort(key=lambda n: n.emphasized_time)
+                # Is there a noticeable difference?!
+                # If not then we fall back to default
+                if data[0].emphasized_time != data[1].emphasized_time:
+                    align_bounds = data[0].bounds
+                    data.pop(0)
+                else:
+                    align_bounds = None
+            elif self._align_mode == "last":
+                if len(data) < 2:
+                    channel(_("No sense in aligning an element to itself"))
+                    return
+                data.sort(reverse=True, key=lambda n: n.emphasized_time)
+                # Is there a noticeable difference?!
+                # If not then we fall back to default
+                if data[0].emphasized_time != data[1].emphasized_time:
+                    align_bounds = data[0].bounds
+                    data.pop(0)
+                else:
+                    align_bounds = None
+            elif self._align_mode == "bed":
+                align_bounds = self._align_boundaries
+            elif self._align_mode == "ref":
+                align_bounds = self._align_boundaries
+            self.align_elements(
+                data=data,
+                alignbounds=align_bounds,
+                positionx=alignx,
+                positiony=aligny,
+                individually=individually,
+            )
+
+
         @self.console_command(
             "alignmode",
             help=_("Sets the alignmode for all align-operations"),
@@ -2716,82 +2803,7 @@ class Elemental(Service):
                 if snode is not None and snode not in d:
                     d.append(snode)
             data = d
-            return "align", data
-
-        # This routine prepares the data according to some validation
-        # and definitions as defined in alignmode
-        def _align_xy(
-            command,
-            channel,
-            _,
-            data=None,
-            alignx=None,
-            aligny=None,
-            asgroup=None,
-            **kwargs,
-        ):
-            ## The complete validation stuff...
-            if data is None or len(data) == 0:
-                return
-            if alignx is None or aligny is None:
-                channel(_("You need to provide parameters for both x and y"))
-                return
-            flag = False
-            if asgroup is not None:
-                flag = asgroup != 0
-            # print(f"'{asgroup}, type={type(asgroup).__name__}, result={flag}")
-            individually = not flag
-            alignx = alignx.lower()
-            aligny = aligny.lower()
-            if not alignx in ("min", "max", "center", "none"):
-                channel(_("Invalid alignment parameter for x"))
-                return
-            if not aligny in ("min", "max", "center", "none"):
-                channel(_("Invalid alignment parameter for y"))
-                return
-            # channel(f"Parameters: x={alignx}, y={aligny}, group={asgroup}, indiv={individually}")
-            if self._align_mode == "default":
-                if len(data) < 2:
-                    channel(_("No sense in aligning an element to itself"))
-                    return
-                # boundaries are the selection boundaries,
-                # will be calculated later
-                align_bounds = None
-            elif self._align_mode == "first":
-                if len(data) < 2:
-                    channel(_("No sense in aligning an element to itself"))
-                    return
-                data.sort(key=lambda n: n.emphasized_time)
-                # Is there a noticeable difference?!
-                # If not then we fall back to default
-                if data[0].emphasized_time != data[1].emphasized_time:
-                    align_bounds = data[0].bounds
-                    data.pop(0)
-                else:
-                    align_bounds = None
-            elif self._align_mode == "last":
-                if len(data) < 2:
-                    channel(_("No sense in aligning an element to itself"))
-                    return
-                data.sort(reverse=True, key=lambda n: n.emphasized_time)
-                # Is there a noticeable difference?!
-                # If not then we fall back to default
-                if data[0].emphasized_time != data[1].emphasized_time:
-                    align_bounds = data[0].bounds
-                    data.pop(0)
-                else:
-                    align_bounds = None
-            elif self._align_mode == "bed":
-                align_bounds = self._align_boundaries
-            elif self._align_mode == "ref":
-                align_bounds = self._align_boundaries
-            self.align_elements(
-                data=data,
-                alignbounds=align_bounds,
-                positionx=alignx,
-                positiony=aligny,
-                individually=individually,
-            )
+            return "align", (self._align_mode, self._align_boundaries, data)
 
         @self.console_argument(
             "alignx", type=str, help=_("One of 'min', 'center', 'max', 'none'")
