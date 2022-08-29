@@ -79,8 +79,8 @@ class FontHistory(wx.Panel):
                     self,
                     wx.ID_ANY,
                     _("<empty>"),
-                    style=wx.ALIGN_CENTER_HORIZONTAL
-                    | wx.ST_ELLIPSIZE_END
+                    style=wx.ALIGN_CENTER_VERTICAL
+                    # | wx.ST_ELLIPSIZE_END
                     | wx.ST_NO_AUTORESIZE,
                 )
             )
