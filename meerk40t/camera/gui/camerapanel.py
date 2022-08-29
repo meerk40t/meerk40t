@@ -714,10 +714,10 @@ class CameraInterface(MWindow):
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
-        self.Bind(wx.EVT_MENU, self.panel.reset_perspective, id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
         self.Bind(wx.EVT_MENU, self.panel.reset_fisheye, id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
+        self.Bind(wx.EVT_MENU, self.panel.reset_perspective, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
