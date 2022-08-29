@@ -113,10 +113,23 @@ class MeerK40tScenePanel(wx.Panel):
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
         self.Layout()
+        self._keybind_channel = self.context.channel("keybinds")
 
         def charhook(event):
-            self.on_key_down(event)
-            self.on_key_up(event)
+            keyvalue = get_key_name(event)
+
+            if keyvalue is not None and (
+                "right" in keyvalue
+                or "left" in keyvalue
+                or ("up" in keyvalue and "pgup" not in keyvalue and "pageup" not in keyvalue)
+                or ("down" in keyvalue and "pagedown" not in keyvalue)
+                or "tab" in keyvalue
+                or "return" in keyvalue
+            ):
+                if self._keybind_channel:
+                    self._keybind_channel(f"Charhook used for keydown: {keyvalue}")
+                self.on_key_down(event)
+            event.DoAllowNextEvent()
 
         self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -448,7 +461,6 @@ class MeerK40tScenePanel(wx.Panel):
                 break
             self.context.signal("reference")
 
-
         # Establishes commands
         @context.console_argument(
             "target", type=str, help=_("Target (one of primary, secondary, circular")
@@ -753,14 +765,20 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
+        if self._keybind_channel:
+            self._keybind_channel(f"key down: {keyvalue}")
         if self.context.bind.trigger(keyvalue):
-            pass
+            if self._keybind_channel:
+                self._keybind_channel(f"executed")
         event.Skip()
 
-    def on_key_up(self, event):
+    def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
+        if self._keybind_channel:
+            self._keybind_channel(f"key up: {keyvalue}")
         if self.context.bind.untrigger(keyvalue):
-            pass
+            if self._keybind_channel:
+                self._keybind_channel(f"executed")
         event.Skip()
 
 
