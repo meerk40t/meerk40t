@@ -1790,13 +1790,13 @@ class Elemental(Service):
         )
         def makeop(
                 command,
-                remainder,
+                remainder=None,
                 **kwargs,
         ):
-            op = ConsoleOperation(command=remainder)
-
-            self.add_op(op)
-            return "ops", [op]
+            if remainder is not None:
+                op = ConsoleOperation(command=remainder)
+                self.add_op(op)
+                return "ops", [op]
 
         @self.console_argument("dpi", type=int, help=_("raster dpi"))
         @self.console_command("dpi", help=_("dpi <raster-dpi>"), input_type="ops")
