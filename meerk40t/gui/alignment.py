@@ -11,12 +11,14 @@ from meerk40t.svgelements import (
     Move,
     Path,
     Point,
+    Polyline,
     QuadraticBezier,
 )
 
 from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, icons8_arrange_50
 from .mwindow import MWindow
+from ..core.units import Length
 
 _ = wx.GetTranslation
 
@@ -337,11 +339,11 @@ class DistributionPanel(wx.Panel):
 
         self.Layout()
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_dist, self.btn_dist)
-        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_x)
-        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_dist_y)
-        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_sort)
-        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
+        self.btn_dist.Bind(wx.EVT_BUTTON, self.on_button_dist)
+        self.rbox_dist_x.Bind(wx.EVT_RADIOBOX, self.validate_data)
+        self.rbox_dist_y.Bind(wx.EVT_RADIOBOX, self.validate_data)
+        self.rbox_sort.Bind(wx.EVT_RADIOBOX, self.validate_data)
+        self.rbox_treatment.Bind(wx.EVT_RADIOBOX, self.validate_data )
         self.restore_setting()
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
@@ -368,6 +370,13 @@ class DistributionPanel(wx.Panel):
             ymode = self.xy_param[idx]
             idx = max(0, self.rbox_sort.GetSelection())
             esort = self.sort_param[idx]
+
+            # Have we just selected the treatment? Then set something useful
+            if obj == self.rbox_treatment and xmode == "none" and ymode == "none":
+                self.rbox_dist_x.SetSelection(2)
+                self.rbox_dist_y.SetSelection(2)
+                xmode = "center"
+                ymode = "center"
             if treat == "default" and self.count < 3:
                 active = False
             elif treat in ("shape", "points") and self.count < 3:
@@ -378,24 +387,6 @@ class DistributionPanel(wx.Panel):
                 active = False
             if self.last_node is None and esort == "last":
                 active = False
-            # if self.scene.reference_object is None and mode=="ref":
-            #     active = False
-            if esort == "first" and self.first_node is not None and treat == "points":
-                if not self.first_node.type in (
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                    "elem path",
-                ):
-                    active = False
-            if esort == "last" and self.last_node is not None and treat == "points":
-                if not self.last_node.type in (
-                    "elem rect",
-                    "elem line",
-                    "elem polyline",
-                    "elem path",
-                ):
-                    active = False
         else:
             active = False
         if treat in ("points", "shape"):
@@ -403,13 +394,9 @@ class DistributionPanel(wx.Panel):
             self.check_inside_xy.SetValue(False)
         else:
             self.check_inside_xy.Enable(True)
-        # Have we just selected the treatment? Then set something useful
-        if obj == self.rbox_treatment and xmode == "none" and ymode == "none":
-            self.rbox_dist_x.SetSelection(2)
-            self.rbox_dist_y.SetSelection(2)
 
-        self.btn_dist.Enable(active)
         self.disable_wip()
+        self.btn_dist.Enable(active)
 
     def calculate_basis(self, data, target, treatment):
         def calc_basic():
@@ -577,8 +564,8 @@ class DistributionPanel(wx.Panel):
         elif treatment == "bed":
             left_edge = 0
             top_edge = 0
-            right_edge = self.context.device.width
-            bottom_edge = self.context.device.height
+            right_edge = float(Length(self.context.device.width))
+            bottom_edge = float(Length(self.context.device.height))
             calc_basic()
         elif treatment == "ref":
             left_edge = self.scene.reference_object.bounds[0]
@@ -589,40 +576,48 @@ class DistributionPanel(wx.Panel):
         elif treatment == "points":
             # So what's the reference node? And delete it...
             refnode = data[0]
+            if hasattr(refnode, "as_path"):
+                path = refnode.as_path()
+            elif hasattr(refnode, "bounds"):
+                points = [
+                    [refnode.bounds[0], refnode.bounds[1]],
+                    [refnode.bounds[2], refnode.bounds[1]],
+                    [refnode.bounds[2], refnode.bounds[3]],
+                    [refnode.bounds[0], refnode.bounds[3]],
+                    [refnode.bounds[0], refnode.bounds[1]],
+                ]
+                path = abs(Path(Polyline(points)))
+            else:
+                # has no path
+                wx.Bell()
+                return
             data.pop(0)
-            path = refnode.as_path()
             calc_points()
         elif treatment == "shape":
             # So what's the reference node? And delete it...
             refnode = data[0]
+            if hasattr(refnode, "as_path"):
+                path = refnode.as_path()
+            elif hasattr(refnode, "bounds"):
+                points = [
+                    [refnode.bounds[0], refnode.bounds[1]],
+                    [refnode.bounds[2], refnode.bounds[1]],
+                    [refnode.bounds[2], refnode.bounds[3]],
+                    [refnode.bounds[0], refnode.bounds[3]],
+                    [refnode.bounds[0], refnode.bounds[1]],
+                ]
+                path = abs(Path(Polyline(points)))
+            else:
+                # has no path
+                wx.Bell()
+                return
             data.pop(0)
-            path = refnode.as_path()
             calc_path()
 
     def prepare_data(self, data, esort):
         xdata = list(self.context.elements.elems(emphasized=True))
-
-        # Element conversion.
-        # We need to establish, if for a given node within a group
-        # all its siblings are selected as well.
-        # If that's the case then use the parent instead
-        d = list()
-        elem_branch = self.context.elements.elem_branch
-        for node in xdata:
-            snode = node
-            if snode.parent and snode.parent is not elem_branch:
-                # I need all other siblings
-                singular = False
-                for n in list(node.parent.children):
-                    if n not in xdata:
-                        singular = True
-                        break
-                if not singular:
-                    while snode.parent and snode.parent is not elem_branch:
-                        snode = snode.parent
-            if snode is not None and snode not in d:
-                d.append(snode)
-        for n in d:
+        data.clear()
+        for n in xdata:
             data.append(n)
         if esort == "first":
             data.sort(key=lambda n: n.emphasized_time)
