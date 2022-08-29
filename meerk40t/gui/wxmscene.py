@@ -132,8 +132,9 @@ class MeerK40tScenePanel(wx.Panel):
                 if self._keybind_channel:
                     self._keybind_channel(f"Charhook used for keydown: {keyvalue}")
                 self.on_key_down(event)
-            event.Skip()
-            # event.DoAllowNextEvent()
+                event.Skip()
+            else:
+                event.DoAllowNextEvent()
         self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
