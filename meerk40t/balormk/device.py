@@ -624,7 +624,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "scale_x",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
                 "label": _("X-Axis"),
                 "tip": _("Scale the X axis"),
@@ -634,7 +634,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "scale_y",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
                 "label": _("Y-Axis"),
                 "tip": _("Scale the Y axis"),
