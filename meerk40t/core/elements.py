@@ -2663,24 +2663,9 @@ class Elemental(Service):
                         ).format(mode=modus)
                     )
                     return
-                # try:
-                if len(boundaries) >= 4:
-                    abounds = (
-                        self.length_x(boundaries[0]),
-                        self.length_y(boundaries[1]),
-                        self.length_x(boundaries[2]),
-                        self.length_y(boundaries[3]),
-                    )
-                else:
-                    channel(
-                        _(
-                            "You need to provide the boundaries for align-mode {mode}"
-                        ).format(mode=modus)
-                    )
-                    return
 
                 self._align_mode = modus
-                self._align_boundaries = abounds
+                self._align_boundaries = boundaries
             else:
                 s = "default, first, last, bed, ref"
                 channel(
