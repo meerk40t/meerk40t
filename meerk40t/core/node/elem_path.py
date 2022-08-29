@@ -21,6 +21,7 @@ class PathNode(Node):
         linecap=None,
         linejoin=None,
         fillrule=None,
+        label=None,
         settings=None,
         **kwargs,
     ):
@@ -43,6 +44,7 @@ class PathNode(Node):
         self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
+        self.label = label
         self.lock = False
 
     def __copy__(self):

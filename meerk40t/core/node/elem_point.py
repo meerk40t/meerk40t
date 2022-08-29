@@ -16,6 +16,7 @@ class PointNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        label=None,
         settings=None,
         **kwargs,
     ):
@@ -30,6 +31,7 @@ class PointNode(Node):
         self.fill = fill
         self.stroke = stroke
         self.stroke_width = stroke_width
+        self.label = label
         self.lock = False
 
     def __copy__(self):

@@ -1094,6 +1094,8 @@ class ShadowTree:
                     if hasattr(node, "dangerous"):
                         node.dangerous = danger
             label = node.create_label(formatter)
+            if node.type.startswith("elem"):
+                print (f"{node.type} (lbl={node.label}) is set to {label}, formatter was: {str(formatter)}")
 
         self.wxtree.SetItemText(node.item, label)
         try:
