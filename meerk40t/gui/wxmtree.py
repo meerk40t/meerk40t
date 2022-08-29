@@ -826,8 +826,12 @@ class ShadowTree:
         tree.SetItemData(node.item, node)
         self.update_decorations(node)
         wxcolor = self.wxtree.GetForegroundColour()
-        if hasattr(node, "stroke"):
-            wxcolor = self.safe_color(node.stroke)
+        if node.type == "elem text":
+            attribute_to_try = "fill"
+        else:
+            attribute_to_try = "stroke"
+        if hasattr(node, attribute_to_try):
+            wxcolor = self.safe_color(getattr(node, attribute_to_try))
         elif hasattr(node, "color"):
             wxcolor = self.safe_color(node.color)
         else:
@@ -1094,20 +1098,34 @@ class ShadowTree:
                     if hasattr(node, "dangerous"):
                         node.dangerous = danger
             label = node.create_label(formatter)
-            if node.type.startswith("elem"):
-                print (f"{node.type} (lbl={node.label}) is set to {label}, formatter was: {str(formatter)}")
 
         self.wxtree.SetItemText(node.item, label)
-        try:
-            wxcolor = self.safe_color(node.stroke)
-            self.wxtree.SetItemTextColour(node.item, wxcolor)
-        except AttributeError:
-            pass
-        try:
+        if node.type == "elem text":
+            attribute_to_try = "fill"
+        else:
+            attribute_to_try = "stroke"
+        wxcolor = None
+        if hasattr(node, attribute_to_try):
+            wxcolor = self.safe_color(getattr(node, attribute_to_try))
+        elif hasattr(node, "color"):
             wxcolor = self.safe_color(node.color)
+        else:
+            back_color = self.wxtree.GetBackgroundColour()
+            rgb = back_color.Get()
+            background = Color(rgb[0], rgb[1], rgb[2])
+            if background is not None:
+                c1 = Color("Black")
+                c2 = Color("White")
+                if Color.distance(background, c1) > Color.distance(background, c2):
+                    textcolor = c1
+                else:
+                    textcolor = c2
+                wxcolor = wx.Colour(swizzlecolor(textcolor))
+        try:
             self.wxtree.SetItemTextColour(node.item, wxcolor)
-        except AttributeError:
+        except (AttributeError, KeyError, TypeError):
             pass
+
         # Has the node a lock attribute?
         if hasattr(node, "lock"):
             lockit = node.lock
