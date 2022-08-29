@@ -121,6 +121,8 @@ class CameraPanel(wx.Panel, Job):
             self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
             self.button_detect.SetSize(self.button_detect.GetBestSize())
             self.slider_fps.SetToolTip(_("Set the camera frames per second"))
+            self.check_fisheye.SetToolTip(_("Corrects Fisheye lensing, must be trained with checkerboard image."))
+            self.check_perspective.SetToolTip(_("The four marker locations (in scene when unchecked) are transformed into corners of a regular square shape."))
             sizer_controls = wx.BoxSizer(wx.HORIZONTAL)
             sizer_checkboxes = wx.BoxSizer(wx.VERTICAL)
             sizer_controls.Add(self.button_update, 0, 0, 0)
