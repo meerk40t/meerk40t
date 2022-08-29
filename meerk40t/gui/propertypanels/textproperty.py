@@ -10,6 +10,7 @@ from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel
+from ...kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -149,7 +150,7 @@ class TextVariables(wx.Panel):
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
         sizer_h_variables = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Available Variables")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Available Variables (double click to use)")), wx.HORIZONTAL
         )
         sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_h_variables)
@@ -619,7 +620,7 @@ class TextPropertyPanel(ScrolledPanel):
         event.Skip()
 
     def on_text_enter(self, event):  # wxGlade: TextProperty.<event_handler>
-        self.panel_history.store_font_history(self.text_text.wxfont)
+        self.panel_history.store_font_history(self.node.wxfont)
         event.Skip()
 
     def on_button_choose_font(self, event):  # wxGlade: TextProperty.<event_handler>
@@ -656,6 +657,10 @@ class TextPropertyPanel(ScrolledPanel):
         self.update_label()
         self.refresh()
 
+    @signal_listener("textselect")
+    def on_signal_select(self, origin, *args):
+        self.text_text.SelectAll()
+        self.text_text.SetFocus()
 
 class TextProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
