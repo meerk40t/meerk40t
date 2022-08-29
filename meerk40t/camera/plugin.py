@@ -80,6 +80,70 @@ def plugin(kernel, lifecycle=None):
                 cam.set_uri(uri)
             return "camera", cam
 
+        @kernel.console_argument("uri", type=str)
+        @kernel.console_command(
+            "uri",
+            help="Set camera uri",
+            output_type="camera",
+            input_type="camera"
+        )
+        def camera_contrast(
+            data=None,
+            uri=None,
+            **kwargs,
+        ):
+            if uri is not None:
+                data.set_uri(uri)
+            return "camera", data
+
+        @kernel.console_command(
+            "contrast",
+            help="Turn on AutoContrast",
+            output_type="camera",
+            input_type="camera"
+        )
+        def camera_contrast(
+            data=None,
+            **kwargs,
+        ):
+            data.autonormal = True
+            return "camera", data
+
+        @kernel.console_command(
+            "nocontrast",
+            help="Turn off AutoContrast",
+            output_type="camera",
+            input_type="camera"
+        )
+        def camera_no_contrast(
+            data=None,
+            **kwargs,
+        ):
+            data.autonormal = False
+            return "camera", data
+
+        @kernel.console_argument("width", "w", type=int, help="force the camera width")
+        @kernel.console_argument("height", "h", type=int, help="force the camera height")
+        @kernel.console_command(
+            "size",
+            help="force set camera size",
+            output_type="camera",
+            input_type="camera"
+        )
+        def camera_size(
+            data=None,
+            width=None,
+            height=None,
+            **kwargs,
+        ):
+            if width is not None:
+                cam = data
+                if width:
+                    cam.width = width
+                if height:
+                    cam.height = height
+                return "camera", cam
+
         @kernel.console_option(
             "tries", "t", type=int, default=10, help="Attempts to recover connection"
         )
