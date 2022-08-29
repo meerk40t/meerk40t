@@ -246,7 +246,10 @@ def console_command(
                 key = k["name"]
                 current = kwargs.get(key)
                 if "type" in k and isinstance(current, list):
-                    kwargs[key] = k["type"](*current)
+                    try:
+                        kwargs[key] = k["type"](*current)
+                    except TypeError:
+                        raise CommandSyntaxError(f"Not enough values given for {key}.")
 
             # Any singleton list arguments should become their only element, unless nargs is set.
             for k in stack:
