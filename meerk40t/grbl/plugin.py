@@ -11,17 +11,15 @@ def plugin(kernel, lifecycle=None):
             print("GRBL plugin could not load because pyserial is not installed.")
             return True
     elif lifecycle == "register":
-        from .device import GCodeLoader, GRBLDevice, GRBLDriver
+        from .device import GCodeLoader, GRBLDevice, GRBLDriver, GRBLEmulator
 
         kernel.register("provider/device/grbl", GRBLDevice)
 
         _ = kernel.translation
         kernel.register("driver/grbl", GRBLDriver)
+        kernel.register("emulator/grbl", GRBLEmulator)
         kernel.register("load/GCodeLoader", GCodeLoader)
 
-        @kernel.console_option(
-            "grbl", type=int, help=_("run grbl-emulator on given port.")
-        )
         @kernel.console_option(
             "flip_x", "X", type=bool, action="store_true", help=_("grbl x-flip")
         )
@@ -38,14 +36,11 @@ def plugin(kernel, lifecycle=None):
             "port", "p", type=int, default=23, help=_("port to listen on.")
         )
         @kernel.console_option(
-            "silent",
-            "s",
+            "verbose",
+            "v",
             type=bool,
             action="store_true",
             help=_("do not watch server channels"),
-        )
-        @kernel.console_option(
-            "watch", "w", type=bool, action="store_true", help=_("watch send/recv data")
         )
         @kernel.console_option(
             "quit",
@@ -54,53 +49,58 @@ def plugin(kernel, lifecycle=None):
             action="store_true",
             help=_("shutdown current grblserver"),
         )
-        @kernel.console_command("grblserver", help=_("activate the grblserver."))
+        @kernel.console_command(("grblcontrol", "grbldesign", "grblemulator"), help=_("activate the grblserver."))
         def grblserver(
             command,
             channel,
             _,
             port=23,
-            path=None,
             flip_x=False,
             flip_y=False,
             adjust_x=0,
             adjust_y=0,
-            silent=False,
+            verbose=False,
             watch=False,
             quit=False,
             **kwargs,
         ):
-            ctx = kernel.get_context(path if path is not None else "/")
-            if ctx is None:
-                return
-            _ = kernel.translation
-            try:
-                server = ctx.open_as("module/TCPServer", "grbl", port=port)
-                emulator = ctx.open("emulator/grbl")
-                if quit:
-                    ctx.close("grbl")
-                    ctx.close("emulator/grbl")
-                    return
-                ctx.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r"
-                channel(_("GRBL Mode."))
-                if not silent:
-                    console = kernel.channel("console")
-                    ctx.channel("grbl").watch(console)
-                    server.events_channel.watch(console)
-                    if watch:
-                        server.events_channel.watch(console)
 
-                emulator.scale_x = flip_x
-                emulator.scale_y = flip_y
+            root = kernel.root
+            try:
+                server = root.open_as("module/TCPServer", "grbl", port=port)
+                emulator = root.open("emulator/grbl")
+                if quit:
+                    root.close("grbl")
+                    root.close("emulator/grbl")
+                    return
+                root.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r"
+                channel(_("GRBL Mode."))
+                if verbose:
+                    console = kernel.channel("console")
+                    root.channel("grbl").watch(console)
+                    server.events_channel.watch(console)
+
+                emulator.scale_x = -1.0 if flip_x else 1.0
+                emulator.scale_y = -1.0 if flip_y else 1.0
                 emulator.home_adjust = (adjust_x, adjust_y)
 
-                ctx.channel("grbl/recv").watch(emulator.write)
-                emulator.recv = ctx.channel("grbl/send")
+                # Link emulator and server.
+                root.channel("grbl/recv").watch(emulator.write)
+                emulator.recv = root.channel("grbl/send")
+
                 channel(
                     _("TCP Server for GRBL Emulator on port: {port}").format(port=port)
                 )
-            except OSError:
+
+                if command == "grbldesign":
+                    emulator.design = True
+                elif command == "grblcontrol":
+                    emulator.control = True
+                elif command == "grblemulator":
+                    pass
+            except OSError as e:
                 channel(_("Server failed on port: {port}").format(port=port))
+                channel(str(e.strerror))
             return
 
     elif lifecycle == "preboot":
