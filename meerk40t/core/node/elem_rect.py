@@ -24,6 +24,7 @@ class RectNode(Node):
         stroke_scale=None,
         linejoin=None,
         fillrule=None,
+        label=None,
         settings=None,
         **kwargs,
     ):
@@ -45,6 +46,7 @@ class RectNode(Node):
         )
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
+        self.label = label
         self.lock = False
 
     def __repr__(self):

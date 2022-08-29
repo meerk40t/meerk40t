@@ -57,9 +57,9 @@ class RasterOpNode(Node, Parameters):
         )
         # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
-        self.allowed_attributes = [
-            "fill",
-        ]  # comma is relevant
+        # An empty set indicates all nodes will be allowed
+        self.allowed_attributes = []
+        # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
 
@@ -134,38 +134,47 @@ class RasterOpNode(Node, Parameters):
         return default_map
 
     def drop(self, drag_node, modify=True):
+        count = 0
+        existing = 0
+        result = False
         if drag_node.type.startswith("elem"):
+            existing += 1
             # if drag_node.type == "elem image":
             #     return False
             # Dragging element onto operation adds that element to the op.
             if modify:
+                count +=1
                 self.add_reference(drag_node, pos=0)
-            return True
+            result = True
         elif drag_node.type == "reference":
             # # Disallow drop of image refelems onto a Dot op.
             # if drag_node.type == "elem image":
             #     return False
             # Move a refelem to end of op.
+            existing += 1
             if modify:
+                count +=1
                 self.append_child(drag_node)
-            return True
+            result = True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
             if modify:
                 self.insert_sibling(drag_node)
-            return True
+            result = True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
-            for e in drag_node.flat("elem"):
+            for e in drag_node.flat(types=elem_nodes):
+                existing += 1
                 # Disallow drop of image elems onto a Dot op.
                 # if drag_node.type == "elem image":
                 #     continue
                 # Add element to operation
                 if modify:
+                    count +=1
                     self.add_reference(e)
                 some_nodes = True
-            return some_nodes
-        return False
+            result = some_nodes
+        return result
 
     def has_color_attribute(self, attribute):
         return attribute in self.allowed_attributes
@@ -312,9 +321,13 @@ class RasterOpNode(Node, Parameters):
             step_y = self.raster_step_y
             bounds = self.bounds
             img_mx = Matrix.scale(step_x, step_y)
+            data = list(self.flat())
+            reverse = context.elements.classify_reverse
+            if reverse:
+                data = list(reversed(data))
             try:
                 image = make_raster(
-                    list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
+                    data, bounds=bounds, step_x=step_x, step_y=step_y
                 )
                 if step_x > 0:
                     img_mx.post_translate(bounds[0], 0)

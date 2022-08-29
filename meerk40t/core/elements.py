@@ -2885,7 +2885,6 @@ class Elemental(Service):
                 return
             if data is None:
                 data = list(self.elems(emphasized=True))
-
             # Element conversion.
             # We need to establish, if for a given node within a group all it's siblings are selected as well,
             # if that's the case then use the parent instead
@@ -2901,7 +2900,7 @@ class Elemental(Service):
                             singular = True
                             break
                     if not singular:
-                        while snode.parent and snode.parent is not elem_branch:
+                        while snode.parent and snode.parent is not elem_branch and snode.parent.type != "file":
                             snode = snode.parent
                 if snode is not None and snode not in d:
                     d.append(snode)

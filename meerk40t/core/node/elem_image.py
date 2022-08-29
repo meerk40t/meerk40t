@@ -31,6 +31,7 @@ class ImageNode(Node):
         green=None,
         blue=None,
         lightness=None,
+        label=None,
         settings=None,
         **kwargs,
     ):
@@ -73,6 +74,7 @@ class ImageNode(Node):
         self.dpi = dpi
         self.step_x = None
         self.step_y = None
+        self.label = label
         self.lock = False
 
         self.invert = False if invert is None else invert

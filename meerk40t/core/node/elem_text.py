@@ -56,6 +56,7 @@ class TextNode(Node):
         descent=None,
         leading=None,
         path=None,
+        label=None,
         settings=None,
         **kwargs,
     ):
@@ -103,6 +104,7 @@ class TextNode(Node):
         self.descent = descent
         self.leading = leading
         self.path = path
+        self.label = label
         self.lock = False
 
     def __copy__(self):
