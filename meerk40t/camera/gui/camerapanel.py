@@ -118,8 +118,14 @@ class CameraPanel(wx.Panel, Job):
             self.button_export.SetSize(self.button_export.GetBestSize())
             self.button_reconnect.SetToolTip(_("Reconnect Camera"))
             self.button_reconnect.SetSize(self.button_reconnect.GetBestSize())
-            self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
+            self.button_detect.SetToolTip(_("Detect Distortions/Calibration\n"
+                                            "You need to print a 9x6 checkerboard pattern from OpenCV\n"
+                                            "It should be flat and visible in the camera."))
             self.button_detect.SetSize(self.button_detect.GetBestSize())
+            self.slider_fps.SetToolTip(_("Set the camera frames per second"))
+            self.check_fisheye.SetToolTip(_("Corrects Fisheye lensing, must be trained with checkerboard image."))
+            self.check_perspective.SetToolTip(_("The four marker locations (in scene when unchecked) are transformed into corners of a regular square shape."))
+
             sizer_controls = wx.BoxSizer(wx.HORIZONTAL)
             sizer_checkboxes = wx.BoxSizer(wx.VERTICAL)
             sizer_controls.Add(self.button_update, 0, 0, 0)
@@ -176,6 +182,8 @@ class CameraPanel(wx.Panel, Job):
         self.camera.schedule(self)
         self.camera.listen("camera;fps", self.on_fps_change)
         self.camera.listen("camera;stopped", self.on_camera_stop)
+        self.camera.gui = self
+        self.camera("camera focus -5% -5% 105% 105%\n")
 
     def pane_hide(self, *args):
         self.camera(f"camera{self.index} stop\n")
@@ -185,6 +193,7 @@ class CameraPanel(wx.Panel, Job):
         self.camera.unlisten("camera;fps", self.on_fps_change)
         self.camera.unlisten("camera;stopped", self.on_camera_stop)
         self.camera.signal("camera;stopped", self.index)
+        self.camera.gui = None
 
     def on_camera_stop(self, origin, index):
         if index == self.index:
@@ -708,10 +717,10 @@ class CameraInterface(MWindow):
 
     def create_menu(self, append):
         wxglade_tmp_menu = wx.Menu()
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
-        self.Bind(wx.EVT_MENU, self.panel.reset_perspective, id=item.GetId())
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Fisheye"), "")
         self.Bind(wx.EVT_MENU, self.panel.reset_fisheye, id=item.GetId())
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Reset Perspective"), "")
+        self.Bind(wx.EVT_MENU, self.panel.reset_perspective, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
         item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")

@@ -1,3 +1,4 @@
+import platform
 import random
 
 import wx
@@ -115,23 +116,25 @@ class MeerK40tScenePanel(wx.Panel):
         self.Layout()
         self._keybind_channel = self.context.channel("keybinds")
 
-        def charhook(event):
-            keyvalue = get_key_name(event)
+        if platform.system() == "Windows":
+            def charhook(event):
+                keyvalue = get_key_name(event)
 
-            if keyvalue is not None and (
-                "right" in keyvalue
-                or "left" in keyvalue
-                or ("up" in keyvalue and "pgup" not in keyvalue and "pageup" not in keyvalue)
-                or ("down" in keyvalue and "pagedown" not in keyvalue)
-                or "tab" in keyvalue
-                or "return" in keyvalue
-            ):
-                if self._keybind_channel:
-                    self._keybind_channel(f"Charhook used for keydown: {keyvalue}")
-                self.on_key_down(event)
-            event.DoAllowNextEvent()
-
-        self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
+                if keyvalue is not None and (
+                        "right" in keyvalue
+                        or "left" in keyvalue
+                        or ("up" in keyvalue and "pgup" not in keyvalue and "pageup" not in keyvalue)
+                        or ("down" in keyvalue and "pagedown" not in keyvalue)
+                        or "tab" in keyvalue
+                        or "return" in keyvalue
+                ):
+                    if self._keybind_channel:
+                        self._keybind_channel(f"Charhook used for keydown: {keyvalue}")
+                    self.on_key_down(event)
+                    event.Skip()
+                else:
+                    event.DoAllowNextEvent()
+            self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)

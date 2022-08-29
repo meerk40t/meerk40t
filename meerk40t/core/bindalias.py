@@ -210,7 +210,7 @@ DEFAULT_ALIAS = {
     "-rotate_cw": (".timerrotate_cw off",),
     "-rotate_ccw": (".timerrotate_ccw off",),
     "-translate_right": (".timertranslate_right off",),
-    "-translate_left": (".timertranslate_right off",),
+    "-translate_left": (".timertranslate_left off",),
     "-translate_down": (".timertranslate_down off",),
     "-translate_up": (".timertranslate_up off",),
     "-right": (".timerright off",),
