@@ -711,12 +711,17 @@ class Elemental(Service):
         return this_area, this_length
 
     def align_elements(self, data, alignbounds, positionx, positiony, individually):
-        ## data       : elements to align
-        ## alignbounds: boundary tuple (left, top, right, bottom)
-        ##              to which data needs to be aligned to
-        ## position   : one of "min", "max", "center"
-        ## indivdually: True, align every element of data to the edge
-        ##              False, align the group in total
+        """
+
+        @param data: elements to align
+        @param alignbounds: boundary tuple (left, top, right, bottom)
+                            to which data needs to be aligned to
+        @param positionx: one of "min", "max", "center"
+        @param positiony: one of "min", "max", "center"
+        @param individually: True, align every element of data to the edge
+                                False, align the group in total
+        @return:
+        """
         def calc_dx_dy():
             dx = 0
             dy = 0
