@@ -120,6 +120,7 @@ class CameraPanel(wx.Panel, Job):
             self.button_reconnect.SetSize(self.button_reconnect.GetBestSize())
             self.button_detect.SetToolTip(_("Detect Distortions/Calibration"))
             self.button_detect.SetSize(self.button_detect.GetBestSize())
+            self.slider_fps.SetToolTip(_("Set the camera frames per second"))
             sizer_controls = wx.BoxSizer(wx.HORIZONTAL)
             sizer_checkboxes = wx.BoxSizer(wx.VERTICAL)
             sizer_controls.Add(self.button_update, 0, 0, 0)
