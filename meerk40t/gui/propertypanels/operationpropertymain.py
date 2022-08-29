@@ -668,17 +668,11 @@ class InfoPanel(wx.Panel):
         pass
 
     def on_button_calculate(self, event):
-        try:
-            timestr = self.operation.time_estimate()
-        except:
-            timestr = "---"
-        self.text_time.SetValue(timestr)
+        self.text_time.SetValue(self.operation.time_estimate())
 
     def refresh_display(self):
-        timestr = "---"
         childs = len(self.operation.children)
-
-        self.text_time.SetValue(timestr)
+        self.text_time.SetValue("---")
         self.text_children.SetValue(str(childs))
 
     def accepts(self, node):
