@@ -166,6 +166,11 @@ class ImageOpNode(Node, Parameters):
             self.add_node(copy(node.node))
 
     def time_estimate(self):
+        """
+        The scanlines would equal "(e.height * 1000) / dpi" but our images are pre-actualized.
+
+        @return:
+        """
         estimate = 0
         for node in self.children:
             if node.type == "reference":
@@ -180,12 +185,12 @@ class ImageOpNode(Node, Parameters):
             height_in_inches = (max_y - min_y) / UNITS_PER_INCH
             speed_in_per_s = self.speed / MM_PER_INCH
             if self.raster_direction in (0, 1, 4):
-                scanlines = (e.height * dpi) / 1000
+                scanlines = height_in_inches * dpi
                 if self.raster_swing:
                     scanlines *= 2
                 estimate += scanlines * width_in_inches / speed_in_per_s + height_in_inches / speed_in_per_s
             if self.raster_direction in (2, 3, 4):
-                scanlines = (e.width * dpi) / 1000
+                scanlines = width_in_inches * dpi
                 if self.raster_swing:
                     scanlines *= 2
                 estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s

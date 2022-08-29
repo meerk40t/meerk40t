@@ -679,7 +679,7 @@ class Node:
             for ref in list(self._children):
                 node._children.append(ref)
                 ref._parent = node
-                # Dont call attach / detach, as the tree
+                # Don't call attach / detach, as the tree
                 # doesn't know about the new node yet...
         self.item = None
         self._parent = None
