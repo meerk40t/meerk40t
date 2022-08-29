@@ -723,6 +723,7 @@ class Elemental(Service):
                                 False, align the group in total
         @return:
         """
+
         def calc_dx_dy():
             dx = 0
             dy = 0
@@ -1729,15 +1730,11 @@ class Elemental(Service):
             "time",
             type=float,
             default=5,
-            help=_(
-                "Time for the given wait operation."
-            ),
+            help=_("Time for the given wait operation."),
         )
         @self.console_command(
             "waitop",
-            help=_(
-                "<waitop> - Create new utility operation"
-            ),
+            help=_("<waitop> - Create new utility operation"),
             input_type=None,
             output_type="ops",
         )
@@ -1754,23 +1751,17 @@ class Elemental(Service):
             "mask",
             type=int,
             default=0,
-            help=_(
-                "binary input/output mask"
-            ),
+            help=_("binary input/output mask"),
         )
         @self.console_argument(
             "value",
             type=int,
             default=0,
-            help=_(
-                "binary input/output value"
-            ),
+            help=_("binary input/output value"),
         )
         @self.console_command(
             ("outputop", "inputop"),
-            help=_(
-                "<outputop, inputop> - Create new utility operation"
-            ),
+            help=_("<outputop, inputop> - Create new utility operation"),
             input_type=None,
             output_type="ops",
         )
@@ -1790,14 +1781,12 @@ class Elemental(Service):
 
         @self.console_command(
             "consoleop",
-            help=_(
-                "<consoleop> - Create new utility operation"
-            ),
+            help=_("<consoleop> - Create new utility operation"),
         )
         def makeop(
-                command,
-                remainder,
-                **kwargs,
+            command,
+            remainder,
+            **kwargs,
         ):
             op = ConsoleOperation(command=remainder)
 
@@ -2689,9 +2678,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def alignmode_push(
-            channel, _, data, **kwargs
-        ):
+        def alignmode_push(channel, _, data, **kwargs):
             """
             Special command to push the current values on the stack
             """
@@ -2711,7 +2698,11 @@ class Elemental(Service):
             """
             mode, group, bound, elements = data
             if len(self._align_stack) > 0:
-                self._align_mode, self._align_group, self._align_boundaries = self._align_stack.pop()
+                (
+                    self._align_mode,
+                    self._align_group,
+                    self._align_boundaries,
+                ) = self._align_stack.pop()
                 mode = self._align_mode
                 group = self._align_group
                 bound = self._align_boundaries
@@ -2724,7 +2715,6 @@ class Elemental(Service):
                 )
             return "align", (mode, group, bound, elements)
 
-
         @self.console_command(
             "group",
             help=_("Set the requested alignment to treat selection as group"),
@@ -2736,7 +2726,6 @@ class Elemental(Service):
             group = True
             return "align", (mode, group, bound, elements)
 
-
         @self.console_command(
             "individual",
             help=_("Set the requested alignment to treat selection as individuals"),
@@ -2747,7 +2736,6 @@ class Elemental(Service):
             mode, group, bound, elements = data
             group = False
             return "align", (mode, group, bound, elements)
-
 
         @self.console_command(
             "default",
@@ -2838,7 +2826,9 @@ class Elemental(Service):
                 )
             return "align", (mode, group, bound, elements)
 
-        @self.console_option("boundaries", "b", type=self.bounds, parallel_cast=True, nargs=4)
+        @self.console_option(
+            "boundaries", "b", type=self.bounds, parallel_cast=True, nargs=4
+        )
         @self.console_command(
             "ref",
             help=_("Set the requested alignment to the reference object"),
@@ -2910,7 +2900,12 @@ class Elemental(Service):
                 if snode is not None and snode not in d:
                     d.append(snode)
             data = d
-            return "align", (self._align_mode, self._align_group, self._align_boundaries, data)
+            return "align", (
+                self._align_mode,
+                self._align_group,
+                self._align_boundaries,
+                data,
+            )
 
         @self.console_argument(
             "alignx", type=str, help=_("One of 'min', 'center', 'max', 'none'")
@@ -2954,9 +2949,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align_bottom(
-            command, channel, _, data=None, **kwargs
-        ):
+        def subtype_align_bottom(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
             _align_xy(command, channel, _, data, "none", "max", group)
             return "align", (mode, group, bound, elements)
@@ -2989,9 +2982,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align_center(
-            command, channel, _, data=None, **kwargs
-        ):
+        def subtype_align_center(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
             _align_xy(command, channel, _, data, "center", "center", group)
             return "align", (mode, group, bound, elements)
@@ -3002,9 +2993,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align_centerh(
-            command, channel, _, data=None, **kwargs
-        ):
+        def subtype_align_centerh(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
             _align_xy(command, channel, _, data, "center", "none", group)
             return "align", (mode, group, bound, elements)
@@ -3015,9 +3004,7 @@ class Elemental(Service):
             input_type="align",
             output_type="align",
         )
-        def subtype_align_centerv(
-            command, channel, _, data=None, **kwargs
-        ):
+        def subtype_align_centerv(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
             _align_xy(command, channel, _, data, "none", "center", group)
             return "align", (mode, group, bound, elements)
@@ -4208,7 +4195,12 @@ class Elemental(Service):
                         channel(
                             _(
                                 "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - scaled-stroke"
-                            ).format(index=i, stroke_width="None", implied_stroke_width="None", name=name)
+                            ).format(
+                                index=i,
+                                stroke_width="None",
+                                implied_stroke_width="None",
+                                name=name,
+                            )
                         )
                     else:
                         if e.stroke_scaled:
@@ -4216,7 +4208,10 @@ class Elemental(Service):
                                 _(
                                     "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - scaled-stroke"
                                 ).format(
-                                    index=i, stroke_width=e.stroke_width, implied_stroke_width=e.implied_stroke_width(), name=name
+                                    index=i,
+                                    stroke_width=e.stroke_width,
+                                    implied_stroke_width=e.implied_stroke_width(),
+                                    name=name,
                                 )
                             )
                         else:
@@ -4224,7 +4219,10 @@ class Elemental(Service):
                                 _(
                                     "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - non-scaling-stroke"
                                 ).format(
-                                    index=i, stroke_width=e.stroke_width, implied_stroke_width=e.implied_stroke_width(), name=name
+                                    index=i,
+                                    stroke_width=e.stroke_width,
+                                    implied_stroke_width=e.implied_stroke_width(),
+                                    name=name,
                                 )
                             )
                     i += 1
