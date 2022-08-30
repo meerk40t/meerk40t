@@ -8523,7 +8523,7 @@ class Elemental(Service):
                 f_area = (cc[2] - cc[0]) * (cc[3] - cc[1])
                 if use_smallest:
 
-                    if f_area <= e_area: # Tie goes to later element
+                    if f_area <= e_area:  # Tie goes to child or later sibling
                         e_area = f_area
                         e = node
                 else:
