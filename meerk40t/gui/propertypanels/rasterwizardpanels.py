@@ -373,14 +373,10 @@ class ToneCurvePanel(wx.Panel):
 
         self.graph_brush = wx.Brush()
         self.graph_pen = wx.Pen()
-        if self.is_dark:
-            self.graph_brush.SetColour(wx.BLACK)
-            self.graph_pen.SetColour(wx.WHITE)
-        else:
-            self.graph_brush.SetColour(wx.WHITE)
-            self.graph_pen.SetColour(wx.BLACK)
+        c = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        self.graph_brush.SetColour(c)
+        self.graph_pen.SetColour(wx.Colour(255 - c[0], 255 - c[1], 255 - c[2]))
         self.graph_pen.SetWidth(5)
-
 
         op = None
         for n in node.operations:
@@ -406,7 +402,7 @@ class ToneCurvePanel(wx.Panel):
         self.check_enable_tone.SetValue(1)
         self.button_reset_tone.SetToolTip(_("Reset Tone Curve"))
         self.curve_panel.SetMinSize((256, 256))
-        self.curve_panel.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.curve_panel.SetMaxSize((256, 256))
         # end wxGlade
 
     def __do_layout(self):
@@ -480,14 +476,6 @@ class ToneCurvePanel(wx.Panel):
     def on_curve_mouse_lost(self, event=None):
         pass
 
-    @property
-    def is_dark(self):
-        # wxPython's SysAppearance does not always deliver a reliable response from
-        # wx.SystemSettings().GetAppearance().IsDark()
-        # so lets tick with 'old way', although this one is fishy...
-        result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
-        return result
-
     def on_update_tone(self, event=None):
         if self._tone_panel_buffer is None:
             return
@@ -496,9 +484,9 @@ class ToneCurvePanel(wx.Panel):
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
+        # gc.SetBrush(self.graph_brush)
+        # gc.DrawRectangle(0, 0, *self._tone_panel_buffer.Size)
         gc.SetPen(self.graph_pen)
-        gc.SetBrush(self.graph_brush)
-        gc.DrawRectangle(0, 0, *self._tone_panel_buffer.Size)
 
         tone_values = self.op["values"]
         if self.op["type"] == "spline":
