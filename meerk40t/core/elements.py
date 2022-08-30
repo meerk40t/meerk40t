@@ -78,7 +78,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
         kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem image", "{element_type} {label} {width}x{height}")
+        kernel.register("format/elem image", "{element_type} {label} {width}x{height} @{dpi}")
         kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
         kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
         kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
