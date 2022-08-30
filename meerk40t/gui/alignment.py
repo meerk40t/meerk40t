@@ -426,6 +426,7 @@ class DistributionPanel(wx.Panel):
             if self.last_node is None and esort == "last":
                 active = False
         else:
+            treat = None
             active = False
         if treat in ("points", "shape"):
             self.check_inside_xy.Enable(False)
