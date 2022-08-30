@@ -484,8 +484,8 @@ class ToneCurvePanel(wx.Panel):
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
-        # gc.SetBrush(self.graph_brush)
-        # gc.DrawRectangle(0, 0, *self._tone_panel_buffer.Size)
+        gc.SetBrush(self.graph_brush)
+        gc.DrawRectangle(0, 0, *self._tone_panel_buffer.Size)
         gc.SetPen(self.graph_pen)
 
         tone_values = self.op["values"]
