@@ -3,6 +3,7 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.gui.icons import DARKMODE
 
 _ = wx.GetTranslation
 
@@ -474,10 +475,9 @@ class ToneCurvePanel(wx.Panel):
         dc = wx.MemoryDC()
         dc.SelectObject(self._tone_panel_buffer)
         dc.Clear()
-        dc.SetBackground(wx.GREEN_BRUSH)
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
-        gc.SetPen(wx.BLACK_PEN)
+        gc.SetPen(wx.WHITE_PEN if DARKMODE else wx.BLACK_PEN)
         tone_values = self.op["values"]
         if self.op["type"] == "spline":
             spline = ImageNode.spline(tone_values)
