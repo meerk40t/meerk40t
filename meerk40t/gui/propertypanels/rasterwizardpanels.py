@@ -371,6 +371,14 @@ class ToneCurvePanel(wx.Panel):
         self.curve_panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.on_curve_mouse_lost)
         self.point = -1
 
+        self.graph_pen = wx.Pen()
+        if self.is_dark:
+            self.graph_pen.SetColour(wx.WHITE)
+        else:
+            self.graph_pen.SetColour(wx.BLACK)
+        self.graph_pen.SetWidth(5)
+
+
         op = None
         for n in node.operations:
             if n.get("name") == "tone":
@@ -469,6 +477,14 @@ class ToneCurvePanel(wx.Panel):
     def on_curve_mouse_lost(self, event=None):
         pass
 
+    @property
+    def is_dark(self):
+        # wxPython's SysAppearance does not always deliver a reliable response from
+        # wx.SystemSettings().GetAppearance().IsDark()
+        # so lets tick with 'old way', although this one is fishy...
+        result = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127
+        return result
+
     def on_update_tone(self, event=None):
         if self._tone_panel_buffer is None:
             return
@@ -477,7 +493,8 @@ class ToneCurvePanel(wx.Panel):
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
-        gc.SetPen(wx.WHITE_PEN if DARKMODE else wx.BLACK_PEN)
+        gc.SetPen(self.graph_pen)
+
         tone_values = self.op["values"]
         if self.op["type"] == "spline":
             spline = ImageNode.spline(tone_values)

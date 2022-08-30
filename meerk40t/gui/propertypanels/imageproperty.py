@@ -1,5 +1,4 @@
 import wx
-from ...core.units import Length
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
 from ..wxutils import TextCtrl, ScrolledPanel
