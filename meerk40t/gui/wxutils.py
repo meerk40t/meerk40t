@@ -321,7 +321,6 @@ def create_menu(gui, node, elements):
         gui.PopupMenu(menu)
         menu.Destroy()
 
-
 class TextCtrl(wx.TextCtrl):
     # Just to add someof the more common things we need, i.e. smaller default size...
     #
@@ -348,9 +347,7 @@ class TextCtrl(wx.TextCtrl):
             validator=validator,
             name=name,
         )
-        self.SetMinSize(wx.Size(35, -1))
-        if limited:
-            self.SetMaxSize(wx.Size(100, -1))
+
         self._check = check
         self.lower_limit = None
         self.upper_limit = None
@@ -372,6 +369,31 @@ class TextCtrl(wx.TextCtrl):
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave)
+        _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
+        self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
+        if limited:
+            self.SetMaxSize(wx.Size(_MAX_WIDTH, -1))
+
+    def validate_widths(self):
+        minw = 35
+        maxw = 100
+        minpattern = "00000"
+        maxpattern = "999999999.99mm"
+        # Lets be a bit more specific: what is the minimum size of the textcontrol fonts
+        # to hold these patterns
+        tfont = self.GetFont()
+        xsize = 15
+        imgBit = wx.Bitmap(xsize, xsize)
+        dc = wx.MemoryDC(imgBit)
+        dc.SelectObject(imgBit)
+        dc.SetFont(tfont)
+        f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(minpattern)
+        minw = f_width + 5
+        f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(maxpattern)
+        maxw = f_width + 10
+        # Now release dc
+        dc.SelectObject(wx.NullBitmap)
+        return minw, maxw
 
     def set_error_level(self, err_min, err_max):
         self.lower_limit_err = err_min
