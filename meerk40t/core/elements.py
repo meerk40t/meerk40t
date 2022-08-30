@@ -88,7 +88,7 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/reference", "*{reference}")
         kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
         kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
-        kernel.register("format/file", "{element_type}: {filename}")
+        kernel.register("format/file", "{element_type} {filename}")
         kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
         kernel.register("format/branch ops", _("Operations {loops}"))
