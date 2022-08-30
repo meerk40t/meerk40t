@@ -223,14 +223,18 @@ class RasterOpNode(Node, Parameters):
                                     self.add_reference(node)
                                 # Have classified but more classification might be needed
                                 return True, self.stopop
-                else:  # empty ? Anything with a solid fill goes
+                else:  # empty ? Anything with either a solid fill or a plain white stroke goes
                     if self.valid_node(node):
                         addit = False
                         if node.type == "elem image":
                             addit = True
-                        elif hasattr(node, "fill"):
+                        if hasattr(node, "fill"):
                             if node.fill is not None and node.fill.argb is not None:
                                 addit = True
+                        if hasattr(node, "stroke"):
+                            if node.stroke is not None and node.stroke.argb is not None:
+                                if matching_color(node.stroke, Color("white")):
+                                    addit = True
                         if addit:
                             self.add_reference(node)
                     # Have classified but more classification might be needed
