@@ -364,17 +364,20 @@ class ToneCurvePanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_reset_tone, self.button_reset_tone)
         # end wxGlade
         self.curve_panel.Bind(wx.EVT_PAINT, self.on_tone_panel_paint)
-        self.curve_panel.Bind(wx.EVT_ERASE_BACKGROUND, lambda e: None)
+        # self.curve_panel.Bind(wx.EVT_ERASE_BACKGROUND, lambda e: None)
         self.curve_panel.Bind(wx.EVT_MOTION, self.on_curve_mouse_move)
         self.curve_panel.Bind(wx.EVT_LEFT_DOWN, self.on_curve_mouse_left_down)
         self.curve_panel.Bind(wx.EVT_LEFT_UP, self.on_curve_mouse_left_up)
         self.curve_panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.on_curve_mouse_lost)
         self.point = -1
 
+        self.graph_brush = wx.Brush()
         self.graph_pen = wx.Pen()
         if self.is_dark:
+            self.graph_brush.SetColour(wx.BLACK)
             self.graph_pen.SetColour(wx.WHITE)
         else:
+            self.graph_brush.SetColour(wx.WHITE)
             self.graph_pen.SetColour(wx.BLACK)
         self.graph_pen.SetWidth(5)
 
@@ -494,6 +497,8 @@ class ToneCurvePanel(wx.Panel):
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
         gc.SetPen(self.graph_pen)
+        gc.SetBrush(self.graph_brush)
+        gc.DrawRectangle(0, 0, *self._tone_panel_buffer.Size)
 
         tone_values = self.op["values"]
         if self.op["type"] == "spline":
