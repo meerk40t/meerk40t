@@ -222,10 +222,10 @@ class PositionSizePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
-        self.text_x = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
-        self.text_y = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
-        self.text_w = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
-        self.text_h = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
+        self.text_x = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=False, check="length")
+        self.text_y = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=False, check="length")
+        self.text_w = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=False, check="length")
+        self.text_h = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=False, check="length")
         self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
 
         self.__set_properties()
