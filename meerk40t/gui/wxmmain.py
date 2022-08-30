@@ -2210,16 +2210,6 @@ class MeerK40t(MWindow):
             lambda e: self.context("webhelp makers\n"),
             id=menuitem.GetId(),
         )
-        menuitem = self.help_menu.Append(
-            wx.ID_ANY,
-            _("&IRC"),
-            _("Chat with developers to get help on the Meerk40t IRC channel"),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp irc\n"),
-            id=menuitem.GetId(),
-        )
         self.help_menu.AppendSeparator()
         menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
