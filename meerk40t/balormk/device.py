@@ -511,7 +511,7 @@ class BalorDevice(Service, ViewPort):
         self.job = None
 
         _ = kernel.translation
-
+        self.register("frequency", (0, 1000))
         self.register(
             "format/op cut",
             "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
@@ -624,7 +624,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "scale_x",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
                 "label": _("X-Axis"),
                 "tip": _("Scale the X axis"),
@@ -634,7 +634,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "scale_y",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
                 "label": _("Y-Axis"),
                 "tip": _("Scale the Y axis"),

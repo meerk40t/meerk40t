@@ -4,7 +4,7 @@ from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MM, Length
+from meerk40t.core.units import Length, UNITS_PER_INCH, MM_PER_INCH
 from meerk40t.svgelements import Color, Path, Polygon
 
 
@@ -166,20 +166,43 @@ class ImageOpNode(Node, Parameters):
             self.add_node(copy(node.node))
 
     def time_estimate(self):
+        """
+        The scanlines would equal "(e.height * 1000) / dpi" but our images are pre-actualized.
+
+        @return:
+        """
         estimate = 0
         for node in self.children:
             if node.type == "reference":
                 node = node.node
             try:
                 e = node.image
+                dpi = node.dpi
             except AttributeError:
                 continue
-            step = node.step_x
-            estimate += (e.image_width * e.image_height * step) / (
-                UNITS_PER_MM * self.speed
-            )
+            min_x, min_y, max_x, max_y = node.bounds
+            width_in_inches = (max_x - min_x) / UNITS_PER_INCH
+            height_in_inches = (max_y - min_y) / UNITS_PER_INCH
+            speed_in_per_s = self.speed / MM_PER_INCH
+            if self.raster_direction in (0, 1, 4):
+                scanlines = height_in_inches * dpi
+                if self.raster_swing:
+                    scanlines *= 2
+                estimate += scanlines * width_in_inches / speed_in_per_s + height_in_inches / speed_in_per_s
+            if self.raster_direction in (2, 3, 4):
+                scanlines = width_in_inches * dpi
+                if self.raster_swing:
+                    scanlines *= 2
+                estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s
+
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+
+        def isNaN(num):
+            return num!= num
+        if isNaN(estimate):
+            estimate = 0
+
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"

@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.7.3"
+SVGELEMENTS_VERSION = "1.7.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -244,7 +244,7 @@ REGEX_CSS_FONT = re.compile(
     r"$"
 )
 REGEX_CSS_FONT_FAMILY = re.compile(
-    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+     r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
 )
 
 svg_parse = [("COMMAND", r"[MmZzLlHhVvCcSsQqTtAa]"), ("SKIP", PATTERN_COMMAWSP)]
@@ -3667,9 +3667,12 @@ class Shape(SVGElement, GraphicObject, Transformable):
             self._calc_lengths(error=error, segments=segments)
         xy = np.empty((len(positions), 2), dtype=float)
         if self._length == 0:
-            i = int(round(positions * (len(segments) - 1)))
-            point = segments[i].point(0.0)
-            xy[:] = point
+            # all segments have 0 length
+            seg_points = np.empty((len(segments), 2), dtype=float)
+            for i, seg in enumerate(segments):
+                seg_points[i] = seg.point(0)
+            indexes = np.round(positions * (len(segments) - 1)).astype(int)
+            xy[:] = seg_points[indexes]
             return xy
 
         # Find which segment the point we search for is located on:
@@ -8952,6 +8955,8 @@ class SVG(Group):
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
                     textstyle = elem.text
+                    if textstyle is None:
+                        textstyle = ""
                     textstyle = re.sub(REGEX_CSS_COMMENT, "", textstyle)
                     assignments = list(re.findall(REGEX_CSS_STYLE, textstyle.strip()))
                     for key, value in assignments:

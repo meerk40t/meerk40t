@@ -43,6 +43,14 @@ OPERATION_POWER_TOOLTIP = _(
 Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines."""
 )
 
+
+OPERATION_FREQUENCY_TOOLTIP = _(
+    """Laser frequency in kHz.
+
+For lasers with frequencies that can be set."""
+)
+
+
 OPERATION_PASSES_TOOLTIP = _(
     """"How many times to repeat this operation?
 
@@ -107,11 +115,18 @@ class LayerSettingPanel(wx.Panel):
         h_property_sizer = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Properties")), wx.HORIZONTAL
         )
-
+        rastertooltip = ""
+        if self.operation.type == "op raster":
+            rastertooltip = "\n" + \
+                _("If neither stroke nor fill are checked, then the raster op") + \
+                "\n" + _("will classify all elements that have a fill") + \
+                "\n" + _("or stroke that are either black or white.")
         try:
             self.has_stroke = self.operation.has_color_attribute("stroke")
             self.checkbox_stroke = wx.CheckBox(self, wx.ID_ANY, _("Stroke"))
-            self.checkbox_stroke.SetToolTip(_("Look at the stroke color to classify."))
+            self.checkbox_stroke.SetToolTip(
+                _("Look at the stroke color to restrict classification.") + rastertooltip
+            )
             self.checkbox_stroke.SetValue(1 if self.has_stroke else 0)
             h_classify_sizer.Add(self.checkbox_stroke, 1, 0, 0)
             self.Bind(wx.EVT_CHECKBOX, self.on_check_stroke, self.checkbox_stroke)
@@ -121,7 +136,9 @@ class LayerSettingPanel(wx.Panel):
         try:
             self.has_fill = self.operation.has_color_attribute("fill")
             self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
-            self.checkbox_fill.SetToolTip(_("Look at the fill color to classify."))
+            self.checkbox_fill.SetToolTip(
+                _("Look at the stroke color to restrict classification.") + rastertooltip
+            )
             self.checkbox_fill.SetValue(1 if self.has_fill else 0)
             h_classify_sizer.Add(self.checkbox_fill, 1, 0, 0)
             self.Bind(wx.EVT_CHECKBOX, self.on_check_fill, self.checkbox_fill)
@@ -401,26 +418,31 @@ class SpeedPpiPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
-        self.text_power.set_error_level(0, 1000)
+        self.text_power.set_range(0, 1000)
         self.text_power.set_warn_level(power_min, power_max)
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
-        frequency_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Frequency (kHz)")), wx.HORIZONTAL
-        )
-        speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
+        freq = self.context.device.lookup("frequency")
+        if freq:
+            frequency_sizer = wx.StaticBoxSizer(
+                wx.StaticBox(self, wx.ID_ANY, _("Frequency (kHz)")), wx.HORIZONTAL
+            )
+            speed_power_sizer.Add(frequency_sizer, 1, wx.EXPAND, 0)
 
-        self.text_frequency = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "20.0",
-            limited=True,
-            check="float",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        # self.text_frequency.SetToolTip(OPERATION_SPEED_TOOLTIP)
-        frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
+            self.text_frequency = TextCtrl(
+                self,
+                wx.ID_ANY,
+                "20.0",
+                limited=True,
+                check="float",
+                style=wx.TE_PROCESS_ENTER,
+            )
+            self.text_frequency.SetToolTip(OPERATION_FREQUENCY_TOOLTIP)
+            self.text_frequency.set_warn_level(*freq)
+            frequency_sizer.Add(self.text_frequency, 1, wx.EXPAND, 0)
+        else:
+            self.text_frequency = None
 
         self.SetSizer(speed_power_sizer)
 
@@ -431,8 +453,9 @@ class SpeedPpiPanel(wx.Panel):
         self.text_power.Bind(wx.EVT_KILL_FOCUS, self.on_text_power)
         self.text_power.Bind(wx.EVT_TEXT_ENTER, self.on_text_power)
 
-        self.text_frequency.Bind(wx.EVT_KILL_FOCUS, self.on_text_frequency)
-        self.text_frequency.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency)
+        if self.text_frequency:
+            self.text_frequency.Bind(wx.EVT_KILL_FOCUS, self.on_text_frequency)
+            self.text_frequency.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency)
 
         # end wxGlade
 
@@ -462,7 +485,7 @@ class SpeedPpiPanel(wx.Panel):
         if self.operation.power is not None:
             self.update_power_label()
             set_ctrl_value(self.text_power, str(self.operation.power))
-        if self.operation.frequency is not None:
+        if self.operation.frequency is not None and self.text_frequency:
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
         self.Show()
 
@@ -654,17 +677,11 @@ class InfoPanel(wx.Panel):
         pass
 
     def on_button_calculate(self, event):
-        try:
-            timestr = self.operation.time_estimate()
-        except:
-            timestr = "---"
-        self.text_time.SetValue(timestr)
+        self.text_time.SetValue(self.operation.time_estimate())
 
     def refresh_display(self):
-        timestr = "---"
         childs = len(self.operation.children)
-
-        self.text_time.SetValue(timestr)
+        self.text_time.SetValue("---")
         self.text_children.SetValue(str(childs))
 
     def accepts(self, node):

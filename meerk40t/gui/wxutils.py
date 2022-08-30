@@ -1,7 +1,7 @@
 """
 Mixin functions for wxMeerk40t
 """
-
+import platform
 from typing import List
 
 import wx
@@ -352,14 +352,22 @@ class TextCtrl(wx.TextCtrl):
         if limited:
             self.SetMaxSize(wx.Size(100, -1))
         self._check = check
+        self.lower_limit = None
+        self.upper_limit = None
         self.lower_limit_err = None
         self.upper_limit_err = None
         self.lower_limit_warn = None
         self.upper_limit_warn = None
-        self.err_color = wx.RED
-        self.warn_color = wx.YELLOW
-        self.modified_color = wx.GREEN
-        self._warn_status = 0
+        self._default_color_background = None
+        self._error_color_background = wx.RED
+        self._warn_color_background = wx.YELLOW
+        self._modify_color_background = None
+
+        self._default_color_foreground = None
+        self._error_color_foreground = None
+        self._warn_color_foreground = wx.BLACK
+        self._modify_color_foreground = None
+        self._warn_status = "modified"
 
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
@@ -373,18 +381,22 @@ class TextCtrl(wx.TextCtrl):
         self.lower_limit_warn = warn_min
         self.upper_limit_warn = warn_max
 
+    def set_range(self, range_min, range_max):
+        self.lower_limit = range_min
+        self.upper_limit = range_max
+
     def on_leave(self, event):
         # Needs to be passed on
         event.Skip()
         self.SelectNone()
-        # We assume its been dealt with, so we recolor...
+        # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
         self.warn_status = self._warn_status
 
     def on_enter(self, event):
         # Let others deal with it after me
         event.Skip()
-        # We assume its been dealt with, so we recolor...
+        # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
         self.warn_status = self._warn_status
 
@@ -395,52 +407,88 @@ class TextCtrl(wx.TextCtrl):
     @warn_status.setter
     def warn_status(self, value):
         self._warn_status = value
-        if value == 0:
+        background = self._default_color_background
+        foreground = self._default_color_foreground
+        if value == "modified":
             # Is it modified?
             if self.IsModified():
-                self.SetBackgroundColour(self.modified_color)
-            else:
-                self.SetBackgroundColour(None)
-        elif value == 1:
-            self.SetBackgroundColour(self.warn_color)
-        elif value == 2:
-            self.SetBackgroundColour(self.err_color)
+                background = self._modify_color_background
+                foreground = self._modify_color_foreground
+        elif value == "warning":
+            background = self._warn_color_background
+            foreground = self._warn_color_foreground
+        elif value == "error":
+            background = self._error_color_background
+            foreground = self._error_color_foreground
+        self.SetBackgroundColour(background)
+        self.SetForegroundColour(foreground)
         self.Refresh()
 
     def on_check(self, event):
         event.Skip()
-        allok = 0
+        status = "modified"
         try:
             txt = self.GetValue()
+            value = None
             if self._check == "float":
-                dummy = float(txt)
+                value = float(txt)
             elif self._check == "percent":
                 if txt.endswith("%"):
-                    dummy = float(txt[:-1]) / 100.0
+                    value = float(txt[:-1]) / 100.0
                 else:
-                    dummy = float(txt)
+                    value = float(txt)
             elif self._check == "int":
-                dummy = int(txt)
+                value = int(txt)
             elif self._check == "empty":
                 if len(txt) == 0:
-                    allok = 2
+                    status = "error"
             elif self._check == "length":
-                dummy = Length(txt)
+                value = Length(txt)
             elif self._check == "angle":
-                dummy = Angle(txt)
+                value = Angle(txt)
             # we passed so far, thus the values are syntactically correct
             # Now check for content compliance
-            if self.lower_limit_warn is not None and dummy < self.lower_limit_warn:
-                allok = 1
-            if self.upper_limit_warn is not None and dummy > self.upper_limit_warn:
-                allok = 1
-            if self.lower_limit_err is not None and dummy < self.lower_limit_err:
-                allok = 2
-            if self.upper_limit_err is not None and dummy > self.upper_limit_err:
-                allok = 2
+            if value is not None:
+                if self.lower_limit is not None and value < self.lower_limit:
+                    value = self.lower_limit
+                    self.SetValue(str(value))
+                    status = "default"
+                if self.upper_limit is not None and value > self.upper_limit:
+                    value = self.upper_limit
+                    self.SetValue(str(value))
+                    status = "default"
+                if self.lower_limit_warn is not None and value < self.lower_limit_warn:
+                    status = "warning"
+                if self.upper_limit_warn is not None and value > self.upper_limit_warn:
+                    status = "warning"
+                if self.lower_limit_err is not None and value < self.lower_limit_err:
+                    status = "error"
+                if self.upper_limit_err is not None and value > self.upper_limit_err:
+                    status = "error"
         except ValueError:
-            allok = 2
-        self.warn_status = allok
+            status = "error"
+        self.warn_status = status
+
+
+class CheckBox(wx.CheckBox):
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self._tool_tip = None
+        super().__init__(*args, **kwargs)
+        if platform.system() == "Linux":
+            def on_mouse_over_check(ctrl):
+                def mouse(event=None):
+                    ctrl.SetToolTip(self._tool_tip)
+
+                return mouse
+            self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
+
+    def SetToolTip(self, tooltip):
+        self._tool_tip = tooltip
+        super().SetToolTip(self._tool_tip)
 
 
 class ScrolledPanel(SP):
@@ -569,6 +617,22 @@ WX_SPECIALKEYS = {
     wx.WXK_WINDOWS_MENU: "menu",
 }
 
+def is_navigation_key(keyvalue):
+    if keyvalue is None:
+        return False
+    if "right" in keyvalue:
+        return True
+    if "left" in keyvalue:
+        return True
+    if "up" in keyvalue and "pgup" not in keyvalue and "pageup" not in keyvalue:
+        return True
+    if "down" in keyvalue and "pagedown" not in keyvalue:
+        return True
+    if "tab" in keyvalue:
+        return True
+    if "return" in keyvalue:
+        return True
+    return False
 
 def get_key_name(event, return_modifier=False):
     keyvalue = ""

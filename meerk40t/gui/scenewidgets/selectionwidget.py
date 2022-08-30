@@ -1407,7 +1407,7 @@ class ReferenceWidget(Widget):
                         break
                     except AttributeError:
                         pass
-
+            self.scene.context.signal("reference")
         self.scene.request_refresh()
 
     def event(
@@ -1928,10 +1928,12 @@ class SelectionWidget(Widget):
             except AttributeError:
                 pass
         # print("set...")
+        self.scene.context.signal("reference")
         self.scene.request_refresh()
 
     def delete_reference(self, event):
         self.scene.reference_object = None
+        self.scene.context.signal("reference")
         # Simplify, no complete scene refresh required
         # print("unset...")
         self.scene.request_refresh()

@@ -1,3 +1,4 @@
+import platform
 import random
 
 import wx
@@ -44,7 +45,7 @@ from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
-from meerk40t.gui.wxutils import get_key_name
+from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Angle, Color
 
@@ -113,7 +114,19 @@ class MeerK40tScenePanel(wx.Panel):
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
         self.Layout()
+        self._keybind_channel = self.context.channel("keybinds")
 
+        if platform.system() == "Windows":
+            def charhook(event):
+                keyvalue = get_key_name(event)
+                if is_navigation_key(keyvalue):
+                    if self._keybind_channel:
+                        self._keybind_channel(f"Scene, char_hook used for key_down: {keyvalue}")
+                    self.on_key_down(event)
+                    event.Skip()
+                else:
+                    event.DoAllowNextEvent()
+            self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -152,40 +165,9 @@ class MeerK40tScenePanel(wx.Panel):
                 == 1,
             },
         )
-        # not yet working
-        # context.kernel.register(
-        #     "button/align/Target",
-        #     {
-        #         "label": _("Target"),
-        #         "tip": _("Toggle Reference Object Status"),
-        #         "icon": icons8_ungroup_objects_50,
-        #         "size": buttonsize,
-        #         "identifier": "target",
-        #         "default": "target0",
-        #         "multi": [
-        #             {
-        #                 "identifier": "target0",
-        #                 "label": _("Selection"),
-        #                 "icon": icons8_ungroup_objects_50,
-        #                 "action": self.set_align_target(0),
-        #             },
-        #             {
-        #                 "identifier": "target1",
-        #                 "label": _("Ref-Object"),
-        #                 "action": self.set_align_target(1),
-        #                 "icon": icons8_reference,
-        #                 "action": self.set_align_target(1),
-        #             },
-        #             {
-        #                 "identifier": "target2",
-        #                 "label": _("Bedsize"),
-        #                 "icon": icons8_bed_50,
-        #                 "action": self.set_align_target(2),
-        #             },
-        #         ],
-        #     },
-        # )
-        self._align_mode = 0  # 0 elements, 1 reference object, 2 bed
+
+        # Provide a reference to current scene in root context
+        setattr(self.context.root, "mainscene", self.widget_scene)
 
         @context.console_command("dialog_fps", hidden=True)
         def dialog_fps(**kwgs):
@@ -472,6 +454,7 @@ class MeerK40tScenePanel(wx.Panel):
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 self.widget_scene.reference_object = e
                 break
+            self.context.signal("reference")
 
         # Establishes commands
         @context.console_argument(
@@ -635,16 +618,8 @@ class MeerK40tScenePanel(wx.Panel):
             else:
                 self.widget_scene.reference_object = e
             break
+        self.context.signal("reference")
         self.request_refresh()
-
-    def set_align_target(self, value=None):
-        # 0 elements, 1 reference object, 2 bed
-        if value is None:
-            self._align_mode += 1
-        else:
-            self._align_mode = value
-        if self._align_mode > 2 or self._align_mode < 0:
-            self._align_mode = 0
 
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
@@ -785,14 +760,26 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
+        if self._keybind_channel:
+            self._keybind_channel(f"Scene key_down: {keyvalue}.")
         if self.context.bind.trigger(keyvalue):
-            pass
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {keyvalue} executed.")
+        else:
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
         event.Skip()
 
-    def on_key_up(self, event):
+    def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
+        if self._keybind_channel:
+            self._keybind_channel(f"Scene key_up: {keyvalue}.")
         if self.context.bind.untrigger(keyvalue):
-            pass
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {keyvalue} executed.")
+        else:
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
 
 

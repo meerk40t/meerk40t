@@ -137,19 +137,15 @@ class Settings:
         @param obj:
         @return:
         """
-        props = [k for k, v in vars(obj.__class__).items() if isinstance(v, property)]
-        for attr in dir(obj):
-            if attr.startswith("_"):
+        for key, value in obj.__dict__.items():
+            if key.startswith("_"):
                 continue
-            if attr in props:
-                continue
-            obj_value = getattr(obj, attr)
-            t = type(obj_value) if obj_value is not None else str
-            load_value = self.read_persistent(t, section, attr)
-            if load_value is None:
+            t = type(value) if value is not None else str
+            read_value = self.read_persistent(t, section, key)
+            if read_value is None:
                 continue
             try:
-                setattr(obj, attr, load_value)
+                setattr(obj, key, read_value)
             except AttributeError:
                 pass
 
@@ -208,9 +204,8 @@ class Settings:
         @param obj: object whose attributes should be written
         @return:
         """
-        for key in write_dict:
-            value = write_dict[key]
-            if value is None:
+        for key, value in write_dict.items():
+            if key.startswith("_"):
                 continue
             if isinstance(value, (int, bool, str, float)):
                 self.write_persistent(section, key, value)
@@ -223,17 +218,7 @@ class Settings:
         @param obj: object whose attributes should be written
         @return:
         """
-        props = [k for k, v in vars(obj.__class__).items() if isinstance(v, property)]
-        for attr in dir(obj):
-            if attr.startswith("_"):
-                continue
-            if attr in props:
-                continue
-            value = getattr(obj, attr)
-            if value is None:
-                continue
-            if isinstance(value, (int, bool, str, float, list, tuple)):
-                self.write_persistent(section, attr, value)
+        self.write_persistent_dict(section, obj.__dict__)
 
     def clear_persistent(self, section: str):
         """

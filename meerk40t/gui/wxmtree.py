@@ -31,7 +31,7 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
-from .wxutils import create_menu, get_key_name
+from .wxutils import create_menu, get_key_name, is_navigation_key
 
 _ = wx.GetTranslation
 
@@ -75,6 +75,7 @@ class TreePanel(wx.Panel):
         self.__set_tree()
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self._keybind_channel = self.context.channel("keybinds")
 
         self.context.signal("rebuild_tree")
 
@@ -104,20 +105,49 @@ class TreePanel(wx.Panel):
         )
 
     def on_key_down(self, event):
+        """
+        Keydown for the tree does not execute navigation keys. These are only executed by the scene since they do
+        useful work for the tree.
+
+        Make sure the treectl can work on standard keys...
+
+        @param event:
+        @return:
+        """
+        event.Skip()
         keyvalue = get_key_name(event)
+        if is_navigation_key(keyvalue):
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_down: {keyvalue} is a navigation key. Not processed.")
+            return
         if self.context.bind.trigger(keyvalue):
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_down: {keyvalue} is executed.")
         else:
-            # Make sure the treectl can work on standard keys...
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_down: {keyvalue} was unbound.")
 
     def on_key_up(self, event):
+        """
+        Keyup for the tree does not execute navigation keys. These are only executed by the scene.
+
+        Make sure the treectl can work on standard keys...
+
+        @param event:
+        @return:
+        """
+        event.Skip()
         keyvalue = get_key_name(event)
+        if is_navigation_key(keyvalue):
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_up: {keyvalue} is a navigation key. Not processed.")
+            return
         if self.context.bind.untrigger(keyvalue):
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_up: {keyvalue} is executed.")
         else:
-            # Make sure the treectl can work on standard keys...
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_up: {keyvalue} was unbound.")
 
     def pane_show(self):
         pass
@@ -826,8 +856,12 @@ class ShadowTree:
         tree.SetItemData(node.item, node)
         self.update_decorations(node)
         wxcolor = self.wxtree.GetForegroundColour()
-        if hasattr(node, "stroke"):
-            wxcolor = self.safe_color(node.stroke)
+        if node.type == "elem text":
+            attribute_to_try = "fill"
+        else:
+            attribute_to_try = "stroke"
+        if hasattr(node, attribute_to_try):
+            wxcolor = self.safe_color(getattr(node, attribute_to_try))
         elif hasattr(node, "color"):
             wxcolor = self.safe_color(node.color)
         else:
@@ -1096,16 +1130,32 @@ class ShadowTree:
             label = node.create_label(formatter)
 
         self.wxtree.SetItemText(node.item, label)
-        try:
-            wxcolor = self.safe_color(node.stroke)
-            self.wxtree.SetItemTextColour(node.item, wxcolor)
-        except AttributeError:
-            pass
-        try:
+        if node.type == "elem text":
+            attribute_to_try = "fill"
+        else:
+            attribute_to_try = "stroke"
+        wxcolor = None
+        if hasattr(node, attribute_to_try):
+            wxcolor = self.safe_color(getattr(node, attribute_to_try))
+        elif hasattr(node, "color"):
             wxcolor = self.safe_color(node.color)
+        else:
+            back_color = self.wxtree.GetBackgroundColour()
+            rgb = back_color.Get()
+            background = Color(rgb[0], rgb[1], rgb[2])
+            if background is not None:
+                c1 = Color("Black")
+                c2 = Color("White")
+                if Color.distance(background, c1) > Color.distance(background, c2):
+                    textcolor = c1
+                else:
+                    textcolor = c2
+                wxcolor = wx.Colour(swizzlecolor(textcolor))
+        try:
             self.wxtree.SetItemTextColour(node.item, wxcolor)
-        except AttributeError:
+        except (AttributeError, KeyError, TypeError):
             pass
+
         # Has the node a lock attribute?
         if hasattr(node, "lock"):
             lockit = node.lock

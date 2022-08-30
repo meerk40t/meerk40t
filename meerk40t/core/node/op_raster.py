@@ -6,7 +6,7 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MM, Length
+from meerk40t.core.units import UNITS_PER_MM, Length, UNITS_PER_INCH, MM_PER_INCH
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
@@ -55,11 +55,11 @@ class RasterOpNode(Node, Parameters):
             "elem text",
             "elem image",
         )
-        # To which attributes does the classification color check respond
+        # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute
-        self.allowed_attributes = [
-            "fill",
-        ]  # comma is relevant
+        # An empty set indicates all nodes will be allowed
+        self.allowed_attributes = []
+        # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
 
@@ -134,38 +134,47 @@ class RasterOpNode(Node, Parameters):
         return default_map
 
     def drop(self, drag_node, modify=True):
+        count = 0
+        existing = 0
+        result = False
         if drag_node.type.startswith("elem"):
+            existing += 1
             # if drag_node.type == "elem image":
             #     return False
             # Dragging element onto operation adds that element to the op.
             if modify:
+                count +=1
                 self.add_reference(drag_node, pos=0)
-            return True
+            result = True
         elif drag_node.type == "reference":
             # # Disallow drop of image refelems onto a Dot op.
             # if drag_node.type == "elem image":
             #     return False
             # Move a refelem to end of op.
+            existing += 1
             if modify:
+                count +=1
                 self.append_child(drag_node)
-            return True
+            result = True
         elif drag_node.type in op_nodes:
             # Move operation to a different position.
             if modify:
                 self.insert_sibling(drag_node)
-            return True
+            result = True
         elif drag_node.type in ("file", "group"):
             some_nodes = False
-            for e in drag_node.flat("elem"):
+            for e in drag_node.flat(types=elem_nodes):
+                existing += 1
                 # Disallow drop of image elems onto a Dot op.
                 # if drag_node.type == "elem image":
                 #     continue
                 # Add element to operation
                 if modify:
+                    count +=1
                     self.add_reference(e)
                 some_nodes = True
-            return some_nodes
-        return False
+            result = some_nodes
+        return result
 
     def has_color_attribute(self, attribute):
         return attribute in self.allowed_attributes
@@ -214,9 +223,25 @@ class RasterOpNode(Node, Parameters):
                                     self.add_reference(node)
                                 # Have classified but more classification might be needed
                                 return True, self.stopop
-                else:  # empty ? Anything goes
+                else:  # empty ? Anything with either a solid fill or a plain white stroke goes
                     if self.valid_node(node):
-                        self.add_reference(node)
+                        addit = False
+                        if node.type == "elem image":
+                            addit = True
+                        if hasattr(node, "fill"):
+                            if node.fill is not None and node.fill.argb is not None:
+                                if matching_color(node.fill, Color("white")):
+                                    addit = True
+                                if matching_color(node.fill, Color("black")):
+                                    addit = True
+                        if hasattr(node, "stroke"):
+                            if node.stroke is not None and node.stroke.argb is not None:
+                                if matching_color(node.stroke, Color("white")):
+                                    addit = True
+                                if matching_color(node.stroke, Color("black")):
+                                    addit = True
+                        if addit:
+                            self.add_reference(node)
                     # Have classified but more classification might be needed
                     return True, self.stopop
             elif self.default and usedefault:
@@ -250,21 +275,27 @@ class RasterOpNode(Node, Parameters):
 
     def time_estimate(self):
         estimate = 0
-        for node in self.children:
-            if node.type != "elem image":
-                continue
-            step_y = node.step_x
-            step_x = node.step_y
-            estimate += (
-                node.image.width
-                * node.image.height
-                * step_x
-                / UNITS_PER_MM
-                * self.speed
-            )
-            estimate += node.image.height * step_y / UNITS_PER_MM * self.speed
+        dpi = self.dpi
+        min_x, min_y, max_x, max_y = Node.union_bounds(self.flat(types=elem_ref_nodes))
+        width_in_inches = (max_x - min_x) / UNITS_PER_INCH
+        height_in_inches = (max_y - min_y) / UNITS_PER_INCH
+        speed_in_per_s = self.speed / MM_PER_INCH
+        if self.raster_direction in (0, 1, 4):
+            scanlines = height_in_inches * dpi
+            if self.raster_swing:
+                scanlines *= 2
+            estimate += scanlines * width_in_inches / speed_in_per_s + height_in_inches / speed_in_per_s
+        if self.raster_direction in (2, 3, 4):
+            scanlines = width_in_inches * dpi
+            if self.raster_swing:
+                scanlines *= 2
+            estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+        def isNaN(num):
+            return num!= num
+        if isNaN(estimate):
+            estimate = 0
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
@@ -310,9 +341,13 @@ class RasterOpNode(Node, Parameters):
             step_y = self.raster_step_y
             bounds = self.bounds
             img_mx = Matrix.scale(step_x, step_y)
+            data = list(self.flat())
+            reverse = context.elements.classify_reverse
+            if reverse:
+                data = list(reversed(data))
             try:
                 image = make_raster(
-                    list(self.flat()), bounds=bounds, step_x=step_x, step_y=step_y
+                    data, bounds=bounds, step_x=step_x, step_y=step_y
                 )
                 if step_x > 0:
                     img_mx.post_translate(bounds[0], 0)

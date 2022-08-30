@@ -23,6 +23,7 @@ class EllipseNode(Node):
         stroke_width=None,
         stroke_scale=None,
         fillrule=None,
+        label=None,
         settings=None,
         **kwargs,
     ):
@@ -43,6 +44,7 @@ class EllipseNode(Node):
             else stroke_scale
         )
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
+        self.label = label
         self.lock = False
 
     def __repr__(self):
@@ -86,7 +88,7 @@ class EllipseNode(Node):
         value of the determinant of the local matrix (1d matrix scaling)"""
         scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
         sw = self.stroke_width / scalefactor
-        limit = 25 * sqrt(zoomscale) * scalefactor
+        limit = 25 * sqrt(zoomscale) / scalefactor
         if sw < limit:
             sw = limit
         return sw

@@ -38,6 +38,7 @@ class WaitPropertyPanel(wx.Panel):
 
     def pane_hide(self):
         self.panel.pane_hide()
+        self.context.elements.signal("element_property_update", self.operation)
 
     def pane_show(self):
         self.panel.pane_show()

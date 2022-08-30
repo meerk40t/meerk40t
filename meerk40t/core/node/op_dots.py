@@ -212,6 +212,12 @@ class DotsOpNode(Node, Parameters):
                 estimate += self.dwell_time
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+
+        def isNaN(num):
+            return num!= num
+        if isNaN(estimate):
+            estimate = 0
+
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
 

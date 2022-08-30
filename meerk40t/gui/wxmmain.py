@@ -61,6 +61,9 @@ from .icons import (
     icons8_ungroup_objects_50,
     icons8_vector_50,
     icons_centerize,
+    icons8_centerv_50,
+    icons8_centerh_50,
+    icons8_arrange_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_icon_appearance,
@@ -1006,14 +1009,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignLeft",
             {
-                "label": _("Align Left"),
+                "label": _("Left"),
                 "icon": icons8_align_left_50,
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align left\n"),
-                "right": lambda v: kernel.elements("align bedleft\n"),
-                "size": buttonsize,
+                "action": lambda v: kernel.elements("align push first individual left pop\n"),
+                "right": lambda v: kernel.elements("align push bed group left pop\n"),                "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1023,14 +1025,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignRight",
             {
-                "label": _("Align Right"),
+                "label": _("Right"),
                 "icon": icons8_align_right_50,
                 "tip": _(
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align right\n"),
-                "right": lambda v: kernel.elements("align bedright\n"),
-                "size": buttonsize,
+                "action": lambda v: kernel.elements("align push first individual right pop\n"),
+                "right": lambda v: kernel.elements("align push bed group right pop\n"),                "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1040,13 +1041,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignTop",
             {
-                "label": _("Align Top"),
+                "label": _("Top"),
                 "icon": icons8_align_top_50,
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align top\n"),
-                "right": lambda v: kernel.elements("align bedtop\n"),
+                "action": lambda v: kernel.elements("align push first individual top pop\n"),
+                "right": lambda v: kernel.elements("align push bed group top pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1057,13 +1058,13 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignBottom",
             {
-                "label": _("Align Bottom"),
+                "label": _("Bottom"),
                 "icon": icons8_align_bottom_50,
                 "tip": _(
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align bottom\n"),
-                "right": lambda v: kernel.elements("align bedbottom\n"),
+                "action": lambda v: kernel.elements("align push first individual bottom pop\n"),
+                "right": lambda v: kernel.elements("align push bed group bottom pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1072,15 +1073,32 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/align/AlignCenter",
+            "button/align/AlignCenterH",
             {
-                "label": _("Align Center"),
-                "icon": icons_centerize,
+                "label": _("Center X"),
+                "icon": icons8_centerh_50,
                 "tip": _(
-                    "Align selected elements at their center (right click: of the bed)"
+                    "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align center\n"),
-                "right": lambda v: kernel.elements("align bedcenter\n"),
+                "action": lambda v: kernel.elements("align push first individual centerh pop\n"),
+                "right": lambda v: kernel.elements("align push bed group centerh pop\n"),
+                "size": buttonsize,
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+            },
+        )
+        kernel.register(
+            "button/align/AlignCenterV",
+            {
+                "label": _("Center Y"),
+                "icon": icons8_centerv_50,
+                "tip": _(
+                    "Align selected elements at their center vertically (right click: of the bed)"
+                ),
+                "action": lambda v: kernel.elements("align push first individual centerv pop\n"),
+                "right": lambda v: kernel.elements("align push bed group centerv pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -2190,16 +2208,6 @@ class MeerK40t(MWindow):
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp makers\n"),
-            id=menuitem.GetId(),
-        )
-        menuitem = self.help_menu.Append(
-            wx.ID_ANY,
-            _("&IRC"),
-            _("Chat with developers to get help on the Meerk40t IRC channel"),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp irc\n"),
             id=menuitem.GetId(),
         )
         self.help_menu.AppendSeparator()

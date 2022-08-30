@@ -1,7 +1,5 @@
 import wx
 
-from meerk40t.core.units import PX_PER_INCH
-
 """
 Svg-text has the following properties (and default values)
  .anchor = "start"  # start, middle, end.
@@ -70,10 +68,8 @@ def wxfont_to_svg(textnode):
 
     wxfont = textnode.wxfont
 
-    # A point is 1/72 of an inch
-    factor = PX_PER_INCH / 72
-    if textnode.font_size != wxfont.GetPointSize() * factor:
-        textnode.font_size = wxfont.GetPointSize() * factor
+    if textnode.font_size != wxfont.GetPointSize():
+        textnode.font_size = wxfont.GetPointSize()
         anychanges = True
     if textnode.font_weight != str(wxfont.GetWeight()):
         textnode.font_weight = str(wxfont.GetWeight())

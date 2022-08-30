@@ -105,19 +105,17 @@ def svgfont_to_wx(textnode):
 
     svg_to_wx_family(textnode, wxfont)
     svg_to_wx_fontstyle(textnode, wxfont)
-
-    # A point is 1/72 of an inch
-    factor = 72 / PX_PER_INCH
-    font_size = textnode.font_size * factor
-    if font_size < 1:
-        if font_size > 0:
-            textnode.matrix.pre_scale(font_size, font_size)
-            font_size = 1
-            textnode.font_size = font_size  # No zero sized fonts.
+    font_size = textnode.font_size
     try:
         wxfont.SetFractionalPointSize(font_size)
     except AttributeError:
-        wxfont.SetPointSize(int(font_size))
+        # If we cannot set the fractional point size, we scale up to adjust to fractional levels.
+        integer_font_size = int(round(font_size))
+        scale = font_size / integer_font_size
+        if scale != 1.0:
+            textnode.matrix.pre_scale(scale, scale)
+            textnode.font_size = integer_font_size
+        wxfont.SetPointSize(integer_font_size)
     wxfont.SetUnderlined(textnode.underline)
     wxfont.SetStrikethrough(textnode.strikethrough)
 
@@ -500,8 +498,8 @@ class LaserRender:
                 if cut.cache is not None:
                     # Cache exists and is valid.
                     gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
-                    # gc.SetBrush(wx.RED_BRUSH) # TODO: TESTING
-                    # gc.DrawRectangle(0, 0, cut.c_width, cut.c_height) # TODO: TESTING
+                    # gc.SetBrush(wx.RED_BRUSH)
+                    # gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
                 else:
                     # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
@@ -548,7 +546,8 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth(1000)
+            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
+            self._set_penwidth(1000 / stroke_scale)
         else:
             self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
@@ -579,7 +578,8 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth(1000)
+            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
+            self._set_penwidth(1000 / stroke_scale)
         else:
             self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
@@ -610,7 +610,8 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth(1000)
+            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
+            self._set_penwidth(1000 / stroke_scale)
         else:
             self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
@@ -665,7 +666,8 @@ class LaserRender:
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
         if draw_mode & DRAW_MODE_LINEWIDTH:
-            self._set_penwidth(1000)
+            stroke_scale = sqrt(abs(matrix.determinant)) if matrix else 1.0
+            self._set_penwidth(1000 / stroke_scale)
         else:
             self._set_penwidth(node.implied_stroke_width(zoomscale))
         self.set_pen(
@@ -691,25 +693,22 @@ class LaserRender:
                 text = text.upper()
             if ttf == "lowercase":
                 text = text.lower()
-        # if node.width != f_width or node.height != f_height:
-        #     node._bounds_dirty = True
-        # print (f"node claims: {node.width} x {node.height} (+ offset of: {node.offset_x} x {node.offset_y})\ngc claims: {f_width} x {f_height}")
-        if node._bounds_dirty:
-            f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(
-                text
-            )
-        else:
-            f_height = node.height
-            f_width = node.width
-        # We do have a compensation factor to make sure we are drawing really at the edge..
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(
+            text
+        )
+        if node.width != f_width or node.height != f_height or node.descent != f_descent or node.leading != f_external_leading:
+            node.width = f_width
+            node.height = f_height
+            node.descent = f_descent
+            node.leading = f_external_leading
+            node._bounds_dirty = True
+        # No offset. Text draw positions should match svg. Draw box over text. Must obscure.
+        dy = f_descent - f_height  # wx=0, convert baseline to correct position.
         dx = 0
-        dy = -f_height
         if node.anchor == "middle":
             dx -= f_width / 2
         elif node.anchor == "end":
             dx -= f_width
-        dx += node.offset_x
-        dy += node.offset_y
         gc.DrawText(text, dx, dy)
         gc.PopState()
 
@@ -765,9 +764,54 @@ class LaserRender:
             gc.PopState()
 
     def measure_text(self, node):
-        # A 'real' height routine needs to draw the string on an
-        # empty canvas and find the first and last dots on a line...
-        # We are creating a temporary bitmap and paint on it...
+        """
+        Use default measure text routines to calculate height etc.
+
+        @param node:
+        @return:
+        """
+
+        bmp = wx.Bitmap(1, 1, 32)
+        dc = wx.MemoryDC()
+        dc.SelectObject(bmp)
+        gc = wx.GraphicsContext.Create(dc)
+        draw_mode = self.context.draw_mode
+        if draw_mode & DRAW_MODE_VARIABLES:
+            # Only if flag show the translated values
+            text = self.context.elements.mywordlist.translate(node.text)
+            node.bounds_with_variables_translated = True
+        else:
+            text = node.text
+            node.bounds_with_variables_translated = False
+        if node.texttransform:
+            ttf = node.texttransform.lower()
+            if ttf == "capitalize":
+                text = text.capitalize()
+            elif ttf == "uppercase":
+                text = text.upper()
+            if ttf == "lowercase":
+                text = text.lower()
+        svgfont_to_wx(node)
+        gc.SetFont(node.wxfont, wx.WHITE)
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        node.width = f_width
+        node.height = f_height
+        node.descent = f_descent
+        node.leading = f_external_leading
+        dc.SelectObject(wx.NullBitmap)
+        dc.Destroy()
+        del dc
+
+    def measure_text_render(self, node):
+        """
+        A 'real' height routine needs to draw the string on an
+        empty canvas and find the first and last dots on a line...
+        We are creating a temporary bitmap and paint on it...
+
+        @param node:
+        @return:
+        """
+
         bmp = wx.Bitmap(1000, 500, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
@@ -817,6 +861,8 @@ class LaserRender:
             node._bounds_dirty = True
         node.width = f_width
         node.height = f_height
+        node.descent = f_descent
+        node.leading = f_external_leading
         node.offset_x = offs_x
         node.offset_y = offs_y
         __ = node.bounds
@@ -834,6 +880,7 @@ class LaserRender:
             ):
                 # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
                 self.measure_text(item)
+                item._bounds_dirty = True
 
     def make_raster(
         self,

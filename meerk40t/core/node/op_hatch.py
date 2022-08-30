@@ -252,6 +252,12 @@ class HatchOpNode(Node, Parameters):
         # TODO: Implement time_estimate.
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+
+        def isNaN(num):
+            return num!= num
+        if isNaN(estimate):
+            estimate = 0
+
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
@@ -284,7 +290,10 @@ class HatchOpNode(Node, Parameters):
             settings = self.settings
             outlines = list()
             for node in self.children:
-                path = node.as_path()
+                try:
+                    path = node.as_path()
+                except AttributeError:
+                    continue
                 path.approximate_arcs_with_cubics()
                 self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():

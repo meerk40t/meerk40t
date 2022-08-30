@@ -3,6 +3,7 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.gui.icons import DARKMODE
 
 _ = wx.GetTranslation
 
@@ -363,12 +364,19 @@ class ToneCurvePanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_reset_tone, self.button_reset_tone)
         # end wxGlade
         self.curve_panel.Bind(wx.EVT_PAINT, self.on_tone_panel_paint)
-        self.curve_panel.Bind(wx.EVT_ERASE_BACKGROUND, lambda e: None)
+        # self.curve_panel.Bind(wx.EVT_ERASE_BACKGROUND, lambda e: None)
         self.curve_panel.Bind(wx.EVT_MOTION, self.on_curve_mouse_move)
         self.curve_panel.Bind(wx.EVT_LEFT_DOWN, self.on_curve_mouse_left_down)
         self.curve_panel.Bind(wx.EVT_LEFT_UP, self.on_curve_mouse_left_up)
         self.curve_panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.on_curve_mouse_lost)
         self.point = -1
+
+        self.graph_brush = wx.Brush()
+        self.graph_pen = wx.Pen()
+        c = wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)
+        self.graph_brush.SetColour(c)
+        self.graph_pen.SetColour(wx.Colour(255 - c[0], 255 - c[1], 255 - c[2]))
+        self.graph_pen.SetWidth(5)
 
         op = None
         for n in node.operations:
@@ -394,7 +402,7 @@ class ToneCurvePanel(wx.Panel):
         self.check_enable_tone.SetValue(1)
         self.button_reset_tone.SetToolTip(_("Reset Tone Curve"))
         self.curve_panel.SetMinSize((256, 256))
-        self.curve_panel.SetBackgroundColour(wx.Colour(255, 255, 255))
+        self.curve_panel.SetMaxSize((256, 256))
         # end wxGlade
 
     def __do_layout(self):
@@ -474,10 +482,12 @@ class ToneCurvePanel(wx.Panel):
         dc = wx.MemoryDC()
         dc.SelectObject(self._tone_panel_buffer)
         dc.Clear()
-        dc.SetBackground(wx.GREEN_BRUSH)
         gc = wx.GraphicsContext.Create(dc)
         gc.PushState()
-        gc.SetPen(wx.BLACK_PEN)
+        gc.SetBrush(self.graph_brush)
+        gc.DrawRectangle(0, 0, *self._tone_panel_buffer.Size)
+        gc.SetPen(self.graph_pen)
+
         tone_values = self.op["values"]
         if self.op["type"] == "spline":
             spline = ImageNode.spline(tone_values)
