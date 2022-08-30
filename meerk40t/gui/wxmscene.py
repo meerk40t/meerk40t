@@ -121,7 +121,7 @@ class MeerK40tScenePanel(wx.Panel):
                 keyvalue = get_key_name(event)
                 if is_navigation_key(keyvalue):
                     if self._keybind_channel:
-                        self._keybind_channel(f"Charhook used for keydown: {keyvalue}")
+                        self._keybind_channel(f"Scene, char_hook used for key_down: {keyvalue}")
                     self.on_key_down(event)
                     event.Skip()
                 else:
@@ -761,19 +761,25 @@ class MeerK40tScenePanel(wx.Panel):
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
         if self._keybind_channel:
-            self._keybind_channel(f"key down: {keyvalue}")
+            self._keybind_channel(f"Scene key_down: {keyvalue}.")
         if self.context.bind.trigger(keyvalue):
             if self._keybind_channel:
-                self._keybind_channel(f"executed")
+                self._keybind_channel(f"Scene key_down: {keyvalue} executed.")
+        else:
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
         event.Skip()
 
     def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
         if self._keybind_channel:
-            self._keybind_channel(f"key up: {keyvalue}")
+            self._keybind_channel(f"Scene key_up: {keyvalue}.")
         if self.context.bind.untrigger(keyvalue):
             if self._keybind_channel:
-                self._keybind_channel(f"executed")
+                self._keybind_channel(f"Scene key_up: {keyvalue} executed.")
+        else:
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
 
 

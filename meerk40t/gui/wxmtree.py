@@ -31,7 +31,7 @@ from .icons import (
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
-from .wxutils import create_menu, get_key_name
+from .wxutils import create_menu, get_key_name, is_navigation_key
 
 _ = wx.GetTranslation
 
@@ -75,6 +75,7 @@ class TreePanel(wx.Panel):
         self.__set_tree()
         self.wxtree.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.wxtree.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self._keybind_channel = self.context.channel("keybinds")
 
         self.context.signal("rebuild_tree")
 
@@ -104,20 +105,49 @@ class TreePanel(wx.Panel):
         )
 
     def on_key_down(self, event):
+        """
+        Keydown for the tree does not execute navigation keys. These are only executed by the scene since they do
+        useful work for the tree.
+
+        Make sure the treectl can work on standard keys...
+
+        @param event:
+        @return:
+        """
+        event.Skip()
         keyvalue = get_key_name(event)
+        if is_navigation_key(keyvalue):
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_down: {keyvalue} is a navigation key. Not processed.")
+            return
         if self.context.bind.trigger(keyvalue):
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_down: {keyvalue} is executed.")
         else:
-            # Make sure the treectl can work on standard keys...
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_down: {keyvalue} was unbound.")
 
     def on_key_up(self, event):
+        """
+        Keyup for the tree does not execute navigation keys. These are only executed by the scene.
+
+        Make sure the treectl can work on standard keys...
+
+        @param event:
+        @return:
+        """
+        event.Skip()
         keyvalue = get_key_name(event)
+        if is_navigation_key(keyvalue):
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_up: {keyvalue} is a navigation key. Not processed.")
+            return
         if self.context.bind.untrigger(keyvalue):
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_up: {keyvalue} is executed.")
         else:
-            # Make sure the treectl can work on standard keys...
-            event.Skip()
+            if self._keybind_channel:
+                self._keybind_channel(f"Tree key_up: {keyvalue} was unbound.")
 
     def pane_show(self):
         pass
