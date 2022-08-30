@@ -446,9 +446,11 @@ class DistributionPanel(wx.Panel):
             y = top_edge
             dlen = len(data)
             target.append((x, y))
-            if dlen > 1:
-                dx = (right_edge - left_edge) / (dlen - 1)
-                dy = (bottom_edge - top_edge) / (dlen - 1)
+            if dlen <= 1:
+                return
+            dx = (right_edge - left_edge) / (dlen - 1)
+            dy = (bottom_edge - top_edge) / (dlen - 1)
+            # target.extend([(x + dx * i, y + dy * i) for i in range(1, dlen)])?
             while dlen > 1:
                 x += dx
                 y += dy
