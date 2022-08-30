@@ -8,7 +8,7 @@ _ = wx.GetTranslation
 
 
 def register_panel(window, context):
-    panel = NotePanel(window, wx.ID_ANY, context=context)
+    panel = NotePanel(window, wx.ID_ANY, context=context, pane=True)
     pane = (
         aui.AuiPaneInfo()
         .Float()
@@ -33,9 +33,11 @@ class NotePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.check_auto_open_notes = wx.CheckBox(
-            self, wx.ID_ANY, _("Automatically Open Notes")
-        )
+        self.pane = pane
+        if not self.pane:
+            self.check_auto_open_notes = wx.CheckBox(
+                self, wx.ID_ANY, _("Automatically Open Notes")
+            )
         self.text_notes = wx.TextCtrl(
             self,
             wx.ID_ANY,
@@ -46,24 +48,27 @@ class NotePanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_auto_note_open, self.check_auto_open_notes
-        )
+        if not self.pane:
+            self.Bind(
+                wx.EVT_CHECKBOX, self.on_check_auto_note_open, self.check_auto_open_notes
+            )
         self.Bind(wx.EVT_TEXT, self.on_text_notes, self.text_notes)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_notes, self.text_notes)
         # end wxGlade
 
     def __set_properties(self):
         # begin wxGlade: NotePanel.__set_properties
-        self.check_auto_open_notes.SetToolTip(
-            _("Automatically open notes if they exist when file is opened.")
-        )
+        if not self.pane:
+            self.check_auto_open_notes.SetToolTip(
+                _("Automatically open notes if they exist when file is opened.")
+            )
         # end wxGlade
 
     def __do_layout(self):
         # begin wxGlade: NotePanel.__do_layout
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
-        sizer_1.Add(self.check_auto_open_notes, 0, 0, 0)
+        if not self.pane:
+            sizer_1.Add(self.check_auto_open_notes, 0, 0, 0)
         sizer_1.Add(self.text_notes, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
@@ -71,8 +76,9 @@ class NotePanel(wx.Panel):
         # end wxGlade
 
     def pane_show(self, *args):
-        self.context.setting(bool, "auto_note", True)
-        self.check_auto_open_notes.SetValue(self.context.elements.auto_note)
+        if not self.pane:
+            self.context.setting(bool, "auto_note", True)
+            self.check_auto_open_notes.SetValue(self.context.elements.auto_note)
         if self.context.elements.note is not None:
             self.text_notes.SetValue(self.context.elements.note)
         self.context.listen("note", self.on_note_listen)
