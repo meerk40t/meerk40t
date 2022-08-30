@@ -1641,7 +1641,7 @@ class GRBLEmulator(Module, Parameters):
             elif self.move_mode == 2:
                 # TODO: Implement CW_ARC
                 self.plotcut.plot_append(x, y, self.power / 1000.0)
-            elif self.move_mode in 3:
+            elif self.move_mode == 3:
                 # TODO: Implement CCW_ARC
                 self.plotcut.plot_append(x, y, self.power / 1000.0)
         return 0
