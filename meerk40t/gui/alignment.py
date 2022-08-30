@@ -514,6 +514,8 @@ class DistributionPanel(wx.Panel):
                     #     if pt.x > 1.0E8 or pt.y > 1.0E8:
                     #         print ("Rather high [%d]: x=%.1f, y=%.1f" % (idx, pt.x, pt.y))
                     #     idx += 1
+                    last_x = None
+                    last_y = None
                     idx = -1
                     for pt in polygons[0]:
                         if pt is None or pt.x is None or pt.y is None:
