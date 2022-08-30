@@ -6370,13 +6370,16 @@ class Elemental(Service):
                 n.replace_node(keep_children=True, **new_settings)
             self.signal("rebuild_tree")
 
-        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_submenu(_("RasterWizard"))
         @self.tree_operation(_("Set to None"), node_type="elem image", help="")
         def image_rasterwizard_apply_none(node, **kwargs):
             node.operations = []
             node.update(self)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
-        @self.tree_submenu(_("Apply raster script"))
+        @self.tree_submenu(_("RasterWizard"))
         @self.tree_values(
             "script", values=list(self.match("raster_script", suffix=True))
         )
@@ -6385,6 +6388,9 @@ class Elemental(Service):
             raster_script = self.lookup(f"raster_script/{script}")
             node.operations = raster_script
             node.update(self)
+            activate = self.kernel.lookup("function/open_property_window_for_node")
+            if activate is not None:
+                activate(node)
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
