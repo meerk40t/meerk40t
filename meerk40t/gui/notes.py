@@ -50,7 +50,9 @@ class NotePanel(wx.Panel):
 
         if not self.pane:
             self.Bind(
-                wx.EVT_CHECKBOX, self.on_check_auto_note_open, self.check_auto_open_notes
+                wx.EVT_CHECKBOX,
+                self.on_check_auto_note_open,
+                self.check_auto_open_notes,
             )
         self.Bind(wx.EVT_TEXT, self.on_text_notes, self.text_notes)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_notes, self.text_notes)

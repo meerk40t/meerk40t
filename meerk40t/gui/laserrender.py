@@ -693,10 +693,13 @@ class LaserRender:
                 text = text.upper()
             if ttf == "lowercase":
                 text = text.lower()
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(
-            text
-        )
-        if node.width != f_width or node.height != f_height or node.descent != f_descent or node.leading != f_external_leading:
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        if (
+            node.width != f_width
+            or node.height != f_height
+            or node.descent != f_descent
+            or node.leading != f_external_leading
+        ):
             node.width = f_width
             node.height = f_height
             node.descent = f_descent

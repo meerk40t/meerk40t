@@ -82,10 +82,7 @@ def plugin(kernel, lifecycle=None):
 
         @kernel.console_argument("uri", type=str)
         @kernel.console_command(
-            "uri",
-            help="Set camera uri",
-            output_type="camera",
-            input_type="camera"
+            "uri", help="Set camera uri", output_type="camera", input_type="camera"
         )
         def camera_contrast(
             data=None,
@@ -100,7 +97,7 @@ def plugin(kernel, lifecycle=None):
             "contrast",
             help="Turn on AutoContrast",
             output_type="camera",
-            input_type="camera"
+            input_type="camera",
         )
         def camera_contrast(
             data=None,
@@ -113,7 +110,7 @@ def plugin(kernel, lifecycle=None):
             "nocontrast",
             help="Turn off AutoContrast",
             output_type="camera",
-            input_type="camera"
+            input_type="camera",
         )
         def camera_no_contrast(
             data=None,
@@ -128,7 +125,7 @@ def plugin(kernel, lifecycle=None):
             "size",
             help="force set camera size",
             output_type="camera",
-            input_type="camera"
+            input_type="camera",
         )
         def camera_size(
             data=None,

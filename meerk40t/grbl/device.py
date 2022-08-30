@@ -7,16 +7,18 @@ import time
 import serial
 from serial import SerialException
 
-from meerk40t.kernel import Service, Module
+from meerk40t.kernel import Module, Service
 
 from ..core.cutcode import (
     CubicCut,
+    CutCode,
     DwellCut,
     InputCut,
     LineCut,
     OutputCut,
+    PlotCut,
     QuadCut,
-    WaitCut, CutCode, PlotCut,
+    WaitCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -1261,7 +1263,7 @@ class GRBLEmulator(Module, Parameters):
         self.speed = 0
         self.used_speed = 0
         self.buffer = ""
-        self.relative = False # G90 default.
+        self.relative = False  # G90 default.
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -1419,6 +1421,7 @@ class GRBLEmulator(Module, Parameters):
             elif data == "$N":
                 pass
             elif data == "$H":
+
                 def realtime_home():
                     yield "home"
                     if self.home_adjust is not None:
@@ -1534,6 +1537,7 @@ class GRBLEmulator(Module, Parameters):
                         yield "home"
                         if self.home_adjust is not None:
                             yield "move", self.home_adjust[0], self.home_adjust[1]
+
                     self.spooler.send(move_to_origin())
                 elif v == 38.1:
                     # Touch Plate

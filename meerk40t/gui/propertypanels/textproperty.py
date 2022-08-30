@@ -5,12 +5,12 @@ import wx
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.wxutils import ScrolledPanel
 
+from ...kernel import signal_listener
 from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel
-from ...kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -150,7 +150,10 @@ class TextVariables(wx.Panel):
         self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
         self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
         sizer_h_variables = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Available Variables (double click to use)")), wx.HORIZONTAL
+            wx.StaticBox(
+                self, wx.ID_ANY, _("Available Variables (double click to use)")
+            ),
+            wx.HORIZONTAL,
         )
         sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_h_variables)
@@ -405,11 +408,13 @@ class TextPropertyPanel(ScrolledPanel):
         sizer_page_main.Add(self.panel_stroke, 0, wx.EXPAND, 0)
         sizer_page_main.Add(self.panel_fill, 0, wx.EXPAND, 0)
         page_main.SetSizer(sizer_page_main)
+
         def on_size_mm(evt):
             siz1 = self.GetSize()
-            siz = (siz1[0]-20, -1)
+            siz = (siz1[0] - 20, -1)
             page_main.SetSize(siz)
             page_main.Layout()
+
         page_main.Bind(wx.EVT_SIZE, on_size_mm)
 
         page_extended = wx.Panel(self.notebook, wx.ID_ANY)
@@ -417,11 +422,13 @@ class TextPropertyPanel(ScrolledPanel):
         self.panel_xy.Reparent(page_extended)
         sizer_page_extended.Add(self.panel_xy, 0, wx.EXPAND, 0)
         page_extended.SetSizer(sizer_page_extended)
+
         def on_size_ex(evt):
             siz1 = self.GetSize()
-            siz = (siz1[0]-20, -1)
+            siz = (siz1[0] - 20, -1)
             page_extended.SetSize(siz)
             page_extended.Layout()
+
         page_extended.Bind(wx.EVT_SIZE, on_size_ex)
 
         page_variables = wx.Panel(self.notebook, wx.ID_ANY)
@@ -429,11 +436,13 @@ class TextPropertyPanel(ScrolledPanel):
         self.panel_variables.Reparent(page_variables)
         sizer_page_variables.Add(self.panel_variables, 1, wx.EXPAND, 0)
         page_variables.SetSizer(sizer_page_variables)
+
         def on_size_pv(evt):
             siz1 = self.GetSize()
-            siz = (siz1[0]-20, -1)
+            siz = (siz1[0] - 20, -1)
             page_variables.SetSize(siz)
             page_variables.Layout()
+
         page_variables.Bind(wx.EVT_SIZE, on_size_pv)
 
         page_fonthistory = wx.Panel(self.notebook, wx.ID_ANY)
@@ -441,11 +450,13 @@ class TextPropertyPanel(ScrolledPanel):
         self.panel_history.Reparent(page_fonthistory)
         sizer_page_history.Add(self.panel_history, 1, wx.EXPAND, 0)
         page_fonthistory.SetSizer(sizer_page_history)
+
         def on_size_fh(evt):
             siz1 = self.GetSize()
-            siz = (siz1[0]-20, -1)
+            siz = (siz1[0] - 20, -1)
             page_fonthistory.SetSize(siz)
             page_fonthistory.Layout()
+
         page_fonthistory.Bind(wx.EVT_SIZE, on_size_fh)
 
         self.notebook.AddPage(page_main, _("Colors"))
@@ -666,6 +677,7 @@ class TextPropertyPanel(ScrolledPanel):
     #         self.text_text.SetFocus()
     #     except RuntimeError:
     #         pass
+
 
 class TextProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):

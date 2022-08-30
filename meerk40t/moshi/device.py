@@ -1127,7 +1127,9 @@ class MoshiController:
             )
             self._connection = connection
             if self._connection is None:
-                raise ConnectionRefusedError("ch341 connect did not return a connection.")
+                raise ConnectionRefusedError(
+                    "ch341 connect did not return a connection."
+                )
             if self.context.mock:
                 self._connection.mock_status = 205
                 self._connection.mock_finish = 207

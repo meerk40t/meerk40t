@@ -1,7 +1,8 @@
 import wx
+
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
-from ..wxutils import TextCtrl, ScrolledPanel
+from ..wxutils import ScrolledPanel, TextCtrl
 from .attributes import IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
@@ -14,13 +15,22 @@ class ImagePropertyPanel(ScrolledPanel):
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.node = node
-        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
-
-        self.text_dpi = TextCtrl(
-            self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float", limited=True,
+        self.panel_id = IdPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
         )
 
-        self.panel_xy = PositionSizePanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
+        self.text_dpi = TextCtrl(
+            self,
+            wx.ID_ANY,
+            "500",
+            style=wx.TE_PROCESS_ENTER,
+            check="float",
+            limited=True,
+        )
+
+        self.panel_xy = PositionSizePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
 
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [

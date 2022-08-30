@@ -118,7 +118,9 @@ class TreePanel(wx.Panel):
         keyvalue = get_key_name(event)
         if is_navigation_key(keyvalue):
             if self._keybind_channel:
-                self._keybind_channel(f"Tree key_down: {keyvalue} is a navigation key. Not processed.")
+                self._keybind_channel(
+                    f"Tree key_down: {keyvalue} is a navigation key. Not processed."
+                )
             return
         if self.context.bind.trigger(keyvalue):
             if self._keybind_channel:
@@ -140,7 +142,9 @@ class TreePanel(wx.Panel):
         keyvalue = get_key_name(event)
         if is_navigation_key(keyvalue):
             if self._keybind_channel:
-                self._keybind_channel(f"Tree key_up: {keyvalue} is a navigation key. Not processed.")
+                self._keybind_channel(
+                    f"Tree key_up: {keyvalue} is a navigation key. Not processed."
+                )
             return
         if self.context.bind.untrigger(keyvalue):
             if self._keybind_channel:

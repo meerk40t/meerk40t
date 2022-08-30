@@ -71,7 +71,7 @@ class ColorWidget(StatusBarWidget):
             button = event.EventObject
             color = button.GetBackgroundColour()
             rgb = [color.Red(), color.Green(), color.Blue()]
-            if button==self.button_color[0]:
+            if button == self.button_color[0]:
                 color_str = "none"
             else:
                 color_str = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
@@ -84,7 +84,7 @@ class ColorWidget(StatusBarWidget):
             button = event.EventObject
             color = button.GetBackgroundColour()
             rgb = [color.Red(), color.Green(), color.Blue()]
-            if button==self.button_color[0]:
+            if button == self.button_color[0]:
                 color_str = "none"
             else:
                 color_str = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"

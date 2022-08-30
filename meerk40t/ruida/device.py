@@ -611,7 +611,9 @@ class RuidaEmulator(Module, Parameters):
 
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plotcut.plot_append(int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+            )
 
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
@@ -630,12 +632,16 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plotcut.plot_append(int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+            )
             desc = f"Move Horizontal Relative ({dx / UNITS_PER_uM} nm)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plotcut.plot_append(int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+            )
             desc = f"Move Vertical Relative ({dy / UNITS_PER_uM} nm)"
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
@@ -725,7 +731,9 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plotcut.plot_append(int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = (
                 f"Cut Absolute ({self.x / UNITS_PER_uM} nm, {self.y / UNITS_PER_uM} nm)"
             )
@@ -734,17 +742,23 @@ class RuidaEmulator(Module, Parameters):
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
-            self.plotcut.plot_append(int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = f"Cut Relative ({dx / UNITS_PER_uM} nm, {dy / UNITS_PER_uM} nm)"
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plotcut.plot_append(int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = f"Cut Horizontal Relative ({dx / UNITS_PER_uM} mil)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plotcut.plot_append(int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = f"Cut Vertical Relative ({dy / UNITS_PER_uM} mil)"
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.

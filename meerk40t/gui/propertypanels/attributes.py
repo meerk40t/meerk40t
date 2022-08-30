@@ -1,12 +1,24 @@
 import wx
-from meerk40t.gui.laserrender import swizzlecolor
-from meerk40t.svgelements import Color
-from meerk40t.gui.wxutils import CheckBox, TextCtrl
+
 from meerk40t.core.units import Length
+from meerk40t.gui.laserrender import swizzlecolor
+from meerk40t.gui.wxutils import CheckBox, TextCtrl
+from meerk40t.svgelements import Color
+
 _ = wx.GetTranslation
 
+
 class ColorPanel(wx.Panel):
-    def __init__(self, *args, context=None, label=None, attribute=None, callback=None, node=None, **kwds):
+    def __init__(
+        self,
+        *args,
+        context=None,
+        label=None,
+        attribute=None,
+        callback=None,
+        node=None,
+        **kwds,
+    ):
         # begin wxGlade: LayerSettingPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
@@ -19,9 +31,7 @@ class ColorPanel(wx.Panel):
         self.node = node
 
         self.header = wx.StaticBox(self, wx.ID_ANY, _(self.label))
-        main_sizer = wx.StaticBoxSizer(
-            self.header, wx.VERTICAL
-        )
+        main_sizer = wx.StaticBoxSizer(self.header, wx.VERTICAL)
         color_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(color_sizer, 0, wx.EXPAND, 0)
         self.btn_color = []
@@ -63,7 +73,7 @@ class ColorPanel(wx.Panel):
                 if bidx == 0:
                     value = None
                 else:
-                    if bidx<0 or bidx>=len(self.btn_color):
+                    if bidx < 0 or bidx >= len(self.btn_color):
                         bidx = -1
                     else:
                         bcolor = button.GetBackgroundColour()
@@ -116,10 +126,10 @@ class ColorPanel(wx.Panel):
                 else:
                     s = value.hexrgb
                 colinfo = s
-            self.header.SetLabel(_(self.label)+ " (" + colinfo + ")")
+            self.header.SetLabel(_(self.label) + " (" + colinfo + ")")
             self.header.Refresh()
 
-            if idx is None:    # Okay, we need to determine it ourselves
+            if idx is None:  # Okay, we need to determine it ourselves
                 idx = -1
                 if value is None:
                     idx = 0
@@ -136,6 +146,7 @@ class ColorPanel(wx.Panel):
             else:
                 label.SetLabel("")
         self.Layout()
+
 
 class IdPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
@@ -215,6 +226,7 @@ class IdPanel(wx.Panel):
         else:
             self.Hide()
 
+
 class PositionSizePanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -222,10 +234,18 @@ class PositionSizePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
-        self.text_x = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
-        self.text_y = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
-        self.text_w = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
-        self.text_h = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length")
+        self.text_x = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
+        )
+        self.text_y = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
+        )
+        self.text_w = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
+        )
+        self.text_h = TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER, limited=True, check="length"
+        )
         self.check_lock = CheckBox(self, wx.ID_ANY, _("Lock element"))
 
         self.__set_properties()
@@ -293,7 +313,9 @@ class PositionSizePanel(wx.Panel):
         self.text_y.SetToolTip(
             _("New Y-coordinate of left top corner (enter to apply)")
         )
-        self.check_lock.SetToolTip(_("If active then this element is effectly prevented from being modified"))
+        self.check_lock.SetToolTip(
+            _("If active then this element is effectly prevented from being modified")
+        )
 
     def pane_hide(self):
         pass
@@ -318,7 +340,10 @@ class PositionSizePanel(wx.Panel):
                 self.check_lock.SetValue(False)
                 self.check_lock.Enable(False)
 
-            en_xy = not getattr(self.node, "lock", False) or self.context.elements.lock_allows_move
+            en_xy = (
+                not getattr(self.node, "lock", False)
+                or self.context.elements.lock_allows_move
+            )
             en_wh = not getattr(self.node, "lock", False)
             x = bb[0]
             y = bb[1]
@@ -341,7 +366,10 @@ class PositionSizePanel(wx.Panel):
             self.Hide()
 
     def translate_it(self):
-        if getattr(self.node, "lock", False) and not self.context.elements.lock_allows_move:
+        if (
+            getattr(self.node, "lock", False)
+            and not self.context.elements.lock_allows_move
+        ):
             return
         bb = self.node.bounds
         try:
@@ -366,11 +394,11 @@ class PositionSizePanel(wx.Panel):
         except (ValueError, AttributeError):
             return
         if bb[2] != bb[0]:
-            sx = neww /  (bb[2]-bb[0])
+            sx = neww / (bb[2] - bb[0])
         else:
             sx = 1
         if bb[3] != bb[1]:
-            sy = newh / (bb[3]-bb[1])
+            sy = newh / (bb[3] - bb[1])
         else:
             sy = 1
         if sx != 1.0 or sy != 1.0:

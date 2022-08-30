@@ -593,7 +593,9 @@ class SVGProcessor:
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
-                node = context_node.add(path=element, type="elem path", id=ident, label=my_label)
+                node = context_node.add(
+                    path=element, type="elem path", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -604,7 +606,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem polyline", id=ident, label=my_label)
+                node = context_node.add(
+                    shape=element, type="elem polyline", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -615,7 +619,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem ellipse", id=ident, label=my_label)
+                node = context_node.add(
+                    shape=element, type="elem ellipse", id=ident, label=my_label
+                )
                 e_list.append(node)
         elif isinstance(element, Ellipse):
             if not element.is_degenerate():
@@ -624,7 +630,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem ellipse", id=ident, label=my_label)
+                node = context_node.add(
+                    shape=element, type="elem ellipse", id=ident, label=my_label
+                )
                 e_list.append(node)
         elif isinstance(element, Rect):
             if not element.is_degenerate():
@@ -633,7 +641,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem rect", id=ident, label=my_label)
+                node = context_node.add(
+                    shape=element, type="elem rect", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SimpleLine):
@@ -643,7 +653,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem line", id=ident, label=my_label)
+                node = context_node.add(
+                    shape=element, type="elem line", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):

@@ -30,6 +30,7 @@ from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_saf
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
+from .alignment import Alignment
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -60,7 +61,6 @@ from .propertypanels.rasterwizardpanels import (
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
-from .alignment import Alignment
 from .wxmmain import MeerK40t
 
 """

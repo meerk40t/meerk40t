@@ -26,7 +26,9 @@ def plugin(kernel, lifecycle):
             action="store_true",
             help="perform focus with animation",
         )
-        @kernel.console_command("focus", input_type="camera", all_arguments_required=True)
+        @kernel.console_command(
+            "focus", input_type="camera", all_arguments_required=True
+        )
         def camera_focus(
             command, _, channel, data, x, y, width, height, animate=False, **kwgs
         ):
@@ -48,7 +50,9 @@ def plugin(kernel, lifecycle):
             bbox = (_x, _y, _width, _height)
             root_widget = gui.widget_scene.widget_root
             matrix = root_widget.scene_widget.matrix
-            root_widget.focus_viewport_scene(bbox, gui.display_camera.Size, animate=animate)
+            root_widget.focus_viewport_scene(
+                bbox, gui.display_camera.Size, animate=animate
+            )
             gui.widget_scene.request_refresh()
             channel(str(matrix))
             return "scene", data

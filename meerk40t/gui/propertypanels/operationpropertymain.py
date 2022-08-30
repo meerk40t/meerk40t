@@ -117,15 +117,20 @@ class LayerSettingPanel(wx.Panel):
         )
         rastertooltip = ""
         if self.operation.type == "op raster":
-            rastertooltip = "\n" + \
-                _("If neither stroke nor fill are checked, then the raster op") + \
-                "\n" + _("will classify all elements that have a fill") + \
-                "\n" + _("or stroke that are either black or white.")
+            rastertooltip = (
+                "\n"
+                + _("If neither stroke nor fill are checked, then the raster op")
+                + "\n"
+                + _("will classify all elements that have a fill")
+                + "\n"
+                + _("or stroke that are either black or white.")
+            )
         try:
             self.has_stroke = self.operation.has_color_attribute("stroke")
             self.checkbox_stroke = wx.CheckBox(self, wx.ID_ANY, _("Stroke"))
             self.checkbox_stroke.SetToolTip(
-                _("Look at the stroke color to restrict classification.") + rastertooltip
+                _("Look at the stroke color to restrict classification.")
+                + rastertooltip
             )
             self.checkbox_stroke.SetValue(1 if self.has_stroke else 0)
             h_classify_sizer.Add(self.checkbox_stroke, 1, 0, 0)
@@ -137,7 +142,8 @@ class LayerSettingPanel(wx.Panel):
             self.has_fill = self.operation.has_color_attribute("fill")
             self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
             self.checkbox_fill.SetToolTip(
-                _("Look at the stroke color to restrict classification.") + rastertooltip
+                _("Look at the stroke color to restrict classification.")
+                + rastertooltip
             )
             self.checkbox_fill.SetValue(1 if self.has_fill else 0)
             h_classify_sizer.Add(self.checkbox_fill, 1, 0, 0)
@@ -685,9 +691,14 @@ class InfoPanel(wx.Panel):
         if not hasattr(self.operation, "classify"):
             return
 
-        infotxt = _("Do you really want to reassign elements to this operation?") + "\n" + \
-            _("Atttention: This will delete all existing assignments!")
-        dlg = wx.MessageDialog(None, infotxt,'Re-Classify',wx.YES_NO | wx.ICON_WARNING)
+        infotxt = (
+            _("Do you really want to reassign elements to this operation?")
+            + "\n"
+            + _("Atttention: This will delete all existing assignments!")
+        )
+        dlg = wx.MessageDialog(
+            None, infotxt, "Re-Classify", wx.YES_NO | wx.ICON_WARNING
+        )
         result = dlg.ShowModal()
         dlg.Destroy()
         if result == wx.ID_YES:

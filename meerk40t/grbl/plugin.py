@@ -49,7 +49,10 @@ def plugin(kernel, lifecycle=None):
             action="store_true",
             help=_("shutdown current grblserver"),
         )
-        @kernel.console_command(("grblcontrol", "grbldesign", "grblemulator"), help=_("activate the grblserver."))
+        @kernel.console_command(
+            ("grblcontrol", "grbldesign", "grblemulator"),
+            help=_("activate the grblserver."),
+        )
         def grblserver(
             command,
             channel,

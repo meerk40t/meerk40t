@@ -10,10 +10,6 @@ from numpy import linspace
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
-from .node.util_console import ConsoleOperation
-from .node.util_input import InputOperation
-from .node.util_output import OutputOperation
-from .node.util_wait import WaitOperation
 
 from ..numpath import Numpath
 from ..svgelements import (
@@ -40,6 +36,10 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
+from .node.util_console import ConsoleOperation
+from .node.util_input import InputOperation
+from .node.util_output import OutputOperation
+from .node.util_wait import WaitOperation
 from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from .wordlist import Wordlist
 
@@ -78,7 +78,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
         kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem image", "{element_type} {label} {width}x{height} @{dpi}")
+        kernel.register(
+            "format/elem image", "{element_type} {label} {width}x{height} @{dpi}"
+        )
         kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
         kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
         kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
@@ -2900,7 +2902,11 @@ class Elemental(Service):
                             singular = True
                             break
                     if not singular:
-                        while snode.parent and snode.parent is not elem_branch and snode.parent.type != "file":
+                        while (
+                            snode.parent
+                            and snode.parent is not elem_branch
+                            and snode.parent.type != "file"
+                        ):
                             snode = snode.parent
                 if snode is not None and snode not in d:
                     d.append(snode)
@@ -2945,7 +2951,7 @@ class Elemental(Service):
         )
         def subtype_align_top(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(channel, _,  mode, bound, elements, "none", "min", group)
+            _align_xy(channel, _, mode, bound, elements, "none", "min", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2956,7 +2962,7 @@ class Elemental(Service):
         )
         def subtype_align_bottom(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(channel, _,  mode, bound, elements, "none", "max", group)
+            _align_xy(channel, _, mode, bound, elements, "none", "max", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2967,7 +2973,7 @@ class Elemental(Service):
         )
         def subtype_align_left(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(channel, _,  mode, bound, elements, "min", "none", group)
+            _align_xy(channel, _, mode, bound, elements, "min", "none", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2978,7 +2984,7 @@ class Elemental(Service):
         )
         def subtype_align_right(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy( channel, _,  mode, bound, elements, "max", "none", group)
+            _align_xy(channel, _, mode, bound, elements, "max", "none", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -2989,7 +2995,9 @@ class Elemental(Service):
         )
         def subtype_align_center(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(command, channel, _,  mode, bound, elements, "center", "center", group)
+            _align_xy(
+                command, channel, _, mode, bound, elements, "center", "center", group
+            )
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -3000,7 +3008,7 @@ class Elemental(Service):
         )
         def subtype_align_centerh(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(channel, _,  mode, bound, elements, "center", "none", group)
+            _align_xy(channel, _, mode, bound, elements, "center", "none", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
@@ -3011,7 +3019,7 @@ class Elemental(Service):
         )
         def subtype_align_centerv(command, channel, _, data=None, **kwargs):
             mode, group, bound, elements = data
-            _align_xy(channel, _,  mode, bound, elements, "none", "center", group)
+            _align_xy(channel, _, mode, bound, elements, "none", "center", group)
             return "align", (mode, group, bound, elements)
 
         @self.console_command(
