@@ -95,11 +95,12 @@ class ImageOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "<stop>" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
+        # print(self.dangerous, self.stopop, self.raster_direction)
         return default_map
 
     def drop(self, drag_node, modify=True):

@@ -127,7 +127,7 @@ class RasterOpNode(Node, Parameters):
         if ct > 0:
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"

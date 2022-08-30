@@ -65,7 +65,7 @@ def plugin(kernel, lifecycle=None):
         )
         kernel.register(
             "format/op image",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {opstop}",
+            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
         )
         kernel.register(
             "format/op dots",

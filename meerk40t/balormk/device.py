@@ -530,7 +530,7 @@ class BalorDevice(Service, ViewPort):
         )
         self.register(
             "format/op image",
-            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
+            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode}",
         )
         self.register(
             "format/op dots",
