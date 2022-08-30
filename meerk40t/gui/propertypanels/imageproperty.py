@@ -1,10 +1,8 @@
 import wx
-from wx.lib.scrolledpanel import ScrolledPanel
-
 from ...core.units import Length
 from ..icons import icons8_image_50
 from ..mwindow import MWindow
-from ..wxutils import TextCtrl
+from ..wxutils import TextCtrl, ScrolledPanel
 from .attributes import IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
