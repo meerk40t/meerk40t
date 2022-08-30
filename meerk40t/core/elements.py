@@ -8522,7 +8522,8 @@ class Elemental(Service):
                 cc = node.bounds
                 f_area = (cc[2] - cc[0]) * (cc[3] - cc[1])
                 if use_smallest:
-                    if f_area < e_area:
+
+                    if f_area <= e_area: # Tie goes to later element
                         e_area = f_area
                         e = node
                 else:
