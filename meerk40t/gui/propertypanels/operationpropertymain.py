@@ -657,9 +657,14 @@ class InfoPanel(wx.Panel):
         self.btn_update = wx.Button(self, wx.ID_ANY, _("Calculate"))
         self.btn_update.Bind(wx.EVT_BUTTON, self.on_button_calculate)
 
+        self.btn_recalc = wx.Button(self, wx.ID_ANY, _("Re-Classify"))
+        self.btn_recalc.Bind(wx.EVT_BUTTON, self.on_button_refresh)
+
         sizer_children.Add(self.text_children, 1, wx.EXPAND, 0)
         sizer_time.Add(self.text_time, 1, wx.EXPAND, 0)
         sizer_time.Add(self.btn_update, 0, wx.EXPAND, 0)
+        sizer_time.AddSpacer(20)
+        sizer_time.Add(self.btn_recalc, 0, wx.EXPAND, 0)
 
         sizer_info.Add(sizer_children, 1, wx.EXPAND, 0)
         sizer_info.Add(sizer_time, 2, wx.EXPAND, 0)
@@ -675,6 +680,36 @@ class InfoPanel(wx.Panel):
 
     def pane_show(self):
         pass
+
+    def on_button_refresh(self, event):
+        if not hasattr(self.operation, "classify"):
+            return
+
+        infotxt = _("Do you really want to reassign elements to this operation?") + "\n" + \
+            _("Atttention: This will delete all existing assignments!")
+        dlg = wx.MessageDialog(None, infotxt,'Re-Classify',wx.YES_NO | wx.ICON_WARNING)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_YES:
+            myop = self.operation
+            myop.remove_all_children()
+            data = list(self.context.elements.elems())
+            reverse = self.context.elements.classify_reverse
+            fuzzy = self.context.elements.classify_fuzzy
+            fuzzydistance = self.context.elements.classify_fuzzydistance
+            if reverse:
+                data = reversed(data)
+            for node in data:
+                classified, should_break = myop.classify(
+                    node,
+                    fuzzy=fuzzy,
+                    fuzzydistance=fuzzydistance,
+                    usedefault=False,
+                )
+            # Probably moot as the next command will move the focus away...
+            self.refresh_display()
+            self.context.signal("tree_changed")
+            self.context.signal("activate_single_node", myop)
 
     def on_button_calculate(self, event):
         self.text_time.SetValue(self.operation.time_estimate())

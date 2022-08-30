@@ -163,6 +163,12 @@ class TreePanel(wx.Panel):
     def on_shadow_select_activate_tree(self, origin, *args):
         self.shadow_tree.activate_selected_node(origin, *args)
 
+    @signal_listener("activate_single_node")
+    def on_shadow_select_activate_single_tree(self, origin, node=None, *args):
+        if node is not None:
+            node.selected = True
+        # self.shadow_tree.activate_selected_node(origin, *args)
+
     @signal_listener("element_property_update")
     def on_element_update(self, origin, *args):
         """
