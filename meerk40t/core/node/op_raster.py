@@ -223,14 +223,23 @@ class RasterOpNode(Node, Parameters):
                                     self.add_reference(node)
                                 # Have classified but more classification might be needed
                                 return True, self.stopop
-                else:  # empty ? Anything with a solid fill goes
+                else:  # empty ? Anything with either a solid fill or a plain white stroke goes
                     if self.valid_node(node):
                         addit = False
                         if node.type == "elem image":
                             addit = True
-                        elif hasattr(node, "fill"):
+                        if hasattr(node, "fill"):
                             if node.fill is not None and node.fill.argb is not None:
-                                addit = True
+                                if matching_color(node.fill, Color("white")):
+                                    addit = True
+                                if matching_color(node.fill, Color("black")):
+                                    addit = True
+                        if hasattr(node, "stroke"):
+                            if node.stroke is not None and node.stroke.argb is not None:
+                                if matching_color(node.stroke, Color("white")):
+                                    addit = True
+                                if matching_color(node.stroke, Color("black")):
+                                    addit = True
                         if addit:
                             self.add_reference(node)
                     # Have classified but more classification might be needed
@@ -283,6 +292,10 @@ class RasterOpNode(Node, Parameters):
             estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+        def isNaN(num):
+            return num!= num
+        if isNaN(estimate):
+            estimate = 0
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"

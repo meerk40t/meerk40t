@@ -158,10 +158,10 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
 
         sizer_dpi = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.HORIZONTAL
         )
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
-        sizer_dpi.Add(self.text_dpi, 0, 0, 0)
+        sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_dpi, 0, wx.EXPAND, 0)
 

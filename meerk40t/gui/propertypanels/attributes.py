@@ -35,8 +35,9 @@ class ColorPanel(wx.Panel):
             0xFFFF00,
             0xFF00FF,
             0x00FFFF,
+            0xFFFFFF,
         )
-        for i in range(8):
+        for i in range(len(bgcolors)):
             self.lbl_color.append(wx.StaticText(self, wx.ID_ANY, ""))
             # self.lbl_color[i].SetMinSize((-1, 20))
             self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
@@ -74,7 +75,6 @@ class ColorPanel(wx.Panel):
                 if self.callback is not None:
                     self.callback()
                 self.mark_color(bidx)
-
                 break
 
     def pane_hide(self):
