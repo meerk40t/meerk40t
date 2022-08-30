@@ -84,7 +84,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             "uri", help="Set camera uri", output_type="camera", input_type="camera"
         )
-        def camera_contrast(
+        def camera_uri(
             data=None,
             uri=None,
             **kwargs,
