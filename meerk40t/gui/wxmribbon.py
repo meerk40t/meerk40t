@@ -11,7 +11,6 @@ from meerk40t.svgelements import Color
 
 from .icons import (
     get_default_icon_size,
-    get_default_scale_factor,
     icons8_opened_folder_50,
 )
 

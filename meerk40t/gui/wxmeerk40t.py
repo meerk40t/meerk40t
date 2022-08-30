@@ -1,7 +1,6 @@
 import os
 import platform
 import sys
-import threading
 import traceback
 from datetime import datetime
 

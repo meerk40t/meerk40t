@@ -1,9 +1,8 @@
 import wx
 
-from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Matrix, Point, Polyline
+from meerk40t.svgelements import Matrix, Point
 
 
 class PointTool(ToolWidget):

@@ -1,5 +1,3 @@
-import platform
-
 import wx
 
 from meerk40t.core.units import Angle, Length

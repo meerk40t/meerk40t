@@ -3,9 +3,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel
 
 from ...core.units import Length
-from ...svgelements import Color
 from ..icons import icons8_vector_50
-from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel
 

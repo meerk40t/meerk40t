@@ -9,7 +9,6 @@ from meerk40t.gui.icons import (
     icons8_small_beam_20,
 )
 from meerk40t.gui.wxutils import TextCtrl
-from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 

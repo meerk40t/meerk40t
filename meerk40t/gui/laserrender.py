@@ -1,5 +1,5 @@
 import platform
-from math import ceil, floor, isnan, sqrt
+from math import ceil, isnan, sqrt
 
 import wx
 from PIL import Image
@@ -30,7 +30,6 @@ from meerk40t.svgelements import (
     QuadraticBezier,
 )
 
-from ..core.units import PX_PER_INCH
 from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50

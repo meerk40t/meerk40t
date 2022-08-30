@@ -5,8 +5,8 @@ def plugin(kernel, lifecycle=None):
         return [gui.plugin]
     elif lifecycle == "invalidate":
         try:
-            import serial
-            from serial import SerialException
+            import serial  # pylint: disable=unused-import
+            from serial import SerialException  # pylint: disable=unused-import
         except ImportError:
             print("GRBL plugin could not load because pyserial is not installed.")
             return True

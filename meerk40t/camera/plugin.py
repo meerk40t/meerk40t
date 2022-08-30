@@ -9,7 +9,7 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "cli":
         try:
             import cv2
-            import numpy as np
+            import numpy as np  # pylint: disable=unused-import
         except ImportError:
             return
         kernel.set_feature("camera")

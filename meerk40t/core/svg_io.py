@@ -52,7 +52,6 @@ from ..svgelements import (
     Color,
     Ellipse,
     Group,
-    Length,
     Matrix,
     Path,
     Point,

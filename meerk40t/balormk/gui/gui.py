@@ -3,13 +3,13 @@ def plugin(service, lifecycle):
         return "provider/device/balor"
     if lifecycle == "invalidate":
         try:
-            import numpy
+            import numpy  # pylint: disable=unused-import
         except ImportError:
             return True
         return not service.has_feature("wx")
     if lifecycle == "added":
         # Needed to test wx import.
-        import wx
+        import wx  # pylint: disable=unused-import
 
         from meerk40t.gui.icons import (
             icons8_computer_support_50,

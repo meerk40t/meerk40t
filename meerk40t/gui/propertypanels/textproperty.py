@@ -5,7 +5,6 @@ import wx
 from meerk40t.gui.fonts import wxfont_to_svg
 from meerk40t.gui.wxutils import ScrolledPanel
 
-from ...kernel import signal_listener
 from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
