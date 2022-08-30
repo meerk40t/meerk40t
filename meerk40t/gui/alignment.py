@@ -19,6 +19,7 @@ from ..kernel import signal_listener
 from .icons import STD_ICON_SIZE, icons8_arrange_50
 from .mwindow import MWindow
 from ..core.units import Length
+from ..gui.wxutils import TextCtrl, CheckBox
 
 _ = wx.GetTranslation
 
@@ -54,6 +55,10 @@ class AlignmentPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_align_x.SetSelection(0)
+        self.rbox_align_x.SetToolTip(
+            _("Align object at the left side, centered or to") + "\n" + \
+            _("the right side in relation to the target point")
+        )
 
         self.rbox_align_y = wx.RadioBox(
             self,
@@ -64,6 +69,10 @@ class AlignmentPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_align_y.SetSelection(0)
+        self.rbox_align_y.SetToolTip(
+            _("Align object to the top, centered or to") + "\n" + \
+            _("the bottom in relation to the target point")
+        )
 
         self.rbox_relation = wx.RadioBox(
             self,
@@ -266,16 +275,16 @@ class DistributionPanel(wx.Panel):
         self.rbox_dist_x = wx.RadioBox(
             self,
             wx.ID_ANY,
-            _("Position of element relative to point for X-Axis:"),
+            _("Position of element relative to point for X-Axis:rbox_dist_x"),
             choices=self.xchoices,
             majorDimension=5,
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_dist_x.SetSelection(0)
-        self.check_inside_xy = wx.CheckBox(
-            self, id=wx.ID_ANY, label=_("Keep first + last inside")
+        self.rbox_dist_x.SetToolTip(
+            _("Align object at the left side, centered or to") + "\n" + \
+            _("the right side in relation to the target point")
         )
-        self.check_inside_xy.SetValue(True)
 
         self.rbox_dist_y = wx.RadioBox(
             self,
@@ -286,6 +295,25 @@ class DistributionPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_dist_y.SetSelection(0)
+        self.rbox_dist_y.SetToolTip(
+            _("Align object to the top, centered or to") + "\n" + \
+            _("the bottom in relation to the target point")
+        )
+
+        self.check_inside_xy = wx.CheckBox(
+            self, id=wx.ID_ANY, label=_("Keep first + last inside")
+        )
+        self.check_inside_xy.SetValue(True)
+        self.check_inside_xy.SetToolTip(
+            _("Keep the first and last element inside the target area,") +"\n" + \
+            _("effectively ignoring the X- and Y-settings")
+        )
+
+        self.check_rotate = wx.CheckBox(
+            self, id=wx.ID_ANY, label=_("Rotate")
+        )
+        self.check_rotate.SetToolTip(_("Rotate elements parallel to the path"))
+
 
         self.rbox_sort = wx.RadioBox(
             self,
@@ -296,6 +324,7 @@ class DistributionPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_sort.SetSelection(0)
+        self.rbox_sort.SetToolTip(_("Defines the order in which the selection is being processed"))
 
         self.rbox_treatment = wx.RadioBox(
             self,
@@ -306,6 +335,14 @@ class DistributionPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_treatment.SetSelection(0)
+        self.rbox_treatment.SetToolTip(
+            _("Defines the area / the shape on which the selection will be distributed:") + "\n" + \
+            _("- Position: along the boundaries of the surrounding rectangle of the selection")  + "\n" + \
+            _("- Shape: along the shape of the first/last selected element")  + "\n" + \
+            _("- Points: on the defined points of the first/last selected element")  + "\n" + \
+            _("- Laserbed: along the boundaries of the laserbed")  + "\n" + \
+            _("- Ref-Object: along the boundaries of a reference-object")
+        )
 
         self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_dist = wx.Button(self, wx.ID_ANY, "Distribute")
@@ -317,11 +354,21 @@ class DistributionPanel(wx.Panel):
         )
         sizer_check.Add(self.check_inside_xy, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        sizer_treat = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_rotate = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Rotation")),
+            wx.HORIZONTAL,
+        )
+        sizer_rotate.Add(self.check_rotate, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_treat.Add(self.rbox_treatment, 1, wx.EXPAND, 0)
+        sizer_treat.Add(sizer_rotate, 0, wx.EXPAND, 0)
+
         sizer_main.Add(self.rbox_dist_x, 0, wx.EXPAND, 0)
         sizer_main.Add(self.rbox_dist_y, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_check, 0, wx.EXPAND, 0)
         sizer_main.Add(self.rbox_sort, 0, wx.EXPAND, 0)
-        sizer_main.Add(self.rbox_treatment, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_treat, 0, wx.EXPAND, 0)
         sizer_main.Add(self.btn_dist, 0, wx.EXPAND, 0)
         sizer_main.Add(self.lbl_info, 1, wx.EXPAND, 0)
 
@@ -383,8 +430,10 @@ class DistributionPanel(wx.Panel):
         if treat in ("points", "shape"):
             self.check_inside_xy.Enable(False)
             self.check_inside_xy.SetValue(False)
+            self.check_rotate.Enable(True)
         else:
             self.check_inside_xy.Enable(True)
+            self.check_rotate.Enable(False)
 
         self.disable_wip()
         self.btn_dist.Enable(active)
@@ -760,15 +809,251 @@ class ArrangementPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.scene = scene
+        # Amount of currently selected
+        self.count = 0
+        self.first_node = None
+        self.last_node = None
+
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        self.relchoices = (
+            _("Selection Bounds"),
+            _("Set distances"),
+        )
+        self.relparam = ("selection", "distance")
+
+        self.selchoices = (
+            _("Selection"),
+            _("First Selected"),
+            _("Last Selected"),
+        )
+        self.selectparam = ("default", "first", "last")
+
+        self.xchoices = (_("Left"), _("Center"), _("Right"))
+        self.ychoices = (_("Top"), _("Center"), _("Bottom"))
+        self.xyparam = ("min", "center", "max")
+
+        self.rbox_align_x = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            _("Alignment relative to X-Axis:"),
+            choices=self.xchoices,
+            majorDimension=3,
+            style=wx.RA_SPECIFY_COLS,
+        )
+        self.rbox_align_x.SetSelection(0)
+
+        self.rbox_align_y = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            _("Alignment relative to Y-Axis:"),
+            choices=self.ychoices,
+            majorDimension=3,
+            style=wx.RA_SPECIFY_COLS,
+        )
+        self.rbox_align_y.SetSelection(0)
+
+        self.arrange_x = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
+        self.arrange_y = wx.SpinCtrl(self, wx.ID_ANY, initial=1, min=1, max=100)
+
+        self.check_same_x = wx.CheckBox(self, wx.ID_ANY, label=_("Same width"))
+        self.check_same_y = wx.CheckBox(self, wx.ID_ANY, label=_("Same height"))
+
+        self.rbox_relation = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            _("Alignment relative to:"),
+            choices=self.relchoices,
+            majorDimension=2,
+            style=wx.RA_SPECIFY_ROWS,
+        )
+        self.rbox_relation.SetSelection(0)
+
+        self.rbox_selection = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            _("Order to process:"),
+            choices=self.selchoices,
+            majorDimension=3,
+            style=wx.RA_SPECIFY_COLS,
+        )
+        self.rbox_selection.SetSelection(0)
+
+        self.txt_gap_x = TextCtrl(self, id=wx.ID_ANY, value="5mm", limited=True, check="length")
+        self.txt_gap_y = TextCtrl(self, id=wx.ID_ANY, value="5mm", limited=True, check="length")
+
+        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
+        self.btn_align = wx.Button(self, wx.ID_ANY, _("Arrange"))
+        self.btn_align.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
+
+        sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_dim_x = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("X-Axis:")),
+            wx.VERTICAL,
+        )
+        sizer_dim_x.Add(self.arrange_x, 0, wx.EXPAND, 0)
+        sizer_dim_x.Add(self.check_same_x, 0, wx.EXPAND, 0)
+
+        sizer_dim_y = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Y-Axis:")),
+            wx.VERTICAL,
+        )
+        sizer_dim_y.Add(self.arrange_y, 0, wx.EXPAND, 0)
+        sizer_dim_y.Add(self.check_same_y, 0, wx.EXPAND, 0)
+
+        sizer_dimensions.Add(sizer_dim_x, 1, wx.EXPAND, 0)
+        sizer_dimensions.Add(sizer_dim_y, 1, wx.EXPAND, 0)
+
+
+        # sizer_gaps = wx.StaticBoxSizer(
+        #     wx.HORIZONTAL,
+        #     wx.StaticBox(self, wx.ID_ANY, _("Gaps:")),
+        # )
+        sizer_gaps_x = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_gaps_x.Add(wx.StaticText(self, wx.ID_ANY, _("X:")), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_gaps_x.Add(self.txt_gap_x, 1, wx.EXPAND, 0)
+        sizer_gaps_y = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_gaps_y.Add(wx.StaticText(self, wx.ID_ANY, _("Y:")), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_gaps_y.Add(self.txt_gap_y, 1, wx.EXPAND, 0)
+        sizer_gaps_xy = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Gaps:")),
+            wx.VERTICAL
+        )
+        sizer_gaps_xy.Add(sizer_gaps_x, 1, wx.EXPAND, 0)
+        sizer_gaps_xy.Add(sizer_gaps_y, 1, wx.EXPAND, 0)
+        sizer_gaps = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_gaps.Add(self.rbox_relation, 1, wx.EXPAND, 0)
+        sizer_gaps.Add(sizer_gaps_xy, 1, wx.EXPAND, 0)
+
+        sizer_main.Add(sizer_dimensions, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.rbox_align_x, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.rbox_align_y, 0, wx.EXPAND, 0)
+
+        sizer_main.Add(self.rbox_selection, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_gaps, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.btn_align, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.lbl_info, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
+
         self.Layout()
 
-    def show_stuff(self, has_emph):
-        return
+        self.Bind(wx.EVT_BUTTON, self.on_button_align, self.btn_align)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_x)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_y)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_selection)
+        self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_relation)
+        self.Bind(wx.EVT_CHECKBOX, self.validate_data, self.check_same_x)
+        self.Bind(wx.EVT_CHECKBOX, self.validate_data, self.check_same_y)
+        self.Bind(wx.EVT_SPINCTRL, self.validate_data, self.arrange_x)
+        self.Bind(wx.EVT_SPINCTRL, self.validate_data, self.arrange_y)
+        self.Bind(wx.EVT_TEXT, self.validate_data, self.txt_gap_x)
+        self.Bind(wx.EVT_TEXT, self.validate_data, self.txt_gap_y)
+        has_emph = self.context.elements.has_emphasis()
+        self.restore_setting()
+        self.show_stuff(has_emph)
 
+    def validate_data(self, event=None):
+        if event is not None:
+            event.Skip()
+        if self.context.elements.has_emphasis():
+            active = True
+            if self.count < 2:
+                active = False
+            idx = self.rbox_selection.GetSelection()
+            if idx < 0:
+                idx = 0
+            select = self.selectparam[idx]
+            idx = self.rbox_relation.GetSelection()
+            if idx < 0:
+                idx = 0
+            relat = self.relparam[idx]
+            self.txt_gap_x.Enable(relat=="distance")
+            self.txt_gap_y.Enable(relat=="distance")
+            idx = self.rbox_align_x.GetSelection()
+            if idx < 0:
+                idx = 0
+            xpos = self.xyparam[idx]
+            idx = self.rbox_align_y.GetSelection()
+            if idx < 0:
+                idx = 0
+            ypos = self.xyparam[idx]
+            try:
+                gapx = float(self.txt_gap_x.GetValue())
+            except ValueError:
+                gapx = -1
+            try:
+                gapy = float(self.txt_gap_y.GetValue())
+            except ValueError:
+                gapy = -1
+            # Invalid gaps?
+            if relat=="distance" and (gapx<0 or gapy < 0):
+                active = False
+        else:
+            active = False
+        self.btn_align.Enable(active)
+
+    def on_button_align(self, event):
+        self.save_setting()
+
+    def save_setting(self):
+        mysettings=(
+            self.rbox_align_x.GetSelection(),
+            self.rbox_align_y.GetSelection(),
+            self.rbox_relation.GetSelection(),
+            self.rbox_selection.GetSelection(),
+            self.arrange_x.GetValue(),
+            self.arrange_y.GetValue(),
+            self.check_same_x.GetValue(),
+            self.check_same_y.GetValue(),
+            self.txt_gap_x.GetValue(),
+            self.txt_gap_y.GetValue(),
+        )
+        setattr(self.context, "arrange_setting", mysettings)
+
+    def restore_setting(self):
+        mysettings = getattr(self.context, "arrange_setting", None)
+        if mysettings is not None and len(mysettings) == 10:
+            self.rbox_align_x.SetSelection(mysettings[0])
+            self.rbox_align_y.SetSelection(mysettings[1])
+            self.rbox_relation.SetSelection(mysettings[2])
+            self.rbox_selection.SetSelection(mysettings[3])
+            self.arrange_x.SetValue(mysettings[4])
+            self.arrange_y.SetValue(mysettings[5])
+            self.check_same_x.SetValue(mysettings[6])
+            self.check_same_y.SetValue(mysettings[7])
+            self.txt_gap_x.SetValue(mysettings[8])
+            self.txt_gap_y.SetValue(mysettings[9])
+
+    def show_stuff(self, has_emph):
+        self.count = 0
+        msg = ""
+        if has_emph:
+            data = list(self.context.elements.flat(emphasized=True))
+            self.count = len(data)
+            msg = _("Selected elements: {count}").format(count=self.count) + "\n"
+            if self.count > 0:
+                data.sort(key=lambda n: n.emphasized_time)
+                node = data[0]
+                msg += (
+                    _("First selected: {type} {lbl}").format(
+                        type=node.type, lbl=node.label
+                    )
+                    + "\n"
+                )
+                node = data[-1]
+                msg += (
+                    _("Last selected: {type} {lbl}").format(
+                        type=node.type, lbl=node.label
+                    )
+                    + "\n"
+                )
+        self.lbl_info.SetLabel(msg)
+        self.rbox_align_x.Enable(has_emph)
+        self.rbox_align_y.Enable(has_emph)
+        self.rbox_relation.Enable(has_emph)
+        self.rbox_selection.Enable(has_emph)
+        self.validate_data()
 
 class Alignment(MWindow):
     def __init__(self, *args, **kwds):
