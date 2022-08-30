@@ -617,6 +617,22 @@ WX_SPECIALKEYS = {
     wx.WXK_WINDOWS_MENU: "menu",
 }
 
+def is_navigation_key(keyvalue):
+    if keyvalue is None:
+        return False
+    if "right" in keyvalue:
+        return True
+    if "left" in keyvalue:
+        return True
+    if "up" in keyvalue and "pgup" not in keyvalue and "pageup" not in keyvalue:
+        return True
+    if "down" in keyvalue and "pagedown" not in keyvalue:
+        return True
+    if "tab" in keyvalue:
+        return True
+    if "return" in keyvalue:
+        return True
+    return False
 
 def get_key_name(event, return_modifier=False):
     keyvalue = ""

@@ -45,7 +45,7 @@ from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
-from meerk40t.gui.wxutils import get_key_name
+from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Angle, Color
 
@@ -119,15 +119,7 @@ class MeerK40tScenePanel(wx.Panel):
         if platform.system() == "Windows":
             def charhook(event):
                 keyvalue = get_key_name(event)
-
-                if keyvalue is not None and (
-                        "right" in keyvalue
-                        or "left" in keyvalue
-                        or ("up" in keyvalue and "pgup" not in keyvalue and "pageup" not in keyvalue)
-                        or ("down" in keyvalue and "pagedown" not in keyvalue)
-                        or "tab" in keyvalue
-                        or "return" in keyvalue
-                ):
+                if is_navigation_key(keyvalue):
                     if self._keybind_channel:
                         self._keybind_channel(f"Charhook used for keydown: {keyvalue}")
                     self.on_key_down(event)
