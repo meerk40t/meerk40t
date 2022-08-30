@@ -119,8 +119,8 @@ class LayerSettingPanel(wx.Panel):
         if self.operation.type == "op raster":
             rastertooltip = "\n" + \
                 _("If neither stroke nor fill are checked, then the raster op") + \
-                "\n" + _("will classify all elements that have a solid fill") + \
-                "\n" + _("or have a plain white stroke.")
+                "\n" + _("will classify all elements that have a fill") + \
+                "\n" + _("or stroke that are either black or white.")
         try:
             self.has_stroke = self.operation.has_color_attribute("stroke")
             self.checkbox_stroke = wx.CheckBox(self, wx.ID_ANY, _("Stroke"))

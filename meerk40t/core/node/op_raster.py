@@ -230,10 +230,15 @@ class RasterOpNode(Node, Parameters):
                             addit = True
                         if hasattr(node, "fill"):
                             if node.fill is not None and node.fill.argb is not None:
-                                addit = True
+                                if matching_color(node.fill, Color("white")):
+                                    addit = True
+                                if matching_color(node.fill, Color("black")):
+                                    addit = True
                         if hasattr(node, "stroke"):
                             if node.stroke is not None and node.stroke.argb is not None:
                                 if matching_color(node.stroke, Color("white")):
+                                    addit = True
+                                if matching_color(node.stroke, Color("black")):
                                     addit = True
                         if addit:
                             self.add_reference(node)
