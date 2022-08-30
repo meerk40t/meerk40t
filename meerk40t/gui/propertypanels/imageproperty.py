@@ -17,7 +17,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
 
         self.text_dpi = TextCtrl(
-            self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float"
+            self, wx.ID_ANY, "500", style=wx.TE_PROCESS_ENTER, check="float", limited=True,
         )
 
         self.panel_xy = PositionSizePanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
