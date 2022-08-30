@@ -1,4 +1,5 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
@@ -199,9 +200,7 @@ class ImageOpNode(Node, Parameters):
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
 
-        def isNaN(num):
-            return num!= num
-        if isNaN(estimate):
+        if isnan(estimate):
             estimate = 0
 
         hours, remainder = divmod(estimate, 3600)

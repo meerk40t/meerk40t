@@ -1,4 +1,5 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
@@ -292,9 +293,8 @@ class RasterOpNode(Node, Parameters):
             estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
-        def isNaN(num):
-            return num!= num
-        if isNaN(estimate):
+
+        if isnan(estimate):
             estimate = 0
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
