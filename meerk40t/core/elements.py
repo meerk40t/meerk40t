@@ -1785,7 +1785,7 @@ class Elemental(Service):
         )
         def makeop(
             command,
-            remainder,
+            remainder=None,
             **kwargs,
         ):
             if remainder is not None:
