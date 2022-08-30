@@ -478,10 +478,10 @@ class Elemental(Service):
         return float(Length(v))
 
     def length_x(self, v):
-        return float(Length(v, relative_length=self.device.width, unitless=1))
+        return float(Length(v, relative_length=self.device.width))
 
     def length_y(self, v):
-        return float(Length(v, relative_length=self.device.height, unitless=1))
+        return float(Length(v, relative_length=self.device.height))
 
     def bounds(self, x0, y0, x1, y1):
         return (
