@@ -148,7 +148,7 @@ class OperationAssignPanel(wx.Panel):
             def get_color():
                 iconcolor = None
                 background = node.color
-                if background is not None:
+                if background is not None and background.argb is not None:
                     c1 = Color("Black")
                     c2 = Color("White")
                     if Color.distance(background, c1) > Color.distance(background, c2):

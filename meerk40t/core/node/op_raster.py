@@ -223,9 +223,16 @@ class RasterOpNode(Node, Parameters):
                                     self.add_reference(node)
                                 # Have classified but more classification might be needed
                                 return True, self.stopop
-                else:  # empty ? Anything goes
+                else:  # empty ? Anything with a solid fill goes
                     if self.valid_node(node):
-                        self.add_reference(node)
+                        addit = False
+                        if node.type == "elem image":
+                            addit = True
+                        elif hasattr(node, "fill"):
+                            if node.fill is not None and node.fill.argb is not None:
+                                addit = True
+                        if addit:
+                            self.add_reference(node)
                     # Have classified but more classification might be needed
                     return True, self.stopop
             elif self.default and usedefault:
