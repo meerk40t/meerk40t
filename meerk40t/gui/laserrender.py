@@ -931,7 +931,7 @@ class LaserRender:
         self.validate_text_nodes(nodecopy, variable_translation)
 
         for item in _nodes:
-            bb = item.bounds
+            bb = item.paint_bounds
             if bb[0] < x_min:
                 x_min = bb[0]
             if bb[1] < y_min:
