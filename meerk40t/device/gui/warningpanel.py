@@ -262,4 +262,3 @@ class WarningPanel(wx.Panel):
 
     def pane_show(self):
         self.update_widgets()
-        pass
