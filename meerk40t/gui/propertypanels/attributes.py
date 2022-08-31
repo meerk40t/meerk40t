@@ -155,8 +155,8 @@ class IdPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_id = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_label = TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
@@ -175,20 +175,18 @@ class IdPanel(wx.Panel):
 
         self.SetSizer(main_sizer)
         self.Layout()
-        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
-        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
-        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
-        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
+        self.text_id.SetActionRoutine(self.on_text_id_change)
+        self.text_label.SetActionRoutine(self.on_text_label_change)
         self.set_widgets(self.node)
 
-    def on_text_id_change(self, event=None):
+    def on_text_id_change(self):
         try:
             self.node.id = self.text_id.GetValue()
             self.context.elements.signal("element_property_update", self.node)
         except AttributeError:
             pass
 
-    def on_text_label_change(self, event=None):
+    def on_text_label_change(self):
         try:
             self.node.label = self.text_label.GetValue()
             self.context.elements.signal("element_property_update", self.node)
@@ -251,14 +249,10 @@ class PositionSizePanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.text_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_enter)
-        self.text_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_enter)
-        self.text_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_enter)
-        self.text_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_enter)
-        self.text_w.Bind(wx.EVT_TEXT_ENTER, self.on_text_w_enter)
-        self.text_w.Bind(wx.EVT_KILL_FOCUS, self.on_text_w_enter)
-        self.text_h.Bind(wx.EVT_TEXT_ENTER, self.on_text_h_enter)
-        self.text_h.Bind(wx.EVT_KILL_FOCUS, self.on_text_h_enter)
+        self.text_x.SetActionRoutine(self.on_text_x_enter)
+        self.text_y.SetActionRoutine(self.on_text_y_enter)
+        self.text_w.SetActionRoutine(self.on_text_w_enter)
+        self.text_h.SetActionRoutine(self.on_text_h_enter)
         self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
 
         self.set_widgets(self.node)
@@ -414,26 +408,13 @@ class PositionSizePanel(wx.Panel):
             self.set_widgets(self.node)
 
     def on_text_x_enter(self, event):
-        # Give the control a chance to reset values if necessary
-        self.text_x.prevalidate()
         self.translate_it()
-        event.Skip()
 
     def on_text_y_enter(self, event):
-        # Give the control a chance to reset values if necessary
-        self.text_y.prevalidate()
         self.translate_it()
-        event.Skip()
 
     def on_text_w_enter(self, event):
-        # Give the control a chance to reset values if necessary
-        self.text_w.prevalidate()
         self.scale_it()
-        event.Skip()
 
     def on_text_h_enter(self, event):
-        # Give the control a chance to reset values if necessary
-        self.text_h.prevalidate()
         self.scale_it()
-        event.Skip()
-

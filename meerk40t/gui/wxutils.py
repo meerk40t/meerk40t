@@ -390,7 +390,11 @@ class TextCtrl(wx.TextCtrl):
         self._warn_color_foreground = wx.BLACK
         self._modify_color_foreground = None
         self._warn_status = "modified"
+
         self._last_valid_value = None
+        self._event_generated = None
+        self._action_routine = None
+
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
@@ -428,6 +432,29 @@ class TextCtrl(wx.TextCtrl):
         dc.SelectObject(wx.NullBitmap)
         return minw, maxw
 
+    def SetActionRoutine(self, action_routine):
+        """
+        This routine will be called after a lost_focus / text_enter event,
+        it's a simple way of dealing with all the
+            ctrl.bind(wx.EVT_KILL_FOCUS / wx.EVT_TEXT_ENTER) things
+        Yes, you can still have them, but you should call
+            ctrl.prevalidate()
+        then to ensure the logic to avoid invalid content is been called.
+        If you need to programmatically distinguish between a lost focus
+        and text_enter event, then consult
+            ctrl.event_generated()
+        this will give back wx.EVT_KILL_FOCUS or wx.EVT_TEXT_ENTER
+        """
+        self._action_routine = action_routine
+
+    def event_generated(self):
+        """
+        This routine will give back wx.EVT_KILL_FOCUS or wx.EVT_TEXT_ENTER
+        if called during an execution of the validator routine, see above,
+        or None in any other case
+        """
+        return self._event_generated
+
     def SetValue(self, newvalue):
         self._last_valid_value = newvalue
         super().SetValue(newvalue)
@@ -444,10 +471,6 @@ class TextCtrl(wx.TextCtrl):
         self.lower_limit = range_min
         self.upper_limit = range_max
 
-    def on_enter_field(self, event):
-        self._last_valid_value = self.GetValue()
-        event.Skip()
-
     def prevalidate(self):
         # Check whether the field is okay, if not then put it to the last value
         if self.warn_status == "error" and self._last_valid_value is not None:
@@ -455,10 +478,18 @@ class TextCtrl(wx.TextCtrl):
             self.ChangeValue(self._last_valid_value)
             self.warn_status = ""
 
+    def on_enter_field(self, event):
+        self._last_valid_value = self.GetValue()
+        event.Skip()
+
     def on_leave_field(self, event):
         # Needs to be passed on
-        self.prevalidate()
         event.Skip()
+        self.prevalidate()
+        if self._action_routine is not None:
+            self._event_generated = wx.EVT_KILL_FOCUS
+            self._action_routine()
+            self._event_generated = None
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
@@ -467,6 +498,12 @@ class TextCtrl(wx.TextCtrl):
     def on_enter(self, event):
         # Let others deal with it after me
         event.Skip()
+        self.prevalidate()
+        if self._action_routine is not None:
+            self._event_generated = wx.EVT_TEXT_ENTER
+            self._action_routine()
+            self._event_generated = None
+        self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
         self.warn_status = self._warn_status

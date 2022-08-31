@@ -454,14 +454,11 @@ class SpeedPpiPanel(wx.Panel):
 
         self.Layout()
 
-        self.text_speed.Bind(wx.EVT_KILL_FOCUS, self.on_text_speed)
-        self.text_speed.Bind(wx.EVT_TEXT_ENTER, self.on_text_speed)
-        self.text_power.Bind(wx.EVT_KILL_FOCUS, self.on_text_power)
-        self.text_power.Bind(wx.EVT_TEXT_ENTER, self.on_text_power)
+        self.text_speed.SetActionRoutine(self.on_text_speed)
+        self.text_power.SetActionRoutine(self.on_text_power)
 
         if self.text_frequency:
-            self.text_frequency.Bind(wx.EVT_KILL_FOCUS, self.on_text_frequency)
-            self.text_frequency.Bind(wx.EVT_TEXT_ENTER, self.on_text_frequency)
+            self.text_frequency.SetActionRoutine(self.on_text_frequency)
 
         # end wxGlade
 
@@ -495,10 +492,7 @@ class SpeedPpiPanel(wx.Panel):
             set_ctrl_value(self.text_frequency, str(self.operation.frequency))
         self.Show()
 
-    def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_speed(self):  # wxGlade: OperationProperty.<event_handler>
         try:
             value = float(self.text_speed.GetValue())
             if self.operation.speed != value:
@@ -508,12 +502,8 @@ class SpeedPpiPanel(wx.Panel):
                 )
         except ValueError:
             pass
-        event.Skip()
 
-    def on_text_frequency(self, event=None):
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_frequency(self):
         try:
             value = float(self.text_frequency.GetValue())
             if self.operation.frequency != value:
@@ -523,7 +513,6 @@ class SpeedPpiPanel(wx.Panel):
                 )
         except ValueError:
             pass
-        event.Skip()
 
     def update_power_label(self):
         # if self.operation.power <= 100:
@@ -532,10 +521,7 @@ class SpeedPpiPanel(wx.Panel):
         #     self.power_label.SetLabel(_("Power (ppi):"))
         pass
 
-    def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_power(self):
         try:
             value = float(self.text_power.GetValue())
             if self.operation.power != value:
@@ -546,8 +532,6 @@ class SpeedPpiPanel(wx.Panel):
                 )
         except ValueError:
             return
-        event.Skip()
-
 
 # end of class SpeedPpiPanel
 
@@ -580,8 +564,7 @@ class PassesPanel(wx.Panel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_passes, self.check_passes)
 
-        self.text_passes.Bind(wx.EVT_KILL_FOCUS, self.on_text_passes)
-        self.text_passes.Bind(wx.EVT_TEXT_ENTER, self.on_text_passes)
+        self.text_passes.SetActionRoutine(self.on_text_passes)
         # end wxGlade
 
     def pane_hide(self):
@@ -622,10 +605,7 @@ class PassesPanel(wx.Panel):
         )
         event.Skip()
 
-    def on_text_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_passes(self):
         try:
             value = int(self.text_passes.GetValue())
             if self.operation.passes != value:
@@ -635,8 +615,6 @@ class PassesPanel(wx.Panel):
                 )
         except ValueError:
             pass
-        event.Skip()
-
 
 # end of class PassesPanel
 
@@ -1183,10 +1161,8 @@ class RasterSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.text_dpi.Bind(wx.EVT_KILL_FOCUS, self.on_text_dpi)
-        self.text_dpi.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi)
-        self.text_overscan.Bind(wx.EVT_KILL_FOCUS, self.on_text_overscan)
-        self.text_overscan.Bind(wx.EVT_TEXT_ENTER, self.on_text_overscan)
+        self.text_dpi.SetActionRoutine(self.on_text_dpi)
+        self.text_overscan.SetActionRoutine(self.on_text_overscan)
 
         self.Bind(
             wx.EVT_COMBOBOX, self.on_combo_raster_direction, self.combo_raster_direction
@@ -1227,10 +1203,7 @@ class RasterSettingsPanel(wx.Panel):
             self.radio_directional_raster.SetSelection(self.operation.raster_swing)
         self.Show()
 
-    def on_text_dpi(self, event=None):  # wxGlade: OperationProperty.<event_handler>
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_dpi(self):
         try:
             value = int(self.text_dpi.GetValue())
             if self.operation.dpi != value:
@@ -1240,16 +1213,12 @@ class RasterSettingsPanel(wx.Panel):
                 )
         except ValueError:
             pass
-        event.Skip()
 
-    def on_text_overscan(self, event=None):
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
-        start_text = ctrl.GetValue()
+    def on_text_overscan(self):
+        start_text = self.text_overscan.GetValue()
         try:
             v = Length(
-                ctrl.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4
+                self.text_overscan.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4
             )
         except ValueError:
             return
@@ -1262,7 +1231,6 @@ class RasterSettingsPanel(wx.Panel):
             self.context.elements.signal(
                 "element_property_reload", self.operation, "text_overscan"
             )
-        event.Skip()
 
     def on_combo_raster_direction(self, event=None):
         if (
@@ -1352,10 +1320,8 @@ class HatchSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.text_distance.Bind(wx.EVT_TEXT_ENTER, self.on_text_distance)
-        self.text_distance.Bind(wx.EVT_KILL_FOCUS, self.on_text_distance)
-        self.text_angle.Bind(wx.EVT_TEXT_ENTER, self.on_text_angle)
-        self.text_angle.Bind(wx.EVT_KILL_FOCUS, self.on_text_angle)
+        self.text_distance.SetActionRoutine(self.on_text_distance)
+        self.text_angle.SetActionRoutine(self.on_text_angle)
         self.Bind(wx.EVT_COMMAND_SCROLL, self.on_slider_angle, self.slider_angle)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_fill, self.combo_fill_style)
         # end wxGlade
@@ -1410,10 +1376,7 @@ class HatchSettingsPanel(wx.Panel):
             pass
         self.Show()
 
-    def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_distance(self):
         try:
             self.operation.hatch_distance = Length(
                 self.text_distance.GetValue()
@@ -1424,10 +1387,7 @@ class HatchSettingsPanel(wx.Panel):
         except ValueError:
             pass
 
-    def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_angle(self):
         try:
             self.operation.hatch_angle = (
                 f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
@@ -1628,8 +1588,7 @@ class DwellSettingsPanel(wx.Panel):
 
         self.Layout()
 
-        self.text_dwelltime.Bind(wx.EVT_TEXT_ENTER, self.on_text_dwelltime)
-        self.text_dwelltime.Bind(wx.EVT_KILL_FOCUS, self.on_text_dwelltime)
+        self.text_dwelltime.SetActionRoutine(self.on_text_dwelltime)
         # end wxGlade
 
     def pane_hide(self):
@@ -1649,10 +1608,7 @@ class DwellSettingsPanel(wx.Panel):
         set_ctrl_value(self.text_dwelltime, str(self.operation.dwell_time))
         self.Show()
 
-    def on_text_dwelltime(self, event=None):
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_dwelltime(self):
         try:
             value = float(self.text_dwelltime.GetValue())
             if self.operation.dwell_time != value:
@@ -1662,8 +1618,6 @@ class DwellSettingsPanel(wx.Panel):
                 )
         except ValueError:
             pass
-        event.Skip()
-
 
 # end of class PassesPanel
 

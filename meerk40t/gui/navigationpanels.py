@@ -1099,10 +1099,8 @@ class SizePanel(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_resize, self.button_navigate_resize
         )
-        self.text_width.Bind(wx.EVT_KILL_FOCUS, self.on_textenter_width)
-        self.text_width.Bind(wx.EVT_TEXT_ENTER, self.on_textenter_width)
-        self.text_height.Bind(wx.EVT_KILL_FOCUS, self.on_textenter_height)
-        self.text_height.Bind(wx.EVT_TEXT_ENTER, self.on_textenter_height)
+        self.text_width.SetActionRoutine(self.on_textenter_width)
+        self.text_height.SetActionRoutine(self.on_textenter_height)
 
     def __set_properties(self):
         # begin wxGlade: SizePanel.__set_properties
@@ -1212,15 +1210,14 @@ class SizePanel(wx.Panel):
         else:
             self.button_navigate_resize.Enable(False)
 
-    def on_button_navigate_resize(self, event):  # wxGlade: SizePanel.<event_handler>
+    def on_button_navigate_resize(self, event):
         new_width = Length(self.text_width.Value, relative_length=self.object_width)
         new_height = Length(self.text_height.Value, relative_length=self.object_height)
         self.context(
             f"resize {repr(self.object_x)} {repr(self.object_y)} {new_width} {new_height}"
         )
 
-    def on_textenter_width(self, event):  # wxGlade: SizePanel.<event_handler>
-        self.text_width.prevalidate()
+    def on_textenter_width(self):  # wxGlade: SizePanel.<event_handler>
         try:
             if self.btn_lock_ratio.GetValue():
                 p = self.context
@@ -1234,16 +1231,14 @@ class SizePanel(wx.Panel):
                 self.text_height.SetValue(
                     (new_width * (1.0 / self.object_ratio)).preferred_length
                 )
-            self.on_button_navigate_resize(event)
+            self.on_button_navigate_resize(None)
         except ValueError:
             # This was not a value, reset this to the last actually used value.
             if self.object_width is not None:
                 self.text_width.SetValue(self.object_width.preferred_length)
             return
-        event.Skip()
 
-    def on_textenter_height(self, event):  # wxGlade: SizePanel.<event_handler>
-        self.text_height.prevalidate()
+    def on_textenter_height(self):
         try:
             if self.btn_lock_ratio.GetValue():
                 p = self.context
@@ -1257,13 +1252,12 @@ class SizePanel(wx.Panel):
                 self.text_width.SetValue(
                     (new_height * self.object_ratio).preferred_length
                 )
-            self.on_button_navigate_resize(event)
+            self.on_button_navigate_resize(None)
         except ValueError:
             # This was not a value, reset this to the last actually used value.
             if self.object_height is not None:
                 self.text_height.SetValue(self.object_height.preferred_length)
             return
-        event.Skip()
 
 
 class Transform(wx.Panel):
@@ -1360,18 +1354,12 @@ class Transform(wx.Panel):
         self.button_translate_right.Bind(wx.EVT_BUTTON, self.on_translate_right_1)
         self.button_rotate_cw.Bind(wx.EVT_BUTTON, self.on_rotate_cw_5)
         self.button_translate_down.Bind(wx.EVT_BUTTON, self.on_translate_down_1)
-        self.text_a.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
-        self.text_b.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
-        self.text_c.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
-        self.text_d.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
-        self.text_e.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
-        self.text_f.Bind(wx.EVT_TEXT_ENTER, self.on_text_matrix)
-        self.text_a.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
-        self.text_b.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
-        self.text_c.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
-        self.text_d.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
-        self.text_e.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
-        self.text_f.Bind(wx.EVT_KILL_FOCUS, self.on_text_matrix)
+        self.text_a.SetActionRoutine(self.on_text_matrix)
+        self.text_b.SetActionRoutine(self.on_text_matrix)
+        self.text_c.SetActionRoutine(self.on_text_matrix)
+        self.text_d.SetActionRoutine(self.on_text_matrix)
+        self.text_e.SetActionRoutine(self.on_text_matrix)
+        self.text_f.SetActionRoutine(self.on_text_matrix)
 
         self.button_translate_up.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_up_10)
         self.button_translate_down.Bind(wx.EVT_RIGHT_DOWN, self.on_translate_down_10)
@@ -1683,12 +1671,8 @@ class Transform(wx.Panel):
             valu = float(stxt)
         return valu
 
-    def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
-        ctrl = event.GetEventObject()
-        if hasattr(ctrl, "prevalidate"):
-            ctrl.prevalidate()
+    def on_text_matrix(self):
         try:
-            event.Skip()
             scale_x = self.scaled_value(self.text_a.GetValue())
             skew_x = self.skewed_value(self.text_c.GetValue())
             scale_y = self.scaled_value(self.text_d.GetValue())
@@ -1740,15 +1724,13 @@ class JogDistancePanel(wx.Panel):
         main_sizer.Fit(self)
         self.Layout()
 
-        self.text_jog_amount.Bind(wx.EVT_TEXT_ENTER, self.on_text_jog_amount)
-        self.text_jog_amount.Bind(wx.EVT_KILL_FOCUS, self.on_text_jog_amount)
-        # end wxGlade
+        self.text_jog_amount.SetActionRoutine(self.on_text_jog_amount)
 
     def pane_show(self, *args):
         self.text_jog_amount.SetValue(str(self.context.jog_amount))
         self.Children[0].SetFocus()
 
-    def on_text_jog_amount(self, event):  # wxGlade: Navigation.<event_handler>
+    def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
             jog = self.context.device.length(
                 self.text_jog_amount.GetValue(), new_units=self.context.units_name
