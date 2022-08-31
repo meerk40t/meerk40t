@@ -213,7 +213,9 @@ class Node:
             self._paint_bounds = None
 
         if self._children:
-            self._paint_bounds = Node.union_bounds(self._children, bounds=self._paint_bounds, attr="paint_bounds")
+            self._paint_bounds = Node.union_bounds(
+                self._children, bounds=self._paint_bounds, attr="paint_bounds"
+            )
         self._paint_bounds_dirty = False
         return self._paint_bounds
 

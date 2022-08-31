@@ -26,7 +26,12 @@ class GroupNode(Node):
         @return:
         """
 
-        return float("inf"), float("inf"), -float("inf"), -float("inf"),
+        return (
+            float("inf"),
+            float("inf"),
+            -float("inf"),
+            -float("inf"),
+        )
 
     def default_map(self, default_map=None):
         default_map = super(GroupNode, self).default_map(default_map=default_map)
