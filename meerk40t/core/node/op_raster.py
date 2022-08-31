@@ -71,13 +71,6 @@ class RasterOpNode(Node, Parameters):
     def __copy__(self):
         return RasterOpNode(self)
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
-            self._bounds_dirty = False
-        return self._bounds
-
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
     #     if maxspeed is not None and self.speed > maxspeed:
@@ -279,6 +272,7 @@ class RasterOpNode(Node, Parameters):
     def time_estimate(self):
         estimate = 0
         dpi = self.dpi
+        # Get fresh union bounds, may not have been marked dirty on additions or removals.
         min_x, min_y, max_x, max_y = Node.union_bounds(self.flat(types=elem_ref_nodes))
         width_in_inches = (max_x - min_x) / UNITS_PER_INCH
         height_in_inches = (max_y - min_y) / UNITS_PER_INCH

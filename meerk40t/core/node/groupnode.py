@@ -15,21 +15,18 @@ class GroupNode(Node):
     def __repr__(self):
         return f"GroupNode('{self.type}', {str(self._parent)})"
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            if len(self.children) == 0:
-                # empty, otherwise will recurse forever...
-                self._bounds = (
-                    float("inf"),
-                    float("inf"),
-                    -float("inf"),
-                    -float("inf"),
-                )
-            else:
-                self._bounds = Node.union_bounds(self._flatten_children(self))
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        """
+        Group default bbox is empty. If childless there are no bounds.
+
+        empty, otherwise will recurse forever...
+
+        @param transformed:
+        @param with_stroke:
+        @return:
+        """
+
+        return float("inf"), float("inf"), -float("inf"), -float("inf"),
 
     def default_map(self, default_map=None):
         default_map = super(GroupNode, self).default_map(default_map=default_map)

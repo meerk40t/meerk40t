@@ -57,18 +57,9 @@ class PointNode(Node):
         self.matrix *= matrix
         self._bounds_dirty = True
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            p = self.matrix.transform_point(self.point)
-            self._bounds = (
-                p[0],
-                p[1],
-                p[0],
-                p[1],
-            )
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        p = self.matrix.transform_point(self.point)
+        return (p[0], p[1], p[0], p[1])
 
     def default_map(self, default_map=None):
         default_map = super(PointNode, self).default_map(default_map=default_map)

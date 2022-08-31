@@ -59,12 +59,8 @@ class NumpathNode(Node, Parameters):
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = self.path.bbox(self.matrix)
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        return self.path.bbox(self.matrix)
 
     def preprocess(self, context, matrix, commands):
         self.path.transform(self.matrix)

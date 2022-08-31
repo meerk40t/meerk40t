@@ -168,13 +168,6 @@ class TextNode(Node):
             sw = limit
         return sw
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds_dirty = False
-            self._bounds = self.bbox(with_stroke=True)
-        return self._bounds
-
     def preprocess(self, context, matrix, commands):
         if self.parent.type != "op raster":
             commands.append(self.remove_text)

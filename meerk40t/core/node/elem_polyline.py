@@ -93,13 +93,9 @@ class PolylineNode(Node):
             sw = limit
         return sw
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._sync_svg()
-            self._bounds = self.shape.bbox(with_stroke=True)
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        self._sync_svg()
+        return self.shape.bbox(transformed=True, with_stroke=with_stroke)
 
     def preprocess(self, context, matrix, commands):
         self.stroke_scaled = True

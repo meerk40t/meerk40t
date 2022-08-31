@@ -3762,7 +3762,7 @@ class Elemental(Service):
                 channel(_("No renderer is registered to perform render."))
                 return
 
-            bounds = Node.union_bounds(data)
+            bounds = Node.union_bounds(data, attr="paint_bounds")
             if bounds is None:
                 return
             xmin, ymin, xmax, ymax = bounds
@@ -7119,7 +7119,7 @@ class Elemental(Service):
             if len(data) == 0:
                 return
             try:
-                bounds = Node.union_bounds(data)
+                bounds = Node.union_bounds(data, attr="paint_bounds")
                 width = bounds[2] - bounds[0]
                 height = bounds[3] - bounds[1]
             except TypeError:
