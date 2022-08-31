@@ -60,6 +60,7 @@ from .propertypanels.rasterwizardpanels import (
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
+from .operation_info import OperationInformation
 from .wxmmain import MeerK40t
 
 """
@@ -367,6 +368,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
+        kernel.register("window/OperationInfo", OperationInformation)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
