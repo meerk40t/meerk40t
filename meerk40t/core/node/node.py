@@ -191,7 +191,6 @@ class Node:
     def bounds(self):
         if not self._bounds_dirty:
             return self._bounds
-        self._bounds_dirty = False
 
         try:
             self._bounds = self.bbox(with_stroke=False)
@@ -200,22 +199,23 @@ class Node:
 
         if self._children:
             self._bounds = Node.union_bounds(self._children, bounds=self._bounds)
+        self._bounds_dirty = False
         return self._bounds
 
     @property
     def paint_bounds(self):
-        if not self._bounds_dirty:
-            return self._bounds
-        self._bounds_dirty = False
+        if not self._paint_bounds_dirty:
+            return self._paint_bounds
 
         try:
-            self._bounds = self.bbox(with_stroke=True)
+            self._paint_bounds = self.bbox(with_stroke=True)
         except AttributeError:
-            self._bounds = None
+            self._paint_bounds = None
 
         if self._children:
-            self._bounds = Node.union_bounds(self._children, bounds=self._bounds, attr="paint_bounds")
-        return self._bounds
+            self._paint_bounds = Node.union_bounds(self._children, bounds=self._paint_bounds, attr="paint_bounds")
+        self._paint_bounds_dirty = False
+        return self._paint_bounds
 
     def set_dirty_bounds(self):
         self._paint_bounds_dirty = True
