@@ -7,7 +7,7 @@ from typing import List
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
-from meerk40t.core.units import Angle, Length
+from meerk40t.core.units import Angle, Length, ACCEPTED_UNITS
 
 _ = wx.GetTranslation
 
@@ -350,6 +350,27 @@ class TextCtrl(wx.TextCtrl):
         )
 
         self._check = check
+        # For the sake of readibility we allow multiple occurences of
+        # the same character in the string even if it's unnecessary...
+        floatstr = "+-.eE0123456789"
+        unitstr = "".join(ACCEPTED_UNITS)
+        angle_units = (
+            "deg",
+            "rad",
+            "grad",
+            "turn",
+            r"%",
+        )
+        anglestr = "".join(angle_units)
+        self.charpattern = ""
+        if self._check == "length":
+            self.charpattern = floatstr + unitstr
+        elif self._check == "percent":
+            self.charpattern = floatstr + r"%"
+        elif self._check == "float":
+            self.charpattern = floatstr
+        elif self._check == "angle":
+            self.charpattern = floatstr + anglestr
         self.lower_limit = None
         self.upper_limit = None
         self.lower_limit_err = None
@@ -369,6 +390,7 @@ class TextCtrl(wx.TextCtrl):
 
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
+            self.Bind(wx.EVT_KEY_DOWN, self.on_char)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
         self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
@@ -450,6 +472,21 @@ class TextCtrl(wx.TextCtrl):
         self.SetBackgroundColour(background)
         self.SetForegroundColour(foreground)
         self.Refresh()
+
+    def on_char(self, event):
+        proceed = True
+        if self.charpattern != "":
+            keyc = event.GetUnicodeKey()
+            # GetUnicodeKey ignores all special keys in the first place.
+            if keyc != wx.WXK_NONE:
+                # a 'real' character?
+                if keyc>=ord(" "):
+                    char = chr(keyc).lower()
+                    if char not in self.charpattern:
+                        proceed = False
+        if proceed:
+            event.DoAllowNextEvent()
+            event.Skip()
 
     def on_check(self, event):
         event.Skip()
