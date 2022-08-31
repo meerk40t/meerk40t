@@ -483,7 +483,7 @@ class Length(object):
         *args,
         amount=None,
         relative_length=None,
-        unitless=PX_PER_UNIT,
+        unitless=1,
         preferred_units=None,
         digits=None,
     ):
