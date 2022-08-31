@@ -594,3 +594,7 @@ class LihuiyuControllerGui(MWindow):
 
     def on_menu_bufferview(self, event=None):
         self.context("window open BufferView\n")
+
+    @staticmethod
+    def submenu():
+        return _("Device-Control")

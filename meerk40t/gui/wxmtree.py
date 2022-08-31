@@ -118,7 +118,9 @@ class TreePanel(wx.Panel):
         keyvalue = get_key_name(event)
         if is_navigation_key(keyvalue):
             if self._keybind_channel:
-                self._keybind_channel(f"Tree key_down: {keyvalue} is a navigation key. Not processed.")
+                self._keybind_channel(
+                    f"Tree key_down: {keyvalue} is a navigation key. Not processed."
+                )
             return
         if self.context.bind.trigger(keyvalue):
             if self._keybind_channel:
@@ -140,7 +142,9 @@ class TreePanel(wx.Panel):
         keyvalue = get_key_name(event)
         if is_navigation_key(keyvalue):
             if self._keybind_channel:
-                self._keybind_channel(f"Tree key_up: {keyvalue} is a navigation key. Not processed.")
+                self._keybind_channel(
+                    f"Tree key_up: {keyvalue} is a navigation key. Not processed."
+                )
             return
         if self.context.bind.untrigger(keyvalue):
             if self._keybind_channel:
@@ -162,6 +166,12 @@ class TreePanel(wx.Panel):
     @signal_listener("activate_selected_nodes")
     def on_shadow_select_activate_tree(self, origin, *args):
         self.shadow_tree.activate_selected_node(origin, *args)
+
+    @signal_listener("activate_single_node")
+    def on_shadow_select_activate_single_tree(self, origin, node=None, *args):
+        if node is not None:
+            node.selected = True
+        # self.shadow_tree.activate_selected_node(origin, *args)
 
     @signal_listener("element_property_update")
     def on_element_update(self, origin, *args):

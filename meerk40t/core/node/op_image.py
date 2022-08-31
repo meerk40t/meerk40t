@@ -1,10 +1,11 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length, UNITS_PER_INCH, MM_PER_INCH
+from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, Length
 from meerk40t.svgelements import Color, Path, Polygon
 
 
@@ -95,11 +96,12 @@ class ImageOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "<stop>" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
+        # print(self.dangerous, self.stopop, self.raster_direction)
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -188,19 +190,23 @@ class ImageOpNode(Node, Parameters):
                 scanlines = height_in_inches * dpi
                 if self.raster_swing:
                     scanlines *= 2
-                estimate += scanlines * width_in_inches / speed_in_per_s + height_in_inches / speed_in_per_s
+                estimate += (
+                    scanlines * width_in_inches / speed_in_per_s
+                    + height_in_inches / speed_in_per_s
+                )
             if self.raster_direction in (2, 3, 4):
                 scanlines = width_in_inches * dpi
                 if self.raster_swing:
                     scanlines *= 2
-                estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s
+                estimate += (
+                    scanlines * height_in_inches / speed_in_per_s
+                    + width_in_inches / speed_in_per_s
+                )
 
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
 
-        def isNaN(num):
-            return num!= num
-        if isNaN(estimate):
+        if isnan(estimate):
             estimate = 0
 
         hours, remainder = divmod(estimate, 3600)

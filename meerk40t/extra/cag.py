@@ -4,7 +4,7 @@ from meerk40t.svgelements import Path, Point, Polygon
 def plugin(kernel, lifecycle):
     if lifecycle == "invalidate":
         try:
-            import numpy as np
+            import numpy as np  # pylint: disable=unused-import
         except ImportError:
             return True
     elif lifecycle == "register":

@@ -173,3 +173,7 @@ class TCPController(MWindow):
                 self.service.tcp.disconnect()
             else:
                 self.service.tcp.connect()
+
+    @staticmethod
+    def submenu():
+        return _("Device-Control")

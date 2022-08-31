@@ -19,13 +19,13 @@ class PropertyWindow(MWindow):
         self.SetTitle(_("Properties"))
         self.panel_instances = list()
 
-        self.notebook_main = wx.aui.AuiNotebook(
+        self.notebook_main = aui.AuiNotebook(
             self,
             -1,
-            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
-            | wx.aui.AUI_NB_SCROLL_BUTTONS
-            | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE,
+            style=aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | aui.AUI_NB_SCROLL_BUTTONS
+            | aui.AUI_NB_TAB_SPLIT
+            | aui.AUI_NB_TAB_MOVE,
         )
         self.Layout()
 
@@ -132,3 +132,7 @@ class PropertyWindow(MWindow):
                 pass
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
+
+    @staticmethod
+    def submenu():
+        return _("Editing")

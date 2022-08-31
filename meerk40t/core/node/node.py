@@ -496,12 +496,6 @@ class Node:
         except AttributeError:
             pass
 
-    def add_all(self, objects, type=None, name=None, pos=None):
-        for obj in objects:
-            self.add(obj, type=type, label=name, pos=pos)
-            if pos is not None:
-                pos += 1
-
     def add_reference(self, node=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.

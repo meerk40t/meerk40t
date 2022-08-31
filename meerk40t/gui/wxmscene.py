@@ -117,15 +117,19 @@ class MeerK40tScenePanel(wx.Panel):
         self._keybind_channel = self.context.channel("keybinds")
 
         if platform.system() == "Windows":
+
             def charhook(event):
                 keyvalue = get_key_name(event)
                 if is_navigation_key(keyvalue):
                     if self._keybind_channel:
-                        self._keybind_channel(f"Scene, char_hook used for key_down: {keyvalue}")
+                        self._keybind_channel(
+                            f"Scene, char_hook used for key_down: {keyvalue}"
+                        )
                     self.on_key_down(event)
                     event.Skip()
                 else:
                     event.DoAllowNextEvent()
+
             self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)

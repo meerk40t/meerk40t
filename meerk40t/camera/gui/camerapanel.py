@@ -118,13 +118,23 @@ class CameraPanel(wx.Panel, Job):
             self.button_export.SetSize(self.button_export.GetBestSize())
             self.button_reconnect.SetToolTip(_("Reconnect Camera"))
             self.button_reconnect.SetSize(self.button_reconnect.GetBestSize())
-            self.button_detect.SetToolTip(_("Detect Distortions/Calibration\n"
-                                            "You need to print a 9x6 checkerboard pattern from OpenCV\n"
-                                            "It should be flat and visible in the camera."))
+            self.button_detect.SetToolTip(
+                _(
+                    "Detect Distortions/Calibration\n"
+                    "You need to print a 9x6 checkerboard pattern from OpenCV\n"
+                    "It should be flat and visible in the camera."
+                )
+            )
             self.button_detect.SetSize(self.button_detect.GetBestSize())
             self.slider_fps.SetToolTip(_("Set the camera frames per second"))
-            self.check_fisheye.SetToolTip(_("Corrects Fisheye lensing, must be trained with checkerboard image."))
-            self.check_perspective.SetToolTip(_("The four marker locations (in scene when unchecked) are transformed into corners of a regular square shape."))
+            self.check_fisheye.SetToolTip(
+                _("Corrects Fisheye lensing, must be trained with checkerboard image.")
+            )
+            self.check_perspective.SetToolTip(
+                _(
+                    "The four marker locations (in scene when unchecked) are transformed into corners of a regular square shape."
+                )
+            )
 
             sizer_controls = wx.BoxSizer(wx.HORIZONTAL)
             sizer_checkboxes = wx.BoxSizer(wx.VERTICAL)
@@ -897,6 +907,10 @@ class CameraInterface(MWindow):
         def camera_win(index=None, **kwargs):
             kernel.console(f"window open -m {index} CameraInterface {index}\n")
 
+    @staticmethod
+    def submenu():
+        return _("Camera")
+
 
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
@@ -1084,3 +1098,7 @@ class CameraURI(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        return _("Camera")

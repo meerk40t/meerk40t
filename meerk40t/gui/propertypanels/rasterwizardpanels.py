@@ -3,7 +3,6 @@ from copy import deepcopy
 import wx
 
 from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.gui.icons import DARKMODE
 
 _ = wx.GetTranslation
 

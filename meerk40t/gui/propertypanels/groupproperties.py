@@ -40,6 +40,7 @@ class GroupPropertiesPanel(ScrolledPanel):
         self.panel_id.set_widgets(node)
         self.node = node
 
+
 class GroupProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(372, 141, *args, **kwds)

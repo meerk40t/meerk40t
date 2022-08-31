@@ -7,16 +7,18 @@ import time
 import serial
 from serial import SerialException
 
-from meerk40t.kernel import Service, Module
+from meerk40t.kernel import Module, Service
 
 from ..core.cutcode import (
     CubicCut,
+    CutCode,
     DwellCut,
     InputCut,
     LineCut,
     OutputCut,
+    PlotCut,
     QuadCut,
-    WaitCut, CutCode, PlotCut,
+    WaitCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -1261,7 +1263,7 @@ class GRBLEmulator(Module, Parameters):
         self.speed = 0
         self.used_speed = 0
         self.buffer = ""
-        self.relative = False # G90 default.
+        self.relative = False  # G90 default.
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -1419,6 +1421,7 @@ class GRBLEmulator(Module, Parameters):
             elif data == "$N":
                 pass
             elif data == "$H":
+
                 def realtime_home():
                     yield "home"
                     if self.home_adjust is not None:
@@ -1448,7 +1451,7 @@ class GRBLEmulator(Module, Parameters):
     def process_gcode(self, gc):
         if "m" in gc:
             for v in gc["m"]:
-                if v == 0 or v == 1:
+                if v in (0, 1):
                     # Stop or Unconditional Stop
                     self.new_plot_cut()
                 elif v == 2:
@@ -1459,7 +1462,7 @@ class GRBLEmulator(Module, Parameters):
                     # Program Stop
                     self.new_plot_cut()
                     return 0
-                elif v == 3 or v == 4:
+                elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode
                     self.new_plot_cut()
                 elif v == 5:
@@ -1487,19 +1490,19 @@ class GRBLEmulator(Module, Parameters):
             for v in gc["g"]:
                 if v is None:
                     return 2
-                elif v == 0.0:
+                elif v == 0:
                     # G0 Rapid Move.
                     self.move_mode = 0
-                elif v == 1.0:
+                elif v == 1:
                     # G1 Cut Move.
                     self.move_mode = 1
-                elif v == 2.0:
+                elif v == 2:
                     # G2 CW_ARC
                     self.move_mode = 2
-                elif v == 3.0:
+                elif v == 3:
                     # G3 CCW_ARC
                     self.move_mode = 3
-                elif v == 4.0:
+                elif v == 4:
                     # DWELL
                     t = 0
                     if "p" in gc:
@@ -1521,10 +1524,10 @@ class GRBLEmulator(Module, Parameters):
                 elif v == 19:
                     # Set the YZ plane for arc.
                     return 2
-                elif v == 20.0 or v == 70.0:
+                elif v in (20, 70):
                     # g20 is inch mode.
                     self.scale = UNITS_PER_INCH
-                elif v == 21.0 or v == 71.0:
+                elif v in (21, 71):
                     # g21 is mm mode. 39.3701 mils in a mm
                     self.scale = UNITS_PER_MM
                 elif v == 28:
@@ -1534,6 +1537,7 @@ class GRBLEmulator(Module, Parameters):
                         yield "home"
                         if self.home_adjust is not None:
                             yield "move", self.home_adjust[0], self.home_adjust[1]
+
                     self.spooler.send(move_to_origin())
                 elif v == 38.1:
                     # Touch Plate
@@ -1567,10 +1571,10 @@ class GRBLEmulator(Module, Parameters):
                 elif v == 80:
                     # Motion mode cancel. Canned cycle.
                     pass
-                elif v == 90.0:
+                elif v == 90:
                     # Set to Absolute Positioning
                     self.relative = False
-                elif v == 91.0:
+                elif v == 91:
                     # Set to Relative Positioning
                     self.relative = True
                 elif v == 92:
@@ -1580,10 +1584,10 @@ class GRBLEmulator(Module, Parameters):
                 elif v == 92.1:
                     # Clear Coordinate offset set by 92.
                     pass  # Clear Coordinate offset TODO: Implement
-                elif v == 93.0:
+                elif v == 93:
                     # Feed Rate Mode (Inverse Time Mode)
                     self.g93_feedrate()
-                elif v == 94.0:
+                elif v == 94:
                     # Feed Rate Mode (Units Per Minute)
                     self.g94_feedrate()
                 else:
@@ -1641,7 +1645,7 @@ class GRBLEmulator(Module, Parameters):
             elif self.move_mode == 2:
                 # TODO: Implement CW_ARC
                 self.plotcut.plot_append(x, y, self.power / 1000.0)
-            elif self.move_mode in 3:
+            elif self.move_mode == 3:
                 # TODO: Implement CCW_ARC
                 self.plotcut.plot_append(x, y, self.power / 1000.0)
         return 0

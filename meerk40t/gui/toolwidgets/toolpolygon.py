@@ -65,12 +65,22 @@ class PolygonTool(ToolWidget):
             else:
                 self.point_series.append((nearest_snap[0], nearest_snap[1]))
             response = RESPONSE_CONSUME
-            if len(self.point_series) > 2 and abs(
-                    complex(*self.point_series[0]) - complex(*self.point_series[-1])) < 5000:
+            if (
+                len(self.point_series) > 2
+                and abs(
+                    complex(*self.point_series[0]) - complex(*self.point_series[-1])
+                )
+                < 5000
+            ):
                 self.end_tool()
                 response = RESPONSE_ABORT
-            if len(self.point_series) > 2 and abs(
-                    complex(*self.point_series[-2]) - complex(*self.point_series[-1])) < 5000:
+            if (
+                len(self.point_series) > 2
+                and abs(
+                    complex(*self.point_series[-2]) - complex(*self.point_series[-1])
+                )
+                < 5000
+            ):
                 self.end_tool()
                 response = RESPONSE_ABORT
             self.scene.tool_active = True

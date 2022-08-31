@@ -1,5 +1,5 @@
 import platform
-from math import ceil, floor, isnan, sqrt
+from math import ceil, isnan, sqrt
 
 import wx
 from PIL import Image
@@ -30,7 +30,6 @@ from meerk40t.svgelements import (
     QuadraticBezier,
 )
 
-from ..core.units import PX_PER_INCH
 from ..numpath import TYPE_CUBIC, TYPE_LINE, TYPE_QUAD, TYPE_RAMP
 from .fonts import wxfont_to_svg
 from .icons import icons8_image_50
@@ -693,10 +692,13 @@ class LaserRender:
                 text = text.upper()
             if ttf == "lowercase":
                 text = text.lower()
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(
-            text
-        )
-        if node.width != f_width or node.height != f_height or node.descent != f_descent or node.leading != f_external_leading:
+        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        if (
+            node.width != f_width
+            or node.height != f_height
+            or node.descent != f_descent
+            or node.leading != f_external_leading
+        ):
             node.width = f_width
             node.height = f_height
             node.descent = f_descent

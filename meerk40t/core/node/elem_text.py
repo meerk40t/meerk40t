@@ -341,7 +341,11 @@ class TextNode(Node):
             )
 
         width = self.width if self.width else len(self.text) * self.font_size
-        height = self.height if self.height else self.line_height * len(list(self.text.split("\n"))) - self.font_size
+        height = (
+            self.height
+            if self.height
+            else self.line_height * len(list(self.text.split("\n"))) - self.font_size
+        )
         descent = self.descent if self.descent else height * 0.5
         leading = self.leading if self.leading else 0
         ymin = -height + descent + leading

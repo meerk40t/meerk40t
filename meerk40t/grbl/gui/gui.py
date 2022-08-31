@@ -1,7 +1,7 @@
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         try:
-            import serial
+            import serial  # pylint: disable=unused-import
         except ImportError:
             return True
         return not service.has_feature("wx")

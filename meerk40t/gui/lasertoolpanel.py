@@ -9,31 +9,12 @@ from meerk40t.gui.icons import (
     instruction_frame,
     instruction_rectangle,
 )
+from meerk40t.gui.mwindow import MWindow
 
 _ = wx.GetTranslation
 
 
 DEFAULT_LEN = "5cm"
-
-
-def register_panel_lasertool(window, context):
-    panel = LaserToolPanel(window, wx.ID_ANY, context=context)
-    pane = (
-        aui.AuiPaneInfo()
-        .Right()
-        .MinSize(220, 165)
-        .FloatingSize(240, 195)
-        .Hide()
-        .Caption(_("Lasertools"))
-        .CaptionVisible(not context.pane_lock)
-        .Name("lasertool")
-    )
-    pane.dock_proportion = 150
-    pane.control = panel
-    pane.submenu = _("Tools")
-
-    window.on_pane_add(pane)
-    context.register("pane/lasertool", pane)
 
 
 class LaserToolPanel(wx.Panel):
@@ -718,3 +699,24 @@ class LaserToolPanel(wx.Panel):
 
     def on_update_laser(self, origin, pos):
         self.laserposition = (pos[2], pos[3])
+
+
+class LaserTool(MWindow):
+    def __init__(self, *args, **kwds):
+        super().__init__(551, 234, submenu="Operations", *args, **kwds)
+        self.panel = LaserToolPanel(self, wx.ID_ANY, context=self.context)
+        self.add_module_delegate(self.panel)
+        _icon = wx.NullIcon
+        # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
+        self.SetIcon(_icon)
+        self.SetTitle(_("Laser-Tools"))
+
+    def window_open(self):
+        self.panel.pane_show()
+
+    def window_close(self):
+        self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        return _("Laser-Tools")

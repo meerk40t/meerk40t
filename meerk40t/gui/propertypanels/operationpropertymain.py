@@ -117,15 +117,20 @@ class LayerSettingPanel(wx.Panel):
         )
         rastertooltip = ""
         if self.operation.type == "op raster":
-            rastertooltip = "\n" + \
-                _("If neither stroke nor fill are checked, then the raster op") + \
-                "\n" + _("will classify all elements that have a fill") + \
-                "\n" + _("or stroke that are either black or white.")
+            rastertooltip = (
+                "\n"
+                + _("If neither stroke nor fill are checked, then the raster op")
+                + "\n"
+                + _("will classify all elements that have a fill")
+                + "\n"
+                + _("or stroke that are either black or white.")
+            )
         try:
             self.has_stroke = self.operation.has_color_attribute("stroke")
             self.checkbox_stroke = wx.CheckBox(self, wx.ID_ANY, _("Stroke"))
             self.checkbox_stroke.SetToolTip(
-                _("Look at the stroke color to restrict classification.") + rastertooltip
+                _("Look at the stroke color to restrict classification.")
+                + rastertooltip
             )
             self.checkbox_stroke.SetValue(1 if self.has_stroke else 0)
             h_classify_sizer.Add(self.checkbox_stroke, 1, 0, 0)
@@ -137,7 +142,8 @@ class LayerSettingPanel(wx.Panel):
             self.has_fill = self.operation.has_color_attribute("fill")
             self.checkbox_fill = wx.CheckBox(self, wx.ID_ANY, _("Fill"))
             self.checkbox_fill.SetToolTip(
-                _("Look at the stroke color to restrict classification.") + rastertooltip
+                _("Look at the stroke color to restrict classification.")
+                + rastertooltip
             )
             self.checkbox_fill.SetValue(1 if self.has_fill else 0)
             h_classify_sizer.Add(self.checkbox_fill, 1, 0, 0)
@@ -657,9 +663,14 @@ class InfoPanel(wx.Panel):
         self.btn_update = wx.Button(self, wx.ID_ANY, _("Calculate"))
         self.btn_update.Bind(wx.EVT_BUTTON, self.on_button_calculate)
 
+        self.btn_recalc = wx.Button(self, wx.ID_ANY, _("Re-Classify"))
+        self.btn_recalc.Bind(wx.EVT_BUTTON, self.on_button_refresh)
+
         sizer_children.Add(self.text_children, 1, wx.EXPAND, 0)
         sizer_time.Add(self.text_time, 1, wx.EXPAND, 0)
         sizer_time.Add(self.btn_update, 0, wx.EXPAND, 0)
+        sizer_time.AddSpacer(20)
+        sizer_time.Add(self.btn_recalc, 0, wx.EXPAND, 0)
 
         sizer_info.Add(sizer_children, 1, wx.EXPAND, 0)
         sizer_info.Add(sizer_time, 2, wx.EXPAND, 0)
@@ -675,6 +686,41 @@ class InfoPanel(wx.Panel):
 
     def pane_show(self):
         pass
+
+    def on_button_refresh(self, event):
+        if not hasattr(self.operation, "classify"):
+            return
+
+        infotxt = (
+            _("Do you really want to reassign elements to this operation?")
+            + "\n"
+            + _("Atttention: This will delete all existing assignments!")
+        )
+        dlg = wx.MessageDialog(
+            None, infotxt, "Re-Classify", wx.YES_NO | wx.ICON_WARNING
+        )
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_YES:
+            myop = self.operation
+            myop.remove_all_children()
+            data = list(self.context.elements.elems())
+            reverse = self.context.elements.classify_reverse
+            fuzzy = self.context.elements.classify_fuzzy
+            fuzzydistance = self.context.elements.classify_fuzzydistance
+            if reverse:
+                data = reversed(data)
+            for node in data:
+                classified, should_break = myop.classify(
+                    node,
+                    fuzzy=fuzzy,
+                    fuzzydistance=fuzzydistance,
+                    usedefault=False,
+                )
+            # Probably moot as the next command will move the focus away...
+            self.refresh_display()
+            self.context.signal("tree_changed")
+            self.context.signal("activate_single_node", myop)
 
     def on_button_calculate(self, event):
         self.text_time.SetValue(self.operation.time_estimate())

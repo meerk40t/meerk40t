@@ -1,4 +1,5 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.cutplan import CutPlanningFailedError
@@ -6,7 +7,7 @@ from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MM, Length, UNITS_PER_INCH, MM_PER_INCH
+from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, UNITS_PER_MM, Length
 from meerk40t.svgelements import Color, Matrix, Path, Polygon
 
 
@@ -127,7 +128,7 @@ class RasterOpNode(Node, Parameters):
         if ct > 0:
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
@@ -143,7 +144,7 @@ class RasterOpNode(Node, Parameters):
             #     return False
             # Dragging element onto operation adds that element to the op.
             if modify:
-                count +=1
+                count += 1
                 self.add_reference(drag_node, pos=0)
             result = True
         elif drag_node.type == "reference":
@@ -153,7 +154,7 @@ class RasterOpNode(Node, Parameters):
             # Move a refelem to end of op.
             existing += 1
             if modify:
-                count +=1
+                count += 1
                 self.append_child(drag_node)
             result = True
         elif drag_node.type in op_nodes:
@@ -170,7 +171,7 @@ class RasterOpNode(Node, Parameters):
                 #     continue
                 # Add element to operation
                 if modify:
-                    count +=1
+                    count += 1
                     self.add_reference(e)
                 some_nodes = True
             result = some_nodes
@@ -284,17 +285,22 @@ class RasterOpNode(Node, Parameters):
             scanlines = height_in_inches * dpi
             if self.raster_swing:
                 scanlines *= 2
-            estimate += scanlines * width_in_inches / speed_in_per_s + height_in_inches / speed_in_per_s
+            estimate += (
+                scanlines * width_in_inches / speed_in_per_s
+                + height_in_inches / speed_in_per_s
+            )
         if self.raster_direction in (2, 3, 4):
             scanlines = width_in_inches * dpi
             if self.raster_swing:
                 scanlines *= 2
-            estimate += scanlines * height_in_inches / speed_in_per_s + width_in_inches / speed_in_per_s
+            estimate += (
+                scanlines * height_in_inches / speed_in_per_s
+                + width_in_inches / speed_in_per_s
+            )
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
-        def isNaN(num):
-            return num!= num
-        if isNaN(estimate):
+
+        if isnan(estimate):
             estimate = 0
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -346,9 +352,7 @@ class RasterOpNode(Node, Parameters):
             if reverse:
                 data = list(reversed(data))
             try:
-                image = make_raster(
-                    data, bounds=bounds, step_x=step_x, step_y=step_y
-                )
+                image = make_raster(data, bounds=bounds, step_x=step_x, step_y=step_y)
                 if step_x > 0:
                     img_mx.post_translate(bounds[0], 0)
                 else:

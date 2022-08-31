@@ -372,3 +372,7 @@ class Preferences(MWindow):
 
     def window_close(self):
         pass
+
+    @staticmethod
+    def submenu():
+        return _("Preferences")

@@ -88,3 +88,7 @@ class BalorConfiguration(MWindow):
                     result = True
                     break
         return result
+
+    @staticmethod
+    def submenu():
+        return _("Device-Settings")

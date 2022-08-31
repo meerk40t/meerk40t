@@ -3,9 +3,7 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel
 
 from ...core.units import Length
-from ...svgelements import Color
 from ..icons import icons8_vector_50
-from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
 from .attributes import ColorPanel, IdPanel, PositionSizePanel
 
@@ -20,7 +18,9 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.node = node
 
-        self.panel_id = IdPanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
+        self.panel_id = IdPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.panel_stroke = ColorPanel(
             self,
             id=wx.ID_ANY,
@@ -39,7 +39,9 @@ class PathPropertyPanel(ScrolledPanel):
             callback=self.callback_color,
             node=self.node,
         )
-        self.panel_xy = PositionSizePanel(self, id=wx.ID_ANY, context=self.context, node=self.node)
+        self.panel_xy = PositionSizePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
 
         # Property display
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)

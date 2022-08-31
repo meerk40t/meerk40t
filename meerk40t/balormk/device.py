@@ -530,7 +530,7 @@ class BalorDevice(Service, ViewPort):
         )
         self.register(
             "format/op image",
-            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
+            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode}",
         )
         self.register(
             "format/op dots",
@@ -1681,7 +1681,7 @@ class BalorDevice(Service, ViewPort):
             "mark_time",
             help=_("Checks the Mark Time."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_mark_time(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_time()
             if reply is None:
                 channel("Not connected, cannot get mark time.")
@@ -1694,7 +1694,7 @@ class BalorDevice(Service, ViewPort):
             "mark_count",
             help=_("Checks the Mark Count."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_mark_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_count()
             if reply is None:
                 channel("Not connected, cannot get mark count.")
@@ -1707,7 +1707,7 @@ class BalorDevice(Service, ViewPort):
             "axis_pos",
             help=_("Checks the Axis Position."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_axis_pos(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_axis_pos()
             if reply is None:
                 channel("Not connected, cannot get axis position.")
@@ -1720,7 +1720,7 @@ class BalorDevice(Service, ViewPort):
             "user_data",
             help=_("Checks the User Data."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_user_data(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_user_data()
             if reply is None:
                 channel("Not connected, cannot get user data.")
@@ -1733,7 +1733,7 @@ class BalorDevice(Service, ViewPort):
             "position_xy",
             help=_("Checks the Position XY"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_position_xy(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_position_xy()
             if reply is None:
                 channel("Not connected, cannot get position xy.")
@@ -1746,7 +1746,7 @@ class BalorDevice(Service, ViewPort):
             "fly_speed",
             help=_("Checks the Fly Speed."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fly_speed(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_speed()
             if reply is None:
                 channel("Not connected, cannot get fly speed.")
@@ -1759,7 +1759,7 @@ class BalorDevice(Service, ViewPort):
             "fly_wait_count",
             help=_("Checks the fiber config extend"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fly_wait_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_wait_count()
             if reply is None:
                 channel("Not connected, cannot get fly weight count.")
@@ -1772,7 +1772,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_st_mo_ap",
             help=_("Checks the fiber st mo ap"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_st_mo_ap()
             if reply is None:
                 channel("Not connected, cannot get fiber_st_mo_ap.")
@@ -1785,7 +1785,7 @@ class BalorDevice(Service, ViewPort):
             "input_port",
             help=_("Checks the input_port"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_input_port(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_input_port()
             if reply is None:
                 channel("Not connected, cannot get input port.")
@@ -1798,7 +1798,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_config_extend",
             help=_("Checks the fiber config extend"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_config_extend()
             if reply is None:
                 channel("Not connected, cannot get fiber config extend.")

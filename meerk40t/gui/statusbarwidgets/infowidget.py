@@ -122,7 +122,7 @@ class InformationWidget(SimpleInfoWidget):
         # We dont have a context yet...
         self._info_active = True
 
-    def Show(self, showit):
+    def Show(self, showit=True):
         if self._needs_generation and showit:
             self.calculate_infos()
         super().Show(showit)
@@ -242,7 +242,7 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._invokation_delta = 2  # Every 2 seconds max
         self._driver = None
 
-    def Show(self, showit):
+    def Show(self, showit=True):
         if self._needs_generation and showit:
             self.calculate_infos()
         super().Show(showit)

@@ -348,9 +348,7 @@ class TextCtrl(wx.TextCtrl):
             validator=validator,
             name=name,
         )
-        self.SetMinSize(wx.Size(35, -1))
-        if limited:
-            self.SetMaxSize(wx.Size(100, -1))
+
         self._check = check
         self.lower_limit = None
         self.upper_limit = None
@@ -372,6 +370,35 @@ class TextCtrl(wx.TextCtrl):
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave)
+        _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
+        self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
+        if limited:
+            self.SetMaxSize(wx.Size(_MAX_WIDTH, -1))
+
+    def validate_widths(self):
+        minw = 35
+        maxw = 100
+        minpattern = "00000"
+        maxpattern = "999999999.99mm"
+        # Lets be a bit more specific: what is the minimum size of the textcontrol fonts
+        # to hold these patterns
+        tfont = self.GetFont()
+        xsize = 15
+        imgBit = wx.Bitmap(xsize, xsize)
+        dc = wx.MemoryDC(imgBit)
+        dc.SelectObject(imgBit)
+        dc.SetFont(tfont)
+        f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(
+            minpattern
+        )
+        minw = f_width + 5
+        f_width, f_height, f_descent, f_external_leading = dc.GetFullTextExtent(
+            maxpattern
+        )
+        maxw = f_width + 10
+        # Now release dc
+        dc.SelectObject(wx.NullBitmap)
+        return minw, maxw
 
     def set_error_level(self, err_min, err_max):
         self.lower_limit_err = err_min
@@ -479,11 +506,13 @@ class CheckBox(wx.CheckBox):
         self._tool_tip = None
         super().__init__(*args, **kwargs)
         if platform.system() == "Linux":
+
             def on_mouse_over_check(ctrl):
                 def mouse(event=None):
                     ctrl.SetToolTip(self._tool_tip)
 
                 return mouse
+
             self.Bind(wx.EVT_MOTION, on_mouse_over_check(super()))
 
     def SetToolTip(self, tooltip):
@@ -617,6 +646,7 @@ WX_SPECIALKEYS = {
     wx.WXK_WINDOWS_MENU: "menu",
 }
 
+
 def is_navigation_key(keyvalue):
     if keyvalue is None:
         return False
@@ -633,6 +663,7 @@ def is_navigation_key(keyvalue):
     if "return" in keyvalue:
         return True
     return False
+
 
 def get_key_name(event, return_modifier=False):
     keyvalue = ""
