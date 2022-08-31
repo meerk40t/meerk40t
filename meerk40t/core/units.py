@@ -61,16 +61,14 @@ nanometers.
 
 class ViewPort:
     """
-    The width and height are of the viewport are stored in MK native units (nm).
-
-    Origin_x and origin_y are the location of the home position in unit square values.
+    The width and height are of the viewport are stored in MK native units (1/65535) in.
+    Origin_x and origin_y are the location of the machine home position in factors of 1.
     This is to say 1,1 is the bottom left, and 0.5 0.5 is the middle of the bed.
-
-    user_scale is a scale factor for applied by the user rather than the driver.
-
-    native_scale is the scale factor of the driver units to MK native units
-
-    flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
+    * user_scale is a scale factor for applied by the user rather than the driver.
+    * native_scale is the scale factor of the driver units to MK native units
+    * flip_x, flip_y, and swap_xy are used to apply whatever flips and swaps are needed.
+    * show_origin is the 0,0 point as seen, for example galvo lasers call 0,0 center of the screen, but the machine
+        units actually have 0,0 as the upper-left corner (depending on the flips and rotates)
     """
 
     def __init__(
@@ -129,11 +127,12 @@ class ViewPort:
 
     def physical_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
         """
-        Converts an X,Y position into viewport units.
+        Converts a physical X,Y position into viewport units.
+
+        This does not depend on the device except for the width/height for converting percent values.
 
         @param x:
         @param y:
-        @param as_float:
         @param unitless:
         @return:
         """
@@ -143,7 +142,8 @@ class ViewPort:
 
     def physical_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
         """
-        Converts an X,Y position into viewport units.
+        Converts a physical X,Y position into device units.
+
         @param x:
         @param y:
         @param unitless:
@@ -154,7 +154,14 @@ class ViewPort:
 
     def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
         """
-        Converts an X,Y position into dx, dy.
+        Converts a physical X,Y vector into device vector (dx, dy).
+
+        This natively assumes device coordinate systems are affine. If we convert (0, 1in) as a vector into
+        machine units we are converting the length of 1in into the equal length in machine units. Positionally this
+        could be flipped or moved anywhere in the machine. But, the distance should be the same. However, in some cases
+        due to belt stretching etc. we can have scaled x vs y coord systems so (1in, 0) could be a different length
+        than (0, 1in).
+
         @param x:
         @param y:
         @param unitless:
@@ -164,14 +171,29 @@ class ViewPort:
         return self.scene_to_device_position(x, y, vector=True)
 
     def device_to_scene_position(self, x, y):
+        """
+        Converts a device position x, y into a scene position of native units (1/65535) inches.
+        @param x:
+        @param y:
+        @return:
+        """
         if self._imatrix is None:
-            self.calculate_matrices()
+            self._calculate_matrices()
         point = self._imatrix.point_in_matrix_space((x, y))
         return point.x, point.y
 
     def scene_to_device_position(self, x, y, vector=False):
+        """
+        Converts scene to a device position (or vector). Converts x, y from scene units (1/65535) inches into
+        device specific units. Optionally allows the calculation of a vector distance.
+
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
         if self._matrix is None:
-            self.calculate_matrices()
+            self._calculate_matrices()
         if vector:
             point = self._matrix.transform_vector([x, y])
             return point[0], point[1]
@@ -179,14 +201,20 @@ class ViewPort:
             point = self._matrix.point_in_matrix_space((x, y))
             return point.x, point.y
 
-    def calculate_matrices(self):
+    def _calculate_matrices(self):
+        """
+        Calculate the matricies between the scene and device units.
+        """
         self._matrix = Matrix(self.scene_to_device_matrix())
         self._imatrix = Matrix(self._matrix)
         self._imatrix.inverse()
 
     def device_to_scene_matrix(self):
+        """
+        Returns the device-to-scene matrix. Positions calculated with this matrix should
+        """
         if self._matrix is None:
-            self.calculate_matrices()
+            self._calculate_matrices()
         return self._imatrix
 
     def scene_to_device_matrix(self):
@@ -313,7 +341,7 @@ class ViewPort:
         unit_y = UNITS_PER_INCH
         if matrix is None:
             if self._matrix is None:
-                self.calculate_matrices()
+                self._calculate_matrices()
             matrix = self._matrix
         oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
         oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
