@@ -343,10 +343,10 @@ class PositionSizePanel(wx.Panel):
             y = bb[1]
             w = bb[2] - bb[0]
             h = bb[3] - bb[1]
-            self.text_x.SetValue(Length(x, unitless=1, digits=4).length_mm)
-            self.text_y.SetValue(Length(y, unitless=1, digits=4).length_mm)
-            self.text_w.SetValue(Length(w, unitless=1, digits=4).length_mm)
-            self.text_h.SetValue(Length(h, unitless=1, digits=4).length_mm)
+            self.text_x.SetValue(Length(x, digits=4).length_mm)
+            self.text_y.SetValue(Length(y, digits=4).length_mm)
+            self.text_w.SetValue(Length(w, digits=4).length_mm)
+            self.text_h.SetValue(Length(h, digits=4).length_mm)
             self.text_x.Enable(en_xy)
             self.text_y.Enable(en_xy)
             self.text_w.Enable(en_wh)

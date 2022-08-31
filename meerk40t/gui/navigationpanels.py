@@ -232,8 +232,8 @@ def get_movement(device, dx, dy):
             if newy != 0:
                 newx = newx * tmp / newy
             newy = tmp
-        sx = Length(newx, unitless=1)
-        sy = Length(newy, unitless=1)
+        sx = Length(newx)
+        sy = Length(newy)
         nx = f"{sx.mm:.4f}mm"
         ny = f"{sy.mm:.4f}mm"
     else:

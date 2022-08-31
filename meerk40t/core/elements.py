@@ -488,10 +488,10 @@ class Elemental(Service):
 
     def bounds(self, x0, y0, x1, y1):
         return (
-            float(Length(x0, relative_length=self.device.width, unitless=1)),
-            float(Length(y0, relative_length=self.device.height, unitless=1)),
-            float(Length(x1, relative_length=self.device.width, unitless=1)),
-            float(Length(y1, relative_length=self.device.height, unitless=1)),
+            float(Length(x0, relative_length=self.device.width)),
+            float(Length(y0, relative_length=self.device.height)),
+            float(Length(x1, relative_length=self.device.width)),
+            float(Length(y1, relative_length=self.device.height)),
         )
 
     def area(self, v):

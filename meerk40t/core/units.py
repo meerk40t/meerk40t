@@ -118,8 +118,8 @@ class ViewPort:
     def realize(self):
         self._imatrix = None
         self._matrix = None
-        self._width = Length(self.width, unitless=1.0).units
-        self._height = Length(self.height, unitless=1.0).units
+        self._width = Length(self.width).units
+        self._height = Length(self.height).units
         self._offset_x = self._width * self.origin_x
         self._offset_y = self._height * self.origin_y
         self._scale_x = self.user_scale_x * self.native_scale_x
@@ -483,7 +483,7 @@ class Length(object):
         *args,
         amount=None,
         relative_length=None,
-        unitless=1,
+        unitless=1.0,
         preferred_units=None,
         digits=None,
     ):
