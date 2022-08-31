@@ -61,6 +61,7 @@ from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
 from .operation_info import OperationInformation
+from .lasertoolpanel import LaserTool
 from .wxmmain import MeerK40t
 
 """
@@ -369,6 +370,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
         kernel.register("window/OperationInfo", OperationInformation)
+        kernel.register("window/Lasertool", LaserTool)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
@@ -393,10 +395,6 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.opassignment import register_panel_operation_assign
 
         kernel.register("wxpane/opassign", register_panel_operation_assign)
-
-        from meerk40t.gui.lasertoolpanel import register_panel_lasertool
-
-        kernel.register("wxpane/Lasertool", register_panel_lasertool)
 
         from meerk40t.gui.snapoptions import register_panel_snapoptions
 

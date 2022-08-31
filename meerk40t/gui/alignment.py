@@ -1160,3 +1160,7 @@ class Alignment(MWindow):
 
     def window_close(self):
         pass
+
+    @staticmethod
+    def submenu():
+        return _("Editing")

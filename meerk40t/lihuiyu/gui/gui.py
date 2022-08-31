@@ -26,7 +26,7 @@ def plugin(service, lifecycle):
 
         service.register("window/Controller", LihuiyuControllerGui)
         service.register("window/Configuration", LihuiyuDriverGui)
-        service.register("window/AccelerationChart", LihuiyuAccelerationChart)
+        service.register("window/Acceleration-Chart", LihuiyuAccelerationChart)
         service.register("window/Network-Controller", TCPController)
 
         service.register("winpath/Controller", service)

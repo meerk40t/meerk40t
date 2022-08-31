@@ -60,3 +60,7 @@ class GRBLConfiguration(MWindow):
 
     def window_preserve(self):
         return False
+
+    @staticmethod
+    def submenu():
+        return _("Device-Settings")
