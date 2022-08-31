@@ -196,13 +196,13 @@ class EngraveOpNode(Node, Parameters):
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
                                     self.add_reference(node)
-                                # Have classified but more classification might be needed
-                                return True, self.stopop
+                                    # Have classified but more classification might be needed
+                                    return True, self.stopop
                 else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
-                    # Have classified but more classification might be needed
-                    return True, self.stopop
+                        # Have classified but more classification might be needed
+                        return True, self.stopop
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):

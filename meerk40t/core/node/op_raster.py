@@ -223,8 +223,8 @@ class RasterOpNode(Node, Parameters):
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
                                     self.add_reference(node)
-                                # Have classified but more classification might be needed
-                                return True, self.stopop
+                                    # Have classified but more classification might be needed
+                                    return True, self.stopop
                 else:  # empty ? Anything with either a solid fill or a plain white stroke goes
                     if self.valid_node(node):
                         addit = False
@@ -249,6 +249,7 @@ class RasterOpNode(Node, Parameters):
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
+                    self.add_reference(node)
                     return True, self.stopop
         return False, False
 
