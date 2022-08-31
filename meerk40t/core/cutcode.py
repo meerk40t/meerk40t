@@ -963,7 +963,9 @@ class WaitCut(CutObject):
 
 
 class HomeCut(CutObject):
-    def __init__(self, offset_point, settings=None, passes=1, parent=None):
+    def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+        if offset_point is None:
+            offset_point = (0, 0)
         CutObject.__init__(
             self,
             offset_point,

@@ -21,7 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import DwellCut, InputCut, OutputCut, WaitCut
+from ..core.cutcode import DwellCut, InputCut, OutputCut, WaitCut, HomeCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -1686,6 +1686,10 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.wait_finish()
             self.wait(plot.dwell_time)
+        elif isinstance(plot, HomeCut):
+            self.plot_start()
+            self.wait_finish()
+            self.home(plot.start[0], plot.start[1])
         else:
             self.plot_planner.push(plot)
             # Mirror the stuff

@@ -22,6 +22,7 @@ from ..core.cutcode import (
     OutputCut,
     QuadCut,
     WaitCut,
+    HomeCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -425,6 +426,8 @@ class MoshiDriver(Parameters):
                         t += step_size
                 elif isinstance(q, WaitCut):
                     self.total_steps += 1
+                elif isinstance(q, HomeCut):
+                    self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
                     # Moshi cannot fire in place.
@@ -459,6 +462,9 @@ class MoshiDriver(Parameters):
                     t += step_size
                 last_x, last_y = q.end
                 self._goto_absolute(last_x, last_y, 1)
+            elif isinstance(q, HomeCut):
+                self.current_steps += 1
+                self.home(*q.start)
             elif isinstance(q, WaitCut):
                 self.current_steps += 1
                 # Moshi has no forced wait functionality.
