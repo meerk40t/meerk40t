@@ -152,7 +152,6 @@ class EllipseNode(Node):
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self.set_dirty_bounds()
 
     def as_path(self):
         self._sync_svg()
