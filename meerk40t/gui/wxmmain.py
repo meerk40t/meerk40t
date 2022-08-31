@@ -1850,19 +1850,26 @@ class MeerK40t(MWindow):
 
         submenus = {}
         for window, _path, suffix_path in self.context.find("window/.*"):
+            try:
+                name = window.name
+            except AttributeError:
+                name = suffix_path
             if not window.window_menu(None):
                 continue
             submenu = None
             try:
-                submenu_name = window.submenu
+                submenu_name = window.submenu()
+                if submenu_name is None:
+                    submenu_name = ""
+            except AttributeError:
+                submenu_name = ""
+            if submenu_name != "":
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
                     submenu = wx.Menu()
                     self.window_menu.AppendSubMenu(submenu, submenu_name)
                     submenus[submenu_name] = submenu
-            except AttributeError:
-                pass
             menu_context = submenu if submenu is not None else self.window_menu
             try:
                 name = window.name
