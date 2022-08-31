@@ -969,7 +969,7 @@ class ShadowTree:
             if node.type.startswith("elem ") and node.type != "elem point":
                 image = self.renderer.make_raster(
                     node,
-                    node.bounds,
+                    node.paint_bounds,
                     width=self.iconsize,
                     height=self.iconsize,
                     bitmap=True,

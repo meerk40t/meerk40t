@@ -294,7 +294,9 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "rapid_mode"
 
             if self.spooler.is_idle:
-                self.spooler.laserjob(list(move_at_speed()), label=f"move {dx} {dy} at {speed}")
+                self.spooler.laserjob(
+                    list(move_at_speed()), label=f"move {dx} {dy} at {speed}"
+                )
             else:
                 channel(_("Busy"))
             return
