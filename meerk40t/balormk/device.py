@@ -1899,7 +1899,7 @@ class BalorDevice(Service, ViewPort):
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(
+        def shapes_selected(
             command, channel, _, count=256, data=None, args=tuple(), **kwargs
         ):
             """
@@ -1927,7 +1927,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, data=None, args=tuple(), **kwargs):
+        def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """

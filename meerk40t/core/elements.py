@@ -6105,7 +6105,7 @@ class Elemental(Service):
             if method is None:
                 method = "quick"
             method = method.lower()
-            if not method in ("segment", "quick", "hull", "complex", "circle"):
+            if method not in ("segment", "quick", "hull", "complex", "circle"):
                 channel(
                     _(
                         "Invalid method, please use one of quick, hull, complex, segment, circle."
@@ -6137,7 +6137,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                _spooler.laserjob(list(trace_hull()))
+                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}")
 
             run_shape(spooler, hull)
 
