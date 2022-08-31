@@ -187,7 +187,7 @@ class Settings:
         for key, value in write_dict.items():
             if key.startswith("_"):
                 continue
-            if isinstance(value, (int, bool, str, float)):
+            if isinstance(value, (str, int, float, bool, list, tuple)):
                 self.write_persistent(section, key, value)
 
     def write_persistent_attributes(self, section, obj):
