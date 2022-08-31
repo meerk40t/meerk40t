@@ -252,13 +252,13 @@ class PositionSizePanel(wx.Panel):
         self.__do_layout()
 
         self.text_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_enter)
-        self.text_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_focus)
+        self.text_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_enter)
         self.text_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_enter)
-        self.text_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_focus)
+        self.text_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_enter)
         self.text_w.Bind(wx.EVT_TEXT_ENTER, self.on_text_w_enter)
-        self.text_w.Bind(wx.EVT_KILL_FOCUS, self.on_text_w_focus)
+        self.text_w.Bind(wx.EVT_KILL_FOCUS, self.on_text_w_enter)
         self.text_h.Bind(wx.EVT_TEXT_ENTER, self.on_text_h_enter)
-        self.text_h.Bind(wx.EVT_KILL_FOCUS, self.on_text_h_focus)
+        self.text_h.Bind(wx.EVT_KILL_FOCUS, self.on_text_h_enter)
         self.check_lock.Bind(wx.EVT_CHECKBOX, self.on_check_lock)
 
         self.set_widgets(self.node)
@@ -414,25 +414,26 @@ class PositionSizePanel(wx.Panel):
             self.set_widgets(self.node)
 
     def on_text_x_enter(self, event):
+        # Give the control a chance to reset values if necessary
+        self.text_x.prevalidate()
         self.translate_it()
+        event.Skip()
 
     def on_text_y_enter(self, event):
+        # Give the control a chance to reset values if necessary
+        self.text_y.prevalidate()
         self.translate_it()
+        event.Skip()
 
     def on_text_w_enter(self, event):
+        # Give the control a chance to reset values if necessary
+        self.text_w.prevalidate()
         self.scale_it()
+        event.Skip()
 
     def on_text_h_enter(self, event):
+        # Give the control a chance to reset values if necessary
+        self.text_h.prevalidate()
         self.scale_it()
+        event.Skip()
 
-    def on_text_x_focus(self, event):
-        self.translate_it()
-
-    def on_text_y_focus(self, event):
-        self.translate_it()
-
-    def on_text_w_focus(self, event):
-        self.scale_it()
-
-    def on_text_h_focus(self, event):
-        self.scale_it()
