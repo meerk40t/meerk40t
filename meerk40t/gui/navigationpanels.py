@@ -1539,8 +1539,28 @@ class Transform(wx.Panel):
             self.text_c.SetValue(f"{matrix.c:.5f}")  # Skew X
             self.text_d.SetValue(f"{matrix.d:.5f}")  # Scale Y
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
-            self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
-            self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
+            # self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
+            # self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
+            l1 = Length(amount=matrix.e, digits=4)
+            l2 = Length(amount=matrix.f, digits=4)
+            self.text_e.SetValue(l1.length_mm)
+            self.text_f.SetValue(l2.length_mm)
+            m_e = matrix.e
+            m_f = matrix.f
+            ttip1 = _(
+                "Translate X - moves the element by this amount of mils in the X-direction; "
+                "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+            )
+            ttip1 = ttip1 + "\n" + _("Current internal value: ") + f"{m_e:.1f}"
+            ttip2 = _(
+                "Translate Y - moves the element by this amount of mils in the Y-direction; "
+                "you may use 'real' distances when modifying this factor, i.e. 2in, 3cm, 50mm"
+            )
+            ttip2 = ttip2 + "\n" + _("Current internal value: ") + f"{m_f:.1f}"
+
+            self.text_e.SetToolTip(ttip1)
+            self.text_f.SetToolTip(ttip2)
+
 
     def select_ready(self, v):
         """
