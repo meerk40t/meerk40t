@@ -13,6 +13,7 @@ from ..core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
@@ -600,9 +601,10 @@ class GRBLDriver(Parameters):
                         t += step_size
                 elif isinstance(q, WaitCut):
                     self.total_steps += 1
+                elif isinstance(q, HomeCut):
+                    self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
-                    # Moshi cannot fire in place.
                 elif isinstance(q, (InputCut, OutputCut)):
                     self.total_steps += 1
                 else:
@@ -660,6 +662,9 @@ class GRBLDriver(Parameters):
             elif isinstance(q, WaitCut):
                 self.current_steps += 1
                 self.wait(q.dwell_time)
+            elif isinstance(q, HomeCut):
+                self.current_steps += 1
+                self.home(q.first)
             elif isinstance(q, DwellCut):
                 self.current_steps += 1
                 self.dwell(q.dwell_time)
@@ -1532,13 +1537,7 @@ class GRBLEmulator(Module, Parameters):
                     self.scale = UNITS_PER_MM
                 elif v == 28:
                     # Move to Origin (Home)
-                    def move_to_origin():
-                        yield "rapid_mode"
-                        yield "home"
-                        if self.home_adjust is not None:
-                            yield "move", self.home_adjust[0], self.home_adjust[1]
-
-                    self.spooler.send(move_to_origin())
+                    self.cutcode.append(HomeCut())
                 elif v == 38.1:
                     # Touch Plate
                     pass

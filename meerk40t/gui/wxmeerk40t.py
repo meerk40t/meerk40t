@@ -40,7 +40,9 @@ from .icons import (
     icons8_pause_50,
 )
 from .keymap import Keymap
+from .lasertoolpanel import LaserTool
 from .notes import Notes
+from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
@@ -60,8 +62,6 @@ from .propertypanels.rasterwizardpanels import (
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
-from .operation_info import OperationInformation
-from .lasertoolpanel import LaserTool
 from .wxmmain import MeerK40t
 
 """

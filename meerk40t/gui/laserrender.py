@@ -8,6 +8,7 @@ from meerk40t.core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
@@ -520,6 +521,8 @@ class LaserRender:
                 pass
             elif isinstance(cut, WaitCut):
                 pass
+            elif isinstance(cut, HomeCut):
+                p.MoveToPoint(start[0] + x, start[1] + y)
             elif isinstance(cut, InputCut):
                 pass
             elif isinstance(cut, OutputCut):

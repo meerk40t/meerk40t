@@ -74,6 +74,7 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
+        kernel.register("format/util home", "{enabled}{element_type}{adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
@@ -6701,6 +6702,7 @@ class Elemental(Service):
                 "op hatch",
                 "util console",
                 "util wait",
+                "util home",
                 "util output",
                 "util input",
                 "lasercode",
@@ -6924,9 +6926,8 @@ class Elemental(Service):
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="util console",
+                type="util home",
                 pos=pos,
-                command="home -f",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
