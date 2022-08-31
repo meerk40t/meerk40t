@@ -966,6 +966,8 @@ class Scene(Module, Job):
             new_cursor = wx.CURSOR_HAND
         elif cursor == "reference":
             new_cursor = wx.CURSOR_BULLSEYE
+        elif cursor == "text":
+            new_cursor = wx.CURSOR_IBEAM
         else:
             new_cursor = wx.CURSOR_ARROW
             self.log("Invalid cursor.")

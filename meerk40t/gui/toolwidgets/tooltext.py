@@ -34,6 +34,7 @@ class TextTool(ToolWidget):
         **kwargs,
     ):
         response = RESPONSE_CHAIN
+        self.scene.cursor("text")
         if event_type == "leftdown":
             if nearest_snap is None:
                 x = space_pos[0]
