@@ -175,13 +175,12 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
-        self.text_svg_ppi.Bind(wx.EVT_TEXT_ENTER, self.on_text_svg_ppi)
-        self.text_svg_ppi.Bind(wx.EVT_KILL_FOCUS, self.on_text_svg_ppi)
+        self.text_svg_ppi.SetActionRoutine(self.on_text_svg_ppi)
         # end wxGlade
 
         context.elements.setting(float, "svg_ppi", 96.0)
         self.text_svg_ppi.SetValue(str(context.elements.svg_ppi))
-        self.on_text_svg_ppi(None)
+        self.on_text_svg_ppi()
 
     def on_combo_svg_ppi(self, event=None):
         elements = self.context.elements
@@ -196,8 +195,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
             elements.svg_ppi = 96.0
         self.text_svg_ppi.SetValue(str(elements.svg_ppi))
 
-    def on_text_svg_ppi(self, event=None):
-        self.text_svg_ppi.prevalidate()
+    def on_text_svg_ppi(self):
         elements = self.context.elements
         try:
             svg_ppi = float(self.text_svg_ppi.GetValue())

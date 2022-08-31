@@ -555,11 +555,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_textbox_text(param, ctrl, obj, dtype):
-                    def text(event=None):
-                        # Give the control a chance to reset values if necessary
-                        ctrl.prevalidate()
-                        event.Skip()
+                def on_generic_text(param, ctrl, obj, dtype):
+                    def text():
                         v = ctrl.GetValue()
                         try:
                             dtype_v = dtype(v)
@@ -572,13 +569,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pass
 
                     return text
-
-                control.Bind(
-                    wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type)
-                )
-                control.Bind(
-                    wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
-                )
+                control.SetActionRoutine(on_generic_text(attr, control, obj, data_type))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
@@ -595,10 +586,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_textbox_text(param, ctrl, obj, dtype):
-                    def text(event=None):
-                        # Give the control a chance to reset values if necessary
-                        ctrl.prevalidate()
+                def on_length_text(param, ctrl, obj, dtype):
+                    def text():
                         try:
                             v = Length(ctrl.GetValue())
                             data_v = v.preferred_length
@@ -611,13 +600,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pass
 
                     return text
-
-                control.Bind(
-                    wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type)
-                )
-                control.Bind(
-                    wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
-                )
+                control.SetActionRoutine(on_length_text(attr, control, obj, data_type))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
@@ -634,10 +617,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_textbox_text(param, ctrl, obj, dtype):
-                    def text(event=None):
-                        # Give the control a chance to reset values if necessary
-                        ctrl.prevalidate()
+                def on_angle_text(param, ctrl, obj, dtype):
+                    def text():
                         try:
                             v = Angle(ctrl.GetValue(), digits=5)
                             data_v = str(v)
@@ -650,13 +631,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pass
 
                     return text
-
-                control.Bind(
-                    wx.EVT_KILL_FOCUS, on_textbox_text(attr, control, obj, data_type)
-                )
-                control.Bind(
-                    wx.EVT_TEXT_ENTER, on_textbox_text(attr, control, obj, data_type)
-                )
+                control.SetActionRoutine(on_angle_text(attr, control, obj, data_type))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
