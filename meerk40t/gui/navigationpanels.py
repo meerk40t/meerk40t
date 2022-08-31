@@ -4,7 +4,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_PIXEL
 from meerk40t.gui.icons import (
     get_default_icon_size,
     icon_corner1,
@@ -995,10 +995,10 @@ class MovePanel(wx.Panel):
                 dlg.Destroy()
                 return
             pos_x = self.context.device.length(
-                self.text_position_x.Value, axis=0, new_units=self.context.units_name
+                self.text_position_x.GetValue(), axis=0, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
             )
             pos_y = self.context.device.length(
-                self.text_position_y.Value, axis=1, new_units=self.context.units_name
+                self.text_position_y.GetValue(), axis=1, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
             )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
@@ -1594,10 +1594,10 @@ class Transform(wx.Panel):
 
     def _translate(self, dx, dy, scale):
         dx = self.context.device.length(
-            dx, 0, scale=scale, new_units=self.context.units_name
+            dx, 0, scale=scale, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
         )
         dy = self.context.device.length(
-            dy, 1, scale=scale, new_units=self.context.units_name
+            dy, 1, scale=scale, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
         )
         self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
@@ -1753,7 +1753,7 @@ class JogDistancePanel(wx.Panel):
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
             jog = self.context.device.length(
-                self.text_jog_amount.GetValue(), new_units=self.context.units_name
+                self.text_jog_amount.GetValue(), new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
             )
         except ValueError:
             return

@@ -2,7 +2,7 @@ import math
 
 import wx
 
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_PIXEL
 from meerk40t.gui.laserrender import DRAW_MODE_GUIDES
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.scene.widget import Widget
@@ -521,11 +521,11 @@ class GuideWidget(Widget):
         self.calc_area(False, w, h)
         p = self.scene.context
         self.scaled_conversion_x = (
-            p.device.length(str(1) + p.units_name, as_float=True)
+            p.device.length(f"1{p.units_name}", as_float=True, unitless=UNITS_PER_PIXEL)
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
         self.scaled_conversion_y = (
-            p.device.length(str(1) + p.units_name, as_float=True)
+            p.device.length(f"1{p.units_name}", as_float=True, unitless=UNITS_PER_PIXEL)
             * self.scene.widget_root.scene_widget.matrix.value_scale_y()
         )
         if self.scaled_conversion_x == 0:

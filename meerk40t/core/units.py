@@ -242,7 +242,7 @@ class ViewPort:
         new_units=None,
         relative_length=None,
         as_float=False,
-        unitless=UNITS_PER_PIXEL,
+        unitless=1,
         digits=None,
         scale=None,
     ):

@@ -5,7 +5,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_PIXEL
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_meerk40t,
@@ -439,10 +439,10 @@ class MeerK40tScenePanel(wx.Panel):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
-                x = self.context.device.length(x, 0)
-                y = self.context.device.length(y, 1)
-                width = self.context.device.length(width, 0)
-                height = self.context.device.length(height, 1)
+                x = self.context.device.length(x, 0, unitless=UNITS_PER_PIXEL)
+                y = self.context.device.length(y, 1, unitless=UNITS_PER_PIXEL)
+                width = self.context.device.length(width, 0, unitless=UNITS_PER_PIXEL)
+                height = self.context.device.length(height, 1, unitless=UNITS_PER_PIXEL)
             except ValueError:
                 raise CommandSyntaxError("Not a valid length.")
             bbox = (x, y, width, height)

@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
+from meerk40t.core.units import Length, UNITS_PER_PIXEL
 from meerk40t.gui.icons import icons8_up_left_50
 
 _ = wx.GetTranslation
@@ -381,7 +381,7 @@ class PositionPanel(wx.Panel):
             except ValueError:
                 try:
                     w = self.context.device.length(
-                        self.text_w.GetValue(), 0, new_unit=self.position_units
+                        self.text_w.GetValue(), 0, new_unit=self.position_units, unitless=UNITS_PER_PIXEL
                     )
                 except ValueError:
                     return
@@ -411,7 +411,7 @@ class PositionPanel(wx.Panel):
             except ValueError:
                 try:
                     h = self.context.device.length(
-                        self.text_h.GetValue(), 1, new_units=self.position_units
+                        self.text_h.GetValue(), 1, new_units=self.position_units, unitless=UNITS_PER_PIXEL
                     )
                 except ValueError:
                     return
@@ -436,7 +436,7 @@ class PositionPanel(wx.Panel):
         except ValueError:
             try:
                 self.position_x = self.context.device.length(
-                    self.text_h.GetValue(), 1, new_units=self.position_units
+                    self.text_h.GetValue(), 1, new_units=self.position_units, unitless=UNITS_PER_PIXEL
                 )
             except ValueError:
                 return
@@ -450,7 +450,7 @@ class PositionPanel(wx.Panel):
         except ValueError:
             try:
                 self.position_y = self.context.device.length(
-                    self.text_h.GetValue(), 1, new_units=self.position_units
+                    self.text_h.GetValue(), 1, new_units=self.position_units, unitless=UNITS_PER_PIXEL
                 )
             except ValueError:
                 return
