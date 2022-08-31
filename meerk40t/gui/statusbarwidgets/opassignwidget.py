@@ -146,8 +146,8 @@ class OperationAssignWidget(StatusBarWidget):
                 break
         event.Skip()
 
-    def Show(self, showit):
-        # Callback function that decideds whether to show an element or not
+    def Show(self, showit=True):
+        # Callback function that decides whether to show an element or not
         if showit:
             for idx, btn in enumerate(self.assign_buttons):
                 if self.op_nodes[idx] is None:
