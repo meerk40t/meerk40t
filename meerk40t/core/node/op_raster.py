@@ -63,6 +63,7 @@ class RasterOpNode(Node, Parameters):
         # self.allowed_attributes.append("fill")
         # Is this op out of useful bounds?
         self.dangerous = False
+        self.stopop = False
 
     def __repr__(self):
         return "RasterOp()"
@@ -243,8 +244,8 @@ class RasterOpNode(Node, Parameters):
                                     addit = True
                         if addit:
                             self.add_reference(node)
-                    # Have classified but more classification might be needed
-                    return True, self.stopop
+                            # Have classified but more classification might be needed
+                            return True, self.stopop
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
