@@ -42,6 +42,6 @@ Stop the looping idle job.
 
 ### correction
 
-# Licensing
+## Licensing
 
-This like everything in MeerK40t is MIT, however Balor itself is GPL licenced and should be slated for eventual spinning off again as a proper plugin. During the testing phase for 0.8.x this was included into MeerK40t proper to facilitate easier development. 
+Balor's original code was GPL licenced but was completely scrapped in pieces over time for this project. The new code still uses the name balor but was recoded from scratch based on various needs. For example the old balor code wasn't well suited to run uncompleted code and send packets while code in another thread is building that data. The replacement uses the name balor but is only based on some of the original research and none of the original code, outside of sections which were written specifically by me (Tatarize) originally anyway. 
