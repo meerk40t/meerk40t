@@ -6701,6 +6701,7 @@ class Elemental(Service):
                 "op hatch",
                 "util console",
                 "util wait",
+                "util home",
                 "util output",
                 "util input",
                 "lasercode",
@@ -6924,9 +6925,8 @@ class Elemental(Service):
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="util console",
+                type="util home",
                 pos=pos,
-                command="home -f",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
