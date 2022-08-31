@@ -948,7 +948,7 @@ class WaitCut(CutObject):
             parent=parent,
         )
         self.dwell_time = wait
-        self.first = True  # Dwell cuts are standalone
+        self.first = True  # Wait cuts are standalone
         self.last = True
         self.raster_step = 0
 
@@ -960,6 +960,54 @@ class WaitCut(CutObject):
 
     def generate(self):
         yield "wait", self.dwell_time
+
+
+class HomeCut(CutObject):
+    def __init__(self, offset_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            offset_point,
+            offset_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        yield "home", self._start_x, self._start_y
+
+
+class GotoCut(CutObject):
+    def __init__(self, goto_point, settings=None, passes=1, parent=None):
+        CutObject.__init__(
+            self,
+            goto_point,
+            goto_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        yield "home", self._start_x, self._start_y
 
 
 class InputCut(CutObject):
