@@ -531,12 +531,12 @@ class MoshiDriver(Parameters):
         self.total_steps = 0
 
     def move_abs(self, x, y):
-        x, y = self.service.physical_to_device_position(x, y, 1)
+        x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx, dy = self.service.physical_to_device_length(dx, dy, 1)
+        dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         x = self.native_x + dx
         y = self.native_y + dy
@@ -555,9 +555,7 @@ class MoshiDriver(Parameters):
             adjust_y = values[1]
         except IndexError:
             pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y, 1
-        )
+        adjust_x, adjust_y = self.service.physical_to_device_position(adjust_x, adjust_y)
 
         self.rapid_mode()
         self.speed = 40

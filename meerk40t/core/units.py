@@ -125,7 +125,7 @@ class ViewPort:
         self._scale_x = self.user_scale_x * self.native_scale_x
         self._scale_y = self.user_scale_y * self.native_scale_y
 
-    def physical_to_scene_position(self, x, y, unitless=UNITS_PER_PIXEL):
+    def physical_to_scene_position(self, x, y, unitless=1):
         """
         Converts a physical X,Y position into viewport units.
 
@@ -140,7 +140,7 @@ class ViewPort:
         unit_y = Length(y, relative_length=self._height, unitless=unitless).units
         return unit_x, unit_y
 
-    def physical_to_device_position(self, x, y, unitless=UNITS_PER_PIXEL):
+    def physical_to_device_position(self, x, y, unitless=1):
         """
         Converts a physical X,Y position into device units.
 
@@ -152,7 +152,7 @@ class ViewPort:
         x, y = self.physical_to_scene_position(x, y, unitless)
         return self.scene_to_device_position(x, y)
 
-    def physical_to_device_length(self, x, y, unitless=UNITS_PER_PIXEL):
+    def physical_to_device_length(self, x, y, unitless=1):
         """
         Converts a physical X,Y vector into device vector (dx, dy).
 
