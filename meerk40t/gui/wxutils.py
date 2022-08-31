@@ -350,6 +350,7 @@ class TextCtrl(wx.TextCtrl):
         )
 
         self._check = check
+        self._style = style
         # For the sake of readibility we allow multiple occurences of
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
@@ -371,6 +372,8 @@ class TextCtrl(wx.TextCtrl):
             self.charpattern = floatstr
         elif self._check == "angle":
             self.charpattern = floatstr + anglestr
+        elif self._check == "int":
+            self.charpattern = r"-+0123456789"
         self.lower_limit = None
         self.upper_limit = None
         self.lower_limit_err = None
@@ -393,7 +396,8 @@ class TextCtrl(wx.TextCtrl):
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
         self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
+        if self._style & wx.TE_PROCESS_ENTER != 0:
+            self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
         self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
         if limited:
