@@ -341,7 +341,7 @@ class RasterOpNode(Node, Parameters):
         def make_image():
             step_x = self.raster_step_x
             step_y = self.raster_step_y
-            bounds = self.bounds
+            bounds = self.paint_bounds
             img_mx = Matrix.scale(step_x, step_y)
             data = list(self.flat())
             reverse = context.elements.classify_reverse
