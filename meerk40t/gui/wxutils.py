@@ -387,11 +387,13 @@ class TextCtrl(wx.TextCtrl):
         self._warn_color_foreground = wx.BLACK
         self._modify_color_foreground = None
         self._warn_status = "modified"
-
+        self._last_valid_value = None
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
-        self.Bind(wx.EVT_KILL_FOCUS, self.on_leave)
+        self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
+        self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
         self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
         if limited:
@@ -422,6 +424,10 @@ class TextCtrl(wx.TextCtrl):
         dc.SelectObject(wx.NullBitmap)
         return minw, maxw
 
+    def SetValue(self, newvalue):
+        self._last_valid_value = newvalue
+        super().SetValue(newvalue)
+
     def set_error_level(self, err_min, err_max):
         self.lower_limit_err = err_min
         self.upper_limit_err = err_max
@@ -434,8 +440,20 @@ class TextCtrl(wx.TextCtrl):
         self.lower_limit = range_min
         self.upper_limit = range_max
 
-    def on_leave(self, event):
+    def on_enter_field(self, event):
+        self._last_valid_value = self.GetValue()
+        event.Skip()
+
+    def prevalidate(self):
+        # Check whether the field is okay, if not then put it to the last value
+        if self.warn_status == "error" and self._last_valid_value is not None:
+            # ChangeValue is not creating any events...
+            self.ChangeValue(self._last_valid_value)
+            self.warn_status = ""
+
+    def on_leave_field(self, event):
         # Needs to be passed on
+        self.prevalidate()
         event.Skip()
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
@@ -477,13 +495,17 @@ class TextCtrl(wx.TextCtrl):
         proceed = True
         if self.charpattern != "":
             keyc = event.GetUnicodeKey()
-            # GetUnicodeKey ignores all special keys in the first place.
-            if keyc != wx.WXK_NONE:
+            special = False
+            if event.RawControlDown() or event.ControlDown() or event.AltDown():
+                special = True
+            # GetUnicodeKey ignores all special keys in the first
+            if keyc != wx.WXK_NONE and not special:
                 # a 'real' character?
                 if keyc>=ord(" "):
                     char = chr(keyc).lower()
                     if char not in self.charpattern:
                         proceed = False
+                        # print (f"Ignored: {keyc} - {char}")
         if proceed:
             event.DoAllowNextEvent()
             event.Skip()
