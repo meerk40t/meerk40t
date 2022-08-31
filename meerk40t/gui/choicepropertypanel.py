@@ -557,6 +557,9 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 def on_textbox_text(param, ctrl, obj, dtype):
                     def text(event=None):
+                        # Give the control a chance to reset values if necessary
+                        ctrl.prevalidate()
+                        event.Skip()
                         v = ctrl.GetValue()
                         try:
                             dtype_v = dtype(v)
@@ -594,6 +597,8 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 def on_textbox_text(param, ctrl, obj, dtype):
                     def text(event=None):
+                        # Give the control a chance to reset values if necessary
+                        ctrl.prevalidate()
                         try:
                             v = Length(ctrl.GetValue())
                             data_v = v.preferred_length
@@ -631,6 +636,8 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 def on_textbox_text(param, ctrl, obj, dtype):
                     def text(event=None):
+                        # Give the control a chance to reset values if necessary
+                        ctrl.prevalidate()
                         try:
                             v = Angle(ctrl.GetValue(), digits=5)
                             data_v = str(v)
