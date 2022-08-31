@@ -16,6 +16,7 @@ from meerk40t.gui.wxutils import ScrolledPanel
 
 _ = wx.GetTranslation
 
+
 class OpInfoPanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -63,7 +64,7 @@ class OpInfoPanel(ScrolledPanel):
 
         self.opinfo = {
             "op cut": ("Cut", icons8_laser_beam_20, 0),
-            "op raster": ("Raster", icons8_direction_20, 0) ,
+            "op raster": ("Raster", icons8_direction_20, 0),
             "op image": ("Image", icons8_image_20, 0),
             "op engrave": ("Engrave", icons8_small_beam_20, 0),
             "op dots": ("Dots", icons8_scatter_plot_20, 0),
@@ -73,7 +74,9 @@ class OpInfoPanel(ScrolledPanel):
         self.state_images.Create(width=25, height=25)
         for key in self.opinfo:
             info = self.opinfo[key]
-            image_id = self.state_images.Add(bitmap=info[1].GetBitmap(resize=(25, 25), noadjustment=True))
+            image_id = self.state_images.Add(
+                bitmap=info[1].GetBitmap(resize=(25, 25), noadjustment=True)
+            )
             info = (info[0], info[1], image_id)
             self.opinfo[key] = info
 
@@ -86,7 +89,7 @@ class OpInfoPanel(ScrolledPanel):
         for index in range(lcount):
             info = "---"
             id = self.list_operations.GetItemData(index)
-            if id<0:
+            if id < 0:
                 continue
             myop = self.ops[id]
             if hasattr(myop, "time_estimate"):
@@ -153,7 +156,7 @@ class OpInfoPanel(ScrolledPanel):
         # Iterate over all unfound elem types
         for key in elem_count:
             count = elem_count[key]
-            if count== 0:
+            if count == 0:
                 continue
             list_id = self.list_operations.InsertItem(
                 self.list_operations.GetItemCount(), "!"
@@ -164,6 +167,9 @@ class OpInfoPanel(ScrolledPanel):
             self.list_operations.SetItemImage(list_id, -1)
             self.list_operations.SetItemData(list_id, -1)
 
+    @signal_listener("element_property_update")
+    @signal_listener("element_property_reload")
+    @signal_listener("rebuild_tree")
     @signal_listener("tree_changed")
     def on_tree_refresh(self, origin, *args):
         self.refresh_data()
@@ -174,7 +180,7 @@ class OpInfoPanel(ScrolledPanel):
     def pane_hide(self):
         pass
 
-    def on_tree_popup_mark_elem(self, elemtype = ""):
+    def on_tree_popup_mark_elem(self, elemtype=""):
         def emphas(event=None):
             data = []
             elems = list(self.context.elements.elems())
@@ -237,7 +243,7 @@ class OpInfoPanel(ScrolledPanel):
         except (KeyError, IndexError):
             return
         menu = wx.Menu()
-        if id<0:
+        if id < 0:
             # elem xxx Type:
             listitem = self.list_operations.GetItem(index, 2)
             elemtype = listitem.GetText()
@@ -258,7 +264,7 @@ class OpInfoPanel(ScrolledPanel):
         else:
             opnode = self.ops[id]
             s = mklabel(opnode.label)
-            if s=="":
+            if s == "":
                 s = opnode.type
             item = menu.Append(
                 wx.ID_ANY,
@@ -273,12 +279,11 @@ class OpInfoPanel(ScrolledPanel):
         self.PopupMenu(menu)
         menu.Destroy()
 
+
 class OperationInformation(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
-        self.panel = OpInfoPanel(
-            self, wx.ID_ANY, context=self.context
-        )
+        self.panel = OpInfoPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
