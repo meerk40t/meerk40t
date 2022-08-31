@@ -183,7 +183,7 @@ class TextNode(Node):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._bounds_dirty = True
+        self.set_dirty_bounds()
 
     def remove_text(self):
         self.remove_node()

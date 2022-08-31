@@ -703,7 +703,7 @@ class LaserRender:
             node.height = f_height
             node.descent = f_descent
             node.leading = f_external_leading
-            node._bounds_dirty = True
+            node.set_dirty_bounds()
         # No offset. Text draw positions should match svg. Draw box over text. Must obscure.
         dy = f_descent - f_height  # wx=0, convert baseline to correct position.
         dx = 0
@@ -860,7 +860,7 @@ class LaserRender:
             # image.save(f"dbg_{text}.png")
 
         if node.width != f_width or node.height != f_height:
-            node._bounds_dirty = True
+            node.set_dirty_bounds()
         node.width = f_width
         node.height = f_height
         node.descent = f_descent
@@ -882,7 +882,7 @@ class LaserRender:
             ):
                 # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
                 self.measure_text(item)
-                item._bounds_dirty = True
+                item.set_dirty_bounds()
 
     def make_raster(
         self,

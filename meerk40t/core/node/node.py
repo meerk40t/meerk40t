@@ -79,6 +79,9 @@ class Node:
         self._bounds = None
         self._bounds_dirty = True
 
+        self._paint_bounds = None
+        self._paint_bounds_dirty = True
+
         self.item = None
         self.icon = None
         self.cache = None
@@ -187,6 +190,15 @@ class Node:
     @property
     def bounds(self):
         return None
+
+    @property
+    def paint_bounds(self):
+        return None
+
+    def set_dirty_bounds(self):
+        self._paint_bounds_dirty = True
+        self._bounds_dirty = True
+
 
     @property
     def formatter(self):
@@ -435,8 +447,9 @@ class Node:
         Invalidation of the individual node.
         """
         self._points_dirty = True
-        self._bounds_dirty = True
+        self.set_dirty_bounds()
         self._bounds = None
+        self._paint_bounds = None
 
     def invalidated(self):
         """
