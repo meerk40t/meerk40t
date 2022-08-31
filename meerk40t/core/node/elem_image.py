@@ -150,8 +150,7 @@ class ImageNode(Node):
         x1, y1 = matrix.point_in_matrix_space((image_width, image_height))
         x2, y2 = matrix.point_in_matrix_space((0, image_height))
         x3, y3 = matrix.point_in_matrix_space((image_width, 0))
-        self._bounds_dirty = False
-        self._bounds = (
+        return (
             min(x0, x1, x2, x3),
             min(y0, y1, y2, y3),
             max(x0, x1, x2, x3),

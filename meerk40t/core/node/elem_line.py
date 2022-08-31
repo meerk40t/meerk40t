@@ -102,6 +102,7 @@ class LineNode(Node):
         self.matrix *= matrix
         self.stroke_scaled = False
         self._sync_svg()
+        self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
         default_map = super(LineNode, self).default_map(default_map=default_map)
@@ -160,7 +161,6 @@ class LineNode(Node):
         self.shape.stroke = self.stroke
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self._bounds_dirty = True
 
     def as_path(self):
         self._sync_svg()

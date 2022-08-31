@@ -55,7 +55,7 @@ class PointNode(Node):
 
     def preprocess(self, context, matrix, commands):
         self.matrix *= matrix
-        self._bounds_dirty = True
+        self.set_dirty_bounds()
 
     def bbox(self, transformed=True, with_stroke=False):
         p = self.matrix.transform_point(self.point)
