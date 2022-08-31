@@ -103,7 +103,7 @@ class Settings:
                     value = f"[{value.replace(';', ', ')}]"
                 try:
                     return ast.literal_eval(value)
-                except ValueError:
+                except (ValueError, SyntaxError):
                     return default
 
             return t(value)
