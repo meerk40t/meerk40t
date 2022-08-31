@@ -73,7 +73,7 @@ class OpInfoPanel(ScrolledPanel):
         self.state_images.Create(width=25, height=25)
         for key in self.opinfo:
             info = self.opinfo[key]
-            image_id = self.state_images.Add(bitmap=info[1].GetBitmap(resize=25))
+            image_id = self.state_images.Add(bitmap=info[1].GetBitmap(resize=(25, 25), noadjustment=True))
             info = (info[0], info[1], image_id)
             self.opinfo[key] = info
 
