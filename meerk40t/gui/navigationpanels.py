@@ -1531,13 +1531,13 @@ class Transform(wx.Panel):
         self.text_f.Enable(v)
         if v:
             matrix = f.matrix
-            # You will get sometimes slightly different numbers thean you would expect due to arithmetic operations
+            # You will get sometimes slightly different numbers than you would expect due to arithmetic operations
             # we will therefore 'adjust' those figures slightly to avoid confusion by rounding them to the sixth decimal (arbitrary)
             # that should be good enough...
             self.text_a.SetValue(f"{matrix.a:.5f}")  # Scale X
             self.text_b.SetValue(f"{matrix.b:.5f}")  # Skew Y
             self.text_c.SetValue(f"{matrix.c:.5f}")  # Skew X
-            self.text_d.SetValue(f"{matrix.e:.5f}")  # Scale Y
+            self.text_d.SetValue(f"{matrix.d:.5f}")  # Scale Y
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
             self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
             self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
