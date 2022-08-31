@@ -53,7 +53,7 @@ class Camera(Service):
         self.setting(int, "fps", 1)
         self.setting(bool, "correction_fisheye", False)
         self.setting(bool, "correction_perspective", False)
-        self.setting(str, "fisheye", "")
+        self.setting(list, "fisheye", None)
         self.setting(float, "perspective_x1", None)
         self.setting(float, "perspective_y1", None)
         self.setting(float, "perspective_x2", None)
@@ -68,9 +68,9 @@ class Camera(Service):
         self.setting(bool, "aspect", False)
         self.setting(str, "preserve_aspect", "xMinYMin meet")
 
-        # TODO: regex confirm fisheye
         if self.fisheye is not None and len(self.fisheye) != 0:
-            self.fisheye_k, self.fisheye_d = eval(self.fisheye)
+            self.fisheye_k, self.fisheye_d = self.fisheye
+
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
@@ -167,7 +167,7 @@ class Camera(Service):
             _("Image Captured"),
             4 | 2048,
         )
-        self.fisheye = repr([K.tolist(), D.tolist()])
+        self.fisheye = [K.tolist(), D.tolist()]
         self.fisheye_k = K.tolist()
         self.fisheye_d = D.tolist()
 
