@@ -910,6 +910,8 @@ class CameraInterface(MWindow):
     @staticmethod
     def submenu():
         return _("Camera")
+
+
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL

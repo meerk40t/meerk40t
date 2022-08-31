@@ -699,12 +699,12 @@ class LaserToolPanel(wx.Panel):
 
     def on_update_laser(self, origin, pos):
         self.laserposition = (pos[2], pos[3])
+
+
 class LaserTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
-        self.panel = LaserToolPanel(
-            self, wx.ID_ANY, context=self.context
-        )
+        self.panel = LaserToolPanel(self, wx.ID_ANY, context=self.context)
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
