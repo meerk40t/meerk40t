@@ -170,7 +170,7 @@ class GridWidget(Widget):
         points = (wpoints + hpoints) / 2
         scaled_conversion = (
             self.scene.context.device.length(
-                f"1{self.scene.context.units_name}", as_float=True, unitless=UNITS_PER_PIXEL
+                f"1{self.scene.context.units_name}", as_float=True,
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
@@ -240,7 +240,7 @@ class GridWidget(Widget):
     def calculate_gridsize(self, w, h):
         scaled_conversion = (
             self.scene.context.device.length(
-                f"1{self.scene.context.units_name}", as_float=True, unitless=UNITS_PER_PIXEL
+                f"1{self.scene.context.units_name}", as_float=True,
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )

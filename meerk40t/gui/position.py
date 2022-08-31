@@ -381,7 +381,7 @@ class PositionPanel(wx.Panel):
             except ValueError:
                 try:
                     w = self.context.device.length(
-                        self.text_w.GetValue(), 0, new_unit=self.position_units, unitless=UNITS_PER_PIXEL
+                        self.text_w.GetValue(), 0, new_units=self.position_units, unitless=UNITS_PER_PIXEL
                     )
                 except ValueError:
                     return
