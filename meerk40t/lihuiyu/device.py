@@ -271,8 +271,9 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "laser_off"
 
             if self.spooler.is_idle:
-                self.spooler.laserjob(list(timed_fire()))
-                channel(_("Pulse laser for {time} milliseconds").format(time=time))
+                label = _("Pulse laser for {time}ms").format(time=time)
+                self.spooler.laserjob(list(timed_fire()), label=label)
+                channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
             return
