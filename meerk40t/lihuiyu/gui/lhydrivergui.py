@@ -273,10 +273,16 @@ class ConfigurationTcp(wx.Panel):
         pass
 
     def on_text_address(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         self.context.address = self.text_address.GetValue()
 
     def on_text_port(self, event):  # wxGlade: ConfigurationTcp.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.port = int(self.text_port.GetValue())
@@ -453,6 +459,9 @@ class ConfigurationLaserPanel(wx.Panel):
         pass
 
     def on_text_home_x(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             length = Length(self.text_home_x.GetValue())
@@ -461,6 +470,9 @@ class ConfigurationLaserPanel(wx.Panel):
             return
 
     def on_text_home_y(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             length = Length(self.text_home_y.GetValue())
@@ -476,6 +488,9 @@ class ConfigurationLaserPanel(wx.Panel):
         self.text_home_y.SetValue(self.context.home_y)
 
     def on_text_bedwidth(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         ctrl = self.text_bedwidth
         try:
@@ -492,6 +507,9 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context("viewport_update\n")
 
     def on_text_bedheight(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         ctrl = self.text_bedheight
         try:
@@ -507,6 +525,9 @@ class ConfigurationLaserPanel(wx.Panel):
         self.context("viewport_update\n")
 
     def on_text_x_scale(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
@@ -520,6 +541,9 @@ class ConfigurationLaserPanel(wx.Panel):
             pass
 
     def on_text_y_scale(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.device.user_scale_x = float(self.text_scale_x.GetValue())
@@ -1126,6 +1150,9 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.context.opt_rapid_between = self.check_rapid_moves_between.GetValue()
 
     def on_text_min_jog_distance(self, event):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             self.context.opt_jog_minimum = int(
                 self.text_minimum_jog_distance.GetValue()
@@ -1140,6 +1167,9 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.context.rapid_override = self.check_override_rapid.GetValue()
 
     def on_text_rapid_x(self, event):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.rapid_override_speed_x = float(self.text_rapid_x.GetValue())
@@ -1147,6 +1177,9 @@ class ConfigurationSetupPanel(ScrolledPanel):
             pass
 
     def on_text_rapid_y(self, event):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.rapid_override_speed_y = float(self.text_rapid_y.GetValue())
@@ -1158,9 +1191,10 @@ class ConfigurationSetupPanel(ScrolledPanel):
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
         self.context.scale_speed_enabled = self.check_scale_speed.GetValue()
 
-    def on_text_speed_scale(
-        self, event
-    ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+    def on_text_speed_scale(self, event):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.scale_speed = float(self.text_speed_scale_amount.GetValue())
@@ -1175,6 +1209,9 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_speed_max_vector(
         self, event
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.max_speed_vector = float(self.text_max_speed_vector.GetValue())
@@ -1189,6 +1226,9 @@ class ConfigurationSetupPanel(ScrolledPanel):
     def on_text_speed_max_raster(
         self, event
     ):  # wxGlade: ConfigurationSetupPanel.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         try:
             self.context.max_speed_raster = float(self.text_max_speed_raster.GetValue())
