@@ -740,7 +740,7 @@ class Node:
         dest.insert_node(self, pos=pos)
 
     @staticmethod
-    def union_bounds(nodes, bounds=None):
+    def union_bounds(nodes, bounds=None, attr="bounds"):
         """
         Returns the union of the node list given, optionally unioned the given bounds value
 
@@ -754,7 +754,7 @@ class Node:
         else:
             xmin, ymin, xmax, ymax = bounds
         for e in nodes:
-            box = e.bounds
+            box = getattr(e, attr)
             if box is None:
                 continue
             if box[0] < xmin:
