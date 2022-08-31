@@ -129,10 +129,16 @@ class MoshiConfigurationPanel(ScrolledPanel):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def on_text_home_x(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         self.context.home_x = self.text_home_x.GetValue()
 
     def on_text_home_y(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         event.Skip()
         self.context.home_y = self.text_home_y.GetValue()
 

@@ -174,6 +174,9 @@ class LhyAdvancedPanel(wx.Panel):
         self.context.elements.signal("element_property_reload", self.operation)
 
     def on_text_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             self.operation.dratio = float(self.text_dratio.GetValue())
         except ValueError:
@@ -200,9 +203,10 @@ class LhyAdvancedPanel(wx.Panel):
         self.operation.dot_length_custom = bool(on)
         self.context.elements.signal("element_property_reload", self.operation)
 
-    def on_text_dot_length(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dot_length(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             self.operation.dot_length = int(self.text_dot_length.GetValue())
         except ValueError:

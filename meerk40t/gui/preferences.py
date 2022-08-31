@@ -197,6 +197,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.text_svg_ppi.SetValue(str(elements.svg_ppi))
 
     def on_text_svg_ppi(self, event=None):
+        self.text_svg_ppi.prevalidate()
         elements = self.context.elements
         try:
             svg_ppi = float(self.text_svg_ppi.GetValue())

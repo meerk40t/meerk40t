@@ -496,6 +496,9 @@ class SpeedPpiPanel(wx.Panel):
         self.Show()
 
     def on_text_speed(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             value = float(self.text_speed.GetValue())
             if self.operation.speed != value:
@@ -507,9 +510,10 @@ class SpeedPpiPanel(wx.Panel):
             pass
         event.Skip()
 
-    def on_text_frequency(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_frequency(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             value = float(self.text_frequency.GetValue())
             if self.operation.frequency != value:
@@ -529,6 +533,9 @@ class SpeedPpiPanel(wx.Panel):
         pass
 
     def on_text_power(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             value = float(self.text_power.GetValue())
             if self.operation.power != value:
@@ -616,6 +623,9 @@ class PassesPanel(wx.Panel):
         event.Skip()
 
     def on_text_passes(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             value = int(self.text_passes.GetValue())
             if self.operation.passes != value:
@@ -1218,6 +1228,9 @@ class RasterSettingsPanel(wx.Panel):
         self.Show()
 
     def on_text_dpi(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             value = int(self.text_dpi.GetValue())
             if self.operation.dpi != value:
@@ -1230,8 +1243,10 @@ class RasterSettingsPanel(wx.Panel):
         event.Skip()
 
     def on_text_overscan(self, event=None):
-        start_text = self.text_overscan.GetValue()
-        ctrl = self.text_overscan
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
+        start_text = ctrl.GetValue()
         try:
             v = Length(
                 ctrl.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4
@@ -1396,6 +1411,9 @@ class HatchSettingsPanel(wx.Panel):
         self.Show()
 
     def on_text_distance(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             self.operation.hatch_distance = Length(
                 self.text_distance.GetValue()
@@ -1407,6 +1425,9 @@ class HatchSettingsPanel(wx.Panel):
             pass
 
     def on_text_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             self.operation.hatch_angle = (
                 f"{Angle.parse(self.text_angle.GetValue()).as_degrees}deg"
@@ -1628,9 +1649,10 @@ class DwellSettingsPanel(wx.Panel):
         set_ctrl_value(self.text_dwelltime, str(self.operation.dwell_time))
         self.Show()
 
-    def on_text_dwelltime(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dwelltime(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             value = float(self.text_dwelltime.GetValue())
             if self.operation.dwell_time != value:

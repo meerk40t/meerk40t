@@ -176,8 +176,10 @@ class WarningPanel(wx.Panel):
 
     def on_text_limit(self, entry, isMax):
         def check(event=None):
+
             event.Skip()
             textctrl = event.GetEventObject()
+            textctrl.prevalidate()
             if isMax:
                 flag = "max"
             else:

@@ -230,6 +230,7 @@ class ImagePropertyPanel(ScrolledPanel):
         # end wxGlade
 
     def on_text_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
+        self.text_dpi.prevalidate()
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
 

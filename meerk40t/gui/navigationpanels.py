@@ -961,7 +961,7 @@ class MovePanel(wx.Panel):
         v_main_sizer = wx.BoxSizer(wx.VERTICAL)
         h_x_sizer = wx.BoxSizer(wx.HORIZONTAL)
         h_y_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        main_sizer.Add(self.button_navigate_move_to, 0, 0, 0)
+        main_sizer.Add(self.button_navigate_move_to, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         label_9 = wx.StaticText(self, wx.ID_ANY, "X:")
         self.text_position_x.SetMinSize((45, 23))
         self.text_position_y.SetMinSize((45, 23))
@@ -1044,8 +1044,8 @@ class PulsePanel(wx.Panel):
         sizer_5 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Short Pulse:")), wx.HORIZONTAL
         )
-        sizer_5.Add(self.button_navigate_pulse, 0, 0, 0)
-        sizer_5.Add(self.spin_pulse_duration, 1, 0, 0)
+        sizer_5.Add(self.button_navigate_pulse, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_5.Add(self.spin_pulse_duration, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         label_4 = wx.StaticText(self, wx.ID_ANY, _(" ms"))
         sizer_5.Add(label_4, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(sizer_5)
@@ -1220,6 +1220,7 @@ class SizePanel(wx.Panel):
         )
 
     def on_textenter_width(self, event):  # wxGlade: SizePanel.<event_handler>
+        self.text_width.prevalidate()
         try:
             if self.btn_lock_ratio.GetValue():
                 p = self.context
@@ -1242,6 +1243,7 @@ class SizePanel(wx.Panel):
         event.Skip()
 
     def on_textenter_height(self, event):  # wxGlade: SizePanel.<event_handler>
+        self.text_height.prevalidate()
         try:
             if self.btn_lock_ratio.GetValue():
                 p = self.context
@@ -1334,7 +1336,7 @@ class Transform(wx.Panel):
             wx.ID_ANY,
             style=wx.TE_PROCESS_ENTER,
             value="0.0",
-            check="float",
+            check="length",
             limited=True,
         )
         self.text_f = TextCtrl(
@@ -1342,7 +1344,7 @@ class Transform(wx.Panel):
             wx.ID_ANY,
             style=wx.TE_PROCESS_ENTER,
             value="0.0",
-            check="float",
+            check="length",
             limited=True,
         )
 
@@ -1682,14 +1684,17 @@ class Transform(wx.Panel):
         return valu
 
     def on_text_matrix(self, event=None):  # wxGlade: Navigation.<event_handler>
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             event.Skip()
             scale_x = self.scaled_value(self.text_a.GetValue())
             skew_x = self.skewed_value(self.text_c.GetValue())
             scale_y = self.scaled_value(self.text_d.GetValue())
             skew_y = self.skewed_value(self.text_b.GetValue())
-            translate_x = float(self.text_e.GetValue())
-            translate_y = float(self.text_f.GetValue())
+            translate_x = float(Length(self.text_e.GetValue()))
+            translate_y = float(Length(self.text_f.GetValue()))
             f = self.context.elements.first_element(emphasized=True)
             matrix = f.matrix
             if (

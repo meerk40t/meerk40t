@@ -39,12 +39,18 @@ class TCPController(MWindow):
         self.state = None
 
     def on_port_change(self, event):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         try:
             self.service.port = int(self.text_port.GetValue())
         except ValueError:
             pass
 
     def on_address_change(self, event):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         self.service.address = str(self.text_ip_host.GetValue())
 
     def __set_properties(self):

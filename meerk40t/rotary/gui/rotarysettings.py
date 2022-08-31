@@ -158,6 +158,9 @@ class RotarySettingsPanel(ScrolledPanel):
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
     def on_text_rotary_scale_y(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         if self.rotary is not None:
             try:
                 self.rotary.scale_y = float(self.text_rotary_scaley.GetValue())
@@ -165,6 +168,9 @@ class RotarySettingsPanel(ScrolledPanel):
                 pass
 
     def on_text_rotary_scale_x(self, event=None):
+        ctrl = event.GetEventObject()
+        if hasattr(ctrl, "prevalidate"):
+            ctrl.prevalidate()
         if self.rotary is not None:
             try:
                 self.rotary.scale_x = float(self.text_rotary_scalex.GetValue())
