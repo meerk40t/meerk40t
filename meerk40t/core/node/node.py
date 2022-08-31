@@ -199,7 +199,6 @@ class Node:
         self._paint_bounds_dirty = True
         self._bounds_dirty = True
 
-
     @property
     def formatter(self):
         return self._formatter
@@ -741,16 +740,19 @@ class Node:
         dest.insert_node(self, pos=pos)
 
     @staticmethod
-    def union_bounds(nodes):
+    def union_bounds(nodes, bounds=None):
         """
-        Returns the union of the node list given.
+        Returns the union of the node list given, optionally unioned the given bounds value
 
         @return: union of all bounds within the iterable.
         """
-        xmin = float("inf")
-        ymin = float("inf")
-        xmax = -xmin
-        ymax = -ymin
+        if bounds is None:
+            xmin = float("inf")
+            ymin = float("inf")
+            xmax = -xmin
+            ymax = -ymin
+        else:
+            xmin, ymin, xmax, ymax = bounds
         for e in nodes:
             box = e.bounds
             if box is None:
