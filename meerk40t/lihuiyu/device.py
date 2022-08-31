@@ -21,7 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import DwellCut, InputCut, OutputCut, WaitCut, HomeCut
+from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort

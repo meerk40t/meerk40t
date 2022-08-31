@@ -8,6 +8,7 @@ from meerk40t.core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
@@ -15,7 +16,7 @@ from meerk40t.core.cutcode import (
     QuadCut,
     RasterCut,
     RawCut,
-    WaitCut, HomeCut,
+    WaitCut,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (

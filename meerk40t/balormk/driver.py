@@ -4,13 +4,13 @@ from meerk40t.balormk.lmc_controller import GalvoController
 from meerk40t.core.cutcode import (
     CubicCut,
     DwellCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
     PlotCut,
     QuadCut,
     WaitCut,
-    HomeCut,
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
