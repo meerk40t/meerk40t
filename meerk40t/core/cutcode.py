@@ -988,30 +988,6 @@ class HomeCut(CutObject):
         yield "home", self._start_x, self._start_y
 
 
-class GotoCut(CutObject):
-    def __init__(self, goto_point, settings=None, passes=1, parent=None):
-        CutObject.__init__(
-            self,
-            goto_point,
-            goto_point,
-            settings=settings,
-            passes=passes,
-            parent=parent,
-        )
-        self.first = True  # Dwell cuts are standalone
-        self.last = True
-        self.raster_step = 0
-
-    def reversible(self):
-        return False
-
-    def reverse(self):
-        pass
-
-    def generate(self):
-        yield "home", self._start_x, self._start_y
-
-
 class InputCut(CutObject):
     def __init__(
         self,

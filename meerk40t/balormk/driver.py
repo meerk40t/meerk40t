@@ -9,7 +9,8 @@ from meerk40t.core.cutcode import (
     OutputCut,
     PlotCut,
     QuadCut,
-    WaitCut, HomeCut, GotoCut,
+    WaitCut,
+    HomeCut,
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
