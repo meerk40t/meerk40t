@@ -132,3 +132,7 @@ class PropertyWindow(MWindow):
                 pass
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
+
+    @staticmethod
+    def submenu():
+        return _("Editing")

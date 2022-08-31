@@ -143,3 +143,7 @@ class SerialController(MWindow):
         self.context.channel(f"recv-{self.service.com_port.lower()}").unwatch(
             self.serial_panel.update_recv
         )
+
+    @staticmethod
+    def submenu():
+        return _("Device-Control")

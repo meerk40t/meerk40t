@@ -907,7 +907,9 @@ class CameraInterface(MWindow):
         def camera_win(index=None, **kwargs):
             kernel.console(f"window open -m {index} CameraInterface {index}\n")
 
-
+    @staticmethod
+    def submenu():
+        return _("Camera")
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -1094,3 +1096,7 @@ class CameraURI(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        return _("Camera")

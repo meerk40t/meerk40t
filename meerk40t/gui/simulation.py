@@ -843,3 +843,7 @@ class Simulation(MWindow):
             self.panel.widget_scene.widget_root, "background", background
         )
         self.panel.widget_scene.request_refresh()
+
+    @staticmethod
+    def submenu():
+        return _("Burning")
