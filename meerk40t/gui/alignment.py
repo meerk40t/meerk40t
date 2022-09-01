@@ -414,6 +414,7 @@ class DistributionPanel(wx.Panel):
         # Certain functionalities are not ready yet, so let's disable them
         self.rbox_dist_x.EnableItem(4, False)  # Space
         self.rbox_dist_y.EnableItem(4, False)  # Space
+        self.check_rotate.Enable(False)
         # self.rbox_treatment.EnableItem(1, False)  # Shape
         # self.rbox_treatment.EnableItem(2, False)    # Points
 
@@ -581,6 +582,7 @@ class DistributionPanel(wx.Panel):
             for pt in polypoints:
                 x = pt[0]
                 y = pt[1]
+                ptangle = 0
                 plen = pt[2]
                 if abs(x) > 1.0e8 or abs(y) > 1.0e8:
                     # this does not seem to be a valid coord...
