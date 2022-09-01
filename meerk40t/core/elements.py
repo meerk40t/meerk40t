@@ -6472,6 +6472,64 @@ class Elemental(Service):
             node.passes_custom = passvalue != 1
             self.signal("element_property_reload", node)
 
+        # ---- Burn Direction
+        def get_direction_values():
+            return ("Top To Bottom",
+            "Bottom To Top",
+            "Right To Left",
+            "Left To Right",
+            "Crosshatch",
+            )
+
+        def radio_match_direction(node, raster_direction="", **kwargs):
+            values = get_direction_values()
+            for idx, key in enumerate(values):
+                if key==raster_direction:
+                    return node.raster_direction == idx
+            return False
+
+        @self.tree_submenu(_("Burn Direction"))
+        @self.tree_radio(radio_match_direction)
+        @self.tree_values("raster_direction", values=get_direction_values())
+        @self.tree_operation(
+            "{raster_direction}",
+            node_type=("op raster", "op image"),
+            help="",
+        )
+        def set_direction(node, raster_direction="", **kwargs):
+            values = get_direction_values()
+            for idx, key in enumerate(values):
+                if key==raster_direction:
+                    node.raster_direction = idx
+                    self.signal("element_property_reload", node)
+                    break
+
+        def get_swing_values():
+            return ("Bidirectional", "Unidirectional",)
+
+        def radio_match_swing(node, raster_swing="", **kwargs):
+            values = get_swing_values()
+            for idx, key in enumerate(values):
+                if key==raster_swing:
+                    return node.raster_swing == idx
+            return False
+
+        @self.tree_submenu(_("Directional Raster"))
+        @self.tree_radio(radio_match_swing)
+        @self.tree_values("raster_swing", values=get_swing_values())
+        @self.tree_operation(
+            "{raster_swing}",
+            node_type=("op raster", "op image"),
+            help="",
+        )
+        def set_swing(node, raster_swing="", **kwargs):
+            values = get_swing_values()
+            for idx, key in enumerate(values):
+                if key==raster_swing:
+                    node.raster_swing = idx
+                    self.signal("element_property_reload", node)
+                    break
+
         @self.tree_separator_before()
         @self.tree_operation(
             _("Execute operation(s)"),
