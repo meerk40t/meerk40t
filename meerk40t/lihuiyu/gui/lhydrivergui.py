@@ -1201,4 +1201,4 @@ class LihuiyuDriverGui(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Device-Settings")
+        return ("Device-Settings", "Configuration")

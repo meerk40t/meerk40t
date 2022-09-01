@@ -521,4 +521,4 @@ class ExecuteJob(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Burning")
+        return ("Burning", "Execute Job")

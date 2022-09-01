@@ -984,7 +984,9 @@ class ArrangementPanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            if self.count < 2:
+            num_cols = self.arrange_x.GetValue()
+            num_rows = self.arrange_y.GetValue()
+            if self.count < 2 or self.count < num_cols*num_rows:
                 active = False
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
@@ -1163,4 +1165,4 @@ class Alignment(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Editing")
+        return ("Editing", "Element Alignment")

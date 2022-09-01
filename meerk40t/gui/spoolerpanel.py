@@ -459,4 +459,4 @@ class JobSpooler(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Burning")
+        return ("Burning", "Spooler")

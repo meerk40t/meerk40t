@@ -340,4 +340,4 @@ class Keymap(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Preferences")
+        return ("Preferences", "Key-Bindings")

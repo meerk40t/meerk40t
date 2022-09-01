@@ -374,4 +374,4 @@ class Preferences(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Preferences")
+        return ("Preferences", "General Preferences")

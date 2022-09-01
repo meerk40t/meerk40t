@@ -174,4 +174,4 @@ class TCPController(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Device-Control")
+        return ("Device-Control", "TCP Controller")
