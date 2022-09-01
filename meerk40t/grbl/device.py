@@ -20,6 +20,7 @@ from ..core.cutcode import (
     PlotCut,
     QuadCut,
     WaitCut,
+    OriginCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -603,6 +604,8 @@ class GRBLDriver(Parameters):
                     self.total_steps += 1
                 elif isinstance(q, HomeCut):
                     self.total_steps += 1
+                elif isinstance(q, OriginCut):
+                    self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
                 elif isinstance(q, (InputCut, OutputCut)):
@@ -665,6 +668,9 @@ class GRBLDriver(Parameters):
             elif isinstance(q, HomeCut):
                 self.current_steps += 1
                 self.home(q.first)
+            elif isinstance(q, OriginCut):
+                self.current_steps += 1
+                self.move_abs(*q.first)
             elif isinstance(q, DwellCut):
                 self.current_steps += 1
                 self.dwell(q.dwell_time)

@@ -11,6 +11,7 @@ from meerk40t.core.cutcode import (
     PlotCut,
     QuadCut,
     WaitCut,
+    OriginCut,
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
@@ -138,6 +139,8 @@ class BalorDriver:
                     self.total_steps += 1
                 elif isinstance(q, HomeCut):
                     self.total_steps += 1
+                elif isinstance(q, OriginCut):
+                    self.total_steps += 1
                 elif isinstance(q, OutputCut):
                     self.total_steps += 1
                 elif isinstance(q, InputCut):
@@ -259,6 +262,9 @@ class BalorDriver:
                     con.list_delay_time(int(d))
                     dwell_time -= d
             elif isinstance(q, HomeCut):
+                self.current_steps += 1
+                con.goto(0x8000, 0x8000)
+            elif isinstance(q, OriginCut):
                 self.current_steps += 1
                 con.goto(0x8000, 0x8000)
             elif isinstance(q, OutputCut):

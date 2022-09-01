@@ -502,6 +502,7 @@ class Planner(Service):
                     "util console",
                     "util wait",
                     "util home",
+                    "util origin",
                     "util input",
                     "util output",
                     "lasercode",

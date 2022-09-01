@@ -21,7 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut
+from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut, OriginCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -1513,7 +1513,9 @@ class LihuiyuDriver(Parameters):
             adjust_y = values[1]
         except IndexError:
             pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(adjust_x, adjust_y)
+        adjust_x, adjust_y = self.service.physical_to_device_position(
+            adjust_x, adjust_y
+        )
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
             self.move_relative(adjust_x, adjust_y)
@@ -1690,6 +1692,11 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.wait_finish()
             self.home(plot.start[0], plot.start[1])
+        elif isinstance(plot, OriginCut):
+            start = plot.start
+            self.plot_start()
+            self.wait_finish()
+            self.move_abs(start[0], start[1])
         else:
             self.plot_planner.push(plot)
             # Mirror the stuff

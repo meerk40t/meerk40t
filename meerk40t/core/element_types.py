@@ -38,6 +38,7 @@ non_structural_nodes = (
     "util console",
     "util wait",
     "util home",
+    "util origin",
     "util output",
     "util input",
     "reference",
@@ -73,6 +74,7 @@ op_nodes = (
     "util console",
     "util wait",
     "util home",
+    "util origin",
     "util output",
     "util input",
 )
