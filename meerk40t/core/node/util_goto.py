@@ -5,7 +5,7 @@ from meerk40t.core.node.node import Node
 
 class GotoOperation(Node):
     """
-    OriginOperation tells the controller to return to origin.
+    GotoOperation tells the controller to return to origin.
 
     Node type "util goto"
     """
