@@ -6474,17 +6474,18 @@ class Elemental(Service):
 
         # ---- Burn Direction
         def get_direction_values():
-            return ("Top To Bottom",
-            "Bottom To Top",
-            "Right To Left",
-            "Left To Right",
-            "Crosshatch",
+            return (
+                "Top To Bottom",
+                "Bottom To Top",
+                "Right To Left",
+                "Left To Right",
+                "Crosshatch",
             )
 
         def radio_match_direction(node, raster_direction="", **kwargs):
             values = get_direction_values()
             for idx, key in enumerate(values):
-                if key==raster_direction:
+                if key == raster_direction:
                     return node.raster_direction == idx
             return False
 
@@ -6499,18 +6500,21 @@ class Elemental(Service):
         def set_direction(node, raster_direction="", **kwargs):
             values = get_direction_values()
             for idx, key in enumerate(values):
-                if key==raster_direction:
+                if key == raster_direction:
                     node.raster_direction = idx
                     self.signal("element_property_reload", node)
                     break
 
         def get_swing_values():
-            return ("Bidirectional", "Unidirectional",)
+            return (
+                "Bidirectional",
+                "Unidirectional",
+            )
 
         def radio_match_swing(node, raster_swing="", **kwargs):
             values = get_swing_values()
             for idx, key in enumerate(values):
-                if key==raster_swing:
+                if key == raster_swing:
                     return node.raster_swing == idx
             return False
 
@@ -6525,7 +6529,7 @@ class Elemental(Service):
         def set_swing(node, raster_swing="", **kwargs):
             values = get_swing_values()
             for idx, key in enumerate(values):
-                if key==raster_swing:
+                if key == raster_swing:
                     node.raster_swing = idx
                     self.signal("element_property_reload", node)
                     break

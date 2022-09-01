@@ -72,7 +72,9 @@ class HomeOperation(Node):
         default_map = super(HomeOperation, self).default_map(default_map=default_map)
         default_map["element_type"] = "Home"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["adjust"] = f" ({self.x}, {self.y})" if self.x != 0 and self.y != 0 else ""
+        default_map["adjust"] = (
+            f" ({self.x}, {self.y})" if self.x != 0 and self.y != 0 else ""
+        )
         default_map["x"] = self.x
         default_map["y"] = self.y
         default_map.update(self.settings)

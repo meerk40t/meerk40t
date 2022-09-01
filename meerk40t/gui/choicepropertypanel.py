@@ -569,6 +569,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pass
 
                     return text
+
                 control.SetActionRoutine(on_generic_text(attr, control, obj, data_type))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Length:
@@ -600,6 +601,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pass
 
                     return text
+
                 control.SetActionRoutine(on_length_text(attr, control, obj, data_type))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Angle:
@@ -631,6 +633,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             pass
 
                     return text
+
                 control.SetActionRoutine(on_angle_text(attr, control, obj, data_type))
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Color:

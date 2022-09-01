@@ -85,10 +85,16 @@ class ElementLightJob:
         con.light_mode()
 
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         delay_dark = self.jump_delay
 
@@ -184,10 +190,16 @@ class LiveSelectionLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         rotate.post_translate(x_offset, y_offset)
 
@@ -363,10 +375,16 @@ class LiveFullLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         rotate.post_translate(x_offset, y_offset)
 
@@ -436,10 +454,16 @@ class LiveFullLightJob:
             return self.crosshairs(con)
 
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True, unitless=UNITS_PER_PIXEL
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         quantization = 50
         rotate = Matrix()

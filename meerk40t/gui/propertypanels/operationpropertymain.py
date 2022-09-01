@@ -533,6 +533,7 @@ class SpeedPpiPanel(wx.Panel):
         except ValueError:
             return
 
+
 # end of class SpeedPpiPanel
 
 
@@ -615,6 +616,7 @@ class PassesPanel(wx.Panel):
                 )
         except ValueError:
             pass
+
 
 # end of class PassesPanel
 
@@ -1218,7 +1220,10 @@ class RasterSettingsPanel(wx.Panel):
         start_text = self.text_overscan.GetValue()
         try:
             v = Length(
-                self.text_overscan.GetValue(), unitless=UNITS_PER_MM, preferred_units="mm", digits=4
+                self.text_overscan.GetValue(),
+                unitless=UNITS_PER_MM,
+                preferred_units="mm",
+                digits=4,
             )
         except ValueError:
             return
@@ -1618,6 +1623,7 @@ class DwellSettingsPanel(wx.Panel):
                 )
         except ValueError:
             pass
+
 
 # end of class PassesPanel
 

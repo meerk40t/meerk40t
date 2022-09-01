@@ -555,7 +555,9 @@ class MoshiDriver(Parameters):
             adjust_y = values[1]
         except IndexError:
             pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(adjust_x, adjust_y)
+        adjust_x, adjust_y = self.service.physical_to_device_position(
+            adjust_x, adjust_y
+        )
 
         self.rapid_mode()
         self.speed = 40

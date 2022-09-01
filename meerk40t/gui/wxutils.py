@@ -542,7 +542,7 @@ class TextCtrl(wx.TextCtrl):
             # GetUnicodeKey ignores all special keys in the first
             if keyc != wx.WXK_NONE and not special:
                 # a 'real' character?
-                if keyc>=ord(" "):
+                if keyc >= ord(" "):
                     char = chr(keyc).lower()
                     if char not in self.charpattern:
                         proceed = False

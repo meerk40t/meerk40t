@@ -1863,9 +1863,9 @@ class MeerK40t(MWindow):
                 if isinstance(returnvalue, str):
                     submenu_name = returnvalue
                 elif isinstance(returnvalue, (tuple, list)):
-                    if len(returnvalue)>0:
+                    if len(returnvalue) > 0:
                         submenu_name = returnvalue[0]
-                    if len(returnvalue)>1:
+                    if len(returnvalue) > 1:
                         win_caption = returnvalue[1]
                 if submenu_name is None:
                     submenu_name = ""
