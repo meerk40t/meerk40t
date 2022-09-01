@@ -988,7 +988,7 @@ class HomeCut(CutObject):
         yield "home", self._start_x, self._start_y
 
 
-class OriginCut(CutObject):
+class GotoCut(CutObject):
     def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
         if offset_point is None:
             offset_point = (0, 0)

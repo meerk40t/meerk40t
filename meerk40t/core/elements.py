@@ -6703,7 +6703,7 @@ class Elemental(Service):
                 "util console",
                 "util wait",
                 "util home",
-                "util origin",
+                "util goto",
                 "util output",
                 "util input",
                 "lasercode",
@@ -6937,8 +6937,10 @@ class Elemental(Service):
         )
         def append_operation_origin(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="util origin",
+                type="util goto",
                 pos=pos,
+                x=0,
+                y=0,
             )
 
         @self.tree_submenu(_("Append special operation(s)"))

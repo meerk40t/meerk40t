@@ -1,25 +1,25 @@
-from meerk40t.core.cutcode import OriginCut
+from meerk40t.core.cutcode import GotoCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
 
-class OriginOperation(Node):
+class GotoOperation(Node):
     """
     OriginOperation tells the controller to return to origin.
 
-    Node type "util origin"
+    Node type "util goto"
     """
 
     def __init__(self, x=0.0, y=0.0, **kwargs):
-        super().__init__(type="util origin", **kwargs)
+        super().__init__(type="util goto", **kwargs)
         self.settings = {"x": x, "y": y, "output": True}
         self._formatter = "{enabled}{element_type} {x} {y}"
 
     def __repr__(self):
-        return f"OriginOperation('{self.x}, {self.y}')"
+        return f"GotoOperation('{self.x}, {self.y}')"
 
     def __copy__(self):
-        return OriginOperation(self.x, self.y)
+        return GotoOperation(self.x, self.y)
 
     def __len__(self):
         return 1
@@ -69,12 +69,11 @@ class OriginOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super(OriginOperation, self).default_map(default_map=default_map)
-        default_map["element_type"] = "Origin"
+        default_map = super(GotoOperation, self).default_map(default_map=default_map)
+        origin = self.x == 0 and self.y == 0
+        default_map["element_type"] = "Origin" if origin else "Goto"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["adjust"] = (
-            f" ({self.x}, {self.y})" if self.x != 0 and self.y != 0 else ""
-        )
+        default_map["adjust"] = f" ({self.x}, {self.y})" if not origin else ""
         default_map["x"] = self.x
         default_map["y"] = self.y
         default_map.update(self.settings)
@@ -109,7 +108,7 @@ class OriginOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        cut = OriginCut((self.x, self.y))
+        cut = GotoCut((self.x, self.y))
         cut.original_op = self.type
         yield cut
 

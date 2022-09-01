@@ -21,7 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut, OriginCut
+from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut, GotoCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -1692,7 +1692,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.wait_finish()
             self.home(plot.start[0], plot.start[1])
-        elif isinstance(plot, OriginCut):
+        elif isinstance(plot, GotoCut):
             start = plot.start
             self.plot_start()
             self.wait_finish()

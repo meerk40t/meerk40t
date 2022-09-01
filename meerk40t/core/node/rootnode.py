@@ -27,7 +27,7 @@ from meerk40t.core.node.refnode import ReferenceNode
 from meerk40t.core.node.util_console import ConsoleOperation
 from meerk40t.core.node.util_home import HomeOperation
 from meerk40t.core.node.util_input import InputOperation
-from meerk40t.core.node.util_origin import OriginOperation
+from meerk40t.core.node.util_goto import GotoOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
 
@@ -56,7 +56,7 @@ class RootNode(Node):
             "util console": ConsoleOperation,
             "util wait": WaitOperation,
             "util home": HomeOperation,
-            "util origin": OriginOperation,
+            "util goto": GotoOperation,
             "util input": InputOperation,
             "util output": OutputOperation,
             "lasercode": LaserCodeNode,

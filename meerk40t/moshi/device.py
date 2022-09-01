@@ -23,7 +23,7 @@ from ..core.cutcode import (
     OutputCut,
     QuadCut,
     WaitCut,
-    OriginCut,
+    GotoCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -429,7 +429,7 @@ class MoshiDriver(Parameters):
                     self.total_steps += 1
                 elif isinstance(q, HomeCut):
                     self.total_steps += 1
-                elif isinstance(q, OriginCut):
+                elif isinstance(q, GotoCut):
                     self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
@@ -468,7 +468,7 @@ class MoshiDriver(Parameters):
             elif isinstance(q, HomeCut):
                 self.current_steps += 1
                 self.home(*q.start)
-            elif isinstance(q, OriginCut):
+            elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 self._goto_absolute(*q.start)
             elif isinstance(q, WaitCut):
