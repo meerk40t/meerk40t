@@ -341,7 +341,7 @@ class CameraPanel(wx.Panel, Job):
     def swap_camera(self, uri):
         def swap(event=None):
             ukey = f"cam_{self.index}_uri"
-            context = self.camera.get_context("/")
+            context = self.camera.get_context("camera")
             setattr(context, ukey, str(uri))
             self.camera(f"camera{self.index} --uri {str(uri)} stop start\n")
             self.frame_bitmap = None
