@@ -786,7 +786,7 @@ class CameraInterface(MWindow):
                 if index is not None:
                     ukey = f"cam_{index}_uri"
                     testuri = getattr(kernel.root, ukey)
-                    if testuri is None or testuri < 0 or testuri == "":
+                    if testuri is None or testuri == "" or (isinstance(testuri, int) and testuri < 0):
                         foundstr = getattr(kernel.root, CAM_FOUND)
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):
