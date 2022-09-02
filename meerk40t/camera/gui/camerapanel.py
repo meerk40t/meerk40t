@@ -699,28 +699,23 @@ class CameraInterface(MWindow):
             ),
             id=item.GetId(),
         )
+        camera_root = self.context.get_context("camera")
+        uris = camera_root.setting(list, "uris", [])
+        camera_root.setting(int, "search_range", 5)
+        for uri in uris:
+            menu_text = _("URI: {usb_index}").format(usb_index=uri)
+            if isinstance(uri, int):
+                menu_text = _("Detected USB {usb_index}").format(usb_index=uri)
+            item = wxglade_tmp_menu.Append(wx.ID_ANY, menu_text, "")
+            self.Bind(wx.EVT_MENU, self.panel.swap_camera(uri), id=item.GetId())
 
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=0), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(0), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=1), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(1), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=2), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(2), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=3), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(3), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=4), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(4), id=item.GetId())
-
+        for i in range(camera_root.search_range):
+            if i in uris:
+                continue
+            item = wxglade_tmp_menu.Append(
+                wx.ID_ANY, _("USB {usb_index}").format(usb_index=i), ""
+            )
+            self.Bind(wx.EVT_MENU, self.panel.swap_camera(i), id=item.GetId())
         append(wxglade_tmp_menu, _("Camera"))
 
     def window_open(self):
