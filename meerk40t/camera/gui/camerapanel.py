@@ -783,20 +783,6 @@ class CameraInterface(MWindow):
 
             def specific(event=None):
                 index = s
-                camera.setting(int, "default", 0)
-                camera.setting(int, "search_range", 5)
-                camera.setting(list, "uris", [])
-                if index is None:
-                    index = camera.default
-
-                try:
-                    default_uri = camera.uris[index]
-                except IndexError:
-                    default_uri = index
-
-                camera_context = camera.derive(index)
-                uri = camera_context.setting(str, "uri", default_uri)
-                camera(f"camera{index} --uri {uri} stop start\n")
                 camera.default = index
                 v = camera.default
                 camera(f"window toggle -m {v} CameraInterface {v}\n")
