@@ -372,7 +372,6 @@ class Camera(Service):
 
     def set_uri(self, uri):
         self.uri = uri
-        self.uri = self.uri
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
