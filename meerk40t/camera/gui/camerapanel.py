@@ -918,12 +918,12 @@ class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+        self.context = context.get_context("camera")
         if index is None:
             index = 0
         self.index = index
         assert isinstance(self.index, int)
-
+        self.context.setting(list, "uris", [])
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
@@ -940,7 +940,6 @@ class CameraURIPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_uri, self.button_add)
         self.Bind(wx.EVT_TEXT, self.on_text_uri, self.text_uri)
         # end wxGlade
-        self.uri_list = None
         self.changed = False
 
     def __set_properties(self):
@@ -963,15 +962,7 @@ class CameraURIPanel(wx.Panel):
         # end wxGlade
 
     def pane_show(self):
-        camera_root_context = self.context.get_context("camera")
-        keylist = camera_root_context.kernel.read_persistent_string_dict(
-            camera_root_context.path, suffix=True
-        )
-        if keylist is not None:
-            keys = [q for q in keylist if isinstance(q, str) and q.startswith("uri")]
-            keys.sort()
-            self.uri_list = [keylist[k] for k in keys]
-            self.on_list_refresh()
+        self.on_list_refresh()
 
     def pane_hide(self):
         self.commit()
@@ -979,29 +970,18 @@ class CameraURIPanel(wx.Panel):
     def commit(self):
         if not self.changed:
             return
-        camera_root_context = self.context.get_context("camera")
-        for c in dir(camera_root_context):
-            if not c.startswith("uri"):
-                continue
-            setattr(camera_root_context, c, None)
-        camera_root_context.clear_persistent()
-
-        for i, uri in enumerate(self.uri_list):
-            key = f"uri{i}"
-            setattr(camera_root_context, key, uri)
-        camera_root_context.flush()
-        camera_root_context.signal("camera_uri_changed", True)
+        self.context.signal("camera_uri_changed", True)
 
     def on_list_refresh(self):
         self.list_uri.DeleteAllItems()
-        for i, uri in enumerate(self.uri_list):
+        for i, uri in enumerate(self.context.uris):
             m = self.list_uri.InsertItem(i, str(i))
             if m != -1:
                 self.list_uri.SetItem(m, 1, str(uri))
 
     def on_list_activated(self, event):  # wxGlade: CameraURI.<event_handler>
         index = event.GetIndex()
-        new_uri = self.uri_list[index]
+        new_uri = self.context.uris[index]
         self.context.console(f"camera{self.index} --uri {new_uri} stop start\n")
         try:
             self.GetParent().Close()
@@ -1031,7 +1011,7 @@ class CameraURIPanel(wx.Panel):
     def on_tree_popup_delete(self, index):
         def delete(event=None):
             try:
-                del self.uri_list[index]
+                del self.context.uris[index]
             except KeyError:
                 pass
             self.changed = True
@@ -1041,7 +1021,7 @@ class CameraURIPanel(wx.Panel):
 
     def on_tree_popup_duplicate(self, index):
         def duplicate(event=None):
-            self.uri_list.insert(index, self.uri_list[index])
+            self.context.uris.insert(index, self.context.uris[index])
             self.changed = True
             self.on_list_refresh()
 
@@ -1055,9 +1035,9 @@ class CameraURIPanel(wx.Panel):
                 _("Camera URI"),
                 "",
             )
-            dlg.SetValue(self.uri_list[index])
+            dlg.SetValue(self.context.uris[index])
             if dlg.ShowModal() == wx.ID_OK:
-                self.uri_list[index] = dlg.GetValue()
+                self.context.uris[index] = dlg.GetValue()
                 self.changed = True
                 self.on_list_refresh()
 
@@ -1065,7 +1045,7 @@ class CameraURIPanel(wx.Panel):
 
     def on_tree_popup_clear(self, index):
         def delete(event):
-            self.uri_list = list()
+            self.context.uris.clear()
             self.changed = True
             self.on_list_refresh()
 
@@ -1075,7 +1055,7 @@ class CameraURIPanel(wx.Panel):
         uri = self.text_uri.GetValue()
         if uri is None or uri == "":
             return
-        self.uri_list.append(uri)
+        self.context.uris.append(uri)
         self.text_uri.SetValue("")
         self.changed = True
         self.on_list_refresh()
