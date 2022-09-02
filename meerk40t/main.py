@@ -214,6 +214,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(wxplugin)
 
+        from .extra.imageactions import plugin as splitterplugin
+
+        plugins.append(splitterplugin)
+
         return plugins
 
     if lifecycle == "invalidate":
