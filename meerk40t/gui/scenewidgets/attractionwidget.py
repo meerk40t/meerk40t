@@ -35,9 +35,10 @@ class AttractionWidget(Widget):
 
         self.context.setting(int, "show_attract_len", 45)
         self.context.setting(int, "action_attract_len", 20)
+        self.context.setting(int, "grid_attract_len", 15)
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", True)
-        self.context.setting(int, "grid_attract_len", 15)
+
 
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
@@ -219,7 +220,7 @@ class AttractionWidget(Widget):
             # print ("Current values are: show=%d, points=%d, grid=%d" % ( pixel1, pixel2, pixel3))
             self.context.show_attract_len = pixel1 / matrix.value_scale_x()
             self.context.action_attract_len = pixel2 / matrix.value_scale_x()
-            self.grid_attract_len = pixel3 / matrix.value_scale_x()
+            self.context.grid_attract_len = pixel3 / matrix.value_scale_x()
 
             min_delta = float("inf")
             min_x = None
@@ -239,7 +240,7 @@ class AttractionWidget(Widget):
                     dy = abs(pts[1] - self.my_y)
 
                     if pts[2] == TYPE_GRID:
-                        distance = self.grid_attract_len
+                        distance = self.context.grid_attract_len
                     else:
                         distance = self.context.action_attract_len
                     if dx <= distance and dy <= distance:
