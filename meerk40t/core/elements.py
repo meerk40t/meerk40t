@@ -6705,6 +6705,7 @@ class Elemental(Service):
                 "util wait",
                 "util home",
                 "util goto",
+                "util origin",
                 "util output",
                 "util input",
                 "lasercode",
@@ -6936,12 +6937,26 @@ class Elemental(Service):
         @self.tree_operation(
             _("Append Return to Origin"), node_type="branch ops", help=""
         )
-        def append_operation_origin(node, pos=None, **kwargs):
+        def append_operation_goto(node, pos=None, **kwargs):
             self.op_branch.add(
                 type="util goto",
                 pos=pos,
                 x=0,
                 y=0,
+            )
+
+        @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(
+            _("Append Set Origin"),
+            node_type="branch ops",
+            help="",
+        )
+        def append_operation_setorigin(node, pos=None, **kwargs):
+            self.op_branch.add(
+                type="util origin",
+                pos=pos,
+                x=None,
+                y=None,
             )
 
         @self.tree_submenu(_("Append special operation(s)"))

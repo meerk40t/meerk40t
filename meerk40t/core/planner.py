@@ -503,6 +503,7 @@ class Planner(Service):
                     "util wait",
                     "util home",
                     "util goto",
+                    "util origin",
                     "util input",
                     "util output",
                     "lasercode",

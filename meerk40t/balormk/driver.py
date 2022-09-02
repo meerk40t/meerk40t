@@ -12,6 +12,7 @@ from meerk40t.core.cutcode import (
     QuadCut,
     WaitCut,
     GotoCut,
+    SetOriginCut,
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
@@ -141,6 +142,8 @@ class BalorDriver:
                     self.total_steps += 1
                 elif isinstance(q, GotoCut):
                     self.total_steps += 1
+                elif isinstance(q, SetOriginCut):
+                    self.total_steps += 1
                 elif isinstance(q, OutputCut):
                     self.total_steps += 1
                 elif isinstance(q, InputCut):
@@ -267,6 +270,8 @@ class BalorDriver:
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 con.goto(0x8000, 0x8000)
+            elif isinstance(q, SetOriginCut):
+                self.current_steps += 1
             elif isinstance(q, OutputCut):
                 self.current_steps += 1
                 con.port_set(q.output_mask, q.output_value)

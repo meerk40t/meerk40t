@@ -995,10 +995,16 @@ class MovePanel(wx.Panel):
                 dlg.Destroy()
                 return
             pos_x = self.context.device.length(
-                self.text_position_x.GetValue(), axis=0, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
+                self.text_position_x.GetValue(),
+                axis=0,
+                new_units=self.context.units_name,
+                unitless=UNITS_PER_PIXEL,
             )
             pos_y = self.context.device.length(
-                self.text_position_y.GetValue(), axis=1, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
+                self.text_position_y.GetValue(),
+                axis=1,
+                new_units=self.context.units_name,
+                unitless=UNITS_PER_PIXEL,
             )
             self.context(f"move {pos_x} {pos_y}\n")
         except ValueError:
@@ -1561,7 +1567,6 @@ class Transform(wx.Panel):
             self.text_e.SetToolTip(ttip1)
             self.text_f.SetToolTip(ttip2)
 
-
     def select_ready(self, v):
         """
         Enables the relevant buttons when there is a selection in the elements.
@@ -1594,10 +1599,18 @@ class Transform(wx.Panel):
 
     def _translate(self, dx, dy, scale):
         dx = self.context.device.length(
-            dx, 0, scale=scale, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
+            dx,
+            0,
+            scale=scale,
+            new_units=self.context.units_name,
+            unitless=UNITS_PER_PIXEL,
         )
         dy = self.context.device.length(
-            dy, 1, scale=scale, new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
+            dy,
+            1,
+            scale=scale,
+            new_units=self.context.units_name,
+            unitless=UNITS_PER_PIXEL,
         )
         self.context(f"translate {dx} {dy}\n")
         self.context.elements.signal("ext-modified")
@@ -1753,7 +1766,9 @@ class JogDistancePanel(wx.Panel):
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
         try:
             jog = self.context.device.length(
-                self.text_jog_amount.GetValue(), new_units=self.context.units_name, unitless=UNITS_PER_PIXEL
+                self.text_jog_amount.GetValue(),
+                new_units=self.context.units_name,
+                unitless=UNITS_PER_PIXEL,
             )
         except ValueError:
             return
