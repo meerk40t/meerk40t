@@ -38,7 +38,7 @@ class AttractionWidget(Widget):
         self.context.setting(int, "grid_attract_len", 15)
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", True)
-        self.show_snap_points = False
+        self._show_snap_points = False
 
     def load_colors(self):
         self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
@@ -65,9 +65,9 @@ class AttractionWidget(Widget):
                 event_type in ("leftdown", "move", "hover", "hover_start")
                 and self.scene.tool_active
             ):
-                self.show_snap_points = True
+                self._show_snap_points = True
             else:
-                self.show_snap_points = False
+                self._show_snap_points = False
         elif event_type in (
             "leftdown",
             "leftup",
@@ -199,7 +199,7 @@ class AttractionWidget(Widget):
         """
         Draw all attraction points on the scene.
         """
-        if self.show_snap_points:
+        if self._show_snap_points:
             self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
             self.closeup_pen.SetColour(self.scene.colors.color_snap_closeup)
             matrix = self.parent.matrix
