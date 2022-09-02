@@ -1878,4 +1878,4 @@ class Navigation(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Editing")
+        return ("Editing", "Jog, Move and Transform")

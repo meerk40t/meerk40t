@@ -1,7 +1,7 @@
 from math import sqrt
 
 import wx
-from numpy import linspace
+import numpy as np
 
 from meerk40t.svgelements import (
     Arc,
@@ -117,6 +117,10 @@ class AlignmentPanel(wx.Panel):
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_relation)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_treatment)
         has_emph = self.context.elements.has_emphasis()
+        self.context.setting(int, "align_treatment", 0)
+        self.context.setting(int, "align_x", 0)
+        self.context.setting(int, "align_y", 0)
+        self.context.setting(int, "align_relation", 0)
         self.restore_setting()
         self.show_stuff(has_emph)
 
@@ -197,21 +201,19 @@ class AlignmentPanel(wx.Panel):
         self.save_setting()
 
     def save_setting(self):
-        mysettings = (
-            self.rbox_treatment.GetSelection(),
-            self.rbox_align_x.GetSelection(),
-            self.rbox_align_y.GetSelection(),
-            self.rbox_relation.GetSelection(),
-        )
-        setattr(self.context, "align_setting", mysettings)
+        self.context.align_treatment = self.rbox_treatment.GetSelection()
+        self.context.align_x = self.rbox_align_x.GetSelection()
+        self.context.align_y = self.rbox_align_y.GetSelection()
+        self.context.align_relation = self.rbox_relation.GetSelection()
 
     def restore_setting(self):
-        mysettings = getattr(self.context, "align_setting", None)
-        if mysettings is not None and len(mysettings) == 4:
-            self.rbox_treatment.SetSelection(mysettings[0])
-            self.rbox_align_x.SetSelection(mysettings[1])
-            self.rbox_align_y.SetSelection(mysettings[2])
-            self.rbox_relation.SetSelection(mysettings[3])
+        try:
+            self.rbox_treatment.SetSelection(self.context.align_treatment)
+            self.rbox_align_x.SetSelection(self.context.align_x)
+            self.rbox_align_y.SetSelection(self.context.align_y)
+            self.rbox_relation.SetSelection(self.context.align_relation)
+        except (RuntimeError, AttributeError, ValueError):
+            pass
 
     def show_stuff(self, has_emph):
         self.rbox_align_x.Enable(has_emph)
@@ -397,6 +399,13 @@ class DistributionPanel(wx.Panel):
         self.rbox_dist_y.Bind(wx.EVT_RADIOBOX, self.validate_data)
         self.rbox_sort.Bind(wx.EVT_RADIOBOX, self.validate_data)
         self.rbox_treatment.Bind(wx.EVT_RADIOBOX, self.validate_data)
+        self.context.setting(int, "distribute_x", 0)
+        self.context.setting(int, "distribute_y", 0)
+        self.context.setting(int, "distribute_treatment", 0)
+        self.context.setting(int, "distribute_sort", 0)
+        self.context.setting(bool, "distribute_inside", False)
+        self.context.setting(bool, "distribute_rotate", False)
+
         self.restore_setting()
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
@@ -405,6 +414,7 @@ class DistributionPanel(wx.Panel):
         # Certain functionalities are not ready yet, so let's disable them
         self.rbox_dist_x.EnableItem(4, False)  # Space
         self.rbox_dist_y.EnableItem(4, False)  # Space
+        self.check_rotate.Enable(False)
         # self.rbox_treatment.EnableItem(1, False)  # Shape
         # self.rbox_treatment.EnableItem(2, False)    # Points
 
@@ -517,7 +527,7 @@ class DistributionPanel(wx.Panel):
                 polypoints.clear()
                 polygons = []
                 for subpath in path.as_subpaths():
-                    subj = Path(subpath).npoint(linspace(0, 1, interpolation))
+                    subj = Path(subpath).npoint(np.linspace(0, 1, interpolation))
 
                     subj.reshape((2, interpolation))
                     s = list(map(Point, subj))
@@ -572,6 +582,7 @@ class DistributionPanel(wx.Panel):
             for pt in polypoints:
                 x = pt[0]
                 y = pt[1]
+                ptangle = 0
                 plen = pt[2]
                 if abs(x) > 1.0e8 or abs(y) > 1.0e8:
                     # this does not seem to be a valid coord...
@@ -763,23 +774,23 @@ class DistributionPanel(wx.Panel):
         self.save_setting()
 
     def save_setting(self):
-        mysettings = (
-            self.rbox_dist_x.GetSelection(),
-            self.rbox_dist_y.GetSelection(),
-            self.rbox_treatment.GetSelection(),
-            self.rbox_sort.GetSelection(),
-            self.check_inside_xy.GetValue(),
-        )
-        setattr(self.context, "distribute_setting", mysettings)
+        self.context.distribute_x = self.rbox_dist_x.GetSelection()
+        self.context.distribute_y = self.rbox_dist_y.GetSelection()
+        self.context.distribute_treatment = self.rbox_treatment.GetSelection()
+        self.context.distribute_sort = self.rbox_sort.GetSelection()
+        self.context.distribute_inside = self.check_inside_xy.GetValue()
+        self.context.distribute_rotate = self.check_rotate.GetValue()
 
     def restore_setting(self):
-        mysettings = getattr(self.context, "distribute_setting", None)
-        if mysettings is not None and len(mysettings) == 5:
-            self.rbox_dist_x.SetSelection(mysettings[0])
-            self.rbox_dist_y.SetSelection(mysettings[1])
-            self.rbox_treatment.SetSelection(mysettings[2])
-            self.rbox_sort.SetSelection(mysettings[3])
-            self.check_inside_xy.SetValue(mysettings[4])
+        try:
+            self.rbox_dist_x.SetSelection(self.context.distribute_x)
+            self.rbox_dist_y.SetSelection(self.context.distribute_y)
+            self.rbox_treatment.SetSelection(self.context.distribute_treatment)
+            self.rbox_sort.SetSelection(self.context.distribute_sort)
+            self.check_inside_xy.SetValue(bool(self.context.distribute_inside))
+            self.check_rotate.SetValue(bool(self.context.distribute_rotate))
+        except (ValueError, AttributeError, RuntimeError):
+            pass
 
     def show_stuff(self, has_emph):
         showit = has_emph
@@ -789,6 +800,7 @@ class DistributionPanel(wx.Panel):
         self.rbox_sort.Enable(showit)
         self.rbox_treatment.Enable(showit)
         self.check_inside_xy.Enable(showit)
+        self.check_rotate.Enable(showit)
         msg = ""
         self.count = 0
         if has_emph:
@@ -976,6 +988,16 @@ class ArrangementPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT, self.validate_data, self.txt_gap_x)
         self.Bind(wx.EVT_TEXT, self.validate_data, self.txt_gap_y)
         has_emph = self.context.elements.has_emphasis()
+        self.context.setting(int, "arrange_x", 0)
+        self.context.setting(int, "arrange_y", 0)
+        self.context.setting(int, "arrange_relation", 0)
+        self.context.setting(int, "arrange_selection", 0)
+        self.context.setting(int, "arrange_cols", 0)
+        self.context.setting(int, "arrange_rows", 0)
+        self.context.setting(bool, "arrange_checkx", 0)
+        self.context.setting(bool, "arrange_checky", 0)
+        self.context.setting(str, "arrange_gapx", "5mm")
+        self.context.setting(str, "arrange_gapy", "5mm")
         self.restore_setting()
         self.show_stuff(has_emph)
 
@@ -984,12 +1006,15 @@ class ArrangementPanel(wx.Panel):
             event.Skip()
         if self.context.elements.has_emphasis():
             active = True
-            if self.count < 2:
+            num_cols = self.arrange_x.GetValue()
+            num_rows = self.arrange_y.GetValue()
+            if self.count < 2 or self.count > num_cols * num_rows:
+                print(f"Too small: {self.count} vs. {num_cols}x{num_rows}")
                 active = False
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
-            select = self.selectparam[idx]
+            esort = self.selectparam[idx]
             idx = self.rbox_relation.GetSelection()
             if idx < 0:
                 idx = 0
@@ -1005,51 +1030,122 @@ class ArrangementPanel(wx.Panel):
                 idx = 0
             ypos = self.xyparam[idx]
             try:
-                gapx = float(self.txt_gap_x.GetValue())
+                gapx = float(Length(self.txt_gap_x.GetValue()))
             except ValueError:
                 gapx = -1
             try:
-                gapy = float(self.txt_gap_y.GetValue())
+                gapy = float(Length(self.txt_gap_y.GetValue()))
             except ValueError:
                 gapy = -1
             # Invalid gaps?
             if relat == "distance" and (gapx < 0 or gapy < 0):
+                print("Invalid gaps")
                 active = False
         else:
             active = False
+        # active = True
         self.btn_align.Enable(active)
 
     def on_button_align(self, event):
+        def prepare_data():
+            xdata = list(self.context.elements.elems(emphasized=True))
+            data.clear()
+            for n in xdata:
+                data.append(n)
+            if esort == "first":
+                data.sort(key=lambda n: n.emphasized_time)
+            elif esort == "last":
+                data.sort(reverse=True, key=lambda n: n.emphasized_time)
+
+        def calculate_arrays():
+            max_colwid = []
+            max_rowht = []
+            bound_array = []
+            colarray = []
+            row = 0
+            col = 0
+            for node in data:
+                bb = node.bounds
+                colarray.append(bb)
+                col += 1
+                if col >= num_cols:
+                    bound_array.append(colarray)
+                    colarray = []
+                    col = 0
+                    row += 1
+            if col > 0:
+                # Extend the array
+                while col < num_cols:
+                    colarray.append(None)
+                bound_array.append(colarray)
+            rows = row
+
+        num_cols = self.arrange_x.GetValue()
+        num_rows = self.arrange_y.GetValue()
+        same_x = self.check_same_x.GetValue()
+        same_y = self.check_same_y.GetValue()
+        idx = self.rbox_selection.GetSelection()
+        if idx < 0:
+            idx = 0
+        esort = self.selectparam[idx]
+        idx = self.rbox_relation.GetSelection()
+        if idx < 0:
+            idx = 0
+        relat = self.relparam[idx]
+        idx = self.rbox_align_x.GetSelection()
+        if idx < 0:
+            idx = 0
+        xpos = self.xyparam[idx]
+        idx = self.rbox_align_y.GetSelection()
+        if idx < 0:
+            idx = 0
+        ypos = self.xyparam[idx]
+        try:
+            gapx = float(Length(self.txt_gap_x.GetValue()))
+        except ValueError:
+            gapx = -1
+        try:
+            gapy = float(Length(self.txt_gap_y.GetValue()))
+        except ValueError:
+            gapy = -1
+        print(f"cols={num_cols}, rows={num_rows}")
+        print(f"samex={same_x}, samey={same_y}")
+        print(f"Relat={relat}, esort={esort}")
+        print(f"xpos={xpos}, ypos={ypos}")
+        print(f"Gapx={gapx:.1f}, Gapy={gapy:.1f}")
+        data = []
+        target = []
+        prepare_data()
+        calculate_arrays()
+        # self.apply_results(data, target, xmode, ymode, remain_inside)
         self.save_setting()
 
     def save_setting(self):
-        mysettings = (
-            self.rbox_align_x.GetSelection(),
-            self.rbox_align_y.GetSelection(),
-            self.rbox_relation.GetSelection(),
-            self.rbox_selection.GetSelection(),
-            self.arrange_x.GetValue(),
-            self.arrange_y.GetValue(),
-            self.check_same_x.GetValue(),
-            self.check_same_y.GetValue(),
-            self.txt_gap_x.GetValue(),
-            self.txt_gap_y.GetValue(),
-        )
-        setattr(self.context, "arrange_setting", mysettings)
+        self.context.arrange_x = self.rbox_align_x.GetSelection()
+        self.context.arrange_y = self.rbox_align_y.GetSelection()
+        self.context.arrange_relation = self.rbox_relation.GetSelection()
+        self.context.arrange_selection = self.rbox_selection.GetSelection()
+        self.context.arrange_cols = self.arrange_x.GetValue()
+        self.context.arrange_rows = self.arrange_y.GetValue()
+        self.context.arrange_checkx = self.check_same_x.GetValue()
+        self.context.arrange_checky = self.check_same_y.GetValue()
+        self.context.arrange_gapx = self.txt_gap_x.GetValue()
+        self.context.arrange_gapy = self.txt_gap_y.GetValue()
 
     def restore_setting(self):
-        mysettings = getattr(self.context, "arrange_setting", None)
-        if mysettings is not None and len(mysettings) == 10:
-            self.rbox_align_x.SetSelection(mysettings[0])
-            self.rbox_align_y.SetSelection(mysettings[1])
-            self.rbox_relation.SetSelection(mysettings[2])
-            self.rbox_selection.SetSelection(mysettings[3])
-            self.arrange_x.SetValue(mysettings[4])
-            self.arrange_y.SetValue(mysettings[5])
-            self.check_same_x.SetValue(mysettings[6])
-            self.check_same_y.SetValue(mysettings[7])
-            self.txt_gap_x.SetValue(mysettings[8])
-            self.txt_gap_y.SetValue(mysettings[9])
+        try:
+            self.rbox_align_x.SetSelection(self.context.arrange_x)
+            self.rbox_align_y.SetSelection(self.context.arrange_y)
+            self.rbox_relation.SetSelection(self.context.arrange_relation)
+            self.rbox_selection.SetSelection(self.context.arrange_selection)
+            self.arrange_x.SetValue(self.context.arrange_cols)
+            self.arrange_y.SetValue(self.context.arrange_rows)
+            self.check_same_x.SetValue(bool(self.context.arrange_checkx))
+            self.check_same_y.SetValue(bool(self.context.arrange_check))
+            self.txt_gap_x.SetValue(self.context.arrange_gapx)
+            self.txt_gap_y.SetValue(self.context.arrange_gapy)
+        except (ValueError, AttributeError, RuntimeError):
+            pass
 
     def show_stuff(self, has_emph):
         self.count = 0
@@ -1104,20 +1200,24 @@ class Alignment(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.scene = getattr(self.context.root, "mainscene", None)
-        # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
-        self.panel_align = AlignmentPanel(
-            self, wx.ID_ANY, context=self.context, scene=self.scene
-        )
-        self.panel_distribution = DistributionPanel(
-            self, wx.ID_ANY, context=self.context, scene=self.scene
-        )
-        self.panel_arrange = ArrangementPanel(
-            self, wx.ID_ANY, context=self.context, scene=self.scene
-        )
+        # Hide Arrangement until ready...
+        self.showpanels = [True, True, False]
+        if self.showpanels[0]:
+            self.panel_align = AlignmentPanel(
+                self, wx.ID_ANY, context=self.context, scene=self.scene
+            )
+            self.notebook_main.AddPage(self.panel_align, _("Alignment"))
+        if self.showpanels[1]:
+            self.panel_distribution = DistributionPanel(
+                self, wx.ID_ANY, context=self.context, scene=self.scene
+            )
+            self.notebook_main.AddPage(self.panel_distribution, _("Distribution"))
+        if self.showpanels[2]:
+            self.panel_arrange = ArrangementPanel(
+                self, wx.ID_ANY, context=self.context, scene=self.scene
+            )
+            self.notebook_main.AddPage(self.panel_arrange, _("Arranging"))
 
-        self.notebook_main.AddPage(self.panel_align, _("Alignment"))
-        self.notebook_main.AddPage(self.panel_distribution, _("Distribution"))
-        self.notebook_main.AddPage(self.panel_arrange, _("Arranging"))
         self.Layout()
 
         _icon = wx.NullIcon
@@ -1126,16 +1226,23 @@ class Alignment(MWindow):
         self.SetTitle(_("Alignment"))
 
     def delegates(self):
-        yield self.panel_align
-        yield self.panel_arrange
+        if self.showpanels[0]:
+            yield self.panel_align
+        if self.showpanels[1]:
+            yield self.panel_distribution
+        if self.showpanels[2]:
+            yield self.panel_arrange
 
     @signal_listener("reference")
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
         has_emph = self.context.elements.has_emphasis()
-        self.panel_align.show_stuff(has_emph)
-        self.panel_distribution.show_stuff(has_emph)
-        self.panel_arrange.show_stuff(has_emph)
+        if self.showpanels[0]:
+            self.panel_align.show_stuff(has_emph)
+        if self.showpanels[1]:
+            self.panel_distribution.show_stuff(has_emph)
+        if self.showpanels[2]:
+            self.panel_arrange.show_stuff(has_emph)
 
     @staticmethod
     def sub_register(kernel):
@@ -1163,4 +1270,4 @@ class Alignment(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Editing")
+        return ("Editing", "Element Alignment")

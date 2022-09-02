@@ -1857,10 +1857,20 @@ class MeerK40t(MWindow):
             if not window.window_menu(None):
                 continue
             submenu = None
+            win_caption = ""
             try:
-                submenu_name = window.submenu()
+                returnvalue = window.submenu()
+                if isinstance(returnvalue, str):
+                    submenu_name = returnvalue
+                elif isinstance(returnvalue, (tuple, list)):
+                    if len(returnvalue) > 0:
+                        submenu_name = returnvalue[0]
+                    if len(returnvalue) > 1:
+                        win_caption = returnvalue[1]
                 if submenu_name is None:
                     submenu_name = ""
+                if win_caption is None:
+                    win_caption = ""
             except AttributeError:
                 submenu_name = ""
             if submenu_name != "":
@@ -1868,22 +1878,24 @@ class MeerK40t(MWindow):
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
                     submenu = wx.Menu()
-                    self.window_menu.AppendSubMenu(submenu, submenu_name)
+                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
                     submenus[submenu_name] = submenu
             menu_context = submenu if submenu is not None else self.window_menu
             try:
                 name = window.name
             except AttributeError:
                 name = suffix_path
-
-            try:
-                caption = window.caption
-            except AttributeError:
-                caption = name[0].upper() + name[1:]
+            if win_caption != "":
+                caption = win_caption
+            else:
+                try:
+                    caption = window.caption
+                except AttributeError:
+                    caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            menuitem = menu_context.Append(wx.ID_ANY, caption, "", wx.ITEM_NORMAL)
+            menuitem = menu_context.Append(wx.ID_ANY, _(caption), "", wx.ITEM_NORMAL)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),

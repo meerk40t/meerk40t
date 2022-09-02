@@ -719,4 +719,4 @@ class LaserTool(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Laser-Tools")
+        return ("Laser-Tools", "Laser-Tools")
