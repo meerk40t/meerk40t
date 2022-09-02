@@ -27,7 +27,7 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import UNITS_PER_INCH, Length
+from ..core.units import UNITS_PER_INCH, Length, UNITS_PER_PIXEL
 from ..svgelements import Color, Matrix, Path
 from .icons import (
     STD_ICON_SIZE,
@@ -323,22 +323,22 @@ class MeerK40t(MWindow):
         # small - std icon size / no labels
         # tiny - reduced icon size / no labels
         context.setting(str, "ribbon_appearance", "default")
-        choices = [
-            {
-                "attr": "ribbon_appearance",
-                "object": self.context.root,
-                "default": "default",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["default", "small", "tiny"],
-                "label": _("Ribbon-Size:"),
-                "tip": _(
-                    "Appearance of ribbon at the top (requires a restart to take effect))"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-        ]
+        # choices = [
+        #     {
+        #         "attr": "ribbon_appearance",
+        #         "object": self.context.root,
+        #         "default": "default",
+        #         "type": str,
+        #         "style": "combosmall",
+        #         "choices": ["default", "small", "tiny"],
+        #         "label": _("Ribbon-Size:"),
+        #         "tip": _(
+        #             "Appearance of ribbon at the top (requires a restart to take effect))"
+        #         ),
+        #         "page": "Gui",
+        #         "section": "Appearance",
+        #     },
+        # ]
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
@@ -2450,10 +2450,12 @@ class MeerK40t(MWindow):
         if frame is not None:
             elements = self.context.elements
             img = Image.fromarray(frame)
+            matrix = Matrix(f"scale({UNITS_PER_PIXEL}, {UNITS_PER_PIXEL})")
             node = elements.elem_branch.add(
-                image=img, width=image_width, height=image_height, type="elem image"
+                image=img, matrix=matrix, type="elem image"
             )
             elements.classify([node])
+            self.context.signal("refresh_scene", "Scene")
 
     @signal_listener("statusmsg")
     def on_update_statusmsg(self, origin, value):

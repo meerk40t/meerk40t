@@ -884,6 +884,7 @@ class LaserRender:
                 item.width is None
                 or item.height is None
                 or item._bounds_dirty
+                or item._paint_bounds_dirty
                 or item.bounds_with_variables_translated != translate_variables
             ):
                 # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure

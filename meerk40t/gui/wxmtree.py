@@ -1025,6 +1025,8 @@ class ShadowTree:
             return
         if self._freeze:
             return
+        if node is None:
+            return
         try:
             item = node.item
         except AttributeError:

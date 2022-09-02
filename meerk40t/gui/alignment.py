@@ -1,11 +1,12 @@
 from math import sqrt
 
-import wx
 import numpy as np
+import wx
 
 from meerk40t.svgelements import (
     Arc,
     Close,
+    Color,
     CubicBezier,
     Line,
     Move,
@@ -24,6 +25,128 @@ from .mwindow import MWindow
 _ = wx.GetTranslation
 
 
+class InfoPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.lbl_info_main = wx.StaticText(self, wx.ID_ANY, "")
+        self.lbl_info_default = wx.StaticText(self, wx.ID_ANY, "")
+        self.lbl_info_first = wx.StaticText(self, wx.ID_ANY, "")
+        self.lbl_info_last = wx.StaticText(self, wx.ID_ANY, "")
+        self.preview_size = 25
+        self.image_default = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+        )
+        self.image_first = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+        )
+        self.image_last = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(self.preview_size, self.preview_size)
+        )
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+
+        sizer_default = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_default.Add(self.image_default, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_default.Add(self.lbl_info_default, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_first = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_first.Add(self.image_first, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_first.Add(self.lbl_info_first, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_last = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_last.Add(self.image_last, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_last.Add(self.lbl_info_last, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_main.Add(self.lbl_info_main, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_default, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_first, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_last, 0, wx.EXPAND, 0)
+        self.make_raster = None
+        self.SetSizer(sizer_main)
+        self.Layout
+
+    def show_stuff(self, has_emph):
+        def create_image_from_node(node, iconsize):
+            image = wx.NullBitmap
+            c = None
+            # Do we have a standard representation?
+            defaultcolor = Color("black")
+            if node.type.startswith("elem "):
+                if (
+                    hasattr(node, "stroke")
+                    and node.stroke is not None
+                    and node.stroke.argb is not None
+                ):
+                    c = node.stroke
+            if node.type.startswith("elem ") and node.type != "elem point":
+                image = self.make_raster(
+                    node,
+                    node.paint_bounds,
+                    width=iconsize,
+                    height=iconsize,
+                    bitmap=True,
+                    keep_ratio=True,
+                )
+
+            if c is None:
+                c = defaultcolor
+            return c, image
+
+        if self.make_raster is None:
+            self.make_raster = self.context.elements.lookup("render-op/make_raster")
+
+        count = 0
+        first_node = None
+        last_node = None
+        msg = ""
+        if has_emph:
+            data = list(self.context.elements.flat(emphasized=True))
+            count = len(data)
+            self.lbl_info_main.SetLabel(
+                _("Selected elements: {count}").format(count=count)
+            )
+            if count > 0:
+                node = data[0]
+                c, image = create_image_from_node(node, self.preview_size)
+                self.image_default.SetBitmap(image)
+                self.lbl_info_default.SetLabel(
+                    _("As in Selection: {type} {lbl}").format(
+                        type=node.type, lbl=node.label
+                    )
+                )
+
+                data.sort(key=lambda n: n.emphasized_time)
+                node = data[0]
+                first_node = node
+                c, image = create_image_from_node(node, self.preview_size)
+                self.image_first.SetBitmap(image)
+                self.lbl_info_first.SetLabel(
+                    _("First selected: {type} {lbl}").format(
+                        type=node.type, lbl=node.label
+                    )
+                )
+
+                node = data[-1]
+                last_node = node
+                c, image = create_image_from_node(node, self.preview_size)
+                self.image_last.SetBitmap(image)
+                self.lbl_info_last.SetLabel(
+                    _("Last selected: {type} {lbl}").format(
+                        type=node.type, lbl=node.label
+                    )
+                )
+        else:
+            self.lbl_info_default.SetLabel("")
+            self.lbl_info_first.SetLabel("")
+            self.lbl_info_last.SetLabel("")
+            self.lbl_info_main.SetLabel(_("No elements selected"))
+            self.image_default.SetBitmap(wx.NullBitmap)
+            self.image_first.SetBitmap(wx.NullBitmap)
+            self.image_last.SetBitmap(wx.NullBitmap)
+        return count, first_node, last_node
+
+
 class AlignmentPanel(wx.Panel):
     def __init__(self, *args, context=None, scene=None, **kwds):
         kwds["style"] = kwds.get("style", 0)
@@ -32,7 +155,8 @@ class AlignmentPanel(wx.Panel):
         self.scene = scene
         # Amount of currently selected
         self.count = 0
-
+        self.first_node = None
+        self.last_node = None
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.relchoices = (
             _("Selection"),
@@ -95,7 +219,6 @@ class AlignmentPanel(wx.Panel):
             style=wx.RA_SPECIFY_COLS,
         )
         self.rbox_treatment.SetSelection(0)
-        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_align = wx.Button(self, wx.ID_ANY, "Align")
         self.btn_align.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
 
@@ -104,7 +227,9 @@ class AlignmentPanel(wx.Panel):
         sizer_main.Add(self.rbox_relation, 0, wx.EXPAND, 0)
         sizer_main.Add(self.rbox_treatment, 0, wx.EXPAND, 0)
         sizer_main.Add(self.btn_align, 0, wx.EXPAND, 0)
-        sizer_main.Add(self.lbl_info, 1, wx.EXPAND, 0)
+
+        self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
+        sizer_main.Add(self.info_panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -220,31 +345,11 @@ class AlignmentPanel(wx.Panel):
         self.rbox_align_y.Enable(has_emph)
         self.rbox_relation.Enable(has_emph)
         self.rbox_treatment.Enable(has_emph)
-        self.count = 0
-        msg = ""
-        if has_emph:
-            data = list(self.context.elements.flat(emphasized=True))
-            self.count = len(data)
-            msg = _("Selected elements: {count}").format(count=self.count) + "\n"
-            if self.count > 0:
-                data.sort(key=lambda n: n.emphasized_time)
-                node = data[0]
-                msg += (
-                    _("First selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
-                    )
-                    + "\n"
-                )
-                node = data[-1]
-                msg += (
-                    _("Last selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
-                    )
-                    + "\n"
-                )
+        self.count, self.first_node, self.last_node = self.info_panel.show_stuff(
+            has_emph
+        )
         flag = self.scene.reference_object is not None
         self.rbox_relation.EnableItem(4, flag)
-        self.lbl_info.SetLabel(msg)
         self.validate_data()
 
 
@@ -281,7 +386,7 @@ class DistributionPanel(wx.Panel):
         self.rbox_dist_x = wx.RadioBox(
             self,
             wx.ID_ANY,
-            _("Position of element relative to point for X-Axis:rbox_dist_x"),
+            _("Position of element relative to point for X-Axis:"),
             choices=self.xchoices,
             majorDimension=5,
             style=wx.RA_SPECIFY_COLS,
@@ -361,7 +466,6 @@ class DistributionPanel(wx.Panel):
             + _("- Ref-Object: along the boundaries of a reference-object")
         )
 
-        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_dist = wx.Button(self, wx.ID_ANY, "Distribute")
         self.btn_dist.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
 
@@ -387,7 +491,9 @@ class DistributionPanel(wx.Panel):
         sizer_main.Add(self.rbox_sort, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_treat, 0, wx.EXPAND, 0)
         sizer_main.Add(self.btn_dist, 0, wx.EXPAND, 0)
-        sizer_main.Add(self.lbl_info, 1, wx.EXPAND, 0)
+
+        self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
+        sizer_main.Add(self.info_panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -801,34 +907,12 @@ class DistributionPanel(wx.Panel):
         self.rbox_treatment.Enable(showit)
         self.check_inside_xy.Enable(showit)
         self.check_rotate.Enable(showit)
-        msg = ""
-        self.count = 0
-        if has_emph:
-            data = list(self.context.elements.flat(emphasized=True))
-            self.count = len(data)
-            msg = _("Selected elements: {count}").format(count=self.count) + "\n"
-            if self.count > 0:
-                data.sort(key=lambda n: n.emphasized_time)
-                node = data[0]
-                self.first_node = node
-                msg += (
-                    _("First selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
-                    )
-                    + "\n"
-                )
-                node = data[-1]
-                self.last_node = node
-                msg += (
-                    _("Last selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
-                    )
-                    + "\n"
-                )
+        self.count, self.first_node, self.last_node = self.info_panel.show_stuff(
+            has_emph
+        )
         flag = self.scene.reference_object is not None
         self.rbox_treatment.EnableItem(4, flag)
 
-        self.lbl_info.SetLabel(msg)
         if showit:
             self.validate_data()
         else:
@@ -917,7 +1001,6 @@ class ArrangementPanel(wx.Panel):
             self, id=wx.ID_ANY, value="5mm", limited=True, check="length"
         )
 
-        self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Arrange"))
         self.btn_align.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
 
@@ -969,7 +1052,9 @@ class ArrangementPanel(wx.Panel):
         sizer_main.Add(self.rbox_selection, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_gaps, 0, wx.EXPAND, 0)
         sizer_main.Add(self.btn_align, 0, wx.EXPAND, 0)
-        sizer_main.Add(self.lbl_info, 1, wx.EXPAND, 0)
+
+        self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
+        sizer_main.Add(self.info_panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -1148,29 +1233,9 @@ class ArrangementPanel(wx.Panel):
             pass
 
     def show_stuff(self, has_emph):
-        self.count = 0
-        msg = ""
-        if has_emph:
-            data = list(self.context.elements.flat(emphasized=True))
-            self.count = len(data)
-            msg = _("Selected elements: {count}").format(count=self.count) + "\n"
-            if self.count > 0:
-                data.sort(key=lambda n: n.emphasized_time)
-                node = data[0]
-                msg += (
-                    _("First selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
-                    )
-                    + "\n"
-                )
-                node = data[-1]
-                msg += (
-                    _("Last selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
-                    )
-                    + "\n"
-                )
-        self.lbl_info.SetLabel(msg)
+        self.count, self.first_node, self.last_node = self.info_panel.show_stuff(
+            has_emph
+        )
         self.rbox_align_x.Enable(has_emph)
         self.rbox_align_y.Enable(has_emph)
         self.rbox_relation.Enable(has_emph)

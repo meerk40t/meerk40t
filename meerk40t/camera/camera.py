@@ -12,24 +12,14 @@ CORNER_SIZE = 25
 class Camera(Service):
     def __init__(self, kernel, camera_path, *args, **kwargs):
         Service.__init__(self, kernel, camera_path)
-        self.uri = 0
-        self.fisheye_k = None
-        self.fisheye_d = None
-        self.perspective_x1 = None
-        self.perspective_y1 = None
-        self.perspective_x2 = None
-        self.perspective_y2 = None
-        self.perspective_x3 = None
-        self.perspective_y3 = None
-        self.perspective_x4 = None
-        self.perspective_y4 = None
-        self.camera_job = None
 
-        self.current_frame = None
-        self.last_frame = None
+        self._camera_job = None
 
-        self.current_raw = None
-        self.last_raw = None
+        self._current_frame = None
+        self._last_frame = None
+
+        self._current_raw = None
+        self._last_raw = None
 
         self.capture = None
         self.image_width = -1
@@ -50,24 +40,19 @@ class Camera(Service):
         self.max_tries_frame = 10
         self.setting(int, "width", 640)
         self.setting(int, "height", 480)
-        self.setting(int, "fps", 1)
+        self.setting(int, "fps", 40)
         self.setting(bool, "correction_fisheye", False)
         self.setting(bool, "correction_perspective", False)
         self.setting(list, "fisheye", None)
-        self.setting(float, "perspective_x1", None)
-        self.setting(float, "perspective_y1", None)
-        self.setting(float, "perspective_x2", None)
-        self.setting(float, "perspective_y2", None)
-        self.setting(float, "perspective_x3", None)
-        self.setting(float, "perspective_y3", None)
-        self.setting(float, "perspective_x4", None)
-        self.setting(float, "perspective_y4", None)
-        self.setting(str, "uri", "0")
-        self.setting(int, "index", 0)
+        self.setting(list, "perspective", None)
+        index = int(camera_path[7:])
+        self.setting(str, "uri", str(index))
+        self.setting(int, "index", index)
         self.setting(bool, "autonormal", False)
         self.setting(bool, "aspect", False)
         self.setting(str, "preserve_aspect", "xMinYMin meet")
-
+        self.fisheye_k = None
+        self.fisheye_d = None
         if self.fisheye is not None and len(self.fisheye) != 0:
             self.fisheye_k, self.fisheye_d = self.fisheye
 
@@ -80,10 +65,10 @@ class Camera(Service):
         return "Camera()"
 
     def get_frame(self):
-        return self.last_frame
+        return self._last_frame
 
     def get_raw(self):
-        return self.last_raw
+        return self._last_raw
 
     def shutdown(self, *args, **kwargs):
         self.close_camera()
@@ -98,7 +83,7 @@ class Camera(Service):
         @return:
         """
         _ = self._
-        frame = self.last_raw
+        frame = self._last_raw
         if frame is None:
             return
         CHECKERBOARD = (6, 9)
@@ -199,7 +184,7 @@ class Camera(Service):
         self.quit_thread = True
 
     def process_frame(self):
-        frame = self.current_raw
+        frame = self._current_raw
         if (
             self.fisheye_k is not None
             and self.fisheye_d is not None
@@ -220,26 +205,19 @@ class Camera(Service):
                 borderMode=cv2.BORDER_CONSTANT,
             )
         width, height = frame.shape[:2][::-1]
-        if self.perspective_x1 is None:
-            self.perspective_x1 = 0
-            self.perspective_y1 = 0
-            self.perspective_x2 = width
-            self.perspective_y2 = 0
-            self.perspective_x3 = width
-            self.perspective_y3 = height
-            self.perspective_x4 = 0
-            self.perspective_y4 = height
+        if self.perspective is None:
+            self.perspective = [
+                [0, 0],
+                [width, 0],
+                [width, height],
+                [0, height],
+            ]
         if self.correction_perspective:
             # Perspective the drawing.
             dest_width = self.width
             dest_height = self.height
             rect = np.array(
-                [
-                    [self.perspective_x1, self.perspective_y1],
-                    [self.perspective_x2, self.perspective_y2],
-                    [self.perspective_x3, self.perspective_y3],
-                    [self.perspective_x4, self.perspective_y4],
-                ],
+                self.perspective,
                 dtype="float32",
             )
             dst = np.array(
@@ -256,8 +234,8 @@ class Camera(Service):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if self.autonormal:
             cv2.normalize(frame, frame, 0, 255, cv2.NORM_MINMAX)
-        self.last_frame = self.current_frame
-        self.current_frame = frame
+        self._last_frame = self._current_frame
+        self._current_frame = frame
 
     def _attempt_recovery(self):
         channel = self.channel("camera")
@@ -330,8 +308,8 @@ class Camera(Service):
                 channel(f"Frame Success: {str(uri)}")
                 self.connection_attempts = 0
 
-                self.last_raw = self.current_raw
-                self.current_raw = frame
+                self._last_raw = self._current_raw
+                self._current_raw = frame
                 self.frame_index += 1
                 self.process_frame()
                 channel(f"Processing Frame: {str(uri)}")
@@ -352,14 +330,7 @@ class Camera(Service):
         @param event:
         @return:
         """
-        self.perspective_x1 = None
-        self.perspective_y1 = None
-        self.perspective_x2 = None
-        self.perspective_y2 = None
-        self.perspective_x3 = None
-        self.perspective_y3 = None
-        self.perspective_x4 = None
-        self.perspective_y4 = None
+        self.perspective = None
 
     def backtrack_fisheye(self):
         if self._object_points:
@@ -377,11 +348,10 @@ class Camera(Service):
         self.fisheye_d = None
         self._object_points = []
         self._image_points = []
-        self.fisheye = ""
+        self.fisheye = None
 
     def set_uri(self, uri):
         self.uri = uri
-        self.uri = self.uri
         try:
             self.uri = int(self.uri)  # URI is an index.
         except ValueError:
@@ -393,7 +363,7 @@ class Camera(Service):
         @param event:
         @return:
         """
-        frame = self.last_frame
+        frame = self._last_frame
         if frame is not None:
             self.image_height, self.image_width = frame.shape[:2]
             self.signal("background", (self.image_width, self.image_height, frame))
@@ -404,7 +374,7 @@ class Camera(Service):
         """
         Sends an image to the scene as an exported object.
         """
-        frame = self.last_frame
+        frame = self._last_frame
         if frame is not None:
             self.image_height, self.image_width = frame.shape[:2]
             self.signal("export-image", (self.image_width, self.image_height, frame))

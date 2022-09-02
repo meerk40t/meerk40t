@@ -40,8 +40,11 @@ class ImageNode(Node):
         settings.update(kwargs)
         super(ImageNode, self).__init__(type="elem image", **settings)
         self.__formatter = "{element_type} {width}x{height}"
+        if matrix is None:
+            matrix = Matrix()
+
+        self.matrix = matrix
         if "href" in settings:
-            self.matrix = Matrix()
             try:
                 from PIL import Image as PILImage
 
@@ -66,7 +69,6 @@ class ImageNode(Node):
                 self.image = None
         else:
             self.image = image
-            self.matrix = matrix
 
         self.settings = settings
         self.overscan = overscan
