@@ -125,6 +125,7 @@ def plugin(kernel, lifecycle):
                         offset_x += deltax_bound
                     starty = endy + 1
                     offset_y += deltay_bound
+                return data_out
 
             elements = context.elements
             if data is None:
