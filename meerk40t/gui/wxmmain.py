@@ -323,22 +323,22 @@ class MeerK40t(MWindow):
         # small - std icon size / no labels
         # tiny - reduced icon size / no labels
         context.setting(str, "ribbon_appearance", "default")
-        choices = [
-            {
-                "attr": "ribbon_appearance",
-                "object": self.context.root,
-                "default": "default",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["default", "small", "tiny"],
-                "label": _("Ribbon-Size:"),
-                "tip": _(
-                    "Appearance of ribbon at the top (requires a restart to take effect))"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-        ]
+        # choices = [
+        #     {
+        #         "attr": "ribbon_appearance",
+        #         "object": self.context.root,
+        #         "default": "default",
+        #         "type": str,
+        #         "style": "combosmall",
+        #         "choices": ["default", "small", "tiny"],
+        #         "label": _("Ribbon-Size:"),
+        #         "tip": _(
+        #             "Appearance of ribbon at the top (requires a restart to take effect))"
+        #         ),
+        #         "page": "Gui",
+        #         "section": "Appearance",
+        #     },
+        # ]
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
