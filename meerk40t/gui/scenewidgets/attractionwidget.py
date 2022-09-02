@@ -57,6 +57,8 @@ class AttractionWidget(Widget):
         """
         Event-Logic - just note the current position
         """
+        # if event_type.startswith("left"):
+        #     print(f"Attract - event={event_type}, space={space_pos}")
         response = RESPONSE_CHAIN
         if space_pos is not None:
             self.my_x = space_pos[0]
@@ -69,7 +71,7 @@ class AttractionWidget(Widget):
                 self._show_snap_points = True
             else:
                 self._show_snap_points = False
-        elif event_type in (
+        if event_type in (
             "leftdown",
             "leftup",
             "leftclick",
@@ -78,6 +80,8 @@ class AttractionWidget(Widget):
         ):
             # Check whether shift key is pressed...
             if "shift" not in modifiers:
+                # if event_type.startswith("left"):
+                #     print (f"x={self.my_x}, y={self.my_y}, len={len(self.display_points)}")
                 # Loop through display points
                 if len(self.display_points) > 0 and not self.my_x is None:
                     # Has to be lower than the action threshold
@@ -95,7 +99,7 @@ class AttractionWidget(Widget):
                             min_delta = delta
                     # fmt:off
                     # print("Check complete: old x,y = %.1f, %.1f, new = %s,%s, delta=%.1f, threshold=%.1f"
-                    #   % ( self.my_x, self.my_y, new_x, new_y, delta, self.action_attract_len, ))
+                    #   % ( self.my_x, self.my_y, new_x, new_y, delta, self.context.action_attract_len, ))
                     # fmt:on
                     if new_x is not None:
                         if (
