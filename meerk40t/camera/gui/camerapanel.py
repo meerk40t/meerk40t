@@ -172,7 +172,7 @@ class CameraPanel(wx.Panel, Job):
             self.check_perspective.SetValue(self.camera.correction_perspective)
             self.slider_fps.SetValue(self.camera.fps)
 
-        self.on_fps_change(None)
+        self.on_fps_change(self.camera.path)
 
         self.widget_scene.widget_root.set_aspect(self.camera.aspect)
 
