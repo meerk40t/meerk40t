@@ -38,10 +38,6 @@ class AttractionWidget(Widget):
         self.context.setting(int, "grid_attract_len", 15)
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", True)
-
-
-        self.snap_grid = self.scene.context.snap_grid
-        self.snap_points = self.scene.context.snap_points
         self.show_snap_points = False
 
     def load_colors(self):
@@ -319,10 +315,8 @@ class AttractionWidget(Widget):
         if self.attraction_points is None:
             self.calculate_attraction_points()
 
-        self.snap_grid = self.scene.context.snap_grid
-        self.snap_points = self.scene.context.snap_points
         if (
-            self.snap_points
+            self.context.snap_points
             and len(self.attraction_points) > 0
             and not self.my_x is None
         ):
@@ -337,7 +331,7 @@ class AttractionWidget(Widget):
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
         if (
-            self.snap_grid
+            self.context.snap_grid
             and self.scene.grid_points is not None
             and len(self.scene.grid_points) > 0
             and not self.my_x is None
