@@ -152,6 +152,9 @@ def plugin(kernel, lifecycle):
         @kernel.console_option(
             "invert", "i", help=_("invert masking of image"), type=int
         )
+        @kernel.console_option(
+            "outline", "o", help=_("add outline of keyhole shape"), type=int
+        )
         @kernel.console_command(
             "render_keyhole",
             help=_("render_keyhole <columns> <rows> <dpi>")
@@ -167,6 +170,7 @@ def plugin(kernel, lifecycle):
             dpi=None,
             order=None,
             invert=None,
+            outline=None,
             origin=None,
             data=None,
             **kwargs,
@@ -211,7 +215,7 @@ def plugin(kernel, lifecycle):
                     bounds=data_bounds,
                     width=new_width,
                     height=new_height,
-                    keep_ratio = True,
+                    keep_ratio=True,
                 )
                 matrix = Matrix.scale(width / new_width, height / new_height)
                 return image, matrix
@@ -226,7 +230,7 @@ def plugin(kernel, lifecycle):
                 imagematrix1 = copy(imagematrix0)
                 imagematrix2 = copy(imagematrix1)
 
-                mask_pattern = mask_image.convert('1')
+                mask_pattern = mask_image.convert("1")
                 elem_image.putalpha(mask_pattern)
 
                 image_node1 = ImageNode(image=elem_image, matrix=imagematrix1, dpi=dpi)
@@ -256,12 +260,24 @@ def plugin(kernel, lifecycle):
             emptyrec = Rect(
                 x=total_bounds[0],
                 y=total_bounds[1],
-                width=total_bounds[2]-total_bounds[0],
-                height=total_bounds[3]-total_bounds[1],
+                width=total_bounds[2] - total_bounds[0],
+                height=total_bounds[3] - total_bounds[1],
             )
             rectnode = RectNode(shape=emptyrec, stroke=None, fill=None)
             bb, tempnode = prepare_data(order)
             masknode = copy(tempnode)
+            if (
+                outline is not None
+                and outline != 0
+                and tempnode.type not in ("elem text", "elem image")
+                and hasattr(tempnode, "stroke")
+            ):
+                outlinenode = copy(tempnode)
+                if hasattr(outlinenode, "fill"):
+                    outlinenode.fill = None
+                outlinenode.stroke = Color("black")
+                data.append(outlinenode)
+
             # Make sure they have the right size by adding a dummy node to it...
             maskdata = (masknode, rectnode)
             data.append(rectnode)
@@ -274,11 +290,14 @@ def plugin(kernel, lifecycle):
             maskimage, maskmatrix = create_image(maskdata, total_bounds, dpi)
             if not invert:
                 from PIL import ImageOps
+
                 maskimage = ImageOps.invert(maskimage)
 
             if maskimage is None or elemimage is None:
                 channel(_("Intermediary images were none"))
                 data_out = None
             else:
-                data_out = mask_image(elemimage, maskimage, elemmatrix, total_bounds, dpi)
+                data_out = mask_image(
+                    elemimage, maskimage, elemmatrix, total_bounds, dpi
+                )
             return "elements", data_out
