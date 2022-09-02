@@ -33,6 +33,7 @@ class AttractionWidget(Widget):
         self.symbol_size = 1  # Will be replaced anyway
         self.display_points = []
 
+        # Should already be covered in wxmain choice panel, but are used here and thus set here.
         self.context.setting(int, "show_attract_len", 45)
         self.context.setting(int, "action_attract_len", 20)
         self.context.setting(int, "grid_attract_len", 15)
