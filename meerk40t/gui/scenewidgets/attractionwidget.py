@@ -21,7 +21,7 @@ class AttractionWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         # Respond to Snap is not necessary, but for the sake of completeness...
-
+        self.context = self.scene.context
         self.attraction_points = None  # Clear all
         self.my_x = None
         self.my_y = None
@@ -32,17 +32,17 @@ class AttractionWidget(Widget):
         self.load_colors()
         self.symbol_size = 1  # Will be replaced anyway
         self.display_points = []
-        self.show_attract_len = 0
-        self.action_attract_len = 0
-        self.show_snap_points = False
-        self.scene.context.setting(bool, "snap_grid", True)
-        self.scene.context.setting(bool, "snap_points", True)
-        self.scene.context.setting(int, "show_attract_len", 45)
-        self.scene.context.setting(int, "action_attract_len", 20)
-        self.scene.context.setting(int, "grid_attract_len", 15)
 
+        self.context.setting(int, "show_attract_len", 45)
+        self.context.setting(int, "action_attract_len", 20)
+        self.context.setting(bool, "snap_grid", True)
+        self.context.setting(bool, "snap_points", True)
+        self.context.setting(int, "grid_attract_len", 15)
+
+        self.action_attract_len = 0
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
+        self.show_snap_points = False
 
     def load_colors(self):
         self.visible_pen.SetColour(self.scene.colors.color_snap_visible)
@@ -214,11 +214,11 @@ class AttractionWidget(Widget):
                 matrix.reset()
                 return
             # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
-            pixel1 = self.scene.context.show_attract_len
-            pixel2 = self.scene.context.action_attract_len
-            pixel3 = self.scene.context.grid_attract_len
+            pixel1 = self.context.show_attract_len
+            pixel2 = self.context.action_attract_len
+            pixel3 = self.context.grid_attract_len
             # print ("Current values are: show=%d, points=%d, grid=%d" % ( pixel1, pixel2, pixel3))
-            self.show_attract_len = pixel1 / matrix.value_scale_x()
+            self.context.show_attract_len = pixel1 / matrix.value_scale_x()
             self.action_attract_len = pixel2 / matrix.value_scale_x()
             self.grid_attract_len = pixel3 / matrix.value_scale_x()
 
@@ -228,8 +228,8 @@ class AttractionWidget(Widget):
             min_type = None
             for pts in self.display_points:
                 if (
-                    abs(pts[0] - self.my_x) <= self.show_attract_len
-                    and abs(pts[1] - self.my_y) <= self.show_attract_len
+                    abs(pts[0] - self.my_x) <= self.context.show_attract_len
+                    and abs(pts[1] - self.my_y) <= self.context.show_attract_len
                 ):
                     closeup = 0
                     delta = sqrt(
@@ -331,8 +331,8 @@ class AttractionWidget(Widget):
                 doit = True  # Not sure why not :-)
                 if doit:
                     if (
-                        abs(pts[0] - self.my_x) <= self.show_attract_len
-                        and abs(pts[1] - self.my_y) <= self.show_attract_len
+                        abs(pts[0] - self.my_x) <= self.context.show_attract_len
+                        and abs(pts[1] - self.my_y) <= self.context.show_attract_len
                     ):
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
@@ -344,8 +344,8 @@ class AttractionWidget(Widget):
         ):
             for pts in self.scene.grid_points:
                 if (
-                    abs(pts[0] - self.my_x) <= self.show_attract_len
-                    and abs(pts[1] - self.my_y) <= self.show_attract_len
+                    abs(pts[0] - self.my_x) <= self.context.show_attract_len
+                    and abs(pts[1] - self.my_y) <= self.context.show_attract_len
                 ):
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 
