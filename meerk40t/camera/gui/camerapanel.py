@@ -890,7 +890,7 @@ class CameraInterface(MWindow):
                     {
                         "identifier": "cam4",
                         "label": _("Camera {index}").format(index=4),
-                        "action": camera_click(5),
+                        "action": camera_click(4),
                     },
                     {
                         "identifier": "id_cam",
