@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.icons import STD_ICON_SIZE, icons8_split_table_50
+from meerk40t.gui.icons import STD_ICON_SIZE, icons8_split_table_50, icons8_keyhole_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
 from meerk40t.kernel import signal_listener
@@ -207,7 +207,7 @@ class KeyholePanel(wx.Panel):
         self.text_dpi.SetValue("500")
         self.lbl_info = wx.StaticText(self, wx.ID_ANY, "")
         self.btn_align = wx.Button(self, wx.ID_ANY, _("Create keyhole image"))
-        self.btn_align.SetBitmap(icons8_split_table_50.GetBitmap(resize=25))
+        self.btn_align.SetBitmap(icons8_keyhole_50.GetBitmap(resize=25))
 
         lbl_dpi = wx.StaticText(self, wx.ID_ANY, "DPI:")
         sizer_dpi = wx.StaticBoxSizer(
@@ -217,14 +217,22 @@ class KeyholePanel(wx.Panel):
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
         sizer_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_check = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Invert:")),
+        sizer_check_invert = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Invert Mask:")),
             wx.HORIZONTAL,
         )
-        self.check_invert = wx.CheckBox(self, wx.ID_ANY, "Invert mask from keyhole")
-        sizer_check.Add(self.check_invert, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_check_outline = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Trace Keyhole:")),
+            wx.HORIZONTAL,
+        )
+        self.check_invert = wx.CheckBox(self, wx.ID_ANY, "Invert")
+        self.check_outline = wx.CheckBox(self, wx.ID_ANY, "Trace")
+
+        sizer_check_invert.Add(self.check_invert, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_check_outline.Add(self.check_outline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_options.Add(sizer_dpi, 1, wx.EXPAND, 0)
-        sizer_options.Add(sizer_check, 1, wx.EXPAND, 0)
+        sizer_options.Add(sizer_check_invert, 1, wx.EXPAND, 0)
+        sizer_options.Add(sizer_check_outline, 1, wx.EXPAND, 0)
 
         sizer_main.Add(self.rbox_selection, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_options, 0, wx.EXPAND, 0)
@@ -239,11 +247,13 @@ class KeyholePanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_keyhole, self.btn_align)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_selection)
         self.Bind(wx.EVT_CHECKBOX, self.validate_data, self.check_invert)
+        self.Bind(wx.EVT_CHECKBOX, self.validate_data, self.check_outline)
         self.Bind(wx.EVT_TEXT, self.validate_data, self.text_dpi)
         has_emph = self.context.elements.has_emphasis()
         self.context.setting(int, "keyhole_selection", 0)
         self.context.setting(str, "keyhole_dpi", "500")
         self.context.setting(bool, "keyhole_invert", False)
+        self.context.setting(bool, "keyhole_outline", True)
         self.restore_setting()
         self.show_stuff(has_emph)
 
@@ -253,6 +263,7 @@ class KeyholePanel(wx.Panel):
         if self.context.elements.has_emphasis():
             active = True
             invert = self.check_invert.GetValue()
+            outline = self.check_outline.GetValue()
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
                 idx = 0
@@ -280,22 +291,28 @@ class KeyholePanel(wx.Panel):
         except ValueError:
             mydpi = 500
         if self.check_invert.GetValue():
-            invert = "--invert 1"
+            invert = " --invert 1"
         else:
             invert = ""
-        cmdstr = f"render_keyhole {mydpi} --order {esort} {invert}\n"
+        if self.check_outline.GetValue():
+            outline = " --outline 1"
+        else:
+            outline = ""
+        cmdstr = f"render_keyhole {mydpi} --order {esort}{invert}{outline}\n"
         self.context(cmdstr)
         self.save_setting()
 
     def save_setting(self):
         self.context.keyhole_selection = self.rbox_selection.GetSelection()
         self.context.keyhole_invert = self.check_invert.GetValue()
+        self.context.keyhole_outline = self.check_outline.GetValue()
         self.context.keyhole_dpi = self.text_dpi.GetValue()
 
     def restore_setting(self):
         try:
             self.rbox_selection.SetSelection(self.context.keyhole_selection)
             self.check_invert.SetValue(bool(self.context.keyhole_invert))
+            self.check_outline.SetValue(bool(self.context.keyhole_outline))
             self.text_dpi.SetValue(self.context.keyhole_dpi)
         except (ValueError, AttributeError, RuntimeError):
             pass
@@ -326,6 +343,7 @@ class KeyholePanel(wx.Panel):
         self.lbl_info.SetLabel(msg)
         self.rbox_selection.Enable(has_emph)
         self.check_invert.Enable(has_emph)
+        self.check_outline.Enable(has_emph)
         self.text_dpi.Enable(has_emph)
         self.validate_data()
 
