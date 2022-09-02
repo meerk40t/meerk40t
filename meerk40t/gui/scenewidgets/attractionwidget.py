@@ -39,7 +39,6 @@ class AttractionWidget(Widget):
         self.context.setting(bool, "snap_points", True)
         self.context.setting(int, "grid_attract_len", 15)
 
-        self.action_attract_len = 0
         self.snap_grid = self.scene.context.snap_grid
         self.snap_points = self.scene.context.snap_points
         self.show_snap_points = False
@@ -102,8 +101,8 @@ class AttractionWidget(Widget):
                     # fmt:on
                     if new_x is not None:
                         if (
-                            abs(new_x - self.my_x) <= self.action_attract_len
-                            and abs(new_y - self.my_y) <= self.action_attract_len
+                            abs(new_x - self.my_x) <= self.context.action_attract_len
+                            and abs(new_y - self.my_y) <= self.context.action_attract_len
                         ):
                             # Is the distance small enough?
                             response = (RESPONSE_CHAIN, new_x, new_y)
@@ -219,7 +218,7 @@ class AttractionWidget(Widget):
             pixel3 = self.context.grid_attract_len
             # print ("Current values are: show=%d, points=%d, grid=%d" % ( pixel1, pixel2, pixel3))
             self.context.show_attract_len = pixel1 / matrix.value_scale_x()
-            self.action_attract_len = pixel2 / matrix.value_scale_x()
+            self.context.action_attract_len = pixel2 / matrix.value_scale_x()
             self.grid_attract_len = pixel3 / matrix.value_scale_x()
 
             min_delta = float("inf")
@@ -242,7 +241,7 @@ class AttractionWidget(Widget):
                     if pts[2] == TYPE_GRID:
                         distance = self.grid_attract_len
                     else:
-                        distance = self.action_attract_len
+                        distance = self.context.action_attract_len
                     if dx <= distance and dy <= distance:
                         closeup = 1
                         if delta < min_delta:
