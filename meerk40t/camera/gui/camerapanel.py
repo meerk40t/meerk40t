@@ -779,49 +779,44 @@ class CameraInterface(MWindow):
         camera = kernel.get_context("camera")
 
         def camera_click(index=None):
+            s = index
+
             def specific(event=None):
+                index = s
                 camera.setting(int, "default", 0)
                 camera.setting(int, "search_range", 5)
-                camera.setting(list, "found_indices", [])
-                for _index in range(5):
-                    camera.setting(int, f"cam_{_index}_uri", -1)
+                camera.setting(list, "uris", [])
+                if index is None:
+                    index = camera.default
 
-                if index is not None:
-                    ukey = f"cam_{index}_uri"
-                    uri = getattr(camera, ukey)
-                    if uri is None or uri == "" or (isinstance(uri, int) and uri < 0):
-                        available_cameras = camera.found_indices
-                        if index >= len(available_cameras):
-                            # Took default
-                            if len(available_cameras) > 0:
-                                uri = available_cameras[0]
-                            else:
-                                uri = 0
-                        else:
-                            uri = available_cameras[index]
-                        setattr(camera, ukey, int(uri))
-                    camera(f"camera{index} --uri {uri} stop start\n")
-                    camera.default = index
+                try:
+                    default_uri = camera.uris[index]
+                except IndexError:
+                    default_uri = index
+
+                camera_context = camera.derive(index)
+                uri = camera_context.setting(str, "uri", default_uri)
+                camera(f"camera{index} --uri {uri} stop start\n")
+                camera.default = index
                 v = camera.default
                 camera(f"window toggle -m {v} CameraInterface {v}\n")
 
             return specific
 
-        def get_cameras(search=None):
+        def detect_usb_cameras(search=None):
             def specific(event=None):
-                available_cameras = []
-                # Reset stuff...
-                # Max range to look at
-                camera.setting(int, "search_range", 5)
-                camera.setting(list, "found_indices", [])
-                for _index in range(5):
-                    ukey = f"cam_{_index}_uri"
-                    camera.setting(int, ukey, -1)
-                    setattr(camera, ukey, -1)
                 try:
                     import cv2
                 except ImportError:
                     return
+
+                # Max range to look at
+                camera.setting(int, "search_range", 5)
+                camera.setting(list, "uris", [])
+                # Reset stuff...
+                for _index in range(5):
+                    if _index in camera.uris:
+                        camera.uris.remove(_index)
 
                 max_range = camera.search_range
                 if max_range is None or max_range < 1:
@@ -844,7 +839,7 @@ class CameraInterface(MWindow):
                     try:
                         cap = cv2.VideoCapture(index)
                         if cap.read()[0]:
-                            available_cameras.append(str(index))
+                            camera.uris.append(index)
                             cap.release()
                             found += 1
                     except:
@@ -854,7 +849,6 @@ class CameraInterface(MWindow):
                     )
                     index += 1
                 progress.Destroy()
-                camera.found_indices = available_cameras
 
             return specific
 
@@ -895,7 +889,7 @@ class CameraInterface(MWindow):
                     {
                         "identifier": "id_cam",
                         "label": _("Identify cameras"),
-                        "action": get_cameras(True),
+                        "action": detect_usb_cameras(True),
                     },
                 ],
             },
