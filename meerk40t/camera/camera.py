@@ -44,14 +44,7 @@ class Camera(Service):
         self.setting(bool, "correction_fisheye", False)
         self.setting(bool, "correction_perspective", False)
         self.setting(list, "fisheye", None)
-        self.setting(float, "perspective_x1", None)
-        self.setting(float, "perspective_y1", None)
-        self.setting(float, "perspective_x2", None)
-        self.setting(float, "perspective_y2", None)
-        self.setting(float, "perspective_x3", None)
-        self.setting(float, "perspective_y3", None)
-        self.setting(float, "perspective_x4", None)
-        self.setting(float, "perspective_y4", None)
+        self.setting(list, "perspective", None)
         index = int(camera_path[7:])
         self.setting(str, "uri", str(index))
         self.setting(int, "index", index)
@@ -212,26 +205,19 @@ class Camera(Service):
                 borderMode=cv2.BORDER_CONSTANT,
             )
         width, height = frame.shape[:2][::-1]
-        if self.perspective_x1 is None:
-            self.perspective_x1 = 0
-            self.perspective_y1 = 0
-            self.perspective_x2 = width
-            self.perspective_y2 = 0
-            self.perspective_x3 = width
-            self.perspective_y3 = height
-            self.perspective_x4 = 0
-            self.perspective_y4 = height
+        if self.perspective is None:
+            self.perspective = [
+                [0, 0],
+                [width, 0],
+                [width, height],
+                [0, height],
+            ]
         if self.correction_perspective:
             # Perspective the drawing.
             dest_width = self.width
             dest_height = self.height
             rect = np.array(
-                [
-                    [self.perspective_x1, self.perspective_y1],
-                    [self.perspective_x2, self.perspective_y2],
-                    [self.perspective_x3, self.perspective_y3],
-                    [self.perspective_x4, self.perspective_y4],
-                ],
+                self.perspective,
                 dtype="float32",
             )
             dst = np.array(
@@ -344,14 +330,7 @@ class Camera(Service):
         @param event:
         @return:
         """
-        self.perspective_x1 = None
-        self.perspective_y1 = None
-        self.perspective_x2 = None
-        self.perspective_y2 = None
-        self.perspective_x3 = None
-        self.perspective_y3 = None
-        self.perspective_x4 = None
-        self.perspective_y4 = None
+        self.perspective = None
 
     def backtrack_fisheye(self):
         if self._object_points:
@@ -369,7 +348,7 @@ class Camera(Service):
         self.fisheye_d = None
         self._object_points = []
         self._image_points = []
-        self.fisheye = ""
+        self.fisheye = None
 
     def set_uri(self, uri):
         self.uri = uri

@@ -582,18 +582,7 @@ class CamPerspectiveWidget(Widget):
 
     def update(self):
         half = CORNER_SIZE / 2.0
-        if self.index == 0:
-            pos_x = self.cam.camera.perspective_x1
-            pos_y = self.cam.camera.perspective_y1
-        elif self.index == 1:
-            pos_x = self.cam.camera.perspective_x2
-            pos_y = self.cam.camera.perspective_y2
-        elif self.index == 2:
-            pos_x = self.cam.camera.perspective_x3
-            pos_y = self.cam.camera.perspective_y3
-        else:
-            pos_x = self.cam.camera.perspective_x4
-            pos_y = self.cam.camera.perspective_y4
+        pos_x, pos_y = self.cam.camera.perspective[self.index]
         self.set_position(pos_x - half, pos_y - half)
 
     def hit(self):
@@ -621,18 +610,8 @@ class CamPerspectiveWidget(Widget):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
-            if self.index == 0:
-                self.cam.camera.perspective_x1 += space_pos[4]
-                self.cam.camera.perspective_y1 += space_pos[5]
-            elif self.index == 1:
-                self.cam.camera.perspective_x2 += space_pos[4]
-                self.cam.camera.perspective_y2 += space_pos[5]
-            elif self.index == 2:
-                self.cam.camera.perspective_x3 += space_pos[4]
-                self.cam.camera.perspective_y3 += space_pos[5]
-            else:
-                self.cam.camera.perspective_x4 += space_pos[4]
-                self.cam.camera.perspective_y4 += space_pos[5]
+            self.cam.camera.perspective[self.index][0] += space_pos[4]
+            self.cam.camera.perspective[self.index][1] += space_pos[5]
             if self.parent is not None:
                 for w in self.parent:
                     if isinstance(w, CamPerspectiveWidget):
@@ -648,37 +627,16 @@ class CamSceneWidget(Widget):
 
     def process_draw(self, gc):
         if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
-            if self.cam.camera.perspective_x1 is not None:
+            if self.cam.camera.perspective is not None:
                 if not len(self):
-                    for i in range(4):
+                    for i in range(len(self.cam.camera.perspective)):
                         self.add_widget(
                             -1, CamPerspectiveWidget(self.scene, self.cam, i, False)
                         )
                 gc.SetPen(wx.BLACK_DASHED_PEN)
-                gc.StrokeLines(
-                    [
-                        (
-                            self.cam.camera.perspective_x1,
-                            self.cam.camera.perspective_y1,
-                        ),
-                        (
-                            self.cam.camera.perspective_x2,
-                            self.cam.camera.perspective_y2,
-                        ),
-                        (
-                            self.cam.camera.perspective_x3,
-                            self.cam.camera.perspective_y3,
-                        ),
-                        (
-                            self.cam.camera.perspective_x4,
-                            self.cam.camera.perspective_y4,
-                        ),
-                        (
-                            self.cam.camera.perspective_x1,
-                            self.cam.camera.perspective_y1,
-                        ),
-                    ]
-                )
+                lines = list(self.cam.camera.perspective)
+                lines.append(lines[0])
+                gc.StrokeLines(lines)
         else:
             if len(self):
                 self.remove_all_widgets()
