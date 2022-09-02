@@ -776,21 +776,21 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
+        camera = kernel.get_context("camera")
 
         def camera_click(index=None):
             def specific(event=None):
-                kernel.root.setting(int, "camera_default", 0)
-                kernel.root.setting(int, "cam_search_range", 5)
-                kernel.root.setting(str, "cam_found_indices", "")
+                camera.setting(int, "default", 0)
+                camera.setting(int, "search_range", 5)
+                camera.setting(list, "found_indices", [])
                 for _index in range(5):
-                    kernel.root.setting(int, f"cam_{_index}_uri", -1)
+                    camera.setting(int, f"cam_{_index}_uri", -1)
 
                 if index is not None:
                     ukey = f"cam_{index}_uri"
-                    uri = getattr(kernel.root, ukey)
+                    uri = getattr(camera, ukey)
                     if uri is None or uri == "" or (isinstance(uri, int) and uri < 0):
-                        foundstr = kernel.root.cam_found_indices
-                        available_cameras = foundstr.split(";")
+                        available_cameras = camera.found_indices
                         if index >= len(available_cameras):
                             # Took default
                             if len(available_cameras) > 0:
@@ -799,11 +799,11 @@ class CameraInterface(MWindow):
                                 uri = 0
                         else:
                             uri = available_cameras[index]
-                        setattr(kernel.root, ukey, int(uri))
-                    kernel.console(f"camera{index} --uri {uri} stop start\n")
-                    kernel.root.camera_default = index
-                v = kernel.root.camera_default
-                kernel.console(f"window toggle -m {v} CameraInterface {v}\n")
+                        setattr(camera, ukey, int(uri))
+                    camera(f"camera{index} --uri {uri} stop start\n")
+                    camera.default = index
+                v = camera.default
+                camera(f"window toggle -m {v} CameraInterface {v}\n")
 
             return specific
 
@@ -812,34 +812,35 @@ class CameraInterface(MWindow):
                 available_cameras = []
                 # Reset stuff...
                 # Max range to look at
-                kernel.root.setting(int, "cam_search_range", 5)
-                kernel.root.setting(str, "cam_found_indices", "")
+                camera.setting(int, "search_range", 5)
+                camera.setting(list, "found_indices", [])
                 for _index in range(5):
                     ukey = f"cam_{_index}_uri"
-                    kernel.root.setting(int, ukey, -1)
-                    setattr(kernel.root, ukey, -1)
+                    camera.setting(int, ukey, -1)
+                    setattr(camera, ukey, -1)
                 try:
                     import cv2
                 except ImportError:
                     return
-                MAXFIND = kernel.root.cam_search_range
-                if MAXFIND is None or MAXFIND < 1:
-                    MAXFIND = 5
+
+                max_range = camera.search_range
+                if max_range is None or max_range < 1:
+                    max_range = 5
                 found = 0
                 found_camera_string = _("Cameras found: {count}")
                 progress = wx.ProgressDialog(
                     _("Looking for Cameras (Range={max_range})").format(
-                        max_range=MAXFIND
+                        max_range=max_range
                     ),
                     found_camera_string.format(count=found),
-                    maximum=MAXFIND,
+                    maximum=max_range,
                     parent=None,
                     style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
                 )
                 # checks for cameras in the first x USB ports
                 index = 0
                 keepgoing = True
-                while index < MAXFIND and keepgoing:
+                while index < max_range and keepgoing:
                     try:
                         cap = cv2.VideoCapture(index)
                         if cap.read()[0]:
@@ -853,8 +854,7 @@ class CameraInterface(MWindow):
                     )
                     index += 1
                 progress.Destroy()
-                foundstr = ";".join(available_cameras)
-                setattr(kernel.root, "cam_found_indices", foundstr)
+                camera.found_indices = available_cameras
 
             return specific
 
