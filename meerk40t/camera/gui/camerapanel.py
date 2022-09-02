@@ -776,32 +776,31 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        CAM_FOUND = "cam_found_indices"
-        CAM_MAX = "cam_search_range"
 
         def camera_click(index=None):
             def specific(event=None):
                 kernel.root.setting(int, "camera_default", 0)
-                kernel.root.setting(int, CAM_MAX, 5)
-                kernel.root.setting(str, CAM_FOUND, "")
-                for ci in range(5):
-                    kernel.root.setting(int, f"cam_{ci}_uri", -1)
+                kernel.root.setting(int, "cam_search_range", 5)
+                kernel.root.setting(str, "cam_found_indices", "")
+                for _index in range(5):
+                    kernel.root.setting(int, f"cam_{_index}_uri", -1)
+
                 if index is not None:
                     ukey = f"cam_{index}_uri"
-                    testuri = getattr(kernel.root, ukey)
-                    if testuri is None or testuri == "" or (isinstance(testuri, int) and testuri < 0):
-                        foundstr = getattr(kernel.root, CAM_FOUND)
+                    uri = getattr(kernel.root, ukey)
+                    if uri is None or uri == "" or (isinstance(uri, int) and uri < 0):
+                        foundstr = kernel.root.cam_found_indices
                         available_cameras = foundstr.split(";")
                         if index >= len(available_cameras):
                             # Took default
                             if len(available_cameras) > 0:
-                                testuri = available_cameras[0]
+                                uri = available_cameras[0]
                             else:
-                                testuri = 0
+                                uri = 0
                         else:
-                            testuri = available_cameras[index]
-                        setattr(kernel.root, ukey, int(testuri))
-                    kernel.console(f"camera{index} --uri {testuri} stop start\n")
+                            uri = available_cameras[index]
+                        setattr(kernel.root, ukey, int(uri))
+                    kernel.console(f"camera{index} --uri {uri} stop start\n")
                     kernel.root.camera_default = index
                 v = kernel.root.camera_default
                 kernel.console(f"window toggle -m {v} CameraInterface {v}\n")
@@ -813,17 +812,17 @@ class CameraInterface(MWindow):
                 available_cameras = []
                 # Reset stuff...
                 # Max range to look at
-                kernel.root.setting(int, CAM_MAX, 5)
-                kernel.root.setting(str, CAM_FOUND, "")
-                for ci in range(5):
-                    ukey = f"cam_{ci}_uri"
+                kernel.root.setting(int, "cam_search_range", 5)
+                kernel.root.setting(str, "cam_found_indices", "")
+                for _index in range(5):
+                    ukey = f"cam_{_index}_uri"
                     kernel.root.setting(int, ukey, -1)
                     setattr(kernel.root, ukey, -1)
                 try:
                     import cv2
                 except ImportError:
                     return
-                MAXFIND = getattr(kernel.root, CAM_MAX)
+                MAXFIND = kernel.root.cam_search_range
                 if MAXFIND is None or MAXFIND < 1:
                     MAXFIND = 5
                 found = 0
@@ -855,7 +854,7 @@ class CameraInterface(MWindow):
                     index += 1
                 progress.Destroy()
                 foundstr = ";".join(available_cameras)
-                setattr(kernel.root, CAM_FOUND, foundstr)
+                setattr(kernel.root, "cam_found_indices", foundstr)
 
             return specific
 
