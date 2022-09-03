@@ -382,6 +382,8 @@ class MoshiDriver(Parameters):
         """
         Turn laser off in place.
 
+        Moshiboards do not support this command.
+
         @param values:
         @return:
         """
@@ -390,6 +392,8 @@ class MoshiDriver(Parameters):
     def laser_on(self, *values):
         """
         Turn laser on in place.
+
+        Moshiboards do not support this command.
 
         @param values:
         @return:
@@ -550,11 +554,26 @@ class MoshiDriver(Parameters):
         self.total_steps = 0
 
     def move_abs(self, x, y):
+        """
+        Requests laser move to absolute position x, y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
+
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
+        """
+        Requests laser move relative position dx, dy in physical units
+
+        @param dx:
+        @param dy:
+        @return:
+        """
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         x = self.native_x + dx
@@ -668,37 +687,7 @@ class MoshiDriver(Parameters):
             move_y = int(values[3])
         except (ValueError, IndexError):
             move_y = 0
-        self.start_program_mode(offset_x, offset_y, move_x, move_y)
-
-    def start_program_mode(
-        self,
-        offset_x,
-        offset_y,
-        move_x=None,
-        move_y=None,
-        speed=None,
-        normal_speed=None,
-    ):
-        if move_x is None:
-            move_x = offset_x
-        if move_y is None:
-            move_y = offset_y
-        if speed is None and self.speed is not None:
-            speed = int(self.speed)
-        if speed is None:
-            speed = 20
-        if normal_speed is None:
-            normal_speed = speed
-
-        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
-        self.program.vector_speed(speed, normal_speed)
-        self.program.set_offset(0, offset_x, offset_y)
-        self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
-
-        self.program.move_abs(move_x, move_y)
-        self.native_x = move_x
-        self.native_y = move_y
+        self._start_program_mode(offset_x, offset_y, move_x, move_y)
 
     def raster_mode(self, *values):
         """
@@ -729,77 +718,29 @@ class MoshiDriver(Parameters):
             move_y = int(values[3])
         except (ValueError, IndexError):
             move_y = 0
-        self.start_raster_mode(offset_x, offset_y, move_x, move_y)
+        self._start_raster_mode(offset_x, offset_y, move_x, move_y)
 
-    def start_raster_mode(
-        self, offset_x, offset_y, move_x=None, move_y=None, speed=None
-    ):
-        if move_x is None:
-            move_x = offset_x
-        if move_y is None:
-            move_y = offset_y
-        if speed is None and self.speed is not None:
-            speed = int(self.speed)
-        if speed is None:
-            speed = 160
-        self.program.raster_speed(speed)
-        self.program.set_offset(0, offset_x, offset_y)
-        self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
-
-        self.program.move_abs(move_x, move_y)
-        self.native_x = move_x
-        self.native_y = move_y
-
-    def set(self, attribute, value):
+    def set(self, key, value):
         """
         Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
         yet to be written drivers.
+
         @param key:
         @param value:
         @return:
         """
-        if attribute == "power":
+        if key == "power":
             self._set_power(value)
-        if attribute == "ppi":
+        if key == "ppi":
             self._set_power(value)
-        if attribute == "pwm":
+        if key == "pwm":
             self._set_power(value)
-        if attribute == "overscan":
+        if key == "overscan":
             self._set_overscan(value)
-        if attribute == "speed":
+        if key == "speed":
             self._set_speed(value)
-        if attribute == "step":
+        if key == "step":
             self._set_step(value)
-
-    def _set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def _set_overscan(self, overscan=None):
-        self.overscan = overscan
-
-    def _set_speed(self, speed=None):
-        """
-        Set the speed for the driver.
-        """
-        if self.speed != speed:
-            self.speed = speed
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def _set_step(self, step_x=None, step_y=None):
-        """
-        Set the raster step for the driver.
-        """
-        if self.raster_step_x != step_x or self.raster_step_y != step_y:
-            self.raster_step_x = step_x
-            self.raster_step_y = step_y
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
 
     def set_origin(self, x, y):
         """
@@ -812,15 +753,17 @@ class MoshiDriver(Parameters):
         self.origin_x = x
         self.origin_y = y
 
-    def wait(self, t):
+    def wait(self, time_in_ms):
         """
-        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
-        called first this should pause the machine without current work acting as a dwell.
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
 
-        @param t:
+        @param time_in_ms:
         @return:
         """
-        time.sleep(float(t) / 1000.0)
+        time.sleep(time_in_ms / 1000.0)
 
     def wait_finish(self, *values):
         """
@@ -843,14 +786,26 @@ class MoshiDriver(Parameters):
         function()
 
     def beep(self):
+        """
+        Wants a system beep to be issued.
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
+
+        @return:
+        """
         self.service("beep\n")
 
     def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
         self.service(value)
 
     def signal(self, signal, *args):
         """
-        This asks that this signal be broadcast.
+        This asks that this signal be broadcast at the appropriate time within the spooling cycle.
 
         @param signal:
         @param args:
@@ -906,6 +861,89 @@ class MoshiDriver(Parameters):
         parts.append(f"power={self.power}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
+
+    ####################
+    # Protected Driver Functions
+    ####################
+
+    def _start_program_mode(
+        self,
+        offset_x,
+        offset_y,
+        move_x=None,
+        move_y=None,
+        speed=None,
+        normal_speed=None,
+    ):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
+        if speed is None:
+            speed = 20
+        if normal_speed is None:
+            normal_speed = speed
+
+        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
+        self.program.vector_speed(speed, normal_speed)
+        self.program.set_offset(0, offset_x, offset_y)
+        self.state = DRIVER_STATE_PROGRAM
+        self.service.signal("driver;mode", self.state)
+
+        self.program.move_abs(move_x, move_y)
+        self.native_x = move_x
+        self.native_y = move_y
+
+    def _start_raster_mode(
+        self, offset_x, offset_y, move_x=None, move_y=None, speed=None
+    ):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
+        if speed is None:
+            speed = 160
+        self.program.raster_speed(speed)
+        self.program.set_offset(0, offset_x, offset_y)
+        self.state = DRIVER_STATE_RASTER
+        self.service.signal("driver;mode", self.state)
+
+        self.program.move_abs(move_x, move_y)
+        self.native_x = move_x
+        self.native_y = move_y
+
+    def _set_power(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def _set_overscan(self, overscan=None):
+        self.overscan = overscan
+
+    def _set_speed(self, speed=None):
+        """
+        Set the speed for the driver.
+        """
+        if self.speed != speed:
+            self.speed = speed
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def _set_step(self, step_x=None, step_y=None):
+        """
+        Set the raster step for the driver.
+        """
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
 
     def push_program(self):
         self.pipe_channel("Pushed program to output...")
