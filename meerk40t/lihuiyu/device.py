@@ -878,10 +878,10 @@ class LihuiyuDriver(Parameters):
                         # Perform a rapid position change. Always perform this for raster moves.
                         # DRIVER_STATE_RASTER should call this code as well.
                         self.rapid_mode()
-                        self.move_absolute(x, y)
+                        self._move_absolute(x, y)
                     else:
                         # Jog is performable and requested. # We have not flagged our direction or state.
-                        self.jog_absolute(x, y, mode=self.service.opt_jog_mode)
+                        self._jog_absolute(x, y, mode=self.service.opt_jog_mode)
                 continue
             dx = x - sx
             dy = y - sy
@@ -901,11 +901,11 @@ class LihuiyuDriver(Parameters):
                         if (dx > 0 and self._leftward) or (
                             dx < 0 and not self._leftward
                         ):
-                            self.h_switch(dy)
+                            self._h_switch(dy)
                     else:
                         # Default Raster
                         if dy != 0:
-                            self.h_switch_g(dy)
+                            self._h_switch_g(dy)
                 else:
                     # Vertical Rastering.
                     if self.service.nse_raster or self.settings.get(
@@ -913,15 +913,15 @@ class LihuiyuDriver(Parameters):
                     ):
                         # Alt-Style Raster
                         if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
-                            self.v_switch(dx)
+                            self._v_switch(dx)
                     else:
                         # Default Raster
                         if dx != 0:
-                            self.v_switch_g(dx)
+                            self._v_switch_g(dx)
                 # Update dx, dy (if changed by switches)
                 dx = x - self.native_x
                 dy = y - self.native_y
-            self.goto_octent(dx, dy, on & 1)
+            self._goto_octent(dx, dy, on & 1)
         self.plot_data = None
         return False
 
@@ -941,7 +941,7 @@ class LihuiyuDriver(Parameters):
 
         self.service.signal("pipe;buffer", 0)
         self(b"~I*\n~")
-        self.reset_modes()
+        self._reset_modes()
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
         self.is_paused = False
@@ -950,30 +950,30 @@ class LihuiyuDriver(Parameters):
         if blob_type == "egv":
             self(data)
 
-    def cut(self, x, y):
-        self.goto(x, y, True)
+    def _cut(self, x, y):
+        self._goto(x, y, True)
 
-    def jog(self, x, y, **kwargs):
+    def _jog(self, x, y, **kwargs):
         if self.is_relative:
-            self.jog_relative(x, y, **kwargs)
+            self._jog_relative(x, y, **kwargs)
         else:
-            self.jog_absolute(x, y, **kwargs)
+            self._jog_absolute(x, y, **kwargs)
 
-    def jog_absolute(self, x, y, **kwargs):
-        self.jog_relative(x - self.native_x, y - self.native_y, **kwargs)
+    def _jog_absolute(self, x, y, **kwargs):
+        self._jog_relative(x - self.native_x, y - self.native_y, **kwargs)
 
-    def jog_relative(self, dx, dy, mode=0):
+    def _jog_relative(self, dx, dy, mode=0):
         self.laser_off()
         dx = int(round(dx))
         dy = int(round(dy))
         if mode == 0:
             self._nse_jog_event(dx, dy)
         elif mode == 1:
-            self.mode_shift_on_the_fly(dx, dy)
+            self._mode_shift_on_the_fly(dx, dy)
         else:
             # Finish-out Jog
             self.rapid_mode()
-            self.move_relative(dx, dy)
+            self._move_relative(dx, dy)
             self.program_mode()
 
     def _nse_jog_event(self, dx=0, dy=0, speed=None):
@@ -1001,20 +1001,20 @@ class LihuiyuDriver(Parameters):
             if not self.is_bottom and dy <= 0:
                 self(self.CODE_BOTTOM)
         self(b"N")
-        self.goto_xy(dx, dy)
+        self._goto_xy(dx, dy)
         self(b"SE")
-        self(self.code_declare_directions())
+        self(self._code_declare_directions())
         self.state = original_state
 
     def move_abs(self, x, y):
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
-        self.move_absolute(int(x), int(y))
+        self._move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
-        self.move_relative(dx, dy)
+        self._move_relative(dx, dy)
 
     def dwell(self, time_in_ms):
         self.program_mode()
@@ -1024,16 +1024,16 @@ class LihuiyuDriver(Parameters):
         self.wait(time_in_ms)
         self.laser_off()
 
-    def move(self, x, y):
-        self.goto(x, y, False)
+    def _move(self, x, y):
+        self._goto(x, y, False)
 
-    def move_absolute(self, x, y):
-        self.goto_absolute(x, y, False)
+    def _move_absolute(self, x, y):
+        self._goto_absolute(x, y, False)
 
-    def move_relative(self, x, y):
-        self.goto_relative(x, y, False)
+    def _move_relative(self, x, y):
+        self._goto_relative(x, y, False)
 
-    def goto(self, x, y, cut):
+    def _goto(self, x, y, cut):
         """
         Goto a position within a cut.
 
@@ -1045,11 +1045,11 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         if self.is_relative:
-            self.goto_relative(x, y, cut)
+            self._goto_relative(x, y, cut)
         else:
-            self.goto_absolute(x, y, cut)
+            self._goto_absolute(x, y, cut)
 
-    def goto_absolute(self, x, y, cut):
+    def _goto_absolute(self, x, y, cut):
         """
         Goto absolute x and y. With cut set or not set.
 
@@ -1058,7 +1058,7 @@ class LihuiyuDriver(Parameters):
         @param cut:
         @return:
         """
-        self.goto_relative(x - self.native_x, y - self.native_y, cut)
+        self._goto_relative(x - self.native_x, y - self.native_y, cut)
 
     def _move_in_rapid_mode(self, dx, dy, cut):
         if self.service.rapid_override and (dx != 0 or dy != 0):
@@ -1069,7 +1069,7 @@ class LihuiyuDriver(Parameters):
                 self.rapid_mode()
                 self.set_speed(self.service.rapid_override_speed_x)
                 self.program_mode()
-                self.goto_octent(dx, 0, cut)
+                self._goto_octent(dx, 0, cut)
             if dy != 0:
                 if (
                     self.service.rapid_override_speed_x
@@ -1078,11 +1078,11 @@ class LihuiyuDriver(Parameters):
                     self.rapid_mode()
                     self.set_speed(self.service.rapid_override_speed_y)
                     self.program_mode()
-                self.goto_octent(0, dy, cut)
+                self._goto_octent(0, dy, cut)
             self.rapid_mode()
         else:
             self(b"I")
-            self.goto_xy(dx, dy)
+            self._goto_xy(dx, dy)
             self(b"S1P\n")
             if not self.service.autolock:
                 self(b"IS2P\n")
@@ -1106,7 +1106,7 @@ class LihuiyuDriver(Parameters):
         self(b"SE")
         self.laser = False
 
-    def goto_relative(self, dx, dy, cut):
+    def _goto_relative(self, dx, dy, cut):
         """
         Goto relative dx, dy. With cut set or not set.
 
@@ -1125,21 +1125,21 @@ class LihuiyuDriver(Parameters):
         elif self.state == DRIVER_STATE_RASTER:
             # goto in raster, switches to program to recall this function.
             self.program_mode()
-            self.goto_relative(dx, dy, cut)
+            self._goto_relative(dx, dy, cut)
             return
         elif self.state == DRIVER_STATE_PROGRAM:
             mx = 0
             my = 0
             line = list(grouped(ZinglPlotter.plot_line(0, 0, dx, dy)))
             for x, y in line:
-                self.goto_octent(x - mx, y - my, cut)
+                self._goto_octent(x - mx, y - my, cut)
                 mx = x
                 my = y
         elif self.state == DRIVER_STATE_FINISH:
-            self.goto_xy(dx, dy)
+            self._goto_xy(dx, dy)
             self(b"N")
         elif self.state == DRIVER_STATE_MODECHANGE:
-            self.mode_shift_on_the_fly(dx, dy)
+            self._mode_shift_on_the_fly(dx, dy)
 
         new_current = self.service.current
         self.service.signal(
@@ -1223,7 +1223,7 @@ class LihuiyuDriver(Parameters):
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
 
-    def mode_shift_on_the_fly(self, dx=0, dy=0):
+    def _mode_shift_on_the_fly(self, dx=0, dy=0):
         """
         Mode-shift on the fly changes the current modes while in programmed or raster mode
         this exits with a @ command that resets the modes. A movement operation can be added after
@@ -1328,9 +1328,9 @@ class LihuiyuDriver(Parameters):
         ).speedcode
         speed_code = bytes(speed_code, "utf8")
         self(speed_code)
-        self.goto_xy(dx, dy)
+        self._goto_xy(dx, dy)
         self(b"N")
-        self(self.code_declare_directions())
+        self(self._code_declare_directions())
         self(b"S1E")
         if self.step:
             self.state = DRIVER_STATE_RASTER
@@ -1338,7 +1338,7 @@ class LihuiyuDriver(Parameters):
             self.state = DRIVER_STATE_PROGRAM
         self.service.signal("driver;mode", self.state)
 
-    def h_switch(self, dy: float):
+    def _h_switch(self, dy: float):
         """
         NSE h_switches replace the mere reversal of direction with N<v><distance>SE
 
@@ -1385,7 +1385,7 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         self.step_index += 1
 
-    def v_switch(self, dx: float):
+    def _v_switch(self, dx: float):
         """
         NSE v_switches replace the mere reversal of direction with N<h><distance>SE
 
@@ -1428,7 +1428,7 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         self.step_index += 1
 
-    def h_switch_g(self, dy: float):
+    def _h_switch_g(self, dy: float):
         """
         Horizontal switch with a Gvalue set. The board will automatically step according to the step_value_set.
 
@@ -1448,7 +1448,7 @@ class LihuiyuDriver(Parameters):
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
             self.finished_mode()
-            self.move_relative(0, delta)
+            self._move_relative(0, delta)
             self._x_engaged = True
             self._y_engaged = False
             self.raster_mode()
@@ -1464,7 +1464,7 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         self.step_index += 1
 
-    def v_switch_g(self, dx: float):
+    def _v_switch_g(self, dx: float):
         """
         Vertical switch with a Gvalue set. The board will automatically step according to the step_value_set.
 
@@ -1484,7 +1484,7 @@ class LihuiyuDriver(Parameters):
         if delta != 0:
             # Movement exceeds the standard raster step amount. Rapid relocate.
             self.finished_mode()
-            self.move_relative(delta, 0)
+            self._move_relative(delta, 0)
             self._y_engaged = True
             self._x_engaged = False
             self.raster_mode()
@@ -1506,7 +1506,7 @@ class LihuiyuDriver(Parameters):
         old_current = self.service.current
         self.native_x = 0
         self.native_y = 0
-        self.reset_modes()
+        self._reset_modes()
         self.state = DRIVER_STATE_RAPID
         adjust_x = self.service.home_x
         adjust_y = self.service.home_y
@@ -1520,7 +1520,7 @@ class LihuiyuDriver(Parameters):
         )
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
-            self.move_relative(adjust_x, adjust_y)
+            self._move_relative(adjust_x, adjust_y)
             # Erase adjustment
             self.native_x = 0
             self.native_y = 0
@@ -1544,7 +1544,7 @@ class LihuiyuDriver(Parameters):
     def abort(self):
         self(b"I\n")
 
-    def reset_modes(self):
+    def _reset_modes(self):
         self.laser = False
         self._request_leftward = None
         self._request_topward = None
@@ -1555,7 +1555,7 @@ class LihuiyuDriver(Parameters):
         self._y_engaged = False
         self._horizontal_major = False
 
-    def goto_xy(self, dx, dy):
+    def _goto_xy(self, dx, dy):
         rapid = self.state not in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER)
         if dx != 0:
             self.native_x += dx
@@ -1584,7 +1584,7 @@ class LihuiyuDriver(Parameters):
             self._y_engaged = True
             self(lhymicro_distance(abs(dy)))
 
-    def goto_octent(self, dx, dy, on):
+    def _goto_octent(self, dx, dy, on):
         old_current = self.service.current
         if dx == 0 and dy == 0:
             return
@@ -1616,7 +1616,7 @@ class LihuiyuDriver(Parameters):
             self(self.CODE_ANGLE)
             self(lhymicro_distance(abs(dy)))
         else:
-            self.goto_xy(dx, dy)
+            self._goto_xy(dx, dy)
 
         new_current = self.service.current
         self.service.signal(
@@ -1624,7 +1624,7 @@ class LihuiyuDriver(Parameters):
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
-    def code_declare_directions(self):
+    def _code_declare_directions(self):
         x_dir = self.CODE_LEFT if self._leftward else self.CODE_RIGHT
         y_dir = self.CODE_TOP if self._topward else self.CODE_BOTTOM
         if self._horizontal_major:
@@ -1698,7 +1698,7 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             start = plot.start
             self.wait_finish()
-            self.move_absolute(self.origin_x + start[0], self.origin_y + start[1])
+            self._move_absolute(self.origin_x + start[0], self.origin_y + start[1])
         elif isinstance(plot, SetOriginCut):
             self.plot_start()
             if plot.set_current:
