@@ -4,7 +4,7 @@ import threading
 import time
 from hashlib import md5
 
-from meerk40t.core.spoolers import Spooler
+from meerk40t.core.spoolers import Spooler, LaserJob
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -487,6 +487,33 @@ class LihuiyuDevice(Service, ViewPort):
 
         @self.console_argument("filename", type=str)
         @self.console_command(
+            "save_job",
+            help=_("save job export"),
+            input_type="plan"
+        )
+        def egv_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "wb") as f:
+                    f.write(b"Document type : LHYMICRO-GL file\n")
+                    f.write(b"File version: 1.0.01\n")
+                    f.write(b"Copyright: Unknown\n")
+                    f.write(
+                        bytes(f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n", "utf-8")
+                    )
+                    f.write(b"\n")
+                    f.write(b"%0%0%0%0%\n")
+                    driver = LihuiyuDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    driver.out_pipe = f
+                    job.execute()
+
+            except (PermissionError, IOError):
+                channel(_("Could not save: {filename}").format(filename=filename))
+
+        @self.console_argument("filename", type=str)
+        @self.console_command(
             "egv_import",
             help=_("Lihuiyu Engrave Buffer Import. egv_import <egv_file>"),
         )
@@ -772,10 +799,10 @@ class LihuiyuDriver(Parameters):
         def primary_hold():
             if self.out_pipe is None:
                 return True
-
-            buffer = len(self.out_pipe)
-            if buffer is None:
-                return False
+            try:
+                buffer = len(self.out_pipe)
+            except TypeError:
+                buffer = 0
             return self.service.buffer_limit and buffer > self.service.buffer_max
 
         self.holds.append(primary_hold)
@@ -1292,7 +1319,12 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
-        self.temp_holds.append(lambda: len(self.out_pipe) != 0)
+        def temp_hold():
+            try:
+                return len(self.out_pipe) != 0
+            except TypeError:
+                return False
+        self.temp_holds.append(temp_hold)
 
     def status(self):
         """
