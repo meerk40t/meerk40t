@@ -1695,11 +1695,12 @@ class LihuiyuDriver(Parameters):
             self.wait_finish()
             self.home(plot.start[0], plot.start[1])
         elif isinstance(plot, GotoCut):
-            start = plot.start
             self.plot_start()
+            start = plot.start
             self.wait_finish()
-            self.move_abs(self.origin_x + start[0], self.origin_y + start[1])
+            self.move_absolute(self.origin_x + start[0], self.origin_y + start[1])
         elif isinstance(plot, SetOriginCut):
+            self.plot_start()
             if plot.set_current:
                 x = self.native_x
                 y = self.native_y
