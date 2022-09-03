@@ -501,6 +501,7 @@ class Planner(Service):
                     "cutcode",
                     "util console",
                     "util wait",
+                    "util home",
                     "util input",
                     "util output",
                     "lasercode",

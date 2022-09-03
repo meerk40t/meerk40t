@@ -123,8 +123,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_dratio, self.check_dratio_custom)
-        self.text_dratio.Bind(wx.EVT_TEXT_ENTER, self.on_text_dratio)
-        self.text_dratio.Bind(wx.EVT_KILL_FOCUS, self.on_text_dratio)
+        self.text_dratio.SetActionRoutine(self.on_text_dratio)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_acceleration, self.checkbox_custom_accel
         )
@@ -132,8 +131,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_dot_length, self.check_dot_length_custom
         )
-        self.text_dot_length.Bind(wx.EVT_TEXT_ENTER, self.on_text_dot_length)
-        self.text_dot_length.Bind(wx.EVT_KILL_FOCUS, self.on_text_dot_length)
+        self.text_dot_length.SetActionRoutine(self.on_text_dot_length)
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_shift_enabled, self.check_shift_enabled
         )
@@ -173,7 +171,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.operation.dratio_custom = bool(on)
         self.context.elements.signal("element_property_reload", self.operation)
 
-    def on_text_dratio(self, event=None):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dratio(self):
         try:
             self.operation.dratio = float(self.text_dratio.GetValue())
         except ValueError:
@@ -200,9 +198,7 @@ class LhyAdvancedPanel(wx.Panel):
         self.operation.dot_length_custom = bool(on)
         self.context.elements.signal("element_property_reload", self.operation)
 
-    def on_text_dot_length(
-        self, event=None
-    ):  # wxGlade: OperationProperty.<event_handler>
+    def on_text_dot_length(self):
         try:
             self.operation.dot_length = int(self.text_dot_length.GetValue())
         except ValueError:

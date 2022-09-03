@@ -65,13 +65,6 @@ class HatchOpNode(Node, Parameters):
     def __copy__(self):
         return HatchOpNode(self)
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
-            self._bounds_dirty = False
-        return self._bounds
-
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
     #     if maxspeed is not None and self.speed > maxspeed:

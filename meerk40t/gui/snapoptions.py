@@ -118,6 +118,7 @@ class SnapOptionPanel(wx.Panel):
         self.position_y = 0.0
         self.position_h = 0.0
         self.position_w = 0.0
+        # Additionally defined in wxmmain and attraction widget
         self.context.setting(bool, "snap_grid", True)
         self.context.setting(bool, "snap_points", True)
         self.context.setting(int, "show_attract_len", 45)

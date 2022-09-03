@@ -39,8 +39,11 @@ from .icons import (
     icons8_home_filled_50,
     icons8_pause_50,
 )
+from .imagesplitter import RenderSplit
 from .keymap import Keymap
+from .lasertoolpanel import LaserTool
 from .notes import Notes
+from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
@@ -60,8 +63,6 @@ from .propertypanels.rasterwizardpanels import (
 from .propertypanels.textproperty import TextPropertyPanel
 from .simulation import Simulation
 from .wordlisteditor import WordlistEditor
-from .operation_info import OperationInformation
-from .lasertoolpanel import LaserTool
 from .wxmmain import MeerK40t
 
 """
@@ -369,6 +370,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
+        kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
 

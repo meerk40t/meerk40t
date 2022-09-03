@@ -37,6 +37,7 @@ non_structural_nodes = (
     "op hatch",
     "util console",
     "util wait",
+    "util home",
     "util output",
     "util input",
     "reference",
@@ -71,6 +72,7 @@ op_nodes = (
     "op hatch",
     "util console",
     "util wait",
+    "util home",
     "util output",
     "util input",
 )

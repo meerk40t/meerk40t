@@ -74,6 +74,7 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
+        kernel.register("format/util home", "{enabled}{element_type}{adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
@@ -487,10 +488,10 @@ class Elemental(Service):
 
     def bounds(self, x0, y0, x1, y1):
         return (
-            float(Length(x0, relative_length=self.device.width, unitless=1)),
-            float(Length(y0, relative_length=self.device.height, unitless=1)),
-            float(Length(x1, relative_length=self.device.width, unitless=1)),
-            float(Length(y1, relative_length=self.device.height, unitless=1)),
+            float(Length(x0, relative_length=self.device.width)),
+            float(Length(y0, relative_length=self.device.height)),
+            float(Length(x1, relative_length=self.device.width)),
+            float(Length(y1, relative_length=self.device.height)),
         )
 
     def area(self, v):
@@ -3762,7 +3763,7 @@ class Elemental(Service):
                 channel(_("No renderer is registered to perform render."))
                 return
 
-            bounds = Node.union_bounds(data)
+            bounds = Node.union_bounds(data, attr="paint_bounds")
             if bounds is None:
                 return
             xmin, ymin, xmax, ymax = bounds
@@ -6105,7 +6106,7 @@ class Elemental(Service):
             if method is None:
                 method = "quick"
             method = method.lower()
-            if not method in ("segment", "quick", "hull", "complex", "circle"):
+            if method not in ("segment", "quick", "hull", "complex", "circle"):
                 channel(
                     _(
                         "Invalid method, please use one of quick, hull, complex, segment, circle."
@@ -6137,7 +6138,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                _spooler.laserjob(list(trace_hull()))
+                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}")
 
             run_shape(spooler, hull)
 
@@ -6471,6 +6472,68 @@ class Elemental(Service):
             node.passes_custom = passvalue != 1
             self.signal("element_property_reload", node)
 
+        # ---- Burn Direction
+        def get_direction_values():
+            return (
+                "Top To Bottom",
+                "Bottom To Top",
+                "Right To Left",
+                "Left To Right",
+                "Crosshatch",
+            )
+
+        def radio_match_direction(node, raster_direction="", **kwargs):
+            values = get_direction_values()
+            for idx, key in enumerate(values):
+                if key == raster_direction:
+                    return node.raster_direction == idx
+            return False
+
+        @self.tree_submenu(_("Burn Direction"))
+        @self.tree_radio(radio_match_direction)
+        @self.tree_values("raster_direction", values=get_direction_values())
+        @self.tree_operation(
+            "{raster_direction}",
+            node_type=("op raster", "op image"),
+            help="",
+        )
+        def set_direction(node, raster_direction="", **kwargs):
+            values = get_direction_values()
+            for idx, key in enumerate(values):
+                if key == raster_direction:
+                    node.raster_direction = idx
+                    self.signal("element_property_reload", node)
+                    break
+
+        def get_swing_values():
+            return (
+                "Bidirectional",
+                "Unidirectional",
+            )
+
+        def radio_match_swing(node, raster_swing="", **kwargs):
+            values = get_swing_values()
+            for idx, key in enumerate(values):
+                if key == raster_swing:
+                    return node.raster_swing == idx
+            return False
+
+        @self.tree_submenu(_("Directional Raster"))
+        @self.tree_radio(radio_match_swing)
+        @self.tree_values("raster_swing", values=get_swing_values())
+        @self.tree_operation(
+            "{raster_swing}",
+            node_type=("op raster", "op image"),
+            help="",
+        )
+        def set_swing(node, raster_swing="", **kwargs):
+            values = get_swing_values()
+            for idx, key in enumerate(values):
+                if key == raster_swing:
+                    node.raster_swing = idx
+                    self.signal("element_property_reload", node)
+                    break
+
         @self.tree_separator_before()
         @self.tree_operation(
             _("Execute operation(s)"),
@@ -6701,6 +6764,7 @@ class Elemental(Service):
                 "op hatch",
                 "util console",
                 "util wait",
+                "util home",
                 "util output",
                 "util input",
                 "lasercode",
@@ -6924,9 +6988,8 @@ class Elemental(Service):
         @self.tree_operation(_("Append Home"), node_type="branch ops", help="")
         def append_operation_home(node, pos=None, **kwargs):
             self.op_branch.add(
-                type="util console",
+                type="util home",
                 pos=pos,
-                command="home -f",
             )
 
         @self.tree_submenu(_("Append special operation(s)"))
@@ -7119,7 +7182,7 @@ class Elemental(Service):
             if len(data) == 0:
                 return
             try:
-                bounds = Node.union_bounds(data)
+                bounds = Node.union_bounds(data, attr="paint_bounds")
                 width = bounds[2] - bounds[0]
                 height = bounds[3] - bounds[1]
             except TypeError:

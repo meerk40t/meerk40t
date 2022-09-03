@@ -83,8 +83,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
 
-        self.text_dpi.Bind(wx.EVT_KILL_FOCUS, self.on_text_dpi)
-        self.text_dpi.Bind(wx.EVT_TEXT_ENTER, self.on_text_dpi)
+        self.text_dpi.SetActionRoutine(self.on_text_dpi)
 
         self.Bind(
             wx.EVT_CHECKBOX, self.on_check_invert_grayscale, self.check_invert_grayscale
@@ -229,7 +228,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.Centre()
         # end wxGlade
 
-    def on_text_dpi(self, event=None):  # wxGlade: ImageProperty.<event_handler>
+    def on_text_dpi(self):
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
 

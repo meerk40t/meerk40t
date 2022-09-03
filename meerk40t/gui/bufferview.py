@@ -67,4 +67,4 @@ class BufferView(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Device-Control")
+        return ("Device-Control", "Buffer")

@@ -92,8 +92,7 @@ class WarningPanel(wx.Panel):
             ctrl1.Enable(False)
             entry["textcontrol_min"] = ctrl1
             chk1.Bind(wx.EVT_CHECKBOX, self.on_checkbox_check(entry, False))
-            ctrl1.Bind(wx.EVT_KILL_FOCUS, self.on_text_limit(entry, False))
-            ctrl1.Bind(wx.EVT_TEXT_ENTER, self.on_text_limit(entry, False))
+            ctrl1.SetActionRoutine(self.on_text_limit(ctrl1, entry, False))
 
             label4 = wx.StaticText(self, id=wx.ID_ANY, label=">")
             chk2 = wx.CheckBox(self, id=wx.ID_ANY, label="")
@@ -114,8 +113,7 @@ class WarningPanel(wx.Panel):
             ctrl2.Enable(False)
             entry["textcontrol_max"] = ctrl2
             chk2.Bind(wx.EVT_CHECKBOX, self.on_checkbox_check(entry, True))
-            ctrl2.Bind(wx.EVT_KILL_FOCUS, self.on_text_limit(entry, True))
-            ctrl2.Bind(wx.EVT_TEXT_ENTER, self.on_text_limit(entry, True))
+            ctrl2.SetActionRoutine(self.on_text_limit(ctrl2, entry, True))
 
             hsizer.Add(image, 0, wx.ALIGN_CENTER_VERTICAL, 0)
             hsizer.Add(label1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -174,10 +172,8 @@ class WarningPanel(wx.Panel):
 
         return check
 
-    def on_text_limit(self, entry, isMax):
-        def check(event=None):
-            event.Skip()
-            textctrl = event.GetEventObject()
+    def on_text_limit(self, textctrl, entry, isMax):
+        def check():
             if isMax:
                 flag = "max"
             else:

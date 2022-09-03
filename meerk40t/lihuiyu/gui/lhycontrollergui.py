@@ -597,4 +597,4 @@ class LihuiyuControllerGui(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Device-Control")
+        return ("Device-Control", "Controller")

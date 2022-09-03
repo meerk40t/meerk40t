@@ -146,4 +146,4 @@ class SerialController(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Device-Control")
+        return ("Device-Control", "GRBL Serial Controller")

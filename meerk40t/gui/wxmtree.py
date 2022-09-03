@@ -341,6 +341,7 @@ class ShadowTree:
             "console interrupt": icons8_stop_gesture_20,
             "console quit": icons8_close_window_20,
             "util wait": icons8_timer_20,
+            "util home": icons8_home_20,
             "util output": icons8_output_20,
             "util input": icons8_input_20,
             "util console": icons8_system_task_20,
@@ -969,7 +970,7 @@ class ShadowTree:
             if node.type.startswith("elem ") and node.type != "elem point":
                 image = self.renderer.make_raster(
                     node,
-                    node.bounds,
+                    node.paint_bounds,
                     width=self.iconsize,
                     height=self.iconsize,
                     bitmap=True,
@@ -1021,6 +1022,8 @@ class ShadowTree:
         if drawmode & DRAW_MODE_ICONS != 0:
             return
         if self._freeze:
+            return
+        if node is None:
             return
         try:
             item = node.item
