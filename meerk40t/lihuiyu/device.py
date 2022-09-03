@@ -950,6 +950,439 @@ class LihuiyuDriver(Parameters):
         if blob_type == "egv":
             self(data)
 
+    def move_abs(self, x, y):
+        x, y = self.service.physical_to_device_position(x, y)
+        self.rapid_mode()
+        self._move_absolute(int(x), int(y))
+
+    def move_rel(self, dx, dy):
+        dx, dy = self.service.physical_to_device_length(dx, dy)
+        self.rapid_mode()
+        self._move_relative(dx, dy)
+
+    def dwell(self, time_in_ms):
+        self.program_mode()
+        self.raster_mode()
+        self.wait_finish()
+        self.laser_on()  # This can't be sent early since these are timed operations.
+        self.wait(time_in_ms)
+        self.laser_off()
+
+    def set_speed(self, speed=None):
+        if self.speed != speed:
+            self.speed = speed
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def set_d_ratio(self, d_ratio=None):
+        if self.dratio != d_ratio:
+            self.dratio = d_ratio
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def set_acceleration(self, accel=None):
+        if self.acceleration != accel:
+            self.acceleration = accel
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def set_step(self, step_x=None, step_y=None):
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def laser_off(self):
+        if not self.laser:
+            return False
+        if self.state == DRIVER_STATE_RAPID:
+            self(b"I")
+            self(self.CODE_LASER_OFF)
+            self(b"S1P\n")
+            if not self.service.autolock:
+                self(b"IS2P\n")
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+            self(self.CODE_LASER_OFF)
+        elif self.state == DRIVER_STATE_FINISH:
+            self(self.CODE_LASER_OFF)
+            self(b"N")
+        self.laser = False
+        return True
+
+    def laser_on(self):
+        if self.laser:
+            return False
+        if self.state == DRIVER_STATE_RAPID:
+            self(b"I")
+            self(self.CODE_LASER_ON)
+            self(b"S1P\n")
+            if not self.service.autolock:
+                self(b"IS2P\n")
+        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+            self(self.CODE_LASER_ON)
+        elif self.state == DRIVER_STATE_FINISH:
+            self(self.CODE_LASER_ON)
+            self(b"N")
+        self.laser = True
+        return True
+
+    def rapid_mode(self, *values):
+        if self.state == DRIVER_STATE_RAPID:
+            return
+        if self.state == DRIVER_STATE_FINISH:
+            self(b"S1P\n")
+            if not self.service.autolock:
+                self(b"IS2P\n")
+        elif self.state in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+            DRIVER_STATE_MODECHANGE,
+        ):
+            self(b"FNSE-\n")
+            self.laser = False
+        self.state = DRIVER_STATE_RAPID
+        self.service.signal("driver;mode", self.state)
+
+    def finished_mode(self, *values):
+        if self.state == DRIVER_STATE_FINISH:
+            return
+        if self.state in (
+            DRIVER_STATE_PROGRAM,
+            DRIVER_STATE_RASTER,
+            DRIVER_STATE_MODECHANGE,
+        ):
+            self(b"@NSE")
+            self.laser = False
+        elif self.state == DRIVER_STATE_RAPID:
+            self(b"I")
+        self.state = DRIVER_STATE_FINISH
+        self.service.signal("driver;mode", self.state)
+
+    def raster_mode(self, *values):
+        """
+        Raster mode runs in either `G0xx` stepping mode or NSE stepping but is only intended to move horizontal or
+        vertical rastering, usually at a high speed. Accel twitches are required for this mode.
+
+        @param values:
+        @return:
+        """
+        if self.state == DRIVER_STATE_RASTER:
+            return
+        self.finished_mode()
+        self.program_mode()
+
+    def program_mode(self, *values, dx=0, dy=0):
+        """
+        Vector Mode implies but doesn't discount rastering. Twitches are used if twitches is set to True.
+
+        @param values: passed information from the driver command
+        @param dx: change in dx that should be made while switching to program mode.
+        @param dy: change in dy that should be made while switching to program mode.
+        @return:
+        """
+        if self.state == DRIVER_STATE_PROGRAM:
+            return
+        self.finished_mode()
+
+        instance_step = 0
+        self.step_index = 0
+        self.step = self.raster_step_x
+        self.step_value_set = 0
+        if self.settings.get("_raster_alt", False):
+            pass
+        elif self.service.nse_raster and not self.service.nse_stepraster:
+            pass
+        else:
+            self.step_value_set = int(round(self.step))
+            instance_step = self.step_value_set
+
+        suffix_c = None
+        if (
+            not self.service.twitches or self.settings.get("_force_twitchless", False)
+        ) and not self.step:
+            suffix_c = True
+        if self._request_leftward is not None:
+            self._leftward = self._request_leftward
+            self._request_leftward = None
+        if self._request_topward is not None:
+            self._topward = self._request_topward
+            self._request_topward = None
+        if self._request_horizontal_major is not None:
+            self._horizontal_major = self._request_horizontal_major
+            self._request_horizontal_major = None
+        if self.service.strict:
+            # Override requested or current values only use core initial values.
+            self._leftward = False
+            self._topward = False
+            self._horizontal_major = False
+
+        speed_code = LaserSpeed(
+            self.service.board,
+            self.speed,
+            instance_step,
+            d_ratio=self.implicit_d_ratio,
+            acceleration=self.implicit_accel,
+            fix_limit=True,
+            fix_lows=True,
+            suffix_c=suffix_c,
+            fix_speeds=self.service.fix_speeds,
+            raster_horizontal=self._horizontal_major,
+        ).speedcode
+        speed_code = bytes(speed_code, "utf8")
+        self(speed_code)
+        self._goto_xy(dx, dy)
+        self(b"N")
+        self(self._code_declare_directions())
+        self(b"S1E")
+        if self.step:
+            self.state = DRIVER_STATE_RASTER
+        else:
+            self.state = DRIVER_STATE_PROGRAM
+        self.service.signal("driver;mode", self.state)
+
+    def home(self, *values):
+        self.rapid_mode()
+        self(b"IPP\n")
+        old_current = self.service.current
+        self.native_x = 0
+        self.native_y = 0
+        self._reset_modes()
+        self.state = DRIVER_STATE_RAPID
+        adjust_x = self.service.home_x
+        adjust_y = self.service.home_y
+        try:
+            adjust_x = values[0]
+            adjust_y = values[1]
+        except IndexError:
+            pass
+        adjust_x, adjust_y = self.service.physical_to_device_position(
+            adjust_x, adjust_y
+        )
+        if adjust_x != 0 or adjust_y != 0:
+            # Perform post home adjustment.
+            self._move_relative(adjust_x, adjust_y)
+            # Erase adjustment
+            self.native_x = 0
+            self.native_y = 0
+
+        self.service.signal("driver;mode", self.state)
+
+        new_current = self.service.current
+        self.service.signal(
+            "driver;position",
+            (old_current[0], old_current[1], new_current[0], new_current[1]),
+        )
+
+    def lock_rail(self):
+        self.rapid_mode()
+        self(b"IS1P\n")
+
+    def unlock_rail(self, abort=False):
+        self.rapid_mode()
+        self(b"IS2P\n")
+
+    def abort(self):
+        self(b"I\n")
+
+    @property
+    def is_left(self):
+        return self._x_engaged and not self._y_engaged and self._leftward
+
+    @property
+    def is_right(self):
+        return self._x_engaged and not self._y_engaged and not self._leftward
+
+    @property
+    def is_top(self):
+        return not self._x_engaged and self._y_engaged and self._topward
+
+    @property
+    def is_bottom(self):
+        return not self._x_engaged and self._y_engaged and not self._topward
+
+    @property
+    def is_angle(self):
+        return self._y_engaged and self._x_engaged
+
+    ######################
+    # ORIGINAL DRIVER CODE
+    ######################
+
+    def laser_disable(self, *values):
+        self.laser_enabled = False
+
+    def laser_enable(self, *values):
+        self.laser_enabled = True
+
+    def plot(self, plot):
+        """
+        @param plot:
+        @return:
+        """
+        if isinstance(plot, InputCut):
+            self.plot_start()
+            self.wait_finish()
+            # We do not have any GPIO-output abilities
+        elif isinstance(plot, OutputCut):
+            self.plot_start()
+            self.wait_finish()
+            # We do not have any GPIO-input abilities
+        elif isinstance(plot, DwellCut):
+            self.plot_start()
+            self.rapid_mode()
+            start = plot.start
+            self.move_abs(start[0], start[1])
+            self.wait_finish()
+            self.dwell(plot.dwell_time)
+        elif isinstance(plot, WaitCut):
+            self.plot_start()
+            self.wait_finish()
+            self.wait(plot.dwell_time)
+        elif isinstance(plot, HomeCut):
+            self.plot_start()
+            self.wait_finish()
+            self.home(plot.start[0], plot.start[1])
+        elif isinstance(plot, GotoCut):
+            self.plot_start()
+            start = plot.start
+            self.wait_finish()
+            self._move_absolute(self.origin_x + start[0], self.origin_y + start[1])
+        elif isinstance(plot, SetOriginCut):
+            self.plot_start()
+            if plot.set_current:
+                x = self.native_x
+                y = self.native_y
+            else:
+                x, y = plot.start
+            self.set_origin(x, y)
+        else:
+            self.plot_planner.push(plot)
+            # Mirror the stuff
+            self.dummy_planner.push(plot)
+
+    def plot_start(self):
+        self.total_steps = 0
+        self.current_steps = 0
+        if self.plot_data is None:
+            self.plot_data = self.plot_planner.gen()
+            skip_calc = True
+            if not skip_calc:
+                assessment_start = time.time()
+                dummy_data = list(self.dummy_planner.gen())
+                self.total_steps += len(dummy_data)
+                self.dummy_planner.clear()
+                # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+
+        self.plotplanner_process()
+
+    def set(self, attribute, value):
+        if attribute == "power":
+            self.set_power(value)
+        if attribute == "ppi":
+            self.set_power(value)
+        if attribute == "pwm":
+            self.set_power(value)
+        if attribute == "overscan":
+            self.set_overscan(value)
+        if attribute == "relative":
+            self.is_relative = value
+
+    def set_power(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def set_ppi(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def set_pwm(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def set_overscan(self, overscan=None):
+        self.overscan = overscan
+
+    def set_origin(self, x, y):
+        """
+        This should set the origin position.
+
+        @param x:
+        @param y:
+        @return:
+        """
+        self.origin_x = x
+        self.origin_y = y
+
+    def wait(self, t):
+        time.sleep(float(t) / 1000.0)
+
+    def wait_finish(self, *values):
+        """Adds a temp hold requirement if the pipe has any data."""
+        self.temp_holds.append(lambda: len(self.out_pipe) != 0)
+
+    def status(self):
+        parts = list()
+        parts.append(f"x={self.native_x}")
+        parts.append(f"y={self.native_y}")
+        parts.append(f"speed={self.speed}")
+        parts.append(f"power={self.power}")
+        status = ";".join(parts)
+        self.service.signal("driver;status", status)
+
+    def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooled cycle.
+
+        @param function:
+        @return:
+        """
+        function()
+
+    def beep(self):
+        self.service("beep\n")
+
+    def console(self, value):
+        self.service(value)
+
+    def signal(self, signal, *args):
+        """
+        This asks that this signal be broadcast.
+
+        @param signal:
+        @param args:
+        @return:
+        """
+        self.service.signal(signal, *args)
+
+    def set_prop(self, mask):
+        self.properties |= mask
+
+    def unset_prop(self, mask):
+        self.properties &= ~mask
+
+    def is_prop(self, mask):
+        return bool(self.properties & mask)
+
+    def toggle_prop(self, mask):
+        if self.is_prop(mask):
+            self.unset_prop(mask)
+        else:
+            self.set_prop(mask)
+
+    ######################
+    # PROTECTED DRIVER CODE
+    ######################
+
     def _cut(self, x, y):
         self._goto(x, y, True)
 
@@ -1005,24 +1438,6 @@ class LihuiyuDriver(Parameters):
         self(b"SE")
         self(self._code_declare_directions())
         self.state = original_state
-
-    def move_abs(self, x, y):
-        x, y = self.service.physical_to_device_position(x, y)
-        self.rapid_mode()
-        self._move_absolute(int(x), int(y))
-
-    def move_rel(self, dx, dy):
-        dx, dy = self.service.physical_to_device_length(dx, dy)
-        self.rapid_mode()
-        self._move_relative(dx, dy)
-
-    def dwell(self, time_in_ms):
-        self.program_mode()
-        self.raster_mode()
-        self.wait_finish()
-        self.laser_on()  # This can't be sent early since these are timed operations.
-        self.wait(time_in_ms)
-        self.laser_off()
 
     def _move(self, x, y):
         self._goto(x, y, False)
@@ -1147,82 +1562,6 @@ class LihuiyuDriver(Parameters):
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
-    def set_speed(self, speed=None):
-        if self.speed != speed:
-            self.speed = speed
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def set_d_ratio(self, d_ratio=None):
-        if self.dratio != d_ratio:
-            self.dratio = d_ratio
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def set_acceleration(self, accel=None):
-        if self.acceleration != accel:
-            self.acceleration = accel
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def set_step(self, step_x=None, step_y=None):
-        if self.raster_step_x != step_x or self.raster_step_y != step_y:
-            self.raster_step_x = step_x
-            self.raster_step_y = step_y
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def laser_off(self):
-        if not self.laser:
-            return False
-        if self.state == DRIVER_STATE_RAPID:
-            self(b"I")
-            self(self.CODE_LASER_OFF)
-            self(b"S1P\n")
-            if not self.service.autolock:
-                self(b"IS2P\n")
-        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-            self(self.CODE_LASER_OFF)
-        elif self.state == DRIVER_STATE_FINISH:
-            self(self.CODE_LASER_OFF)
-            self(b"N")
-        self.laser = False
-        return True
-
-    def laser_on(self):
-        if self.laser:
-            return False
-        if self.state == DRIVER_STATE_RAPID:
-            self(b"I")
-            self(self.CODE_LASER_ON)
-            self(b"S1P\n")
-            if not self.service.autolock:
-                self(b"IS2P\n")
-        elif self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-            self(self.CODE_LASER_ON)
-        elif self.state == DRIVER_STATE_FINISH:
-            self(self.CODE_LASER_ON)
-            self(b"N")
-        self.laser = True
-        return True
-
-    def rapid_mode(self, *values):
-        if self.state == DRIVER_STATE_RAPID:
-            return
-        if self.state == DRIVER_STATE_FINISH:
-            self(b"S1P\n")
-            if not self.service.autolock:
-                self(b"IS2P\n")
-        elif self.state in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_RASTER,
-            DRIVER_STATE_MODECHANGE,
-        ):
-            self(b"FNSE-\n")
-            self.laser = False
-        self.state = DRIVER_STATE_RAPID
-        self.service.signal("driver;mode", self.state)
-
     def _mode_shift_on_the_fly(self, dx=0, dy=0):
         """
         Mode-shift on the fly changes the current modes while in programmed or raster mode
@@ -1240,103 +1579,6 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         self.state = DRIVER_STATE_RAPID
         self.program_mode(dx, dy)
-
-    def finished_mode(self, *values):
-        if self.state == DRIVER_STATE_FINISH:
-            return
-        if self.state in (
-            DRIVER_STATE_PROGRAM,
-            DRIVER_STATE_RASTER,
-            DRIVER_STATE_MODECHANGE,
-        ):
-            self(b"@NSE")
-            self.laser = False
-        elif self.state == DRIVER_STATE_RAPID:
-            self(b"I")
-        self.state = DRIVER_STATE_FINISH
-        self.service.signal("driver;mode", self.state)
-
-    def raster_mode(self, *values):
-        """
-        Raster mode runs in either `G0xx` stepping mode or NSE stepping but is only intended to move horizontal or
-        vertical rastering, usually at a high speed. Accel twitches are required for this mode.
-
-        @param values:
-        @return:
-        """
-        if self.state == DRIVER_STATE_RASTER:
-            return
-        self.finished_mode()
-        self.program_mode()
-
-    def program_mode(self, *values, dx=0, dy=0):
-        """
-        Vector Mode implies but doesn't discount rastering. Twitches are used if twitches is set to True.
-
-        @param values: passed information from the driver command
-        @param dx: change in dx that should be made while switching to program mode.
-        @param dy: change in dy that should be made while switching to program mode.
-        @return:
-        """
-        if self.state == DRIVER_STATE_PROGRAM:
-            return
-        self.finished_mode()
-
-        instance_step = 0
-        self.step_index = 0
-        self.step = self.raster_step_x
-        self.step_value_set = 0
-        if self.settings.get("_raster_alt", False):
-            pass
-        elif self.service.nse_raster and not self.service.nse_stepraster:
-            pass
-        else:
-            self.step_value_set = int(round(self.step))
-            instance_step = self.step_value_set
-
-        suffix_c = None
-        if (
-            not self.service.twitches or self.settings.get("_force_twitchless", False)
-        ) and not self.step:
-            suffix_c = True
-        if self._request_leftward is not None:
-            self._leftward = self._request_leftward
-            self._request_leftward = None
-        if self._request_topward is not None:
-            self._topward = self._request_topward
-            self._request_topward = None
-        if self._request_horizontal_major is not None:
-            self._horizontal_major = self._request_horizontal_major
-            self._request_horizontal_major = None
-        if self.service.strict:
-            # Override requested or current values only use core initial values.
-            self._leftward = False
-            self._topward = False
-            self._horizontal_major = False
-
-        speed_code = LaserSpeed(
-            self.service.board,
-            self.speed,
-            instance_step,
-            d_ratio=self.implicit_d_ratio,
-            acceleration=self.implicit_accel,
-            fix_limit=True,
-            fix_lows=True,
-            suffix_c=suffix_c,
-            fix_speeds=self.service.fix_speeds,
-            raster_horizontal=self._horizontal_major,
-        ).speedcode
-        speed_code = bytes(speed_code, "utf8")
-        self(speed_code)
-        self._goto_xy(dx, dy)
-        self(b"N")
-        self(self._code_declare_directions())
-        self(b"S1E")
-        if self.step:
-            self.state = DRIVER_STATE_RASTER
-        else:
-            self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
 
     def _h_switch(self, dy: float):
         """
@@ -1500,50 +1742,6 @@ class LihuiyuDriver(Parameters):
         self.laser = False
         self.step_index += 1
 
-    def home(self, *values):
-        self.rapid_mode()
-        self(b"IPP\n")
-        old_current = self.service.current
-        self.native_x = 0
-        self.native_y = 0
-        self._reset_modes()
-        self.state = DRIVER_STATE_RAPID
-        adjust_x = self.service.home_x
-        adjust_y = self.service.home_y
-        try:
-            adjust_x = values[0]
-            adjust_y = values[1]
-        except IndexError:
-            pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y
-        )
-        if adjust_x != 0 or adjust_y != 0:
-            # Perform post home adjustment.
-            self._move_relative(adjust_x, adjust_y)
-            # Erase adjustment
-            self.native_x = 0
-            self.native_y = 0
-
-        self.service.signal("driver;mode", self.state)
-
-        new_current = self.service.current
-        self.service.signal(
-            "driver;position",
-            (old_current[0], old_current[1], new_current[0], new_current[1]),
-        )
-
-    def lock_rail(self):
-        self.rapid_mode()
-        self(b"IS1P\n")
-
-    def unlock_rail(self, abort=False):
-        self.rapid_mode()
-        self(b"IS2P\n")
-
-    def abort(self):
-        self(b"I\n")
-
     def _reset_modes(self):
         self.laser = False
         self._request_leftward = None
@@ -1635,200 +1833,6 @@ class LihuiyuDriver(Parameters):
             self._x_engaged = False
             self._y_engaged = True
             return x_dir + y_dir
-
-    @property
-    def is_left(self):
-        return self._x_engaged and not self._y_engaged and self._leftward
-
-    @property
-    def is_right(self):
-        return self._x_engaged and not self._y_engaged and not self._leftward
-
-    @property
-    def is_top(self):
-        return not self._x_engaged and self._y_engaged and self._topward
-
-    @property
-    def is_bottom(self):
-        return not self._x_engaged and self._y_engaged and not self._topward
-
-    @property
-    def is_angle(self):
-        return self._y_engaged and self._x_engaged
-
-    ######################
-    # ORIGINAL DRIVER CODE
-    ######################
-
-    def laser_disable(self, *values):
-        self.laser_enabled = False
-
-    def laser_enable(self, *values):
-        self.laser_enabled = True
-
-    def plot(self, plot):
-        """
-        @param plot:
-        @return:
-        """
-        if isinstance(plot, InputCut):
-            self.plot_start()
-            self.wait_finish()
-            # We do not have any GPIO-output abilities
-        elif isinstance(plot, OutputCut):
-            self.plot_start()
-            self.wait_finish()
-            # We do not have any GPIO-input abilities
-        elif isinstance(plot, DwellCut):
-            self.plot_start()
-            self.rapid_mode()
-            start = plot.start
-            self.move_abs(start[0], start[1])
-            self.wait_finish()
-            self.dwell(plot.dwell_time)
-        elif isinstance(plot, WaitCut):
-            self.plot_start()
-            self.wait_finish()
-            self.wait(plot.dwell_time)
-        elif isinstance(plot, HomeCut):
-            self.plot_start()
-            self.wait_finish()
-            self.home(plot.start[0], plot.start[1])
-        elif isinstance(plot, GotoCut):
-            self.plot_start()
-            start = plot.start
-            self.wait_finish()
-            self._move_absolute(self.origin_x + start[0], self.origin_y + start[1])
-        elif isinstance(plot, SetOriginCut):
-            self.plot_start()
-            if plot.set_current:
-                x = self.native_x
-                y = self.native_y
-            else:
-                x, y = plot.start
-            self.set_origin(x, y)
-        else:
-            self.plot_planner.push(plot)
-            # Mirror the stuff
-            self.dummy_planner.push(plot)
-
-    def plot_start(self):
-        self.total_steps = 0
-        self.current_steps = 0
-        if self.plot_data is None:
-            self.plot_data = self.plot_planner.gen()
-            skip_calc = True
-            if not skip_calc:
-                assessment_start = time.time()
-                dummy_data = list(self.dummy_planner.gen())
-                self.total_steps += len(dummy_data)
-                self.dummy_planner.clear()
-                # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
-
-        self.plotplanner_process()
-
-    def set(self, attribute, value):
-        if attribute == "power":
-            self.set_power(value)
-        if attribute == "ppi":
-            self.set_power(value)
-        if attribute == "pwm":
-            self.set_power(value)
-        if attribute == "overscan":
-            self.set_overscan(value)
-        if attribute == "relative":
-            self.is_relative = value
-
-    def set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def set_ppi(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def set_pwm(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def set_overscan(self, overscan=None):
-        self.overscan = overscan
-
-    def set_origin(self, x, y):
-        """
-        This should set the origin position.
-
-        @param x:
-        @param y:
-        @return:
-        """
-        self.origin_x = x
-        self.origin_y = y
-
-    def wait(self, t):
-        time.sleep(float(t) / 1000.0)
-
-    def wait_finish(self, *values):
-        """Adds a temp hold requirement if the pipe has any data."""
-        self.temp_holds.append(lambda: len(self.out_pipe) != 0)
-
-    def status(self):
-        parts = list()
-        parts.append(f"x={self.native_x}")
-        parts.append(f"y={self.native_y}")
-        parts.append(f"speed={self.speed}")
-        parts.append(f"power={self.power}")
-        status = ";".join(parts)
-        self.service.signal("driver;status", status)
-
-    def set_prop(self, mask):
-        self.properties |= mask
-
-    def unset_prop(self, mask):
-        self.properties &= ~mask
-
-    def is_prop(self, mask):
-        return bool(self.properties & mask)
-
-    def toggle_prop(self, mask):
-        if self.is_prop(mask):
-            self.unset_prop(mask)
-        else:
-            self.set_prop(mask)
-
-    def function(self, function):
-        """
-        This command asks that this function be executed at the appropriate time within the spooled cycle.
-
-        @param function:
-        @return:
-        """
-        function()
-
-    def beep(self):
-        self.service("beep\n")
-
-    def console(self, value):
-        self.service(value)
-
-    def signal(self, signal, *args):
-        """
-        This asks that this signal be broadcast.
-
-        @param signal:
-        @param args:
-        @return:
-        """
-        self.service.signal(signal, *args)
 
 
 class LihuiyuController:
