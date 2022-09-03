@@ -460,9 +460,24 @@ class BalorDriver:
         self.connection.wait_finished()
 
     def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooling cycle.
+
+        @param function:
+        @return:
+        """
         function()
 
     def wait(self, time_in_ms):
+        """
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
+
+        @param time_in_ms:
+        @return:
+        """
         time.sleep(time_in_ms * 1000.0)
 
     def console(self, value):
@@ -523,6 +538,18 @@ class BalorDriver:
         @return:
         """
         pass
+
+    def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period. This could be done in a series of commands,
+        move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
+        commands so calling dwell is preferred.
+
+        @param time_in_ms:
+        @return:
+        """
+        self.pulse(time_in_ms)
+
 
     def pulse(self, pulse_time):
         con = self.connection
