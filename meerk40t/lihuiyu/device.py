@@ -361,7 +361,7 @@ class LihuiyuDevice(Service, ViewPort):
                     )
             else:
                 try:
-                    self.driver.set_power(ppi)
+                    self.driver._set_power(ppi)
                 except ValueError:
                     pass
 
@@ -1171,39 +1171,15 @@ class LihuiyuDriver(Parameters):
 
     def set(self, attribute, value):
         if attribute == "power":
-            self.set_power(value)
+            self._set_power(value)
         if attribute == "ppi":
-            self.set_power(value)
+            self._set_power(value)
         if attribute == "pwm":
-            self.set_power(value)
+            self._set_power(value)
         if attribute == "overscan":
-            self.set_overscan(value)
+            self._set_overscan(value)
         if attribute == "relative":
             self.is_relative = value
-
-    def set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def set_ppi(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def set_pwm(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def set_overscan(self, overscan=None):
-        self.overscan = overscan
 
     def set_origin(self, x, y):
         """
@@ -1305,7 +1281,7 @@ class LihuiyuDriver(Parameters):
                 elif on & PLOT_SETTING:  # Plot planner settings have changed.
                     p_set = Parameters(self.plot_planner.settings)
                     if p_set.power != self.power:
-                        self.set_power(p_set.power)
+                        self._set_power(p_set.power)
                     if (
                         p_set.raster_step_x != self.raster_step_x
                         or p_set.raster_step_y != self.raster_step_y
@@ -1382,6 +1358,30 @@ class LihuiyuDriver(Parameters):
             self._goto_octent(dx, dy, on & 1)
         self.plot_data = None
         return False
+
+    def _set_power(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def _set_ppi(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def _set_pwm(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def _set_overscan(self, overscan=None):
+        self.overscan = overscan
 
     def _cut(self, x, y):
         self._goto(x, y, True)
