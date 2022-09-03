@@ -822,109 +822,6 @@ class LihuiyuDriver(Parameters):
                 return True
         return False
 
-    def plotplanner_process(self):
-        """
-        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
-        movements. Or updating the laser state based on the settings of the cutcode.
-
-        @return:
-        """
-        if self.plot_data is None:
-            return False
-        for x, y, on in self.plot_data:
-            self.current_steps += 1
-            while self.hold_work(0):
-                time.sleep(0.05)
-            sx = self.native_x
-            sy = self.native_y
-            # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
-            on = int(on)
-            if on > 1:
-                # Special Command.
-                if on & PLOT_FINISH:  # Plot planner is ending.
-                    self.rapid_mode()
-                    break
-                elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                    p_set = Parameters(self.plot_planner.settings)
-                    if p_set.power != self.power:
-                        self.set_power(p_set.power)
-                    if (
-                        p_set.raster_step_x != self.raster_step_x
-                        or p_set.raster_step_y != self.raster_step_y
-                        or p_set.speed != self.speed
-                        or self.implicit_d_ratio != p_set.implicit_d_ratio
-                        or self.implicit_accel != p_set.implicit_accel
-                    ):
-                        self.set_speed(p_set.speed)
-                        self.set_step(p_set.raster_step_x, p_set.raster_step_y)
-                        self.set_acceleration(p_set.implicit_accel)
-                        self.set_d_ratio(p_set.implicit_d_ratio)
-                    self.settings.update(p_set.settings)
-                elif on & PLOT_AXIS:  # Major Axis.
-                    # 0 means X Major / Horizontal.
-                    # 1 means Y Major / Vertical
-                    self._request_horizontal_major = bool(x == 0)
-                elif on & PLOT_DIRECTION:
-                    # -1: Moving Left -x
-                    # 1: Moving Right. +x
-                    self._request_leftward = bool(x != 1)
-                    # -1: Moving Bottom +y
-                    # 1: Moving Top. -y
-                    self._request_topward = bool(y != 1)
-                elif on & (
-                    PLOT_RAPID | PLOT_JOG
-                ):  # Plot planner requests position change.
-                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
-                        # Perform a rapid position change. Always perform this for raster moves.
-                        # DRIVER_STATE_RASTER should call this code as well.
-                        self.rapid_mode()
-                        self._move_absolute(x, y)
-                    else:
-                        # Jog is performable and requested. # We have not flagged our direction or state.
-                        self._jog_absolute(x, y, mode=self.service.opt_jog_mode)
-                continue
-            dx = x - sx
-            dy = y - sy
-            step_x = self.raster_step_x
-            step_y = self.raster_step_y
-            if step_x == 0 and step_y == 0:
-                # vector mode
-                self.program_mode()
-            else:
-                self.raster_mode()
-                if self._horizontal_major:
-                    # Horizontal Rastering.
-                    if self.service.nse_raster or self.settings.get(
-                        "_raster_alt", False
-                    ):
-                        # Alt-Style Raster
-                        if (dx > 0 and self._leftward) or (
-                            dx < 0 and not self._leftward
-                        ):
-                            self._h_switch(dy)
-                    else:
-                        # Default Raster
-                        if dy != 0:
-                            self._h_switch_g(dy)
-                else:
-                    # Vertical Rastering.
-                    if self.service.nse_raster or self.settings.get(
-                        "_raster_alt", False
-                    ):
-                        # Alt-Style Raster
-                        if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
-                            self._v_switch(dx)
-                    else:
-                        # Default Raster
-                        if dx != 0:
-                            self._v_switch_g(dx)
-                # Update dx, dy (if changed by switches)
-                dx = x - self.native_x
-                dy = y - self.native_y
-            self._goto_octent(dx, dy, on & 1)
-        self.plot_data = None
-        return False
-
     def pause(self, *values):
         self(b"~PN!\n~")
         self.is_paused = True
@@ -1205,10 +1102,6 @@ class LihuiyuDriver(Parameters):
     def is_angle(self):
         return self._y_engaged and self._x_engaged
 
-    ######################
-    # ORIGINAL DRIVER CODE
-    ######################
-
     def laser_disable(self, *values):
         self.laser_enabled = False
 
@@ -1274,7 +1167,7 @@ class LihuiyuDriver(Parameters):
                 self.dummy_planner.clear()
                 # print ("m2nano-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
-        self.plotplanner_process()
+        self._plotplanner_process()
 
     def set(self, attribute, value):
         if attribute == "power":
@@ -1364,6 +1257,10 @@ class LihuiyuDriver(Parameters):
         """
         self.service.signal(signal, *args)
 
+    ######################
+    # Property IO
+    ######################
+
     def set_prop(self, mask):
         self.properties |= mask
 
@@ -1382,6 +1279,109 @@ class LihuiyuDriver(Parameters):
     ######################
     # PROTECTED DRIVER CODE
     ######################
+
+    def _plotplanner_process(self):
+        """
+        Processes any data in the plot planner. Getting all relevant (x,y,on) plot values and performing the cardinal
+        movements. Or updating the laser state based on the settings of the cutcode.
+
+        @return:
+        """
+        if self.plot_data is None:
+            return False
+        for x, y, on in self.plot_data:
+            self.current_steps += 1
+            while self.hold_work(0):
+                time.sleep(0.05)
+            sx = self.native_x
+            sy = self.native_y
+            # print("x: %s, y: %s -- c: %s, %s" % (str(x), str(y), str(sx), str(sy)))
+            on = int(on)
+            if on > 1:
+                # Special Command.
+                if on & PLOT_FINISH:  # Plot planner is ending.
+                    self.rapid_mode()
+                    break
+                elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                    p_set = Parameters(self.plot_planner.settings)
+                    if p_set.power != self.power:
+                        self.set_power(p_set.power)
+                    if (
+                        p_set.raster_step_x != self.raster_step_x
+                        or p_set.raster_step_y != self.raster_step_y
+                        or p_set.speed != self.speed
+                        or self.implicit_d_ratio != p_set.implicit_d_ratio
+                        or self.implicit_accel != p_set.implicit_accel
+                    ):
+                        self.set_speed(p_set.speed)
+                        self.set_step(p_set.raster_step_x, p_set.raster_step_y)
+                        self.set_acceleration(p_set.implicit_accel)
+                        self.set_d_ratio(p_set.implicit_d_ratio)
+                    self.settings.update(p_set.settings)
+                elif on & PLOT_AXIS:  # Major Axis.
+                    # 0 means X Major / Horizontal.
+                    # 1 means Y Major / Vertical
+                    self._request_horizontal_major = bool(x == 0)
+                elif on & PLOT_DIRECTION:
+                    # -1: Moving Left -x
+                    # 1: Moving Right. +x
+                    self._request_leftward = bool(x != 1)
+                    # -1: Moving Bottom +y
+                    # 1: Moving Top. -y
+                    self._request_topward = bool(y != 1)
+                elif on & (
+                    PLOT_RAPID | PLOT_JOG
+                ):  # Plot planner requests position change.
+                    if on & PLOT_RAPID or self.state != DRIVER_STATE_PROGRAM:
+                        # Perform a rapid position change. Always perform this for raster moves.
+                        # DRIVER_STATE_RASTER should call this code as well.
+                        self.rapid_mode()
+                        self._move_absolute(x, y)
+                    else:
+                        # Jog is performable and requested. # We have not flagged our direction or state.
+                        self._jog_absolute(x, y, mode=self.service.opt_jog_mode)
+                continue
+            dx = x - sx
+            dy = y - sy
+            step_x = self.raster_step_x
+            step_y = self.raster_step_y
+            if step_x == 0 and step_y == 0:
+                # vector mode
+                self.program_mode()
+            else:
+                self.raster_mode()
+                if self._horizontal_major:
+                    # Horizontal Rastering.
+                    if self.service.nse_raster or self.settings.get(
+                        "_raster_alt", False
+                    ):
+                        # Alt-Style Raster
+                        if (dx > 0 and self._leftward) or (
+                            dx < 0 and not self._leftward
+                        ):
+                            self._h_switch(dy)
+                    else:
+                        # Default Raster
+                        if dy != 0:
+                            self._h_switch_g(dy)
+                else:
+                    # Vertical Rastering.
+                    if self.service.nse_raster or self.settings.get(
+                        "_raster_alt", False
+                    ):
+                        # Alt-Style Raster
+                        if (dy > 0 and self._topward) or (dy < 0 and not self._topward):
+                            self._v_switch(dx)
+                    else:
+                        # Default Raster
+                        if dx != 0:
+                            self._v_switch_g(dx)
+                # Update dx, dy (if changed by switches)
+                dx = x - self.native_x
+                dy = y - self.native_y
+            self._goto_octent(dx, dy, on & 1)
+        self.plot_data = None
+        return False
 
     def _cut(self, x, y):
         self._goto(x, y, True)
