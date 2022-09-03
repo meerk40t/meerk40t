@@ -689,36 +689,6 @@ class MoshiDriver(Parameters):
             move_y = 0
         self._start_program_mode(offset_x, offset_y, move_x, move_y)
 
-    def _start_program_mode(
-        self,
-        offset_x,
-        offset_y,
-        move_x=None,
-        move_y=None,
-        speed=None,
-        normal_speed=None,
-    ):
-        if move_x is None:
-            move_x = offset_x
-        if move_y is None:
-            move_y = offset_y
-        if speed is None and self.speed is not None:
-            speed = int(self.speed)
-        if speed is None:
-            speed = 20
-        if normal_speed is None:
-            normal_speed = speed
-
-        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
-        self.program.vector_speed(speed, normal_speed)
-        self.program.set_offset(0, offset_x, offset_y)
-        self.state = DRIVER_STATE_PROGRAM
-        self.service.signal("driver;mode", self.state)
-
-        self.program.move_abs(move_x, move_y)
-        self.native_x = move_x
-        self.native_y = move_y
-
     def raster_mode(self, *values):
         """
         Ensure the driver is currently in a raster program state. If it is not in a raster program state
@@ -750,26 +720,6 @@ class MoshiDriver(Parameters):
             move_y = 0
         self._start_raster_mode(offset_x, offset_y, move_x, move_y)
 
-    def _start_raster_mode(
-        self, offset_x, offset_y, move_x=None, move_y=None, speed=None
-    ):
-        if move_x is None:
-            move_x = offset_x
-        if move_y is None:
-            move_y = offset_y
-        if speed is None and self.speed is not None:
-            speed = int(self.speed)
-        if speed is None:
-            speed = 160
-        self.program.raster_speed(speed)
-        self.program.set_offset(0, offset_x, offset_y)
-        self.state = DRIVER_STATE_RASTER
-        self.service.signal("driver;mode", self.state)
-
-        self.program.move_abs(move_x, move_y)
-        self.native_x = move_x
-        self.native_y = move_y
-
     def set(self, key, value):
         """
         Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
@@ -791,35 +741,6 @@ class MoshiDriver(Parameters):
             self._set_speed(value)
         if key == "step":
             self._set_step(value)
-
-    def _set_power(self, power=1000.0):
-        self.power = power
-        if self.power > 1000.0:
-            self.power = 1000.0
-        if self.power <= 0:
-            self.power = 0.0
-
-    def _set_overscan(self, overscan=None):
-        self.overscan = overscan
-
-    def _set_speed(self, speed=None):
-        """
-        Set the speed for the driver.
-        """
-        if self.speed != speed:
-            self.speed = speed
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def _set_step(self, step_x=None, step_y=None):
-        """
-        Set the raster step for the driver.
-        """
-        if self.raster_step_x != step_x or self.raster_step_y != step_y:
-            self.raster_step_x = step_x
-            self.raster_step_y = step_y
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
 
     def set_origin(self, x, y):
         """
@@ -928,6 +849,89 @@ class MoshiDriver(Parameters):
         parts.append(f"power={self.power}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
+
+    ####################
+    # Protected Driver Functions
+    ####################
+
+    def _start_program_mode(
+        self,
+        offset_x,
+        offset_y,
+        move_x=None,
+        move_y=None,
+        speed=None,
+        normal_speed=None,
+    ):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
+        if speed is None:
+            speed = 20
+        if normal_speed is None:
+            normal_speed = speed
+
+        # Normal speed is rapid. Passing same speed so PPI isn't crazy.
+        self.program.vector_speed(speed, normal_speed)
+        self.program.set_offset(0, offset_x, offset_y)
+        self.state = DRIVER_STATE_PROGRAM
+        self.service.signal("driver;mode", self.state)
+
+        self.program.move_abs(move_x, move_y)
+        self.native_x = move_x
+        self.native_y = move_y
+
+    def _start_raster_mode(
+        self, offset_x, offset_y, move_x=None, move_y=None, speed=None
+    ):
+        if move_x is None:
+            move_x = offset_x
+        if move_y is None:
+            move_y = offset_y
+        if speed is None and self.speed is not None:
+            speed = int(self.speed)
+        if speed is None:
+            speed = 160
+        self.program.raster_speed(speed)
+        self.program.set_offset(0, offset_x, offset_y)
+        self.state = DRIVER_STATE_RASTER
+        self.service.signal("driver;mode", self.state)
+
+        self.program.move_abs(move_x, move_y)
+        self.native_x = move_x
+        self.native_y = move_y
+
+    def _set_power(self, power=1000.0):
+        self.power = power
+        if self.power > 1000.0:
+            self.power = 1000.0
+        if self.power <= 0:
+            self.power = 0.0
+
+    def _set_overscan(self, overscan=None):
+        self.overscan = overscan
+
+    def _set_speed(self, speed=None):
+        """
+        Set the speed for the driver.
+        """
+        if self.speed != speed:
+            self.speed = speed
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def _set_step(self, step_x=None, step_y=None):
+        """
+        Set the raster step for the driver.
+        """
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
 
     def push_program(self):
         self.pipe_channel("Pushed program to output...")
