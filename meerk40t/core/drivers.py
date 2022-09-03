@@ -238,6 +238,7 @@ class Driver:
 
     def beep(self):
         """
+        Wants a system beep to be issued.
         This command asks that a beep be executed at the appropriate time within the spooled cycle.
 
         @return:

@@ -365,8 +365,7 @@ class BalorDriver:
 
     def move_abs(self, x, y):
         """
-        This is called with the actual x and y values with units. If without units we should expect to move in native
-        units.
+        Requests laser move to absolute position x, y in physical units
 
         @param x:
         @param y:
@@ -392,7 +391,7 @@ class BalorDriver:
 
     def move_rel(self, dx, dy):
         """
-        This is called with dx and dy values to move a relative amount.
+        Requests laser move relative position dx, dy in physical units
 
         @param dx:
         @param dy:
@@ -481,11 +480,18 @@ class BalorDriver:
         time.sleep(time_in_ms * 1000.0)
 
     def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
         self.service(value)
 
     def beep(self):
         """
         Wants a system beep to be issued.
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
 
         @return:
         """
