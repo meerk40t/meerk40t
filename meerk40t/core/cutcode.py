@@ -1016,8 +1016,11 @@ class GotoCut(CutObject):
 
 class SetOriginCut(CutObject):
     def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+        self.set_current = False
         if offset_point is None:
             offset_point = (0, 0)
+            self.set_current = True
+
         CutObject.__init__(
             self,
             offset_point,
@@ -1037,7 +1040,10 @@ class SetOriginCut(CutObject):
         pass
 
     def generate(self):
-        yield "set_origin", self._start_x, self._start_y
+        if self.set_current:
+            yield "set_origin"
+        else:
+            yield "set_origin", self._start_x, self._start_y
 
 
 class InputCut(CutObject):

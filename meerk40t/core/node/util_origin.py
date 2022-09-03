@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode import GotoCut, SetOriginCut
+from meerk40t.core.cutcode import SetOriginCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
@@ -113,7 +113,10 @@ class SetOriginOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        cut = SetOriginCut((self.x, self.y))
+        if self.x is None or self.y is None:
+            cut = SetOriginCut()
+        else:
+            cut = SetOriginCut((self.x, self.y))
         cut.original_op = self.type
         yield cut
 
