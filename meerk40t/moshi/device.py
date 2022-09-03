@@ -17,13 +17,14 @@ from meerk40t.kernel import (
 from ..core.cutcode import (
     CubicCut,
     DwellCut,
+    GotoCut,
     HomeCut,
     InputCut,
     LineCut,
     OutputCut,
     QuadCut,
+    SetOriginCut,
     WaitCut,
-    GotoCut, SetOriginCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner

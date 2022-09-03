@@ -4,15 +4,15 @@ from meerk40t.balormk.lmc_controller import GalvoController
 from meerk40t.core.cutcode import (
     CubicCut,
     DwellCut,
+    GotoCut,
     HomeCut,
     InputCut,
     LineCut,
     OutputCut,
     PlotCut,
     QuadCut,
-    WaitCut,
-    GotoCut,
     SetOriginCut,
+    WaitCut,
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 from meerk40t.core.plotplanner import PlotPlanner
@@ -555,7 +555,6 @@ class BalorDriver:
         @return:
         """
         self.pulse(time_in_ms)
-
 
     def pulse(self, pulse_time):
         con = self.connection

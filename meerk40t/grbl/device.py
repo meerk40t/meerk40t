@@ -13,14 +13,15 @@ from ..core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    GotoCut,
     HomeCut,
     InputCut,
     LineCut,
     OutputCut,
     PlotCut,
     QuadCut,
+    SetOriginCut,
     WaitCut,
-    GotoCut, SetOriginCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner

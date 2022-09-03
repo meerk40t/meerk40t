@@ -21,7 +21,15 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut, GotoCut, SetOriginCut
+from ..core.cutcode import (
+    DwellCut,
+    GotoCut,
+    HomeCut,
+    InputCut,
+    OutputCut,
+    SetOriginCut,
+    WaitCut,
+)
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -844,14 +852,14 @@ class LihuiyuDriver(Parameters):
 
     def reset(self):
         """
-         This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
-         deleted.
+        This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
+        deleted.
 
-         Asks that the device resets, and clears all current work.
+        Asks that the device resets, and clears all current work.
 
-         @param args:
-         @return:
-         """
+        @param args:
+        @return:
+        """
         self.service.spooler.clear_queue()
         self.plot_planner.clear()
         self.spooled_item = None
@@ -1627,7 +1635,7 @@ class LihuiyuDriver(Parameters):
         if self.service.rapid_override and (dx != 0 or dy != 0):
             # Rapid movement override. Should make programmed jogs.
             self._set_acceleration(None)
-            self._set_step(0,0)
+            self._set_step(0, 0)
             if dx != 0:
                 self.rapid_mode()
                 self._set_speed(self.service.rapid_override_speed_x)
