@@ -783,7 +783,7 @@ class GRBLDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.grbl(f"G04 S{time_in_ms * 1000.0}\r")
+        self.grbl(f"G04 S{time_in_ms / 1000.0}\r")
 
     def wait_finish(self, *values):
         """
