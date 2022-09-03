@@ -101,4 +101,4 @@ class WaitOperation(Node):
         yield wait
 
     def generate(self):
-        yield "wait", self.wait
+        yield "wait", self.wait * 1000.0
