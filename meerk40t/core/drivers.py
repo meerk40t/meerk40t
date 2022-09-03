@@ -236,6 +236,21 @@ class Driver:
         """
         function()
 
+    def beep(self):
+        """
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
+
+        @return:
+        """
+
+    def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
+
     def signal(self, signal, *args):
         """
         This asks that this signal be broadcast at the appropriate time within the spooling cycle.
