@@ -27,7 +27,7 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import UNITS_PER_INCH, Length, UNITS_PER_PIXEL
+from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (
     STD_ICON_SIZE,
@@ -2451,9 +2451,7 @@ class MeerK40t(MWindow):
             elements = self.context.elements
             img = Image.fromarray(frame)
             matrix = Matrix(f"scale({UNITS_PER_PIXEL}, {UNITS_PER_PIXEL})")
-            node = elements.elem_branch.add(
-                image=img, matrix=matrix, type="elem image"
-            )
+            node = elements.elem_branch.add(image=img, matrix=matrix, type="elem image")
             elements.classify([node])
             self.context.signal("refresh_scene", "Scene")
 

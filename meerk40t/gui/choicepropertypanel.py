@@ -169,7 +169,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     if prev_main == current_sec_sizer:
                         current_sec_sizer = sizer_main
                     if prev_main == current_sizer:
-                        current_sizer= sizer_main
+                        current_sizer = sizer_main
 
                     sizer_very_main.Add(sizer_main, 1, wx.EXPAND, 0)
                     # I think we should reset all sections to make them
@@ -305,6 +305,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             self.context.signal(param, v)
                             for _sig in additional_signal:
                                 self.context.signal(_sig)
+
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
@@ -585,7 +586,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 def set_color(ctrl, color: Color):
                     ctrl.SetLabel(str(color.hex))
                     ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                    if Color.distance(color, Color("black"))> Color.distance(color, Color("white")):
+                    if Color.distance(color, Color("black")) > Color.distance(
+                        color, Color("white")
+                    ):
                         ctrl.SetForegroundColour(wx.BLACK)
                     else:
                         ctrl.SetForegroundColour(wx.WHITE)
@@ -744,7 +747,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 def set_color(ctrl, color: Color):
                     ctrl.SetLabel(str(color.hex))
                     ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                    if Color.distance(color, Color("black"))> Color.distance(color, Color("white")):
+                    if Color.distance(color, Color("black")) > Color.distance(
+                        color, Color("white")
+                    ):
                         ctrl.SetForegroundColour(wx.BLACK)
                     else:
                         ctrl.SetForegroundColour(wx.WHITE)
@@ -892,7 +897,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                         def set_color(color: Color):
                             ctrl.SetLabel(str(color.hex))
                             ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                            if Color.distance(color, Color("black"))> Color.distance(color, Color("white")):
+                            if Color.distance(color, Color("black")) > Color.distance(
+                                color, Color("white")
+                            ):
                                 ctrl.SetForegroundColour(wx.BLACK)
                             else:
                                 ctrl.SetForegroundColour(wx.WHITE)

@@ -5,7 +5,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length, UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_meerk40t,

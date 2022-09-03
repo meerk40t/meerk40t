@@ -30,7 +30,6 @@ from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_saf
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .alignment import Alignment
-from .imagesplitter import RenderSplit
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -40,6 +39,7 @@ from .icons import (
     icons8_home_filled_50,
     icons8_pause_50,
 )
+from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
 from .notes import Notes

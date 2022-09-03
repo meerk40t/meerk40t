@@ -104,7 +104,8 @@ class AttractionWidget(Widget):
                     if new_x is not None:
                         if (
                             abs(new_x - self.my_x) <= self.context.action_attract_len
-                            and abs(new_y - self.my_y) <= self.context.action_attract_len
+                            and abs(new_y - self.my_y)
+                            <= self.context.action_attract_len
                         ):
                             # Is the distance small enough?
                             response = (RESPONSE_CHAIN, new_x, new_y)

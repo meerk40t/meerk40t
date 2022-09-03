@@ -5,7 +5,7 @@ import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Angle, Length, ViewPort, UNITS_PER_PIXEL
+from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length, ViewPort
 from meerk40t.kernel import Service
 from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
 

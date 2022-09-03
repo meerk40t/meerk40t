@@ -373,7 +373,7 @@ class Preferences(MWindow):
             id=wx.ID_ANY,
             context=self.context,
             choices=colorchoices,
-            entries_per_column=12
+            entries_per_column=12,
         )
         self.panel_color.SetupScrolling()
 

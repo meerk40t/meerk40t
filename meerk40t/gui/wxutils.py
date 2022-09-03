@@ -7,7 +7,7 @@ from typing import List
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
-from meerk40t.core.units import Angle, Length, ACCEPTED_UNITS
+from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
 
 _ = wx.GetTranslation
 
