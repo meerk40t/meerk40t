@@ -334,10 +334,54 @@ class Preferences(MWindow):
         )
         self.panel_scene.SetupScrolling()
 
+        main_scene = getattr(self.context.root, "mainscene", None)
+        colorchoices = []
+        local_default_color = []
+        for key in main_scene.colors.default_color:
+            local_default_color.append(key)
+        local_default_color.sort()
+        section = ""
+        for key in local_default_color:
+            colorkey = f"color_{key}"
+            defaultcolor = main_scene.colors.default_color[key]
+            # Try to make a sensible name out of it
+            keyname = key.replace("_", " ")
+            idx = 1  # Intentionally
+            while idx < len(keyname):
+                if keyname[idx] in "0123456789" and keyname[idx - 1] != " ":
+                    keyname = keyname[:idx] + " " + keyname[idx:]
+                idx += 1
+            keyname = keyname[0].upper() + keyname[1:]
+            words = keyname.split()
+            possible_section = words[0]
+            if possible_section[0:2] != section[0:2]:
+                section = possible_section
+            singlechoice = {
+                "attr": colorkey,
+                "object": self.context,
+                "default": defaultcolor,
+                "type": str,
+                "style": "color",  # hexa representation
+                "label": keyname,
+                "section": section,
+                "signals": ("refresh_scene", "theme"),
+            }
+            colorchoices.append(singlechoice)
+
+        self.panel_color = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices=colorchoices,
+            entries_per_column=12,
+        )
+        self.panel_color.SetupScrolling()
+
         self.notebook_main.AddPage(self.panel_main, _("General"))
         self.notebook_main.AddPage(self.panel_classification, _("Classification"))
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
+        self.notebook_main.AddPage(self.panel_color, _("Colors"))
         self.Layout()
 
         _icon = wx.NullIcon
@@ -350,6 +394,7 @@ class Preferences(MWindow):
         yield self.panel_classification
         yield self.panel_gui
         yield self.panel_scene
+        yield self.panel_color
 
     @staticmethod
     def sub_register(kernel):
