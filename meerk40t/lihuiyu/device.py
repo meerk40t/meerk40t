@@ -820,14 +820,38 @@ class LihuiyuDriver(Parameters):
         return False
 
     def pause(self, *values):
+        """
+        Asks that the laser be paused.
+
+        @param args:
+        @return:
+        """
         self(b"~PN!\n~")
         self.is_paused = True
 
     def resume(self, *values):
+        """
+        Asks that the laser be resumed.
+
+        To work this command should usually be put into the realtime work queue for the laser, without that it will
+        be paused and unable to process the resume.
+
+        @param args:
+        @return:
+        """
         self(b"~PN&\n~")
         self.is_paused = False
 
     def reset(self):
+        """
+         This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
+         deleted.
+
+         Asks that the device resets, and clears all current work.
+
+         @param args:
+         @return:
+         """
         self.service.spooler.clear_queue()
         self.plot_planner.clear()
         self.spooled_item = None
@@ -841,20 +865,51 @@ class LihuiyuDriver(Parameters):
         self.is_paused = False
 
     def blob(self, blob_type, data):
+        """
+        Blob sends a data blob. This is native code data of the give type. For example in a ruida device it might be a
+        bunch of .rd code, or Lihuiyu device it could be .egv code. It's a method of sending pre-chewed data to the
+        device.
+
+        @param type:
+        @param data:
+        @return:
+        """
         if blob_type == "egv":
             self(data)
 
     def move_abs(self, x, y):
+        """
+        Requests laser move to absolute position x, y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
+        """
+        Requests laser move relative position dx, dy in physical units
+
+        @param dx:
+        @param dy:
+        @return:
+        """
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         self._move_relative(dx, dy)
 
     def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period. This could be done in a series of commands,
+        move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
+        commands so calling dwell is preferred.
+
+        @param time_in_ms:
+        @return:
+        """
         self.program_mode()
         self.raster_mode()
         self.wait_finish()
@@ -863,6 +918,12 @@ class LihuiyuDriver(Parameters):
         self.laser_off()
 
     def laser_off(self):
+        """
+        Turn laser off in place.
+
+        @param values:
+        @return:
+        """
         if not self.laser:
             return False
         if self.state == DRIVER_STATE_RAPID:
@@ -880,6 +941,12 @@ class LihuiyuDriver(Parameters):
         return True
 
     def laser_on(self):
+        """
+        Turn laser on in place.
+
+        @param values:
+        @return:
+        """
         if self.laser:
             return False
         if self.state == DRIVER_STATE_RAPID:
@@ -897,6 +964,13 @@ class LihuiyuDriver(Parameters):
         return True
 
     def rapid_mode(self, *values):
+        """
+        Rapid mode sets the laser to rapid state. This is usually moving the laser around without it executing a large
+        batch of commands.
+
+        @param values:
+        @return:
+        """
         if self.state == DRIVER_STATE_RAPID:
             return
         if self.state == DRIVER_STATE_FINISH:
@@ -914,6 +988,13 @@ class LihuiyuDriver(Parameters):
         self.service.signal("driver;mode", self.state)
 
     def finished_mode(self, *values):
+        """
+        Finished mode is after a large batch of jobs is done. A transition to finished may require the laser process
+        all the data in the buffer.
+
+        @param values:
+        @return:
+        """
         if self.state == DRIVER_STATE_FINISH:
             return
         if self.state in (
@@ -1011,6 +1092,12 @@ class LihuiyuDriver(Parameters):
         self.service.signal("driver;mode", self.state)
 
     def home(self, *values):
+        """
+        Home the laser.
+
+        @param values:
+        @return:
+        """
         self.rapid_mode()
         self(b"IPP\n")
         old_current = self.service.current
@@ -1044,10 +1131,20 @@ class LihuiyuDriver(Parameters):
         )
 
     def lock_rail(self):
+        """
+        For plotter-style lasers this should prevent the laser bar from moving.
+
+        @return:
+        """
         self.rapid_mode()
         self(b"IS1P\n")
 
     def unlock_rail(self, abort=False):
+        """
+        For plotter-style jobs this should free the laser head to be movable by the user.
+
+        @return:
+        """
         self.rapid_mode()
         self(b"IS2P\n")
 
@@ -1082,6 +1179,8 @@ class LihuiyuDriver(Parameters):
 
     def plot(self, plot):
         """
+        Gives the driver cutcode that should be plotted/performed.
+
         @param plot:
         @return:
         """
@@ -1127,6 +1226,12 @@ class LihuiyuDriver(Parameters):
             self.dummy_planner.push(plot)
 
     def plot_start(self):
+        """
+        Called at the end of plot commands to ensure the driver can deal with them all cutcode as a group, if this
+        is needed by the driver.
+
+        @return:
+        """
         self.total_steps = 0
         self.current_steps = 0
         if self.plot_data is None:
@@ -1141,22 +1246,30 @@ class LihuiyuDriver(Parameters):
 
         self._plotplanner_process()
 
-    def set(self, attribute, value):
-        if attribute == "power":
+    def set(self, key, value):
+        """
+        Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
+        yet to be written drivers.
+
+        @param key:
+        @param value:
+        @return:
+        """
+        if key == "power":
             self._set_power(value)
-        if attribute == "ppi":
+        if key == "ppi":
             self._set_power(value)
-        if attribute == "pwm":
+        if key == "pwm":
             self._set_power(value)
-        if attribute == "overscan":
+        if key == "overscan":
             self._set_overscan(value)
-        if attribute == "acceleration":
+        if key == "acceleration":
             self._set_acceleration(value)
-        if attribute == "relative":
+        if key == "relative":
             self.is_relative = value
-        if attribute == "d_ratio":
+        if key == "d_ratio":
             self._set_d_ratio(value)
-        if attribute == "step":
+        if key == "step":
             self._set_step(*value)
 
     def set_origin(self, x, y):
@@ -1183,10 +1296,22 @@ class LihuiyuDriver(Parameters):
         time.sleep(time_in_ms * 1000.0)
 
     def wait_finish(self, *values):
-        """Adds a temp hold requirement if the pipe has any data."""
+        """
+        Wait finish should ensure that no additional commands be processed until the current buffer is completed. This
+        does not necessarily imply a change in mode as "finished_mode" would require. Just that the buffer be completed
+        before moving on.
+
+        @param values:
+        @return:
+        """
         self.temp_holds.append(lambda: len(self.out_pipe) != 0)
 
     def status(self):
+        """
+        Asks that this device status be updated.
+
+        @return:
+        """
         parts = list()
         parts.append(f"x={self.native_x}")
         parts.append(f"y={self.native_y}")

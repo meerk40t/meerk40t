@@ -441,6 +441,13 @@ class GRBLDriver(Parameters):
         self.grbl(" ".join(line) + "\r")
 
     def move_abs(self, x, y):
+        """
+        Requests laser move to absolute position x, y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
         self._g91_absolute()
         self._clean()
         old_current = self.service.current
@@ -454,7 +461,13 @@ class GRBLDriver(Parameters):
         )
 
     def move_rel(self, dx, dy):
-        # TODO: Should use $J syntax
+        """
+        Requests laser move relative position dx, dy in physical units
+
+        @param dx:
+        @param dy:
+        @return:
+        """
         self._g90_relative()
         self._clean()
         old_current = self.service.current
@@ -470,6 +483,14 @@ class GRBLDriver(Parameters):
         )
 
     def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period. This could be done in a series of commands,
+        move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
+        commands so calling dwell is preferred.
+
+        @param time_in_ms:
+        @return:
+        """
         self.laser_on()  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
         self.laser_off()
@@ -752,10 +773,12 @@ class GRBLDriver(Parameters):
         self.origin_x = x
         self.origin_y = y
 
-    def wait(self, t):
+    def wait(self, time_in_ms):
         """
-        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
-        called first this should pause the machine without current work acting as a dwell.
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
 
         @param time_in_ms:
         @return:
@@ -782,14 +805,26 @@ class GRBLDriver(Parameters):
         function()
 
     def beep(self):
+        """
+        Wants a system beep to be issued.
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
+
+        @return:
+        """
         self.service("beep\n")
 
     def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
         self.service(value)
 
     def signal(self, signal, *args):
         """
-        This asks that this signal be broadcast.
+        This asks that this signal be broadcast at the appropriate time within the spooling cycle.
 
         @param signal:
         @param args:
