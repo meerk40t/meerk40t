@@ -20,7 +20,7 @@ from ..core.cutcode import (
     PlotCut,
     QuadCut,
     WaitCut,
-    GotoCut,
+    GotoCut, SetOriginCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -364,6 +364,8 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+        self.origin_x = 0
+        self.origin_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
@@ -606,6 +608,8 @@ class GRBLDriver(Parameters):
                     self.total_steps += 1
                 elif isinstance(q, GotoCut):
                     self.total_steps += 1
+                elif isinstance(q, SetOriginCut):
+                    self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
                 elif isinstance(q, (InputCut, OutputCut)):
@@ -670,7 +674,15 @@ class GRBLDriver(Parameters):
                 self.home(q.first)
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
-                self.move_abs(*q.first)
+                self.move_abs(*q.start)
+            elif isinstance(q, SetOriginCut):
+                self.current_steps += 1
+                if q.set_current:
+                    x = self.native_x
+                    y = self.native_y
+                else:
+                    x, y = q.start
+                self.set_origin(x, y)
             elif isinstance(q, DwellCut):
                 self.current_steps += 1
                 self.dwell(q.dwell_time)
@@ -799,18 +811,16 @@ class GRBLDriver(Parameters):
             self.speed_dirty = True
         self.settings[key] = value
 
-    def set_position(self, x, y):
+    def set_origin(self, x, y):
         """
-        This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
-        used in step-repeat.
+        This should set the origin position.
 
         @param x:
         @param y:
         @return:
         """
-        self.native_x = x
-        self.native_y = y
+        self.origin_x = x
+        self.origin_y = y
 
     def wait(self, t):
         """

@@ -271,6 +271,7 @@ class BalorDriver:
                 self.current_steps += 1
                 con.goto(0x8000, 0x8000)
             elif isinstance(q, SetOriginCut):
+                # Currently not supporting set origin cut.
                 self.current_steps += 1
             elif isinstance(q, OutputCut):
                 self.current_steps += 1
