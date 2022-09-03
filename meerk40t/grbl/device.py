@@ -675,7 +675,7 @@ class GRBLDriver(Parameters):
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
-                self.move_abs(self.origin_x + start[0], self.origin_y + start[1])
+                self.move(self.origin_x + start[0], self.origin_y + start[1])
             elif isinstance(q, SetOriginCut):
                 self.current_steps += 1
                 if q.set_current:
