@@ -36,7 +36,7 @@ class Driver:
         """
         Required.
 
-        Spooler check. to see if the work cycle should be held.
+        Spooler check. Test if the work cycle should be held, at the given priority.
 
         @return: hold?
         """
@@ -44,7 +44,7 @@ class Driver:
 
     def move_abs(self, x, y):
         """
-        Requests laser move to absolute position x, y
+        Requests laser move to absolute position x, y in physical units
 
         @param x:
         @param y:
@@ -53,7 +53,7 @@ class Driver:
 
     def move_rel(self, dx, dy):
         """
-        Requests laser move relative position dx, dy
+        Requests laser move relative position dx, dy in physical units
 
         @param dx:
         @param dy:
@@ -88,7 +88,8 @@ class Driver:
 
     def plot(self, plot):
         """
-        Gives the driver a bit of cutcode that should be plotted.
+        Gives the driver cutcode that should be plotted/performed.
+
         @param plot:
         @return:
         """
@@ -96,7 +97,8 @@ class Driver:
 
     def plot_start(self):
         """
-        Called at the end of plot commands to ensure the driver can deal with them all as a group.
+        Called at the end of plot commands to ensure the driver can deal with them all cutcode as a group, if this
+        is needed by the driver.
 
         @return:
         """
@@ -104,7 +106,7 @@ class Driver:
     def blob(self, data_type, data):
         """
         Blob sends a data blob. This is native code data of the give type. For example in a ruida device it might be a
-        bunch of .rd code, or Lihuiyu device it could be egv code. It's a method of sending pre-chewed data to the
+        bunch of .rd code, or Lihuiyu device it could be .egv code. It's a method of sending pre-chewed data to the
         device.
 
         @param type:
@@ -123,6 +125,7 @@ class Driver:
     def lock_rail(self):
         """
         For plotter-style lasers this should prevent the laser bar from moving.
+
         @return:
         """
 
@@ -144,7 +147,8 @@ class Driver:
 
     def finished_mode(self, *values):
         """
-        Finished mode is after a large batch of jobs is done.
+        Finished mode is after a large batch of jobs is done. A transition to finished may require the laser process
+        all the data in the buffer.
 
         @param values:
         @return:
@@ -152,7 +156,9 @@ class Driver:
 
     def program_mode(self, *values):
         """
-        Program mode is the state lasers often use to send a large batch of commands.
+        Program mode is the state lasers often use to send a large batch of commands. Movements in program mode are
+        expected to be executed in a list, program, compact mode etc. Depending on the type of driver.
+
         @param values:
         @return:
         """
@@ -160,7 +166,9 @@ class Driver:
     def raster_mode(self, *values):
         """
         Raster mode is a special form of program mode that suggests the batch of commands will be a raster operation
-        many lasers have specialty values
+        many lasers have specialty modes for this mode. If the laser doesn't have such a mode, switching to generic
+        program mode is sufficient.
+
         @param values:
         @return:
         """
@@ -169,6 +177,7 @@ class Driver:
         """
         Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
         yet to be written drivers.
+
         @param key:
         @param value:
         @return:
@@ -177,7 +186,8 @@ class Driver:
 
     def set_origin(self, x, y):
         """
-        This should set the origin position.
+        This should set the origin position for the laser. X, Y refer to the origin position. If these are None then the
+        origin position should be set to the current position of the laser head (if possible).
 
         @param x:
         @param y:
@@ -188,7 +198,9 @@ class Driver:
     def wait(self, t):
         """
         Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
-        called first this should pause the machine without current work acting as a dwell.
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
 
         @param t:
         @return:
@@ -197,8 +209,9 @@ class Driver:
 
     def wait_finish(self, *values):
         """
-        Wait finish should hold the calling thread until the current work has completed. Or otherwise prevent any data
-        from being sent with returning True for the until that criteria is met.
+        Wait finish should ensure that no additional commands be processed until the current buffer is completed. This
+        does not necessarily imply a change in mode as "finished_mode" would require. Just that the buffer be completed
+        before moving on.
 
         @param values:
         @return:
@@ -207,7 +220,7 @@ class Driver:
 
     def function(self, function):
         """
-        This command asks that this function be executed at the appropriate time within the spooled cycle.
+        This command asks that this function be executed at the appropriate time within the spooling cycle.
 
         @param function:
         @return:
@@ -216,7 +229,7 @@ class Driver:
 
     def signal(self, signal, *args):
         """
-        This asks that this signal be broadcast.
+        This asks that this signal be broadcast at the appropriate time within the spooling cycle.
 
         @param signal:
         @param args:
@@ -237,7 +250,8 @@ class Driver:
         """
         Asks that the laser be resumed.
 
-        To work this command should usually be put into the realtime work queue for the laser.
+        To work this command should usually be put into the realtime work queue for the laser, without that it will
+        be paused and unable to process the resume.
 
         @param args:
         @return:
@@ -248,6 +262,7 @@ class Driver:
         """
         This command asks that this device be emergency stopped and reset. Usually that queue data from the spooler be
         deleted.
+
         Asks that the device resets, and clears all current work.
 
         @param args:
