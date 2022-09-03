@@ -29,6 +29,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         choices=None,
         scrolling=True,
         constraint=None,
+        entries_per_column=None,
         **kwds,
     ):
         # constraints are either
@@ -45,6 +46,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.listeners = list()
+        self.entries_per_column = entries_per_column
         if choices is None:
             return
         if isinstance(choices, str):
@@ -142,7 +144,9 @@ class ChoicePropertyPanel(ScrolledPanel):
             self.choices = prechoices
         if len(self.choices) == 0:
             return
+        sizer_very_main = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_very_main.Add(sizer_main, 1, wx.EXPAND, 0)
         last_page = ""
         last_section = ""
         last_subsection = ""
@@ -152,7 +156,27 @@ class ChoicePropertyPanel(ScrolledPanel):
         current_sizer = sizer_main
         # Bey default 0 as we are stacking up stuff
         expansion_flag = 0
+        current_col_entry = -1
         for i, c in enumerate(self.choices):
+            current_col_entry += 1
+            if self.entries_per_column is not None:
+                if current_col_entry >= self.entries_per_column:
+                    current_col_entry = -1
+                    prev_main = sizer_main
+                    sizer_main = wx.BoxSizer(wx.VERTICAL)
+                    if prev_main == current_main_sizer:
+                        current_main_sizer = sizer_main
+                    if prev_main == current_sec_sizer:
+                        current_sec_sizer = sizer_main
+                    if prev_main == current_sizer:
+                        current_sizer= sizer_main
+
+                    sizer_very_main.Add(sizer_main, 1, wx.EXPAND, 0)
+                    # I think we should reset all sections to make them
+                    # reappear in the next columns
+                    last_page = ""
+                    last_section = ""
+                    last_subsection = ""
 
             if isinstance(c, tuple):
                 # If c is tuple
@@ -177,6 +201,14 @@ class ChoicePropertyPanel(ScrolledPanel):
             this_page = c.get("page", "")
             # Do we have a parameter to add a trailing label after the control
             trailer = c.get("trailer")
+            # Is there another signal to send?
+            additional_signal = []
+            sig = c.get("signals")
+            if isinstance(sig, str):
+                additional_signal.append(sig)
+            elif isinstance(sig, (tuple, list)):
+                for _sig in sig:
+                    additional_signal.append(_sig)
             # Do we have a parameter to hide the control unless in expert mode
             hidden = c.get("hidden", False)
             hidden = (
@@ -271,7 +303,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if current_value != bool(v):
                             setattr(obj, param, bool(v))
                             self.context.signal(param, v)
-
+                            for _sig in additional_signal:
+                                self.context.signal(_sig)
                     return check
 
                 control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
@@ -306,6 +339,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 try:
                                     setattr(obj, param, pathname)
                                     self.context.signal(param, pathname)
+                                    for _sig in additional_signal:
+                                        self.context.signal(_sig)
                                 except ValueError:
                                     # cannot cast to data_type, pass
                                     pass
@@ -347,6 +382,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if current_value != v:
                             setattr(obj, param, v)
                             self.context.signal(param, v)
+                            for _sig in additional_signal:
+                                self.context.signal(_sig)
 
                     return select
 
@@ -390,6 +427,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if current_value != v:
                             setattr(obj, param, v)
                             self.context.signal(param, v)
+                            for _sig in additional_signal:
+                                self.context.signal(_sig)
 
                     return select
 
@@ -437,6 +476,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if current_value != v:
                             setattr(obj, param, v)
                             self.context.signal(param, v)
+                            for _sig in additional_signal:
+                                self.context.signal(_sig)
 
                     return select
 
@@ -478,6 +519,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if current_value != current:
                             setattr(obj, param, current)
                             self.context.signal(f"{param}", v)
+                            for _sig in additional_signal:
+                                self.context.signal(_sig)
 
                     return check
 
@@ -534,6 +577,55 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control_sizer.Add(bit_sizer, 0, wx.EXPAND, 0)
 
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type == str and data_style == "color":
+                # str data_type with style "color" objects do get a button with the background.
+                control_sizer = wx.BoxSizer(wx.HORIZONTAL)
+                control = wx.Button(self, -1)
+
+                def set_color(ctrl, color: Color):
+                    ctrl.SetLabel(str(color.hex))
+                    ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                    if Color.distance(color, Color("black"))> Color.distance(color, Color("white")):
+                        ctrl.SetForegroundColour(wx.BLACK)
+                    else:
+                        ctrl.SetForegroundColour(wx.WHITE)
+                    ctrl.color = color
+
+                def on_button_color(param, ctrl, obj):
+                    def click(event=None):
+                        color_data = wx.ColourData()
+                        color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
+                        dlg = wx.ColourDialog(self, color_data)
+                        if dlg.ShowModal() == wx.ID_OK:
+                            color_data = dlg.GetColourData()
+                            data = Color(
+                                swizzlecolor(color_data.GetColour().GetRGB()), 1.0
+                            )
+                            set_color(ctrl, data)
+                            try:
+                                data_v = data.hexa
+                                current_value = getattr(obj, param)
+                                if current_value != data_v:
+                                    setattr(obj, param, data_v)
+                                    self.context.signal(param, data_v)
+                                    for _sig in additional_signal:
+                                        self.context.signal(_sig)
+                            except ValueError:
+                                # cannot cast to data_type, pass
+                                pass
+
+                    return click
+
+                datastr = data
+                data = Color(datastr)
+                set_color(control, data)
+                control_sizer.Add(control, 0, wx.EXPAND, 0)
+                color_info = wx.StaticText(self, wx.ID_ANY, label)
+                control_sizer.Add(color_info, 1, wx.ALIGN_CENTER_VERTICAL)
+
+                control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
+                current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
+
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
                 control_sizer = wx.StaticBoxSizer(
@@ -564,6 +656,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if current_value != dtype_v:
                                 setattr(obj, param, dtype_v)
                                 self.context.signal(param, dtype_v)
+                                for _sig in additional_signal:
+                                    self.context.signal(_sig)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -596,6 +690,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if str(current_value) != str(data_v):
                                 setattr(obj, param, data_v)
                                 self.context.signal(param, data_v)
+                                for _sig in additional_signal:
+                                    self.context.signal(_sig)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -628,6 +724,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if current_value != data_v:
                                 setattr(obj, param, data_v)
                                 self.context.signal(param, data_v)
+                                for _sig in additional_signal:
+                                    self.context.signal(_sig)
                         except ValueError:
                             # cannot cast to data_type, pass
                             pass
@@ -643,10 +741,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 control = wx.Button(self, -1)
 
-                def set_color(color: Color):
-                    control.SetLabel(str(color.hex))
-                    control.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
-                    control.color = color
+                def set_color(ctrl, color: Color):
+                    ctrl.SetLabel(str(color.hex))
+                    ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                    if Color.distance(color, Color("black"))> Color.distance(color, Color("white")):
+                        ctrl.SetForegroundColour(wx.BLACK)
+                    else:
+                        ctrl.SetForegroundColour(wx.WHITE)
+                    ctrl.color = color
 
                 def on_button_color(param, ctrl, obj):
                     def click(event=None):
@@ -658,20 +760,22 @@ class ChoicePropertyPanel(ScrolledPanel):
                             data = Color(
                                 swizzlecolor(color_data.GetColour().GetRGB()), 1.0
                             )
-                            set_color(data)
+                            set_color(ctrl, data)
                             try:
                                 data_v = data_type(data)
                                 current_value = getattr(obj, param)
                                 if current_value != data_v:
                                     setattr(obj, param, data_v)
                                     self.context.signal(param, data_v)
+                                    for _sig in additional_signal:
+                                        self.context.signal(_sig)
                             except ValueError:
                                 # cannot cast to data_type, pass
                                 pass
 
                     return click
 
-                set_color(data)
+                set_color(control, data)
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
                 control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
@@ -774,8 +878,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                     elif dtype == int and dstyle == "binary":
                         pass  # not supported...
                     elif dtype in (str, int, float):
-                        if ctrl.GetValue() != str(data):
-                            ctrl.SetValue(str(data))
+                        if hasattr(ctrl, "GetValue"):
+                            if ctrl.GetValue() != str(data):
+                                ctrl.SetValue(str(data))
                     elif dtype == Length:
                         if ctrl.GetValue() != str(data):
                             ctrl.SetValue(str(data))
@@ -787,6 +892,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                         def set_color(color: Color):
                             ctrl.SetLabel(str(color.hex))
                             ctrl.SetBackgroundColour(wx.Colour(swizzlecolor(color)))
+                            if Color.distance(color, Color("black"))> Color.distance(color, Color("white")):
+                                ctrl.SetForegroundColour(wx.BLACK)
+                            else:
+                                ctrl.SetForegroundColour(wx.WHITE)
                             ctrl.color = color
 
                         set_color(data)
@@ -806,8 +915,8 @@ class ChoicePropertyPanel(ScrolledPanel):
             last_section = this_section
             last_subsection = this_subsection
 
-        self.SetSizer(sizer_main)
-        sizer_main.Fit(self)
+        self.SetSizer(sizer_very_main)
+        sizer_very_main.Fit(self)
         # Make sure stuff gets scrolled if necessary by default
         if scrolling:
             self.SetupScrolling()
