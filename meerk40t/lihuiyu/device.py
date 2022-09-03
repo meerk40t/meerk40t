@@ -4,7 +4,7 @@ import threading
 import time
 from hashlib import md5
 
-from meerk40t.core.spoolers import Spooler
+from meerk40t.core.spoolers import Spooler, LaserJob
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -772,10 +772,10 @@ class LihuiyuDriver(Parameters):
         def primary_hold():
             if self.out_pipe is None:
                 return True
-
-            buffer = len(self.out_pipe)
-            if buffer is None:
-                return False
+            try:
+                buffer = len(self.out_pipe)
+            except TypeError:
+                buffer = 0
             return self.service.buffer_limit and buffer > self.service.buffer_max
 
         self.holds.append(primary_hold)
@@ -1292,7 +1292,12 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
-        self.temp_holds.append(lambda: len(self.out_pipe) != 0)
+        def temp_hold():
+            try:
+                return len(self.out_pipe) != 0
+            except TypeError:
+                return False
+        self.temp_holds.append(temp_hold)
 
     def status(self):
         """
