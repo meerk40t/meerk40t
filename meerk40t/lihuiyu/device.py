@@ -343,7 +343,7 @@ class LihuiyuDevice(Service, ViewPort):
                 s += driver.speed
             elif percent:
                 s = driver.speed * (s / 100.0)
-            driver.set_speed(s)
+            driver.set("speed", s)
             channel(_("Speed set at: {speed} mm/s").format(speed=driver.speed))
 
         @self.console_argument("ppi", type=int, help=_("pulses per inch [0-1000]"))
@@ -360,10 +360,7 @@ class LihuiyuDevice(Service, ViewPort):
                         )
                     )
             else:
-                try:
-                    self.driver._set_power(ppi)
-                except ValueError:
-                    pass
+                self.driver.set("power", ppi)
 
         @self.console_argument("accel", type=int, help=_("Acceleration amount [1-4]"))
         @self.console_command(
@@ -391,10 +388,10 @@ class LihuiyuDevice(Service, ViewPort):
                 try:
                     v = accel
                     if v not in (1, 2, 3, 4):
-                        self.driver.set_acceleration(None)
+                        self.driver.set("acceleration", None)
                         channel(_("Acceleration is set to default."))
                         return
-                    self.driver.set_acceleration(v)
+                    self.driver.set("acceleration", v)
                     channel(
                         _("Acceleration: {acceleration}").format(
                             acceleration=self.driver.acceleration
@@ -865,31 +862,6 @@ class LihuiyuDriver(Parameters):
         self.wait(time_in_ms)
         self.laser_off()
 
-    def set_speed(self, speed=None):
-        if self.speed != speed:
-            self.speed = speed
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def set_d_ratio(self, d_ratio=None):
-        if self.dratio != d_ratio:
-            self.dratio = d_ratio
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def set_acceleration(self, accel=None):
-        if self.acceleration != accel:
-            self.acceleration = accel
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
-    def set_step(self, step_x=None, step_y=None):
-        if self.raster_step_x != step_x or self.raster_step_y != step_y:
-            self.raster_step_x = step_x
-            self.raster_step_y = step_y
-            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
-                self.state = DRIVER_STATE_MODECHANGE
-
     def laser_off(self):
         if not self.laser:
             return False
@@ -1178,8 +1150,14 @@ class LihuiyuDriver(Parameters):
             self._set_power(value)
         if attribute == "overscan":
             self._set_overscan(value)
+        if attribute == "acceleration":
+            self._set_acceleration(value)
         if attribute == "relative":
             self.is_relative = value
+        if attribute == "d_ratio":
+            self._set_d_ratio(value)
+        if attribute == "step":
+            self._set_step(*value)
 
     def set_origin(self, x, y):
         """
@@ -1289,10 +1267,10 @@ class LihuiyuDriver(Parameters):
                         or self.implicit_d_ratio != p_set.implicit_d_ratio
                         or self.implicit_accel != p_set.implicit_accel
                     ):
-                        self.set_speed(p_set.speed)
-                        self.set_step(p_set.raster_step_x, p_set.raster_step_y)
-                        self.set_acceleration(p_set.implicit_accel)
-                        self.set_d_ratio(p_set.implicit_d_ratio)
+                        self._set_speed(p_set.speed)
+                        self._set_step(p_set.raster_step_x, p_set.raster_step_y)
+                        self._set_acceleration(p_set.implicit_accel)
+                        self._set_d_ratio(p_set.implicit_d_ratio)
                     self.settings.update(p_set.settings)
                 elif on & PLOT_AXIS:  # Major Axis.
                     # 0 means X Major / Horizontal.
@@ -1358,6 +1336,31 @@ class LihuiyuDriver(Parameters):
             self._goto_octent(dx, dy, on & 1)
         self.plot_data = None
         return False
+
+    def _set_speed(self, speed=None):
+        if self.speed != speed:
+            self.speed = speed
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def _set_d_ratio(self, d_ratio=None):
+        if self.dratio != d_ratio:
+            self.dratio = d_ratio
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def _set_acceleration(self, accel=None):
+        if self.acceleration != accel:
+            self.acceleration = accel
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
+
+    def _set_step(self, step_x=None, step_y=None):
+        if self.raster_step_x != step_x or self.raster_step_y != step_y:
+            self.raster_step_x = step_x
+            self.raster_step_y = step_y
+            if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
+                self.state = DRIVER_STATE_MODECHANGE
 
     def _set_power(self, power=1000.0):
         self.power = power
@@ -1478,11 +1481,11 @@ class LihuiyuDriver(Parameters):
     def _move_in_rapid_mode(self, dx, dy, cut):
         if self.service.rapid_override and (dx != 0 or dy != 0):
             # Rapid movement override. Should make programmed jogs.
-            self.set_acceleration(None)
-            self.set_step(0)
+            self._set_acceleration(None)
+            self._set_step(0,0)
             if dx != 0:
                 self.rapid_mode()
-                self.set_speed(self.service.rapid_override_speed_x)
+                self._set_speed(self.service.rapid_override_speed_x)
                 self.program_mode()
                 self._goto_octent(dx, 0, cut)
             if dy != 0:
@@ -1491,7 +1494,7 @@ class LihuiyuDriver(Parameters):
                     != self.service.rapid_override_speed_y
                 ):
                     self.rapid_mode()
-                    self.set_speed(self.service.rapid_override_speed_y)
+                    self._set_speed(self.service.rapid_override_speed_y)
                     self.program_mode()
                 self._goto_octent(0, dy, cut)
             self.rapid_mode()
