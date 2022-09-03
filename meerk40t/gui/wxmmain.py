@@ -497,7 +497,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Display-Distance"),
                 "tip": _(
                     "Defines until which distance snap points will be highlighted"
                 ),
@@ -524,7 +524,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Point-Snap-Threshold"),
                 "tip": _(
                     "Set the distance inside which the cursor will snap to the next element point"
                 ),
@@ -552,7 +552,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Point-Snap-Threshold"),
                 "tip": _(
                     "Set the distance inside which the cursor will snap to the next grid intersection"
                 ),
