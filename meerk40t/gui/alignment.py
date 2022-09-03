@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, atan, tau
 
 import numpy as np
 import wx
@@ -180,9 +180,9 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_align_x.SetSelection(0)
         self.rbox_align_x.SetToolTip(
-            _("Align object at the left side, centered or to")
-            + "\n"
-            + _("the right side in relation to the target point")
+            _(
+                "Align object at the left side, centered or to the right side in relation to the target point"
+            )
         )
 
         self.rbox_align_y = wx.RadioBox(
@@ -195,9 +195,9 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_align_y.SetSelection(0)
         self.rbox_align_y.SetToolTip(
-            _("Align object to the top, centered or to")
-            + "\n"
-            + _("the bottom in relation to the target point")
+            _(
+                "Align object to the top, centered or to the bottom in relation to the target point"
+            )
         )
 
         self.rbox_relation = wx.RadioBox(
@@ -393,9 +393,9 @@ class DistributionPanel(wx.Panel):
         )
         self.rbox_dist_x.SetSelection(0)
         self.rbox_dist_x.SetToolTip(
-            _("Align object at the left side, centered or to")
-            + "\n"
-            + _("the right side in relation to the target point")
+            _(
+                "Align object at the left side, centered or to the right side in relation to the target point"
+            )
         )
 
         self.rbox_dist_y = wx.RadioBox(
@@ -408,9 +408,9 @@ class DistributionPanel(wx.Panel):
         )
         self.rbox_dist_y.SetSelection(0)
         self.rbox_dist_y.SetToolTip(
-            _("Align object to the top, centered or to")
-            + "\n"
-            + _("the bottom in relation to the target point")
+            _(
+                "Align object to the top, centered or to the bottom in relation to the target point"
+            )
         )
 
         self.check_inside_xy = wx.CheckBox(
@@ -418,9 +418,9 @@ class DistributionPanel(wx.Panel):
         )
         self.check_inside_xy.SetValue(True)
         self.check_inside_xy.SetToolTip(
-            _("Keep the first and last element inside the target area,")
-            + "\n"
-            + _("effectively ignoring the X- and Y-settings")
+            _(
+                "Keep the first and last element inside the target area, effectively ignoring the X- and Y-settings"
+            )
         )
 
         self.check_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
@@ -516,14 +516,6 @@ class DistributionPanel(wx.Panel):
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
 
-    def disable_wip(self):
-        # Certain functionalities are not ready yet, so let's disable them
-        self.rbox_dist_x.EnableItem(4, False)  # Space
-        self.rbox_dist_y.EnableItem(4, False)  # Space
-        self.check_rotate.Enable(False)
-        # self.rbox_treatment.EnableItem(1, False)  # Shape
-        # self.rbox_treatment.EnableItem(2, False)    # Points
-
     def validate_data(self, event=None):
         obj = None
         if event is not None:
@@ -539,6 +531,7 @@ class DistributionPanel(wx.Panel):
             ymode = self.xy_param[idx]
             idx = max(0, self.rbox_sort.GetSelection())
             esort = self.sort_param[idx]
+            rotate_elem = self.check_rotate.GetValue()
 
             # Have we just selected the treatment? Then set something useful
             if obj == self.rbox_treatment and xmode == "none" and ymode == "none":
@@ -550,6 +543,13 @@ class DistributionPanel(wx.Panel):
                 active = False
             elif treat in ("shape", "points") and self.count < 3:
                 active = False
+
+            if treat in ("shape", "points") and xmode == "space":
+                self.rbox_dist_x.SetSelection(2)
+                xmode == "center"
+            if treat in ("shape", "points") and ymode == "space":
+                self.rbox_dist_y.SetSelection(2)
+                ymode == "center"
             if xmode == "none" and ymode == "none":
                 active = False
             if self.first_node is None and esort == "first":
@@ -562,59 +562,143 @@ class DistributionPanel(wx.Panel):
         if treat in ("points", "shape"):
             self.check_inside_xy.Enable(False)
             self.check_inside_xy.SetValue(False)
-            self.check_rotate.Enable(True)
+        elif xmode == "space" or ymode == "space":
+            self.check_inside_xy.Enable(False)
+            self.check_inside_xy.SetValue(False)
         else:
             self.check_inside_xy.Enable(True)
             self.check_rotate.Enable(False)
+        if treat == "shape":
+            self.check_rotate.Enable(True)
+        else:
+            self.check_rotate.Enable(False)
+            self.check_rotate.SetValue(False)
 
-        self.disable_wip()
         self.btn_dist.Enable(active)
 
-    def calculate_basis(self, data, target, treatment):
+    def calculate_basis(self, data, target, treatment, equidist_x, equidist_y, rotate):
         def calc_basic():
-            # equidistant points in rectangle
+            # equidist_x<:
+            #   if True create equidistant points across line
+            #   if False create equal distances between edges of elements
             target.clear()
             x = left_edge
             y = top_edge
             dlen = len(data)
-            target.append((x, y))
-            if dlen <= 1:
-                return
-            dx = (right_edge - left_edge) / (dlen - 1)
-            dy = (bottom_edge - top_edge) / (dlen - 1)
-            # target.extend([(x + dx * i, y + dy * i) for i in range(1, dlen)])?
-            while dlen > 1:
-                x += dx
-                y += dy
-                target.append((x, y))
-                dlen -= 1
+            x_values = [x]
+            y_values = [y]
+            if dlen > 1:
+                if equidist_x:
+                    dx = (right_edge - left_edge) / (dlen - 1)
+                    dl = dlen
+                    while dl > 1:
+                        x += dx
+                        x_values.append(x)
+                        dl -= 1
+                else:
+                    total_wd = right_edge - left_edge
+                    data_wd = 0
+                    firstwd = None
+                    lastwd = None
+                    for node in data:
+                        bb = node.bounds
+                        wd = bb[2] - bb[0]
+                        if firstwd is None:
+                            firstwd = wd
+                        lastwd = wd
+                        data_wd += wd
+                    # Reduce by first and last half width
+                    # data_wd -= (firstwd + lastwd) / 2
+                    dx = (total_wd - data_wd) / (dlen - 1)
+                    # print(
+                    #     "Totalwidth={w1:.3f}, Element={w2:.3f}, Gap={w3:.3f}".format(
+                    #         w1=Length(amount=total_wd, unitless=1).mm,
+                    #         w2=Length(amount=data_wd, unitless=1).mm,
+                    #         w3=Length(amount=dx, unitless=1).mm,
+                    #     )
+                    # )
+                    for i, node in enumerate(data):
+                        bb = node.bounds
+                        wd = bb[2] - bb[0]
+                        if i == 0:
+                            lastx = bb[2]
+                            x_values[0] = left_edge + wd / 2
+                        else:
+                            x = lastx + wd / 2 + dx
+                            lastx = lastx + wd + dx
+                            x_values.append(x)
+
+                if equidist_y:
+                    dy = (bottom_edge - top_edge) / (dlen - 1)
+                    dl = dlen
+                    while dl > 1:
+                        y += dy
+                        y_values.append(y)
+                        dl -= 1
+                else:
+                    total_ht = bottom_edge - top_edge
+                    data_ht = 0
+                    firstht = None
+                    lastht = None
+                    for node in data:
+                        bb = node.bounds
+                        ht = bb[3] - bb[1]
+                        if firstht is None:
+                            firstht = ht
+                        lastht = ht
+                        data_ht += ht
+                    # Reduce by first and last half height
+                    # data_ht -= (firstht + lastht) / 2
+                    dy = (total_ht - data_ht) / (dlen - 1)
+                    # print(
+                    #     "Totalheight={w1:.3f}, Element={w2:.3f}, Gap={w3:.3f}".format(
+                    #         w1=Length(amount=total_ht, unitless=1).mm,
+                    #         w2=Length(amount=data_ht, unitless=1).mm,
+                    #         w3=Length(amount=dy, unitless=1).mm,
+                    #     )
+                    # )
+                    for i, node in enumerate(data):
+                        bb = node.bounds
+                        ht = bb[3] - bb[1]
+                        if i == 0:
+                            lasty = bb[3]
+                            y_values[0] = top_edge + ht / 2
+                        else:
+                            y = lasty + ht / 2 + dy
+                            lasty = lasty + ht + dy
+                            y_values.append(y)
+
+            for i in range(dlen):
+                x = x_values[i]
+                y = y_values[i]
+                target.append((x, y, 0))
 
         def calc_points():
             first_point = path.first_point
             if first_point is not None:
-                pt = (first_point[0], first_point[1])
+                pt = (first_point[0], first_point[1], 0)
                 target.append(pt)
             for e in path:
                 if isinstance(e, Move):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, Line):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, Close):
                     pass
                 elif isinstance(e, QuadraticBezier):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, CubicBezier):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, Arc):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
 
@@ -664,13 +748,62 @@ class DistributionPanel(wx.Panel):
                         last_y = pt.y
                 return this_length
 
+            def calc_slope(index):
+                try:
+                    this_point = polypoints[index]
+                except IndexError:
+                    this_point = (0, 0, 0)
+                try:
+                    last_point = polypoints[index - 1]
+                except IndexError:
+                    last_point = (0, 0, 0)
+                dx = this_point[0] - last_point[0]
+                dy = this_point[1] - last_point[1]
+                # if dx < 1.0E-07:
+                #     dx = 0
+                # if dy < 1.0E-07:
+                #     dy = 0
+                # calc_atan(dx, dy):
+                if dx == 0:
+                    if dy < 0:
+                        c_angle = -1 / 4 * tau
+                        quadrant = 4
+                    elif dy == 0:
+                        c_angle = 0
+                        quadrant = 0
+                    else:
+                        c_angle = +1 / 4 * tau
+                        quadrant = 1
+                elif dx > 0 and dy >= 0:
+                    # Quadrant 1: angle between 0 und 90 (0 - tau / 4)
+                    c_angle = atan(dy / dx)
+                    quadrant = 1
+                elif dx < 0 and dy >= 0:
+                    # Quadrant 2: angle between 90 und 180 (1/4 tau - 2/4 tau)
+                    c_angle = atan(dy / dx) + tau / 2
+                    quadrant = 2
+                elif dx < 0 and dy < 0:
+                    # Quadrant 3: angle between 180 und 270 (2/4 tau - 3/4 tau)
+                    c_angle = atan(dy / dx) + tau / 2
+                    quadrant = 3
+                elif dx > 0 and dy < 0:
+                    # Quadrant 4: angle between 270 und 360 (2/4 tau - 3/4 tau)
+                    c_angle = atan(dy / dx)
+                    quadrant = 4
+                # print(
+                #     f"dx, dy={dx:.2f}, {dy:.2f}, Quadrant={quadrant}, "
+                #     + f"angle={c_angle:.2f} ({c_angle / tau * 360.0:.2f})"
+                # )
+                return c_angle
+
             polypoints = []
             poly_length = generate_polygon()
             if len(polypoints) == 0:
                 # Degenerate !!
                 return
             # Closed path? -> Different intermediary points
-            if closed_path():
+            is_closed_path = closed_path()
+            if is_closed_path:
                 segcount = len(data)
             else:
                 segcount = len(data) - 1
@@ -685,10 +818,16 @@ class DistributionPanel(wx.Panel):
             # print(f"Expected segcount= {segcount}")
             # Now iterate over all points and establish the positions
             idx = -1
-            for pt in polypoints:
+            for idxpt, pt in enumerate(polypoints):
                 x = pt[0]
                 y = pt[1]
-                ptangle = 0
+                if len(polypoints) > 1:
+                    if idxpt == 0:
+                        ptangle = calc_slope(idxpt + 1)
+                    else:
+                        ptangle = calc_slope(idxpt)
+                else:
+                    ptangle = 0
                 plen = pt[2]
                 if abs(x) > 1.0e8 or abs(y) > 1.0e8:
                     # this does not seem to be a valid coord...
@@ -702,8 +841,8 @@ class DistributionPanel(wx.Panel):
                             fract = (mylen - lastlen) / (plen - lastlen)
                             x = lastx + fract * (x - lastx)
                             y = lasty + fract * (y - lasty)
-                    newpt = (x, y)
-                    # print ("I would add another point...")
+                    newpt = (x, y, ptangle)
+                    # print (f"I add: ({x:.1f}, {y:.1f}, {ptangle:.3f}) {ptangle/tau*360.0:.3f} ")
                     if newpt not in target:
                         # print ("..and added")
                         target.append(newpt)
@@ -713,12 +852,13 @@ class DistributionPanel(wx.Panel):
                 lastx = pt[0]
                 lasty = pt[1]
                 lastlen = pt[2]
+                last_angle = ptangle
             # We may have slightly overshot, so in doubt add the last point
             if segadded < segcount:
                 # print ("I would add to it the last point...")
-                newpt = (lastx, lasty)
+                newpt = (lastx, lasty, last_angle)
                 if newpt not in target:
-                    # print ("..and added")
+                    # print (f"Finally: ({last_x:.1f}, {last_y:.1f}, {last_angle:.3f})")
                     segadded += 1
                     target.append(newpt)
             # print (f"Target points: {len(target)}")
@@ -811,8 +951,11 @@ class DistributionPanel(wx.Panel):
                 break
             dx = target[idx][0] - node.bounds[0]
             dy = target[idx][1] - node.bounds[1]
+            ptangle = target[idx][2]
             if xmode == "none":
                 dx = 0
+                # Makes no sense if not both xmode and ymode are set...
+                ptangle = 0
             elif remain_inside and idx == idxmin:
                 # That's already fine
                 pass
@@ -825,8 +968,11 @@ class DistributionPanel(wx.Panel):
                 dx -= (node.bounds[2] - node.bounds[0]) / 2
             elif xmode == "max":
                 dx -= node.bounds[2] - node.bounds[0]
+
             if ymode == "none":
                 dy = 0
+                # Makes no sense if not both xmode and ymode are set...
+                ptangle = 0
             elif remain_inside and idx == idxmin:
                 # That's already fine
                 pass
@@ -840,7 +986,7 @@ class DistributionPanel(wx.Panel):
             elif ymode == "max":
                 dy -= node.bounds[3] - node.bounds[1]
 
-            if dx == 0 and dy == 0:
+            if dx == 0 and dy == 0 and ptangle == 0:
                 continue
             if (
                 hasattr(node, "lock")
@@ -850,8 +996,13 @@ class DistributionPanel(wx.Panel):
                 continue
             else:
                 try:
-                    # q.matrix *= matrix
-                    node.matrix.post_translate(dx, dy)
+                    cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
+                    cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
+                    if dx != 0 or dy != 0:
+                        node.matrix.post_translate(dx, dy)
+                    # Do we have a rotation to take into account?
+                    if ptangle != 0:
+                        node.matrix.post_rotate(ptangle, cx, cy)
                     node.modified()
                     modified += 1
                 except AttributeError:
@@ -870,12 +1021,27 @@ class DistributionPanel(wx.Panel):
         remain_inside = bool(self.check_inside_xy.GetValue())
         if treat in ("points", "shape"):
             remain_inside = False
+        rotate_elem = self.check_rotate.GetValue()
+        if treat not in ("points", "shape"):
+            rotate_elem = False
         # print(f"Params: x={xmode}, y={ymode}, sort={esort}, treat={treat}")
         # The elements...
         data = []
         target = []
         self.prepare_data(data, esort)
-        self.calculate_basis(data, target, treat)
+        if xmode == "space":
+            # Space
+            equidist_x = False
+            xmode = "center"
+        else:
+            equidist_x = True
+        if ymode == "space":
+            # Space
+            equidist_y = False
+            ymode = "center"
+        else:
+            equidist_y = True
+        self.calculate_basis(data, target, treat, equidist_x, equidist_y, rotate_elem)
         self.apply_results(data, target, xmode, ymode, remain_inside)
         self.save_setting()
 
@@ -1094,7 +1260,7 @@ class ArrangementPanel(wx.Panel):
             num_cols = self.arrange_x.GetValue()
             num_rows = self.arrange_y.GetValue()
             if self.count < 2 or self.count > num_cols * num_rows:
-                print(f"Too small: {self.count} vs. {num_cols}x{num_rows}")
+                # print(f"Too small: {self.count} vs. {num_cols}x{num_rows}")
                 active = False
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
@@ -1124,7 +1290,7 @@ class ArrangementPanel(wx.Panel):
                 gapy = -1
             # Invalid gaps?
             if relat == "distance" and (gapx < 0 or gapy < 0):
-                print("Invalid gaps")
+                # print("Invalid gaps")
                 active = False
         else:
             active = False
@@ -1193,11 +1359,11 @@ class ArrangementPanel(wx.Panel):
             gapy = float(Length(self.txt_gap_y.GetValue()))
         except ValueError:
             gapy = -1
-        print(f"cols={num_cols}, rows={num_rows}")
-        print(f"samex={same_x}, samey={same_y}")
-        print(f"Relat={relat}, esort={esort}")
-        print(f"xpos={xpos}, ypos={ypos}")
-        print(f"Gapx={gapx:.1f}, Gapy={gapy:.1f}")
+        # print(f"cols={num_cols}, rows={num_rows}")
+        # print(f"samex={same_x}, samey={same_y}")
+        # print(f"Relat={relat}, esort={esort}")
+        # print(f"xpos={xpos}, ypos={ypos}")
+        # print(f"Gapx={gapx:.1f}, Gapy={gapy:.1f}")
         data = []
         target = []
         prepare_data()
