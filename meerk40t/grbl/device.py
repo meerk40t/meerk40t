@@ -757,10 +757,10 @@ class GRBLDriver(Parameters):
         Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
         called first this should pause the machine without current work acting as a dwell.
 
-        @param t:
+        @param time_in_ms:
         @return:
         """
-        self.grbl(f"G04 S{t}\r")
+        self.grbl(f"G04 S{time_in_ms * 1000.0}\r")
 
     def wait_finish(self, *values):
         """
