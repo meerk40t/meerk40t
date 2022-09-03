@@ -309,7 +309,7 @@ def plugin(kernel, lifecycle):
                 yield "home"
                 yield "wait_finish"
 
-            spooler.laserjob(list(home_dot_test()))
+            spooler.laserjob(list(home_dot_test()), label=f"Dot and Home Test")
             return "spooler", spooler
 
 
@@ -613,11 +613,12 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def laserjob(self, job, priority=0, loops=1):
+    def laserjob(self, job, priority=0, loops=1, label=None):
         """
         send a wrapped laser job to the spooler.
         """
-        label = f"{self.__class__.__name__}:{len(job)} items"
+        if label is None:
+            label = f"{self.__class__.__name__}:{len(job)} items"
         # label = str(job)
         laserjob = LaserJob(
             label, list(job), driver=self.driver, priority=priority, loops=loops

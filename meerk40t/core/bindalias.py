@@ -36,6 +36,10 @@ from meerk40t.kernel import CommandMatchRejected, Service
 # Later entries in the tuple are used to identify previous defaults and update them to current,
 # so do not delete these until a version change (like 0.8) results in completely new settings anyway.
 DEFAULT_KEYMAP = {
+    "right": ("translate 1mm 0",),
+    "left": ("translate -1mm 0",),
+    "up": ("translate 0 -1mm",),
+    "down": ("translate 0 1mm",),
     "a": ("+left",),
     "d": ("+right",),
     "w": ("+up",),
@@ -207,7 +211,7 @@ DEFAULT_ALIAS = {
     "-rotate_cw": (".timerrotate_cw off",),
     "-rotate_ccw": (".timerrotate_ccw off",),
     "-translate_right": (".timertranslate_right off",),
-    "-translate_left": (".timertranslate_right off",),
+    "-translate_left": (".timertranslate_left off",),
     "-translate_down": (".timertranslate_down off",),
     "-translate_up": (".timertranslate_up off",),
     "-right": (".timerright off",),

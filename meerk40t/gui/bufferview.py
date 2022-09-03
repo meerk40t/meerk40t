@@ -64,3 +64,7 @@ class BufferView(MWindow):
     def window_open(self):
         self.context.close(self.name)
         self.panel.pane_show()
+
+    @staticmethod
+    def submenu():
+        return ("Device-Control", "Buffer")

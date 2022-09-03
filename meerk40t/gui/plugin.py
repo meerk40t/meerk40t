@@ -15,7 +15,7 @@ def plugin(kernel, lifecycle):
             kernel._gui = False
 
             @kernel.console_command("gui", help=_("starts the gui"))
-            def gui_start(channel=None, **kwargs):
+            def gui_fail(channel=None, **kwargs):
                 channel(
                     "wxPython is not installed. No graphical user interface possible."
                 )

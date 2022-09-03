@@ -156,3 +156,7 @@ class TCPController(MWindow):
             self.service.controller.disconnect()
         else:
             self.service.controller.connect()
+
+    @staticmethod
+    def submenu():
+        return ("Device-Control", "GRBL TCP Controller")

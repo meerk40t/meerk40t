@@ -5,7 +5,7 @@ def plugin(kernel, lifecycle):
         return [gui.plugin]
     if lifecycle == "invalidate":
         try:
-            import numpy
+            import numpy  # pylint: disable=unused-import
         except ImportError:
             return True
     if lifecycle == "register":

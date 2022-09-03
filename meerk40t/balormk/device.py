@@ -5,7 +5,7 @@ import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Angle, Length, ViewPort
+from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length, ViewPort
 from meerk40t.kernel import Service
 from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
 
@@ -85,10 +85,16 @@ class ElementLightJob:
         con.light_mode()
 
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         delay_dark = self.jump_delay
 
@@ -184,10 +190,16 @@ class LiveSelectionLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         rotate.post_translate(x_offset, y_offset)
 
@@ -363,10 +375,16 @@ class LiveFullLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         rotate.post_translate(x_offset, y_offset)
 
@@ -436,10 +454,16 @@ class LiveFullLightJob:
             return self.crosshairs(con)
 
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         quantization = 50
         rotate = Matrix()
@@ -511,7 +535,7 @@ class BalorDevice(Service, ViewPort):
         self.job = None
 
         _ = kernel.translation
-
+        self.register("frequency", (0, 1000))
         self.register(
             "format/op cut",
             "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
@@ -530,7 +554,7 @@ class BalorDevice(Service, ViewPort):
         )
         self.register(
             "format/op image",
-            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
+            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode}",
         )
         self.register(
             "format/op dots",
@@ -624,7 +648,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "scale_x",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
                 "label": _("X-Axis"),
                 "tip": _("Scale the X axis"),
@@ -634,7 +658,7 @@ class BalorDevice(Service, ViewPort):
             {
                 "attr": "scale_y",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
                 "label": _("Y-Axis"),
                 "tip": _("Scale the Y axis"),
@@ -1681,7 +1705,7 @@ class BalorDevice(Service, ViewPort):
             "mark_time",
             help=_("Checks the Mark Time."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_mark_time(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_time()
             if reply is None:
                 channel("Not connected, cannot get mark time.")
@@ -1694,7 +1718,7 @@ class BalorDevice(Service, ViewPort):
             "mark_count",
             help=_("Checks the Mark Count."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_mark_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_count()
             if reply is None:
                 channel("Not connected, cannot get mark count.")
@@ -1707,7 +1731,7 @@ class BalorDevice(Service, ViewPort):
             "axis_pos",
             help=_("Checks the Axis Position."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_axis_pos(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_axis_pos()
             if reply is None:
                 channel("Not connected, cannot get axis position.")
@@ -1720,7 +1744,7 @@ class BalorDevice(Service, ViewPort):
             "user_data",
             help=_("Checks the User Data."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_user_data(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_user_data()
             if reply is None:
                 channel("Not connected, cannot get user data.")
@@ -1733,7 +1757,7 @@ class BalorDevice(Service, ViewPort):
             "position_xy",
             help=_("Checks the Position XY"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_position_xy(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_position_xy()
             if reply is None:
                 channel("Not connected, cannot get position xy.")
@@ -1746,7 +1770,7 @@ class BalorDevice(Service, ViewPort):
             "fly_speed",
             help=_("Checks the Fly Speed."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fly_speed(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_speed()
             if reply is None:
                 channel("Not connected, cannot get fly speed.")
@@ -1759,7 +1783,7 @@ class BalorDevice(Service, ViewPort):
             "fly_wait_count",
             help=_("Checks the fiber config extend"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fly_wait_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_wait_count()
             if reply is None:
                 channel("Not connected, cannot get fly weight count.")
@@ -1772,7 +1796,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_st_mo_ap",
             help=_("Checks the fiber st mo ap"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_st_mo_ap()
             if reply is None:
                 channel("Not connected, cannot get fiber_st_mo_ap.")
@@ -1785,7 +1809,7 @@ class BalorDevice(Service, ViewPort):
             "input_port",
             help=_("Checks the input_port"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_input_port(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_input_port()
             if reply is None:
                 channel("Not connected, cannot get input port.")
@@ -1798,7 +1822,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_config_extend",
             help=_("Checks the fiber config extend"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_config_extend()
             if reply is None:
                 channel("Not connected, cannot get fiber config extend.")
@@ -1899,7 +1923,7 @@ class BalorDevice(Service, ViewPort):
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(
+        def shapes_selected(
             command, channel, _, count=256, data=None, args=tuple(), **kwargs
         ):
             """
@@ -1927,7 +1951,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, data=None, args=tuple(), **kwargs):
+        def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """

@@ -1,4 +1,5 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut
 from meerk40t.core.element_types import *
@@ -66,13 +67,6 @@ class CutOpNode(Node, Parameters):
     def __copy__(self):
         return CutOpNode(self)
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
-            self._bounds_dirty = False
-        return self._bounds
-
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
     #     if maxspeed is not None and self.speed > maxspeed:
@@ -107,7 +101,7 @@ class CutOpNode(Node, Parameters):
         if ct > 0:
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
@@ -190,16 +184,17 @@ class CutOpNode(Node, Parameters):
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
                                     self.add_reference(node)
-                                # Have classified but more classification might be needed
-                                return True, self.stopop
+                                    # Have classified but more classification might be needed
+                                    return True, self.stopop
                 else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
-                    # Have classified but more classification might be needed
-                    return True, self.stopop
+                        # Have classified but more classification might be needed
+                        return True, self.stopop
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
+                    self.add_reference(node)
                     return True, self.stopop
         return False, False
 
@@ -244,6 +239,10 @@ class CutOpNode(Node, Parameters):
                 estimate = float("inf")
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+
+        if isnan(estimate):
+            estimate = 0
+
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"

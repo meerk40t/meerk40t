@@ -1,7 +1,6 @@
 import os
 import platform
 import sys
-import threading
 import traceback
 from datetime import datetime
 
@@ -30,6 +29,7 @@ from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_saf
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
+from .alignment import Alignment
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -39,8 +39,11 @@ from .icons import (
     icons8_home_filled_50,
     icons8_pause_50,
 )
+from .imagesplitter import RenderSplit
 from .keymap import Keymap
+from .lasertoolpanel import LaserTool
 from .notes import Notes
+from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
@@ -366,6 +369,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
+        kernel.register("window/Alignment", Alignment)
+        kernel.register("window/SplitImage", RenderSplit)
+        kernel.register("window/OperationInfo", OperationInformation)
+        kernel.register("window/Lasertool", LaserTool)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
@@ -390,10 +397,6 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.opassignment import register_panel_operation_assign
 
         kernel.register("wxpane/opassign", register_panel_operation_assign)
-
-        from meerk40t.gui.lasertoolpanel import register_panel_lasertool
-
-        kernel.register("wxpane/Lasertool", register_panel_lasertool)
 
         from meerk40t.gui.snapoptions import register_panel_snapoptions
 

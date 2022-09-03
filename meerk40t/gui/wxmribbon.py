@@ -9,11 +9,7 @@ from wx import aui
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import (
-    get_default_icon_size,
-    get_default_scale_factor,
-    icons8_opened_folder_50,
-)
+from .icons import get_default_icon_size, icons8_opened_folder_50
 
 _ = wx.GetTranslation
 

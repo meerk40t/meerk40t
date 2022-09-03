@@ -3,10 +3,9 @@ import wx
 from meerk40t.gui.wxutils import ScrolledPanel
 
 from ...core.units import Length
-from ...svgelements import Color
 from ..icons import icons8_vector_50
-from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
+from .attributes import ColorPanel, IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
@@ -19,72 +18,43 @@ class PathPropertyPanel(ScrolledPanel):
 
         self.node = node
 
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.button_stroke_none = wx.Button(self, wx.ID_ANY, _("None"))
-        self.button_stroke_none.name = "stroke none"
-        self.button_stroke_F00 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_F00.name = "stroke #F00"
-        self.button_stroke_0F0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_0F0.name = "stroke #0F0"
-        self.button_stroke_00F = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_00F.name = "stroke #00F"
-        self.button_stroke_F0F = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_F0F.name = "stroke #F0F"
-        self.button_stroke_0FF = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_0FF.name = "stroke #0FF"
-        self.button_stroke_FF0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_FF0.name = "stroke #FF0"
-        self.button_stroke_000 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_000.name = "stroke #000"
+        self.panel_id = IdPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panel_stroke = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            label="Stroke:",
+            attribute="stroke",
+            callback=self.callback_color,
+            node=self.node,
+        )
+        self.panel_fill = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            label="Fill:",
+            attribute="fill",
+            callback=self.callback_color,
+            node=self.node,
+        )
+        self.panel_xy = PositionSizePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
 
-        self.button_fill_none = wx.Button(self, wx.ID_ANY, _("None"))
-        self.button_fill_none.name = "fill none"
-        self.button_fill_F00 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_F00.name = "fill #F00"
-        self.button_fill_0F0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_0F0.name = "fill #0F0"
-        self.button_fill_00F = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_00F.name = "fill #00F"
-        self.button_fill_F0F = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_F0F.name = "fill #F0F"
-        self.button_fill_0FF = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_0FF.name = "fill #0FF"
-        self.button_fill_FF0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_FF0.name = "fill #FF0"
-        self.button_fill_000 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_000.name = "fill #000"
-        self.color_info_stroke = wx.StaticText(self, wx.ID_ANY, "")
-        self.color_info_fill = wx.StaticText(self, wx.ID_ANY, "")
         # Property display
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_length = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.lbl_info_area = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.btn_info_get = wx.Button(self, wx.ID_ANY, _("Retrieve"))
+        self.check_classify = wx.CheckBox(
+            self, wx.ID_ANY, _("Immediately classify after colour change")
+        )
+        self.check_classify.SetValue(True)
 
         self.__set_properties()
         self.__do_layout()
-
-        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
-        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
-        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
-        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F00)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_0F0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_00F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F0F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_0FF)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_FF0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_000)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_none)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_F00)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_0F0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_00F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_F0F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_0FF)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
 
         self.Bind(wx.EVT_BUTTON, self.on_btn_get_infos, self.btn_info_get)
 
@@ -128,55 +98,13 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_points.SetValue(f"{points:d}")
 
     def set_widgets(self, node):
+        self.panel_id.set_widgets(node)
+        self.panel_stroke.set_widgets(node)
+        self.panel_fill.set_widgets(node)
+        self.panel_xy.set_widgets(node)
+
         if node is not None:
             self.node = node
-        try:
-            if self.node.stroke is not None and self.node.stroke != "none":
-                color = wx.Colour(swizzlecolor(self.node.stroke))
-                self.text_id.SetBackgroundColour(color)
-        except AttributeError:
-            pass
-        try:
-            if node.id is not None:
-                self.text_id.SetValue(str(node.id))
-        except AttributeError:
-            pass
-        try:
-            if node.label is not None:
-                self.text_label.SetValue(str(node.label))
-        except AttributeError:
-            pass
-        s_stroke = "None"
-        s_fill = "None"
-        if self.node is not None:
-            if self.node.stroke is not None and self.node.stroke.argb is not None:
-                scol = self.node.stroke
-                wcol = wx.Colour(swizzlecolor(scol))
-                s = ""
-                try:
-                    s = wcol.GetAsString(wx.C2S_NAME)
-                except AssertionError:
-                    s = ""
-                if s != "":
-                    s = s + " (" + scol.hexrgb + ")"
-                else:
-                    s = scol.hexrgb
-                s_stroke = s
-            if self.node.fill is not None and self.node.fill.argb is not None:
-                scol = self.node.fill
-                wcol = wx.Colour(swizzlecolor(scol))
-                s = ""
-                try:
-                    s = wcol.GetAsString(wx.C2S_NAME)
-                except AssertionError:
-                    s = ""
-                if s != "":
-                    s = s + " (" + scol.hexrgb + ")"
-                else:
-                    s = scol.hexrgb
-                s_fill = s
-        self.color_info_stroke.SetLabel(s_stroke)
-        self.color_info_fill.SetLabel(s_fill)
         self.lbl_info_area.SetValue("")
         self.lbl_info_length.SetValue("")
         self.lbl_info_points.SetValue("")
@@ -184,82 +112,11 @@ class PathPropertyPanel(ScrolledPanel):
         self.Refresh()
 
     def __set_properties(self):
-        self.button_stroke_none.SetToolTip(_('"none" defined value'))
-        self.button_stroke_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
-        self.button_stroke_F00.SetToolTip(_("#FF0000 defined values."))
-        self.button_stroke_0F0.SetBackgroundColour(wx.Colour(0, 255, 0))
-        self.button_stroke_0F0.SetToolTip(_("#00FF00 defined values."))
-        self.button_stroke_00F.SetBackgroundColour(wx.Colour(0, 0, 255))
-        self.button_stroke_00F.SetToolTip(_("#00FF00 defined values."))
-        self.button_stroke_F0F.SetBackgroundColour(wx.Colour(255, 0, 255))
-        self.button_stroke_F0F.SetToolTip(_("#FF00FF defined values."))
-        self.button_stroke_0FF.SetBackgroundColour(wx.Colour(0, 255, 255))
-        self.button_stroke_0FF.SetToolTip(_("#00FFFF defined values."))
-        self.button_stroke_FF0.SetBackgroundColour(wx.Colour(255, 255, 0))
-        self.button_stroke_FF0.SetToolTip(_("#FFFF00 defined values."))
-        self.button_stroke_000.SetBackgroundColour(wx.Colour(0, 0, 0))
-        self.button_stroke_000.SetToolTip(_("#000000 defined values."))
-        self.button_fill_none.SetToolTip(_('"none" defined value'))
-        self.button_fill_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
-        self.button_fill_F00.SetToolTip(_("#FF0000 defined values."))
-        self.button_fill_0F0.SetBackgroundColour(wx.Colour(0, 255, 0))
-        self.button_fill_0F0.SetToolTip(_("#00FF00 defined values."))
-        self.button_fill_00F.SetBackgroundColour(wx.Colour(0, 0, 255))
-        self.button_fill_00F.SetToolTip(_("#00FF00 defined values."))
-        self.button_fill_F0F.SetBackgroundColour(wx.Colour(255, 0, 255))
-        self.button_fill_F0F.SetToolTip(_("#FF00FF defined values."))
-        self.button_fill_0FF.SetBackgroundColour(wx.Colour(0, 255, 255))
-        self.button_fill_0FF.SetToolTip(_("#00FFFF defined values."))
-        self.button_fill_FF0.SetBackgroundColour(wx.Colour(255, 255, 0))
-        self.button_fill_FF0.SetToolTip(_("#FFFF00 defined values."))
-        self.button_fill_000.SetBackgroundColour(wx.Colour(0, 0, 0))
-        self.button_fill_000.SetToolTip(_("#000000 defined values."))
-        # end wxGlade
+        return
 
     def __do_layout(self):
         # begin wxGlade: PathProperty.__do_layout
         sizer_v_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_h_colors = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_v_col_fill = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL
-        )
-        sizer_v_col_stroke = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Stroke Color")), wx.VERTICAL
-        )
-        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_id = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
-        )
-        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
-        sizer_label = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
-        )
-        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
-
-        sizer_v_col_stroke.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.button_stroke_0F0, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.button_stroke_00F, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.button_stroke_F0F, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.button_stroke_0FF, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.button_stroke_FF0, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.button_stroke_000, 0, wx.EXPAND, 0)
-        sizer_v_col_stroke.Add(self.color_info_stroke, 0, wx.EXPAND, 0)
-
-        sizer_v_col_fill.Add(self.button_fill_none, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.button_fill_F00, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.button_fill_0F0, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.button_fill_00F, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.button_fill_F0F, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.button_fill_0FF, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.button_fill_FF0, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.button_fill_000, 0, wx.EXPAND, 0)
-        sizer_v_col_fill.Add(self.color_info_fill, 0, wx.EXPAND, 0)
-
-        sizer_h_colors.Add(sizer_v_col_stroke, 1, wx.EXPAND, 0)
-        sizer_h_colors.Add(sizer_v_col_fill, 1, wx.EXPAND, 0)
 
         sizer_h_infos = wx.BoxSizer(wx.HORIZONTAL)
         sizer_info1 = wx.StaticBoxSizer(
@@ -282,57 +139,31 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_h_infos.Add(sizer_info3, 1, wx.EXPAND, 0)
         sizer_h_infos.Add(self.btn_info_get, 0, wx.EXPAND, 0)
 
-        sizer_v_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
-        sizer_v_main.Add(sizer_h_colors, 1, wx.EXPAND, 0)
+        sizer_v_main.Add(self.panel_id, 0, wx.EXPAND, 0)
+        sizer_v_main.Add(self.panel_stroke, 0, wx.EXPAND, 0)
+        sizer_v_main.Add(self.panel_fill, 0, wx.EXPAND, 0)
+        sizer_v_main.Add(self.check_classify, 0, 0, 0)
+        sizer_v_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
         sizer_v_main.Add(sizer_h_infos, 0, wx.EXPAND, 0)
         self.SetSizer(sizer_v_main)
         self.Layout()
         self.Centre()
         # end wxGlade
 
-    def on_text_id_change(self, event=None):
-        try:
-            self.node.id = self.text_id.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
+    def update_label(self):
+        return
 
-    def on_text_label_change(self, event=None):
-        try:
-            self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
-
-    def on_button_color(self, event):  # wxGlade: ElementProperty.<event_handler>
-        button = event.EventObject
-        color = None
-        if "none" not in button.name:
-            color = button.GetBackgroundColour()
-            rgb = color.GetRGB()
-            color = swizzlecolor(rgb)
-            color = Color(color, 1.0)
-        if "stroke" in button.name:
-            if color is not None:
-                self.node.stroke = color
-                self.node.altered()
-                color = wx.Colour(swizzlecolor(self.node.stroke))
-                self.text_id.SetBackgroundColour(color)
-            else:
-                self.node.stroke = Color("none")
-                self.node.altered()
-                self.text_id.SetBackgroundColour(wx.WHITE)
-        elif "fill" in button.name:
-            if color is not None:
-                self.node.fill = color
-                self.node.altered()
-            else:
-                self.node.fill = Color("none")
-                self.node.altered()
-        self.context.elements.set_node_emphasis(self.node, True)
+    def callback_color(self):
+        self.node.altered()
+        self.update_label()
         self.Refresh()
-        self.context("declassify\nclassify\n")
-        self.context.elements.signal("element_property_update", self.node)
+        if self.check_classify.GetValue():
+            mynode = self.node
+            wasemph = self.node.emphasized
+            self.context("declassify\nclassify\n")
+            self.context.elements.signal("element_property_update", self.node)
+            mynode.emphasized = wasemph
+            self.set_widgets(mynode)
 
 
 class PathProperty(MWindow):

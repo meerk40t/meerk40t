@@ -1,27 +1,25 @@
-from meerk40t.core.cutcode import WaitCut
+from meerk40t.core.cutcode import SetOriginCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
 
-class WaitOperation(Node):
+class SetOriginOperation(Node):
     """
-    WaitOperation tells the controller to wait for a specified period of time.
+    SetOriginOperation tells the controller to return to origin.
 
-    The units for the wait property is seconds. The waitcut uses milliseconds, as does spooled "wait" lasercode.
-
-    Node type "util wait"
+    Node type "util origin"
     """
 
-    def __init__(self, wait=1.0, **kwargs):
-        super().__init__(type="util wait", **kwargs)
-        self.settings = {"wait": wait, "output": True}
-        self._formatter = "{enabled}{element_type} {wait}"
+    def __init__(self, x=None, y=None, **kwargs):
+        super().__init__(type="util origin", **kwargs)
+        self.settings = {"x": x, "y": y, "output": True}
+        self._formatter = "{enabled}{element_type} {x} {y}"
 
     def __repr__(self):
-        return f"WaitOperation('{self.wait}')"
+        return f"SetOriginOperation('{self.x}, {self.y}')"
 
     def __copy__(self):
-        return WaitOperation(self.wait)
+        return SetOriginOperation(self.x, self.y)
 
     def __len__(self):
         return 1
@@ -29,7 +27,8 @@ class WaitOperation(Node):
     def validate(self):
         parameters = [
             ("output", lambda v: str(v).lower() == "true"),
-            ("wait", float),
+            ("x", float),
+            ("y", float),
         ]
         settings = self.settings
         for param, cast in parameters:
@@ -42,12 +41,20 @@ class WaitOperation(Node):
                 pass
 
     @property
-    def wait(self):
-        return self.settings.get("wait")
+    def x(self):
+        return self.settings.get("x")
 
-    @wait.setter
-    def wait(self, v):
-        self.settings["wait"] = v
+    @x.setter
+    def x(self, v):
+        self.settings["x"] = v
+
+    @property
+    def y(self):
+        return self.settings.get("y")
+
+    @y.setter
+    def y(self, v):
+        self.settings["y"] = v
 
     @property
     def output(self):
@@ -62,10 +69,18 @@ class WaitOperation(Node):
         return 1
 
     def default_map(self, default_map=None):
-        default_map = super(WaitOperation, self).default_map(default_map=default_map)
-        default_map["element_type"] = "Wait"
+        default_map = super(SetOriginOperation, self).default_map(
+            default_map=default_map
+        )
+        default_map["element_type"] = "SetOrigin"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["wait"] = self.wait
+        default_map["adjust"] = (
+            f" ({self.x}, {self.y})"
+            if self.x is not None and self.y is not None
+            else "<Current>"
+        )
+        default_map["x"] = self.x
+        default_map["y"] = self.y
         default_map.update(self.settings)
         return default_map
 
@@ -98,9 +113,12 @@ class WaitOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        wait = WaitCut(self.wait * 1000.0)
-        wait.original_op = self.type
-        yield wait
+        if self.x is None or self.y is None:
+            cut = SetOriginCut()
+        else:
+            cut = SetOriginCut((self.x, self.y))
+        cut.original_op = self.type
+        yield cut
 
     def generate(self):
-        yield "wait", self.wait * 1000.0
+        yield "set_origin", self.x, self.y

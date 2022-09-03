@@ -19,13 +19,13 @@ class PropertyWindow(MWindow):
         self.SetTitle(_("Properties"))
         self.panel_instances = list()
 
-        self.notebook_main = wx.aui.AuiNotebook(
+        self.notebook_main = aui.AuiNotebook(
             self,
             -1,
-            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
-            | wx.aui.AUI_NB_SCROLL_BUTTONS
-            | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE,
+            style=aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | aui.AUI_NB_SCROLL_BUTTONS
+            | aui.AUI_NB_TAB_SPLIT
+            | aui.AUI_NB_TAB_MOVE,
         )
         self.Layout()
 
@@ -52,6 +52,7 @@ class PropertyWindow(MWindow):
         pages_to_instance = []
         for node in nodes:
             pages_in_node = []
+            found = False
             for property_sheet in self.context.lookup_all(
                 f"property/{node.__class__.__name__}/.*"
             ):
@@ -59,6 +60,23 @@ class PropertyWindow(MWindow):
                     node
                 ):
                     pages_in_node.append((property_sheet, node))
+                    found = True
+            # If we did not have any hits and the node is a reference
+            # then we fall back to the master. So if in the future we
+            # would have a property panel dealing with reference-nodes
+            # then this would no longer apply.
+            if node.type == "reference" and not found:
+                snode = node.node
+                found = False
+                for property_sheet in self.context.lookup_all(
+                    f"property/{snode.__class__.__name__}/.*"
+                ):
+                    if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                        snode
+                    ):
+                        pages_in_node.append((property_sheet, snode))
+                        found = True
+
             pages_in_node.sort(key=sort_priority)
             pages_to_instance.extend(pages_in_node)
 
@@ -114,3 +132,7 @@ class PropertyWindow(MWindow):
                 pass
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
+
+    @staticmethod
+    def submenu():
+        return ("Editing", "Operation/Element Properties")

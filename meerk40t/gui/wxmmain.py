@@ -27,7 +27,7 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import UNITS_PER_INCH, Length
+from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (
     STD_ICON_SIZE,
@@ -40,6 +40,8 @@ from .icons import (
     icons8_align_left_50,
     icons8_align_right_50,
     icons8_align_top_50,
+    icons8_centerh_50,
+    icons8_centerv_50,
     icons8_circle_50,
     icons8_cursor_50,
     icons8_flip_vertical,
@@ -60,7 +62,6 @@ from .icons import (
     icons8_type_50,
     icons8_ungroup_objects_50,
     icons8_vector_50,
-    icons_centerize,
     icons_evenspace_horiz,
     icons_evenspace_vert,
     set_icon_appearance,
@@ -322,22 +323,22 @@ class MeerK40t(MWindow):
         # small - std icon size / no labels
         # tiny - reduced icon size / no labels
         context.setting(str, "ribbon_appearance", "default")
-        choices = [
-            {
-                "attr": "ribbon_appearance",
-                "object": self.context.root,
-                "default": "default",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["default", "small", "tiny"],
-                "label": _("Ribbon-Size:"),
-                "tip": _(
-                    "Appearance of ribbon at the top (requires a restart to take effect))"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-        ]
+        # choices = [
+        #     {
+        #         "attr": "ribbon_appearance",
+        #         "object": self.context.root,
+        #         "default": "default",
+        #         "type": str,
+        #         "style": "combosmall",
+        #         "choices": ["default", "small", "tiny"],
+        #         "label": _("Ribbon-Size:"),
+        #         "tip": _(
+        #             "Appearance of ribbon at the top (requires a restart to take effect))"
+        #         ),
+        #         "page": "Gui",
+        #         "section": "Appearance",
+        #     },
+        # ]
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
@@ -1006,13 +1007,15 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignLeft",
             {
-                "label": _("Align Left"),
+                "label": _("Left"),
                 "icon": icons8_align_left_50,
                 "tip": _(
                     "Align selected elements at the leftmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align left\n"),
-                "right": lambda v: kernel.elements("align bedleft\n"),
+                "action": lambda v: kernel.elements(
+                    "align push first individual left pop\n"
+                ),
+                "right": lambda v: kernel.elements("align push bed group left pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1023,13 +1026,15 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignRight",
             {
-                "label": _("Align Right"),
+                "label": _("Right"),
                 "icon": icons8_align_right_50,
                 "tip": _(
                     "Align selected elements at the rightmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align right\n"),
-                "right": lambda v: kernel.elements("align bedright\n"),
+                "action": lambda v: kernel.elements(
+                    "align push first individual right pop\n"
+                ),
+                "right": lambda v: kernel.elements("align push bed group right pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1040,13 +1045,15 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignTop",
             {
-                "label": _("Align Top"),
+                "label": _("Top"),
                 "icon": icons8_align_top_50,
                 "tip": _(
                     "Align selected elements at the topmost position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align top\n"),
-                "right": lambda v: kernel.elements("align bedtop\n"),
+                "action": lambda v: kernel.elements(
+                    "align push first individual top pop\n"
+                ),
+                "right": lambda v: kernel.elements("align push bed group top pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1057,13 +1064,15 @@ class MeerK40t(MWindow):
         kernel.register(
             "button/align/AlignBottom",
             {
-                "label": _("Align Bottom"),
+                "label": _("Bottom"),
                 "icon": icons8_align_bottom_50,
                 "tip": _(
                     "Align selected elements at the lowest position (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align bottom\n"),
-                "right": lambda v: kernel.elements("align bedbottom\n"),
+                "action": lambda v: kernel.elements(
+                    "align push first individual bottom pop\n"
+                ),
+                "right": lambda v: kernel.elements("align push bed group bottom pop\n"),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1072,15 +1081,40 @@ class MeerK40t(MWindow):
             },
         )
         kernel.register(
-            "button/align/AlignCenter",
+            "button/align/AlignCenterH",
             {
-                "label": _("Align Center"),
-                "icon": icons_centerize,
+                "label": _("Center X"),
+                "icon": icons8_centerh_50,
                 "tip": _(
-                    "Align selected elements at their center (right click: of the bed)"
+                    "Align selected elements at their center horizontally (right click: of the bed)"
                 ),
-                "action": lambda v: kernel.elements("align center\n"),
-                "right": lambda v: kernel.elements("align bedcenter\n"),
+                "action": lambda v: kernel.elements(
+                    "align push first individual centerh pop\n"
+                ),
+                "right": lambda v: kernel.elements(
+                    "align push bed group centerh pop\n"
+                ),
+                "size": buttonsize,
+                "rule_enabled": lambda cond: len(
+                    list(kernel.elements.elems(emphasized=True))
+                )
+                > 0,
+            },
+        )
+        kernel.register(
+            "button/align/AlignCenterV",
+            {
+                "label": _("Center Y"),
+                "icon": icons8_centerv_50,
+                "tip": _(
+                    "Align selected elements at their center vertically (right click: of the bed)"
+                ),
+                "action": lambda v: kernel.elements(
+                    "align push first individual centerv pop\n"
+                ),
+                "right": lambda v: kernel.elements(
+                    "align push bed group centerv pop\n"
+                ),
                 "size": buttonsize,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
@@ -1816,33 +1850,52 @@ class MeerK40t(MWindow):
 
         submenus = {}
         for window, _path, suffix_path in self.context.find("window/.*"):
+            try:
+                name = window.name
+            except AttributeError:
+                name = suffix_path
             if not window.window_menu(None):
                 continue
             submenu = None
+            win_caption = ""
             try:
-                submenu_name = window.submenu
+                returnvalue = window.submenu()
+                if isinstance(returnvalue, str):
+                    submenu_name = returnvalue
+                elif isinstance(returnvalue, (tuple, list)):
+                    if len(returnvalue) > 0:
+                        submenu_name = returnvalue[0]
+                    if len(returnvalue) > 1:
+                        win_caption = returnvalue[1]
+                if submenu_name is None:
+                    submenu_name = ""
+                if win_caption is None:
+                    win_caption = ""
+            except AttributeError:
+                submenu_name = ""
+            if submenu_name != "":
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
                     submenu = wx.Menu()
-                    self.window_menu.AppendSubMenu(submenu, submenu_name)
+                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
                     submenus[submenu_name] = submenu
-            except AttributeError:
-                pass
             menu_context = submenu if submenu is not None else self.window_menu
             try:
                 name = window.name
             except AttributeError:
                 name = suffix_path
-
-            try:
-                caption = window.caption
-            except AttributeError:
-                caption = name[0].upper() + name[1:]
+            if win_caption != "":
+                caption = win_caption
+            else:
+                try:
+                    caption = window.caption
+                except AttributeError:
+                    caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            menuitem = menu_context.Append(wx.ID_ANY, caption, "", wx.ITEM_NORMAL)
+            menuitem = menu_context.Append(wx.ID_ANY, _(caption), "", wx.ITEM_NORMAL)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
@@ -2192,16 +2245,6 @@ class MeerK40t(MWindow):
             lambda e: self.context("webhelp makers\n"),
             id=menuitem.GetId(),
         )
-        menuitem = self.help_menu.Append(
-            wx.ID_ANY,
-            _("&IRC"),
-            _("Chat with developers to get help on the Meerk40t IRC channel"),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            lambda e: self.context("webhelp irc\n"),
-            id=menuitem.GetId(),
-        )
         self.help_menu.AppendSeparator()
         menuitem = self.help_menu.Append(
             wx.ID_ABOUT,
@@ -2334,7 +2377,7 @@ class MeerK40t(MWindow):
             dlg.Destroy()
 
     @signal_listener("cutplanning;failed")
-    def on_usb_error(self, origin, error):
+    def on_cutplan_error(self, origin, error):
         dlg = wx.MessageDialog(
             None,
             _("Cut planning failed because: {error}".format(error=error)),
@@ -2407,10 +2450,10 @@ class MeerK40t(MWindow):
         if frame is not None:
             elements = self.context.elements
             img = Image.fromarray(frame)
-            node = elements.elem_branch.add(
-                image=img, width=image_width, height=image_height, type="elem image"
-            )
+            matrix = Matrix(f"scale({UNITS_PER_PIXEL}, {UNITS_PER_PIXEL})")
+            node = elements.elem_branch.add(image=img, matrix=matrix, type="elem image")
             elements.classify([node])
+            self.context.signal("refresh_scene", "Scene")
 
     @signal_listener("statusmsg")
     def on_update_statusmsg(self, origin, value):

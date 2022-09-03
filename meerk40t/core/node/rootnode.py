@@ -1,4 +1,3 @@
-from meerk40t.core.node.node import Node
 from meerk40t.core.node.blobnode import BlobNode
 from meerk40t.core.node.branch_elems import BranchElementsNode
 from meerk40t.core.node.branch_ops import BranchOperationsNode
@@ -17,6 +16,7 @@ from meerk40t.core.node.filenode import FileNode
 from meerk40t.core.node.groupnode import GroupNode
 from meerk40t.core.node.lasercodenode import LaserCodeNode
 from meerk40t.core.node.layernode import LayerNode
+from meerk40t.core.node.node import Node
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_dots import DotsOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -25,7 +25,10 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.refnode import ReferenceNode
 from meerk40t.core.node.util_console import ConsoleOperation
+from meerk40t.core.node.util_goto import GotoOperation
+from meerk40t.core.node.util_home import HomeOperation
 from meerk40t.core.node.util_input import InputOperation
+from meerk40t.core.node.util_origin import SetOriginOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
 
@@ -206,6 +209,9 @@ bootstrap = {
     "op hatch": HatchOpNode,
     "util console": ConsoleOperation,
     "util wait": WaitOperation,
+    "util origin": SetOriginOperation,
+    "util home": HomeOperation,
+    "util goto": GotoOperation,
     "util input": InputOperation,
     "util output": OutputOperation,
     "lasercode": LaserCodeNode,

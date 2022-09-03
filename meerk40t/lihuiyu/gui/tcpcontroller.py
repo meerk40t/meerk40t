@@ -30,21 +30,19 @@ class TCPController(MWindow):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_start_connection, self.button_device_connect
         )
-        self.text_port.Bind(wx.EVT_TEXT_ENTER, self.on_port_change)
-        self.text_port.Bind(wx.EVT_KILL_FOCUS, self.on_port_change)
-        self.text_ip_host.Bind(wx.EVT_TEXT_ENTER, self.on_address_change)
-        self.text_ip_host.Bind(wx.EVT_KILL_FOCUS, self.on_address_change)
+        self.text_port.SetActionRoutine(self.on_port_change)
+        self.text_ip_host.SetActionRoutine(self.on_address_change)
         # end wxGlade
         self.max = 0
         self.state = None
 
-    def on_port_change(self, event):
+    def on_port_change(self):
         try:
             self.service.port = int(self.text_port.GetValue())
         except ValueError:
             pass
 
-    def on_address_change(self, event):
+    def on_address_change(self):
         self.service.address = str(self.text_ip_host.GetValue())
 
     def __set_properties(self):
@@ -173,3 +171,7 @@ class TCPController(MWindow):
                 self.service.tcp.disconnect()
             else:
                 self.service.tcp.connect()
+
+    @staticmethod
+    def submenu():
+        return ("Device-Control", "TCP Controller")

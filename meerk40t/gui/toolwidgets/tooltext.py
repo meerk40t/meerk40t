@@ -1,8 +1,11 @@
 import wx
 
+from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
-from meerk40t.gui.toolwidgets.textentry import TextEntry
+
+# from meerk40t.gui.toolwidgets.textentry import TextEntry
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
+from meerk40t.svgelements import Color, Matrix
 
 _ = wx.GetTranslation
 
@@ -31,6 +34,7 @@ class TextTool(ToolWidget):
         **kwargs,
     ):
         response = RESPONSE_CHAIN
+        self.scene.cursor("text")
         if event_type == "leftdown":
             if nearest_snap is None:
                 x = space_pos[0]
@@ -38,7 +42,22 @@ class TextTool(ToolWidget):
             else:
                 x = nearest_snap[0]
                 y = nearest_snap[1]
-            self.scene.context(f"window open TextEntry {x} {y}\n")
+            ## self.scene.context(f"window open TextEntry {x} {y}\n")
+            self.scene.context("tool none\n")
+            node = self.scene.context.elements.elem_branch.add(
+                text="Text",
+                matrix=Matrix(f"translate({x}, {y}) scale({UNITS_PER_PIXEL})"),
+                anchor="start",
+                fill=Color("black"),
+                type="elem text",
+            )
+            activate = self.scene.context.kernel.lookup(
+                "function/open_property_window_for_node"
+            )
+            if activate is not None:
+                activate(node)
+                self.scene.context.signal("textselect")
+
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.tool_active:
@@ -49,6 +68,6 @@ class TextTool(ToolWidget):
                 response = RESPONSE_CHAIN
         return response
 
-    @staticmethod
-    def sub_register(kernel):
-        kernel.register("window/TextEntry", TextEntry)
+    # @staticmethod
+    # def sub_register(kernel):
+    #     kernel.register("window/TextEntry", TextEntry)

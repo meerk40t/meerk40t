@@ -610,7 +610,9 @@ class RuidaEmulator(Module, Parameters):
 
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+            )
 
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
@@ -621,7 +623,7 @@ class RuidaEmulator(Module, Parameters):
                 self.x += dx
                 self.y += dy
                 self.plotcut.plot_append(
-                    self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0
+                    int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
                 )
                 desc = f"Move Relative ({dx / UNITS_PER_uM} nm, {dy / UNITS_PER_uM} nm)"
             else:
@@ -629,12 +631,16 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+            )
             desc = f"Move Horizontal Relative ({dx / UNITS_PER_uM} nm)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 0)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+            )
             desc = f"Move Vertical Relative ({dy / UNITS_PER_uM} nm)"
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
@@ -724,7 +730,9 @@ class RuidaEmulator(Module, Parameters):
         elif array[0] == 0xA8:  # 0b10101000 11 characters.
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
-            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = (
                 f"Cut Absolute ({self.x / UNITS_PER_uM} nm, {self.y / UNITS_PER_uM} nm)"
             )
@@ -733,17 +741,23 @@ class RuidaEmulator(Module, Parameters):
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
-            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = f"Cut Relative ({dx / UNITS_PER_uM} nm, {dy / UNITS_PER_uM} nm)"
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
-            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = f"Cut Horizontal Relative ({dx / UNITS_PER_uM} mil)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
-            self.plotcut.plot_append(self.x / UNITS_PER_uM, self.y / UNITS_PER_uM, 1)
+            self.plotcut.plot_append(
+                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+            )
             desc = f"Cut Vertical Relative ({dy / UNITS_PER_uM} mil)"
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
@@ -981,7 +995,7 @@ class RuidaEmulator(Module, Parameters):
             # If not saving send to spooler in control or elements if `design` is set.
             if not self.saving and len(self.cutcode):
                 if self.control:
-                    self.spooler.append(self.cutcode)
+                    self.spooler.laserjob([self.cutcode])
                 if self.design and self.elements is not None:
                     node = CutNode(cutcode=self.cutcode)
                     self.elements.op_branch.add_node(node)
@@ -1205,10 +1219,8 @@ class RuidaEmulator(Module, Parameters):
                 desc = "OEM On/Off, CardIO On/OFF"
             elif array[1] == 0x05 or array[1] == 0x54:
                 desc = "Read Run Info"
-                # len: 2
-                respond = b"\x04\x00"
+                respond = b"\xda\x05" + b"\x00" * 20
                 respond_desc = "Read Run Response"
-                # TODO: Requires Response
             elif array[1] == 0x06 or array[1] == 0x52:
                 desc = "Unknown/System Time."
             elif array[1] == 0x10 or array[1] == 0x53:
@@ -1217,12 +1229,14 @@ class RuidaEmulator(Module, Parameters):
                 # Property requested with select document, upload button "fresh property"
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = f"Upload Info 0x30 Document {filenumber}"
+                respond = b"\xda\x30" + b"\x00" * 20
                 # TODO: Requires Response.
             elif array[1] == 0x31:
                 # Property requested with select document, upload button "fresh property"
                 filenumber = self.parse_filenumber(array[2:4])
                 desc = f"Upload Info 0x31 Document {filenumber}"
                 # TODO: Requires Response.
+                respond = b"\xda\x31" + b"\x00" * 20
             elif array[1] == 0x60:
                 # len: 14
                 v = self.decode14(array[2:4])
@@ -2211,10 +2225,10 @@ class RDLoader:
         yield "RDWorks File", ("rd",), "application/x-rd"
 
     @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
+    def load(kernel, service, pathname, **kwargs):
         basename = os.path.basename(pathname)
         with open(pathname, "rb") as f:
-            op_branch = elements_modifier.get(type="branch ops")
+            op_branch = service.get(type="branch ops")
             op_branch.add(
                 data=bytearray(f.read()), data_type="ruida", type="blob", name=basename
             )

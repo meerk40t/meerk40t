@@ -226,7 +226,7 @@ class StatusBarWidget(BasicHSizer):
     def EndPopulation(self):
         self.startup = False
 
-    def Show(self, showit):
+    def Show(self, showit=True):
         # print ("Called %s - show with %s" % (self.identifier, showit))
         cnt = self.GetItemCount()
         if cnt == 0:

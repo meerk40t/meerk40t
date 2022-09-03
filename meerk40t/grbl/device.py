@@ -1,3 +1,4 @@
+import os
 import re
 import socket
 import threading
@@ -6,15 +7,20 @@ import time
 import serial
 from serial import SerialException
 
-from meerk40t.kernel import Service
+from meerk40t.kernel import Module, Service
 
 from ..core.cutcode import (
     CubicCut,
+    CutCode,
     DwellCut,
+    GotoCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
+    PlotCut,
     QuadCut,
+    SetOriginCut,
     WaitCut,
 )
 from ..core.parameters import Parameters
@@ -359,6 +365,8 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+        self.origin_x = 0
+        self.origin_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
@@ -380,12 +388,12 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.feed_mode = None
         self.feed_convert = None
-        self.g94_feedrate()  # G93 DEFAULT, mm mode
+        self._g94_feedrate()  # G93 DEFAULT, mm mode
 
         self.unit_scale = None
         self.units = None
-        self.g21_units_mm()
-        self.g91_absolute()
+        self._g21_units_mm()
+        self._g91_absolute()
 
         self.grbl = self.service.channel("grbl", pure=True)
 
@@ -434,8 +442,15 @@ class GRBLDriver(Parameters):
         self.grbl(" ".join(line) + "\r")
 
     def move_abs(self, x, y):
-        self.g91_absolute()
-        self.clean()
+        """
+        Requests laser move to absolute position x, y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
+        self._g91_absolute()
+        self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
         # self.rapid_mode()
@@ -447,9 +462,15 @@ class GRBLDriver(Parameters):
         )
 
     def move_rel(self, dx, dy):
-        # TODO: Should use $J syntax
-        self.g90_relative()
-        self.clean()
+        """
+        Requests laser move relative position dx, dy in physical units
+
+        @param dx:
+        @param dy:
+        @return:
+        """
+        self._g90_relative()
+        self._clean()
         old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
@@ -462,78 +483,15 @@ class GRBLDriver(Parameters):
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
-    def clean(self):
-        if self.absolute_dirty:
-            if self._absolute:
-                self.grbl("G90\r")
-            else:
-                self.grbl("G91\r")
-        self.absolute_dirty = False
-
-        if self.feedrate_dirty:
-            if self.feed_mode == 94:
-                self.grbl("G94\r")
-            else:
-                self.grbl("G93\r")
-        self.feedrate_dirty = False
-
-        if self.units_dirty:
-            if self.units == 20:
-                self.grbl("G20\r")
-            else:
-                self.grbl("G21\r")
-        self.units_dirty = False
-
-    def g90_relative(self):
-        if not self._absolute:
-            return
-        self._absolute = False
-        self.absolute_dirty = True
-
-    def g91_absolute(self):
-        if self._absolute:
-            return
-        self._absolute = True
-        self.absolute_dirty = True
-
-    def _g93_mms_to_minutes_per_gunits(self, mms):
-        millimeters_per_minute = 60.0 * mms
-        distance = UNITS_PER_MIL / self.stepper_step_size
-        return distance / millimeters_per_minute
-
-    def g93_feedrate(self):
-        if self.feed_mode == 93:
-            return
-        self.feed_mode = 93
-        # Feed Rate in Minutes / Unit
-        self.feed_convert = self._g93_mms_to_minutes_per_gunits
-        self.feedrate_dirty = True
-
-    def _g94_mms_to_gunits_per_minute(self, mms):
-        millimeters_per_minute = 60.0 * mms
-        distance = UNITS_PER_MIL / self.stepper_step_size
-        return millimeters_per_minute / distance
-
-    def g94_feedrate(self):
-        if self.feed_mode == 94:
-            return
-        self.feed_mode = 94
-        # Feed Rate in Units / Minute
-        self.feed_convert = self._g94_mms_to_gunits_per_minute
-        # units to mm, seconds to minutes.
-        self.feedrate_dirty = True
-
-    def g20_units_inch(self):
-        self.units = 20
-        self.unit_scale = UNITS_PER_INCH / self.stepper_step_size  # g20 is inch mode.
-        self.units_dirty = True
-
-    def g21_units_mm(self):
-        self.units = 21
-        self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
-        self.units_dirty = True
-
     def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period. This could be done in a series of commands,
+        move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
+        commands so calling dwell is preferred.
+
+        @param time_in_ms:
+        @return:
+        """
         self.laser_on()  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
         self.laser_off()
@@ -597,9 +555,14 @@ class GRBLDriver(Parameters):
                         t += step_size
                 elif isinstance(q, WaitCut):
                     self.total_steps += 1
+                elif isinstance(q, HomeCut):
+                    self.total_steps += 1
+                elif isinstance(q, GotoCut):
+                    self.total_steps += 1
+                elif isinstance(q, SetOriginCut):
+                    self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
-                    # Moshi cannot fire in place.
                 elif isinstance(q, (InputCut, OutputCut)):
                     self.total_steps += 1
                 else:
@@ -609,9 +572,9 @@ class GRBLDriver(Parameters):
                     dummy_planner.clear()
             # print ("GRBL-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
-        self.g91_absolute()
-        self.g94_feedrate()
-        self.clean()
+        self._g91_absolute()
+        self._g94_feedrate()
+        self._clean()
         if self.service.use_m3:
             self.grbl("M3\r")
         else:
@@ -657,6 +620,21 @@ class GRBLDriver(Parameters):
             elif isinstance(q, WaitCut):
                 self.current_steps += 1
                 self.wait(q.dwell_time)
+            elif isinstance(q, HomeCut):
+                self.current_steps += 1
+                self.home(q.first)
+            elif isinstance(q, GotoCut):
+                self.current_steps += 1
+                start = q.start
+                self.move(self.origin_x + start[0], self.origin_y + start[1])
+            elif isinstance(q, SetOriginCut):
+                self.current_steps += 1
+                if q.set_current:
+                    x = self.native_x
+                    y = self.native_y
+                else:
+                    x, y = q.start
+                self.set_origin(x, y)
             elif isinstance(q, DwellCut):
                 self.current_steps += 1
                 self.dwell(q.dwell_time)
@@ -785,28 +763,28 @@ class GRBLDriver(Parameters):
             self.speed_dirty = True
         self.settings[key] = value
 
-    def set_position(self, x, y):
+    def set_origin(self, x, y):
         """
-        This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
-        used in step-repeat.
+        This should set the origin position.
 
         @param x:
         @param y:
         @return:
         """
-        self.native_x = x
-        self.native_y = y
+        self.origin_x = x
+        self.origin_y = y
 
-    def wait(self, t):
+    def wait(self, time_in_ms):
         """
-        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
-        called first this should pause the machine without current work acting as a dwell.
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
 
-        @param t:
+        @param time_in_ms:
         @return:
         """
-        self.grbl(f"G04 S{t}\r")
+        self.grbl(f"G04 S{time_in_ms / 1000.0}\r")
 
     def wait_finish(self, *values):
         """
@@ -827,9 +805,27 @@ class GRBLDriver(Parameters):
         """
         function()
 
+    def beep(self):
+        """
+        Wants a system beep to be issued.
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
+
+        @return:
+        """
+        self.service("beep\n")
+
+    def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
+        self.service(value)
+
     def signal(self, signal, *args):
         """
-        This asks that this signal be broadcast.
+        This asks that this signal be broadcast at the appropriate time within the spooling cycle.
 
         @param signal:
         @param args:
@@ -887,395 +883,79 @@ class GRBLDriver(Parameters):
         self.service.signal("driver;status", status)
 
     ####################
-    # EMULATION CODE
-    # This code isn't currently used.
+    # PROTECTED DRIVER CODE
     ####################
 
-    # def grbl_write(self, data):
-    #     if self.grbl_channel is not None:
-    #         self.grbl_channel(data)
-    #     if self.reply is not None:
-    #         self.reply(data)
-    #
-    # def realtime_write(self, bytes_to_write):
-    #     device = self.device
-    #     if bytes_to_write == "?":  # Status report
-    #         # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-    #         if device.state == 0:
-    #             state = "Idle"
-    #         else:
-    #             state = "Busy"
-    #         x = device.current_x / self.stepper_step_size
-    #         y = device.current_y / self.stepper_step_size
-    #         z = 0.0
-    #         parts = list()
-    #         parts.append(state)
-    #         parts.append("MPos:%f,%f,%f" % (x, y, z))
-    #         speed = device.settings.speed
-    #         if speed is None:
-    #             speed = 30.0
-    #         f = self.feed_invert(speed)
-    #         power = device.settings.power
-    #         if power is None:
-    #             power = 1000
-    #         s = power
-    #         parts.append("FS:%f,%d" % (f, s))
-    #         self.grbl_write("<%s>\r" % "|".join(parts))
-    #     elif bytes_to_write == "~":  # Resume.
-    #         self.context("resume\n")
-    #     elif bytes_to_write == "!":  # Pause.
-    #         self.context("pause\n")
-    #     elif bytes_to_write == "\x18":  # Soft reset.
-    #         self.context("estop\n")
-    #
-    # def write2(self, data):
-    #     if isinstance(data, bytes):
-    #         data = data.decode()
-    #     if "?" in data:
-    #         data = data.replace("?", "")
-    #         self.realtime_write("?")
-    #     if "~" in data:
-    #         data = data.replace("$", "")
-    #         self.realtime_write("~")
-    #     if "!" in data:
-    #         data = data.replace("!", "")
-    #         self.realtime_write("!")
-    #     if "\x18" in data:
-    #         data = data.replace("\x18", "")
-    #         self.realtime_write("\x18")
-    #     self.buffer += data
-    #     while "\b" in self.buffer:
-    #         self.buffer = re.sub(".\b", "", self.buffer, count=1)
-    #         if self.buffer.startswith("\b"):
-    #             self.buffer = re.sub("\b+", "", self.buffer)
-    #
-    #     while "\n" in self.buffer:
-    #         pos = self.buffer.find("\n")
-    #         command = self.buffer[0:pos].strip("\r")
-    #         self.buffer = self.buffer[pos + 1 :]
-    #         cmd = self.process_line(command)
-    #         if cmd == 0:  # Execute GCode.
-    #             self.grbl_write("ok\r")
-    #         else:
-    #             self.grbl_write("error:%d\r" % cmd)
-    #
-    # def process_line(self, data):
-    #     if data.startswith("$"):
-    #         if data == "$":
-    #             self.grbl_write(
-    #                 "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r"
-    #             )
-    #             return 0
-    #         elif data == "$$":
-    #             for s in self.settings:
-    #                 v = self.settings[s]
-    #                 if isinstance(v, int):
-    #                     self.grbl_write("$%d=%d\r" % (s, v))
-    #                 elif isinstance(v, float):
-    #                     self.grbl_write("$%d=%.3f\r" % (s, v))
-    #             return 0
-    #         if GRBL_SET_RE.match(data):
-    #             settings = list(GRBL_SET_RE.findall(data))[0]
-    #             print(settings)
-    #             try:
-    #                 c = self.settings[int(settings[0])]
-    #             except KeyError:
-    #                 return 3
-    #             if isinstance(c, float):
-    #                 self.settings[int(settings[0])] = float(settings[1])
-    #             else:
-    #                 self.settings[int(settings[0])] = int(settings[1])
-    #             return 0
-    #         elif data == "$I":
-    #             pass
-    #         elif data == "$G":
-    #             pass
-    #         elif data == "$N":
-    #             pass
-    #         elif data == "$H":
-    #             self.spooler.job("home")
-    #             if self.home_adjust is not None:
-    #                 self.spooler.job("rapid_mode")
-    #                 self.spooler.job("move", self.home_adjust[0], self.home_adjust[1])
-    #             return 0
-    #             # return 5  # Homing cycle not enabled by settings.
-    #         return 3  # GRBL '$' system command was not recognized or supported.
-    #     if data.startswith("cat"):
-    #         return 2
-    #     commands = {}
-    #     for c in _tokenize_code(data):
-    #         g = c[0]
-    #         if g not in commands:
-    #             commands[g] = []
-    #         if len(c) >= 2:
-    #             commands[g].append(c[1])
-    #         else:
-    #             commands[g].append(None)
-    #     return self._process_commands(commands)
-    #
-    # def _process_commands(self, gc):
-    #     """
-    #     Process parsed gcode commands.
-    #
-    #     @param gc:
-    #     @return:
-    #     """
-    #     if "m" in gc:
-    #         for v in gc["m"]:
-    #             if v == 0 or v == 1:
-    #                 yield "rapid_mode"
-    #                 yield "wait_finish"
-    #             elif v == 2:
-    #                 return
-    #             elif v == 30:
-    #                 return
-    #             elif v == 3 or v == 4:
-    #                 on_mode = True
-    #             elif v == 5:
-    #                 on_mode = False
-    #                 yield "laser_off"
-    #             elif v == 7:
-    #                 #  Coolant control.
-    #                 pass
-    #             elif v == 8:
-    #                 yield "signal", ("coolant", True)
-    #             elif v == 9:
-    #                 yield "signal", ("coolant", False)
-    #             elif v == 56:
-    #                 pass  # Parking motion override control.
-    #             elif v == 911:
-    #                 pass  # Set TMC2130 holding currents
-    #             elif v == 912:
-    #                 pass  # M912: Set TMC2130 running currents
-    #             else:
-    #                 return 20
-    #         del gc["m"]
-    #     if "g" in gc:
-    #         for v in gc["g"]:
-    #             if v is None:
-    #                 return 2
-    #             elif v == 0.0:
-    #                 move_mode = 0
-    #             elif v == 1.0:
-    #                 move_mode = 1
-    #             elif v == 2.0:  # CW_ARC
-    #                 move_mode = 2
-    #             elif v == 3.0:  # CCW_ARC
-    #                 move_mode = 3
-    #             elif v == 4.0:  # DWELL
-    #                 t = 0
-    #                 if "p" in gc:
-    #                     t = float(gc["p"].pop()) / 1000.0
-    #                     if len(gc["p"]) == 0:
-    #                         del gc["p"]
-    #                 if "s" in gc:
-    #                     t = float(gc["s"].pop())
-    #                     if len(gc["s"]) == 0:
-    #                         del gc["s"]
-    #                 yield "rapid_mode"
-    #                 yield "wait", t
-    #             elif v == 10.0:
-    #                 if "l" in gc:
-    #                     l = float(gc["l"].pop(0))
-    #                     if len(gc["l"]) == 0:
-    #                         del gc["l"]
-    #                     if l == 2.0:
-    #                         pass
-    #                     elif l == 20:
-    #                         pass
-    #             elif v == 17:
-    #                 pass  # Set XY coords.
-    #             elif v == 18:
-    #                 return 2  # Set the XZ plane for arc.
-    #             elif v == 19:
-    #                 return 2  # Set the YZ plane for arc.
-    #             elif v == 20.0 or v == 70.0:
-    #                 scale = UNITS_PER_INCH  # g20 is inch mode.
-    #             elif v == 21.0 or v == 71.0:
-    #                 scale = UNITS_PER_MM  # g21 is mm mode.
-    #             elif v == 28.0:
-    #                 yield "rapid_mode"
-    #                 yield "home"
-    #                 if home_adjust is not None:
-    #                     yield "move_abs", home_adjust[0], home_adjust[1]
-    #                 if home is not None:
-    #                     yield "move", home
-    #             elif v == 28.1:
-    #                 if "x" in gc and "y" in gc:
-    #                     x = gc["x"].pop(0)
-    #                     if len(gc["x"]) == 0:
-    #                         del gc["x"]
-    #                     y = gc["y"].pop(0)
-    #                     if len(gc["y"]) == 0:
-    #                         del gc["y"]
-    #                     if x is None:
-    #                         x = 0
-    #                     if y is None:
-    #                         y = 0
-    #                     home = (x, y)
-    #             elif v == 28.2:
-    #                 # Run homing cycle.
-    #                 yield "rapid_mode"
-    #                 yield "home"
-    #                 if home_adjust is not None:
-    #                     yield "move_abs", home_adjust[0], home_adjust[1]
-    #             elif v == 28.3:
-    #                 yield "rapid_mode"
-    #                 yield "home"
-    #                 if home_adjust is not None:
-    #                     yield "move", home_adjust[0], home_adjust[1]
-    #                 if "x" in gc:
-    #                     x = gc["x"].pop(0)
-    #                     if len(gc["x"]) == 0:
-    #                         del gc["x"]
-    #                     if x is None:
-    #                         x = 0
-    #                     yield "move", x, 0
-    #                 if "y" in gc:
-    #                     y = gc["y"].pop(0)
-    #                     if len(gc["y"]) == 0:
-    #                         del gc["y"]
-    #                     if y is None:
-    #                         y = 0
-    #                     yield "move", 0, y
-    #             elif v == 30.0:
-    #                 # Goto predefined position. Return to secondary home position.
-    #                 if "p" in gc:
-    #                     p = float(gc["p"].pop(0))
-    #                     if len(gc["p"]) == 0:
-    #                         del gc["p"]
-    #                 else:
-    #                     p = None
-    #                 yield "rapid_mode"
-    #                 yield "home"
-    #                 if home_adjust is not None:
-    #                     yield "move", home_adjust[0], home_adjust[1]
-    #                 if home2 is not None:
-    #                     yield "move", home2
-    #             elif v == 30.1:
-    #                 # Stores the current absolute position.
-    #                 if "x" in gc and "y" in gc:
-    #                     x = gc["x"].pop(0)
-    #                     if len(gc["x"]) == 0:
-    #                         del gc["x"]
-    #                     y = gc["y"].pop(0)
-    #                     if len(gc["y"]) == 0:
-    #                         del gc["y"]
-    #                     if x is None:
-    #                         x = 0
-    #                     if y is None:
-    #                         y = 0
-    #                     home2 = (x, y)
-    #             elif v == 38.1:
-    #                 # Touch Plate
-    #                 pass
-    #             elif v == 38.2:
-    #                 # Straight Probe
-    #                 pass
-    #             elif v == 38.3:
-    #                 # Prope towards workpiece
-    #                 pass
-    #             elif v == 38.4:
-    #                 # Probe away from workpiece, signal error
-    #                 pass
-    #             elif v == 38.5:
-    #                 # Probe away from workpiece.
-    #                 pass
-    #             elif v == 40.0:
-    #                 pass  # Compensation Off
-    #             elif v == 43.1:
-    #                 pass  # Dynamic tool Length offsets
-    #             elif v == 49:
-    #                 # Cancel tool offset.
-    #                 pass  # Dynamic tool length offsets
-    #             elif v == 53:
-    #                 pass  # Move in Absolute Coordinates
-    #             elif 54 <= v <= 59:
-    #                 # Fixture offset 1-6, G10 and G92
-    #                 system = v - 54
-    #                 pass  # Work Coordinate Systems
-    #             elif v == 61:
-    #                 # Exact path control mode. GRBL required
-    #                 pass
-    #             elif v == 80:
-    #                 # Motion mode cancel. Canned cycle.
-    #                 pass
-    #             elif v == 90.0:
-    #                 yield "set", "relative", False
-    #             elif v == 91.0:
-    #                 yield "set", "relative", True
-    #             elif v == 91.1:
-    #                 # Offset mode for certain cam. Incremental distance mode for arcs.
-    #                 pass  # ARC IJK Distance Modes # TODO Implement
-    #             elif v == 92:
-    #                 # Change the current coords without moving.
-    #                 pass  # Coordinate Offset TODO: Implement
-    #             elif v == 92.1:
-    #                 # Clear Coordinate offset set by 92.
-    #                 pass  # Clear Coordinate offset TODO: Implement
-    #             elif v == 93.0:
-    #                 feed_convert, feed_invert = g93_feed_convert, g93_feed_invert
-    #             elif v == 94.0:
-    #                 feed_convert, feed_invert = g94_feed_convert, g94_feed_invert
-    #             else:
-    #                 return 20  # Unsupported or invalid g-code command found in block.
-    #         del gc["g"]
-    #     if "comment" in gc:
-    #         del gc["comment"]
-    #     if "f" in gc:  # Feed_rate
-    #         for v in gc["f"]:
-    #             if v is None:
-    #                 return 2  # Numeric value format is not valid or missing an expected value.
-    #             feed_rate = feed_convert(v)
-    #             if speed != feed_rate:
-    #                 speed = feed_rate
-    #         del gc["f"]
-    #     if "s" in gc:
-    #         for v in gc["s"]:
-    #             if v is None:
-    #                 return 2  # Numeric value format is not valid or missing an expected value.
-    #             if 0.0 < v <= 1.0:
-    #                 v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
-    #             power = v
-    #             yield "set", "power", v
-    #
-    #         del gc["s"]
-    #     if "x" in gc or "y" in gc:
-    #         if "x" in gc:
-    #             x = gc["x"].pop(0)
-    #             if x is None:
-    #                 x = 0
-    #             else:
-    #                 x *= scale * flip_x
-    #             if len(gc["x"]) == 0:
-    #                 del gc["x"]
-    #         else:
-    #             x = 0
-    #         if "y" in gc:
-    #             y = gc["y"].pop(0)
-    #             if y is None:
-    #                 y = 0
-    #             else:
-    #                 y *= scale * flip_y
-    #             if len(gc["y"]) == 0:
-    #                 del gc["y"]
-    #         else:
-    #             y = 0
-    #         if move_mode == 0:
-    #             yield "program_mode"
-    #             yield "move", x, y
-    #         elif move_mode >= 1:
-    #             yield "program_mode"
-    #             if power == 0:
-    #                 yield "move", x, y
-    #             else:
-    #                 if used_speed != speed:
-    #                     yield "set", "speed", speed
-    #                     used_speed = speed
-    #                 yield "cut", x, y
-    #             # TODO: Implement CW_ARC
-    #             # TODO: Implement CCW_ARC
-    #     return 0
+    def _clean(self):
+        if self.absolute_dirty:
+            if self._absolute:
+                self.grbl("G90\r")
+            else:
+                self.grbl("G91\r")
+        self.absolute_dirty = False
+
+        if self.feedrate_dirty:
+            if self.feed_mode == 94:
+                self.grbl("G94\r")
+            else:
+                self.grbl("G93\r")
+        self.feedrate_dirty = False
+
+        if self.units_dirty:
+            if self.units == 20:
+                self.grbl("G20\r")
+            else:
+                self.grbl("G21\r")
+        self.units_dirty = False
+
+    def _g90_relative(self):
+        if not self._absolute:
+            return
+        self._absolute = False
+        self.absolute_dirty = True
+
+    def _g91_absolute(self):
+        if self._absolute:
+            return
+        self._absolute = True
+        self.absolute_dirty = True
+
+    def _g93_mms_to_minutes_per_gunits(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return distance / millimeters_per_minute
+
+    def _g93_feedrate(self):
+        if self.feed_mode == 93:
+            return
+        self.feed_mode = 93
+        # Feed Rate in Minutes / Unit
+        self.feed_convert = self._g93_mms_to_minutes_per_gunits
+        self.feedrate_dirty = True
+
+    def _g94_mms_to_gunits_per_minute(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return millimeters_per_minute / distance
+
+    def _g94_feedrate(self):
+        if self.feed_mode == 94:
+            return
+        self.feed_mode = 94
+        # Feed Rate in Units / Minute
+        self.feed_convert = self._g94_mms_to_gunits_per_minute
+        # units to mm, seconds to minutes.
+        self.feedrate_dirty = True
+
+    def _g20_units_inch(self):
+        self.units = 20
+        self.unit_scale = UNITS_PER_INCH / self.stepper_step_size  # g20 is inch mode.
+        self.units_dirty = True
+
+    def _g21_units_mm(self):
+        self.units = 21
+        self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
+        self.units_dirty = True
 
 
 class GrblController:
@@ -1615,16 +1295,437 @@ class TCPOutput:
         return len(self.buffer)
 
 
-class GcodeBlob(list):
-    def __init__(self, cmds, name=None):
-        super().__init__(cmds)
-        self.name = name
+class GRBLEmulator(Module, Parameters):
+    def __init__(self, context, path):
+        Module.__init__(self, context, path)
+        Parameters.__init__(self)
+        self.design = False
+        self.control = False
+        self.saving = False
+
+        self.cutcode = CutCode()
+        self.plotcut = PlotCut()
+
+        self._use_set = None
+
+        self.spooler = self.context.device.spooler
+        self.device = self.context.device
+        self.elements = self.context.elements
+
+        self.home_adjust = None
+        self.scale_x = 1
+        self.scale_y = -1
+
+        # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
+        self.scale = UNITS_PER_MM
+
+        self.compensation = False
+        self.feed_convert = None
+        self.feed_invert = None
+        self.g94_feedrate()  # G94 DEFAULT, mm mode
+        self.move_mode = 0
+        self.home = None
+        self.home2 = None
+        self.on_mode = 1
+        self.power = 0
+        self.speed = 0
+        self.used_speed = 0
+        self.buffer = ""
+        self.relative = False  # G90 default.
+        self.grbl_settings = {
+            0: 10,  # step pulse microseconds
+            1: 25,  # step idle delay
+            2: 0,  # step pulse invert
+            3: 0,  # step direction invert
+            4: 0,  # invert step enable pin, boolean
+            5: 0,  # invert limit pins, boolean
+            6: 0,  # invert probe pin
+            10: 255,  # status report options
+            11: 0.010,  # Junction deviation, mm
+            12: 0.002,  # arc tolerance, mm
+            13: 0,  # Report in inches
+            20: 0,  # Soft limits enabled.
+            21: 0,  # hard limits enabled
+            22: 0,  # Homing cycle enable
+            23: 0,  # Homing direction invert
+            24: 25.000,  # Homing locate feed rate, mm/min
+            25: 500.000,  # Homing search seek rate, mm/min
+            26: 250,  # Homing switch debounce delay, ms
+            27: 1.000,  # Homing switch pull-off distance, mm
+            30: 1000,  # Maximum spindle speed, RPM
+            31: 0,  # Minimum spindle speed, RPM
+            32: 1,  # Laser mode enable, boolean
+            100: 250.000,  # X-axis steps per millimeter
+            101: 250.000,  # Y-axis steps per millimeter
+            102: 250.000,  # Z-axis steps per millimeter
+            110: 500.000,  # X-axis max rate mm/min
+            111: 500.000,  # Y-axis max rate mm/min
+            112: 500.000,  # Z-axis max rate mm/min
+            120: 10.000,  # X-axis acceleration, mm/s^2
+            121: 10.000,  # Y-axis acceleration, mm/s^2
+            122: 10.000,  # Z-axis acceleration, mm/s^2
+            130: 200.000,  # X-axis max travel mm.
+            131: 200.000,  # Y-axis max travel mm
+            132: 200.000,  # Z-axis max travel mm.
+        }
+        self.grbl_channel = self.context.channel("grbl")
+        self.reply = None
+        self.channel = None
+        self.elements = None
 
     def __repr__(self):
-        return f"Gcode({self.name}, {len(self)} lines)"
+        return f"GRBL({self.name}, {len(self.cutcode)} cuts)"
 
-    def as_svg(self):
-        pass
+    def generate(self):
+        for cutobject in self.cutcode:
+            yield "plot", cutobject
+        yield "plot_start"
+
+    def new_plot_cut(self):
+        if len(self.plotcut):
+            self.plotcut.settings = self.cutset()
+            self.plotcut.check_if_rasterable()
+            self.cutcode.append(self.plotcut)
+            self.plotcut = PlotCut()
+
+    def cutset(self):
+        if self._use_set is None:
+            self._use_set = self.derive()
+        return self._use_set
+
+    def grbl_write(self, data):
+        if self.grbl_channel:
+            self.grbl_channel(data)
+        if self.reply:
+            self.reply(data)
+
+    def realtime_write(self, bytes_to_write):
+        driver = self.device
+        if bytes_to_write == "?":  # Status report
+            # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
+            if driver.state == 0:
+                state = "Idle"
+            else:
+                state = "Busy"
+            x = driver.current_x / self.scale
+            y = driver.current_y / self.scale
+            z = 0.0
+            parts = list()
+            parts.append(state)
+            parts.append("MPos:%f,%f,%f" % (x, y, z))
+            f = self.feed_invert(driver.speed)
+            s = driver.power
+            parts.append("FS:%f,%d" % (f, s))
+            self.grbl_write("<%s>\r\n" % "|".join(parts))
+        elif bytes_to_write == "~":  # Resume.
+            self.spooler.send("resume")
+        elif bytes_to_write == "!":  # Pause.
+            self.spooler.send("pause")
+        elif bytes_to_write == "\x18":  # Soft reset.
+            self.spooler.send("abort")
+
+    def write(self, data):
+        if isinstance(data, bytes):
+            data = data.decode()
+        if "?" in data:
+            data = data.replace("?", "")
+            self.realtime_write("?")
+        if "~" in data:
+            data = data.replace("~", "")
+            self.realtime_write("~")
+        if "!" in data:
+            data = data.replace("!", "")
+            self.realtime_write("!")
+        if "\x18" in data:
+            data = data.replace("\x18", "")
+            self.realtime_write("\x18")
+        self.buffer += data
+        while "\b" in self.buffer:
+            self.buffer = re.sub(".\b", "", self.buffer, count=1)
+            if self.buffer.startswith("\b"):
+                self.buffer = re.sub("\b+", "", self.buffer)
+
+        while "\n" in self.buffer:
+            pos = self.buffer.find("\n")
+            command = self.buffer[0:pos].strip("\r")
+            self.buffer = self.buffer[pos + 1 :]
+            cmd = self.process(command)
+            if cmd == 0:  # Execute GCode.
+                self.grbl_write("ok\r\n")
+            else:
+                self.grbl_write("error:%d\r\n" % cmd)
+
+    def process(self, data):
+        if data.startswith("$"):
+            if data == "$":
+                self.grbl_write(
+                    "[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]\r\n"
+                )
+                return 0
+            elif data == "$$":
+                for s in self.grbl_settings:
+                    v = self.grbl_settings[s]
+                    if isinstance(v, int):
+                        self.grbl_write("$%d=%d\r\n" % (s, v))
+                    elif isinstance(v, float):
+                        self.grbl_write("$%d=%.3f\r\n" % (s, v))
+                return 0
+            if GRBL_SET_RE.match(data):
+                settings = list(GRBL_SET_RE.findall(data))[0]
+                print(settings)
+                try:
+                    c = self.grbl_settings[int(settings[0])]
+                except KeyError:
+                    return 3
+                if isinstance(c, float):
+                    self.grbl_settings[int(settings[0])] = float(settings[1])
+                else:
+                    self.grbl_settings[int(settings[0])] = int(settings[1])
+                return 0
+            elif data == "$I":
+                pass
+            elif data == "$G":
+                pass
+            elif data == "$N":
+                pass
+            elif data == "$H":
+
+                def realtime_home():
+                    yield "home"
+                    if self.home_adjust is not None:
+                        yield "rapid_mode"
+                        yield "move_abs", self.home_adjust[0], self.home_adjust[1]
+
+                self.spooler.send(realtime_home)
+                return 0
+                # return 5  # Homing cycle not enabled by settings.
+            elif data.startswith("$"):
+                return 3  # GRBL '$' system command was not recognized or supported.
+        if data.startswith("cat"):
+            # Weird call to cat files for some other grbl boards
+            return 2
+
+        commands = {}
+        for c in _tokenize_code(data):
+            g = c[0]
+            if g not in commands:
+                commands[g] = []
+            if len(c) >= 2:
+                commands[g].append(c[1])
+            else:
+                commands[g].append(None)
+        return self.process_gcode(commands)
+
+    def process_gcode(self, gc):
+        if "m" in gc:
+            for v in gc["m"]:
+                if v in (0, 1):
+                    # Stop or Unconditional Stop
+                    self.new_plot_cut()
+                elif v == 2:
+                    # Program End
+                    self.new_plot_cut()
+                    return 0
+                elif v == 30:
+                    # Program Stop
+                    self.new_plot_cut()
+                    return 0
+                elif v in (3, 4):
+                    # Spindle On - Clockwise/CCW Laser Mode
+                    self.new_plot_cut()
+                elif v == 5:
+                    # Spindle Off - Laser Mode
+                    self.new_plot_cut()
+                elif v == 7:
+                    #  Mist coolant control.
+                    pass
+                elif v == 8:
+                    # Flood coolant On
+                    self.spooler.send("signal", ("coolant", True))
+                elif v == 9:
+                    # Flood coolant Off
+                    self.spooler.send("signal", ("coolant", False))
+                elif v == 56:
+                    pass  # Parking motion override control.
+                elif v == 911:
+                    pass  # Set TMC2130 holding currents
+                elif v == 912:
+                    pass  # M912: Set TMC2130 running currents
+                else:
+                    return 20
+            del gc["m"]
+        if "g" in gc:
+            for v in gc["g"]:
+                if v is None:
+                    return 2
+                elif v == 0:
+                    # G0 Rapid Move.
+                    self.move_mode = 0
+                elif v == 1:
+                    # G1 Cut Move.
+                    self.move_mode = 1
+                elif v == 2:
+                    # G2 CW_ARC
+                    self.move_mode = 2
+                elif v == 3:
+                    # G3 CCW_ARC
+                    self.move_mode = 3
+                elif v == 4:
+                    # DWELL
+                    t = 0
+                    if "p" in gc:
+                        t = float(gc["p"].pop()) / 1000.0
+                        if len(gc["p"]) == 0:
+                            del gc["p"]
+                    if "s" in gc:
+                        t = float(gc["s"].pop())
+                        if len(gc["s"]) == 0:
+                            del gc["s"]
+                    self.new_plot_cut()
+                    self.cutcode.append(WaitCut(t))
+                elif v == 17:
+                    # Set XY coords.
+                    pass
+                elif v == 18:
+                    # Set the XZ plane for arc.
+                    return 2
+                elif v == 19:
+                    # Set the YZ plane for arc.
+                    return 2
+                elif v in (20, 70):
+                    # g20 is inch mode.
+                    self.scale = UNITS_PER_INCH
+                elif v in (21, 71):
+                    # g21 is mm mode. 39.3701 mils in a mm
+                    self.scale = UNITS_PER_MM
+                elif v == 28:
+                    # Move to Origin (Home)
+                    self.cutcode.append(HomeCut())
+                elif v == 38.1:
+                    # Touch Plate
+                    pass
+                elif v == 38.2:
+                    # Probe towards workpiece, stop on contact. Signal error.
+                    pass
+                elif v == 38.3:
+                    # Probe towards workpiece, stop on contact.
+                    pass
+                elif v == 38.4:
+                    # Probe away from workpiece, signal error
+                    pass
+                elif v == 38.5:
+                    # Probe away from workpiece.
+                    pass
+                elif v == 40.0:
+                    # Compensation Off
+                    self.compensation = False
+                elif v == 43.1:
+                    pass  # Dynamic tool Length offsets
+                elif v == 49:
+                    # Cancel tool offset.
+                    pass  # Dynamic tool length offsets
+                elif 53 <= v <= 59:
+                    # Coord System Select
+                    pass  # Work Coordinate Systems
+                elif v == 61:
+                    # Exact path control mode. GRBL required
+                    pass
+                elif v == 80:
+                    # Motion mode cancel. Canned cycle.
+                    pass
+                elif v == 90:
+                    # Set to Absolute Positioning
+                    self.relative = False
+                elif v == 91:
+                    # Set to Relative Positioning
+                    self.relative = True
+                elif v == 92:
+                    # Set Position.
+                    # Change the current coords without moving.
+                    pass  # Coordinate Offset TODO: Implement
+                elif v == 92.1:
+                    # Clear Coordinate offset set by 92.
+                    pass  # Clear Coordinate offset TODO: Implement
+                elif v == 93:
+                    # Feed Rate Mode (Inverse Time Mode)
+                    self.g93_feedrate()
+                elif v == 94:
+                    # Feed Rate Mode (Units Per Minute)
+                    self.g94_feedrate()
+                else:
+                    return 20  # Unsupported or invalid g-code command found in block.
+            del gc["g"]
+
+        if "comment" in gc:
+            self.grbl_channel(f'Comment: {gc["comment"]}')
+            del gc["comment"]
+
+        if "f" in gc:  # Feed_rate
+            for v in gc["f"]:
+                if v is None:
+                    return 2  # Numeric value format is not valid or missing an expected value.
+                feed_rate = self.feed_convert(v)
+                if self.speed != feed_rate:
+                    self.speed = feed_rate
+                    # On speed change we start a new plot.
+                    self.new_plot_cut()
+            del gc["f"]
+        if "s" in gc:
+            for v in gc["s"]:
+                if v is None:
+                    return 2  # Numeric value format is not valid or missing an expected value.
+                if 0.0 < v <= 1.0:
+                    v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
+                self.power = v
+
+            del gc["s"]
+        if "x" in gc or "y" in gc:
+            if "x" in gc:
+                x = gc["x"].pop(0)
+                if x is None:
+                    x = 0
+                else:
+                    x *= self.scale * self.scale_x
+                if len(gc["x"]) == 0:
+                    del gc["x"]
+            else:
+                x = 0
+            if "y" in gc:
+                y = gc["y"].pop(0)
+                if y is None:
+                    y = 0
+                else:
+                    y *= self.scale * self.scale_y
+                if len(gc["y"]) == 0:
+                    del gc["y"]
+            else:
+                y = 0
+            if self.move_mode == 0:
+                self.plotcut.plot_append(x, y, 0)
+            elif self.move_mode == 1:
+                self.plotcut.plot_append(x, y, self.power / 1000.0)
+            elif self.move_mode == 2:
+                # TODO: Implement CW_ARC
+                self.plotcut.plot_append(x, y, self.power / 1000.0)
+            elif self.move_mode == 3:
+                # TODO: Implement CCW_ARC
+                self.plotcut.plot_append(x, y, self.power / 1000.0)
+        return 0
+
+    def g93_feedrate(self):
+        # Feed Rate in Minutes / Unit
+        self.feed_convert = lambda s: (60.0 / s) * self.scale / UNITS_PER_MM
+        self.feed_invert = lambda s: (60.0 / s) * UNITS_PER_MM / self.scale
+
+    def g94_feedrate(self):
+        # Feed Rate in Units / Minute
+        self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_INCH) * 60.0)
+        self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_INCH) * 60.0)
+        # units to mm, seconds to minutes.
+
+    @property
+    def type(self):
+        return "grbl"
 
 
 class GCodeLoader:
@@ -1633,12 +1734,12 @@ class GCodeLoader:
         yield "Gcode File", ("gcode", "nc", "gc"), "application/x-gcode"
 
     @staticmethod
-    def load(kernel, elements_modifier, pathname, **kwargs):
-        # basename = os.path.basename(pathname)
-        # with open(pathname, "r") as f:
-        #     grblemulator = GRBLEmulator(kernel.root, basename)
-        #     grblemulator.elements = elements_modifier
-        #     commandcode = GcodeBlob(get_command_code(f.readlines()), name=basename)
-        #     elements_modifier.op_branch.add(commandcode, type="lasercode")
-        #     kernel.root.close(basename)
-        return True
+    def load(kernel, service, pathname, **kwargs):
+        basename = os.path.basename(pathname)
+        with open(pathname, "rb") as f:
+            op_branch = service.get(type="branch ops")
+            op_branch.add(
+                data=list(f.readlines()), data_type="grbl", type="blob", name=basename
+            )
+            kernel.root.close(basename)
+            return True

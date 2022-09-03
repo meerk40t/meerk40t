@@ -340,3 +340,7 @@ class WordlistEditor(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        return ("Editing", "Variables + Wordlists")

@@ -505,3 +505,7 @@ class MoshiControllerGui(MWindow):
             self.context("unlock\n")
         except AttributeError:
             pass
+
+    @staticmethod
+    def submenu():
+        return ("Device-Control", "Controller")

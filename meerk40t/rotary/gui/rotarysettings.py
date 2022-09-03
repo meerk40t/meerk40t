@@ -37,10 +37,8 @@ class RotarySettingsPanel(ScrolledPanel):
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
-        self.text_rotary_scalex.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_x)
-        self.text_rotary_scalex.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_x)
-        self.text_rotary_scaley.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_y)
-        self.text_rotary_scaley.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_y)
+        self.text_rotary_scalex.SetActionRoutine(self.on_text_rotary_scale_x)
+        self.text_rotary_scalex.SetActionRoutine(self.on_text_rotary_scale_y)
         # self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_loop, self.checkbox_rotary_loop)
         # self.text_rotary_rotation.Bind(wx.EVT_TEXT, self.on_text_rotation)
         # self.Bind(
@@ -157,14 +155,14 @@ class RotarySettingsPanel(ScrolledPanel):
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
-    def on_text_rotary_scale_y(self, event=None):
+    def on_text_rotary_scale_y(self):
         if self.rotary is not None:
             try:
                 self.rotary.scale_y = float(self.text_rotary_scaley.GetValue())
             except ValueError:
                 pass
 
-    def on_text_rotary_scale_x(self, event=None):
+    def on_text_rotary_scale_x(self):
         if self.rotary is not None:
             try:
                 self.rotary.scale_x = float(self.text_rotary_scalex.GetValue())
@@ -209,3 +207,7 @@ class RotarySettings(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        return ("Device-Settings", "Rotary Setting")

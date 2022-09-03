@@ -146,8 +146,8 @@ class OperationAssignWidget(StatusBarWidget):
                 break
         event.Skip()
 
-    def Show(self, showit):
-        # Callback function that decideds whether to show an element or not
+    def Show(self, showit=True):
+        # Callback function that decides whether to show an element or not
         if showit:
             for idx, btn in enumerate(self.assign_buttons):
                 if self.op_nodes[idx] is None:
@@ -216,7 +216,7 @@ class OperationAssignWidget(StatusBarWidget):
             def get_color():
                 iconcolor = None
                 background = node.color
-                if background is not None:
+                if background is not None and background.argb is not None:
                     c1 = Color("Black")
                     c2 = Color("White")
                     if Color.distance(background, c1) > Color.distance(background, c2):

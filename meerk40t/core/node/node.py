@@ -80,6 +80,9 @@ class Node:
         self._bounds = None
         self._bounds_dirty = True
 
+        self._paint_bounds = None
+        self._paint_bounds_dirty = True
+
         self.item = None
         self.icon = None
         self.cache = None
@@ -193,7 +196,39 @@ class Node:
 
     @property
     def bounds(self):
-        return None
+        if not self._bounds_dirty:
+            return self._bounds
+
+        try:
+            self._bounds = self.bbox(with_stroke=False)
+        except AttributeError:
+            self._bounds = None
+
+        if self._children:
+            self._bounds = Node.union_bounds(self._children, bounds=self._bounds)
+        self._bounds_dirty = False
+        return self._bounds
+
+    @property
+    def paint_bounds(self):
+        if not self._paint_bounds_dirty:
+            return self._paint_bounds
+
+        try:
+            self._paint_bounds = self.bbox(with_stroke=True)
+        except AttributeError:
+            self._paint_bounds = None
+
+        if self._children:
+            self._paint_bounds = Node.union_bounds(
+                self._children, bounds=self._paint_bounds, attr="paint_bounds"
+            )
+        self._paint_bounds_dirty = False
+        return self._paint_bounds
+
+    def set_dirty_bounds(self):
+        self._paint_bounds_dirty = True
+        self._bounds_dirty = True
 
     @property
     def formatter(self):
@@ -461,8 +496,9 @@ class Node:
         Invalidation of the individual node.
         """
         self._points_dirty = True
-        self._bounds_dirty = True
+        self.set_dirty_bounds()
         self._bounds = None
+        self._paint_bounds = None
 
     def invalidated(self):
         """
@@ -521,12 +557,6 @@ class Node:
             self.highlighted = False
         except AttributeError:
             pass
-
-    def add_all(self, objects, type=None, name=None, pos=None):
-        for obj in objects:
-            self.add(obj, type=type, label=name, pos=pos)
-            if pos is not None:
-                pos += 1
 
     def add_reference(self, node=None, pos=None, **kwargs):
         """
@@ -708,7 +738,7 @@ class Node:
             for ref in list(self._children):
                 node._children.append(ref)
                 ref._parent = node
-                # Dont call attach / detach, as the tree
+                # Don't call attach / detach, as the tree
                 # doesn't know about the new node yet...
         self.item = None
         self._parent = None
@@ -763,18 +793,21 @@ class Node:
         dest.insert_node(self, pos=pos)
 
     @staticmethod
-    def union_bounds(nodes):
+    def union_bounds(nodes, bounds=None, attr="bounds"):
         """
-        Returns the union of the node list given.
+        Returns the union of the node list given, optionally unioned the given bounds value
 
         @return: union of all bounds within the iterable.
         """
-        xmin = float("inf")
-        ymin = float("inf")
-        xmax = -xmin
-        ymax = -ymin
+        if bounds is None:
+            xmin = float("inf")
+            ymin = float("inf")
+            xmax = -xmin
+            ymax = -ymin
+        else:
+            xmin, ymin, xmax, ymax = bounds
         for e in nodes:
-            box = e.bounds
+            box = getattr(e, attr)
             if box is None:
                 continue
             if box[0] < xmin:
