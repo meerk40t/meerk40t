@@ -1273,7 +1273,7 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        time.sleep(time_in_ms * 1000.0)
+        time.sleep(time_in_ms / 1000.0)
 
     def wait_finish(self, *values):
         """

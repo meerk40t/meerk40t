@@ -382,6 +382,8 @@ class MoshiDriver(Parameters):
         """
         Turn laser off in place.
 
+        Moshiboards do not support this command.
+
         @param values:
         @return:
         """
@@ -390,6 +392,8 @@ class MoshiDriver(Parameters):
     def laser_on(self, *values):
         """
         Turn laser on in place.
+
+        Moshiboards do not support this command.
 
         @param values:
         @return:
@@ -550,11 +554,26 @@ class MoshiDriver(Parameters):
         self.total_steps = 0
 
     def move_abs(self, x, y):
+        """
+        Requests laser move to absolute position x, y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
+
         x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
+        """
+        Requests laser move relative position dx, dy in physical units
+
+        @param dx:
+        @param dy:
+        @return:
+        """
         dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         x = self.native_x + dx
@@ -668,9 +687,9 @@ class MoshiDriver(Parameters):
             move_y = int(values[3])
         except (ValueError, IndexError):
             move_y = 0
-        self.start_program_mode(offset_x, offset_y, move_x, move_y)
+        self._start_program_mode(offset_x, offset_y, move_x, move_y)
 
-    def start_program_mode(
+    def _start_program_mode(
         self,
         offset_x,
         offset_y,
@@ -729,9 +748,9 @@ class MoshiDriver(Parameters):
             move_y = int(values[3])
         except (ValueError, IndexError):
             move_y = 0
-        self.start_raster_mode(offset_x, offset_y, move_x, move_y)
+        self._start_raster_mode(offset_x, offset_y, move_x, move_y)
 
-    def start_raster_mode(
+    def _start_raster_mode(
         self, offset_x, offset_y, move_x=None, move_y=None, speed=None
     ):
         if move_x is None:
@@ -751,25 +770,26 @@ class MoshiDriver(Parameters):
         self.native_x = move_x
         self.native_y = move_y
 
-    def set(self, attribute, value):
+    def set(self, key, value):
         """
         Sets a laser parameter this could be speed, power, wobble, number_of_unicorns, or any unknown parameters for
         yet to be written drivers.
+
         @param key:
         @param value:
         @return:
         """
-        if attribute == "power":
+        if key == "power":
             self._set_power(value)
-        if attribute == "ppi":
+        if key == "ppi":
             self._set_power(value)
-        if attribute == "pwm":
+        if key == "pwm":
             self._set_power(value)
-        if attribute == "overscan":
+        if key == "overscan":
             self._set_overscan(value)
-        if attribute == "speed":
+        if key == "speed":
             self._set_speed(value)
-        if attribute == "step":
+        if key == "step":
             self._set_step(value)
 
     def _set_power(self, power=1000.0):
@@ -822,7 +842,7 @@ class MoshiDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        time.sleep(time_in_ms * 1000.0)
+        time.sleep(time_in_ms / 1000.0)
 
     def wait_finish(self, *values):
         """
