@@ -387,12 +387,12 @@ class GRBLDriver(Parameters):
         self._absolute = True
         self.feed_mode = None
         self.feed_convert = None
-        self.g94_feedrate()  # G93 DEFAULT, mm mode
+        self._g94_feedrate()  # G93 DEFAULT, mm mode
 
         self.unit_scale = None
         self.units = None
-        self.g21_units_mm()
-        self.g91_absolute()
+        self._g21_units_mm()
+        self._g91_absolute()
 
         self.grbl = self.service.channel("grbl", pure=True)
 
@@ -441,8 +441,8 @@ class GRBLDriver(Parameters):
         self.grbl(" ".join(line) + "\r")
 
     def move_abs(self, x, y):
-        self.g91_absolute()
-        self.clean()
+        self._g91_absolute()
+        self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
         # self.rapid_mode()
@@ -455,8 +455,8 @@ class GRBLDriver(Parameters):
 
     def move_rel(self, dx, dy):
         # TODO: Should use $J syntax
-        self.g90_relative()
-        self.clean()
+        self._g90_relative()
+        self._clean()
         old_current = self.service.current
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
@@ -468,77 +468,6 @@ class GRBLDriver(Parameters):
             "driver;position",
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
-
-    def clean(self):
-        if self.absolute_dirty:
-            if self._absolute:
-                self.grbl("G90\r")
-            else:
-                self.grbl("G91\r")
-        self.absolute_dirty = False
-
-        if self.feedrate_dirty:
-            if self.feed_mode == 94:
-                self.grbl("G94\r")
-            else:
-                self.grbl("G93\r")
-        self.feedrate_dirty = False
-
-        if self.units_dirty:
-            if self.units == 20:
-                self.grbl("G20\r")
-            else:
-                self.grbl("G21\r")
-        self.units_dirty = False
-
-    def g90_relative(self):
-        if not self._absolute:
-            return
-        self._absolute = False
-        self.absolute_dirty = True
-
-    def g91_absolute(self):
-        if self._absolute:
-            return
-        self._absolute = True
-        self.absolute_dirty = True
-
-    def _g93_mms_to_minutes_per_gunits(self, mms):
-        millimeters_per_minute = 60.0 * mms
-        distance = UNITS_PER_MIL / self.stepper_step_size
-        return distance / millimeters_per_minute
-
-    def g93_feedrate(self):
-        if self.feed_mode == 93:
-            return
-        self.feed_mode = 93
-        # Feed Rate in Minutes / Unit
-        self.feed_convert = self._g93_mms_to_minutes_per_gunits
-        self.feedrate_dirty = True
-
-    def _g94_mms_to_gunits_per_minute(self, mms):
-        millimeters_per_minute = 60.0 * mms
-        distance = UNITS_PER_MIL / self.stepper_step_size
-        return millimeters_per_minute / distance
-
-    def g94_feedrate(self):
-        if self.feed_mode == 94:
-            return
-        self.feed_mode = 94
-        # Feed Rate in Units / Minute
-        self.feed_convert = self._g94_mms_to_gunits_per_minute
-        # units to mm, seconds to minutes.
-        self.feedrate_dirty = True
-
-    def g20_units_inch(self):
-        self.units = 20
-        self.unit_scale = UNITS_PER_INCH / self.stepper_step_size  # g20 is inch mode.
-        self.units_dirty = True
-
-    def g21_units_mm(self):
-        self.units = 21
-        self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
-        self.units_dirty = True
 
     def dwell(self, time_in_ms):
         self.laser_on()  # This can't be sent early since these are timed operations.
@@ -621,9 +550,9 @@ class GRBLDriver(Parameters):
                     dummy_planner.clear()
             # print ("GRBL-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
-        self.g91_absolute()
-        self.g94_feedrate()
-        self.clean()
+        self._g91_absolute()
+        self._g94_feedrate()
+        self._clean()
         if self.service.use_m3:
             self.grbl("M3\r")
         else:
@@ -852,6 +781,12 @@ class GRBLDriver(Parameters):
         """
         function()
 
+    def beep(self):
+        self.service("beep\n")
+
+    def console(self, value):
+        self.service(value)
+
     def signal(self, signal, *args):
         """
         This asks that this signal be broadcast.
@@ -910,6 +845,81 @@ class GRBLDriver(Parameters):
         parts.append(f"power={self.settings.get('power', 0)}")
         status = ";".join(parts)
         self.service.signal("driver;status", status)
+
+    ####################
+    # PROTECTED DRIVER CODE
+    ####################
+
+    def _clean(self):
+        if self.absolute_dirty:
+            if self._absolute:
+                self.grbl("G90\r")
+            else:
+                self.grbl("G91\r")
+        self.absolute_dirty = False
+
+        if self.feedrate_dirty:
+            if self.feed_mode == 94:
+                self.grbl("G94\r")
+            else:
+                self.grbl("G93\r")
+        self.feedrate_dirty = False
+
+        if self.units_dirty:
+            if self.units == 20:
+                self.grbl("G20\r")
+            else:
+                self.grbl("G21\r")
+        self.units_dirty = False
+
+    def _g90_relative(self):
+        if not self._absolute:
+            return
+        self._absolute = False
+        self.absolute_dirty = True
+
+    def _g91_absolute(self):
+        if self._absolute:
+            return
+        self._absolute = True
+        self.absolute_dirty = True
+
+    def _g93_mms_to_minutes_per_gunits(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return distance / millimeters_per_minute
+
+    def _g93_feedrate(self):
+        if self.feed_mode == 93:
+            return
+        self.feed_mode = 93
+        # Feed Rate in Minutes / Unit
+        self.feed_convert = self._g93_mms_to_minutes_per_gunits
+        self.feedrate_dirty = True
+
+    def _g94_mms_to_gunits_per_minute(self, mms):
+        millimeters_per_minute = 60.0 * mms
+        distance = UNITS_PER_MIL / self.stepper_step_size
+        return millimeters_per_minute / distance
+
+    def _g94_feedrate(self):
+        if self.feed_mode == 94:
+            return
+        self.feed_mode = 94
+        # Feed Rate in Units / Minute
+        self.feed_convert = self._g94_mms_to_gunits_per_minute
+        # units to mm, seconds to minutes.
+        self.feedrate_dirty = True
+
+    def _g20_units_inch(self):
+        self.units = 20
+        self.unit_scale = UNITS_PER_INCH / self.stepper_step_size  # g20 is inch mode.
+        self.units_dirty = True
+
+    def _g21_units_mm(self):
+        self.units = 21
+        self.unit_scale = UNITS_PER_MM / self.stepper_step_size  # g21 is mm mode.
+        self.units_dirty = True
 
 
 class GrblController:
