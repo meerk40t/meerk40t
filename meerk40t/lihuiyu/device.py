@@ -21,7 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut
+from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut, GotoCut, SetOriginCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -734,6 +734,8 @@ class LihuiyuDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
+        self.origin_x = 0
+        self.origin_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = service.plot_shift
@@ -1692,6 +1694,19 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.wait_finish()
             self.home(plot.start[0], plot.start[1])
+        elif isinstance(plot, GotoCut):
+            self.plot_start()
+            start = plot.start
+            self.wait_finish()
+            self.move_absolute(self.origin_x + start[0], self.origin_y + start[1])
+        elif isinstance(plot, SetOriginCut):
+            self.plot_start()
+            if plot.set_current:
+                x = self.native_x
+                y = self.native_y
+            else:
+                x, y = plot.start
+            self.set_origin(x, y)
         else:
             self.plot_planner.push(plot)
             # Mirror the stuff
@@ -1748,9 +1763,16 @@ class LihuiyuDriver(Parameters):
     def set_overscan(self, overscan=None):
         self.overscan = overscan
 
-    def set_position(self, x, y):
-        self.native_x = x
-        self.native_y = y
+    def set_origin(self, x, y):
+        """
+        This should set the origin position.
+
+        @param x:
+        @param y:
+        @return:
+        """
+        self.origin_x = x
+        self.origin_y = y
 
     def wait(self, t):
         time.sleep(float(t) / 1000.0)

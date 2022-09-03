@@ -17,6 +17,7 @@ from meerk40t.core.cutcode import (
     RasterCut,
     RawCut,
     WaitCut,
+    GotoCut, SetOriginCut,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
@@ -522,6 +523,11 @@ class LaserRender:
             elif isinstance(cut, WaitCut):
                 pass
             elif isinstance(cut, HomeCut):
+                p.MoveToPoint(start[0] + x, start[1] + y)
+            elif isinstance(cut, SetOriginCut):
+                # This may actually need to set a new draw location for loop cuts
+                pass
+            elif isinstance(cut, GotoCut):
                 p.MoveToPoint(start[0] + x, start[1] + y)
             elif isinstance(cut, InputCut):
                 pass

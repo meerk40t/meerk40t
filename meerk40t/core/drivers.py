@@ -175,11 +175,9 @@ class Driver:
         """
         self.settings[key] = value
 
-    def set_position(self, x, y):
+    def set_origin(self, x, y):
         """
-        This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
-        used in step-repeat.
+        This should set the origin position.
 
         @param x:
         @param y:
