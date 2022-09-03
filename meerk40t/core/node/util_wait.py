@@ -7,6 +7,8 @@ class WaitOperation(Node):
     """
     WaitOperation tells the controller to wait for a specified period of time.
 
+    The units for the wait property is seconds. The waitcut uses milliseconds, as does spooled "wait" lasercode.
+
     Node type "util wait"
     """
 

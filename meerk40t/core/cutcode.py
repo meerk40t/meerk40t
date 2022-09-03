@@ -966,6 +966,7 @@ class WaitCut(CutObject):
         pass
 
     def generate(self):
+        # Dwell time is already in ms.
         yield "wait", self.dwell_time
 
 
