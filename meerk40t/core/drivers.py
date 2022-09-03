@@ -204,17 +204,17 @@ class Driver:
         """
         pass
 
-    def wait(self, t):
+    def wait(self, time_in_ms):
         """
-        Wait asks that the work be stalled or current process held for the time t in seconds. If wait_finished is
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
         called first this will attempt to stall the machine while performing no work. If the driver in question permits
         waits to be placed within code this should insert waits into the current job. Returning instantly rather than
         holding the processes.
 
-        @param t:
+        @param time_in_ms:
         @return:
         """
-        time.sleep(float(t))
+        time.sleep(time_in_ms * 1000.0)
 
     def wait_finish(self, *values):
         """
