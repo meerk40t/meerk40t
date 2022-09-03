@@ -290,7 +290,7 @@ class LihuiyuDevice(Service, ViewPort):
             def move_at_speed():
                 yield "set", "speed", speed
                 yield "program_mode"
-                yield "move_relative", dx.mil, dy.mil
+                yield "move_rel", dx.length_mil, dy.length_mil
                 yield "rapid_mode"
 
             if self.spooler.is_idle:
