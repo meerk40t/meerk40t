@@ -1170,8 +1170,17 @@ class LihuiyuDriver(Parameters):
         self.origin_x = x
         self.origin_y = y
 
-    def wait(self, t):
-        time.sleep(float(t) / 1000.0)
+    def wait(self, time_in_ms):
+        """
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
+
+        @param time_in_ms:
+        @return:
+        """
+        time.sleep(time_in_ms * 1000.0)
 
     def wait_finish(self, *values):
         """Adds a temp hold requirement if the pipe has any data."""
@@ -1196,9 +1205,20 @@ class LihuiyuDriver(Parameters):
         function()
 
     def beep(self):
+        """
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
+
+        @return:
+        """
         self.service("beep\n")
 
     def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
         self.service(value)
 
     def signal(self, signal, *args):
