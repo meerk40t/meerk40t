@@ -786,14 +786,26 @@ class MoshiDriver(Parameters):
         function()
 
     def beep(self):
+        """
+        Wants a system beep to be issued.
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
+
+        @return:
+        """
         self.service("beep\n")
 
     def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
         self.service(value)
 
     def signal(self, signal, *args):
         """
-        This asks that this signal be broadcast.
+        This asks that this signal be broadcast at the appropriate time within the spooling cycle.
 
         @param signal:
         @param args:
