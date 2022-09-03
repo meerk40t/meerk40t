@@ -882,7 +882,7 @@ def origin():
 
 def unlock():
     yield "rapid_mode"
-    yield "unlock"
+    yield "unlock_rail"
 
 
 def home():

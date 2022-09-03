@@ -70,6 +70,10 @@ class BalorDriver:
     def abort_retry(self):
         self.connection.abort_connect()
 
+    #############
+    # DRIVER COMMANDS
+    #############
+
     def hold_work(self, priority):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
@@ -361,8 +365,7 @@ class BalorDriver:
 
     def move_abs(self, x, y):
         """
-        This is called with the actual x and y values with units. If without units we should expect to move in native
-        units.
+        Requests laser move to absolute position x, y in physical units
 
         @param x:
         @param y:
@@ -388,7 +391,7 @@ class BalorDriver:
 
     def move_rel(self, dx, dy):
         """
-        This is called with dx and dy values to move a relative amount.
+        Requests laser move relative position dx, dy in physical units
 
         @param dx:
         @param dy:
@@ -456,17 +459,39 @@ class BalorDriver:
         self.connection.wait_finished()
 
     def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooling cycle.
+
+        @param function:
+        @return:
+        """
         function()
 
     def wait(self, time_in_ms):
-        time.sleep(time_in_ms * 1000.0)
+        """
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
+
+        @param time_in_ms:
+        @return:
+        """
+        time.sleep(time_in_ms / 1000.0)
 
     def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
         self.service(value)
 
     def beep(self):
         """
         Wants a system beep to be issued.
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
 
         @return:
         """
@@ -519,6 +544,18 @@ class BalorDriver:
         @return:
         """
         pass
+
+    def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period. This could be done in a series of commands,
+        move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
+        commands so calling dwell is preferred.
+
+        @param time_in_ms:
+        @return:
+        """
+        self.pulse(time_in_ms)
+
 
     def pulse(self, pulse_time):
         con = self.connection
