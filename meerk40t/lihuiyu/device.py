@@ -487,6 +487,33 @@ class LihuiyuDevice(Service, ViewPort):
 
         @self.console_argument("filename", type=str)
         @self.console_command(
+            "save_job",
+            help=_("save job export"),
+            input_type="plan"
+        )
+        def egv_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "wb") as f:
+                    f.write(b"Document type : LHYMICRO-GL file\n")
+                    f.write(b"File version: 1.0.01\n")
+                    f.write(b"Copyright: Unknown\n")
+                    f.write(
+                        bytes(f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n", "utf-8")
+                    )
+                    f.write(b"\n")
+                    f.write(b"%0%0%0%0%\n")
+                    driver = LihuiyuDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    driver.out_pipe = f
+                    job.execute()
+
+            except (PermissionError, IOError):
+                channel(_("Could not save: {filename}").format(filename=filename))
+
+        @self.console_argument("filename", type=str)
+        @self.console_command(
             "egv_import",
             help=_("Lihuiyu Engrave Buffer Import. egv_import <egv_file>"),
         )
