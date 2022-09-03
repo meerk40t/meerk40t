@@ -1448,7 +1448,7 @@ class GRBLEmulator(Module, Parameters):
                     yield "home"
                     if self.home_adjust is not None:
                         yield "rapid_mode"
-                        yield "move", self.home_adjust[0], self.home_adjust[1]
+                        yield "move_abs", self.home_adjust[0], self.home_adjust[1]
 
                 self.spooler.send(realtime_home)
                 return 0
