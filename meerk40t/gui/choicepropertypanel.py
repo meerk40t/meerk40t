@@ -823,7 +823,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 result = result[idx + 1 :]
         return result
 
-    def module_close(self):
+    def module_close(self, *args, **kwargs):
         self.pane_hide()
 
     def pane_hide(self):
