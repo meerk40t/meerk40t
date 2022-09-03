@@ -46,41 +46,7 @@ class RootNode(Node):
         self._root = self
         self.context = context
         self.listeners = []
-
-        self.bootstrap = {
-            "op cut": CutOpNode,
-            "op engrave": EngraveOpNode,
-            "op raster": RasterOpNode,
-            "op image": ImageOpNode,
-            "op dots": DotsOpNode,
-            "op hatch": HatchOpNode,
-            "util console": ConsoleOperation,
-            "util wait": WaitOperation,
-            "util origin": SetOriginOperation,
-            "util home": HomeOperation,
-            "util goto": GotoOperation,
-            "util input": InputOperation,
-            "util output": OutputOperation,
-            "lasercode": LaserCodeNode,
-            "blob": BlobNode,
-            "group": GroupNode,
-            "layer": LayerNode,
-            "elem ellipse": EllipseNode,
-            "elem line": LineNode,
-            "elem rect": RectNode,
-            "elem path": PathNode,
-            "elem point": PointNode,
-            "elem polyline": PolylineNode,
-            "elem image": ImageNode,
-            "elem text": TextNode,
-            "elem numpath": NumpathNode,
-            "reference": ReferenceNode,
-            "cutcode": CutNode,
-            "branch ops": BranchOperationsNode,
-            "branch elems": BranchElementsNode,
-            "branch reg": BranchRegmarkNode,
-            "file": FileNode,
-        }
+        self.bootstrap = bootstrap
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
@@ -228,3 +194,40 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "focus"):
                 listen.focus(node, **kwargs)
+
+
+bootstrap = {
+    "root": RootNode,
+    "op cut": CutOpNode,
+    "op engrave": EngraveOpNode,
+    "op raster": RasterOpNode,
+    "op image": ImageOpNode,
+    "op dots": DotsOpNode,
+    "op hatch": HatchOpNode,
+    "util console": ConsoleOperation,
+    "util wait": WaitOperation,
+    "util origin": SetOriginOperation,
+    "util home": HomeOperation,
+    "util goto": GotoOperation,
+    "util input": InputOperation,
+    "util output": OutputOperation,
+    "lasercode": LaserCodeNode,
+    "blob": BlobNode,
+    "group": GroupNode,
+    "layer": LayerNode,
+    "elem ellipse": EllipseNode,
+    "elem line": LineNode,
+    "elem rect": RectNode,
+    "elem path": PathNode,
+    "elem point": PointNode,
+    "elem polyline": PolylineNode,
+    "elem image": ImageNode,
+    "elem text": TextNode,
+    "elem numpath": NumpathNode,
+    "reference": ReferenceNode,
+    "cutcode": CutNode,
+    "branch ops": BranchOperationsNode,
+    "branch elems": BranchElementsNode,
+    "branch reg": BranchRegmarkNode,
+    "file": FileNode,
+}

@@ -345,7 +345,7 @@ class LaserJob:
     def is_running(self):
         return not self._stopped
 
-    def execute(self, driver):
+    def execute(self, driver=None):
         """
         Execute calls each item in the list of items in order. This is intended to be called by the spooler thread. And
         hold the spooler while these items are executing.
