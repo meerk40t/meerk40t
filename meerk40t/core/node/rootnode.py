@@ -25,9 +25,9 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.refnode import ReferenceNode
 from meerk40t.core.node.util_console import ConsoleOperation
+from meerk40t.core.node.util_goto import GotoOperation
 from meerk40t.core.node.util_home import HomeOperation
 from meerk40t.core.node.util_input import InputOperation
-from meerk40t.core.node.util_goto import GotoOperation
 from meerk40t.core.node.util_origin import SetOriginOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
