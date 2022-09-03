@@ -18,8 +18,15 @@ class Driver:
     """
     A driver is a class which implements the spoolable commands which are issued to the spooler by something in the
     system. The spooled command consist of a method and some data. These are sent to the driver associated with that
-    spooler in linear order as the driver is ready to receive more data. If a method does not exist, it will
-    not be called; it will be as if the command didn't exist.
+    spooler in linear within a single spooler thread. If a method does not exist, it will not be called;
+    it will be as if the command didn't exist. Some devices may have other functions which can equally be called through
+    spooling particular lasercode.
+
+    Most code however is processed as part of cutcode which is a series of native-coord commands which should be
+    processed in order. These can include curves to cut and places to dwell the laser to be executed as part of a
+    precompiled set of instructions. Cutcode can't do things like pause the laser or leave the rail unlocked, but should
+    be permitted to execute various steps in order, and have that execution manipulated by the most of these remaining
+    commands.
     """
 
     def __init__(self, context, name=None):
@@ -62,7 +69,9 @@ class Driver:
 
     def dwell(self, time_in_ms):
         """
-        Requests that the laser fire in place for the given time period.
+        Requests that the laser fire in place for the given time period. This could be done in a series of commands,
+        move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
+        commands so calling dwell is preferred.
 
         @param time_in_ms:
         @return:
