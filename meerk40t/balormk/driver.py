@@ -70,6 +70,10 @@ class BalorDriver:
     def abort_retry(self):
         self.connection.abort_connect()
 
+    #############
+    # DRIVER COMMANDS
+    #############
+
     def hold_work(self, priority):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
