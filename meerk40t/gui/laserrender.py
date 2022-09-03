@@ -8,6 +8,7 @@ from meerk40t.core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
@@ -16,6 +17,7 @@ from meerk40t.core.cutcode import (
     RasterCut,
     RawCut,
     WaitCut,
+    GotoCut, SetOriginCut,
 )
 from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
@@ -520,6 +522,13 @@ class LaserRender:
                 pass
             elif isinstance(cut, WaitCut):
                 pass
+            elif isinstance(cut, HomeCut):
+                p.MoveToPoint(start[0] + x, start[1] + y)
+            elif isinstance(cut, SetOriginCut):
+                # This may actually need to set a new draw location for loop cuts
+                pass
+            elif isinstance(cut, GotoCut):
+                p.MoveToPoint(start[0] + x, start[1] + y)
             elif isinstance(cut, InputCut):
                 pass
             elif isinstance(cut, OutputCut):
@@ -703,7 +712,7 @@ class LaserRender:
             node.height = f_height
             node.descent = f_descent
             node.leading = f_external_leading
-            node._bounds_dirty = True
+            node.set_dirty_bounds()
         # No offset. Text draw positions should match svg. Draw box over text. Must obscure.
         dy = f_descent - f_height  # wx=0, convert baseline to correct position.
         dx = 0
@@ -860,7 +869,7 @@ class LaserRender:
             # image.save(f"dbg_{text}.png")
 
         if node.width != f_width or node.height != f_height:
-            node._bounds_dirty = True
+            node.set_dirty_bounds()
         node.width = f_width
         node.height = f_height
         node.descent = f_descent
@@ -878,11 +887,12 @@ class LaserRender:
                 item.width is None
                 or item.height is None
                 or item._bounds_dirty
+                or item._paint_bounds_dirty
                 or item.bounds_with_variables_translated != translate_variables
             ):
                 # We never drew this cleanly; our initial bounds calculations will be off if we don't premeasure
                 self.measure_text(item)
-                item._bounds_dirty = True
+                item.set_dirty_bounds()
 
     def make_raster(
         self,
@@ -931,7 +941,7 @@ class LaserRender:
         self.validate_text_nodes(nodecopy, variable_translation)
 
         for item in _nodes:
-            bb = item.bounds
+            bb = item.paint_bounds
             if bb[0] < x_min:
                 x_min = bb[0]
             if bb[1] < y_min:

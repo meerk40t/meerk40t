@@ -93,19 +93,16 @@ class LineNode(Node):
             sw = limit
         return sw
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._sync_svg()
-            self._bounds = self.shape.bbox(with_stroke=True)
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        self._sync_svg()
+        return self.shape.bbox(transformed=transformed, with_stroke=with_stroke)
 
     def preprocess(self, context, matrix, commands):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
         self._sync_svg()
+        self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
         default_map = super(LineNode, self).default_map(default_map=default_map)
@@ -161,9 +158,9 @@ class LineNode(Node):
         self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
             SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
         )
+        self.shape.stroke = self.stroke
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self._bounds_dirty = True
 
     def as_path(self):
         self._sync_svg()

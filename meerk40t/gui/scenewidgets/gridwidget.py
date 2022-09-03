@@ -4,12 +4,7 @@ from time import time
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.laserrender import (
-    DRAW_MODE_BACKGROUND,
-    DRAW_MODE_GRID,
-    DRAW_MODE_GUIDES,
-    swizzlecolor,
-)
+from meerk40t.gui.laserrender import DRAW_MODE_GRID, DRAW_MODE_GUIDES
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
@@ -170,7 +165,8 @@ class GridWidget(Widget):
         points = (wpoints + hpoints) / 2
         scaled_conversion = (
             self.scene.context.device.length(
-                str(1) + self.scene.context.units_name, as_float=True
+                f"1{self.scene.context.units_name}",
+                as_float=True,
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
@@ -240,7 +236,8 @@ class GridWidget(Widget):
     def calculate_gridsize(self, w, h):
         scaled_conversion = (
             self.scene.context.device.length(
-                str(1) + self.scene.context.units_name, as_float=True
+                f"1{self.scene.context.units_name}",
+                as_float=True,
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )

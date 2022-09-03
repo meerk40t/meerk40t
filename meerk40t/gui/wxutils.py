@@ -7,7 +7,7 @@ from typing import List
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel as SP
 
-from meerk40t.core.units import Angle, Length
+from meerk40t.core.units import ACCEPTED_UNITS, Angle, Length
 
 _ = wx.GetTranslation
 
@@ -350,6 +350,30 @@ class TextCtrl(wx.TextCtrl):
         )
 
         self._check = check
+        self._style = style
+        # For the sake of readibility we allow multiple occurences of
+        # the same character in the string even if it's unnecessary...
+        floatstr = "+-.eE0123456789"
+        unitstr = "".join(ACCEPTED_UNITS)
+        angle_units = (
+            "deg",
+            "rad",
+            "grad",
+            "turn",
+            r"%",
+        )
+        anglestr = "".join(angle_units)
+        self.charpattern = ""
+        if self._check == "length":
+            self.charpattern = floatstr + unitstr
+        elif self._check == "percent":
+            self.charpattern = floatstr + r"%"
+        elif self._check == "float":
+            self.charpattern = floatstr
+        elif self._check == "angle":
+            self.charpattern = floatstr + anglestr
+        elif self._check == "int":
+            self.charpattern = r"-+0123456789"
         self.lower_limit = None
         self.upper_limit = None
         self.lower_limit_err = None
@@ -367,9 +391,17 @@ class TextCtrl(wx.TextCtrl):
         self._modify_color_foreground = None
         self._warn_status = "modified"
 
+        self._last_valid_value = None
+        self._event_generated = None
+        self._action_routine = None
+
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_TEXT, self.on_check)
-        self.Bind(wx.EVT_KILL_FOCUS, self.on_leave)
+            self.Bind(wx.EVT_KEY_DOWN, self.on_char)
+        self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
+        self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
+        if self._style & wx.TE_PROCESS_ENTER != 0:
+            self.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
         _MIN_WIDTH, _MAX_WIDTH = self.validate_widths()
         self.SetMinSize(wx.Size(_MIN_WIDTH, -1))
         if limited:
@@ -400,6 +432,33 @@ class TextCtrl(wx.TextCtrl):
         dc.SelectObject(wx.NullBitmap)
         return minw, maxw
 
+    def SetActionRoutine(self, action_routine):
+        """
+        This routine will be called after a lost_focus / text_enter event,
+        it's a simple way of dealing with all the
+            ctrl.bind(wx.EVT_KILL_FOCUS / wx.EVT_TEXT_ENTER) things
+        Yes, you can still have them, but you should call
+            ctrl.prevalidate()
+        then to ensure the logic to avoid invalid content is been called.
+        If you need to programmatically distinguish between a lost focus
+        and text_enter event, then consult
+            ctrl.event_generated()
+        this will give back wx.EVT_KILL_FOCUS or wx.EVT_TEXT_ENTER
+        """
+        self._action_routine = action_routine
+
+    def event_generated(self):
+        """
+        This routine will give back wx.EVT_KILL_FOCUS or wx.EVT_TEXT_ENTER
+        if called during an execution of the validator routine, see above,
+        or None in any other case
+        """
+        return self._event_generated
+
+    def SetValue(self, newvalue):
+        self._last_valid_value = newvalue
+        super().SetValue(newvalue)
+
     def set_error_level(self, err_min, err_max):
         self.lower_limit_err = err_min
         self.upper_limit_err = err_max
@@ -412,9 +471,25 @@ class TextCtrl(wx.TextCtrl):
         self.lower_limit = range_min
         self.upper_limit = range_max
 
-    def on_leave(self, event):
+    def prevalidate(self):
+        # Check whether the field is okay, if not then put it to the last value
+        if self.warn_status == "error" and self._last_valid_value is not None:
+            # ChangeValue is not creating any events...
+            self.ChangeValue(self._last_valid_value)
+            self.warn_status = ""
+
+    def on_enter_field(self, event):
+        self._last_valid_value = self.GetValue()
+        event.Skip()
+
+    def on_leave_field(self, event):
         # Needs to be passed on
         event.Skip()
+        self.prevalidate()
+        if self._action_routine is not None:
+            self._event_generated = wx.EVT_KILL_FOCUS
+            self._action_routine()
+            self._event_generated = None
         self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
@@ -423,6 +498,12 @@ class TextCtrl(wx.TextCtrl):
     def on_enter(self, event):
         # Let others deal with it after me
         event.Skip()
+        self.prevalidate()
+        if self._action_routine is not None:
+            self._event_generated = wx.EVT_TEXT_ENTER
+            self._action_routine()
+            self._event_generated = None
+        self.SelectNone()
         # We assume it's been dealt with, so we recolor...
         self.SetModified(False)
         self.warn_status = self._warn_status
@@ -450,6 +531,25 @@ class TextCtrl(wx.TextCtrl):
         self.SetBackgroundColour(background)
         self.SetForegroundColour(foreground)
         self.Refresh()
+
+    def on_char(self, event):
+        proceed = True
+        if self.charpattern != "":
+            keyc = event.GetUnicodeKey()
+            special = False
+            if event.RawControlDown() or event.ControlDown() or event.AltDown():
+                special = True
+            # GetUnicodeKey ignores all special keys in the first
+            if keyc != wx.WXK_NONE and not special:
+                # a 'real' character?
+                if keyc >= ord(" "):
+                    char = chr(keyc).lower()
+                    if char not in self.charpattern:
+                        proceed = False
+                        # print (f"Ignored: {keyc} - {char}")
+        if proceed:
+            event.DoAllowNextEvent()
+            event.Skip()
 
     def on_check(self, event):
         event.Skip()

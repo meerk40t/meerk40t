@@ -3,7 +3,6 @@ import time
 import wx
 from wx import aui
 
-
 _ = wx.GetTranslation
 
 

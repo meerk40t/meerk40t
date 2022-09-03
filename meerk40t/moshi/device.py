@@ -17,11 +17,13 @@ from meerk40t.kernel import (
 from ..core.cutcode import (
     CubicCut,
     DwellCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
     QuadCut,
     WaitCut,
+    GotoCut, SetOriginCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -340,6 +342,8 @@ class MoshiDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
+        self.origin_x = 0
+        self.origin_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.queue = list()
@@ -425,6 +429,12 @@ class MoshiDriver(Parameters):
                         t += step_size
                 elif isinstance(q, WaitCut):
                     self.total_steps += 1
+                elif isinstance(q, HomeCut):
+                    self.total_steps += 1
+                elif isinstance(q, GotoCut):
+                    self.total_steps += 1
+                elif isinstance(q, SetOriginCut):
+                    self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
                     # Moshi cannot fire in place.
@@ -459,6 +469,21 @@ class MoshiDriver(Parameters):
                     t += step_size
                 last_x, last_y = q.end
                 self._goto_absolute(last_x, last_y, 1)
+            elif isinstance(q, HomeCut):
+                self.current_steps += 1
+                self.home(*q.start)
+            elif isinstance(q, GotoCut):
+                self.current_steps += 1
+                start = q.start
+                self._goto_absolute(self.origin_x + start[0], self.origin_y + start[1])
+            elif isinstance(q, SetOriginCut):
+                self.current_steps += 1
+                if q.set_current:
+                    x = self.native_x
+                    y = self.native_y
+                else:
+                    x, y = q.start
+                self.set_origin(x, y)
             elif isinstance(q, WaitCut):
                 self.current_steps += 1
                 # Moshi has no forced wait functionality.
@@ -525,12 +550,12 @@ class MoshiDriver(Parameters):
         self.total_steps = 0
 
     def move_abs(self, x, y):
-        x, y = self.service.physical_to_device_position(x, y, 1)
+        x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self._move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx, dy = self.service.physical_to_device_length(dx, dy, 1)
+        dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         x = self.native_x + dx
         y = self.native_y + dy
@@ -550,7 +575,7 @@ class MoshiDriver(Parameters):
         except IndexError:
             pass
         adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y, 1
+            adjust_x, adjust_y
         )
 
         self.rapid_mode()
@@ -776,18 +801,16 @@ class MoshiDriver(Parameters):
             if self.state in (DRIVER_STATE_PROGRAM, DRIVER_STATE_RASTER):
                 self.state = DRIVER_STATE_MODECHANGE
 
-    def set_position(self, x, y):
+    def set_origin(self, x, y):
         """
-        This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
-        used in step-repeat.
+        This should set the origin position.
 
         @param x:
         @param y:
         @return:
         """
-        self.native_x = x
-        self.native_y = y
+        self.origin_x = x
+        self.origin_y = y
 
     def wait(self, t):
         """

@@ -53,9 +53,37 @@ def plugin(kernel, lifecycle=None):
         input_type=(None, "image-array", "inkscape"),
         output_type="image",
     )
-    def image(command, channel, _, data_type=None, data=None, args=tuple(), **kwargs):
+    def image(command, channel, _, data_type=None, data=None, remainder=None, **kwargs):
         elements = context.elements
+        if data_type is None:
+            if not remainder:
+                # No additional data just list the images.
+                channel(_("----------"))
+                channel(_("Images:"))
+                i = 0
+                for node in elements.elems():
+                    if node.type != "elem image":
+                        continue
+                    name = str(node)
+                    if len(name) > 50:
+                        name = name[:50] + "..."
+                    channel(
+                        f"{i}: ({node.image.width}, {node.image.height}) {node.image.mode}, {name}"
+                    )
+                    i += 1
+                channel(_("----------"))
+                return
+            # We have additional commands, return selected images.
+            if not elements.has_emphasis():
+                channel(_("No selected images."))
+                return
+            images = [
+                e for e in elements.elems(emphasized=True) if e.type == "elem image"
+            ]
+            return "image", images
+
         if data_type == "inkscape":
+            # Inkscape type convert to added image.
             inkscape_path, filename = data
             if filename is None:
                 channel(_("File was not set."))
@@ -66,39 +94,16 @@ def plugin(kernel, lifecycle=None):
                 img = Image.open(filename)
                 inode = elements.elem_branch.add(image=img, type="elem image")
                 return "image", [inode]
-
-        if len(args) == 0:
-            channel(_("----------"))
-            channel(_("Images:"))
-            i = 0
-            for node in elements.elems():
-                if node.type != "elem image":
-                    continue
-                name = str(node)
-                if len(name) > 50:
-                    name = name[:50] + "..."
-                channel(
-                    f"{i}: ({node.image.width}, {node.image.height}) {node.image.mode}, {name}"
-                )
-                i += 1
-            channel(_("----------"))
-            return
-        if data_type is None:
-            if not elements.has_emphasis():
-                channel(_("No selected images."))
-                return
-            images = [
-                e for e in elements.elems(emphasized=True) if e.type == "elem image"
-            ]
         elif data_type == "image-array":
+            # Camera Image-Array, convert to image.
             from PIL import Image
 
             width, height, frame = data
             img = Image.fromarray(frame)
             images = [elements.elem_branch.add(image=img, type="elem image")]
+            return "image", images
         else:
             raise CommandSyntaxError
-        return "image", images
 
     @context.console_command(
         "path",

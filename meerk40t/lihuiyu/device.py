@@ -21,7 +21,7 @@ from meerk40t.kernel import (
 )
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
-from ..core.cutcode import DwellCut, InputCut, OutputCut, WaitCut
+from ..core.cutcode import DwellCut, HomeCut, InputCut, OutputCut, WaitCut, GotoCut, SetOriginCut
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner, grouped
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
@@ -271,8 +271,9 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "laser_off"
 
             if self.spooler.is_idle:
-                self.spooler.laserjob(list(timed_fire()))
-                channel(_("Pulse laser for {time} milliseconds").format(time=time))
+                label = _("Pulse laser for {time}ms").format(time=time)
+                self.spooler.laserjob(list(timed_fire()), label=label)
+                channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
             return
@@ -293,7 +294,9 @@ class LihuiyuDevice(Service, ViewPort):
                 yield "rapid_mode"
 
             if self.spooler.is_idle:
-                self.spooler.laserjob(list(move_at_speed()))
+                self.spooler.laserjob(
+                    list(move_at_speed()), label=f"move {dx} {dy} at {speed}"
+                )
             else:
                 channel(_("Busy"))
             return
@@ -679,79 +682,6 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Emulator cannot be attached to any device."))
             return
 
-        @kernel.console_argument("transition_type", type=str)
-        @kernel.console_command(
-            "test_jog_transition",
-            help="test_jog_transition <finish,jog,switch>",
-            input_type=("spooler", None),
-            hidden=True,
-        )
-        def run_jog_transition_test(data, transition_type, **kwgs):
-            """ "
-            The Jog Transition Test is intended to test the jogging
-            """
-            if transition_type == "jog":
-                command = "jog"
-            elif transition_type == "finish":
-                command = "jog_finish"
-            elif transition_type == "switch":
-                command = "jog_switch"
-            else:
-                raise CommandSyntaxError
-            if data is None:
-                data = kernel.device.spooler
-            spooler = data
-
-            def jog_transition_test():
-                yield "rapid_mode"
-                yield "laser_off"
-                yield "wait_finish"
-                yield "move_abs", 3000, 3000
-                yield "wait_finish"
-                yield "laser_on"
-                yield "wait", 50
-                yield "laser_off"
-                yield "wait_finish"
-                yield "set", "speed", 10.0
-
-                def pos(i):
-                    if i < 3:
-                        x = 200
-                    elif i < 6:
-                        x = -200
-                    else:
-                        x = 0
-                    if i % 3 == 0:
-                        y = 200
-                    elif i % 3 == 1:
-                        y = -200
-                    else:
-                        y = 0
-                    return x, y
-
-                for q in range(8):
-                    top = q & 1
-                    left = q & 2
-                    x_val = q & 3
-                    yield "set_direction", top, left, x_val, not x_val
-                    yield "program"
-                    for j in range(9):
-                        jx, jy = pos(j)
-                        for k in range(9):
-                            kx, ky = pos(k)
-                            yield "move_abs", 3000, 3000
-                            yield "move_abs", 3000 + jx, 3000 + jy
-                            yield command, 3000 + jx + kx, 3000 + jy + ky
-                    yield "move_abs", 3000, 3000
-                    yield "rapid_mode"
-                    yield "wait_finish"
-                    yield "laser_on"
-                    yield "wait", 50
-                    yield "laser_off"
-                    yield "wait_finish"
-
-            spooler.laserjob(list(jog_transition_test()))
-
     @property
     def viewbuffer(self):
         return self.driver.out_pipe.viewbuffer
@@ -804,6 +734,8 @@ class LihuiyuDriver(Parameters):
 
         self.native_x = 0
         self.native_y = 0
+        self.origin_x = 0
+        self.origin_y = 0
 
         self.plot_planner = PlotPlanner(self.settings)
         self.plot_planner.force_shift = service.plot_shift
@@ -1075,12 +1007,12 @@ class LihuiyuDriver(Parameters):
         self.state = original_state
 
     def move_abs(self, x, y):
-        x, y = self.service.physical_to_device_position(x, y, 1)
+        x, y = self.service.physical_to_device_position(x, y)
         self.rapid_mode()
         self.move_absolute(int(x), int(y))
 
     def move_rel(self, dx, dy):
-        dx, dy = self.service.physical_to_device_length(dx, dy, 1)
+        dx, dy = self.service.physical_to_device_length(dx, dy)
         self.rapid_mode()
         self.move_relative(dx, dy)
 
@@ -1584,7 +1516,7 @@ class LihuiyuDriver(Parameters):
         except IndexError:
             pass
         adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y, 1
+            adjust_x, adjust_y
         )
         if adjust_x != 0 or adjust_y != 0:
             # Perform post home adjustment.
@@ -1758,6 +1690,23 @@ class LihuiyuDriver(Parameters):
             self.plot_start()
             self.wait_finish()
             self.wait(plot.dwell_time)
+        elif isinstance(plot, HomeCut):
+            self.plot_start()
+            self.wait_finish()
+            self.home(plot.start[0], plot.start[1])
+        elif isinstance(plot, GotoCut):
+            self.plot_start()
+            start = plot.start
+            self.wait_finish()
+            self.move_absolute(self.origin_x + start[0], self.origin_y + start[1])
+        elif isinstance(plot, SetOriginCut):
+            self.plot_start()
+            if plot.set_current:
+                x = self.native_x
+                y = self.native_y
+            else:
+                x, y = plot.start
+            self.set_origin(x, y)
         else:
             self.plot_planner.push(plot)
             # Mirror the stuff
@@ -1814,9 +1763,16 @@ class LihuiyuDriver(Parameters):
     def set_overscan(self, overscan=None):
         self.overscan = overscan
 
-    def set_position(self, x, y):
-        self.native_x = x
-        self.native_y = y
+    def set_origin(self, x, y):
+        """
+        This should set the origin position.
+
+        @param x:
+        @param y:
+        @return:
+        """
+        self.origin_x = x
+        self.origin_y = y
 
     def wait(self, t):
         time.sleep(float(t) / 1000.0)

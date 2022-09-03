@@ -13,12 +13,14 @@ from ..core.cutcode import (
     CubicCut,
     CutCode,
     DwellCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
     PlotCut,
     QuadCut,
     WaitCut,
+    GotoCut, SetOriginCut,
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
@@ -362,6 +364,8 @@ class GRBLDriver(Parameters):
         self.paused = False
         self.native_x = 0
         self.native_y = 0
+        self.origin_x = 0
+        self.origin_y = 0
         self.stepper_step_size = UNITS_PER_MIL
 
         self.plot_planner = PlotPlanner(
@@ -600,9 +604,14 @@ class GRBLDriver(Parameters):
                         t += step_size
                 elif isinstance(q, WaitCut):
                     self.total_steps += 1
+                elif isinstance(q, HomeCut):
+                    self.total_steps += 1
+                elif isinstance(q, GotoCut):
+                    self.total_steps += 1
+                elif isinstance(q, SetOriginCut):
+                    self.total_steps += 1
                 elif isinstance(q, DwellCut):
                     self.total_steps += 1
-                    # Moshi cannot fire in place.
                 elif isinstance(q, (InputCut, OutputCut)):
                     self.total_steps += 1
                 else:
@@ -660,6 +669,21 @@ class GRBLDriver(Parameters):
             elif isinstance(q, WaitCut):
                 self.current_steps += 1
                 self.wait(q.dwell_time)
+            elif isinstance(q, HomeCut):
+                self.current_steps += 1
+                self.home(q.first)
+            elif isinstance(q, GotoCut):
+                self.current_steps += 1
+                start = q.start
+                self.move(self.origin_x + start[0], self.origin_y + start[1])
+            elif isinstance(q, SetOriginCut):
+                self.current_steps += 1
+                if q.set_current:
+                    x = self.native_x
+                    y = self.native_y
+                else:
+                    x, y = q.start
+                self.set_origin(x, y)
             elif isinstance(q, DwellCut):
                 self.current_steps += 1
                 self.dwell(q.dwell_time)
@@ -788,18 +812,16 @@ class GRBLDriver(Parameters):
             self.speed_dirty = True
         self.settings[key] = value
 
-    def set_position(self, x, y):
+    def set_origin(self, x, y):
         """
-        This should set an offset position.
-        * Note: This may need to be replaced with something that has better concepts behind it. Currently, this is only
-        used in step-repeat.
+        This should set the origin position.
 
         @param x:
         @param y:
         @return:
         """
-        self.native_x = x
-        self.native_y = y
+        self.origin_x = x
+        self.origin_y = y
 
     def wait(self, t):
         """
@@ -1532,13 +1554,7 @@ class GRBLEmulator(Module, Parameters):
                     self.scale = UNITS_PER_MM
                 elif v == 28:
                     # Move to Origin (Home)
-                    def move_to_origin():
-                        yield "rapid_mode"
-                        yield "home"
-                        if self.home_adjust is not None:
-                            yield "move", self.home_adjust[0], self.home_adjust[1]
-
-                    self.spooler.send(move_to_origin())
+                    self.cutcode.append(HomeCut())
                 elif v == 38.1:
                     # Touch Plate
                     pass

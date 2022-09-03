@@ -1,18 +1,18 @@
 import wx
 
-from meerk40t.kernel import signal_listener
 from meerk40t.core.element_types import op_parent_nodes
 from meerk40t.gui.icons import (
     icons8_computer_support_50,
-    icons8_small_beam_20,
-    icons8_laser_beam_20,
-    icons8_image_20,
-    icons8_direction_20,
     icons8_diagonal_20,
+    icons8_direction_20,
+    icons8_image_20,
+    icons8_laser_beam_20,
     icons8_scatter_plot_20,
+    icons8_small_beam_20,
 )
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -298,4 +298,4 @@ class OperationInformation(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Operations")
+        return ("Operations", "Operation Information")

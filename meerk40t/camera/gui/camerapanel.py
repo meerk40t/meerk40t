@@ -172,7 +172,7 @@ class CameraPanel(wx.Panel, Job):
             self.check_perspective.SetValue(self.camera.correction_perspective)
             self.slider_fps.SetValue(self.camera.fps)
 
-        self.on_fps_change(None)
+        self.on_fps_change(self.camera.path)
 
         self.widget_scene.widget_root.set_aspect(self.camera.aspect)
 
@@ -211,6 +211,9 @@ class CameraPanel(wx.Panel, Job):
 
     def on_fps_change(self, origin, *args):
         # Set the camera fps.
+        if origin != self.camera.path:
+            # Not this window.
+            return
         fps = self.camera.fps
         if fps == 0:
             tick = 5
@@ -337,9 +340,6 @@ class CameraPanel(wx.Panel, Job):
 
     def swap_camera(self, uri):
         def swap(event=None):
-            ukey = f"cam_{self.index}_uri"
-            context = self.camera.get_context("/")
-            setattr(context, ukey, str(uri))
             self.camera(f"camera{self.index} --uri {str(uri)} stop start\n")
             self.frame_bitmap = None
 
@@ -364,7 +364,9 @@ class CamInterfaceWidget(Widget):
                     0,
                 )
             else:
-                gc.DrawText(_("Fetching Frame..."), 0, 0)
+                gc.DrawText(
+                    _("Fetching Frame {uri}...").format(uri=self.cam.camera.uri), 0, 0
+                )
 
     def hit(self):
         return HITCHAIN_HIT
@@ -579,18 +581,7 @@ class CamPerspectiveWidget(Widget):
 
     def update(self):
         half = CORNER_SIZE / 2.0
-        if self.index == 0:
-            pos_x = self.cam.camera.perspective_x1
-            pos_y = self.cam.camera.perspective_y1
-        elif self.index == 1:
-            pos_x = self.cam.camera.perspective_x2
-            pos_y = self.cam.camera.perspective_y2
-        elif self.index == 2:
-            pos_x = self.cam.camera.perspective_x3
-            pos_y = self.cam.camera.perspective_y3
-        else:
-            pos_x = self.cam.camera.perspective_x4
-            pos_y = self.cam.camera.perspective_y4
+        pos_x, pos_y = self.cam.camera.perspective[self.index]
         self.set_position(pos_x - half, pos_y - half)
 
     def hit(self):
@@ -618,18 +609,8 @@ class CamPerspectiveWidget(Widget):
         if event_type == "leftdown":
             return RESPONSE_CONSUME
         if event_type == "move":
-            if self.index == 0:
-                self.cam.camera.perspective_x1 += space_pos[4]
-                self.cam.camera.perspective_y1 += space_pos[5]
-            elif self.index == 1:
-                self.cam.camera.perspective_x2 += space_pos[4]
-                self.cam.camera.perspective_y2 += space_pos[5]
-            elif self.index == 2:
-                self.cam.camera.perspective_x3 += space_pos[4]
-                self.cam.camera.perspective_y3 += space_pos[5]
-            else:
-                self.cam.camera.perspective_x4 += space_pos[4]
-                self.cam.camera.perspective_y4 += space_pos[5]
+            self.cam.camera.perspective[self.index][0] += space_pos[4]
+            self.cam.camera.perspective[self.index][1] += space_pos[5]
             if self.parent is not None:
                 for w in self.parent:
                     if isinstance(w, CamPerspectiveWidget):
@@ -645,37 +626,16 @@ class CamSceneWidget(Widget):
 
     def process_draw(self, gc):
         if not self.cam.camera.correction_perspective and not self.cam.camera.aspect:
-            if self.cam.camera.perspective_x1 is not None:
+            if self.cam.camera.perspective is not None:
                 if not len(self):
-                    for i in range(4):
+                    for i in range(len(self.cam.camera.perspective)):
                         self.add_widget(
                             -1, CamPerspectiveWidget(self.scene, self.cam, i, False)
                         )
                 gc.SetPen(wx.BLACK_DASHED_PEN)
-                gc.StrokeLines(
-                    [
-                        (
-                            self.cam.camera.perspective_x1,
-                            self.cam.camera.perspective_y1,
-                        ),
-                        (
-                            self.cam.camera.perspective_x2,
-                            self.cam.camera.perspective_y2,
-                        ),
-                        (
-                            self.cam.camera.perspective_x3,
-                            self.cam.camera.perspective_y3,
-                        ),
-                        (
-                            self.cam.camera.perspective_x4,
-                            self.cam.camera.perspective_y4,
-                        ),
-                        (
-                            self.cam.camera.perspective_x1,
-                            self.cam.camera.perspective_y1,
-                        ),
-                    ]
-                )
+                lines = list(self.cam.camera.perspective)
+                lines.append(lines[0])
+                gc.StrokeLines(lines)
         else:
             if len(self):
                 self.remove_all_widgets()
@@ -741,28 +701,23 @@ class CameraInterface(MWindow):
             ),
             id=item.GetId(),
         )
+        camera_root = self.context.get_context("camera")
+        uris = camera_root.setting(list, "uris", [])
+        camera_root.setting(int, "search_range", 5)
+        for uri in uris:
+            menu_text = _("URI: {usb_index}").format(usb_index=uri)
+            if isinstance(uri, int):
+                menu_text = _("Detected USB {usb_index}").format(usb_index=uri)
+            item = wxglade_tmp_menu.Append(wx.ID_ANY, menu_text, "")
+            self.Bind(wx.EVT_MENU, self.panel.swap_camera(uri), id=item.GetId())
 
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=0), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(0), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=1), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(1), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=2), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(2), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=3), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(3), id=item.GetId())
-        item = wxglade_tmp_menu.Append(
-            wx.ID_ANY, _("USB {usb_index}").format(usb_index=4), ""
-        )
-        self.Bind(wx.EVT_MENU, self.panel.swap_camera(4), id=item.GetId())
-
+        for i in range(camera_root.search_range):
+            if i in uris:
+                continue
+            item = wxglade_tmp_menu.Append(
+                wx.ID_ANY, _("USB {usb_index}").format(usb_index=i), ""
+            )
+            self.Bind(wx.EVT_MENU, self.panel.swap_camera(i), id=item.GetId())
         append(wxglade_tmp_menu, _("Camera"))
 
     def window_open(self):
@@ -773,75 +728,56 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        CAM_FOUND = "cam_found_indices"
-        CAM_MAX = "cam_search_range"
+        camera = kernel.get_context("camera")
 
         def camera_click(index=None):
+            s = index
+
             def specific(event=None):
-                kernel.root.setting(int, "camera_default", 0)
-                kernel.root.setting(int, CAM_MAX, 5)
-                kernel.root.setting(str, CAM_FOUND, "")
-                for ci in range(5):
-                    kernel.root.setting(int, f"cam_{ci}_uri", -1)
-                if index is not None:
-                    ukey = f"cam_{index}_uri"
-                    testuri = getattr(kernel.root, ukey)
-                    if testuri is None or testuri < 0 or testuri == "":
-                        foundstr = getattr(kernel.root, CAM_FOUND)
-                        available_cameras = foundstr.split(";")
-                        if index >= len(available_cameras):
-                            # Took default
-                            if len(available_cameras) > 0:
-                                testuri = available_cameras[0]
-                            else:
-                                testuri = 0
-                        else:
-                            testuri = available_cameras[index]
-                        setattr(kernel.root, ukey, int(testuri))
-                    kernel.console(f"camera{index} --uri {testuri} stop start\n")
-                    kernel.root.camera_default = index
-                v = kernel.root.camera_default
-                kernel.console(f"window toggle -m {v} CameraInterface {v}\n")
+                index = s
+                camera.default = index
+                v = camera.default
+                camera(f"window toggle -m {v} CameraInterface {v}\n")
 
             return specific
 
-        def get_cameras(search=None):
+        def detect_usb_cameras(search=None):
             def specific(event=None):
-                available_cameras = []
-                # Reset stuff...
-                # Max range to look at
-                kernel.root.setting(int, CAM_MAX, 5)
-                kernel.root.setting(str, CAM_FOUND, "")
-                for ci in range(5):
-                    ukey = f"cam_{ci}_uri"
-                    kernel.root.setting(int, ukey, -1)
-                    setattr(kernel.root, ukey, -1)
                 try:
                     import cv2
                 except ImportError:
                     return
-                MAXFIND = getattr(kernel.root, CAM_MAX)
-                if MAXFIND is None or MAXFIND < 1:
-                    MAXFIND = 5
+
+                # Max range to look at
+                camera.setting(int, "search_range", 5)
+                camera.setting(list, "uris", [])
+                # Reset stuff...
+                for _index in range(5):
+                    if _index in camera.uris:
+                        camera.uris.remove(_index)
+
+                max_range = camera.search_range
+                if max_range is None or max_range < 1:
+                    max_range = 5
                 found = 0
                 found_camera_string = _("Cameras found: {count}")
                 progress = wx.ProgressDialog(
                     _("Looking for Cameras (Range={max_range})").format(
-                        max_range=MAXFIND
+                        max_range=max_range
                     ),
                     found_camera_string.format(count=found),
-                    maximum=MAXFIND,
+                    maximum=max_range,
                     parent=None,
                     style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
                 )
                 # checks for cameras in the first x USB ports
                 index = 0
                 keepgoing = True
-                while index < MAXFIND and keepgoing:
+                while index < max_range and keepgoing:
                     try:
                         cap = cv2.VideoCapture(index)
                         if cap.read()[0]:
-                            available_cameras.append(str(index))
+                            camera.uris.append(index)
                             cap.release()
                             found += 1
                     except:
@@ -851,8 +787,6 @@ class CameraInterface(MWindow):
                     )
                     index += 1
                 progress.Destroy()
-                foundstr = ";".join(available_cameras)
-                setattr(kernel.root, CAM_FOUND, foundstr)
 
             return specific
 
@@ -888,12 +822,12 @@ class CameraInterface(MWindow):
                     {
                         "identifier": "cam4",
                         "label": _("Camera {index}").format(index=4),
-                        "action": camera_click(5),
+                        "action": camera_click(4),
                     },
                     {
                         "identifier": "id_cam",
                         "label": _("Identify cameras"),
-                        "action": get_cameras(True),
+                        "action": detect_usb_cameras(True),
                     },
                 ],
             },
@@ -909,19 +843,19 @@ class CameraInterface(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Camera")
+        return ("Camera", "Camera")
 
 
 class CameraURIPanel(wx.Panel):
     def __init__(self, *args, context=None, index=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
+        self.context = context.get_context("camera")
         if index is None:
             index = 0
         self.index = index
         assert isinstance(self.index, int)
-
+        self.context.setting(list, "uris", [])
         self.list_uri = wx.ListCtrl(
             self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
@@ -938,7 +872,6 @@ class CameraURIPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_add_uri, self.button_add)
         self.Bind(wx.EVT_TEXT, self.on_text_uri, self.text_uri)
         # end wxGlade
-        self.uri_list = None
         self.changed = False
 
     def __set_properties(self):
@@ -961,15 +894,7 @@ class CameraURIPanel(wx.Panel):
         # end wxGlade
 
     def pane_show(self):
-        camera_root_context = self.context.get_context("camera")
-        keylist = camera_root_context.kernel.read_persistent_string_dict(
-            camera_root_context.path, suffix=True
-        )
-        if keylist is not None:
-            keys = [q for q in keylist if isinstance(q, str) and q.startswith("uri")]
-            keys.sort()
-            self.uri_list = [keylist[k] for k in keys]
-            self.on_list_refresh()
+        self.on_list_refresh()
 
     def pane_hide(self):
         self.commit()
@@ -977,29 +902,18 @@ class CameraURIPanel(wx.Panel):
     def commit(self):
         if not self.changed:
             return
-        camera_root_context = self.context.get_context("camera")
-        for c in dir(camera_root_context):
-            if not c.startswith("uri"):
-                continue
-            setattr(camera_root_context, c, None)
-        camera_root_context.clear_persistent()
-
-        for i, uri in enumerate(self.uri_list):
-            key = f"uri{i}"
-            setattr(camera_root_context, key, uri)
-        camera_root_context.flush()
-        camera_root_context.signal("camera_uri_changed", True)
+        self.context.signal("camera_uri_changed", True)
 
     def on_list_refresh(self):
         self.list_uri.DeleteAllItems()
-        for i, uri in enumerate(self.uri_list):
+        for i, uri in enumerate(self.context.uris):
             m = self.list_uri.InsertItem(i, str(i))
             if m != -1:
                 self.list_uri.SetItem(m, 1, str(uri))
 
     def on_list_activated(self, event):  # wxGlade: CameraURI.<event_handler>
         index = event.GetIndex()
-        new_uri = self.uri_list[index]
+        new_uri = self.context.uris[index]
         self.context.console(f"camera{self.index} --uri {new_uri} stop start\n")
         try:
             self.GetParent().Close()
@@ -1029,7 +943,7 @@ class CameraURIPanel(wx.Panel):
     def on_tree_popup_delete(self, index):
         def delete(event=None):
             try:
-                del self.uri_list[index]
+                del self.context.uris[index]
             except KeyError:
                 pass
             self.changed = True
@@ -1039,7 +953,7 @@ class CameraURIPanel(wx.Panel):
 
     def on_tree_popup_duplicate(self, index):
         def duplicate(event=None):
-            self.uri_list.insert(index, self.uri_list[index])
+            self.context.uris.insert(index, self.context.uris[index])
             self.changed = True
             self.on_list_refresh()
 
@@ -1053,9 +967,9 @@ class CameraURIPanel(wx.Panel):
                 _("Camera URI"),
                 "",
             )
-            dlg.SetValue(self.uri_list[index])
+            dlg.SetValue(self.context.uris[index])
             if dlg.ShowModal() == wx.ID_OK:
-                self.uri_list[index] = dlg.GetValue()
+                self.context.uris[index] = dlg.GetValue()
                 self.changed = True
                 self.on_list_refresh()
 
@@ -1063,7 +977,7 @@ class CameraURIPanel(wx.Panel):
 
     def on_tree_popup_clear(self, index):
         def delete(event):
-            self.uri_list = list()
+            self.context.uris.clear()
             self.changed = True
             self.on_list_refresh()
 
@@ -1073,7 +987,7 @@ class CameraURIPanel(wx.Panel):
         uri = self.text_uri.GetValue()
         if uri is None or uri == "":
             return
-        self.uri_list.append(uri)
+        self.context.uris.append(uri)
         self.text_uri.SetValue("")
         self.changed = True
         self.on_list_refresh()
@@ -1101,4 +1015,4 @@ class CameraURI(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Camera")
+        return ("Camera", "Sources")

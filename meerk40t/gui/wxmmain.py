@@ -27,7 +27,7 @@ from meerk40t.gui.statusbarwidgets.statusbar import CustomStatusBar
 from meerk40t.gui.statusbarwidgets.strokewidget import ColorWidget, StrokeWidget
 from meerk40t.kernel import lookup_listener, signal_listener
 
-from ..core.units import UNITS_PER_INCH, Length
+from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
 from ..svgelements import Color, Matrix, Path
 from .icons import (
     STD_ICON_SIZE,
@@ -323,22 +323,22 @@ class MeerK40t(MWindow):
         # small - std icon size / no labels
         # tiny - reduced icon size / no labels
         context.setting(str, "ribbon_appearance", "default")
-        choices = [
-            {
-                "attr": "ribbon_appearance",
-                "object": self.context.root,
-                "default": "default",
-                "type": str,
-                "style": "combosmall",
-                "choices": ["default", "small", "tiny"],
-                "label": _("Ribbon-Size:"),
-                "tip": _(
-                    "Appearance of ribbon at the top (requires a restart to take effect))"
-                ),
-                "page": "Gui",
-                "section": "Appearance",
-            },
-        ]
+        # choices = [
+        #     {
+        #         "attr": "ribbon_appearance",
+        #         "object": self.context.root,
+        #         "default": "default",
+        #         "type": str,
+        #         "style": "combosmall",
+        #         "choices": ["default", "small", "tiny"],
+        #         "label": _("Ribbon-Size:"),
+        #         "tip": _(
+        #             "Appearance of ribbon at the top (requires a restart to take effect))"
+        #         ),
+        #         "page": "Gui",
+        #         "section": "Appearance",
+        #     },
+        # ]
         # context.kernel.register_choices("preferences", choices)
         choices = [
             {
@@ -1857,10 +1857,20 @@ class MeerK40t(MWindow):
             if not window.window_menu(None):
                 continue
             submenu = None
+            win_caption = ""
             try:
-                submenu_name = window.submenu()
+                returnvalue = window.submenu()
+                if isinstance(returnvalue, str):
+                    submenu_name = returnvalue
+                elif isinstance(returnvalue, (tuple, list)):
+                    if len(returnvalue) > 0:
+                        submenu_name = returnvalue[0]
+                    if len(returnvalue) > 1:
+                        win_caption = returnvalue[1]
                 if submenu_name is None:
                     submenu_name = ""
+                if win_caption is None:
+                    win_caption = ""
             except AttributeError:
                 submenu_name = ""
             if submenu_name != "":
@@ -1868,22 +1878,24 @@ class MeerK40t(MWindow):
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
                     submenu = wx.Menu()
-                    self.window_menu.AppendSubMenu(submenu, submenu_name)
+                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
                     submenus[submenu_name] = submenu
             menu_context = submenu if submenu is not None else self.window_menu
             try:
                 name = window.name
             except AttributeError:
                 name = suffix_path
-
-            try:
-                caption = window.caption
-            except AttributeError:
-                caption = name[0].upper() + name[1:]
+            if win_caption != "":
+                caption = win_caption
+            else:
+                try:
+                    caption = window.caption
+                except AttributeError:
+                    caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            menuitem = menu_context.Append(wx.ID_ANY, caption, "", wx.ITEM_NORMAL)
+            menuitem = menu_context.Append(wx.ID_ANY, _(caption), "", wx.ITEM_NORMAL)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
@@ -2438,10 +2450,10 @@ class MeerK40t(MWindow):
         if frame is not None:
             elements = self.context.elements
             img = Image.fromarray(frame)
-            node = elements.elem_branch.add(
-                image=img, width=image_width, height=image_height, type="elem image"
-            )
+            matrix = Matrix(f"scale({UNITS_PER_PIXEL}, {UNITS_PER_PIXEL})")
+            node = elements.elem_branch.add(image=img, matrix=matrix, type="elem image")
             elements.classify([node])
+            self.context.signal("refresh_scene", "Scene")
 
     @signal_listener("statusmsg")
     def on_update_statusmsg(self, origin, value):

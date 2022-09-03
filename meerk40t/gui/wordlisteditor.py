@@ -343,4 +343,4 @@ class WordlistEditor(MWindow):
 
     @staticmethod
     def submenu():
-        return _("Editing")
+        return ("Editing", "Variables + Wordlists")
