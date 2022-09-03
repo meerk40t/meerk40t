@@ -51,9 +51,6 @@ class RootNode(Node):
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
 
-    def __copy__(self):
-        return RootNode(self.context)
-
     def __repr__(self):
         return f"RootNode({str(self.context)})"
 
