@@ -474,7 +474,8 @@ class MoshiDriver(Parameters):
                 self.home(*q.start)
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
-                self._goto_absolute(*q.start)
+                start = q.start
+                self._goto_absolute(self.origin_x + start[0], self.origin_y + start[1])
             elif isinstance(q, SetOriginCut):
                 self.current_steps += 1
                 if q.set_current:

@@ -1698,7 +1698,7 @@ class LihuiyuDriver(Parameters):
             start = plot.start
             self.plot_start()
             self.wait_finish()
-            self.move_abs(start[0], start[1])
+            self.move_abs(self.origin_x + start[0], self.origin_y + start[1])
         elif isinstance(plot, SetOriginCut):
             if plot.set_current:
                 x = self.native_x
