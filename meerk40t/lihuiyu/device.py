@@ -864,6 +864,9 @@ class LihuiyuDriver(Parameters):
         self.service.signal("driver;mode", self.state)
         self.is_paused = False
 
+    def abort(self):
+        self(b"I\n")
+
     def blob(self, blob_type, data):
         """
         Blob sends a data blob. This is native code data of the give type. For example in a ruida device it might be a
@@ -1148,29 +1151,6 @@ class LihuiyuDriver(Parameters):
         self.rapid_mode()
         self(b"IS2P\n")
 
-    def abort(self):
-        self(b"I\n")
-
-    @property
-    def is_left(self):
-        return self._x_engaged and not self._y_engaged and self._leftward
-
-    @property
-    def is_right(self):
-        return self._x_engaged and not self._y_engaged and not self._leftward
-
-    @property
-    def is_top(self):
-        return not self._x_engaged and self._y_engaged and self._topward
-
-    @property
-    def is_bottom(self):
-        return not self._x_engaged and self._y_engaged and not self._topward
-
-    @property
-    def is_angle(self):
-        return self._y_engaged and self._x_engaged
-
     def laser_disable(self, *values):
         self.laser_enabled = False
 
@@ -1359,6 +1339,26 @@ class LihuiyuDriver(Parameters):
     ######################
     # Property IO
     ######################
+
+    @property
+    def is_left(self):
+        return self._x_engaged and not self._y_engaged and self._leftward
+
+    @property
+    def is_right(self):
+        return self._x_engaged and not self._y_engaged and not self._leftward
+
+    @property
+    def is_top(self):
+        return not self._x_engaged and self._y_engaged and self._topward
+
+    @property
+    def is_bottom(self):
+        return not self._x_engaged and self._y_engaged and not self._topward
+
+    @property
+    def is_angle(self):
+        return self._y_engaged and self._x_engaged
 
     def set_prop(self, mask):
         self.properties |= mask
