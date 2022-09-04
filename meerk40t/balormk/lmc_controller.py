@@ -458,12 +458,14 @@ class GalvoController:
             while self.paused:
                 time.sleep(0.3)
             self.send(self._active_list, False)
-            self.set_end_of_list(0)
+            if self.mode != DRIVER_STATE_RAW:
+                self.set_end_of_list(0)
             self._number_of_list_packets += 1
             self._active_list = None
             self._active_index = 0
             if self._number_of_list_packets > 2 and not self._list_executing:
-                self.execute_list()
+                if self.mode != DRIVER_STATE_RAW:
+                    self.execute_list()
                 self._list_executing = True
 
     def _list_new(self):
@@ -662,28 +664,38 @@ class GalvoController:
         return bool(status & READY)
 
     def is_ready_and_not_busy(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return True
         status = self.status()
         return bool(status & READY) and not bool(status & BUSY)
 
     def wait_finished(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
         while not self.is_ready_and_not_busy():
             time.sleep(0.01)
             if self.is_shutdown:
                 return
 
     def wait_ready(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
         while not self.is_ready():
             time.sleep(0.01)
             if self.is_shutdown:
                 return
 
     def wait_idle(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
         while self.is_busy():
             time.sleep(0.01)
             if self.is_shutdown:
                 return
 
     def abort(self, dummy_packet=True):
+        if self.mode == DRIVER_STATE_RAW:
+            return
         self.stop_execute()
         self.set_fiber_mo(0)
         self.reset_list()
@@ -701,14 +713,20 @@ class GalvoController:
         self.mode = DRIVER_STATE_RAPID
 
     def pause(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
         self.paused = True
         self.stop_list()
 
     def resume(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
         self.restart_list()
         self.paused = False
 
     def init_laser(self):
+        if self.mode == DRIVER_STATE_RAW:
+            return
         cor_file = self.service.corfile if self.service.corfile_enabled else None
         first_pulse_killer = self.service.first_pulse_killer
         pwm_pulse_width = self.service.pwm_pulse_width
