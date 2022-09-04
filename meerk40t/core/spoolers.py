@@ -579,6 +579,8 @@ class Spooler:
         @return:
         """
         while not self._shutdown:
+            if self.context.kernel.is_shutdown:
+                return  # Kernel shutdown spooler threads should die off.
             if not len(self._queue):
                 # There is no work to do.
                 time.sleep(0.1)

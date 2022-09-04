@@ -1143,6 +1143,10 @@ class Kernel(Settings):
             for service in list(services):
                 self.set_service_lifecycle(service, LIFECYCLE_KERNEL_SHUTDOWN)
 
+    @property
+    def is_shutdown(self):
+        return self._shutdown
+
     def shutdown(self):
         """
         Starts shutdown procedure.
