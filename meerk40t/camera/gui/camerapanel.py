@@ -508,7 +508,7 @@ class CamInterfaceWidget(Widget):
             menu.AppendSeparator()
 
             sub_menu = wx.Menu()
-            item = sub_menu.Append(wx.ID_ANY, _("Manage URIs"), "")
+            item = sub_menu.Append(wx.ID_ANY, _("URI Manager"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
                 lambda e: self.cam.context.open(
@@ -689,7 +689,7 @@ class CameraInterface(MWindow):
         self.Bind(wx.EVT_MENU, self.panel.reset_perspective, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("URI Manager"), "")
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.camera.open(
