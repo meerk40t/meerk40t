@@ -365,7 +365,7 @@ class CamInterfaceWidget(Widget):
                 )
             else:
                 gc.DrawText(
-                    _("Fetching Frame {uri}...").format(uri=self.cam.camera.uri), 0, 0
+                    _("Fetching URI:{uri} Frame...").format(uri=self.cam.camera.uri), 0, 0
                 )
 
     def hit(self):
@@ -508,7 +508,7 @@ class CamInterfaceWidget(Widget):
             menu.AppendSeparator()
 
             sub_menu = wx.Menu()
-            item = sub_menu.Append(wx.ID_ANY, _("Set URI"), "")
+            item = sub_menu.Append(wx.ID_ANY, _("URI Manager"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
                 lambda e: self.cam.context.open(
@@ -518,20 +518,16 @@ class CamInterfaceWidget(Widget):
             )
 
             camera_context = self.cam.context.get_context("camera")
-            keylist = camera_context.kernel.read_persistent_string_dict(
-                camera_context.path, suffix=True
-            )
-            if keylist is not None:
-                keys = list(keylist)
-                keys.sort()
-                uri_list = [keylist[k] for k in keys]
-                for uri in uri_list:
-                    item = sub_menu.Append(
-                        wx.ID_ANY, _("URI: {uri}").format(uri=uri), ""
-                    )
-                    self.cam.Bind(
-                        wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
-                    )
+            uris = camera_context.setting(list, "uris", [])
+            for uri in uris:
+                item = sub_menu.Append(
+                    wx.ID_ANY, _("URI: {uri}").format(uri=uri), ""
+                )
+                self.cam.Bind(
+                    wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
+                )
+            if sub_menu.MenuItemCount:
+                sub_menu.AppendSeparator()
 
             item = sub_menu.Append(
                 wx.ID_ANY, _("USB {usb_index}").format(usb_index=0), ""
@@ -556,7 +552,7 @@ class CamInterfaceWidget(Widget):
 
             menu.Append(
                 wx.ID_ANY,
-                _("Set URI"),
+                _("Manage URIs"),
                 sub_menu,
             )
             if menu.MenuItemCount != 0:
@@ -693,7 +689,7 @@ class CameraInterface(MWindow):
         self.Bind(wx.EVT_MENU, self.panel.reset_perspective, id=item.GetId())
         wxglade_tmp_menu.AppendSeparator()
 
-        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("Set URI"), "")
+        item = wxglade_tmp_menu.Append(wx.ID_ANY, _("URI Manager"), "")
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.camera.open(
@@ -1005,7 +1001,7 @@ class CameraURI(MWindow):
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraURI.__set_properties
-        self.SetTitle(_("Camera URI"))
+        self.SetTitle(_("URI Manager"))
 
     def window_open(self):
         self.panel.pane_show()
