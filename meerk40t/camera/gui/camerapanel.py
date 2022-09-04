@@ -518,20 +518,14 @@ class CamInterfaceWidget(Widget):
             )
 
             camera_context = self.cam.context.get_context("camera")
-            keylist = camera_context.kernel.read_persistent_string_dict(
-                camera_context.path, suffix=True
-            )
-            if keylist is not None:
-                keys = list(keylist)
-                keys.sort()
-                uri_list = [keylist[k] for k in keys]
-                for uri in uri_list:
-                    item = sub_menu.Append(
-                        wx.ID_ANY, _("URI: {uri}").format(uri=uri), ""
-                    )
-                    self.cam.Bind(
-                        wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
-                    )
+            uris = camera_context.setting(list, "uris", [])
+            for uri in uris:
+                item = sub_menu.Append(
+                    wx.ID_ANY, _("URI: {uri}").format(uri=uri), ""
+                )
+                self.cam.Bind(
+                    wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
+                )
 
             item = sub_menu.Append(
                 wx.ID_ANY, _("USB {usb_index}").format(usb_index=0), ""
