@@ -1,4 +1,4 @@
-from math import sqrt, atan, tau
+from math import atan, sqrt, tau
 
 import numpy as np
 import wx
@@ -67,6 +67,12 @@ class InfoPanel(wx.Panel):
         self.Layout
 
     def show_stuff(self, has_emph):
+        def mklabel(label):
+            result = ""
+            if label is not None:
+                result = label
+            return result
+
         def create_image_from_node(node, iconsize):
             image = wx.NullBitmap
             c = None
@@ -101,7 +107,11 @@ class InfoPanel(wx.Panel):
         last_node = None
         msg = ""
         if has_emph:
-            data = list(self.context.elements.flat(emphasized=True))
+            xdata = list(self.context.elements.flat(emphasized=True))
+            data = []
+            for n in xdata:
+                if n.type.startswith("elem"):
+                    data.append(n)
             count = len(data)
             self.lbl_info_main.SetLabel(
                 _("Selected elements: {count}").format(count=count)
@@ -112,7 +122,8 @@ class InfoPanel(wx.Panel):
                 self.image_default.SetBitmap(image)
                 self.lbl_info_default.SetLabel(
                     _("As in Selection: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
+                        type=node.type,
+                        lbl=mklabel(node.label),
                     )
                 )
 
@@ -123,7 +134,8 @@ class InfoPanel(wx.Panel):
                 self.image_first.SetBitmap(image)
                 self.lbl_info_first.SetLabel(
                     _("First selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
+                        type=node.type,
+                        lbl=mklabel(node.label),
                     )
                 )
 
@@ -133,7 +145,8 @@ class InfoPanel(wx.Panel):
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
                     _("Last selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
+                        type=node.type,
+                        lbl=mklabel(node.label),
                     )
                 )
         else:
@@ -935,7 +948,8 @@ class DistributionPanel(wx.Panel):
         xdata = list(self.context.elements.elems(emphasized=True))
         data.clear()
         for n in xdata:
-            data.append(n)
+            if n.type.startswith("elem"):
+                data.append(n)
         if esort == "first":
             data.sort(key=lambda n: n.emphasized_time)
         elif esort == "last":
@@ -1043,6 +1057,7 @@ class DistributionPanel(wx.Panel):
             equidist_y = True
         self.calculate_basis(data, target, treat, equidist_x, equidist_y, rotate_elem)
         self.apply_results(data, target, xmode, ymode, remain_inside)
+        self.context.signal("refresh_scene", "Scene")
         self.save_setting()
 
     def save_setting(self):
@@ -1098,7 +1113,7 @@ class ArrangementPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.relchoices = (
-            _("Selection Bounds"),
+            _("Adjacent"),
             _("Set distances"),
         )
         self.relparam = ("selection", "distance")
@@ -1143,7 +1158,7 @@ class ArrangementPanel(wx.Panel):
         self.rbox_relation = wx.RadioBox(
             self,
             wx.ID_ANY,
-            _("Alignment relative to:"),
+            _("Arrangement inside grid:"),
             choices=self.relchoices,
             majorDimension=2,
             style=wx.RA_SPECIFY_ROWS,
@@ -1167,8 +1182,8 @@ class ArrangementPanel(wx.Panel):
             self, id=wx.ID_ANY, value="5mm", limited=True, check="length"
         )
 
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Arrange"))
-        self.btn_align.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
+        self.btn_arrange = wx.Button(self, wx.ID_ANY, _("Arrange"))
+        self.btn_arrange.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dim_x = wx.StaticBoxSizer(
@@ -1217,7 +1232,7 @@ class ArrangementPanel(wx.Panel):
 
         sizer_main.Add(self.rbox_selection, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_gaps, 0, wx.EXPAND, 0)
-        sizer_main.Add(self.btn_align, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.btn_arrange, 0, wx.EXPAND, 0)
 
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
         sizer_main.Add(self.info_panel, 1, wx.EXPAND, 0)
@@ -1226,8 +1241,27 @@ class ArrangementPanel(wx.Panel):
         sizer_main.Fit(self)
 
         self.Layout()
+        self.btn_arrange.SetToolTip(_("Rearrange all selected elements"))
+        self.rbox_align_x.SetToolTip(_(""))
+        self.rbox_align_y.SetToolTip(_(""))
+        self.check_same_x.SetToolTip(
+            _(
+                "Set if all columns need to have the same size (ie maximum width over all columns)"
+            )
+        )
+        self.check_same_y.SetToolTip(
+            _(
+                "Set if all rows need to have the same size (ie maximum height over all row)"
+            )
+        )
+        self.rbox_relation.SetToolTip(_(""))
+        self.rbox_selection.SetToolTip(_(""))
+        self.arrange_x.SetToolTip(_(""))
+        self.arrange_y.SetToolTip(_(""))
+        self.txt_gap_x.SetToolTip(_("Set the distance between columns"))
+        self.txt_gap_y.SetToolTip(_("Set the distance between rows"))
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_align, self.btn_align)
+        self.Bind(wx.EVT_BUTTON, self.on_button_align, self.btn_arrange)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_x)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_y)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_selection)
@@ -1295,41 +1329,128 @@ class ArrangementPanel(wx.Panel):
         else:
             active = False
         # active = True
-        self.btn_align.Enable(active)
+        self.btn_arrange.Enable(active)
 
     def on_button_align(self, event):
         def prepare_data():
             xdata = list(self.context.elements.elems(emphasized=True))
             data.clear()
             for n in xdata:
-                data.append(n)
+                if n.type.startswith("elem"):
+                    data.append(n)
             if esort == "first":
                 data.sort(key=lambda n: n.emphasized_time)
             elif esort == "last":
                 data.sort(reverse=True, key=lambda n: n.emphasized_time)
 
         def calculate_arrays():
-            max_colwid = []
-            max_rowht = []
-            bound_array = []
-            colarray = []
             row = 0
             col = 0
+            max_colwid = [0] * num_cols
+            max_rowht = [0]
+            total_max_wid = 0
+            total_max_ht = 0
             for node in data:
                 bb = node.bounds
-                colarray.append(bb)
+                wd = bb[2] - bb[0]
+                ht = bb[3] - bb[1]
+                total_max_ht = max(total_max_ht, ht)
+                max_rowht[row] = max(max_rowht[row], ht)
+                total_max_wid = max(total_max_wid, wd)
+                max_colwid[col] = max(max_colwid[col], wd)
+
                 col += 1
                 if col >= num_cols:
-                    bound_array.append(colarray)
-                    colarray = []
                     col = 0
                     row += 1
-            if col > 0:
-                # Extend the array
-                while col < num_cols:
-                    colarray.append(None)
-                bound_array.append(colarray)
-            rows = row
+                    max_rowht.append(0)
+            max_xx = 0
+            max_yy = 0
+            xx = 0
+            yy = 0
+            # target contains the bound of the grid segment
+            target.clear()
+            for idx2 in range(len(max_rowht)):
+                if same_y:
+                    dy = total_max_ht
+                else:
+                    dy = max_rowht[idx2]
+                for idx1 in range(num_cols):
+                    if same_x:
+                        dx = total_max_wid
+                    else:
+                        dx = max_colwid[idx1]
+                    bb = (xx, yy, xx + dx, yy + dy)
+                    max_xx = max(max_xx, xx + dy)
+                    max_yy = max(max_yy, yy + dy)
+                    target.append(bb)
+                    xx = xx + dx + gapx
+                xx = 0
+                yy = yy + dy + gapy
+            # Now that we have established the global boundaries,
+            # we are going to center it on the scene...
+            # By definition the origin was set to 0 0
+            dx = float(Length(self.context.device.width)) / 2 - (0 + max_xx) / 2
+            dy = float(Length(self.context.device.height)) / 2 - (0 + max_yy) / 2
+            for idx, bb in enumerate(target):
+                newbb = (bb[0] + dx, bb[1] + dy, bb[2] + dx, bb[3] + dy)
+                target[idx] = newbb
+
+        def arrange_elements():
+            for idx, node in enumerate(data):
+                bb = node.bounds
+                if idx >= len(target):
+                    # no more information available
+                    break
+                # target contains the bound of the grid segment
+                left_edge = target[idx][0]
+                right_edge = target[idx][2]
+                top_edge = target[idx][1]
+                bottom_edge = target[idx][3]
+
+                if xpos == "min":
+                    dx = left_edge - bb[0]
+                elif xpos == "center":
+                    dx = (right_edge + left_edge) / 2 - (bb[2] + bb[0]) / 2
+                elif xpos == "max":
+                    dx = right_edge - bb[2]
+                else:
+                    dx = 0
+                if ypos == "min":
+                    dy = top_edge - bb[1]
+                elif ypos == "center":
+                    dy = (bottom_edge + top_edge) / 2 - (bb[3] + bb[1]) / 2
+                elif ypos == "max":
+                    dy = bottom_edge - bb[3]
+                else:
+                    dy = 0
+
+                # s = f"{node.type} pos: {Length(amount=bb[0], unitless=1, digits=1).length_mm}, "
+                # s += f"{Length(amount=bb[0], unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=bb[2], unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=bb[3], unitless=1, digits=1).length_mm}"
+                # print (s)
+                # s = f"Set to: {Length(amount=left_edge, unitless=1, digits=1).length_mm}, "
+                # s += f"{Length(amount=top_edge, unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=right_edge, unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=bottom_edge, unitless=1, digits=1).length_mm}"
+                # print (s)
+                # s = f"dx={Length(amount=dx, unitless=1, digits=1).length_mm}, "
+                # s += f"dx={Length(amount=dy, unitless=1, digits=1).length_mm}"
+                # print (s)
+                if dx != 0 or dy != 0:
+                    if (
+                        hasattr(node, "lock")
+                        and node.lock
+                        and not self.context.elements.lock_allows_move
+                    ):
+                        continue
+                    else:
+                        try:
+                            node.matrix.post_translate(dx, dy)
+                            node.modified()
+                        except AttributeError:
+                            pass
 
         num_cols = self.arrange_x.GetValue()
         num_rows = self.arrange_y.GetValue()
@@ -1343,6 +1464,17 @@ class ArrangementPanel(wx.Panel):
         if idx < 0:
             idx = 0
         relat = self.relparam[idx]
+        gapx = 0
+        gapy = 0
+        if relat == "distance":
+            try:
+                gapx = float(Length(self.txt_gap_x.GetValue()))
+            except ValueError:
+                gapx = 0
+            try:
+                gapy = float(Length(self.txt_gap_y.GetValue()))
+            except ValueError:
+                gapy = 0
         idx = self.rbox_align_x.GetSelection()
         if idx < 0:
             idx = 0
@@ -1351,14 +1483,6 @@ class ArrangementPanel(wx.Panel):
         if idx < 0:
             idx = 0
         ypos = self.xyparam[idx]
-        try:
-            gapx = float(Length(self.txt_gap_x.GetValue()))
-        except ValueError:
-            gapx = -1
-        try:
-            gapy = float(Length(self.txt_gap_y.GetValue()))
-        except ValueError:
-            gapy = -1
         # print(f"cols={num_cols}, rows={num_rows}")
         # print(f"samex={same_x}, samey={same_y}")
         # print(f"Relat={relat}, esort={esort}")
@@ -1368,7 +1492,9 @@ class ArrangementPanel(wx.Panel):
         target = []
         prepare_data()
         calculate_arrays()
+        arrange_elements()
         # self.apply_results(data, target, xmode, ymode, remain_inside)
+        self.context.signal("refresh_scene", "Scene")
         self.save_setting()
 
     def save_setting(self):
@@ -1406,6 +1532,12 @@ class ArrangementPanel(wx.Panel):
         self.rbox_align_y.Enable(has_emph)
         self.rbox_relation.Enable(has_emph)
         self.rbox_selection.Enable(has_emph)
+        self.arrange_x.Enable(has_emph)
+        self.arrange_y.Enable(has_emph)
+        self.check_same_x.Enable(has_emph)
+        self.check_same_y.Enable(has_emph)
+        self.txt_gap_x.Enable(has_emph)
+        self.txt_gap_y.Enable(has_emph)
         self.validate_data()
 
 
@@ -1432,22 +1564,22 @@ class Alignment(MWindow):
         )
         self.scene = getattr(self.context.root, "mainscene", None)
         # Hide Arrangement until ready...
-        self.showpanels = [True, True, False]
+        self.showpanels = [True, True, True]
         if self.showpanels[0]:
             self.panel_align = AlignmentPanel(
                 self, wx.ID_ANY, context=self.context, scene=self.scene
             )
-            self.notebook_main.AddPage(self.panel_align, _("Alignment"))
+            self.notebook_main.AddPage(self.panel_align, _("Align"))
         if self.showpanels[1]:
             self.panel_distribution = DistributionPanel(
                 self, wx.ID_ANY, context=self.context, scene=self.scene
             )
-            self.notebook_main.AddPage(self.panel_distribution, _("Distribution"))
+            self.notebook_main.AddPage(self.panel_distribution, _("Distribute"))
         if self.showpanels[2]:
             self.panel_arrange = ArrangementPanel(
                 self, wx.ID_ANY, context=self.context, scene=self.scene
             )
-            self.notebook_main.AddPage(self.panel_arrange, _("Arranging"))
+            self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
 
         self.Layout()
 
