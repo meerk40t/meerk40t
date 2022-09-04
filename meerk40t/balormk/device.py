@@ -1404,6 +1404,13 @@ class BalorDevice(Service, ViewPort):
             action="store_true",
         )
         @self.console_option(
+            "hard",
+            "h",
+            help=_("Do not send regular list protocol commands"),
+            type=bool,
+            action="store_true",
+        )
+        @self.console_option(
             "trim",
             "t",
             help=_("Trim the first number of characters"),
@@ -1427,6 +1434,7 @@ class BalorDevice(Service, ViewPort):
             binary_in=False,
             binary_out=False,
             short=False,
+            hard=False,
             trim=0,
             input=None,
             output=None,
@@ -1543,46 +1551,62 @@ class BalorDevice(Service, ViewPort):
                     byte_i += 1
                 raw_commands.append(values)
 
-            if output is None:
-                # output to device.
-                if short:
-                    for v in raw_commands:
-                        self.driver.connection.raw_write(*v)
+            if output is not None:
+                # Output to file
+                channel(f"Writing data to: {output}")
+                try:
+                    if binary_out:
+                        with open(output, "wb") as f:
+                            for v in raw_commands:
+                                b_data = struct.pack("<6H", *v)
+                                f.write(b_data)
+                    else:
+                        lines = []
+                        for v in raw_commands:
+                            lines.append(
+                                f"{list_command_lookup.get(v[0], f'{v[0]:04x}').ljust(20)} "
+                                f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
+                            )
+                        with open(output, "w") as f:
+                            f.writelines(lines)
+                except IOError:
+                    channel("File could not be written.")
+                return  # If we output to file, we do not output to device.
+
+            # OUTPUT TO DEVICE
+            if hard:
+                # Hard raw mode, disable any control values being sent.
+                self.driver.connection.raw_mode()
+                if not default:
+                    self.driver.connection.raw_clear()
+                for v in raw_commands:
+                    command = v[0]
+                    if command >= 0x8000:
+                        self.driver.connection._list_write(*v)
+                    else:
+                        self.driver.connection._command(*v)
+                return
+
+            if short:
+                # Short mode only sending pure shorts.
+                for v in raw_commands:
+                    self.driver.connection.raw_write(*v)
+                return
+
+            # Hybrid mode. Sending list and short commands using the right mode changes.
+            self.driver.connection.rapid_mode()
+            self.driver.connection.program_mode()
+            if not default:
+                self.driver.connection.raw_clear()
+            for v in raw_commands:
+                command = v[0]
+                if command >= 0x8000:
+                    self.driver.connection.program_mode()
+                    self.driver.connection._list_write(*v)
                 else:
                     self.driver.connection.rapid_mode()
-                    self.driver.connection.program_mode()
-                    if not default:
-                        self.driver.connection.raw_clear()
-                    for v in raw_commands:
-                        command = v[0]
-                        if command >= 0x8000:
-                            self.driver.connection.program_mode()
-                            self.driver.connection._list_write(*v)
-                        else:
-                            self.driver.connection.rapid_mode()
-                            self.driver.connection._command(*v)
-                    self.driver.connection.rapid_mode()
-            else:
-                # output to file
-                if output is not None:
-                    channel(f"Writing data to: {output}")
-                    try:
-                        if binary_out:
-                            with open(output, "wb") as f:
-                                for v in raw_commands:
-                                    b_data = struct.pack("<6H", *v)
-                                    f.write(b_data)
-                        else:
-                            lines = []
-                            for v in raw_commands:
-                                lines.append(
-                                    f"{list_command_lookup.get(v[0], f'{v[0]:04x}').ljust(20)} "
-                                    f"{v[1]:04x} {v[2]:04x} {v[3]:04x} {v[4]:04x} {v[5]:04x}\n"
-                                )
-                            with open(output, "w") as f:
-                                f.writelines(lines)
-                    except IOError:
-                        channel("File could not be written.")
+                    self.driver.connection._command(*v)
+            self.driver.connection.rapid_mode()
 
         @self.console_argument("x", type=float, default=0.0)
         @self.console_argument("y", type=float, default=0.0)
