@@ -330,7 +330,7 @@ class ConfigurationLaserPanel(wx.Panel):
         self.button_home_by_current.SetToolTip(
             _("Set Home Position based on the current position")
         )
-        sizer_home.Add(self.button_home_by_current, 1, wx.EXPAND, 0)
+        sizer_home.Add(self.button_home_by_current, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_bed = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL
@@ -714,9 +714,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.context.origin_y = 1.0 if self.context.home_bottom else 0.0
         self.context("viewport_update\n")
 
-    def on_device_label(
-        self, event
-    ):  # wxGlade: ConfigurationInterfacePanel.<event_handler>
+    def on_device_label(self):
         self.context.label = self.text_device_label.GetValue()
         self.context.signal("device;renamed")
 

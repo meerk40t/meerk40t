@@ -126,10 +126,10 @@ class MoshiConfigurationPanel(ScrolledPanel):
     def on_check_home_bottom(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
-    def on_text_home_x(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+    def on_text_home_x(self):  # wxGlade: MoshiDriverGui.<event_handler>
         self.context.home_x = self.text_home_x.GetValue()
 
-    def on_text_home_y(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
+    def on_text_home_y(self):  # wxGlade: MoshiDriverGui.<event_handler>
         self.context.home_y = self.text_home_y.GetValue()
 
     def on_button_set_home_current(
