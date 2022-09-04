@@ -365,7 +365,7 @@ class CamInterfaceWidget(Widget):
                 )
             else:
                 gc.DrawText(
-                    _("Fetching Frame {uri}...").format(uri=self.cam.camera.uri), 0, 0
+                    _("Fetching URI:{uri} Frame...").format(uri=self.cam.camera.uri), 0, 0
                 )
 
     def hit(self):
