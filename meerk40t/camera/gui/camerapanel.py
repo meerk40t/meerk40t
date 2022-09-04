@@ -69,6 +69,7 @@ class CameraPanel(wx.Panel, Job):
 
         self.context(f"camera{self.index}\n")  # command activates Camera service
         self.camera = self.context.get_context(f"camera/{self.index}")
+        self.camera.setting(int, "frames_per_second", 40)
         # camera service location.
         self.last_frame_index = -1
 
@@ -170,7 +171,7 @@ class CameraPanel(wx.Panel, Job):
         if not pane:
             self.check_fisheye.SetValue(self.camera.correction_fisheye)
             self.check_perspective.SetValue(self.camera.correction_perspective)
-            self.slider_fps.SetValue(self.camera.fps)
+            self.slider_fps.SetValue(self.camera.frames_per_second)
 
         self.on_fps_change(self.camera.path)
 
@@ -214,7 +215,7 @@ class CameraPanel(wx.Panel, Job):
         if origin != self.camera.path:
             # Not this window.
             return
-        fps = self.camera.fps
+        fps = self.camera.frames_per_second
         if fps == 0:
             tick = 5
         else:
@@ -326,8 +327,8 @@ class CameraPanel(wx.Panel, Job):
         @param event:
         @return:
         """
-        self.camera.fps = self.slider_fps.GetValue()
-        self.camera.signal("camera;fps", self.camera.fps)
+        self.camera.frames_per_second = self.slider_fps.GetValue()
+        self.camera.signal("camera;fps", self.camera.frames_per_second)
 
     def on_button_detect(self, event=None):  # wxGlade: CameraInterface.<event_handler>
         """
