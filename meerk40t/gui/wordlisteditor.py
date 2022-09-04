@@ -2,7 +2,13 @@ import os
 
 import wx
 
-from .icons import icons8_curly_brackets_50
+from .icons import (
+    icons8_add_new_25,
+    icons8_curly_brackets_50,
+    icons8_edit_25,
+    icons8_paste_25,
+    icons8_remove_25,
+)
 from .mwindow import MWindow
 
 _ = wx.GetTranslation
@@ -76,10 +82,23 @@ class WordlistPanel(wx.Panel):
         sizer_grids.Add(self.grid_content, 1, wx.ALL | wx.EXPAND, 1)
 
         sizer_edit_buttons = wx.BoxSizer(wx.HORIZONTAL)
-        self.btn_edit_button_add = wx.Button(self, wx.ID_ANY, "+")
-        self.btn_edit_button_del = wx.Button(self, wx.ID_ANY, "-")
-        self.btn_edit_button_edit = wx.Button(self, wx.ID_ANY, "e")
-        self.btn_edit_button_paste = wx.Button(self, wx.ID_ANY, "p")
+        self.btn_edit_button_add = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_button_del = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_button_edit = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_button_paste = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_button_add.SetBitmap(icons8_add_new_25.GetBitmap())
+        self.btn_edit_button_del.SetBitmap(icons8_remove_25.GetBitmap())
+        self.btn_edit_button_edit.SetBitmap(icons8_edit_25.GetBitmap())
+        self.btn_edit_button_paste.SetBitmap(icons8_paste_25.GetBitmap())
+
         self.btn_edit_button_add.SetToolTip(
             _("Add a new entry for the active variable")
         )
@@ -90,7 +109,9 @@ class WordlistPanel(wx.Panel):
             _("Edit the current entry for the active variable")
         )
         self.btn_edit_button_paste.SetToolTip(
-            _("Paste the clipboard as new entries for the active variable, any line as new entry")
+            _(
+                "Paste the clipboard as new entries for the active variable, any line as new entry"
+            )
         )
         minsize = 23
         self.btn_edit_button_add.SetMinSize(wx.Size(minsize, minsize))
@@ -156,10 +177,10 @@ class WordlistPanel(wx.Panel):
         self.grid_content.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_content)
         self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit)
         self.grid_content.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit)
-        self.btn_edit_button_add.Bind(wx.EVT_BUTTON, self.on_button_edit_add)
-        self.btn_edit_button_del.Bind(wx.EVT_BUTTON, self.on_button_edit_del)
-        self.btn_edit_button_edit.Bind(wx.EVT_BUTTON, self.on_button_edit_edit)
-        self.btn_edit_button_paste.Bind(wx.EVT_BUTTON, self.on_button_edit_paste)
+        self.btn_edit_button_add.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_add)
+        self.btn_edit_button_del.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_del)
+        self.btn_edit_button_edit.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_edit)
+        self.btn_edit_button_paste.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_paste)
 
         self.btn_import.Enable(False)
         self.populate_gui()
@@ -189,21 +210,26 @@ class WordlistPanel(wx.Panel):
         self.refresh_grid_content(skey, 0)
 
     def on_button_edit_edit(self, event):
+        skey = self.cur_skey
+        if skey is None:
+            return
         index = self.grid_content.GetFirstSelected()
         if index >= 0:
             self.cur_index = index
             self.grid_content.EditLabel(self.cur_index)
 
     def on_button_edit_paste(self, event):
+        skey = self.cur_skey
+        if skey is None:
+            return
         text_data = wx.TextDataObject()
         if wx.TheClipboard.Open():
             success = wx.TheClipboard.GetData(text_data)
             wx.TheClipboard.Close()
         if success:
             msg = text_data.GetText()
-            if msg is not None and len(msg)>0:
+            if msg is not None and len(msg) > 0:
                 lines = msg.splitlines()
-                skey = self.cur_skey
                 for entry in lines:
                     self.wlist.add_value(skey, entry, 0)
                 self.refresh_grid_content(skey, 0)
@@ -221,9 +247,9 @@ class WordlistPanel(wx.Panel):
             )
             self.grid_wordlist.SetItem(index, 1, skey)
             self.grid_wordlist.SetItem(index, 2, str(self.wlist.content[skey][1] - 2))
-        self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER )
+        self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
         self.grid_wordlist.SetColumnWidth(1, wx.LIST_AUTOSIZE)
-        self.grid_wordlist.SetColumnWidth(2, wx.LIST_AUTOSIZE_USEHEADER )
+        self.grid_wordlist.SetColumnWidth(2, wx.LIST_AUTOSIZE_USEHEADER)
 
     def get_column_text(self, grid, index, col):
         item = grid.GetItem(index, col)
