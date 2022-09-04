@@ -68,7 +68,7 @@ class WordlistPanel(wx.Panel):
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
-        sizer_grids.Add(self.grid_wordlist, 1, wx.ALL | wx.EXPAND, 1)
+        sizer_grids.Add(self.grid_wordlist, 1, wx.EXPAND, 0)
 
         self.grid_content = wx.ListCtrl(
             self,
