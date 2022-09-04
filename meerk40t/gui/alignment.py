@@ -621,7 +621,7 @@ class DistributionPanel(wx.Panel):
                         bb = node.bounds
                         wd = bb[2] - bb[0]
                         if i == 0:
-                            lastx = bb[2]
+                            lastx = left_edge + wd
                             x_values[0] = left_edge + wd / 2
                         else:
                             x = lastx + wd / 2 + dx
@@ -661,7 +661,7 @@ class DistributionPanel(wx.Panel):
                         bb = node.bounds
                         ht = bb[3] - bb[1]
                         if i == 0:
-                            lasty = bb[3]
+                            lasty = top_edge + ht
                             y_values[0] = top_edge + ht / 2
                         else:
                             y = lasty + ht / 2 + dy
