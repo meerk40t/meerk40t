@@ -416,31 +416,6 @@ class GRBLDriver(Parameters):
         """
         return priority <= 0 and (self.paused or self.hold)
 
-    def move(self, x, y, absolute=False):
-        if self._absolute:
-            self.native_x = x
-            self.native_y = y
-        else:
-            self.native_x += x
-            self.native_y += y
-        line = []
-        if self.move_mode == 0:
-            line.append("G0")
-        else:
-            line.append("G1")
-        x /= self.unit_scale
-        y /= self.unit_scale
-        line.append(f"X{x:.3f}")
-        line.append(f"Y{y:.3f}")
-        if self.power_dirty:
-            if self.power is not None:
-                line.append(f"S{self.power * self.on_value:.1f}")
-            self.power_dirty = False
-        if self.speed_dirty:
-            line.append(f"F{self.feed_convert(self.speed):.1f}")
-            self.speed_dirty = False
-        self.grbl(" ".join(line) + "\r")
-
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -453,8 +428,7 @@ class GRBLDriver(Parameters):
         self._clean()
         old_current = self.service.current
         x, y = self.service.physical_to_device_position(x, y)
-        # self.rapid_mode()
-        self.move(x, y)
+        self._move(x, y)
         new_current = self.service.current
         self.service.signal(
             "driver;position",
@@ -475,7 +449,7 @@ class GRBLDriver(Parameters):
 
         dx, dy = self.service.physical_to_device_length(dx, dy)
         # self.rapid_mode()
-        self.move(dx, dy)
+        self._move(dx, dy)
 
         new_current = self.service.current
         self.service.signal(
@@ -587,7 +561,7 @@ class GRBLDriver(Parameters):
                 self.on_value = 0
                 self.power_dirty = True
                 self.move_mode = 0
-                self.move(start_x, start_y)
+                self._move(start_x, start_y)
             if self.on_value != 1.0:
                 self.power_dirty = True
             self.on_value = 1.0
@@ -603,7 +577,7 @@ class GRBLDriver(Parameters):
             if isinstance(q, LineCut):
                 self.current_steps += 1
                 self.move_mode = 1
-                self.move(*q.end)
+                self._move(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
                 self.move_mode = 1
                 interp = self.service.interpolate
@@ -613,10 +587,10 @@ class GRBLDriver(Parameters):
                     self.current_steps += 1
                     while self.paused:
                         time.sleep(0.05)
-                    self.move(*q.point(t))
+                    self._move(*q.point(t))
                     t += step_size
                 last_x, last_y = q.end
-                self.move(last_x, last_y)
+                self._move(last_x, last_y)
             elif isinstance(q, WaitCut):
                 self.current_steps += 1
                 self.wait(q.dwell_time)
@@ -626,7 +600,7 @@ class GRBLDriver(Parameters):
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
-                self.move(self.origin_x + start[0], self.origin_y + start[1])
+                self._move(self.origin_x + start[0], self.origin_y + start[1])
             elif isinstance(q, SetOriginCut):
                 self.current_steps += 1
                 if q.set_current:
@@ -667,7 +641,7 @@ class GRBLDriver(Parameters):
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
                             self.move_mode = 0
-                            self.move(x, y)
+                            self._move(x, y)
                         continue
                     if on == 0:
                         self.move_mode = 0
@@ -676,7 +650,7 @@ class GRBLDriver(Parameters):
                     if self.on_value != on:
                         self.power_dirty = True
                     self.on_value = on
-                    self.move(x, y)
+                    self._move(x, y)
         self.queue.clear()
         self.current_steps = 0
         self.total_steps = 0
@@ -885,6 +859,31 @@ class GRBLDriver(Parameters):
     ####################
     # PROTECTED DRIVER CODE
     ####################
+
+    def _move(self, x, y, absolute=False):
+        if self._absolute:
+            self.native_x = x
+            self.native_y = y
+        else:
+            self.native_x += x
+            self.native_y += y
+        line = []
+        if self.move_mode == 0:
+            line.append("G0")
+        else:
+            line.append("G1")
+        x /= self.unit_scale
+        y /= self.unit_scale
+        line.append(f"X{x:.3f}")
+        line.append(f"Y{y:.3f}")
+        if self.power_dirty:
+            if self.power is not None:
+                line.append(f"S{self.power * self.on_value:.1f}")
+            self.power_dirty = False
+        if self.speed_dirty:
+            line.append(f"F{self.feed_convert(self.speed):.1f}")
+            self.speed_dirty = False
+        self.grbl(" ".join(line) + "\r")
 
     def _clean(self):
         if self.absolute_dirty:
