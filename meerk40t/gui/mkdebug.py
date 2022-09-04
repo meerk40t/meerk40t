@@ -1,9 +1,7 @@
+import time
+
 import wx
 from wx import aui
-
-from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
-from meerk40t.gui.icons import icons8_lock_50, icons8_padlock_50
 
 _ = wx.GetTranslation
 
@@ -34,6 +32,7 @@ class DebugTreePanel(wx.Panel):
         self.context = context
         self.lb_selected = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
         self.lb_emphasized = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE)
+        self.txt_first = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
 
         self.__set_properties()
         self.__do_layout()
@@ -54,6 +53,7 @@ class DebugTreePanel(wx.Panel):
         # begin wxGlade: PositionPanel.__set_properties
         self.lb_emphasized.SetToolTip(_("Emphasized nodes"))
         self.lb_selected.SetToolTip(_("Selected nodes"))
+        self.txt_first.SetToolTip(_("Primus inter pares"))
         # end wxGlade
 
     def __do_layout(self):
@@ -67,7 +67,7 @@ class DebugTreePanel(wx.Panel):
         )
         sizer_1.Add(self.lb_selected, 1, wx.EXPAND, 0)
         sizer_2.Add(self.lb_emphasized, 1, wx.EXPAND, 0)
-
+        sizer_2.Add(self.txt_first, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_1, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_2, 1, wx.EXPAND, 0)
 
@@ -80,12 +80,29 @@ class DebugTreePanel(wx.Panel):
         self.update_position(True)
 
     def update_position(self, reset):
+        def timestr(ts):
+            if ts is None:
+                return "---"
+            else:
+                return time.strftime("%H:%M:%S", time.localtime(ts))
+
         txt1 = ""
         txt2 = ""
         for node in self.context.elements.flat(selected=True):
             txt1 += str(node) + "\n"
-        for node in self.context.elements.flat(emphasized=True):
-            txt2 += str(node) + "\n"
+        data = self.context.elements.flat(emphasized=True)
+        for node in data:
+            txt2 += (
+                f"{node.id} - {node.type} {node.label} - {timestr(node._emphasized_time)}"
+                + "\n"
+            )
+        node = self.context.elements.first_emphasized  # (data)
+        if node is None:
+            txt3 = ""
+        else:
+            txt3 = f"{node.id} - {node.type} {node.label} - {timestr(node._emphasized_time)}"
 
         self.lb_selected.SetValue(txt1)
         self.lb_emphasized.SetValue(txt2)
+
+        self.txt_first.SetValue(txt3)

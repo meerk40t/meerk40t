@@ -52,7 +52,6 @@ from ..svgelements import (
     Color,
     Ellipse,
     Group,
-    Length,
     Matrix,
     Path,
     Point,
@@ -81,7 +80,8 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("SVG Viewport is Bed"),
                 "tip": _(
-                    "SVG Viewport is the size of the current bed rather than absent"
+                    "SVG files can be saved without real physical units.\n"
+                    "This setting uses the SVG viewport dimensions to scale the rest of the elements in the file."
                 ),
                 "page": "Input/Output",
                 "section": "Input",
@@ -221,7 +221,11 @@ class SVGWriter:
                 element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
-                c.image.save(stream, format="PNG")
+                try:
+                    c.image.save(stream, format="PNG")
+                except OSError:
+                    # Edge condition if the original image was CMYK and never touched it can't encode to PNG
+                    c.image.convert("RGBA").save(stream, format="PNG")
                 subelement.set(
                     "xlink:href",
                     f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
@@ -529,7 +533,7 @@ class SVGProcessor:
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
-        my_label = ""
+        my_label = None
         ink_tag = "inkscape:label"
         try:
             inkscape = element.values.get("inkscape")
@@ -539,8 +543,8 @@ class SVGProcessor:
             pass
         try:
             my_label = element.values.get(ink_tag)
-            if my_label is None:
-                my_label = ""
+            if my_label == "":
+                my_label = None
             # print ("Found label: %s" % my_label)
         except (AttributeError, KeyError):
             pass
@@ -550,6 +554,7 @@ class SVGProcessor:
 
             decor = element.values.get("text-decoration", "").lower()
             node = context_node.add(
+                id=ident,
                 text=element.text,
                 x=element.x,
                 y=element.y,
@@ -568,10 +573,9 @@ class SVGProcessor:
                 overline="overline" in decor,
                 texttransform=element.values.get("text-transform"),
                 type="elem text",
+                label=my_label,
                 settings=element.values,
             )
-            if my_label != "" and hasattr(node, "label"):
-                node.label = my_label
             # Maybe superseded by concrete values later, so do it first
             if "font" in element.values:
                 node.font = element.values.get("font")
@@ -588,9 +592,9 @@ class SVGProcessor:
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
-                node = context_node.add(path=element, type="elem path", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
+                node = context_node.add(
+                    path=element, type="elem path", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -601,9 +605,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem polyline", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
+                node = context_node.add(
+                    shape=element, type="elem polyline", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
@@ -614,9 +618,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem ellipse", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
+                node = context_node.add(
+                    shape=element, type="elem ellipse", id=ident, label=my_label
+                )
                 e_list.append(node)
         elif isinstance(element, Ellipse):
             if not element.is_degenerate():
@@ -625,9 +629,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem ellipse", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
+                node = context_node.add(
+                    shape=element, type="elem ellipse", id=ident, label=my_label
+                )
                 e_list.append(node)
         elif isinstance(element, Rect):
             if not element.is_degenerate():
@@ -636,9 +640,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem rect", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
+                node = context_node.add(
+                    shape=element, type="elem rect", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SimpleLine):
@@ -648,9 +652,9 @@ class SVGProcessor:
                     element = Path(element)
                     element.reify()
                     element.approximate_arcs_with_cubics()
-                node = context_node.add(shape=element, type="elem line", id=ident)
-                if my_label != "" and hasattr(node, "label"):
-                    node.label = my_label
+                node = context_node.add(
+                    shape=element, type="elem line", id=ident, label=my_label
+                )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
@@ -662,9 +666,8 @@ class SVGProcessor:
                         matrix=element.transform,
                         type="elem image",
                         id=ident,
+                        label=my_label,
                     )
-                    if my_label != "" and hasattr(node, "label"):
-                        node.label = my_label
                     e_list.append(node)
             except OSError:
                 pass
@@ -686,7 +689,7 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list)
         else:
-            # Check if SVGElement:  Note.
+            # SVGElement is type. Generic or unknown node type.
             tag = element.values.get(SVG_ATTR_TAG)
             # We need to reverse the meerk40t:... replacement that the routine had already applied:
             if tag is not None:
@@ -701,6 +704,7 @@ class SVGProcessor:
                     )
                     element.values[tag] = oldval
                     element.values[SVG_ATTR_TAG] = tag
+            # Check if note-type
             if tag in (MEERK40T_XMLS_ID + ":note", "note"):
                 self.elements.note = element.values.get(SVG_TAG_TEXT)
                 self.elements.signal("note", self.pathname)
@@ -714,44 +718,47 @@ class SVGProcessor:
                 node_type = f"op {op_type.lower()}"
                 element.values["attributes"]["type"] = node_type
 
-            if node_type is not None:
-                node_id = element.values.get("id")
+            if node_type is None:
+                # Type is not given. Abort.
+                return
+
+            node_id = element.values.get("id")
+            if tag in (f"{MEERK40T_XMLS_ID}:operation", "operation"):
                 # Check if SVGElement: operation
-                if tag in (MEERK40T_XMLS_ID + ":operation", "operation"):
-                    if not self.operations_cleared:
-                        self.elements.clear_operations()
-                        self.operations_cleared = True
+                if not self.operations_cleared:
+                    self.elements.clear_operations()
+                    self.operations_cleared = True
+                try:
+                    attrs = element.values["attributes"]
+                except KeyError:
+                    attrs = element.values
+                try:
                     try:
-                        attrs = element.values["attributes"]
+                        del attrs["type"]
                     except KeyError:
-                        attrs = element.values
-                    try:
-                        try:
-                            del attrs["type"]
-                        except KeyError:
-                            pass
-                        op = self.elements.op_branch.add(type=node_type, **attrs)
-                        op.validate()
-                        op.id = node_id
-                    except AttributeError:
-                        # This operation is invalid.
                         pass
+                    op = self.elements.op_branch.add(type=node_type, **attrs)
+                    op.validate()
+                    op.id = node_id
+                except AttributeError:
+                    # This operation is invalid.
+                    pass
+            elif tag in (f"{MEERK40T_XMLS_ID}:element", "element"):
                 # Check if SVGElement: element
-                elif tag == "element":
-                    if "type" in element.values:
-                        del element.values["type"]
-                    if "fill" in element.values:
-                        element.values["fill"] = Color(element.values["fill"])
-                    if "stroke" in element.values:
-                        element.values["stroke"] = Color(element.values["stroke"])
-                    if "transform" in element.values:
-                        element.values["matrix"] = Matrix(element.values["transform"])
-                    elem = context_node.add(type=node_type, **element.values)
-                    try:
-                        elem.validate()
-                    except AttributeError:
-                        pass
-                    elem.id = node_id
+                if "type" in element.values:
+                    del element.values["type"]
+                if "fill" in element.values:
+                    element.values["fill"] = Color(element.values["fill"])
+                if "stroke" in element.values:
+                    element.values["stroke"] = Color(element.values["stroke"])
+                if "transform" in element.values:
+                    element.values["matrix"] = Matrix(element.values["transform"])
+                elem = context_node.add(type=node_type, **element.values)
+                try:
+                    elem.validate()
+                except AttributeError:
+                    pass
+                elem.id = node_id
 
 
 class SVGLoader:

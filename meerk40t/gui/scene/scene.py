@@ -372,6 +372,7 @@ class Scene(Module, Job):
         context.setting(bool, "mouse_zoom_invert", False)
         context.setting(bool, "mouse_pan_invert", False)
         context.setting(bool, "mouse_wheel_pan", False)
+        context.setting(float, "zoom_factor", 0.1)
         context.setting(float, "pan_factor", 25.0)
         context.setting(int, "fps", 40)
         if context.fps <= 0:
@@ -965,6 +966,8 @@ class Scene(Module, Job):
             new_cursor = wx.CURSOR_HAND
         elif cursor == "reference":
             new_cursor = wx.CURSOR_BULLSEYE
+        elif cursor == "text":
+            new_cursor = wx.CURSOR_IBEAM
         else:
             new_cursor = wx.CURSOR_ARROW
             self.log("Invalid cursor.")

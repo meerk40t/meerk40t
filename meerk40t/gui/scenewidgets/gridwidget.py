@@ -4,12 +4,7 @@ from time import time
 import wx
 
 from meerk40t.core.units import Length
-from meerk40t.gui.laserrender import (
-    DRAW_MODE_BACKGROUND,
-    DRAW_MODE_GRID,
-    DRAW_MODE_GUIDES,
-    swizzlecolor,
-)
+from meerk40t.gui.laserrender import DRAW_MODE_GRID, DRAW_MODE_GUIDES
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
@@ -170,7 +165,8 @@ class GridWidget(Widget):
         points = (wpoints + hpoints) / 2
         scaled_conversion = (
             self.scene.context.device.length(
-                str(1) + self.scene.context.units_name, as_float=True
+                f"1{self.scene.context.units_name}",
+                as_float=True,
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
@@ -240,7 +236,8 @@ class GridWidget(Widget):
     def calculate_gridsize(self, w, h):
         scaled_conversion = (
             self.scene.context.device.length(
-                str(1) + self.scene.context.units_name, as_float=True
+                f"1{self.scene.context.units_name}",
+                as_float=True,
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
@@ -579,7 +576,7 @@ class GridWidget(Widget):
                 colour=self.scene.colors.color_bed, style=wx.BRUSHSTYLE_TRANSPARENT
             )
             gc.SetBrush(brush)
-            # While there is a bug in wxPython v4.1.1 and below that will not allow to apply a LineWidth bleow a given level:
+            # While there is a bug in wxPython v4.1.1 and below that will not allow to apply a LineWidth below a given level:
             # At a matrix.value_scale_x value of about 17.2 and a corresponding line width of 0.058 everything looks good
             # but one step more with 18.9 and 0.053 the lines degenerate...
             # Interestingly this does not apply to arcs in a path, they remain at 1 pixel

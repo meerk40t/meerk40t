@@ -1,11 +1,21 @@
+import platform
 import random
 
 import wx
 from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
-from meerk40t.gui.icons import icon_meerk40t, icons8_menu_50
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
+from meerk40t.gui.icons import (
+    STD_ICON_SIZE,
+    icon_meerk40t,
+    icons8_bed_50,
+    icons8_menu_50,
+    icons8_r_black,
+    icons8_r_white,
+    icons8_reference,
+    icons8_ungroup_objects_50,
+)
 from meerk40t.gui.laserrender import DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
@@ -35,7 +45,7 @@ from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
 from meerk40t.gui.utilitywidgets.togglewidget import ToggleWidget
-from meerk40t.gui.wxutils import get_key_name
+from meerk40t.gui.wxutils import get_key_name, is_navigation_key
 from meerk40t.kernel import CommandSyntaxError, signal_listener
 from meerk40t.svgelements import Angle, Color
 
@@ -104,7 +114,23 @@ class MeerK40tScenePanel(wx.Panel):
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
         self.Layout()
+        self._keybind_channel = self.context.channel("keybinds")
 
+        if platform.system() == "Windows":
+
+            def charhook(event):
+                keyvalue = get_key_name(event)
+                if is_navigation_key(keyvalue):
+                    if self._keybind_channel:
+                        self._keybind_channel(
+                            f"Scene, char_hook used for key_down: {keyvalue}"
+                        )
+                    self.on_key_down(event)
+                    event.Skip()
+                else:
+                    event.DoAllowNextEvent()
+
+            self.scene.Bind(wx.EVT_CHAR_HOOK, charhook)
         self.scene.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.scene.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
@@ -126,6 +152,26 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/vector", VectorTool)
         context.register("tool/measure", MeasureTool)
         context.register("tool/ribbon", RibbonTool)
+
+        buttonsize = int(STD_ICON_SIZE / 2)
+        context.kernel.register(
+            "button/align/refob",
+            {
+                "label": _("Ref. Obj."),
+                "icon": icons8_r_white,
+                "tip": _("Toggle Reference Object Status"),
+                "action": lambda v: self.toggle_ref_obj(),
+                "size": buttonsize,
+                "identifier": "refobj",
+                "rule_enabled": lambda cond: len(
+                    list(context.kernel.elements.elems(emphasized=True))
+                )
+                == 1,
+            },
+        )
+
+        # Provide a reference to current scene in root context
+        setattr(self.context.root, "mainscene", self.widget_scene)
 
         @context.console_command("dialog_fps", hidden=True)
         def dialog_fps(**kwgs):
@@ -393,10 +439,10 @@ class MeerK40tScenePanel(wx.Panel):
             if height is None:
                 raise CommandSyntaxError("x, y, width, height not specified")
             try:
-                x = self.context.device.length(x, 0)
-                y = self.context.device.length(y, 1)
-                width = self.context.device.length(width, 0)
-                height = self.context.device.length(height, 1)
+                x = self.context.device.length(x, 0, unitless=UNITS_PER_PIXEL)
+                y = self.context.device.length(y, 1, unitless=UNITS_PER_PIXEL)
+                width = self.context.device.length(width, 0, unitless=UNITS_PER_PIXEL)
+                height = self.context.device.length(height, 1, unitless=UNITS_PER_PIXEL)
             except ValueError:
                 raise CommandSyntaxError("Not a valid length.")
             bbox = (x, y, width, height)
@@ -412,6 +458,7 @@ class MeerK40tScenePanel(wx.Panel):
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 self.widget_scene.reference_object = e
                 break
+            self.context.signal("reference")
 
         # Establishes commands
         @context.console_argument(
@@ -568,6 +615,16 @@ class MeerK40tScenePanel(wx.Panel):
                 else:
                     channel(_("Target needs to be one of primary, secondary, circular"))
 
+    def toggle_ref_obj(self):
+        for e in self.scene.context.elements.flat(types=elem_nodes, emphasized=True):
+            if self.widget_scene.reference_object == e:
+                self.widget_scene.reference_object = None
+            else:
+                self.widget_scene.reference_object = e
+            break
+        self.context.signal("reference")
+        self.request_refresh()
+
     @signal_listener("draw_mode")
     def on_draw_mode(self, origin, *args):
         if self._tool_widget is not None:
@@ -600,7 +657,7 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.scene.magnet_attraction = strength
 
     def pane_show(self, *args):
-        zl = self.context.zoom_level
+        zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
 
     def pane_hide(self, *args):
@@ -707,14 +764,26 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
+        if self._keybind_channel:
+            self._keybind_channel(f"Scene key_down: {keyvalue}.")
         if self.context.bind.trigger(keyvalue):
-            pass
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {keyvalue} executed.")
+        else:
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
         event.Skip()
 
-    def on_key_up(self, event):
+    def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
+        if self._keybind_channel:
+            self._keybind_channel(f"Scene key_up: {keyvalue}.")
         if self.context.bind.untrigger(keyvalue):
-            pass
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {keyvalue} executed.")
+        else:
+            if self._keybind_channel:
+                self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
 
 

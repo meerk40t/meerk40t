@@ -9,11 +9,7 @@ from wx import aui
 from meerk40t.kernel import Job, lookup_listener, signal_listener
 from meerk40t.svgelements import Color
 
-from .icons import (
-    get_default_icon_size,
-    get_default_scale_factor,
-    icons8_opened_folder_50,
-)
+from .icons import get_default_icon_size, icons8_opened_folder_50
 
 _ = wx.GetTranslation
 
@@ -439,7 +435,10 @@ class RibbonPanel(wx.Panel):
     def _restore_button_aspect(self, base_button, key):
         if not hasattr(base_button, "alternatives"):
             return
-        alt = base_button.alternatives[key]
+        try:
+            alt = base_button.alternatives[key]
+        except KeyError:
+            return
         base_button.action = alt.get("action", base_button.action)
         base_button.label = alt.get("label", base_button.label)
         base_button.help_string = alt.get("help_string", base_button.help_string)
@@ -565,7 +564,7 @@ class RibbonPanel(wx.Panel):
                     self._store_button_aspect(b, key)
                     self._update_button_aspect(b, key, **v)
                     if "icon" in v:
-                        v_icon = button.get("icon")
+                        v_icon = v.get("icon")
                         self._update_button_aspect(
                             b,
                             key,

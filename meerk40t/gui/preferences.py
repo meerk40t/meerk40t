@@ -13,8 +13,6 @@ from .wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
-MILS_IN_MM = 39.3701
-
 
 class PreferencesUnitsPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -113,7 +111,7 @@ class PreferencesLanguagePanel(wx.Panel):
         self.combo_language.SetToolTip(
             _("Select the desired language to use (requires a restart to take effect).")
         )
-        sizer_2.Add(self.combo_language, 0, 0, 0)
+        sizer_2.Add(self.combo_language, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(sizer_2)
 
@@ -159,7 +157,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.combo_svg_ppi.SetToolTip(
             _("Select the Pixels Per Inch to use when loading an SVG file")
         )
-        sizer_3.Add(self.combo_svg_ppi, 0, wx.EXPAND, 0)
+        sizer_3.Add(self.combo_svg_ppi, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_3.Add((20, 20), 0, 0, 0)
 
@@ -177,13 +175,12 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
         self.Layout()
 
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_svg_ppi, self.combo_svg_ppi)
-        self.text_svg_ppi.Bind(wx.EVT_TEXT_ENTER, self.on_text_svg_ppi)
-        self.text_svg_ppi.Bind(wx.EVT_KILL_FOCUS, self.on_text_svg_ppi)
+        self.text_svg_ppi.SetActionRoutine(self.on_text_svg_ppi)
         # end wxGlade
 
         context.elements.setting(float, "svg_ppi", 96.0)
         self.text_svg_ppi.SetValue(str(context.elements.svg_ppi))
-        self.on_text_svg_ppi(None)
+        self.on_text_svg_ppi()
 
     def on_combo_svg_ppi(self, event=None):
         elements = self.context.elements
@@ -198,7 +195,7 @@ class PreferencesPixelsPerInchPanel(wx.Panel):
             elements.svg_ppi = 96.0
         self.text_svg_ppi.SetValue(str(elements.svg_ppi))
 
-    def on_text_svg_ppi(self, event=None):
+    def on_text_svg_ppi(self):
         elements = self.context.elements
         try:
             svg_ppi = float(self.text_svg_ppi.GetValue())
@@ -254,33 +251,42 @@ class PreferencesMain(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def delegates(self):
+        yield self.panel_ppi
+        yield self.panel_language
+        yield self.panel_units
+        yield self.panel_pref1
+
 
 # end of class PreferencesMain
 
-
-class PreferencesPanel(wx.Panel):
-    def __init__(self, *args, context=None, **kwds):
-        # begin wxGlade: PreferencesPanel.__init__
-        kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
-        self.context = context
-
-        sizer_settings = wx.BoxSizer(wx.VERTICAL)
-
-        self.panel_main = PreferencesMain(self, wx.ID_ANY, context=context)
-        sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
-
-        self.SetSizer(sizer_settings)
-
-        self.Layout()
-        # end wxGlade
+#
+# class PreferencesPanel(wx.Panel):
+#     def __init__(self, *args, context=None, **kwds):
+#         # begin wxGlade: PreferencesPanel.__init__
+#         kwds["style"] = kwds.get("style", 0)
+#         wx.Panel.__init__(self, *args, **kwds)
+#         self.context = context
+#
+#         sizer_settings = wx.BoxSizer(wx.VERTICAL)
+#
+#         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=context)
+#         sizer_settings.Add(self.panel_main, 1, wx.EXPAND, 0)
+#
+#         self.SetSizer(sizer_settings)
+#
+#         self.Layout()
+#         # end wxGlade
+#
+#     def delegates(self):
+#         yield self.panel_main
 
 
 class Preferences(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(
-            565,
-            400,
+            525,
+            605,
             *args,
             style=wx.CAPTION
             | wx.CLOSE_BOX
@@ -298,7 +304,8 @@ class Preferences(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
 
-        self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+        # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
+        self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
 
         self.panel_classification = ChoicePropertyPanel(
             self,
@@ -327,20 +334,67 @@ class Preferences(MWindow):
         )
         self.panel_scene.SetupScrolling()
 
+        main_scene = getattr(self.context.root, "mainscene", None)
+        colorchoices = []
+        local_default_color = []
+        for key in main_scene.colors.default_color:
+            local_default_color.append(key)
+        local_default_color.sort()
+        section = ""
+        for key in local_default_color:
+            colorkey = f"color_{key}"
+            defaultcolor = main_scene.colors.default_color[key]
+            # Try to make a sensible name out of it
+            keyname = key.replace("_", " ")
+            idx = 1  # Intentionally
+            while idx < len(keyname):
+                if keyname[idx] in "0123456789" and keyname[idx - 1] != " ":
+                    keyname = keyname[:idx] + " " + keyname[idx:]
+                idx += 1
+            keyname = keyname[0].upper() + keyname[1:]
+            words = keyname.split()
+            possible_section = words[0]
+            if possible_section[0:2] != section[0:2]:
+                section = possible_section
+            singlechoice = {
+                "attr": colorkey,
+                "object": self.context,
+                "default": defaultcolor,
+                "type": str,
+                "style": "color",  # hexa representation
+                "label": keyname,
+                "section": section,
+                "signals": ("refresh_scene", "theme"),
+            }
+            colorchoices.append(singlechoice)
+
+        self.panel_color = ChoicePropertyPanel(
+            self,
+            id=wx.ID_ANY,
+            context=self.context,
+            choices=colorchoices,
+            entries_per_column=12,
+        )
+        self.panel_color.SetupScrolling()
+
         self.notebook_main.AddPage(self.panel_main, _("General"))
         self.notebook_main.AddPage(self.panel_classification, _("Classification"))
         self.notebook_main.AddPage(self.panel_gui, _("GUI"))
         self.notebook_main.AddPage(self.panel_scene, _("Scene"))
+        self.notebook_main.AddPage(self.panel_color, _("Colors"))
         self.Layout()
 
-        self.add_module_delegate(self.panel_main)
-        self.add_module_delegate(self.panel_classification)
-        self.add_module_delegate(self.panel_gui)
-        self.add_module_delegate(self.panel_scene)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
+
+    def delegates(self):
+        yield self.panel_main
+        yield self.panel_classification
+        yield self.panel_gui
+        yield self.panel_scene
+        yield self.panel_color
 
     @staticmethod
     def sub_register(kernel):
@@ -362,3 +416,7 @@ class Preferences(MWindow):
 
     def window_close(self):
         pass
+
+    @staticmethod
+    def submenu():
+        return ("Preferences", "General Preferences")

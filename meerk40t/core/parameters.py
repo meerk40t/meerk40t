@@ -25,6 +25,7 @@ FLOAT_PARAMETERS = (
     "raster_step_x",
     "raster_step_y",
     "speed",
+    "rapid_speed",
     "dratio",
     "dwell_time",
     "frequency",

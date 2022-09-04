@@ -23,12 +23,17 @@ class EllipseNode(Node):
         stroke_width=None,
         stroke_scale=None,
         fillrule=None,
+        label=None,
+        settings=None,
         **kwargs,
     ):
-        super(EllipseNode, self).__init__(type="elem ellipse", **kwargs)
+        if settings is None:
+            settings = dict()
+        settings.update(kwargs)
+        super(EllipseNode, self).__init__(type="elem ellipse", **settings)
         self.__formatter = "{element_type} {id} {stroke}"
         self.shape = shape
-        self.settings = kwargs
+        self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
         self.fill = shape.fill if fill is None else fill
         self.stroke = shape.stroke if stroke is None else stroke
@@ -39,6 +44,7 @@ class EllipseNode(Node):
             else stroke_scale
         )
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
+        self.label = label
         self.lock = False
 
     def __repr__(self):
@@ -53,16 +59,12 @@ class EllipseNode(Node):
             stroke_width=copy(self.stroke_width),
             stroke_scale=self._stroke_scaled,
             fillrule=self.fillrule,
-            **self.settings,
+            setting=self.settings,
         )
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._sync_svg()
-            self._bounds = self.shape.bbox(with_stroke=True)
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        self._sync_svg()
+        return self.shape.bbox(transformed=transformed, with_stroke=with_stroke)
 
     @property
     def stroke_scaled(self):
@@ -82,7 +84,7 @@ class EllipseNode(Node):
         value of the determinant of the local matrix (1d matrix scaling)"""
         scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
         sw = self.stroke_width / scalefactor
-        limit = 25 * sqrt(zoomscale) * scalefactor
+        limit = 25 * sqrt(zoomscale) / scalefactor
         if sw < limit:
             sw = limit
         return sw
@@ -92,6 +94,7 @@ class EllipseNode(Node):
         self.matrix *= matrix
         self.stroke_scaled = False
         self._sync_svg()
+        self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
         default_map = super(EllipseNode, self).default_map(default_map=default_map)
@@ -149,7 +152,6 @@ class EllipseNode(Node):
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self._bounds_dirty = True
 
     def as_path(self):
         self._sync_svg()

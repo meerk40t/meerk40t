@@ -17,9 +17,15 @@ class ReferenceNode(Node):
     def __repr__(self):
         return f"ReferenceNode('{self.type}', {str(self.node)}, {str(self._parent)})"
 
+    def __copy__(self):
+        return ReferenceNode(self.node)
+
     @property
     def bounds(self):
         return self.node.bounds
+
+    def bbox(self, transformed=True, with_stroke=False):
+        return self.node.bbox(transformed=transformed, with_stroke=with_stroke)
 
     def default_map(self, default_map=None):
         default_map = super(ReferenceNode, self).default_map(default_map=default_map)

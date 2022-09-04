@@ -1,10 +1,12 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import PlotCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.elem_polyline import PolylineNode
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
+from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import Color, Path
 
 
@@ -63,13 +65,6 @@ class HatchOpNode(Node, Parameters):
     def __copy__(self):
         return HatchOpNode(self)
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
-            self._bounds_dirty = False
-        return self._bounds
-
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
     #     if maxspeed is not None and self.speed > maxspeed:
@@ -106,7 +101,7 @@ class HatchOpNode(Node, Parameters):
         if ct > 0:
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
@@ -210,16 +205,17 @@ class HatchOpNode(Node, Parameters):
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
                                     self.add_reference(node)
-                                # Have classified but more classification might be needed
-                                return True, self.stopop
+                                    # Have classified but more classification might be needed
+                                    return True, self.stopop
                 else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
-                    # Have classified but more classification might be needed
-                    return True, self.stopop
+                        # Have classified but more classification might be needed
+                        return True, self.stopop
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
+                    self.add_reference(node)
                     return True, self.stopop
         return False, False
 
@@ -251,6 +247,10 @@ class HatchOpNode(Node, Parameters):
         # TODO: Implement time_estimate.
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+
+        if isnan(estimate):
+            estimate = 0
+
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
@@ -274,12 +274,19 @@ class HatchOpNode(Node, Parameters):
         @param commands:
         @return:
         """
+        native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+        self.settings["native_mm"] = native_mm
+        self.settings["native_speed"] = self.speed * native_mm
+        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
 
         def hatch():
             settings = self.settings
             outlines = list()
             for node in self.children:
-                path = node.as_path()
+                try:
+                    path = node.as_path()
+                except AttributeError:
+                    continue
                 path.approximate_arcs_with_cubics()
                 self.settings["line_color"] = path.stroke
                 for subpath in path.as_subpaths():

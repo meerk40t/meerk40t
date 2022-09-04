@@ -15,7 +15,7 @@ from .icons import (
     icons8_play_50,
     icons8_route_50,
 )
-from .laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
+from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
 from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
@@ -24,8 +24,6 @@ from .scenewidgets.gridwidget import GridWidget
 from .wxutils import disable_window
 
 _ = wx.GetTranslation
-
-MILS_IN_MM = 39.3701
 
 
 class SimulationPanel(wx.Panel, Job):
@@ -257,10 +255,7 @@ class SimulationPanel(wx.Panel, Job):
         self.hscene_sizer.Add(self.btn_slide_options, 0, wx.EXPAND, 0)
         self.hscene_sizer.Add(self.voption_sizer, 1, wx.EXPAND, 0)
 
-        v_sizer_main.Add(self.hscene_sizer, 3, wx.EXPAND, 0)
-
         h_sizer_scroll.Add(self.slider_progress, 1, wx.EXPAND, 0)
-        v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
 
         sizer_laser_distance.Add(self.text_distance_laser_step, 1, wx.EXPAND, 0)
         sizer_laser_distance.Add(self.text_distance_laser, 1, wx.EXPAND, 0)
@@ -297,9 +292,11 @@ class SimulationPanel(wx.Panel, Job):
         sizer_6.Add(self.button_spool, 0, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_6, 1, wx.EXPAND, 0)
 
+        v_sizer_main.Add(self.hscene_sizer, 1, wx.EXPAND, 0)
+        v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_text_1, 0, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_text_2, 0, wx.EXPAND, 0)
-        v_sizer_main.Add(h_sizer_buttons, 1, wx.EXPAND, 0)
+        v_sizer_main.Add(h_sizer_buttons, 0, wx.EXPAND, 0)
         self.SetSizer(v_sizer_main)
         self.slided_in = True  # Hide initially
         self.Layout()
@@ -362,6 +359,13 @@ class SimulationPanel(wx.Panel, Job):
     def remove_background(self, event):
         self.widget_scene._signal_widget(
             self.widget_scene.widget_root, "background", None
+        )
+        self.widget_scene.request_refresh()
+
+    def fit_scene_to_panel(self):
+        bbox = self.context.device.bbox()
+        self.widget_scene.widget_root.focus_viewport_scene(
+            bbox, self.view_pane.Size, 0.1
         )
         self.widget_scene.request_refresh()
 
@@ -428,6 +432,16 @@ class SimulationPanel(wx.Panel, Job):
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, self.remove_background, id=id5.GetId())
+        menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.fit_scene_to_panel(),
+            menu.Append(
+                wx.ID_ANY,
+                _("Zoom to Bed"),
+                _("View the whole laser bed"),
+            ),
+        )
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -461,24 +475,28 @@ class SimulationPanel(wx.Panel, Job):
 
     def update_fields(self):
         step = self.progress
-        travel = self.cutcode.length_travel(stop_at=step)
-        cuts = self.cutcode.length_cut(stop_at=step)
-        travel /= MILS_IN_MM
-        cuts /= MILS_IN_MM
-        self.text_distance_travel_step.SetValue(f"{travel:.2f}mm")
-        self.text_distance_laser_step.SetValue(f"{cuts:.2f}mm")
-        self.text_distance_total_step.SetValue(f"{travel + cuts:.2f}mm")
 
-        extra = self.cutcode.extra_time(stop_at=step)
+        ###################
+        # UPDATE POSITIONAL
+        ###################
 
+        mm = self.cutcode.settings.get("native_mm", 39.3701)
+        travel_mm = self.cutcode.length_travel(stop_at=step) / mm
+        cuts_mm = self.cutcode.length_cut(stop_at=step) / mm
+        self.text_distance_travel_step.SetValue(f"{travel_mm:.2f}mm")
+        self.text_distance_laser_step.SetValue(f"{cuts_mm:.2f}mm")
+        self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
         try:
-            time_travel = travel / self.cutcode.travel_speed
+            time_travel = self.cutcode.duration_travel(step)
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
             self.text_time_travel_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
+        except ZeroDivisionError:
+            time_travel = 0
+        try:
             time_cuts = self.cutcode.duration_cut(stop_at=step)
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
@@ -486,6 +504,10 @@ class SimulationPanel(wx.Panel, Job):
             self.text_time_laser_step.SetValue(
                 f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
             )
+        except ZeroDivisionError:
+            time_cuts = 0
+        try:
+            extra = self.cutcode.extra_time(stop_at=step)
             time_total = time_travel + time_cuts + extra
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
@@ -496,27 +518,34 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             pass
 
-        travel = self.cutcode.length_travel()
-        cuts = self.cutcode.length_cut()
-        travel /= MILS_IN_MM
-        cuts /= MILS_IN_MM
-        self.text_distance_travel.SetValue(f"{travel:.2f}mm")
-        self.text_distance_laser.SetValue(f"{cuts:.2f}mm")
-        self.text_distance_total.SetValue(f"{travel + cuts:.2f}mm")
+        ###################
+        # UPDATE TOTAL
+        ###################
 
-        extra = self.cutcode.extra_time()
+        travel_mm = self.cutcode.length_travel() / mm
+        cuts_mm = self.cutcode.length_cut() / mm
+        self.text_distance_travel.SetValue(f"{travel_mm:.2f}mm")
+        self.text_distance_laser.SetValue(f"{cuts_mm:.2f}mm")
+        self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
 
         try:
-            time_travel = travel / self.cutcode.travel_speed
+            time_travel = self.cutcode.duration_travel()
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
             self.text_time_travel.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
+        except ZeroDivisionError:
+            time_travel = 0
+        try:
             time_cuts = self.cutcode.duration_cut()
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
             self.text_time_laser.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
+        except ZeroDivisionError:
+            time_cuts = 0
+        try:
+            extra = self.cutcode.extra_time()
             time_total = time_travel + time_cuts + extra
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
@@ -546,6 +575,7 @@ class SimulationPanel(wx.Panel, Job):
             bbox, self.view_pane.Size, 0.1
         )
         self.update_fields()
+        self.panel_optimize.pane_show()
 
     def pane_hide(self):
         if self.auto_clear:
@@ -553,6 +583,7 @@ class SimulationPanel(wx.Panel, Job):
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
+        self.panel_optimize.pane_hide()
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
@@ -620,7 +651,7 @@ class SimulationPanel(wx.Panel, Job):
         self.selected_device.kernel.activate_service_path(
             "device", self.selected_device.path
         )
-        self.widget_scene.request_refresh()
+        self.fit_scene_to_panel()
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.context(f"plan{self.plan_name} spool\n")
@@ -812,3 +843,7 @@ class Simulation(MWindow):
             self.panel.widget_scene.widget_root, "background", background
         )
         self.panel.widget_scene.request_refresh()
+
+    @staticmethod
+    def submenu():
+        return ("Burning", "Simulation")

@@ -18,8 +18,6 @@ properties for that cuts may need or use. Or which may be used by the CutPlanner
 are references to settings which may be shared by all CutObjects created by a LaserOperation.
 """
 
-MILS_IN_MM = 39.3701
-
 
 class CutObject(Parameters):
     """
@@ -336,8 +334,6 @@ class CutCode(CutGroup):
     def __init__(self, seq=(), settings=None):
         CutGroup.__init__(self, None, seq, settings=settings)
         self.output = True
-
-        self.travel_speed = 20.0
         self.mode = None
 
     def __str__(self):
@@ -403,6 +399,13 @@ class CutCode(CutGroup):
         yield "plot_start"
 
     def length_travel(self, include_start=False, stop_at=-1):
+        """
+        Calculates the distance traveled between cutcode objects.
+
+        @param include_start: should the distance include the start
+        @param stop_at: stop position
+        @return:
+        """
         cutcode = list(self.flat())
         if len(cutcode) == 0:
             return 0
@@ -424,6 +427,12 @@ class CutCode(CutGroup):
         return distance
 
     def length_cut(self, stop_at=-1):
+        """
+        Calculated the length of the cutcode code distance.
+
+        @param stop_at: stop index
+        @return:
+        """
         cutcode = list(self.flat())
         distance = 0
         if stop_at < 0:
@@ -436,6 +445,12 @@ class CutCode(CutGroup):
         return distance
 
     def extra_time(self, stop_at=-1):
+        """
+        Raw calculation of extra time within this cutcode objects.
+
+        @param stop_at:
+        @return:
+        """
         cutcode = list(self.flat())
         extra = 0
         if stop_at < 0:
@@ -443,22 +458,50 @@ class CutCode(CutGroup):
         if stop_at > len(cutcode):
             stop_at = len(cutcode)
         for i in range(0, stop_at):
-            curr = cutcode[i]
-            extra += curr.extra()
+            current = cutcode[i]
+            extra += current.extra()
         return extra
 
     def duration_cut(self, stop_at=None):
+        """
+        Time taken to cut this cutcode object. Since objects can cut at different speed each individual object
+        speed is taken into account.
+
+        @param stop_at: stop index
+        @return:
+        """
         cutcode = list(self.flat())
-        distance = 0
+        duration = 0
         if stop_at is None:
             stop_at = len(cutcode)
         if stop_at > len(cutcode):
             stop_at = len(cutcode)
-        for i in range(0, stop_at):
-            curr = cutcode[i]
-            if curr.speed != 0:
-                distance += (curr.length() / MILS_IN_MM) / curr.speed
-        return distance
+        for current in cutcode[0:stop_at]:
+            native_speed = current.settings.get("native_speed", current.speed)
+            if native_speed != 0:
+                duration += current.length() / native_speed
+        return duration
+
+    def duration_travel(self, stop_at=None):
+        """
+        Duration of travel time taken within the cutcode.
+
+        @param stop_at: stop index
+        @return:
+        """
+        travel = self.length_travel()
+        cutcode = list(self.flat())
+        if cutcode:
+            current = cutcode[0]
+            rapid_speed = current.settings.get(
+                "native_rapid_speed",
+                current.settings.get("native_speed", current.speed),
+            )
+        else:
+            rapid_speed = self.settings.get(
+                "native_rapid_speed", self.settings.get("native_speed", self.speed)
+            )
+        return travel / rapid_speed
 
     @classmethod
     def from_lasercode(cls, lasercode):
@@ -896,6 +939,13 @@ class DwellCut(CutObject):
 
 class WaitCut(CutObject):
     def __init__(self, wait, settings=None, passes=1, parent=None):
+        """
+        Establish a wait cut.
+        @param wait: wait time in ms.
+        @param settings: Settings for wait cut.
+        @param passes: Number of passes.
+        @param parent: CutObject parent.
+        """
         CutObject.__init__(
             self,
             (0, 0),
@@ -905,6 +955,33 @@ class WaitCut(CutObject):
             parent=parent,
         )
         self.dwell_time = wait
+        self.first = True  # Wait cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        # Dwell time is already in ms.
+        yield "wait", self.dwell_time
+
+
+class HomeCut(CutObject):
+    def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+        if offset_point is None:
+            offset_point = (0, 0)
+        CutObject.__init__(
+            self,
+            offset_point,
+            offset_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
         self.first = True  # Dwell cuts are standalone
         self.last = True
         self.raster_step = 0
@@ -916,7 +993,65 @@ class WaitCut(CutObject):
         pass
 
     def generate(self):
-        yield "wait", self.dwell_time
+        yield "home", self._start_x, self._start_y
+
+
+class GotoCut(CutObject):
+    def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+        if offset_point is None:
+            offset_point = (0, 0)
+        CutObject.__init__(
+            self,
+            offset_point,
+            offset_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.first = True  # Dwell cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        yield "move_abs", self._start_x, self._start_y
+
+
+class SetOriginCut(CutObject):
+    def __init__(self, offset_point=None, settings=None, passes=1, parent=None):
+        self.set_current = False
+        if offset_point is None:
+            offset_point = (0, 0)
+            self.set_current = True
+
+        CutObject.__init__(
+            self,
+            offset_point,
+            offset_point,
+            settings=settings,
+            passes=passes,
+            parent=parent,
+        )
+        self.first = True  # SetOrigin cuts are standalone
+        self.last = True
+        self.raster_step = 0
+
+    def reversible(self):
+        return False
+
+    def reverse(self):
+        pass
+
+    def generate(self):
+        if self.set_current:
+            yield "set_origin"
+        else:
+            yield "set_origin", self._start_x, self._start_y
 
 
 class InputCut(CutObject):

@@ -13,9 +13,9 @@ class LaserCodeNode(Node):
         super().__init__(type="lasercode", **kwargs)
         self._formatter = "{element_type} {command_count}"
         if "name" in kwargs:
-            self.name = kwargs["name"]
+            self._name = kwargs["name"]
         else:
-            self.name = "LaserCode"
+            self._name = "LaserCode"
         self.commands = commands
         self.output = True
 

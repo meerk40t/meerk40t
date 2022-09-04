@@ -36,6 +36,10 @@ from meerk40t.kernel import CommandMatchRejected, Service
 # Later entries in the tuple are used to identify previous defaults and update them to current,
 # so do not delete these until a version change (like 0.8) results in completely new settings anyway.
 DEFAULT_KEYMAP = {
+    "right": ("translate 1mm 0",),
+    "left": ("translate -1mm 0",),
+    "up": ("translate 0 -1mm",),
+    "down": ("translate 0 1mm",),
     "a": ("+left",),
     "d": ("+right",),
     "w": ("+up",),
@@ -206,7 +210,7 @@ DEFAULT_ALIAS = {
     "-rotate_cw": (".timerrotate_cw off",),
     "-rotate_ccw": (".timerrotate_ccw off",),
     "-translate_right": (".timertranslate_right off",),
-    "-translate_left": (".timertranslate_right off",),
+    "-translate_left": (".timertranslate_left off",),
     "-translate_down": (".timertranslate_down off",),
     "-translate_up": (".timertranslate_up off",),
     "-right": (".timerright off",),
@@ -339,6 +343,24 @@ class Bind(Service):
             if value:
                 self.keymap[key] = value
 
+    def service_attach(self, *args, **kwargs):
+        if not len(self.keymap):
+            self.default_keymap()
+            return
+        # Remap "control+" to "ctrl+"
+        for key in list(self.keymap.keys()):
+            if key.startswith("control+"):
+                newkey = "ctrl+" + key[8:]
+                self.keymap[newkey] = self.keymap[key]
+                del self.keymap[key]
+        for key, values in DEFAULT_KEYMAP.items():
+            if key not in self.keymap or self.keymap[key] in values[1:]:
+                value = values[0]
+                if value:
+                    self.keymap[key] = value
+                elif key in self.keymap:
+                    del self.keymap[key]
+
 
 class Alias(Service):
     """
@@ -432,6 +454,18 @@ class Alias(Service):
             value = values[0]
             if value:
                 self.aliases[key] = value
+
+    def service_attach(self, *args, **kwargs):
+        if not len(self.aliases):
+            self.default_alias()
+            return
+        for key, values in DEFAULT_ALIAS.items():
+            if key not in self.aliases or self.aliases[key] in values[1:]:
+                value = values[0]
+                if value:
+                    self.aliases[key] = value
+                elif key in self.aliases:
+                    del self.aliases[key]
 
 
 def keymap_execute(context, keyvalue, keydown=True):

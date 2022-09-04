@@ -69,9 +69,9 @@ class OperationAssignOptionWidget(StatusBarWidget):
         value = self.context.elements.classify_impose_default
         self.combo_apply_color.SetSelection(value)
         self.EndPopulation()
-        self.Add(self.combo_apply_color, 1, wx.EXPAND, 0)
-        self.Add(self.check_all_similar, 1, wx.EXPAND, 0)
-        self.Add(self.check_exclusive, 1, wx.EXPAND, 0)
+        self.Add(self.combo_apply_color, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.check_all_similar, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Add(self.check_exclusive, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.check_exclusive.Bind(wx.EVT_CHECKBOX, self.on_check_exclusive)
         self.check_all_similar.Bind(wx.EVT_CHECKBOX, self.on_check_allsimilar)
         self.combo_apply_color.Bind(wx.EVT_COMBOBOX, self.on_combo_color)
@@ -146,8 +146,8 @@ class OperationAssignWidget(StatusBarWidget):
                 break
         event.Skip()
 
-    def Show(self, showit):
-        # Callback function that decideds whether to show an element or not
+    def Show(self, showit=True):
+        # Callback function that decides whether to show an element or not
         if showit:
             for idx, btn in enumerate(self.assign_buttons):
                 if self.op_nodes[idx] is None:
@@ -216,7 +216,7 @@ class OperationAssignWidget(StatusBarWidget):
             def get_color():
                 iconcolor = None
                 background = node.color
-                if background is not None:
+                if background is not None and background.argb is not None:
                     c1 = Color("Black")
                     c2 = Color("White")
                     if Color.distance(background, c1) > Color.distance(background, c2):

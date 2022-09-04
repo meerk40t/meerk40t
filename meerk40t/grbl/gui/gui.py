@@ -1,7 +1,7 @@
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         try:
-            import serial
+            import serial  # pylint: disable=unused-import
         except ImportError:
             return True
         return not service.has_feature("wx")
@@ -19,6 +19,10 @@ def plugin(service, lifecycle):
 
         service.register("window/Serial-Controller", SerialController)
         service.register("window/Configuration", GRBLConfiguration)
+
+        service.register("winpath/Serial-Controller", service)
+        service.register("winpath/Configuration", service)
+
         _ = service._
 
         service.register(

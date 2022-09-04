@@ -36,8 +36,8 @@ class BufferViewPanel(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
         label_8 = wx.StaticText(self, wx.ID_ANY, _("Buffer"))
-        sizer_5.Add(label_8, 0, 0, 0)
-        sizer_5.Add(self.text_buffer_length, 10, 0, 0)
+        sizer_5.Add(label_8, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_5.Add(self.text_buffer_length, 1, wx.EXPAND, 0)
         sizer_1.Add(sizer_5, 0, wx.EXPAND, 0)
         sizer_1.Add(self.text_buffer_info, 1, wx.EXPAND, 0)
         self.SetSizer(sizer_1)
@@ -64,3 +64,7 @@ class BufferView(MWindow):
     def window_open(self):
         self.context.close(self.name)
         self.panel.pane_show()
+
+    @staticmethod
+    def submenu():
+        return ("Device-Control", "Buffer")

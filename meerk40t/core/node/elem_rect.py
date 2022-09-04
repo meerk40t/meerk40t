@@ -24,12 +24,17 @@ class RectNode(Node):
         stroke_scale=None,
         linejoin=None,
         fillrule=None,
+        label=None,
+        settings=None,
         **kwargs,
     ):
-        super(RectNode, self).__init__(type="elem rect", **kwargs)
+        if settings is None:
+            settings = dict()
+        settings.update(kwargs)
+        super(RectNode, self).__init__(type="elem rect", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape
-        self.settings = kwargs
+        self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
         self.fill = shape.fill if fill is None else fill
         self.stroke = shape.stroke if stroke is None else stroke
@@ -41,6 +46,7 @@ class RectNode(Node):
         )
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
+        self.label = label
         self.lock = False
 
     def __repr__(self):
@@ -56,7 +62,7 @@ class RectNode(Node):
             stroke_scale=self._stroke_scaled,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
-            **self.settings,
+            settings=self.settings,
         )
 
     @property
@@ -79,24 +85,21 @@ class RectNode(Node):
         value of the determinant of the local matrix (1d matrix scaling)"""
         scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
         sw = self.stroke_width / scalefactor
-        limit = 25 * sqrt(zoomscale) * scalefactor
+        limit = 25 * sqrt(zoomscale) / scalefactor
         if sw < limit:
             sw = limit
         return sw
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._sync_svg()
-            self._bounds = self.shape.bbox(with_stroke=True)
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        self._sync_svg()
+        return self.shape.bbox(transformed=transformed, with_stroke=with_stroke)
 
     def preprocess(self, context, matrix, commands):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
         self._sync_svg()
+        self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
         default_map = super(RectNode, self).default_map(default_map=default_map)
@@ -154,7 +157,6 @@ class RectNode(Node):
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
-        self._bounds_dirty = True
 
     def as_path(self):
         self._sync_svg()

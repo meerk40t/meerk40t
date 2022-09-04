@@ -2,7 +2,7 @@ import wx
 from wx import aui
 
 from meerk40t.core.element_types import elem_nodes
-from meerk40t.core.units import Length
+from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_up_left_50
 
 _ = wx.GetTranslation
@@ -156,9 +156,9 @@ class PositionPanel(wx.Panel):
         sizer_main.Add(sizer_h_all, 0, wx.EXPAND, 0)
 
         sizer_h_options = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_options.Add(self.chk_indivdually, 1, wx.EXPAND, 0)
-        sizer_h_options.Add(self.chk_lock, 1, wx.EXPAND, 0)
-        sizer_h_options.Add(self.combo_box_units, 0, wx.EXPAND, 0)
+        sizer_h_options.Add(self.chk_indivdually, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_options.Add(self.chk_lock, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_h_options.Add(self.combo_box_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_main.Add(sizer_h_options, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
@@ -381,7 +381,10 @@ class PositionPanel(wx.Panel):
             except ValueError:
                 try:
                     w = self.context.device.length(
-                        self.text_w.GetValue(), 0, new_unit=self.position_units
+                        self.text_w.GetValue(),
+                        0,
+                        new_units=self.position_units,
+                        unitless=UNITS_PER_PIXEL,
                     )
                 except ValueError:
                     return
@@ -411,7 +414,10 @@ class PositionPanel(wx.Panel):
             except ValueError:
                 try:
                     h = self.context.device.length(
-                        self.text_h.GetValue(), 1, new_units=self.position_units
+                        self.text_h.GetValue(),
+                        1,
+                        new_units=self.position_units,
+                        unitless=UNITS_PER_PIXEL,
                     )
                 except ValueError:
                     return
@@ -436,7 +442,10 @@ class PositionPanel(wx.Panel):
         except ValueError:
             try:
                 self.position_x = self.context.device.length(
-                    self.text_h.GetValue(), 1, new_units=self.position_units
+                    self.text_h.GetValue(),
+                    1,
+                    new_units=self.position_units,
+                    unitless=UNITS_PER_PIXEL,
                 )
             except ValueError:
                 return
@@ -450,7 +459,10 @@ class PositionPanel(wx.Panel):
         except ValueError:
             try:
                 self.position_y = self.context.device.length(
-                    self.text_h.GetValue(), 1, new_units=self.position_units
+                    self.text_h.GetValue(),
+                    1,
+                    new_units=self.position_units,
+                    unitless=UNITS_PER_PIXEL,
                 )
             except ValueError:
                 return

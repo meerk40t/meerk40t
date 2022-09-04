@@ -1,7 +1,6 @@
 import wx
 
 from meerk40t.gui.icons import icons8_next_page_20
-from meerk40t.svgelements import Color
 
 
 class CustomStatusBar(wx.StatusBar):

@@ -1,14 +1,12 @@
 import wx
 from wx import aui
 
-from meerk40t.core.element_types import elem_nodes, op_nodes
-from meerk40t.core.elements import Elemental
+from meerk40t.core.element_types import op_nodes
 from meerk40t.gui.icons import (
     icons8_diagonal_20,
     icons8_direction_20,
     icons8_image_20,
     icons8_laser_beam_20,
-    icons8_padlock_50,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
 )
@@ -105,7 +103,7 @@ class OperationAssignPanel(wx.Panel):
         self.sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.sizer_options = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_buttons = wx.FlexGridSizer(cols=8)
-        self.sizer_options.Add(self.cbo_apply_color, 1, wx.EXPAND, 0)
+        self.sizer_options.Add(self.cbo_apply_color, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_options.Add(self.chk_all_similar, 1, wx.EXPAND, 0)
         self.sizer_options.Add(self.chk_exclusive, 1, wx.EXPAND, 0)
 
@@ -148,7 +146,7 @@ class OperationAssignPanel(wx.Panel):
             def get_color():
                 iconcolor = None
                 background = node.color
-                if background is not None:
+                if background is not None and background.argb is not None:
                     c1 = Color("Black")
                     c2 = Color("White")
                     if Color.distance(background, c1) > Color.distance(background, c2):

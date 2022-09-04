@@ -3,7 +3,7 @@ from copy import copy
 from math import sqrt
 
 from meerk40t.core.node.node import Node
-from meerk40t.core.units import Length, UNITS_PER_POINT
+from meerk40t.core.units import UNITS_PER_POINT, Length
 from meerk40t.svgelements import Matrix
 
 REGEX_CSS_FONT = re.compile(
@@ -53,11 +53,16 @@ class TextNode(Node):
         texttransform=None,
         width=None,
         height=None,
+        descent=None,
+        leading=None,
         path=None,
+        label=None,
         settings=None,
+        **kwargs,
     ):
         if settings is None:
             settings = dict()
+        settings.update(kwargs)
         super(TextNode, self).__init__(type="elem text", **settings)
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
@@ -96,7 +101,10 @@ class TextNode(Node):
 
         self.width = width
         self.height = height
+        self.descent = descent
+        self.leading = leading
         self.path = path
+        self.label = label
         self.lock = False
 
     def __copy__(self):
@@ -115,8 +123,10 @@ class TextNode(Node):
             texttransform=self.texttransform,
             width=self.width,
             height=self.height,
+            descent=self.descent,
+            leading=self.leading,
             path=self.path,
-            **self.settings,
+            settings=self.settings,
         )
 
     @property
@@ -153,17 +163,10 @@ class TextNode(Node):
         value of the determinant of the local matrix (1d matrix scaling)"""
         scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
         sw = self.stroke_width / scalefactor
-        limit = 25 * sqrt(zoomscale) * scalefactor
+        limit = 25 * sqrt(zoomscale) / scalefactor
         if sw < limit:
             sw = limit
         return sw
-
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds_dirty = False
-            self._bounds = self.bbox(with_stroke=True)
-        return self._bounds
 
     def preprocess(self, context, matrix, commands):
         if self.parent.type != "op raster":
@@ -173,7 +176,7 @@ class TextNode(Node):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
-        self._bounds_dirty = True
+        self.set_dirty_bounds()
 
     def remove_text(self):
         self.remove_node()
@@ -330,21 +333,16 @@ class TextNode(Node):
                 with_stroke=with_stroke,
             )
 
-        if self.width:
-            width = self.width
-        else:
-            # Width is undefined, make an educated guess
-            width = len(self.text) * self.font_size
-
-        if self.height:
-            height = self.height
-        else:
-            # Height is undefined, make an educated guess
-            height = (
-                -self.line_height * len(list(self.text.split("\n"))) - self.font_size
-            )
-        ymin = -height
-        ymax = 0
+        width = self.width if self.width else len(self.text) * self.font_size
+        height = (
+            self.height
+            if self.height
+            else self.line_height * len(list(self.text.split("\n"))) - self.font_size
+        )
+        descent = self.descent if self.descent else height * 0.5
+        leading = self.leading if self.leading else 0
+        ymin = -height + descent + leading
+        ymax = descent
         if self.anchor == "middle":
             xmin = -width / 2
             xmax = width / 2

@@ -21,10 +21,10 @@ class RotarySettingsPanel(ScrolledPanel):
 
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.Children[0].SetFocus()
-        self.text_rotary_scaley = TextCtrl(
+        self.text_rotary_scalex = TextCtrl(
             self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
         )
-        self.text_rotary_scalex = TextCtrl(
+        self.text_rotary_scaley = TextCtrl(
             self, wx.ID_ANY, "1.0", check="float", style=wx.TE_PROCESS_ENTER
         )
         # self.checkbox_rotary_loop = wx.CheckBox(self, wx.ID_ANY, _("Field Loop"))
@@ -37,10 +37,8 @@ class RotarySettingsPanel(ScrolledPanel):
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
-        self.text_rotary_scalex.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_x)
-        self.text_rotary_scalex.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_x)
-        self.text_rotary_scaley.Bind(wx.EVT_TEXT_ENTER, self.on_text_rotary_scale_y)
-        self.text_rotary_scaley.Bind(wx.EVT_KILL_FOCUS, self.on_text_rotary_scale_y)
+        self.text_rotary_scalex.SetActionRoutine(self.on_text_rotary_scale_x)
+        self.text_rotary_scalex.SetActionRoutine(self.on_text_rotary_scale_y)
         # self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_loop, self.checkbox_rotary_loop)
         # self.text_rotary_rotation.Bind(wx.EVT_TEXT, self.on_text_rotation)
         # self.Bind(
@@ -111,6 +109,7 @@ class RotarySettingsPanel(ScrolledPanel):
 
     def __do_layout(self):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_scale = wx.BoxSizer(wx.HORIZONTAL)
         # sizer_circumference = wx.StaticBoxSizer(
         #     wx.StaticBox(self, wx.ID_ANY, _("Object Circumference:")), wx.HORIZONTAL
         # )
@@ -127,11 +126,12 @@ class RotarySettingsPanel(ScrolledPanel):
             wx.StaticBox(self, wx.ID_ANY, _("Scale Y:")), wx.HORIZONTAL
         )
         sizer_main.Add(self.checkbox_rotary, 0, 0, 0)
-        sizer_y.Add(self.text_rotary_scaley, 0, 0, 0)
-        sizer_main.Add(sizer_y, 0, wx.EXPAND, 0)
         sizer_x.Add(self.text_rotary_scalex, 0, 0, 0)
-        sizer_main.Add(sizer_x, 0, wx.EXPAND, 0)
-        sizer_main.Add((20, 20), 0, 0, 0)
+        sizer_y.Add(self.text_rotary_scaley, 0, 0, 0)
+        sizer_scale.Add(sizer_x, 1, wx.EXPAND, 0)
+        sizer_scale.Add(sizer_y, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_scale, 0, wx.EXPAND, 0)
+        # sizer_main.Add((20, 20), 0, 0, 0)
         # sizer_main.Add(self.checkbox_rotary_loop, 0, 0, 0)
         # sizer_steps.Add(self.text_rotary_rotation, 0, 0, 0)
         # label_steps = wx.StaticText(self, wx.ID_ANY, _("steps"))
@@ -155,14 +155,14 @@ class RotarySettingsPanel(ScrolledPanel):
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
 
-    def on_text_rotary_scale_y(self, event=None):
+    def on_text_rotary_scale_y(self):
         if self.rotary is not None:
             try:
                 self.rotary.scale_y = float(self.text_rotary_scaley.GetValue())
             except ValueError:
                 pass
 
-    def on_text_rotary_scale_x(self, event=None):
+    def on_text_rotary_scale_x(self):
         if self.rotary is not None:
             try:
                 self.rotary.scale_x = float(self.text_rotary_scalex.GetValue())
@@ -192,7 +192,7 @@ class RotarySettingsPanel(ScrolledPanel):
 
 class RotarySettings(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(222, 147, *args, **kwds)
+        super().__init__(200, 125, *args, **kwds)
 
         self.panel = RotarySettingsPanel(self, wx.ID_ANY, context=self.context.rotary)
         self.add_module_delegate(self.panel)
@@ -207,3 +207,7 @@ class RotarySettings(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        return ("Device-Settings", "Rotary Setting")

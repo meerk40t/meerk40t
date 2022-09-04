@@ -25,28 +25,28 @@ class WordlistPanel(wx.Panel):
         sizer_1.Add(sizer_csv, 0, wx.EXPAND, 0)
 
         label_1 = wx.StaticText(self, wx.ID_ANY, _("Import CSV-File"))
-        sizer_csv.Add(label_1, 0, 0, 0)
+        sizer_csv.Add(label_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_filename = wx.TextCtrl(self, wx.ID_ANY, "")
-        sizer_csv.Add(self.txt_filename, 1, 0, 0)
+        sizer_csv.Add(self.txt_filename, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_fileDialog = wx.Button(self, wx.ID_ANY, "...")
         self.btn_fileDialog.SetMinSize((23, 23))
         sizer_csv.Add(self.btn_fileDialog, 0, 0, 0)
 
         self.btn_import = wx.Button(self, wx.ID_ANY, _("Import CSV"))
-        sizer_csv.Add(self.btn_import, 0, 0, 0)
+        sizer_csv.Add(self.btn_import, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_index = wx.BoxSizer(wx.HORIZONTAL)
         sizer_1.Add(sizer_index, 0, wx.EXPAND, 0)
 
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Current Index for Data:"))
-        sizer_index.Add(label_2, 0, 0, 0)
+        sizer_index.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.cbo_Index = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        sizer_index.Add(self.cbo_Index, 0, 0, 0)
+        sizer_index.Add(self.cbo_Index, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_vdata = wx.BoxSizer(wx.VERTICAL)
         sizer_1.Add(sizer_vdata, 1, wx.EXPAND, 0)
@@ -340,3 +340,7 @@ class WordlistEditor(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    @staticmethod
+    def submenu():
+        return ("Editing", "Variables + Wordlists")

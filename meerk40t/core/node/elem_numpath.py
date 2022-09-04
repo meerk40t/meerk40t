@@ -12,6 +12,7 @@ class NumpathNode(Node, Parameters):
 
     def __init__(
         self,
+        *args,
         path=None,
         matrix=None,
         fill=None,
@@ -20,12 +21,15 @@ class NumpathNode(Node, Parameters):
         linecap=Linecap.CAP_BUTT,
         linejoin=Linejoin.JOIN_MITER,
         fillrule=Fillrule.FILLRULE_EVENODD,
-        *args,
+        label=None,
+        settings=None,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        if settings is None:
+            settings = dict()
+        settings.update(kwargs)
+        super().__init__(*args, **settings)
         self._formatter = "{element_type} {id} {stroke}"
-        self.settings.update(kwargs)
         self.path = path
         if matrix is None:
             matrix = Matrix()
@@ -36,6 +40,7 @@ class NumpathNode(Node, Parameters):
         self.linecap = linecap
         self.linejoin = linejoin
         self.fillrule = fillrule
+        self.label = label
         self.lock = False
 
     def __copy__(self):
@@ -48,23 +53,19 @@ class NumpathNode(Node, Parameters):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
-            **self.settings,
+            settings=self.settings,
         )
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = self.path.bbox(self.matrix)
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        return self.path.bbox(self.matrix)
 
     def preprocess(self, context, matrix, commands):
         self.path.transform(self.matrix)
         self.path.transform(matrix)
-        self._bounds_dirty = True
+        self.set_dirty_bounds()
 
     def default_map(self, default_map=None):
         default_map = super(NumpathNode, self).default_map(default_map=default_map)

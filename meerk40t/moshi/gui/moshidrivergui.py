@@ -20,10 +20,20 @@ class MoshiConfigurationPanel(ScrolledPanel):
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
         self.text_home_x = TextCtrl(
-            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+            self,
+            wx.ID_ANY,
+            "0mm",
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
         )
         self.text_home_y = TextCtrl(
-            self, wx.ID_ANY, "0mm", check="length", style=wx.TE_PROCESS_ENTER
+            self,
+            wx.ID_ANY,
+            "0mm",
+            check="length",
+            style=wx.TE_PROCESS_ENTER,
+            limited=True,
         )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
         # self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
@@ -33,10 +43,8 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
-        self.text_home_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_x)
-        self.text_home_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_x)
-        self.text_home_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_home_y)
-        self.text_home_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_home_y)
+        self.text_home_x.SetActionRoutine(self.on_text_home_x)
+        self.text_home_y.SetActionRoutine(self.on_text_home_y)
         self.Bind(
             wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
         )
@@ -78,22 +86,21 @@ class MoshiConfigurationPanel(ScrolledPanel):
         sizer_config = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Configuration")), wx.HORIZONTAL
         )
-        sizer_config.Add(self.checkbox_home_right, 0, 0, 0)
-        sizer_config.Add(self.checkbox_home_bottom, 0, 0, 0)
+        sizer_config.Add(self.checkbox_home_right, 1, wx.EXPAND, 0)
+        sizer_config.Add(self.checkbox_home_bottom, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_config, 0, wx.EXPAND, 0)
+
         label_9 = wx.StaticText(self, wx.ID_ANY, "X")
-        sizer_4.Add(label_9, 0, 0, 0)
-        sizer_4.Add(self.text_home_x, 0, 0, 0)
-        label_12 = wx.StaticText(self, wx.ID_ANY, _("mil"))
-        sizer_4.Add(label_12, 0, 0, 0)
-        sizer_home.Add(sizer_4, 2, wx.EXPAND, 0)
+        sizer_4.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_4.Add(self.text_home_x, 1, wx.EXPAND, 0)
+        sizer_home.Add(sizer_4, 1, wx.EXPAND, 0)
+
         label_10 = wx.StaticText(self, wx.ID_ANY, "Y")
-        sizer_2.Add(label_10, 0, 0, 0)
-        sizer_2.Add(self.text_home_y, 0, 0, 0)
-        label_11 = wx.StaticText(self, wx.ID_ANY, _("mil"))
-        sizer_2.Add(label_11, 1, 0, 0)
-        sizer_home.Add(sizer_2, 2, wx.EXPAND, 0)
-        sizer_home.Add(self.button_home_by_current, 1, 0, 0)
+        sizer_2.Add(label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_2.Add(self.text_home_y, 1, wx.EXPAND, 0)
+        sizer_home.Add(sizer_2, 1, wx.EXPAND, 0)
+
+        sizer_home.Add(self.button_home_by_current, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_home, 0, wx.EXPAND, 0)
         # sizer_6.Add(self.checkbox_random_ppi, 0, 0, 0)
         sizer_main.Add(sizer_6, 1, wx.EXPAND, 0)
@@ -120,19 +127,17 @@ class MoshiConfigurationPanel(ScrolledPanel):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
 
     def on_text_home_x(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
-        event.Skip()
         self.context.home_x = self.text_home_x.GetValue()
 
     def on_text_home_y(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
-        event.Skip()
         self.context.home_y = self.text_home_y.GetValue()
 
     def on_button_set_home_current(
         self, event
     ):  # wxGlade: MoshiDriverGui.<event_handler>
         current_x, current_y = self.context.device.current
-        self.context.home_x = f"{Length(amount=current_x).mm}.1fmm"
-        self.context.home_y = f"{Length(amount=current_y).mm}.1fmm"
+        self.context.home_x = f"{Length(amount=current_x).mm:.1f}mm"
+        self.context.home_y = f"{Length(amount=current_y).mm:.1f}mm"
         self.text_home_x.SetValue(self.context.home_x)
         self.text_home_y.SetValue(self.context.home_y)
 
@@ -142,7 +147,7 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
 class MoshiDriverGui(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(335, 170, *args, **kwds)
+        super().__init__(305, 410, *args, **kwds)
         self.context = self.context.device
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
@@ -182,3 +187,7 @@ class MoshiDriverGui(MWindow):
 
     def window_preserve(self):
         return False
+
+    @staticmethod
+    def submenu():
+        return ("Device-Settings", "Configuration")

@@ -1,7 +1,7 @@
 def plugin(kernel, lifecycle=None):
     if lifecycle == "invalidate":
         try:
-            import ezdxf
+            import ezdxf  # pylint: disable=unused-import
         except ImportError:
             print("DXF plugin could not load because ezdxf is not installed.")
             return True

@@ -4,11 +4,14 @@ from meerk40t.balormk.lmc_controller import GalvoController
 from meerk40t.core.cutcode import (
     CubicCut,
     DwellCut,
+    GotoCut,
+    HomeCut,
     InputCut,
     LineCut,
     OutputCut,
     PlotCut,
     QuadCut,
+    SetOriginCut,
     WaitCut,
 )
 from meerk40t.core.drivers import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
@@ -67,6 +70,10 @@ class BalorDriver:
     def abort_retry(self):
         self.connection.abort_connect()
 
+    #############
+    # DRIVER COMMANDS
+    #############
+
     def hold_work(self, priority):
         """
         This is checked by the spooler to see if we should hold any work from being processed from the work queue.
@@ -112,39 +119,50 @@ class BalorDriver:
 
         @return:
         """
-        # preprocess queue to establish steps
-        assessment_start = time.time()
-        dummy_planner = PlotPlanner(
-            dict(), single=True, smooth=False, ppi=False, shift=False, group=True
-        )
         self.current_steps = 0
         self.total_steps = 0
-        for q in self.queue:
-            if isinstance(q, LineCut):
-                self.total_steps += 1
-            elif isinstance(q, (QuadCut, CubicCut)):
-                interp = self.service.interpolate
-                for p in range(int(interp)):
+        # preprocess queue to establish steps
+        skip_calc = True
+        if not skip_calc:
+            assessment_start = time.time()
+            dummy_planner = PlotPlanner(
+                dict(), single=True, smooth=False, ppi=False, shift=False, group=True
+            )
+            for q in self.queue:
+                if isinstance(q, LineCut):
                     self.total_steps += 1
-            elif isinstance(q, PlotCut):
-                for x, y, on in q.plot[1:]:
+                elif isinstance(q, (QuadCut, CubicCut)):
+                    interp = self.service.interpolate
+                    for p in range(int(interp)):
+                        self.total_steps += 1
+                elif isinstance(q, PlotCut):
+                    for x, y, on in q.plot[1:]:
+                        self.total_steps += 1
+                elif isinstance(q, DwellCut):
                     self.total_steps += 1
-            elif isinstance(q, DwellCut):
-                self.total_steps += 1
-            elif isinstance(q, WaitCut):
-                self.total_steps += 1
-            elif isinstance(q, OutputCut):
-                self.total_steps += 1
-            elif isinstance(q, InputCut):
-                self.total_steps += 1
-            else:
-                dummy_planner.push(q)
-                dummy_data = list(dummy_planner.gen())
-                self.total_steps += len(dummy_data)
-                dummy_planner.clear()
-        # print ("Balor-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
+                elif isinstance(q, WaitCut):
+                    self.total_steps += 1
+                elif isinstance(q, HomeCut):
+                    self.total_steps += 1
+                elif isinstance(q, GotoCut):
+                    self.total_steps += 1
+                elif isinstance(q, SetOriginCut):
+                    self.total_steps += 1
+                elif isinstance(q, OutputCut):
+                    self.total_steps += 1
+                elif isinstance(q, InputCut):
+                    self.total_steps += 1
+                else:
+                    dummy_planner.push(q)
+                    dummy_data = list(dummy_planner.gen())
+                    self.total_steps += len(dummy_data)
+                    dummy_planner.clear()
+            # print ("Balor-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
 
         con = self.connection
+        con._light_speed = None
+        con._dark_speed = None
+        con._goto_speed = None
         con.program_mode()
         self._list_bits = con._port_bits
         last_on = None
@@ -250,6 +268,15 @@ class BalorDriver:
                     d = min(dwell_time, 60000)
                     con.list_delay_time(int(d))
                     dwell_time -= d
+            elif isinstance(q, HomeCut):
+                self.current_steps += 1
+                con.goto(0x8000, 0x8000)
+            elif isinstance(q, GotoCut):
+                self.current_steps += 1
+                con.goto(0x8000, 0x8000)
+            elif isinstance(q, SetOriginCut):
+                # Currently not supporting set origin cut.
+                self.current_steps += 1
             elif isinstance(q, OutputCut):
                 self.current_steps += 1
                 con.port_set(q.output_mask, q.output_value)
@@ -289,11 +316,9 @@ class BalorDriver:
                         elif on & (
                             PLOT_RAPID | PLOT_JOG
                         ):  # Plot planner requests position change.
-                            con.list_jump_speed(self.service.default_rapid_speed)
                             con.goto(x, y)
                         continue
                     if on == 0:
-                        con.list_jump_speed(self.service.default_rapid_speed)
                         con.goto(x, y)
                     else:
                         # on is in range 0 exclusive and 1 inclusive.
@@ -340,8 +365,7 @@ class BalorDriver:
 
     def move_abs(self, x, y):
         """
-        This is called with the actual x and y values with units. If without units we should expect to move in native
-        units.
+        Requests laser move to absolute position x, y in physical units
 
         @param x:
         @param y:
@@ -367,7 +391,7 @@ class BalorDriver:
 
     def move_rel(self, dx, dy):
         """
-        This is called with dx and dy values to move a relative amount.
+        Requests laser move relative position dx, dy in physical units
 
         @param dx:
         @param dy:
@@ -435,17 +459,39 @@ class BalorDriver:
         self.connection.wait_finished()
 
     def function(self, function):
+        """
+        This command asks that this function be executed at the appropriate time within the spooling cycle.
+
+        @param function:
+        @return:
+        """
         function()
 
     def wait(self, time_in_ms):
-        time.sleep(time_in_ms * 1000.0)
+        """
+        Wait asks that the work be stalled or current process held for the time time_in_ms in ms. If wait_finished is
+        called first this will attempt to stall the machine while performing no work. If the driver in question permits
+        waits to be placed within code this should insert waits into the current job. Returning instantly rather than
+        holding the processes.
+
+        @param time_in_ms:
+        @return:
+        """
+        time.sleep(time_in_ms / 1000.0)
 
     def console(self, value):
+        """
+        This asks that the console command be executed at the appropriate time within the spooled cycle.
+
+        @param value: console commnad
+        @return:
+        """
         self.service(value)
 
     def beep(self):
         """
         Wants a system beep to be issued.
+        This command asks that a beep be executed at the appropriate time within the spooled cycle.
 
         @return:
         """
@@ -498,6 +544,17 @@ class BalorDriver:
         @return:
         """
         pass
+
+    def dwell(self, time_in_ms):
+        """
+        Requests that the laser fire in place for the given time period. This could be done in a series of commands,
+        move to a location, turn laser on, wait, turn laser off. However, some drivers have specific laser-in-place
+        commands so calling dwell is preferred.
+
+        @param time_in_ms:
+        @return:
+        """
+        self.pulse(time_in_ms)
 
     def pulse(self, pulse_time):
         con = self.connection

@@ -4,7 +4,7 @@ from meerk40t.svgelements import Path, Point, Polygon
 def plugin(kernel, lifecycle):
     if lifecycle == "invalidate":
         try:
-            import numpy as np
+            import numpy as np  # pylint: disable=unused-import
         except ImportError:
             return True
     elif lifecycle == "register":
@@ -30,6 +30,7 @@ def plugin(kernel, lifecycle):
                 )
                 return "elements", []
 
+            elements = context.elements
             if command == "intersection":
                 ct = ClipType.Intersection
             elif command == "xor":
@@ -39,12 +40,16 @@ def plugin(kernel, lifecycle):
             else:  # difference
                 ct = ClipType.Difference
             solution_path = Path(
-                stroke=context.elements.default_stroke,
-                fill=context.elements.default_fill,
+                stroke=elements.default_stroke,
+                fill=elements.default_fill,
                 stroke_width=1000,
             )
+
+            # reorder elements
+            data.sort(key=lambda n: n.emphasized_time)
             last_polygon = None
             node = None
+
             for i in range(len(data)):
                 node = data[i]
                 try:
@@ -78,12 +83,12 @@ def plugin(kernel, lifecycle):
                     solution_path += Path(r)
             if solution_path:
                 if node is None:
-                    new_node = context.elements.elem_branch.add(
+                    new_node = elements.elem_branch.add(
                         path=solution_path,
                         type="elem path",
                     )
                 else:
-                    new_node = context.elements.elem_branch.add(
+                    new_node = elements.elem_branch.add(
                         path=solution_path,
                         type="elem path",
                         stroke=node.stroke if node is not None else None,
@@ -91,7 +96,7 @@ def plugin(kernel, lifecycle):
                         stroke_width=node.stroke_width if node is not None else None,
                     )
                 context.signal("refresh_scene", "Scene")
-                context.elements.classify([new_node])
+                elements.classify([new_node])
                 return "elements", [node]
             else:
                 return "elements", []

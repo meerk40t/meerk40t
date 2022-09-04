@@ -309,7 +309,7 @@ def plugin(kernel, lifecycle):
                 yield "home"
                 yield "wait_finish"
 
-            spooler.laserjob(list(home_dot_test()))
+            spooler.laserjob(list(home_dot_test()), label=f"Dot and Home Test")
             return "spooler", spooler
 
 
@@ -331,23 +331,13 @@ class LaserJob:
         self._stopped = True
 
         self._estimate = 0
-        MILS_IN_MM = 39.3701
 
         for item in self.items:
-            time_cuts = 0
-            time_travel = 0
-            time_extra = 0
             if isinstance(item, CutCode):
-                travel = item.length_travel()
-                cuts = item.length_cut()
-                travel /= MILS_IN_MM
-                cuts /= MILS_IN_MM
-                time_extra = item.extra_time()
-                if item.travel_speed is not None and item.travel_speed != 0:
-                    time_travel = travel / item.travel_speed
+                time_travel = item.duration_travel()
                 time_cuts = item.duration_cut()
-                time_total = time_travel + time_cuts + time_extra
-                self._estimate += time_total
+                time_extra = item.extra_time()
+                self._estimate += time_travel + time_cuts + time_extra
 
     def __str__(self):
         return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
@@ -355,7 +345,7 @@ class LaserJob:
     def is_running(self):
         return not self._stopped
 
-    def execute(self, driver):
+    def execute(self, driver=None):
         """
         Execute calls each item in the list of items in order. This is intended to be called by the spooler thread. And
         hold the spooler while these items are executing.
@@ -435,7 +425,7 @@ class LaserJob:
         if self.runtime != 0:
             result = self.runtime
         else:
-            if not self._stopped:
+            if self.is_running():
                 result = time.time() - self.time_started
         return result
 
@@ -456,6 +446,9 @@ class LaserJob:
             if hasattr(self._driver, "total_steps"):
                 total = self._driver.total_steps
                 current = self._driver.current_steps
+                # Safety belt, as we have disabled the logic partially
+                if total < current:
+                    total = current + 1
                 if current > 10 and total > 0:
                     # Arbitrary minimum steps (if too low, value is erratic)
                     ratio = total / current
@@ -620,11 +613,12 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def laserjob(self, job, priority=0, loops=1):
+    def laserjob(self, job, priority=0, loops=1, label=None):
         """
         send a wrapped laser job to the spooler.
         """
-        label = f"{self.__class__.__name__}:{len(job)} items"
+        if label is None:
+            label = f"{self.__class__.__name__}:{len(job)} items"
         # label = str(job)
         laserjob = LaserJob(
             label, list(job), driver=self.driver, priority=priority, loops=loops

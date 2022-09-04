@@ -3,6 +3,7 @@ import time
 import wx
 
 from ...core.element_types import elem_nodes
+from ...core.spoolers import LaserJob
 from ...core.units import Length
 from ..icons import icons8_up_50
 from .statusbarwidget import StatusBarWidget
@@ -121,7 +122,7 @@ class InformationWidget(SimpleInfoWidget):
         # We dont have a context yet...
         self._info_active = True
 
-    def Show(self, showit):
+    def Show(self, showit=True):
         if self._needs_generation and showit:
             self.calculate_infos()
         super().Show(showit)
@@ -241,7 +242,7 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._invokation_delta = 2  # Every 2 seconds max
         self._driver = None
 
-    def Show(self, showit):
+    def Show(self, showit=True):
         if self._needs_generation and showit:
             self.calculate_infos()
         super().Show(showit)
@@ -308,7 +309,7 @@ class BurnProgressPanel(SimpleInfoWidget):
                 # We already have one, so these are the jobs still in the queue
                 # So we just add the time to the remaining...
                 self._queue_remaining += spool_obj.estimate_time()
-            elif spool_obj.is_running():
+            elif spool_obj.is_running() and isinstance(spool_obj, LaserJob):
                 self._queue_pos = idx + 1
                 self._job_label = spool_obj.label
                 self._job_active = True

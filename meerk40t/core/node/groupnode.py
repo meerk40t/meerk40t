@@ -7,28 +7,31 @@ class GroupNode(Node):
     All group types are bootstrapped into this node object.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, label=None, **kwargs):
         super(GroupNode, self).__init__(type="group", **kwargs)
+        self.label = label
         self._formatter = "{element_type} {id} ({children} elems)"
 
     def __repr__(self):
         return f"GroupNode('{self.type}', {str(self._parent)})"
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            if len(self.children) == 0:
-                # empty, otherwise will recurse forever...
-                self._bounds = (
-                    float("inf"),
-                    float("inf"),
-                    -float("inf"),
-                    -float("inf"),
-                )
-            else:
-                self._bounds = Node.union_bounds(self._flatten_children(self))
-            self._bounds_dirty = False
-        return self._bounds
+    def bbox(self, transformed=True, with_stroke=False):
+        """
+        Group default bbox is empty. If childless there are no bounds.
+
+        empty, otherwise will recurse forever...
+
+        @param transformed:
+        @param with_stroke:
+        @return:
+        """
+
+        return (
+            float("inf"),
+            float("inf"),
+            -float("inf"),
+            -float("inf"),
+        )
 
     def default_map(self, default_map=None):
         default_map = super(GroupNode, self).default_map(default_map=default_map)

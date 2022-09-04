@@ -31,8 +31,6 @@ from ..svgelements import (
     Viewbox,
 )
 
-MILS_PER_MM = 39.3701
-
 
 class DxfLoader:
     @staticmethod

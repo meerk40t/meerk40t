@@ -136,8 +136,6 @@ def plugin(kernel, lifecycle=None):
             {
                 "attr": "opt_complete_subpaths",
                 "object": context,
-                # Default is false for backwards compatibility.
-                # Initial tests suggest that in most cases this actually results in shorter burn times.
                 "default": True,
                 "type": bool,
                 "label": _("Burn Complete Subpaths"),
@@ -503,6 +501,9 @@ class Planner(Service):
                     "cutcode",
                     "util console",
                     "util wait",
+                    "util home",
+                    "util goto",
+                    "util origin",
                     "util input",
                     "util output",
                     "lasercode",
@@ -678,103 +679,103 @@ class Planner(Service):
             self.signal("plan", data.name, 0)
             return data_type, data
 
-        @self.console_argument("cols", type=int, help=_("columns for the grid"))
-        @self.console_argument("rows", type=int, help=_("rows for the grid"))
-        @self.console_argument(
-            "x_distance", type=self.length_x, help=_("x_distance each column step")
-        )
-        @self.console_argument(
-            "y_distance", type=self.length_y, help=_("y_distance each row step")
-        )
-        @self.console_command(
-            "step_repeat",
-            help=_("plan<?> step_repeat"),
-            input_type="plan",
-            output_type="plan",
-        )
-        def plan_step_repeat(
-            command,
-            channel,
-            _,
-            cols=0,
-            rows=0,
-            x_distance=None,
-            y_distance=None,
-            data_type=None,
-            data=None,
-            **kwgs,
-        ):
-            # pylint: disable=no-member
-            # No member calls are for dynamically attributed values.
-            if y_distance is None:
-                raise CommandSyntaxError
-            # Following must be in same order as added in preprocess()
-            pre_plan_items = (
-                (self.prephysicalhome, physicalhome),
-                (self.prehome, home),
-            )
-            # Following must be in reverse order as added in preprocess()
-            post_plan_items = (
-                (self.autointerrupt, interrupt),
-                (self.autobeep, beep),
-                (self.postunlock, unlock),
-                (self.autoorigin, origin),
-                (self.autophysicalhome, physicalhome),
-                (self.autohome, home),
-            )
-            post_plan = []
-
-            c_plan = list(data.plan)
-            data.plan.clear()
-            data.commands.clear()
-            for cmd, func in pre_plan_items:
-                if cmd and c_plan[0] is func:
-                    data.plan.append(c_plan.pop(0))
-                elif type(c_plan[0]) == str:  # Rotary disabled
-                    data.plan.append(c_plan.pop(0))
-
-            for cmd, func in post_plan_items:
-                if cmd and c_plan[-1] is func:
-                    post_plan.insert(0, c_plan.pop())
-                elif type(c_plan[-1]) == str:  # Rotary disabled
-                    post_plan.insert(0, c_plan.pop())
-
-                # Sophist: Following try/except commented out as
-                # exceptions need to be narrow not global in scope.
-                # try:
-                if x_distance is None:
-                    x_distance = f"{100.0 / (cols + 1)}%"
-                if y_distance is None:
-                    y_distance = f"{100.0 / (rows + 1)}%"
-            # except Exception:
-            # pass
-            x_last = 0
-            y_last = 0
-            y_pos = 0
-            x_pos = 0
-
-            for j in range(rows):
-                x_pos = 0
-                for k in range(cols):
-                    x_offset = x_pos - x_last
-                    y_offset = y_pos - y_last
-                    data.plan.append(origin)
-                    if x_offset != 0 or y_offset != 0:
-                        data.plan.append(offset(x_offset, y_offset))
-
-                    data.plan.extend(c_plan)
-                    x_last = x_pos
-                    y_last = y_pos
-                    x_pos += x_distance
-                y_pos += y_distance
-            y_pos -= y_distance
-            x_pos -= x_distance
-            if x_pos != 0 or y_pos != 0:
-                data.plan.append(origin)
-                data.plan.append(offset(-x_pos, -y_pos))
-            data.plan.extend(post_plan)
-            self.signal("plan", data.name, None)
-            return data_type, data
+        # @self.console_argument("cols", type=int, help=_("columns for the grid"))
+        # @self.console_argument("rows", type=int, help=_("rows for the grid"))
+        # @self.console_argument(
+        #     "x_distance", type=self.length_x, help=_("x_distance each column step")
+        # )
+        # @self.console_argument(
+        #     "y_distance", type=self.length_y, help=_("y_distance each row step")
+        # )
+        # @self.console_command(
+        #     "step_repeat",
+        #     help=_("plan<?> step_repeat"),
+        #     input_type="plan",
+        #     output_type="plan",
+        # )
+        # def plan_step_repeat(
+        #     command,
+        #     channel,
+        #     _,
+        #     cols=0,
+        #     rows=0,
+        #     x_distance=None,
+        #     y_distance=None,
+        #     data_type=None,
+        #     data=None,
+        #     **kwgs,
+        # ):
+        #     # pylint: disable=no-member
+        #     # No member calls are for dynamically attributed values.
+        #     if y_distance is None:
+        #         raise CommandSyntaxError
+        #     # Following must be in same order as added in preprocess()
+        #     pre_plan_items = (
+        #         (self.prephysicalhome, physicalhome),
+        #         (self.prehome, home),
+        #     )
+        #     # Following must be in reverse order as added in preprocess()
+        #     post_plan_items = (
+        #         (self.autointerrupt, interrupt),
+        #         (self.autobeep, beep),
+        #         (self.postunlock, unlock),
+        #         (self.autoorigin, origin),
+        #         (self.autophysicalhome, physicalhome),
+        #         (self.autohome, home),
+        #     )
+        #     post_plan = []
+        #
+        #     c_plan = list(data.plan)
+        #     data.plan.clear()
+        #     data.commands.clear()
+        #     for cmd, func in pre_plan_items:
+        #         if cmd and c_plan[0] is func:
+        #             data.plan.append(c_plan.pop(0))
+        #         elif type(c_plan[0]) == str:  # Rotary disabled
+        #             data.plan.append(c_plan.pop(0))
+        #
+        #     for cmd, func in post_plan_items:
+        #         if cmd and c_plan[-1] is func:
+        #             post_plan.insert(0, c_plan.pop())
+        #         elif type(c_plan[-1]) == str:  # Rotary disabled
+        #             post_plan.insert(0, c_plan.pop())
+        #
+        #         # Sophist: Following try/except commented out as
+        #         # exceptions need to be narrow not global in scope.
+        #         # try:
+        #         if x_distance is None:
+        #             x_distance = f"{100.0 / (cols + 1)}%"
+        #         if y_distance is None:
+        #             y_distance = f"{100.0 / (rows + 1)}%"
+        #     # except Exception:
+        #     # pass
+        #     x_last = 0
+        #     y_last = 0
+        #     y_pos = 0
+        #     x_pos = 0
+        #
+        #     for j in range(rows):
+        #         x_pos = 0
+        #         for k in range(cols):
+        #             x_offset = x_pos - x_last
+        #             y_offset = y_pos - y_last
+        #             data.plan.append(origin)
+        #             if x_offset != 0 or y_offset != 0:
+        #                 data.plan.append(offset(x_offset, y_offset))
+        #
+        #             data.plan.extend(c_plan)
+        #             x_last = x_pos
+        #             y_last = y_pos
+        #             x_pos += x_distance
+        #         y_pos += y_distance
+        #     y_pos -= y_distance
+        #     x_pos -= x_distance
+        #     if x_pos != 0 or y_pos != 0:
+        #         data.plan.append(origin)
+        #         data.plan.append(offset(-x_pos, -y_pos))
+        #     data.plan.extend(post_plan)
+        #     self.signal("plan", data.name, None)
+        #     return data_type, data
 
         @self.console_command(
             "return",
@@ -881,7 +882,7 @@ def origin():
 
 def unlock():
     yield "rapid_mode"
-    yield "unlock"
+    yield "unlock_rail"
 
 
 def home():
@@ -893,20 +894,20 @@ def physicalhome():
     yield "home", 0, 0
 
 
-class offset:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        return f"offset_value ({self.x:.1f}, {self.y:.1f})"
-
-    def __call__(self, *args):
-        if len(args) > 1:
-            self.x = args[0]
-            self.y = args[1]
-        yield "wait_finish"
-        yield "set_position", -int(self.x), -int(self.y)
+# class offset:
+#     def __init__(self, x, y):
+#         self.x = x
+#         self.y = y
+#
+#     def __str__(self):
+#         return f"offset_value ({self.x:.1f}, {self.y:.1f})"
+#
+#     def __call__(self, *args):
+#         if len(args) > 1:
+#             self.x = args[0]
+#             self.y = args[1]
+#         yield "wait_finish"
+#         yield "set_position", -int(self.x), -int(self.y)
 
 
 def beep():

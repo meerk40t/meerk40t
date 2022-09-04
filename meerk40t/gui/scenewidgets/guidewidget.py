@@ -521,11 +521,11 @@ class GuideWidget(Widget):
         self.calc_area(False, w, h)
         p = self.scene.context
         self.scaled_conversion_x = (
-            p.device.length(str(1) + p.units_name, as_float=True)
+            p.device.length(f"1{p.units_name}", as_float=True)
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
         self.scaled_conversion_y = (
-            p.device.length(str(1) + p.units_name, as_float=True)
+            p.device.length(f"1{p.units_name}", as_float=True)
             * self.scene.widget_root.scene_widget.matrix.value_scale_y()
         )
         if self.scaled_conversion_x == 0:

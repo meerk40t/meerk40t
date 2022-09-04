@@ -19,6 +19,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
 from enum import Enum
+from time import time
 
 
 # LINEJOIN
@@ -69,6 +70,7 @@ class Node:
 
         self._selected = False
         self._emphasized = False
+        self._emphasized_time = None
         self._highlighted = False
         self._target = False
 
@@ -76,6 +78,9 @@ class Node:
 
         self._bounds = None
         self._bounds_dirty = True
+
+        self._paint_bounds = None
+        self._paint_bounds_dirty = True
 
         self.item = None
         self.icon = None
@@ -101,6 +106,9 @@ class Node:
 
     def __eq__(self, other):
         return other is self
+
+    def __hash__(self):
+        return id(self)
 
     @property
     def children(self):
@@ -130,8 +138,37 @@ class Node:
 
     @emphasized.setter
     def emphasized(self, value):
-        self._emphasized = value
+        if value != self._emphasized:
+            self._emphasized = value
+            self._emphasized_time = time() if value else None
         self.notify_emphasized(self)
+
+    @property
+    def emphasized_time(self):
+        # we intentionally reduce the resolution to 1/100 sec.
+        # to allow simultaneous assignments to return the same delta
+        factor = 100
+        if self._emphasized_time is None:
+            # Insanely high
+            result = float("inf")
+        else:
+            result = self._emphasized_time
+            result = round(result * factor) / factor
+        return result
+
+    def emphasized_since(self, reftime=None, fullres=False):
+        # we intentionally reduce the resolution to 1/100 sec.
+        # to allow simultaneous assignments to return the same delta
+        factor = 100
+        if reftime is None:
+            reftime = time()
+        if self._emphasized_time is None:
+            delta = 0
+        else:
+            delta = reftime - self._emphasized_time
+            if not fullres:
+                delta = round(delta * factor) / factor
+        return delta
 
     @property
     def selected(self):
@@ -152,7 +189,39 @@ class Node:
 
     @property
     def bounds(self):
-        return None
+        if not self._bounds_dirty:
+            return self._bounds
+
+        try:
+            self._bounds = self.bbox(with_stroke=False)
+        except AttributeError:
+            self._bounds = None
+
+        if self._children:
+            self._bounds = Node.union_bounds(self._children, bounds=self._bounds)
+        self._bounds_dirty = False
+        return self._bounds
+
+    @property
+    def paint_bounds(self):
+        if not self._paint_bounds_dirty:
+            return self._paint_bounds
+
+        try:
+            self._paint_bounds = self.bbox(with_stroke=True)
+        except AttributeError:
+            self._paint_bounds = None
+
+        if self._children:
+            self._paint_bounds = Node.union_bounds(
+                self._children, bounds=self._paint_bounds, attr="paint_bounds"
+            )
+        self._paint_bounds_dirty = False
+        return self._paint_bounds
+
+    def set_dirty_bounds(self):
+        self._paint_bounds_dirty = True
+        self._bounds_dirty = True
 
     @property
     def formatter(self):
@@ -401,8 +470,9 @@ class Node:
         Invalidation of the individual node.
         """
         self._points_dirty = True
-        self._bounds_dirty = True
+        self.set_dirty_bounds()
         self._bounds = None
+        self._paint_bounds = None
 
     def invalidated(self):
         """
@@ -462,12 +532,6 @@ class Node:
         except AttributeError:
             pass
 
-    def add_all(self, objects, type=None, name=None, pos=None):
-        for obj in objects:
-            self.add(obj, type=type, label=name, pos=pos)
-            if pos is not None:
-                pos += 1
-
     def add_reference(self, node=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
@@ -477,21 +541,7 @@ class Node:
         @param pos:
         @return:
         """
-
-        node_class = self._root.bootstrap["reference"]
-        reference_node = node_class(node, **kwargs)
-        if self._root is not None:
-            self._root.notify_created(reference_node)
-        reference_node.type = "reference"
-        reference_node.id = node.id
-        reference_node._parent = self
-        reference_node._root = node._root
-        if pos is None:
-            self._children.append(reference_node)
-        else:
-            self._children.insert(pos, reference_node)
-        reference_node.notify_attached(reference_node, pos=pos)
-        return reference_node
+        return self.add(node=node, type="reference", pos=pos, **kwargs)
 
     def add_node(self, node, pos=None):
         if node._parent is not None:
@@ -659,7 +709,7 @@ class Node:
             for ref in list(self._children):
                 node._children.append(ref)
                 ref._parent = node
-                # Dont call attach / detach, as the tree
+                # Don't call attach / detach, as the tree
                 # doesn't know about the new node yet...
         self.item = None
         self._parent = None
@@ -714,18 +764,21 @@ class Node:
         dest.insert_node(self, pos=pos)
 
     @staticmethod
-    def union_bounds(nodes):
+    def union_bounds(nodes, bounds=None, attr="bounds"):
         """
-        Returns the union of the node list given.
+        Returns the union of the node list given, optionally unioned the given bounds value
 
         @return: union of all bounds within the iterable.
         """
-        xmin = float("inf")
-        ymin = float("inf")
-        xmax = -xmin
-        ymax = -ymin
+        if bounds is None:
+            xmin = float("inf")
+            ymin = float("inf")
+            xmax = -xmin
+            ymax = -ymin
+        else:
+            xmin, ymin, xmax, ymax = bounds
         for e in nodes:
-            box = e.bounds
+            box = getattr(e, attr)
             if box is None:
                 continue
             if box[0] < xmin:

@@ -1,9 +1,11 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import CubicCut, CutGroup, LineCut, QuadCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
+from meerk40t.core.units import UNITS_PER_MM
 from meerk40t.svgelements import (
     Close,
     Color,
@@ -14,8 +16,6 @@ from meerk40t.svgelements import (
     Polygon,
     QuadraticBezier,
 )
-
-MILS_IN_MM = 39.3701
 
 
 class EngraveOpNode(Node, Parameters):
@@ -73,12 +73,6 @@ class EngraveOpNode(Node, Parameters):
     def __copy__(self):
         return EngraveOpNode(self)
 
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
-        return self._bounds
-
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
     #     if maxspeed is not None and self.speed > maxspeed:
@@ -113,7 +107,7 @@ class EngraveOpNode(Node, Parameters):
         if ct > 0:
             s = self.color.hex + "-" + t
         default_map["colcode"] = s
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "(stop)" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         return default_map
@@ -196,13 +190,13 @@ class EngraveOpNode(Node, Parameters):
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
                                     self.add_reference(node)
-                                # Have classified but more classification might be needed
-                                return True, self.stopop
+                                    # Have classified but more classification might be needed
+                                    return True, self.stopop
                 else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
-                    # Have classified but more classification might be needed
-                    return True, self.stopop
+                        # Have classified but more classification might be needed
+                        return True, self.stopop
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
@@ -242,15 +236,32 @@ class EngraveOpNode(Node, Parameters):
                 continue
             length = path.length(error=1e-2, min_depth=2)
             try:
-                estimate += length / (MILS_IN_MM * self.speed)
+                estimate += length / (UNITS_PER_MM * self.speed)
             except ZeroDivisionError:
                 estimate = float("inf")
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
 
+        if isnan(estimate):
+            estimate = 0
+
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+
+    def preprocess(self, context, matrix, commands):
+        """
+        Preprocess hatch values
+
+        @param context:
+        @param matrix:
+        @param commands:
+        @return:
+        """
+        native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
+        self.settings["native_mm"] = native_mm
+        self.settings["native_speed"] = self.speed * native_mm
+        self.settings["native_rapid_speed"] = self.rapid_speed * native_mm
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """Generator of cutobjects for a particular operation."""

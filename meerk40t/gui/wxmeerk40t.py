@@ -1,7 +1,6 @@
 import os
 import platform
 import sys
-import threading
 import traceback
 from datetime import datetime
 
@@ -30,6 +29,7 @@ from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_saf
 
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
+from .alignment import Alignment
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -39,8 +39,11 @@ from .icons import (
     icons8_home_filled_50,
     icons8_pause_50,
 )
+from .imagesplitter import RenderSplit
 from .keymap import Keymap
+from .lasertoolpanel import LaserTool
 from .notes import Notes
+from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
@@ -366,6 +369,10 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Simulation", Simulation)
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
+        kernel.register("window/Alignment", Alignment)
+        kernel.register("window/SplitImage", RenderSplit)
+        kernel.register("window/OperationInfo", OperationInformation)
+        kernel.register("window/Lasertool", LaserTool)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
@@ -390,10 +397,6 @@ class wxMeerK40t(wx.App, Module):
         from meerk40t.gui.opassignment import register_panel_operation_assign
 
         kernel.register("wxpane/opassign", register_panel_operation_assign)
-
-        from meerk40t.gui.lasertoolpanel import register_panel_lasertool
-
-        kernel.register("wxpane/Lasertool", register_panel_lasertool)
 
         from meerk40t.gui.snapoptions import register_panel_snapoptions
 
@@ -539,8 +542,11 @@ class wxMeerK40t(wx.App, Module):
                 window_uri = window_class
                 window_class = context.lookup(window_uri)
 
-            if hasattr(window_class, "required_path"):
-                path = context.get_context(window_class.required_path)
+            new_path = context.lookup(f"winpath/{window}")
+            if new_path:
+                path = new_path
+            else:
+                path = context
 
             window_name = f"{window_uri}:{multi}" if multi is not None else window_uri
 
@@ -553,7 +559,7 @@ class wxMeerK40t(wx.App, Module):
                 channel(_("Window closed: {window}").format(window=window))
 
             if command == "open":
-                if context.lookup(window_uri) is not None:
+                if path.lookup(window_uri) is not None:
                     if wx.IsMainThread():
                         window_open(None)
                     else:
@@ -572,7 +578,7 @@ class wxMeerK40t(wx.App, Module):
                         # kernel.run_later(window_close, None)
                     else:
                         if wx.IsMainThread():
-                            window_open(window_open(), None)
+                            window_open(None)
                         else:
                             wx.CallAfter(window_open, None)
                         # kernel.run_later(window_open, None)

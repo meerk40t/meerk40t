@@ -1,13 +1,12 @@
 from copy import copy
+from math import isnan
 
 from meerk40t.core.cutcode import RasterCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import Length
+from meerk40t.core.units import MM_PER_INCH, UNITS_PER_INCH, Length
 from meerk40t.svgelements import Color, Path, Polygon
-
-MILS_IN_MM = 39.3701
 
 
 class ImageOpNode(Node, Parameters):
@@ -48,13 +47,6 @@ class ImageOpNode(Node, Parameters):
 
     def __copy__(self):
         return ImageOpNode(self)
-
-    @property
-    def bounds(self):
-        if self._bounds_dirty:
-            self._bounds = Node.union_bounds(self.flat(types=elem_ref_nodes))
-            self._bounds_dirty = False
-        return self._bounds
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
@@ -97,11 +89,12 @@ class ImageOpNode(Node, Parameters):
         default_map["speed"] = "default"
         default_map["power"] = "default"
         default_map["frequency"] = "default"
-        default_map["opstop"] = "❌" if self.stopop else ""
+        default_map["opstop"] = "<stop>" if self.stopop else ""
         default_map.update(self.settings)
         default_map["color"] = self.color.hexrgb if self.color is not None else ""
         default_map["colcode"] = self.color.hexrgb if self.color is not None else ""
         default_map["overscan"] = f"±{self.overscan}"
+        # print(self.dangerous, self.stopop, self.raster_direction)
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -168,20 +161,47 @@ class ImageOpNode(Node, Parameters):
             self.add_node(copy(node.node))
 
     def time_estimate(self):
+        """
+        The scanlines would equal "(e.height * 1000) / dpi" but our images are pre-actualized.
+
+        @return:
+        """
         estimate = 0
         for node in self.children:
             if node.type == "reference":
                 node = node.node
             try:
                 e = node.image
+                dpi = node.dpi
             except AttributeError:
                 continue
-            step = node.step_x
-            estimate += (e.image_width * e.image_height * step) / (
-                MILS_IN_MM * self.speed
-            )
+            min_x, min_y, max_x, max_y = node.bounds
+            width_in_inches = (max_x - min_x) / UNITS_PER_INCH
+            height_in_inches = (max_y - min_y) / UNITS_PER_INCH
+            speed_in_per_s = self.speed / MM_PER_INCH
+            if self.raster_direction in (0, 1, 4):
+                scanlines = height_in_inches * dpi
+                if self.raster_swing:
+                    scanlines *= 2
+                estimate += (
+                    scanlines * width_in_inches / speed_in_per_s
+                    + height_in_inches / speed_in_per_s
+                )
+            if self.raster_direction in (2, 3, 4):
+                scanlines = width_in_inches * dpi
+                if self.raster_swing:
+                    scanlines *= 2
+                estimate += (
+                    scanlines * height_in_inches / speed_in_per_s
+                    + width_in_inches / speed_in_per_s
+                )
+
         if self.passes_custom and self.passes != 1:
             estimate *= max(self.passes, 1)
+
+        if isnan(estimate):
+            estimate = 0
+
         hours, remainder = divmod(estimate, 3600)
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"

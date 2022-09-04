@@ -25,7 +25,10 @@ from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
 from meerk40t.core.node.refnode import ReferenceNode
 from meerk40t.core.node.util_console import ConsoleOperation
+from meerk40t.core.node.util_goto import GotoOperation
+from meerk40t.core.node.util_home import HomeOperation
 from meerk40t.core.node.util_input import InputOperation
+from meerk40t.core.node.util_origin import SetOriginOperation
 from meerk40t.core.node.util_output import OutputOperation
 from meerk40t.core.node.util_wait import WaitOperation
 
@@ -43,44 +46,16 @@ class RootNode(Node):
         self._root = self
         self.context = context
         self.listeners = []
-
-        self.bootstrap = {
-            "op cut": CutOpNode,
-            "op engrave": EngraveOpNode,
-            "op raster": RasterOpNode,
-            "op image": ImageOpNode,
-            "op dots": DotsOpNode,
-            "op hatch": HatchOpNode,
-            "util console": ConsoleOperation,
-            "util wait": WaitOperation,
-            "util input": InputOperation,
-            "util output": OutputOperation,
-            "lasercode": LaserCodeNode,
-            "blob": BlobNode,
-            "group": GroupNode,
-            "layer": LayerNode,
-            "elem ellipse": EllipseNode,
-            "elem line": LineNode,
-            "elem rect": RectNode,
-            "elem path": PathNode,
-            "elem point": PointNode,
-            "elem polyline": PolylineNode,
-            "elem image": ImageNode,
-            "elem text": TextNode,
-            "elem numpath": NumpathNode,
-            "reference": ReferenceNode,
-            "cutcode": CutNode,
-            "branch ops": BranchOperationsNode,
-            "branch elems": BranchElementsNode,
-            "branch reg": BranchRegmarkNode,
-            "file": FileNode,
-        }
+        self.bootstrap = bootstrap
         self.add(type="branch ops", label=_("Operations"))
         self.add(type="branch elems", label=_("Elements"))
         self.add(type="branch reg", label=_("Regmarks"))
 
     def __repr__(self):
         return f"RootNode({str(self.context)})"
+
+    def __copy__(self):
+        return RootNode(self.context)
 
     def is_movable(self):
         return False
@@ -219,3 +194,40 @@ class RootNode(Node):
         for listen in self.listeners:
             if hasattr(listen, "focus"):
                 listen.focus(node, **kwargs)
+
+
+bootstrap = {
+    "root": RootNode,
+    "op cut": CutOpNode,
+    "op engrave": EngraveOpNode,
+    "op raster": RasterOpNode,
+    "op image": ImageOpNode,
+    "op dots": DotsOpNode,
+    "op hatch": HatchOpNode,
+    "util console": ConsoleOperation,
+    "util wait": WaitOperation,
+    "util origin": SetOriginOperation,
+    "util home": HomeOperation,
+    "util goto": GotoOperation,
+    "util input": InputOperation,
+    "util output": OutputOperation,
+    "lasercode": LaserCodeNode,
+    "blob": BlobNode,
+    "group": GroupNode,
+    "layer": LayerNode,
+    "elem ellipse": EllipseNode,
+    "elem line": LineNode,
+    "elem rect": RectNode,
+    "elem path": PathNode,
+    "elem point": PointNode,
+    "elem polyline": PolylineNode,
+    "elem image": ImageNode,
+    "elem text": TextNode,
+    "elem numpath": NumpathNode,
+    "reference": ReferenceNode,
+    "cutcode": CutNode,
+    "branch ops": BranchOperationsNode,
+    "branch elems": BranchElementsNode,
+    "branch reg": BranchRegmarkNode,
+    "file": FileNode,
+}

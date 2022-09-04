@@ -1,10 +1,11 @@
 import os
 import re
 import struct
+import time
 
 from meerk40t.balormk.driver import BalorDriver
 from meerk40t.core.spoolers import Spooler
-from meerk40t.core.units import Angle, Length, ViewPort
+from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length, ViewPort
 from meerk40t.kernel import Service
 from meerk40t.svgelements import Matrix, Path, Point, Polygon, Polyline
 
@@ -30,6 +31,10 @@ class ElementLightJob:
         self.quantization = quantization
         self.simulate = simulate
         self.priority = -1
+        self.label = "Element Light Job"
+        self.time_submitted = time.time()
+        self.time_started = time.time()
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped and self.started
@@ -37,6 +42,7 @@ class ElementLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -46,10 +52,26 @@ class ElementLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
         return True
 
     def stop(self):
         self.stopped = True
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
 
     def process(self, con):
         if self.stopped:
@@ -63,10 +85,16 @@ class ElementLightJob:
         con.light_mode()
 
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         delay_dark = self.jump_delay
 
@@ -130,6 +158,10 @@ class LiveSelectionLightJob:
         self._current_points = None
         self._last_bounds = None
         self.priority = -1
+        self.label = "Live Selection Light Job"
+        self.time_submitted = time.time()
+        self.time_started = time.time()
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped
@@ -137,6 +169,7 @@ class LiveSelectionLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -146,6 +179,7 @@ class LiveSelectionLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
         return True
 
     def update_points(self, bounds):
@@ -156,10 +190,16 @@ class LiveSelectionLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         rotate.post_translate(x_offset, y_offset)
 
@@ -225,6 +265,21 @@ class LiveSelectionLightJob:
     def stop(self):
         self.stopped = True
 
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
+
     def process(self, con):
         if self.stopped:
             return False
@@ -266,9 +321,12 @@ class LiveFullLightJob:
         self.stopped = False
         self.started = False
         self.changed = False
-        service.listen("emphasized", self.on_emphasis_changed)
         self._last_bounds = None
         self.priority = -1
+        self.label = "Live Full Light Job"
+        self.time_submitted = time.time()
+        self.time_started = time.time()
+        self.runtime = 0
 
     def is_running(self):
         return not self.stopped
@@ -276,6 +334,8 @@ class LiveFullLightJob:
     def execute(self, driver):
         if self.stopped:
             return True
+        self.service.listen("emphasized", self.on_emphasis_changed)
+        self.time_started = time.time()
         self.started = True
         connection = driver.connection
         connection.rapid_mode()
@@ -285,11 +345,27 @@ class LiveFullLightJob:
                 break
         connection.abort()
         self.stopped = True
+        self.runtime += time.time() - self.time_started
+        self.service.unlisten("emphasized", self.on_emphasis_changed)
         return True
 
     def stop(self):
         self.stopped = True
-        self.service.unlisten("emphasized", self.on_emphasis_changed)
+
+    def elapsed_time(self):
+        """
+        How long is this job already running...
+        """
+        result = 0
+        if self.runtime != 0:
+            result = self.runtime
+        else:
+            if self.is_running():
+                result = time.time() - self.time_started
+        return result
+
+    def estimate_time(self):
+        return 0
 
     def on_emphasis_changed(self, *args):
         self.changed = True
@@ -299,10 +375,16 @@ class LiveFullLightJob:
         rotate = Matrix()
         rotate.post_rotate(self.service.redlight_angle.radians, 0x8000, 0x8000)
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         rotate.post_translate(x_offset, y_offset)
 
@@ -372,10 +454,16 @@ class LiveFullLightJob:
             return self.crosshairs(con)
 
         x_offset = self.service.length(
-            self.service.redlight_offset_x, axis=0, as_float=True
+            self.service.redlight_offset_x,
+            axis=0,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         y_offset = self.service.length(
-            self.service.redlight_offset_y, axis=1, as_float=True
+            self.service.redlight_offset_y,
+            axis=1,
+            as_float=True,
+            unitless=UNITS_PER_PIXEL,
         )
         quantization = 50
         rotate = Matrix()
@@ -447,7 +535,7 @@ class BalorDevice(Service, ViewPort):
         self.job = None
 
         _ = kernel.translation
-
+        self.register("frequency", (0, 1000))
         self.register(
             "format/op cut",
             "{danger}{defop}{enabled}{pass}{element_type} {speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
@@ -466,7 +554,7 @@ class BalorDevice(Service, ViewPort):
         )
         self.register(
             "format/op image",
-            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode} {opstop}",
+            "{danger}{defop}{enabled}{penvalue}{pass}{element_type}{direction}{speed}mm/s @{power} {frequency}kHz {colcode}",
         )
         self.register(
             "format/op dots",
@@ -500,14 +588,18 @@ class BalorDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                "section": "_00_General",
+                "priority": "10",
             },
             {
                 "attr": "corfile_enabled",
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Enable Correction File"),
+                "label": _("Enable"),
                 "tip": _("Use correction file?"),
+                "section": "_00_General",
+                "subsection": "Correction File",
             },
             {
                 "attr": "corfile",
@@ -517,8 +609,11 @@ class BalorDevice(Service, ViewPort):
                 "style": "file",
                 "wildcard": "*.cor",
                 "conditional": (self, "corfile_enabled"),
-                "label": _("Correction File"),
+                "label": _("File"),
                 "tip": _("Provide a correction file for the machine"),
+                "weight": 3,
+                "section": "_00_General",
+                "subsection": "Correction File",
             },
             {
                 "attr": "lens_size",
@@ -527,38 +622,48 @@ class BalorDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Width"),
                 "tip": _("Lens Size"),
+                "section": "_00_General",
+                "priority": "20",
             },
             {
                 "attr": "offset_x",
                 "object": self,
                 "default": "0mm",
                 "type": Length,
-                "label": _("Offset X"),
+                "label": _("X-Axis"),
                 "tip": _("Offset in the X axis"),
+                "section": "_10_Parameters",
+                "subsection": "_25_Offset",
             },
             {
                 "attr": "offset_y",
                 "object": self,
                 "default": "0mm",
                 "type": Length,
-                "label": _("Offset Y"),
+                "label": _("Y-Axis"),
                 "tip": _("Offset in the Y axis"),
+                "section": "_10_Parameters",
+                "subsection": "_25_Offset",
             },
             {
                 "attr": "scale_x",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
-                "label": _("Scale X"),
+                "label": _("X-Axis"),
                 "tip": _("Scale the X axis"),
+                "section": "_10_Parameters",
+                "subsection": "_20_Scale",
             },
             {
                 "attr": "scale_y",
                 "object": self,
-                "default": "0",
+                "default": "1.0",
                 "type": float,
-                "label": _("Scale Y"),
+                "label": _("Y-Axis"),
                 "tip": _("Scale the Y axis"),
+                "section": "_10_Parameters",
+                "subsection": "_20_Scale",
             },
             {
                 "attr": "flip_x",
@@ -567,6 +672,8 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Flip X"),
                 "tip": _("Flip the X axis for the Balor device"),
+                "section": "_10_Parameters",
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "flip_y",
@@ -575,6 +682,8 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Flip Y"),
                 "tip": _("Flip the Y axis for the Balor device"),
+                "section": "_10_Parameters",
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "swap_xy",
@@ -583,6 +692,8 @@ class BalorDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Swap XY"),
                 "tip": _("Swap the X and Y axis for the device"),
+                "section": "_10_Parameters",
+                "subsection": "_10_Axis corrections",
             },
             {
                 "attr": "interpolate",
@@ -590,6 +701,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 50,
                 "type": int,
                 "label": _("Curve Interpolation"),
+                "section": "_10_Parameters",
                 "tip": _("Number of curve interpolation points"),
             },
             {
@@ -601,6 +713,8 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                "section": "_00_General",
+                "priority": "30",
             },
             {
                 "attr": "machine_index",
@@ -611,22 +725,27 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(
                     "Which machine should we connect to? -- Leave at 0 if you have 1 machine."
                 ),
+                "section": "_00_General",
             },
             {
                 "attr": "footpedal_pin",
                 "object": self,
                 "default": 15,
                 "type": int,
-                "label": _("Pin Index of footpedal"),
+                "label": _("Footpedal"),
                 "tip": _("What pin is your foot pedal hooked to on the GPIO"),
+                "section": "_10_Parameters",
+                "subsection": "_30_Pin-Index",
             },
             {
                 "attr": "light_pin",
                 "object": self,
                 "default": 8,
                 "type": int,
-                "label": _("Pin Index of redlight laser"),
+                "label": _("Redlight laser"),
                 "tip": _("What pin is your redlight hooked to on the GPIO"),
+                "section": "_10_Parameters",
+                "subsection": "_30_Pin-Index",
             },
         ]
         self.register_choices("balor", choices)
@@ -645,26 +764,29 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": "0mm",
                 "type": Length,
-                "label": _("Redlight X Offset"),
+                "label": _("X-Offset"),
                 "tip": _("Offset the redlight positions by this amount in x"),
+                "subsection": "Redlight-Offset",
             },
             {
                 "attr": "redlight_offset_y",
                 "object": self,
                 "default": "0mm",
                 "type": Length,
-                "label": _("Redlight Y Offset"),
+                "label": _("Y-Offset"),
                 "tip": _("Offset the redlight positions by this amount in y"),
+                "subsection": "Redlight-Offset",
             },
             {
                 "attr": "redlight_angle",
                 "object": self,
                 "default": "0deg",
                 "type": Angle,
-                "label": _("Redlight Angle Offset"),
+                "label": _("Angle Offset"),
                 "tip": _(
                     "Offset the redlight positions by this angle, curving around center"
                 ),
+                "subsection": "Redlight-Offset",
             },
             {
                 "attr": "redlight_preferred",
@@ -675,6 +797,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _(
                     "Redlight preference will turn toggleable redlights on after a job completes."
                 ),
+                "priority": "0",
             },
         ]
         self.register_choices("balor-redlight", choices)
@@ -686,6 +809,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 50.0,
                 "type": float,
                 "label": _("Laser Power"),
+                "trailer": "%",
                 "tip": _("How what power level do we cut at?"),
             },
             {
@@ -693,6 +817,7 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": 100.0,
                 "type": float,
+                "trailer": "mm/s",
                 "label": _("Cut Speed"),
                 "tip": _("How fast do we cut?"),
             },
@@ -701,6 +826,7 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": 30.0,
                 "type": float,
+                "trailer": "kHz",
                 "label": _("Q Switch Frequency"),
                 "tip": _("QSwitch Frequency value"),
             },
@@ -710,6 +836,7 @@ class BalorDevice(Service, ViewPort):
                 "default": 2000.0,
                 "type": float,
                 "label": _("Travel Speed"),
+                "trailer": "mm/s",
                 "tip": _("How fast do we travel when not cutting?"),
             },
             {
@@ -717,8 +844,9 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": False,
                 "type": bool,
-                "label": _("Enable Pulse Width"),
+                "label": _("Enable"),
                 "tip": _("Enable using Pulse Width (MOPA)"),
+                "subsection": "Pulse Width",
             },
             {
                 "attr": "default_pulse_width",
@@ -746,7 +874,9 @@ class BalorDevice(Service, ViewPort):
                 ],
                 "conditional": (self, "pulse_width_enabled"),
                 "label": _("Set Pulse Width (ns)"),
+                "trailer": "ns",
                 "tip": _("Set the MOPA pulse width setting"),
+                "subsection": "Pulse Width",
             },
         ]
         self.register_choices("balor-global", choices)
@@ -757,16 +887,28 @@ class BalorDevice(Service, ViewPort):
                 "object": self,
                 "default": 100.0,
                 "type": float,
-                "label": _("Laser On Delay"),
-                "tip": _("Delay for the start of the laser"),
+                "label": _("Laser On"),
+                "trailer": "µs",
+                "tip": _(
+                    "Start delay (Start TC) at the beginning of each mark command"
+                ),
+                "section": "_10_General",
+                "subsection": "Delays",
+                "priority": "00",
             },
             {
                 "attr": "delay_laser_off",
                 "object": self,
                 "default": 100.0,
                 "type": float,
-                "label": _("Laser Off Delay"),
-                "tip": _("Delay amount for the end of the laser"),
+                "label": _("Laser Off"),
+                "trailer": "µs",
+                "tip": _(
+                    "The delay time of the laser shutting down after marking finished"
+                ),
+                "section": "_10_General",
+                "subsection": "Delays",
+                "priority": "10",
             },
             {
                 "attr": "delay_polygon",
@@ -774,7 +916,11 @@ class BalorDevice(Service, ViewPort):
                 "default": 100.0,
                 "type": float,
                 "label": _("Polygon Delay"),
+                "trailer": "µs",
                 "tip": _("Delay amount between different points in the path travel."),
+                "section": "_10_General",
+                "subsection": "Delays",
+                "priority": "30",
             },
             {
                 "attr": "delay_end",
@@ -782,23 +928,33 @@ class BalorDevice(Service, ViewPort):
                 "default": 300.0,
                 "type": float,
                 "label": _("End Delay"),
+                "trailer": "µs",
                 "tip": _("Delay amount for the end TC"),
+                "section": "_10_General",
+                "subsection": "Delays",
+                "priority": "20",
             },
             {
                 "attr": "delay_jump_long",
                 "object": self,
                 "default": 200.0,
                 "type": float,
-                "label": _("Jump Delay (long)"),
+                "label": _("Long jump delay"),
+                "trailer": "µs",
                 "tip": _("Delay for a long jump distance"),
+                "section": "_10_General",
+                "subsection": "Jump-Settings",
             },
             {
                 "attr": "delay_jump_short",
                 "object": self,
                 "default": 8,
                 "type": float,
-                "label": _("Jump Delay (short)"),
+                "label": _("Short jump delay"),
+                "trailer": "µs",
                 "tip": _("Delay for a short jump distance"),
+                "section": "_10_General",
+                "subsection": "Jump-Settings",
             },
             {
                 "attr": "delay_distance_long",
@@ -807,6 +963,8 @@ class BalorDevice(Service, ViewPort):
                 "type": Length,
                 "label": _("Long jump distance"),
                 "tip": _("Distance divide between long and short jump distances"),
+                "section": "_10_General",
+                "subsection": "Jump-Settings",
             },
             {
                 "attr": "delay_openmo",
@@ -814,7 +972,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 8.0,
                 "type": float,
                 "label": _("Open MO delay"),
+                "trailer": "ms",
                 "tip": _("OpenMO delay in ms"),
+                "section": "_90_Other",
             },
         ]
         self.register_choices("balor-global-timing", choices)
@@ -826,7 +986,12 @@ class BalorDevice(Service, ViewPort):
                 "default": 200,
                 "type": int,
                 "label": _("First Pulse Killer"),
-                "tip": _("Unknown"),
+                "trailer": "µs",
+                "tip": _(
+                    "First Pulse Killer (F.P.K): the lasting time for the first pulse suppress"
+                ),
+                "section": "First Pulse Killer",
+                "hidden": 1,
             },
             {
                 "attr": "pwm_half_period",
@@ -834,7 +999,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 125,
                 "type": int,
                 "label": _("PWM Half Period"),
-                "tip": _("Unknown"),
+                "tip": _("Pulse Period: the frequency of the preionization signal"),
+                "subsection": "Pulse-Width-Modulation",
+                "hidden": 1,
             },
             {
                 "attr": "pwm_pulse_width",
@@ -842,23 +1009,29 @@ class BalorDevice(Service, ViewPort):
                 "default": 125,
                 "type": int,
                 "label": _("PWM Pulse Width"),
-                "tip": _("Unknown"),
+                "tip": _("Pulse Width: the pulse width of the preionization signal"),
+                "subsection": "Pulse-Width-Modulation",
+                "hidden": 1,
             },
             {
                 "attr": "standby_param_1",
                 "object": self,
                 "default": 2000,
                 "type": int,
-                "label": _("Standby Parameter 1"),
-                "tip": _("Unknown"),
+                "label": _("Parameter 1"),
+                "tip": _(""),
+                "subsection": "Standby-Parameter",
+                "hidden": 1,
             },
             {
                 "attr": "standby_param_2",
                 "object": self,
                 "default": 20,
                 "type": int,
-                "label": _("Standby Parameter 2"),
-                "tip": _("Unknown"),
+                "label": _("Parameter 2"),
+                "tip": _(""),
+                "subsection": "Standby-Parameter",
+                "hidden": 1,
             },
             {
                 "attr": "timing_mode",
@@ -866,7 +1039,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Timing Mode"),
-                "tip": _("Unknown"),
+                "tip": _(""),
+                "subsection": "Modes",
+                "hidden": 1,
             },
             {
                 "attr": "delay_mode",
@@ -874,7 +1049,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Delay Mode"),
-                "tip": _("Unknown"),
+                "tip": _(""),
+                "subsection": "Modes",
+                "hidden": 1,
             },
             {
                 "attr": "laser_mode",
@@ -882,7 +1059,9 @@ class BalorDevice(Service, ViewPort):
                 "default": 1,
                 "type": int,
                 "label": _("Laser Mode"),
-                "tip": _("Unknown"),
+                "tip": _(""),
+                "subsection": "Modes",
+                "hidden": 1,
             },
             {
                 "attr": "control_mode",
@@ -890,71 +1069,97 @@ class BalorDevice(Service, ViewPort):
                 "default": 0,
                 "type": int,
                 "label": _("Control Mode"),
-                "tip": _("Unknown"),
+                "tip": _(""),
+                "subsection": "Modes",
+                "hidden": 1,
             },
             {
                 "attr": "fpk2_p1",
                 "object": self,
                 "default": 0xFFB,
                 "type": int,
-                "label": _("First Pulse Killer, Parameter 1"),
-                "tip": _("Unknown"),
+                "label": _("Max Voltage"),
+                "tip": _(""),
+                "trailer": "V",
+                "section": "First Pulse Killer",
+                "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fpk2_p2",
                 "object": self,
                 "default": 1,
                 "type": int,
-                "label": _("First Pulse Killer, Parameter 2"),
-                "tip": _("Unknown"),
+                "label": _("Min Voltage"),
+                "trailer": "V",
+                "tip": _(""),
+                "section": "First Pulse Killer",
+                "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fpk2_p3",
                 "object": self,
                 "default": 409,
                 "type": int,
-                "label": _("First Pulse Killer, Parameter 3"),
-                "tip": _("Unknown"),
+                "label": _("T1"),
+                "trailer": "µs",
+                "tip": _(""),
+                "section": "First Pulse Killer",
+                "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fpk2_p4",
                 "object": self,
                 "default": 100,
                 "type": int,
-                "label": _("First Pulse Killer, Parameter 4"),
-                "tip": _("Unknown"),
+                "label": _("T2"),
+                "trailer": "µs",
+                "tip": _(""),
+                "section": "First Pulse Killer",
+                "subsection": "Parameters",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p1",
                 "object": self,
                 "default": 0,
                 "type": int,
-                "label": _("Fly Res, Parameter 1"),
-                "tip": _("Unknown"),
+                "label": _("Param 1"),
+                "tip": _(""),
+                "subsection": "Fly Resolution",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p2",
                 "object": self,
                 "default": 99,
                 "type": int,
-                "label": _("Fly Res, Parameter 2"),
-                "tip": _("Unknown"),
+                "label": _("Param 2"),
+                "tip": _(""),
+                "subsection": "Fly Resolution",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p3",
                 "object": self,
                 "default": 1000,
                 "type": int,
-                "label": _("Fly Res, Parameter 3"),
-                "tip": _("Unknown"),
+                "label": _("Param 3"),
+                "tip": _(""),
+                "subsection": "Fly Resolution",
+                "hidden": 1,
             },
             {
                 "attr": "fly_res_p4",
                 "object": self,
                 "default": 25,
                 "type": int,
-                "label": _("Fly Res, Parameter 4"),
-                "tip": _("Unknown"),
+                "label": _("Param 4"),
+                "tip": _(""),
+                "subsection": "Fly Resolution",
+                "hidden": 1,
             },
         ]
         self.register_choices("balor-extra", choices)
@@ -1052,7 +1257,7 @@ class BalorDevice(Service, ViewPort):
                     quantization=quantization,
                     simulate=True,
                 )
-            self.spooler.command("light_loop", self.job.process)
+            self.spooler.send(self.job)
 
         @self.console_command(
             "select-light", help=_("Execute selection light idle job")
@@ -1061,7 +1266,7 @@ class BalorDevice(Service, ViewPort):
             if self.job is not None:
                 self.job.stop()
             self.job = LiveSelectionLightJob(self)
-            self.spooler.command("light_loop", self.job.process)
+            self.spooler.send(self.job)
 
         @self.console_command("full-light", help=_("Execute full light idle job"))
         def full_light(**kwargs):
@@ -1500,7 +1705,7 @@ class BalorDevice(Service, ViewPort):
             "mark_time",
             help=_("Checks the Mark Time."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_mark_time(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_time()
             if reply is None:
                 channel("Not connected, cannot get mark time.")
@@ -1513,7 +1718,7 @@ class BalorDevice(Service, ViewPort):
             "mark_count",
             help=_("Checks the Mark Count."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_mark_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_mark_count()
             if reply is None:
                 channel("Not connected, cannot get mark count.")
@@ -1526,7 +1731,7 @@ class BalorDevice(Service, ViewPort):
             "axis_pos",
             help=_("Checks the Axis Position."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_axis_pos(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_axis_pos()
             if reply is None:
                 channel("Not connected, cannot get axis position.")
@@ -1539,7 +1744,7 @@ class BalorDevice(Service, ViewPort):
             "user_data",
             help=_("Checks the User Data."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_user_data(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_user_data()
             if reply is None:
                 channel("Not connected, cannot get user data.")
@@ -1552,7 +1757,7 @@ class BalorDevice(Service, ViewPort):
             "position_xy",
             help=_("Checks the Position XY"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_position_xy(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_position_xy()
             if reply is None:
                 channel("Not connected, cannot get position xy.")
@@ -1565,7 +1770,7 @@ class BalorDevice(Service, ViewPort):
             "fly_speed",
             help=_("Checks the Fly Speed."),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fly_speed(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_speed()
             if reply is None:
                 channel("Not connected, cannot get fly speed.")
@@ -1578,7 +1783,7 @@ class BalorDevice(Service, ViewPort):
             "fly_wait_count",
             help=_("Checks the fiber config extend"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fly_wait_count(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fly_wait_count()
             if reply is None:
                 channel("Not connected, cannot get fly weight count.")
@@ -1591,7 +1796,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_st_mo_ap",
             help=_("Checks the fiber st mo ap"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fiber_st_mo_ap(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_st_mo_ap()
             if reply is None:
                 channel("Not connected, cannot get fiber_st_mo_ap.")
@@ -1604,7 +1809,7 @@ class BalorDevice(Service, ViewPort):
             "input_port",
             help=_("Checks the input_port"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_input_port(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_input_port()
             if reply is None:
                 channel("Not connected, cannot get input port.")
@@ -1617,7 +1822,7 @@ class BalorDevice(Service, ViewPort):
             "fiber_config_extend",
             help=_("Checks the fiber config extend"),
         )
-        def balor_status(command, channel, _, remainder=None, **kwgs):
+        def balor_fiber_config_extend(command, channel, _, remainder=None, **kwgs):
             reply = self.driver.connection.get_fiber_config_extend()
             if reply is None:
                 channel("Not connected, cannot get fiber config extend.")
@@ -1718,7 +1923,7 @@ class BalorDevice(Service, ViewPort):
             help=_("outline the current selected elements"),
             output_type="shapes",
         )
-        def element_outline(
+        def shapes_selected(
             command, channel, _, count=256, data=None, args=tuple(), **kwargs
         ):
             """
@@ -1746,7 +1951,7 @@ class BalorDevice(Service, ViewPort):
             input_type=(None, "elements"),
             output_type="shapes",
         )
-        def element_outline(command, channel, _, data=None, args=tuple(), **kwargs):
+        def shapes_hull(command, channel, _, data=None, args=tuple(), **kwargs):
             """
             Draws an outline of the current shape.
             """

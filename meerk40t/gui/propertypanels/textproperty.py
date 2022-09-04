@@ -9,6 +9,7 @@ from ...svgelements import Color
 from ..icons import icons8_choose_font_50, icons8_text_50
 from ..laserrender import swizzlecolor
 from ..mwindow import MWindow
+from .attributes import ColorPanel, IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
@@ -59,15 +60,119 @@ class PromptingComboBox(wx.ComboBox):
         event.Skip()
 
 
+class FontHistory(wx.Panel):
+    def __init__(self, *args, context=None, textbox=None, callback=None, **kwds):
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.FONTHISTORY = 4
+        self.context = context
+        self.last_font = []
+        self.callback = callback
+        self.textbox = textbox
+        self.default_font = wx.Font(
+            14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
+        )
+
+        for i in range(self.FONTHISTORY):
+            self.last_font.append(
+                wx.StaticText(
+                    self,
+                    wx.ID_ANY,
+                    _("<empty>"),
+                    style=wx.ALIGN_CENTER_VERTICAL
+                    # | wx.ST_ELLIPSIZE_END
+                    | wx.ST_NO_AUTORESIZE,
+                )
+            )
+            self.last_font[i].SetMinSize((120, 90))
+            self.last_font[i].SetFont(self.default_font)
+            self.last_font[i].SetToolTip(_("Choose last used font-settings"))
+            self.textbox.Bind(wx.EVT_TEXT, self.on_text_change)
+
+        self.load_font_history()
+        sizer_h_fonthistory = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Last Font-Entries")), wx.HORIZONTAL
+        )
+        for i in range(self.FONTHISTORY):
+            sizer_h_fonthistory.Add(
+                self.last_font[i], 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 1
+            )
+        self.SetSizer(sizer_h_fonthistory)
+        self.Layout()
+        for i in range(self.FONTHISTORY):
+            self.last_font[i].Bind(wx.EVT_LEFT_DOWN, self.on_last_font)
+
+    def on_text_change(self, event):
+        txt = self.textbox.GetValue()
+        for i in range(self.FONTHISTORY):
+            self.last_font[i].SetLabel(txt)
+        event.Skip()
+
+    def on_last_font(self, event):
+        if self.callback is None:
+            return
+        obj = event.EventObject
+        self.callback(obj.GetForegroundColour(), obj.GetFont())
+
+    def store_font_history(self, font):
+        fontdesc = font.GetNativeFontInfoDesc()
+        # Is the fontdesc already contained?
+        if fontdesc in self.history:
+            # print (f"Was already there: {fontdesc}")
+            return
+        for i in range(self.FONTHISTORY - 1, 0, -1):
+            self.history[i] = self.history[i - 1]
+        self.history[0] = fontdesc
+        for i in range(self.FONTHISTORY):
+            setattr(self.context, f"fonthistory_{i}", self.history[i])
+        self.context.flush()
+
+    def load_font_history(self):
+        self.history = []
+        defaultfontdesc = self.default_font.GetNativeFontInfoUserDesc()
+        for i in range(self.FONTHISTORY):
+            self.context.setting(str, f"fonthistory_{i}", defaultfontdesc)
+            fontdesc = getattr(self.context, f"fonthistory_{i}")
+            self.history.append(fontdesc)
+            font = wx.Font(fontdesc)
+            self.last_font[i].SetFont(font)
+
+
+class TextVariables(wx.Panel):
+    def __init__(self, *args, context=None, textbox=None, **kwds):
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.textbox = textbox
+        # populate listbox
+        choices = self.context.elements.mywordlist.get_variable_list()
+        self.lb_variables = wx.ListBox(self, wx.ID_ANY, choices=choices)
+        self.lb_variables.SetToolTip(_("Double click a variable to add it to the text"))
+        sizer_h_variables = wx.StaticBoxSizer(
+            wx.StaticBox(
+                self, wx.ID_ANY, _("Available Variables (double click to use)")
+            ),
+            wx.HORIZONTAL,
+        )
+        sizer_h_variables.Add(self.lb_variables, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_h_variables)
+        self.Layout()
+        self.lb_variables.Bind(wx.EVT_LISTBOX_DCLICK, self.on_variable_dclick)
+
+    def on_variable_dclick(self, event):
+        svalue = event.GetString()
+        svalue = svalue[0 : svalue.find(" (")]
+        svalue = self.textbox.GetValue() + " {" + svalue + "}"
+        self.textbox.SetValue(svalue.strip(" "))
+
+
 class TextPropertyPanel(ScrolledPanel):
     def __init__(self, parent, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         super().__init__(parent, *args, **kwds)
         self.context = context
-        self.text_id = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_label = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
 
-        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
         self.node = node
         self.label_fonttest = wx.StaticText(
             self, wx.ID_ANY, "", style=wx.ST_ELLIPSIZE_END | wx.ST_NO_AUTORESIZE
@@ -84,42 +189,42 @@ class TextPropertyPanel(ScrolledPanel):
             )
         )
         self.button_choose_font = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap()
+            self, wx.ID_ANY, icons8_choose_font_50.GetBitmap(resize=25)
         )
-        self.button_stroke_none = wx.Button(self, wx.ID_ANY, "None")
-        self.button_stroke_none.name = "stroke none"
-        self.button_stroke_F00 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_F00.name = "stroke #F00"
-        self.button_stroke_0F0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_0F0.name = "stroke #0F0"
-        self.button_stroke_00F = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_00F.name = "stroke #00F"
-        self.button_stroke_F0F = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_F0F.name = "stroke #F0F"
-        self.button_stroke_0FF = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_0FF.name = "stroke #0FF"
-        self.button_stroke_FF0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_FF0.name = "stroke #FF0"
-        self.button_stroke_000 = wx.Button(self, wx.ID_ANY, "")
-        self.button_stroke_000.name = "stroke #000"
-
-        self.button_fill_none = wx.Button(self, wx.ID_ANY, "None")
-        self.button_fill_none.name = "fill none"
-        self.button_fill_F00 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_F00.name = "fill #F00"
-        self.button_fill_0F0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_0F0.name = "fill #0F0"
-        self.button_fill_00F = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_00F.name = "fill #00F"
-        self.button_fill_F0F = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_F0F.name = "fill #F0F"
-        self.button_fill_0FF = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_0FF.name = "fill #0FF"
-        self.button_fill_FF0 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_FF0.name = "fill #FF0"
-        self.button_fill_000 = wx.Button(self, wx.ID_ANY, "")
-        self.button_fill_000.name = "fill #000"
-
+        self.panel_id = IdPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panel_stroke = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            label="Stroke:",
+            attribute="stroke",
+            callback=self.callback_color,
+            context=self.context,
+            node=self.node,
+        )
+        self.panel_fill = ColorPanel(
+            self,
+            id=wx.ID_ANY,
+            label="Fill:",
+            attribute="fill",
+            callback=self.callback_color,
+            context=self.context,
+            node=self.node,
+        )
+        self.panel_xy = PositionSizePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panel_variables = TextVariables(
+            self, wx.ID_ANY, context=self.context, textbox=self.text_text
+        )
+        self.panel_history = FontHistory(
+            self,
+            wx.ID_ANY,
+            context=self.context,
+            textbox=self.text_text,
+            callback=self.font_callback,
+        )
         flist = wx.FontEnumerator()
         flist.EnumerateFacenames()
         elist = flist.GetFacenames()
@@ -159,30 +264,8 @@ class TextPropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        self.text_id.Bind(wx.EVT_KILL_FOCUS, self.on_text_id_change)
-        self.text_id.Bind(wx.EVT_TEXT_ENTER, self.on_text_id_change)
-        self.text_label.Bind(wx.EVT_KILL_FOCUS, self.on_text_label_change)
-        self.text_label.Bind(wx.EVT_TEXT_ENTER, self.on_text_label_change)
-
-        self.Bind(wx.EVT_TEXT, self.on_text_name_change, self.text_text)
-
-        self.Bind(wx.EVT_BUTTON, self.on_button_choose_font, self.button_choose_font)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_none)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F00)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_0F0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_00F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_F0F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_0FF)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_FF0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_stroke_000)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_none)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_F00)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_0F0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_00F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_F0F)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_0FF)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_FF0)
-        self.Bind(wx.EVT_BUTTON, self.on_button_color, self.button_fill_000)
+        self.Bind(wx.EVT_TEXT, self.on_text_change, self.text_text)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.text_text)
 
         self.Bind(wx.EVT_COMBOBOX, self.on_font_choice, self.combo_font)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_font_choice, self.combo_font)
@@ -215,18 +298,13 @@ class TextPropertyPanel(ScrolledPanel):
         pass
 
     def set_widgets(self, node):
+        self.panel_id.set_widgets(node)
+        self.panel_stroke.set_widgets(node)
+        self.panel_fill.set_widgets(node)
+        self.panel_xy.set_widgets(node)
+
         if node is not None:
             self.node = node
-        try:
-            if node.id is not None:
-                self.text_id.SetValue(str(node.id))
-        except AttributeError:
-            pass
-        try:
-            if node.label is not None:
-                self.text_label.SetValue(str(node.label))
-        except AttributeError:
-            pass
         try:
             if self.node.text is not None:
                 self.text_text.SetValue(self.node.text)
@@ -237,40 +315,12 @@ class TextPropertyPanel(ScrolledPanel):
                     pass
         except AttributeError:
             pass
+        self.text_text.SetFocus()
+        self.text_text.SelectAll()
 
     def __set_properties(self):
 
         self.button_choose_font.SetSize(self.button_choose_font.GetBestSize())
-        self.button_stroke_none.SetToolTip(_('"none" defined value'))
-        self.button_stroke_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
-        self.button_stroke_F00.SetToolTip(_("#FF0000 defined values."))
-        self.button_stroke_0F0.SetBackgroundColour(wx.Colour(0, 255, 0))
-        self.button_stroke_0F0.SetToolTip(_("#00FF00 defined values."))
-        self.button_stroke_00F.SetBackgroundColour(wx.Colour(0, 0, 255))
-        self.button_stroke_00F.SetToolTip(_("#00FF00 defined values."))
-        self.button_stroke_F0F.SetBackgroundColour(wx.Colour(255, 0, 255))
-        self.button_stroke_F0F.SetToolTip(_("#FF00FF defined values."))
-        self.button_stroke_0FF.SetBackgroundColour(wx.Colour(0, 255, 255))
-        self.button_stroke_0FF.SetToolTip(_("#00FFFF defined values."))
-        self.button_stroke_FF0.SetBackgroundColour(wx.Colour(255, 255, 0))
-        self.button_stroke_FF0.SetToolTip(_("#FFFF00 defined values."))
-        self.button_stroke_000.SetBackgroundColour(wx.Colour(0, 0, 0))
-        self.button_stroke_000.SetToolTip(_("#000000 defined values."))
-        self.button_fill_none.SetToolTip(_('"none" defined value'))
-        self.button_fill_F00.SetBackgroundColour(wx.Colour(255, 0, 0))
-        self.button_fill_F00.SetToolTip(_("#FF0000 defined values."))
-        self.button_fill_0F0.SetBackgroundColour(wx.Colour(0, 255, 0))
-        self.button_fill_0F0.SetToolTip(_("#00FF00 defined values."))
-        self.button_fill_00F.SetBackgroundColour(wx.Colour(0, 0, 255))
-        self.button_fill_00F.SetToolTip(_("#00FF00 defined values."))
-        self.button_fill_F0F.SetBackgroundColour(wx.Colour(255, 0, 255))
-        self.button_fill_F0F.SetToolTip(_("#FF00FF defined values."))
-        self.button_fill_0FF.SetBackgroundColour(wx.Colour(0, 255, 255))
-        self.button_fill_0FF.SetToolTip(_("#00FFFF defined values."))
-        self.button_fill_FF0.SetBackgroundColour(wx.Colour(255, 255, 0))
-        self.button_fill_FF0.SetToolTip(_("#FFFF00 defined values."))
-        self.button_fill_000.SetBackgroundColour(wx.Colour(0, 0, 0))
-        self.button_fill_000.SetToolTip(_("#000000 defined values."))
 
         self.button_attrib_bold.SetFont(
             wx.Font(
@@ -326,73 +376,98 @@ class TextPropertyPanel(ScrolledPanel):
     def __do_layout(self):
         # begin wxGlade: TextProperty.__do_layout
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_id_label = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_id = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Id")), wx.VERTICAL
-        )
-        sizer_id.Add(self.text_id, 1, wx.EXPAND, 0)
-        sizer_label = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Label")), wx.VERTICAL
-        )
-        sizer_label.Add(self.text_label, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_id, 1, wx.EXPAND, 0)
-        sizer_id_label.Add(sizer_label, 1, wx.EXPAND, 0)
-        sizer_main.Add(sizer_id_label, 0, wx.EXPAND, 0)
-
-        sizer_fill = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Fill Color")), wx.VERTICAL
-        )
-        sizer_stroke = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Stroke Color")), wx.VERTICAL
-        )
+        sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
 
         sizer_font = wx.BoxSizer(wx.HORIZONTAL)
         sizer_font.Add(self.label_fonttest, 1, wx.EXPAND, 0)
 
         sizer_attrib = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_attrib.Add(self.button_choose_font, 0, 0, 0)
-        sizer_attrib.Add(self.combo_font, 0, 0, 0)
-        sizer_attrib.Add(self.button_attrib_larger, 0, 0, 0)
-        sizer_attrib.Add(self.button_attrib_smaller, 0, 0, 0)
-        sizer_attrib.Add(self.button_attrib_bold, 0, 0, 0)
-        sizer_attrib.Add(self.button_attrib_italic, 0, 0, 0)
-        sizer_attrib.Add(self.button_attrib_underline, 0, 0, 0)
-        sizer_attrib.Add(self.button_attrib_strikethrough, 0, 0, 0)
-
-        sizer_colors = wx.BoxSizer(wx.HORIZONTAL)
-
-        sizer_stroke.Add(self.button_stroke_none, 0, wx.EXPAND, 0)
-        sizer_stroke.Add(self.button_stroke_F00, 0, wx.EXPAND, 0)
-        sizer_stroke.Add(self.button_stroke_0F0, 0, wx.EXPAND, 0)
-        sizer_stroke.Add(self.button_stroke_00F, 0, wx.EXPAND, 0)
-        sizer_stroke.Add(self.button_stroke_F0F, 0, wx.EXPAND, 0)
-        sizer_stroke.Add(self.button_stroke_0FF, 0, wx.EXPAND, 0)
-        sizer_stroke.Add(self.button_stroke_FF0, 0, wx.EXPAND, 0)
-        sizer_stroke.Add(self.button_stroke_000, 0, wx.EXPAND, 0)
-        sizer_colors.Add(sizer_stroke, 1, wx.EXPAND, 0)
-
-        sizer_fill.Add(self.button_fill_none, 0, wx.EXPAND, 0)
-        sizer_fill.Add(self.button_fill_F00, 0, wx.EXPAND, 0)
-        sizer_fill.Add(self.button_fill_0F0, 0, wx.EXPAND, 0)
-        sizer_fill.Add(self.button_fill_00F, 0, wx.EXPAND, 0)
-        sizer_fill.Add(self.button_fill_F0F, 0, wx.EXPAND, 0)
-        sizer_fill.Add(self.button_fill_0FF, 0, wx.EXPAND, 0)
-        sizer_fill.Add(self.button_fill_FF0, 0, wx.EXPAND, 0)
-        sizer_fill.Add(self.button_fill_000, 0, wx.EXPAND, 0)
-        sizer_colors.Add(sizer_fill, 1, wx.EXPAND, 0)
+        sizer_attrib.Add(self.button_choose_font, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.combo_font, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.button_attrib_larger, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.button_attrib_smaller, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.button_attrib_bold, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.button_attrib_italic, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(self.button_attrib_underline, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_attrib.Add(
+            self.button_attrib_strikethrough, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
 
         sizer_anchor = wx.BoxSizer(wx.HORIZONTAL)
         sizer_anchor.Add(self.rb_align, 0, 0, 0)
         sizer_main.Add(self.text_text, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_attrib, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_anchor, 0, wx.EXPAND, 0)
-        sizer_main.Add(sizer_colors, 0, wx.EXPAND, 0)
+
+        self.notebook = wx.Notebook(self, id=wx.ID_ANY)
+        page_main = wx.Panel(self.notebook, wx.ID_ANY)
+        sizer_page_main = wx.BoxSizer(wx.VERTICAL)
+        self.panel_fill.Reparent(page_main)
+        self.panel_stroke.Reparent(page_main)
+        sizer_page_main.Add(self.panel_stroke, 0, wx.EXPAND, 0)
+        sizer_page_main.Add(self.panel_fill, 0, wx.EXPAND, 0)
+        page_main.SetSizer(sizer_page_main)
+
+        def on_size_mm(evt):
+            siz1 = self.GetSize()
+            siz = (siz1[0] - 20, -1)
+            page_main.SetSize(siz)
+            page_main.Layout()
+
+        page_main.Bind(wx.EVT_SIZE, on_size_mm)
+
+        page_extended = wx.Panel(self.notebook, wx.ID_ANY)
+        sizer_page_extended = wx.BoxSizer(wx.VERTICAL)
+        self.panel_xy.Reparent(page_extended)
+        sizer_page_extended.Add(self.panel_xy, 0, wx.EXPAND, 0)
+        page_extended.SetSizer(sizer_page_extended)
+
+        def on_size_ex(evt):
+            siz1 = self.GetSize()
+            siz = (siz1[0] - 20, -1)
+            page_extended.SetSize(siz)
+            page_extended.Layout()
+
+        page_extended.Bind(wx.EVT_SIZE, on_size_ex)
+
+        page_variables = wx.Panel(self.notebook, wx.ID_ANY)
+        sizer_page_variables = wx.BoxSizer(wx.VERTICAL)
+        self.panel_variables.Reparent(page_variables)
+        sizer_page_variables.Add(self.panel_variables, 1, wx.EXPAND, 0)
+        page_variables.SetSizer(sizer_page_variables)
+
+        def on_size_pv(evt):
+            siz1 = self.GetSize()
+            siz = (siz1[0] - 20, -1)
+            page_variables.SetSize(siz)
+            page_variables.Layout()
+
+        page_variables.Bind(wx.EVT_SIZE, on_size_pv)
+
+        page_fonthistory = wx.Panel(self.notebook, wx.ID_ANY)
+        sizer_page_history = wx.BoxSizer(wx.VERTICAL)
+        self.panel_history.Reparent(page_fonthistory)
+        sizer_page_history.Add(self.panel_history, 1, wx.EXPAND, 0)
+        page_fonthistory.SetSizer(sizer_page_history)
+
+        def on_size_fh(evt):
+            siz1 = self.GetSize()
+            siz = (siz1[0] - 20, -1)
+            page_fonthistory.SetSize(siz)
+            page_fonthistory.Layout()
+
+        page_fonthistory.Bind(wx.EVT_SIZE, on_size_fh)
+
+        self.notebook.AddPage(page_main, _("Colors"))
+        self.notebook.AddPage(page_variables, _("Text-Variables"))
+        self.notebook.AddPage(page_fonthistory, _("Font-History"))
+        self.notebook.AddPage(page_extended, _("Position"))
         sizer_main.Add(sizer_font, 1, wx.EXPAND, 0)
+        sizer_main.Add(self.notebook, 1, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         self.Layout()
         self.Centre()
-        # end wxGlade
 
     def update_label(self):
         try:
@@ -435,23 +510,16 @@ class TextPropertyPanel(ScrolledPanel):
         self.button_attrib_strikethrough.SetValue(self.node.strikethrough)
         self.combo_font.SetValue(self.node.wxfont.GetFaceName())
 
+    def font_callback(self, forecolor, newfont):
+        self.node.wxfont = newfont
+        self.node.fill = Color(swizzlecolor(forecolor))
+        wxfont_to_svg(self.node)
+        self.update_label()
+        self.refresh()
+
     def refresh(self):
         self.context.elements.signal("element_property_reload", self.node)
         self.context.signal("refresh_scene", "Scene")
-
-    def on_text_id_change(self, event=None):
-        try:
-            self.node.id = self.text_id.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
-
-    def on_text_label_change(self, event=None):
-        try:
-            self.node.label = self.text_label.GetValue()
-            self.context.elements.signal("element_property_update", self.node)
-        except AttributeError:
-            pass
 
     def on_button_smaller(self, event):
         try:
@@ -470,7 +538,6 @@ class TextPropertyPanel(ScrolledPanel):
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
-        event.Skip()
 
     def on_button_larger(self, event):
         try:
@@ -487,7 +554,6 @@ class TextPropertyPanel(ScrolledPanel):
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
-        event.Skip()
 
     def on_font_choice(self, event):
         lastfont = self.node.wxfont.GetFaceName()
@@ -498,7 +564,6 @@ class TextPropertyPanel(ScrolledPanel):
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
-        event.Skip()
 
     def on_button_bold(self, event):
         button = event.EventObject
@@ -516,7 +581,6 @@ class TextPropertyPanel(ScrolledPanel):
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
-        event.Skip()
 
     def on_button_italic(self, event):
         button = event.EventObject
@@ -528,7 +592,6 @@ class TextPropertyPanel(ScrolledPanel):
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
-        event.Skip()
 
     def on_button_underline(self, event):
         button = event.EventObject
@@ -537,7 +600,6 @@ class TextPropertyPanel(ScrolledPanel):
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
-        event.Skip()
 
     def on_button_strikethrough(self, event):
         button = event.EventObject
@@ -546,7 +608,6 @@ class TextPropertyPanel(ScrolledPanel):
         wxfont_to_svg(self.node)
         self.update_label()
         self.refresh()
-        event.Skip()
 
     def on_radio_box(self, event):
         new_anchor = event.GetInt()
@@ -560,7 +621,7 @@ class TextPropertyPanel(ScrolledPanel):
         self.update_label()
         self.refresh()
 
-    def on_text_name_change(self, event):  # wxGlade: TextProperty.<event_handler>
+    def on_text_change(self, event):  # wxGlade: TextProperty.<event_handler>
         try:
             self.node.text = self.text_text.GetValue()
             self.node.modified()
@@ -568,6 +629,10 @@ class TextPropertyPanel(ScrolledPanel):
             self.refresh()
         except AttributeError:
             pass
+        event.Skip()
+
+    def on_text_enter(self, event):  # wxGlade: TextProperty.<event_handler>
+        self.panel_history.store_font_history(self.node.wxfont)
         event.Skip()
 
     def on_button_choose_font(self, event):  # wxGlade: TextProperty.<event_handler>
@@ -599,31 +664,18 @@ class TextPropertyPanel(ScrolledPanel):
         dialog.Destroy()
         event.Skip()
 
-    def on_button_color(self, event):  # wxGlade: TextProperty.<event_handler>
-        button = event.EventObject
-        color = None
-        if "none" not in button.name:
-            color = button.GetBackgroundColour()
-            rgb = color.GetRGB()
-            color = swizzlecolor(rgb)
-            color = Color(color, 1.0)
-        if "stroke" in button.name:
-            if color is not None:
-                self.node.stroke = color
-                self.node.altered()
-            else:
-                self.node.stroke = Color("none")
-                self.node.altered()
-        elif "fill" in button.name:
-            if color is not None:
-                self.node.fill = color
-                self.node.altered()
-            else:
-                self.node.fill = Color("none")
-                self.node.altered()
+    def callback_color(self):
+        self.node.altered()
         self.update_label()
         self.refresh()
-        event.Skip()
+
+    # @signal_listener("textselect")
+    # def on_signal_select(self, origin, *args):
+    #     try:
+    #         self.text_text.SelectAll()
+    #         self.text_text.SetFocus()
+    #     except RuntimeError:
+    #         pass
 
 
 class TextProperty(MWindow):
