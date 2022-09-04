@@ -526,6 +526,8 @@ class CamInterfaceWidget(Widget):
                 self.cam.Bind(
                     wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
                 )
+            if sub_menu.MenuItemCount:
+                sub_menu.AppendSeparator()
 
             item = sub_menu.Append(
                 wx.ID_ANY, _("USB {usb_index}").format(usb_index=0), ""
