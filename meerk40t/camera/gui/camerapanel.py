@@ -1001,7 +1001,7 @@ class CameraURI(MWindow):
         _icon.CopyFromBitmap(icons8_camera_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: CameraURI.__set_properties
-        self.SetTitle(_("Camera URI"))
+        self.SetTitle(_("URI Manager"))
 
     def window_open(self):
         self.panel.pane_show()
