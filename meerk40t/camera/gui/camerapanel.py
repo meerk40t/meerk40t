@@ -550,7 +550,7 @@ class CamInterfaceWidget(Widget):
 
             menu.Append(
                 wx.ID_ANY,
-                _("Set URI"),
+                _("Manage URIs"),
                 sub_menu,
             )
             if menu.MenuItemCount != 0:
