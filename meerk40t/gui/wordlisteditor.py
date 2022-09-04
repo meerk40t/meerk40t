@@ -75,6 +75,37 @@ class WordlistPanel(wx.Panel):
         )
         sizer_grids.Add(self.grid_content, 1, wx.ALL | wx.EXPAND, 1)
 
+        sizer_edit_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_edit_button_add = wx.Button(self, wx.ID_ANY, "+")
+        self.btn_edit_button_del = wx.Button(self, wx.ID_ANY, "-")
+        self.btn_edit_button_edit = wx.Button(self, wx.ID_ANY, "e")
+        self.btn_edit_button_paste = wx.Button(self, wx.ID_ANY, "p")
+        self.btn_edit_button_add.SetToolTip(
+            _("Add a new entry for the active variable")
+        )
+        self.btn_edit_button_del.SetToolTip(
+            _("Delete the current entry for the active variable")
+        )
+        self.btn_edit_button_edit.SetToolTip(
+            _("Edit the current entry for the active variable")
+        )
+        self.btn_edit_button_paste.SetToolTip(
+            _("Paste the clipboard as new entries for the active variable, any line as new entry")
+        )
+        minsize = 23
+        self.btn_edit_button_add.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_button_del.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_button_edit.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_button_paste.SetMinSize(wx.Size(minsize, minsize))
+        sizer_edit_buttons.Add(self.btn_edit_button_add, 0, wx.EXPAND, 0)
+        sizer_edit_buttons.Add(self.btn_edit_button_del, 0, wx.EXPAND, 0)
+        sizer_edit_buttons.Add(self.btn_edit_button_edit, 0, wx.EXPAND, 0)
+        sizer_edit_buttons.Add(self.btn_edit_button_paste, 0, wx.EXPAND, 0)
+
+        dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
+        sizer_index.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_index.Add(sizer_edit_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         sizer_hdata.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
@@ -97,14 +128,14 @@ class WordlistPanel(wx.Panel):
 
         self.btn_backup = wx.Button(self, wx.ID_ANY, _("Backup Wordlist"))
         self.btn_backup.SetToolTip(_("Save current wordlist to disk"))
-        sizer_exit.Add(self.btn_backup, 0, 0, 0)
+        sizer_exit.Add(self.btn_backup, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.btn_restore = wx.Button(self, wx.ID_ANY, _("Restore Wordlist"))
         self.btn_restore.SetToolTip(_("Load wordlist from disk"))
-        sizer_exit.Add(self.btn_restore, 0, 0, 0)
+        sizer_exit.Add(self.btn_restore, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.lbl_message = wx.StaticText(self, wx.ID_ANY, "")
-        sizer_exit.Add(self.lbl_message, 1, 0, 0)
+        sizer_exit.Add(self.lbl_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(sizer_1)
         sizer_1.Fit(self)
@@ -125,6 +156,10 @@ class WordlistPanel(wx.Panel):
         self.grid_content.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_content)
         self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit)
         self.grid_content.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit)
+        self.btn_edit_button_add.Bind(wx.EVT_BUTTON, self.on_button_edit_add)
+        self.btn_edit_button_del.Bind(wx.EVT_BUTTON, self.on_button_edit_del)
+        self.btn_edit_button_edit.Bind(wx.EVT_BUTTON, self.on_button_edit_edit)
+        self.btn_edit_button_paste.Bind(wx.EVT_BUTTON, self.on_button_edit_paste)
 
         self.btn_import.Enable(False)
         self.populate_gui()
@@ -135,6 +170,43 @@ class WordlistPanel(wx.Panel):
 
     def pane_hide(self):
         pass
+
+    def on_button_edit_add(self, event):
+        skey = self.cur_skey
+        if skey is None:
+            return
+        self.wlist.add_value(self.cur_skey, "---", 0)
+        self.refresh_grid_content(skey, 0)
+
+    def on_button_edit_del(self, event):
+        skey = self.cur_skey
+        if skey is None:
+            return
+        index = self.grid_content.GetFirstSelected()
+        if index >= 0:
+            pass
+        self.wlist.delete_value(skey, index)
+        self.refresh_grid_content(skey, 0)
+
+    def on_button_edit_edit(self, event):
+        index = self.grid_content.GetFirstSelected()
+        if index >= 0:
+            self.cur_index = index
+            self.grid_content.EditLabel(self.cur_index)
+
+    def on_button_edit_paste(self, event):
+        text_data = wx.TextDataObject()
+        if wx.TheClipboard.Open():
+            success = wx.TheClipboard.GetData(text_data)
+            wx.TheClipboard.Close()
+        if success:
+            msg = text_data.GetText()
+            if msg is not None and len(msg)>0:
+                lines = msg.splitlines()
+                skey = self.cur_skey
+                for entry in lines:
+                    self.wlist.add_value(skey, entry, 0)
+                self.refresh_grid_content(skey, 0)
 
     def refresh_grid_wordlist(self):
         self.grid_wordlist.ClearAll()
@@ -149,6 +221,9 @@ class WordlistPanel(wx.Panel):
             )
             self.grid_wordlist.SetItem(index, 1, skey)
             self.grid_wordlist.SetItem(index, 2, str(self.wlist.content[skey][1] - 2))
+        self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER )
+        self.grid_wordlist.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.grid_wordlist.SetColumnWidth(2, wx.LIST_AUTOSIZE_USEHEADER )
 
     def get_column_text(self, grid, index, col):
         item = grid.GetItem(index, col)
@@ -165,6 +240,8 @@ class WordlistPanel(wx.Panel):
             )
             if idx == current + 2:
                 self.grid_content.SetItemTextColour(index, wx.RED)
+        wsize = self.grid_content.GetSize()
+        self.grid_content.SetColumnWidth(0, wsize[0] - 10)
 
     def on_grid_wordlist(self, event):
         current_item = event.Index

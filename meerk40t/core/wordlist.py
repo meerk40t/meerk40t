@@ -65,6 +65,19 @@ class Wordlist:
             ]  # incomplete, as it will be appended right after this
         self.content[skey].append(value)
 
+    def delete_value(self, skey, idx):
+        skey = skey.lower()
+        if not skey in self.content:
+            return
+        if idx is None or idx < 0:
+            return
+
+        # Zerobased outside + 2 inside
+        idx += 2
+        if idx >= len(self.content[skey]):
+            return
+        self.content[skey].pop(idx)
+
     def set_value(self, skey, value, idx=None, wtype=None):
         # Special treatment:
         # Index = None - use current
