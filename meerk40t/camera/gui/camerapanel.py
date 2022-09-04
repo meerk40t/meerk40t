@@ -508,7 +508,7 @@ class CamInterfaceWidget(Widget):
             menu.AppendSeparator()
 
             sub_menu = wx.Menu()
-            item = sub_menu.Append(wx.ID_ANY, _("Set URI"), "")
+            item = sub_menu.Append(wx.ID_ANY, _("Manage URIs"), "")
             self.cam.Bind(
                 wx.EVT_MENU,
                 lambda e: self.cam.context.open(
