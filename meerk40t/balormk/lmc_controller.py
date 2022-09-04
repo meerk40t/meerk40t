@@ -9,6 +9,7 @@ from meerk40t.fill.fills import Wobble
 DRIVER_STATE_RAPID = 0
 DRIVER_STATE_LIGHT = 1
 DRIVER_STATE_PROGRAM = 2
+DRIVER_STATE_RAW = 3
 
 nop = [0x02, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 empty = bytearray(nop * 0x100)
@@ -360,6 +361,9 @@ class GalvoController:
     # MODE SHIFTS
     #######################
 
+    def raw_mode(self):
+        self.mode = DRIVER_STATE_RAW
+
     def rapid_mode(self):
         if self.mode == DRIVER_STATE_RAPID:
             return
@@ -378,6 +382,9 @@ class GalvoController:
         self.service.signal("galvo;marktime", marktime)
         self.usb_log(f"Time taken for list execution: {marktime}")
         self.mode = DRIVER_STATE_RAPID
+
+    def raster_mode(self):
+        self.program_mode()
 
     def program_mode(self):
         if self.mode == DRIVER_STATE_PROGRAM:
