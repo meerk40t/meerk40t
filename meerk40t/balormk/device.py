@@ -1584,6 +1584,7 @@ class BalorDevice(Service, ViewPort):
                     if command >= 0x8000:
                         self.driver.connection._list_write(*v)
                     else:
+                        self.driver.connection._list_end()
                         self.driver.connection._command(*v)
                 return
 
