@@ -182,7 +182,7 @@ class TemplatePanel(wx.Panel):
         # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
         self.parameters = [
             ("speed", None, _("Speed"), "mm/s", False, True),
-            ("ppi", None, _("Power"), "ppi", False, True),
+            ("power", None, _("Power"), "ppi", False, True),
         ]
 
         if opidx == 0:
@@ -190,19 +190,19 @@ class TemplatePanel(wx.Panel):
             # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("ppi", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), "ppi", False, True),
             ]
         elif opidx == 1:
             # Engrave
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("ppi", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), "ppi", False, True),
             ]
         elif opidx == 2:
             # Raster
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("ppi", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), "ppi", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
             ]
@@ -210,7 +210,7 @@ class TemplatePanel(wx.Panel):
             # Image
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("ppi", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), "ppi", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
             ]
@@ -218,7 +218,7 @@ class TemplatePanel(wx.Panel):
             # Hatch
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
-                ("ppi", None, _("Power"), "ppi", False, True),
+                ("power", None, _("Power"), "ppi", False, True),
                 ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
                 ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
             ]
@@ -262,12 +262,14 @@ class TemplatePanel(wx.Panel):
 
     def on_combo_1(self, input):
         s_unit = ""
+        b_positive = True
         idx = self.combo_param_1.GetSelection()
         # 0 = internal_attribute, 1 = secondary_attribute,
         # 2 = Label, 3 = unit,
         # 4 = keep_unit, 5 = needs_to_be_positive)
         if idx >= 0 and idx < len(self.parameters):
             s_unit = self.parameters[idx][3]
+            b_positive = self.parameters[idx][5]
         self.unit_param_1a.SetLabel(s_unit)
         self.unit_param_1b.SetLabel(s_unit)
         # And now enter validation...
@@ -661,7 +663,7 @@ class TemplatePanel(wx.Panel):
             self.text_min_1.SetValue(self.context.template_min1)
             self.text_max_1.SetValue(self.context.template_max1)
             self.text_min_2.SetValue(self.context.template_min2)
-            self.text_max_2.SetValue(self.context.template_max1)
+            self.text_max_2.SetValue(self.context.template_max2)
             self.spin_count_1.SetValue(self.context.template_count1)
             self.spin_count_2.SetValue(self.context.template_count2)
             self.spin_dim_1.SetValue(self.context.template_dim1)
