@@ -1563,23 +1563,18 @@ class Alignment(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.scene = getattr(self.context.root, "mainscene", None)
-        # Hide Arrangement until ready...
-        self.showpanels = [True, True, True]
-        if self.showpanels[0]:
-            self.panel_align = AlignmentPanel(
-                self, wx.ID_ANY, context=self.context, scene=self.scene
-            )
-            self.notebook_main.AddPage(self.panel_align, _("Align"))
-        if self.showpanels[1]:
-            self.panel_distribution = DistributionPanel(
-                self, wx.ID_ANY, context=self.context, scene=self.scene
-            )
-            self.notebook_main.AddPage(self.panel_distribution, _("Distribute"))
-        if self.showpanels[2]:
-            self.panel_arrange = ArrangementPanel(
-                self, wx.ID_ANY, context=self.context, scene=self.scene
-            )
-            self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
+        self.panel_align = AlignmentPanel(
+            self, wx.ID_ANY, context=self.context, scene=self.scene
+        )
+        self.notebook_main.AddPage(self.panel_align, _("Align"))
+        self.panel_distribution = DistributionPanel(
+            self, wx.ID_ANY, context=self.context, scene=self.scene
+        )
+        self.notebook_main.AddPage(self.panel_distribution, _("Distribute"))
+        self.panel_arrange = ArrangementPanel(
+            self, wx.ID_ANY, context=self.context, scene=self.scene
+        )
+        self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
 
         self.Layout()
 
@@ -1589,23 +1584,17 @@ class Alignment(MWindow):
         self.SetTitle(_("Alignment"))
 
     def delegates(self):
-        if self.showpanels[0]:
-            yield self.panel_align
-        if self.showpanels[1]:
-            yield self.panel_distribution
-        if self.showpanels[2]:
-            yield self.panel_arrange
+        yield self.panel_align
+        yield self.panel_distribution
+        yield self.panel_arrange
 
     @signal_listener("reference")
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
         has_emph = self.context.elements.has_emphasis()
-        if self.showpanels[0]:
-            self.panel_align.show_stuff(has_emph)
-        if self.showpanels[1]:
-            self.panel_distribution.show_stuff(has_emph)
-        if self.showpanels[2]:
-            self.panel_arrange.show_stuff(has_emph)
+        self.panel_align.show_stuff(has_emph)
+        self.panel_distribution.show_stuff(has_emph)
+        self.panel_arrange.show_stuff(has_emph)
 
     @staticmethod
     def sub_register(kernel):
