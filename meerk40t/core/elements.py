@@ -7874,6 +7874,7 @@ class Elemental(Service):
         self.add_op(CutOpNode())
         if performclassify:
             self.classify(list(self.elems()))
+        self.signal("tree_changed")
 
     def load_default2(self, performclassify=True):
         self.clear_operations()
@@ -7894,6 +7895,7 @@ class Elemental(Service):
         self.add_op(CutOpNode())
         if performclassify:
             self.classify(list(self.elems()))
+        self.signal("tree_changed")
 
     def tree_operations_for_node(self, node):
         for func, m, sname in self.find("tree", node.type, ".*"):
