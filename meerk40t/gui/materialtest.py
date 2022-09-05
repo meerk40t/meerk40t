@@ -1,19 +1,19 @@
 from copy import copy
 from math import tau
-
+import PIL
 import wx
 
-from meerk40t.core.node.elem_rect import RectNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
+from meerk40t.core.node.elem_image import ImageNode
+from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_INCH, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
-from meerk40t.svgelements import Color, Matrix, Rect
+from meerk40t.svgelements import Color, Matrix, Rect, Circle
 
 _ = wx.GetTranslation
 
@@ -247,11 +247,11 @@ class TemplatePanel(wx.Panel):
 
     def on_combo_2(self, input):
         s_unit = ""
-        idx = self.combo_param_1.GetSelection()
+        idx = self.combo_param_2.GetSelection()
         if idx >= 0 and idx < len(self.param_units):
             s_unit = self.param_units[idx]
-        self.unit_param_1a.SetLabel(s_unit)
-        self.unit_param_1b.SetLabel(s_unit)
+        self.unit_param_2a.SetLabel(s_unit)
+        self.unit_param_2b.SetLabel(s_unit)
         # And now enter validation...
         self.validate_input(None)
 
@@ -276,7 +276,10 @@ class TemplatePanel(wx.Panel):
 
             if optype < 0 or optype > 4:
                 return
-
+            if optype == 3:
+                shapetype = "image"
+            else:
+                shapetype = "rect"
             size_x = float(Length(f"{dimension_1}mm"))
             size_y = float(Length(f"{dimension_2}mm"))
             gap_x = float(Length(f"{gap_1}mm"))
@@ -387,19 +390,47 @@ class TemplatePanel(wx.Panel):
                         fill_color = set_color
                     else:
                         fill_color = None
-                    pattern = Rect(
-                        x=xx,
-                        y=yy,
-                        width=size_x,
-                        height=size_y,
-                        stroke=set_color,
-                        fill=fill_color,
-                    )
-                    rectnode = self.context.elements.elem_branch.add(
-                        shape=pattern, type="elem rect"
-                    )
-                    rectnode.label = s_lbl
-                    this_op.add_reference(rectnode, 0)
+                    if shapetype == "image":
+                        imgsx = int(size_x / UNITS_PER_PIXEL)
+                        imgsy = int(size_y / UNITS_PER_PIXEL)
+                        image = PIL.Image.new(
+                            "RGBA",
+                            size=(imgsx, imgsy),
+                            color=(set_color.red, set_color.green, set_color.blue, 255)
+                        )
+                        elemnode = ImageNode(image=image)
+                        elemnode.matrix.post_translate(xx, yy)
+                        elemnode.matrix.post_scale(UNITS_PER_PIXEL, UNITS_PER_PIXEL, xx, yy)
+                        elemnode.modified()
+                        self.context.elements.elem_branch.add_node(elemnode)
+                    elif shapetype == "rect":
+                        pattern = Rect(
+                            x=xx,
+                            y=yy,
+                            width=size_x,
+                            height=size_y,
+                            stroke=set_color,
+                            fill=fill_color,
+                        )
+                        elem_type = "elem rect"
+                        elemnode = self.context.elements.elem_branch.add(
+                            shape=pattern, type=elem_type
+                        )
+                    elif shapetype == "circle":
+                        pattern = Circle(
+                            cx=xx + size_x / 2,
+                            cy=yy + size_y / 2,
+                            rx=size_x / 2,
+                            ry=size_y / 2,
+                            stroke=set_color,
+                            fill=fill_color,
+                        )
+                        elem_type = "elem rect"
+                        elemnode = self.context.elements.elem_branch.add(
+                            shape=pattern, type=elem_type
+                        )
+                    elemnode.label = s_lbl
+                    this_op.add_reference(elemnode, 0)
                     p_value_2 += delta_2
                     yy = yy + gap_y + size_y
                 p_value_1 += delta_1
