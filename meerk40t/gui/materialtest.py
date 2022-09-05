@@ -230,10 +230,10 @@ class TemplatePanel(wx.Panel):
             balor_choices = [
                 ("frequency", None, _("Frequency"), "kHz", False, True),
                 ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s", False, True),
-                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "µs", False, True),
+                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "ns", False, True),
                 ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "µs", False, False),
                 ("delay_laser_off", "timing_enabled",  _("Laser Off Delay"), "µs", False, False),
-                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "ns", False, False),
+                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "µs", False, False),
                 ("wobble_radius", "wobble_enabled", _("Wobble Radius"), "mm", True, True),
                 ("wobble_interval", "wobble_enabled", _("Wobble Interval"), "mm", True, True),
                 ("wobble_speed", "wobble_enabled", _("Wobble Speed Multiplier"), "x", False, True),
