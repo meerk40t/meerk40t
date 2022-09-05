@@ -7830,7 +7830,14 @@ class Elemental(Service):
         operation_branch = self._tree.get(type="branch ops")
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
-            op = operation_branch.add(type=op_type)
+            # That should not happen, but it happens nonetheless...
+            # So recover gracefully
+            try:
+                op = operation_branch.add(type=op_type)
+            except (AttributeError, RuntimeError):
+                print (f"That should not happen, but ops contained: '{op_type}'")
+                continue
+
             op.load(settings, section)
         self.classify(list(self.elems()))
 
