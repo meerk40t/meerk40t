@@ -25,11 +25,7 @@ class TemplatePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
-        self.param_choices = []
-        self.param_override = []
-        self.param_strings = []
-        self.param_units = []
-        self.param_keep_units = []
+        self.parameters = []
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -177,97 +173,86 @@ class TemplatePanel(wx.Panel):
         self.Layout()
         self.setup_settings()
         self.combo_ops.SetSelection(0)
-        self.set_param_according_to_op(None)
         self.restore_settings()
+        self.set_param_according_to_op(None)
 
     def set_param_according_to_op(self, event):
         opidx = self.combo_ops.GetSelection()
-        # Internal attribute name
-        self.param_choices = ["speed", "ppi"]
-        # Is there a secondary overrid logic flag to be set? No - empty, or None
-        self.param_override = [None, None]
-        # How should it be displayed
-        self.param_strings = [_("Speed"), _("Power")]
-        # What are its intrinsic units
-        self.param_units = ["mm/s", "ppi"]
-        self.param_keep_units= [False, False]
+        # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
+        self.parameters = [
+            ("speed", None, _("Speed"), "mm/s", False, True),
+            ("ppi", None, _("Power"), "ppi", False, True),
+        ]
+
+        if opidx == 0:
+            # Cut
+            # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
+            self.parameters = [
+                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("ppi", None, _("Power"), "ppi", False, True),
+            ]
+        elif opidx == 1:
+            # Engrave
+            self.parameters = [
+                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("ppi", None, _("Power"), "ppi", False, True),
+            ]
+        elif opidx == 2:
+            # Raster
+            self.parameters = [
+                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("ppi", None, _("Power"), "ppi", False, True),
+                ("dpi", None, _("DPI"), "dpi", False, True),
+                ("overscan", None, _("Overscan"), "mm", False, True),
+            ]
+        elif opidx == 3:
+            # Image
+            self.parameters = [
+                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("ppi", None, _("Power"), "ppi", False, True),
+                ("dpi", None, _("DPI"), "dpi", False, True),
+                ("overscan", None, _("Overscan"), "mm", False, True),
+            ]
+        elif opidx == 4:
+            # Hatch
+            self.parameters = [
+                ("speed", None, _("Speed"), "mm/s", False, True),
+                ("ppi", None, _("Power"), "ppi", False, True),
+                ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
+                ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
+            ]
+
         if "balor" in self.context.device._path:
             allow_balor = True
         else:
             allow_balor = False
-        if opidx == 0:
-            # Cut
-            self.param_choices = ["speed", "ppi"]
-            self.param_override = [None, None]
-            self.param_strings = [_("Speed"), _("Power")]
-            self.param_units = ["mm/s", "ppi"]
-            self.param_keep_units= [False, False]
-        elif opidx == 1:
-            # Engrave
-            self.param_choices = ["speed", "ppi"]
-            self.param_override = [None, None]
-            self.param_strings = [_("Speed"), _("Power")]
-            self.param_units = ["mm/s", "ppi"]
-            self.param_keep_units= [False, False]
-        elif opidx == 2:
-            # Raster
-            self.param_choices = ["speed", "ppi", "dpi", "overscan"]
-            self.param_override = [None, None, None, None]
-            self.param_strings = [_("Speed"), _("Power"), _("DPI"), _("Overscan")]
-            self.param_units = ["mm/s", "ppi", "dpi", "mm"]
-            self.param_keep_units= [False, False, False, False]
-        elif opidx == 3:
-            # Image
-            self.param_choices = ["speed", "ppi", "dpi", "overscan"]
-            self.param_override = [None, None, None, None]
-            self.param_strings = [_("Speed"), _("Power"), _("DPI"), _("Overscan")]
-            self.param_units = ["mm/s", "ppi", "dpi", "mm"]
-            self.param_keep_units= [False, False, False, False]
-        elif opidx == 4:
-            # Hatch
-            self.param_choices = [
-                "speed",
-                "ppi",
-                "hatch_distance",
-                "hatch_angle",
-            ]  # , "hatch_type"]
-            self.param_override = [None, None, None, None]
-            self.param_strings = [
-                _("Speed"),
-                _("Power"),
-                _("Hatch Distance"),
-                _("Hatch Angle"),
-            ]  # , _("Hatch type")]
-            self.param_units = ["mm/s", "ppi", "mm", "deg"]
-            self.param_keep_units= [False, False, False, False]
         if allow_balor:
             balor_choices = [
-                ("frequency", None, _("Frequency"), "kHz", False),
-                ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s", False),
-                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "µs", False),
-                ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "µs", False),
-                ("delay_laser_off", "timing_enabled",  _("Laser Off Delay"), "µs", False),
-                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "ns", False),
-                ("wobble_radius", "wobble_enabled", _("Wobble Radius"), "mm", True),
-                ("wobble_interval", "wobble_enabled", _("Wobble Interval"), "mm", True),
-                ("wobble_speed", "wobble_enabled", _("Wobble Speed Multiplier"), "x", False),
+                ("frequency", None, _("Frequency"), "kHz", False, True),
+                ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s", False, True),
+                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "µs", False, True),
+                ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "µs", False, False),
+                ("delay_laser_off", "timing_enabled",  _("Laser Off Delay"), "µs", False, False),
+                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "ns", False, False),
+                ("wobble_radius", "wobble_enabled", _("Wobble Radius"), "mm", True, True),
+                ("wobble_interval", "wobble_enabled", _("Wobble Interval"), "mm", True, True),
+                ("wobble_speed", "wobble_enabled", _("Wobble Speed Multiplier"), "x", False, True),
             ]
             for entry in balor_choices:
-                self.param_choices.append(entry[0])
-                self.param_override.append(entry[1])
-                self.param_strings.append(entry[2])
-                self.param_units.append(entry[3])
-                self.param_keep_units.append(entry[4])
+                self.parameters.append(entry)
+        choices = []
+        for entry in self.parameters:
+            choices.append(entry[2])
         self.combo_param_1.Clear()
-        self.combo_param_1.Set(self.param_strings)
+        self.combo_param_1.Set(choices)
         self.combo_param_2.Clear()
-        self.combo_param_2.Set(self.param_strings)
+        self.combo_param_2.Set(choices)
         idx1 = -1
         idx2 = -1
-        if len(self.param_strings) > 0:
+        if len(self.parameters) > 0:
             idx1 = 0
             idx2 = 0
-        if len(self.param_strings) > 1:
+        if len(self.parameters) > 1:
             idx2 = 1
         self.combo_param_1.SetSelection(idx1)
         self.on_combo_1(None)
@@ -277,8 +262,11 @@ class TemplatePanel(wx.Panel):
     def on_combo_1(self, input):
         s_unit = ""
         idx = self.combo_param_1.GetSelection()
-        if idx >= 0 and idx < len(self.param_units):
-            s_unit = self.param_units[idx]
+        # 0 = internal_attribute, 1 = secondary_attribute,
+        # 2 = Label, 3 = unit,
+        # 4 = keep_unit, 5 = needs_to_be_positive)
+        if idx >= 0 and idx < len(self.parameters):
+            s_unit = self.parameters[idx][3]
         self.unit_param_1a.SetLabel(s_unit)
         self.unit_param_1b.SetLabel(s_unit)
         # And now enter validation...
@@ -287,8 +275,11 @@ class TemplatePanel(wx.Panel):
     def on_combo_2(self, input):
         s_unit = ""
         idx = self.combo_param_2.GetSelection()
-        if idx >= 0 and idx < len(self.param_units):
-            s_unit = self.param_units[idx]
+        # 0 = internal_attribute, 1 = secondary_attribute,
+        # 2 = Label, 3 = unit,
+        # 4 = keep_unit, 5 = needs_to_be_positive)
+        if idx >= 0 and idx < len(self.parameters):
+            s_unit = self.parameters[idx][3]
         self.unit_param_2a.SetLabel(s_unit)
         self.unit_param_2b.SetLabel(s_unit)
         # And now enter validation...
@@ -514,23 +505,29 @@ class TemplatePanel(wx.Panel):
         idx = self.combo_param_1.GetSelection()
         if idx < 0:
             return
-        param_name_1 = self.param_strings[idx]
-        param_type_1 = self.param_choices[idx]
-        param_override_1 = self.param_override[idx]
+        # 0 = internal_attribute, 1 = secondary_attribute,
+        # 2 = Label, 3 = unit,
+        # 4 = keep_unit, 5 = needs_to_be_positive)
+        param_name_1 = self.parameters[idx][2]
+        param_type_1 = self.parameters[idx][0]
+        param_override_1 = self.parameters[idx][1]
         if param_override_1 == "":
             param_override_1 = None
-        param_unit_1 = self.param_units[idx]
-        param_keep_unit_1 = self.param_keep_units[idx]
+        param_unit_1 = self.parameters[idx][3]
+        param_keep_unit_1 = self.parameters[idx][4]
+        param_positive_1 = self.parameters[idx][5]
+
         idx = self.combo_param_2.GetSelection()
         if idx < 0:
             return
-        param_name_2 = self.param_strings[idx]
-        param_type_2 = self.param_choices[idx]
-        param_override_2 = self.param_override[idx]
+        param_name_2 = self.parameters[idx][2]
+        param_type_2 = self.parameters[idx][0]
+        param_override_2 = self.parameters[idx][1]
         if param_override_2 == "":
             param_override_2 = None
-        param_unit_2 = self.param_units[idx]
-        param_keep_unit_2 = self.param_keep_units[idx]
+        param_unit_2 = self.parameters[idx][3]
+        param_keep_unit_2 = self.parameters[idx][4]
+        param_positive_2 = self.parameters[idx][5]
         if param_type_1 == param_type_2:
             return
         if self.text_min_1.GetValue() == "":
@@ -566,8 +563,9 @@ class TemplatePanel(wx.Panel):
             max_value_1 = min(max_value_1, 1000)
         else:
             # > 0
-            min_value_1 = max(min_value_1, 0)
-            max_value_1 = max(max_value_1, 0)
+            if param_positive_1:
+                min_value_1 = max(min_value_1, 0)
+                max_value_1 = max(max_value_1, 0)
 
         if param_unit_2 == "deg":
             min_value_2 = f"{Angle.parse(self.text_min_2.GetValue()).as_degrees}deg"
@@ -577,8 +575,9 @@ class TemplatePanel(wx.Panel):
             max_value_2 = min(max_value_2, 1000)
         else:
             # > 0
-            min_value_2 = max(min_value_2, 0)
-            max_value_2 = max(max_value_2, 0)
+            if param_positive_2:
+                min_value_2 = max(min_value_2, 0)
+                max_value_2 = max(max_value_2, 0)
 
         count_1 = int(self.spin_count_1.GetValue())
         count_2 = int(self.spin_count_2.GetValue())
