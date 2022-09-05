@@ -242,7 +242,7 @@ class TemplatePanel(wx.Panel):
             self.param_keep_units= [False, False, False, False]
         if allow_balor:
             balor_choices = [
-                ("frequency", "", _("Frequency"), "kHz", False),
+                ("frequency", None, _("Frequency"), "kHz", False),
                 ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s", False),
                 ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "µs", False),
                 ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "µs", False),
@@ -515,6 +515,8 @@ class TemplatePanel(wx.Panel):
         param_name_1 = self.param_strings[idx]
         param_type_1 = self.param_choices[idx]
         param_override_1 = self.param_override[idx]
+        if param_override_1 == "":
+            param_override_1 = None
         param_unit_1 = self.param_units[idx]
         param_keep_unit_1 = self.param_keep_units[idx]
         idx = self.combo_param_2.GetSelection()
@@ -523,6 +525,8 @@ class TemplatePanel(wx.Panel):
         param_name_2 = self.param_strings[idx]
         param_type_2 = self.param_choices[idx]
         param_override_2 = self.param_override[idx]
+        if param_override_2 == "":
+            param_override_2 = None
         param_unit_2 = self.param_units[idx]
         param_keep_unit_2 = self.param_keep_units[idx]
         if param_type_1 == param_type_2:
