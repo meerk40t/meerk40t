@@ -178,6 +178,38 @@ class TemplatePanel(wx.Panel):
         self.set_param_according_to_op(None)
 
     def set_param_according_to_op(self, event):
+
+        def preset_balor_wobble(node=None):
+            # Will be called ahead of the modification of a wobble variable
+            # to copy the device defaults
+            if node is None or "balor" not in self.context.device._path:
+                return
+            node.settings["wobble_enabled"] = True
+
+        def preset_balor_rapid(node=None):
+            # Will be called ahead of the modification of a rapid variable
+            # to copy the device defaults
+            if node is None or "balor" not in self.context.device._path:
+                return
+            node.settings["rapid_enabled"] = True
+
+        def preset_balor_pulse(node=None):
+            # Will be called ahead of the modification of a pulse variable
+            # to copy the device defaults
+            if node is None or "balor" not in self.context.device._path:
+                return
+            node.settings["pulse_width_enabled"] = True
+
+        def preset_balor_timings(node=None):
+            # Will be called ahead of the modification of a timing variable
+            # to copy the device defaults
+            if node is None or "balor" not in self.context.device._path:
+                return
+            node.settings["timing_enabled"] = True
+            node.settings["delay_laser_on"] = self.context.device.delay_laser_on
+            node.settings["delay_laser_off"] = self.context.device.delay_laser_off
+            node.settings["delay_polygon"] = self.context.device.delay_polygon
+
         opidx = self.combo_ops.GetSelection()
         # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
         self.parameters = [
@@ -230,14 +262,14 @@ class TemplatePanel(wx.Panel):
         if allow_balor:
             balor_choices = [
                 ("frequency", None, _("Frequency"), "kHz", False, True),
-                ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s", False, True),
-                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "ns", False, True),
-                ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "µs", False, False),
-                ("delay_laser_off", "timing_enabled",  _("Laser Off Delay"), "µs", False, False),
-                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "µs", False, False),
-                ("wobble_radius", "wobble_enabled", _("Wobble Radius"), "mm", True, True),
-                ("wobble_interval", "wobble_enabled", _("Wobble Interval"), "mm", True, True),
-                ("wobble_speed", "wobble_enabled", _("Wobble Speed Multiplier"), "x", False, True),
+                ("rapid_speed", preset_balor_rapid, _("Rapid Speed"), "mm/s", False, True),
+                ("pulse_width", preset_balor_pulse, _("Pulse Width"), "ns", False, True),
+                ("delay_laser_on", preset_balor_timings, _("Laser On Delay"), "µs", False, False),
+                ("delay_laser_off", preset_balor_timings,  _("Laser Off Delay"), "µs", False, False),
+                ("delay_polygon", preset_balor_timings, _("Polygon Delay"), "µs", False, False),
+                ("wobble_radius", preset_balor_wobble, _("Wobble Radius"), "mm", True, True),
+                ("wobble_interval", preset_balor_wobble, _("Wobble Interval"), "mm", True, True),
+                ("wobble_speed", preset_balor_wobble, _("Wobble Speed Multiplier"), "x", False, True),
             ]
             for entry in balor_choices:
                 self.parameters.append(entry)
@@ -414,6 +446,11 @@ class TemplatePanel(wx.Panel):
                     else:
                         return
                     this_op.label = s_lbl
+
+                    # Do we need to prep the op?
+                    if param_prepper_1 is not None:
+                        param_prepper_1(this_op)
+
                     if param_keep_unit_1:
                         value = str(p_value_1) + param_unit_1
                     else:
@@ -422,12 +459,10 @@ class TemplatePanel(wx.Panel):
                         setattr(this_op, param_type_1, value)
                     else: # Try setting
                         this_op.settings[param_type_1] = value
-                    # Is there a corresponding xxx_enabled property available?
-                    if param_override_1 is not None:
-                        if hasattr(this_op, param_override_1):
-                            setattr(this_op, param_override_1, True)
-                        else: # Try setting
-                            this_op.settings[param_override_1] = True
+
+                    # Do we need to prep the op?
+                    if param_prepper_2 is not None:
+                        param_prepper_2(this_op)
 
                     if param_keep_unit_2:
                         value = str(p_value_2) + param_unit_2
@@ -437,12 +472,6 @@ class TemplatePanel(wx.Panel):
                         setattr(this_op, param_type_2, value)
                     else: # Try setting
                         this_op.settings[param_type_2] = value
-                    # Is there a corresponding xxx_enabled property available?
-                    if param_override_2 is not None:
-                        if hasattr(this_op, param_override_2):
-                            setattr(this_op, param_override_2, True)
-                        else: # Try setting
-                            this_op.settings[param_override_2] = True
 
                     set_color = make_color(idx1, count_1, idx2, count_2)
                     this_op.color = set_color
@@ -513,9 +542,9 @@ class TemplatePanel(wx.Panel):
         # 4 = keep_unit, 5 = needs_to_be_positive)
         param_name_1 = self.parameters[idx][2]
         param_type_1 = self.parameters[idx][0]
-        param_override_1 = self.parameters[idx][1]
-        if param_override_1 == "":
-            param_override_1 = None
+        param_prepper_1 = self.parameters[idx][1]
+        if param_prepper_1 == "":
+            param_prepper_1 = None
         param_unit_1 = self.parameters[idx][3]
         param_keep_unit_1 = self.parameters[idx][4]
         param_positive_1 = self.parameters[idx][5]
@@ -525,9 +554,9 @@ class TemplatePanel(wx.Panel):
             return
         param_name_2 = self.parameters[idx][2]
         param_type_2 = self.parameters[idx][0]
-        param_override_2 = self.parameters[idx][1]
-        if param_override_2 == "":
-            param_override_2 = None
+        param_prepper_2 = self.parameters[idx][1]
+        if param_prepper_2 == "":
+            param_prepper_2 = None
         param_unit_2 = self.parameters[idx][3]
         param_keep_unit_2 = self.parameters[idx][4]
         param_positive_2 = self.parameters[idx][5]
