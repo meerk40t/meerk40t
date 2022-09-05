@@ -539,6 +539,8 @@ class TextCtrl(wx.TextCtrl):
             special = False
             if event.RawControlDown() or event.ControlDown() or event.AltDown():
                 special = True
+            if keyc == 127:  # delete
+                special = True
             # GetUnicodeKey ignores all special keys in the first
             if keyc != wx.WXK_NONE and not special:
                 # a 'real' character?
