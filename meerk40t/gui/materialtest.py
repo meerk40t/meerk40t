@@ -29,6 +29,7 @@ class TemplatePanel(wx.Panel):
         self.param_override = []
         self.param_strings = []
         self.param_units = []
+        self.param_keep_units = []
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -189,7 +190,7 @@ class TemplatePanel(wx.Panel):
         self.param_strings = [_("Speed"), _("Power")]
         # What are its intrinsic units
         self.param_units = ["mm/s", "ppi"]
-        # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
+        self.param_keep_units= [False, False]
         if "balor" in self.context.device._path:
             allow_balor = True
         else:
@@ -200,24 +201,28 @@ class TemplatePanel(wx.Panel):
             self.param_override = [None, None]
             self.param_strings = [_("Speed"), _("Power")]
             self.param_units = ["mm/s", "ppi"]
+            self.param_keep_units= [False, False]
         elif opidx == 1:
             # Engrave
             self.param_choices = ["speed", "ppi"]
             self.param_override = [None, None]
             self.param_strings = [_("Speed"), _("Power")]
             self.param_units = ["mm/s", "ppi"]
+            self.param_keep_units= [False, False]
         elif opidx == 2:
             # Raster
             self.param_choices = ["speed", "ppi", "dpi", "overscan"]
             self.param_override = [None, None, None, None]
             self.param_strings = [_("Speed"), _("Power"), _("DPI"), _("Overscan")]
             self.param_units = ["mm/s", "ppi", "dpi", "mm"]
+            self.param_keep_units= [False, False, False, False]
         elif opidx == 3:
             # Image
             self.param_choices = ["speed", "ppi", "dpi", "overscan"]
             self.param_override = [None, None, None, None]
             self.param_strings = [_("Speed"), _("Power"), _("DPI"), _("Overscan")]
             self.param_units = ["mm/s", "ppi", "dpi", "mm"]
+            self.param_keep_units= [False, False, False, False]
         elif opidx == 4:
             # Hatch
             self.param_choices = [
@@ -234,22 +239,24 @@ class TemplatePanel(wx.Panel):
                 _("Hatch Angle"),
             ]  # , _("Hatch type")]
             self.param_units = ["mm/s", "ppi", "mm", "deg"]
+            self.param_keep_units= [False, False, False, False]
         if allow_balor:
             balor_choices = [
-                ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s"),
-                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "ns"),
-                ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "ns"),
-                ("delay_laser_off", "timing_enabled",  _("Laser Off Delay"), "ns"),
-                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "ns"),
-                ("wobble_radius", "wobble_enabled", _("Wobble Radius"), "mm"),
-                ("wobble_interval", "wobble_enabled", _("Wobble Interval"), "mm"),
-                ("wobble_speed", "wobble_enabled", _("Wobble Speed Multiplier"), "x"),
+                ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s", False),
+                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "ns", False),
+                ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "ns", False),
+                ("delay_laser_off", "timing_enabled",  _("Laser Off Delay"), "ns", False),
+                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "ns", False),
+                ("wobble_radius", "wobble_enabled", _("Wobble Radius"), "mm", True),
+                ("wobble_interval", "wobble_enabled", _("Wobble Interval"), "mm", True),
+                ("wobble_speed", "wobble_enabled", _("Wobble Speed Multiplier"), "x", False),
             ]
             for entry in balor_choices:
                 self.param_choices.append(entry[0])
                 self.param_override.append(entry[1])
                 self.param_strings.append(entry[2])
                 self.param_units.append(entry[3])
+                self.param_keep_units.append(entry[4])
         self.combo_param_1.Clear()
         self.combo_param_1.Set(self.param_strings)
         self.combo_param_2.Clear()
@@ -410,10 +417,14 @@ class TemplatePanel(wx.Panel):
                     else:
                         return
                     this_op.label = s_lbl
+                    if param_keep_unit_1:
+                        value = str(p_value_1) + param_unit_1
+                    else:
+                        value = p_value_1
                     if hasattr(this_op, param_type_1):
-                        setattr(this_op, param_type_1, p_value_1)
+                        setattr(this_op, param_type_1, value)
                     else: # Try setting
-                        this_op.settings[param_type_1] = p_value_1
+                        this_op.settings[param_type_1] = value
                     # Is there a corresponding xxx_enabled property available?
                     if param_override_1 is not None:
                         if hasattr(this_op, param_override_1):
@@ -421,10 +432,14 @@ class TemplatePanel(wx.Panel):
                         else: # Try setting
                             this_op.settings[param_override_1] = True
 
+                    if param_keep_unit_2:
+                        value = str(p_value_2) + param_unit_2
+                    else:
+                        value = p_value_2
                     if hasattr(this_op, param_type_2):
-                        setattr(this_op, param_type_2, p_value_2)
+                        setattr(this_op, param_type_2, value)
                     else: # Try setting
-                        this_op.settings[param_type_2] = p_value_2
+                        this_op.settings[param_type_2] = value
                     # Is there a corresponding xxx_enabled property available?
                     if param_override_2 is not None:
                         if hasattr(this_op, param_override_2):
@@ -500,6 +515,7 @@ class TemplatePanel(wx.Panel):
         param_type_1 = self.param_choices[idx]
         param_override_1 = self.param_override[idx]
         param_unit_1 = self.param_units[idx]
+        param_keep_unit_1 = self.param_keep_units[idx]
         idx = self.combo_param_2.GetSelection()
         if idx < 0:
             return
@@ -507,6 +523,7 @@ class TemplatePanel(wx.Panel):
         param_type_2 = self.param_choices[idx]
         param_override_2 = self.param_override[idx]
         param_unit_2 = self.param_units[idx]
+        param_keep_unit_2 = self.param_keep_units[idx]
         if param_type_1 == param_type_2:
             return
         if self.text_min_1.GetValue() == "":
@@ -631,9 +648,9 @@ class TemplatePanel(wx.Panel):
 
     def restore_settings(self):
         try:
-            self.combo_ops.SetSelection(self.context.template_optype)
-            self.combo_param_1.SetSelection(self.context.template_param1)
-            self.combo_param_2.SetSelection(self.context.template_param2)
+            self.combo_ops.SetSelection(min(self.context.template_optype, self.combo_ops.GetCount() -1))
+            self.combo_param_1.SetSelection(min(self.context.template_param1, self.combo_param_1.GetCount() -1))
+            self.combo_param_2.SetSelection(min(self.context.template_param2, self.combo_param_2.GetCount() -1))
             self.text_min_1.SetValue(self.context.template_min1)
             self.text_max_1.SetValue(self.context.template_max1)
             self.text_min_2.SetValue(self.context.template_min2)
