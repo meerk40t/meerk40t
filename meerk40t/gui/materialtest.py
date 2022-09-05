@@ -14,6 +14,7 @@ from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
 from meerk40t.svgelements import Color, Matrix, Rect, Circle
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -670,7 +671,9 @@ class TemplatePanel(wx.Panel):
         except (AttributeError, ValueError):
             return
 
-
+    @signal_listener("activate;device")
+    def on_activate_device(self, origin, device):
+        self.set_param_according_to_op(None)
 class TemplateTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(490, 280, submenu="Laser-Tools", *args, **kwds)
