@@ -26,6 +26,7 @@ class TemplatePanel(wx.Panel):
         self.context = context
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
         self.param_choices = []
+        self.param_override = []
         self.param_strings = []
         self.param_units = []
         self.combo_ops = wx.ComboBox(
@@ -174,34 +175,47 @@ class TemplatePanel(wx.Panel):
         self.SetSizer(sizer_main)
         self.Layout()
         self.setup_settings()
-        self.restore_settings()
         self.combo_ops.SetSelection(0)
         self.set_param_according_to_op(None)
+        self.restore_settings()
 
     def set_param_according_to_op(self, event):
         opidx = self.combo_ops.GetSelection()
+        # Internal attribute name
         self.param_choices = ["speed", "ppi"]
+        # Is there a secondary overrid logic flag to be set? No - empty, or None
+        self.param_override = [None, None]
+        # How should it be displayed
         self.param_strings = [_("Speed"), _("Power")]
+        # What are its intrinsic units
         self.param_units = ["mm/s", "ppi"]
         # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
+        if "balor" in self.context.device._path:
+            allow_balor = True
+        else:
+            allow_balor = False
         if opidx == 0:
             # Cut
             self.param_choices = ["speed", "ppi"]
+            self.param_override = [None, None]
             self.param_strings = [_("Speed"), _("Power")]
             self.param_units = ["mm/s", "ppi"]
         elif opidx == 1:
             # Engrave
             self.param_choices = ["speed", "ppi"]
+            self.param_override = [None, None]
             self.param_strings = [_("Speed"), _("Power")]
             self.param_units = ["mm/s", "ppi"]
         elif opidx == 2:
             # Raster
             self.param_choices = ["speed", "ppi", "dpi", "overscan"]
+            self.param_override = [None, None, None, None]
             self.param_strings = [_("Speed"), _("Power"), _("DPI"), _("Overscan")]
             self.param_units = ["mm/s", "ppi", "dpi", "mm"]
         elif opidx == 3:
             # Image
             self.param_choices = ["speed", "ppi", "dpi", "overscan"]
+            self.param_override = [None, None, None, None]
             self.param_strings = [_("Speed"), _("Power"), _("DPI"), _("Overscan")]
             self.param_units = ["mm/s", "ppi", "dpi", "mm"]
         elif opidx == 4:
@@ -212,6 +226,7 @@ class TemplatePanel(wx.Panel):
                 "hatch_distance",
                 "hatch_angle",
             ]  # , "hatch_type"]
+            self.param_override = [None, None, None, None]
             self.param_strings = [
                 _("Speed"),
                 _("Power"),
@@ -219,6 +234,22 @@ class TemplatePanel(wx.Panel):
                 _("Hatch Angle"),
             ]  # , _("Hatch type")]
             self.param_units = ["mm/s", "ppi", "mm", "deg"]
+        if allow_balor:
+            balor_choices = [
+                ("rapid_speed", "rapid_enabled", _("Rapid Speed"), "mm/s"),
+                ("pulse_width", "pulse_width _enabled", _("Pulse Width"), "ns"),
+                ("delay_laser_on", "timing_enabled", _("Laser On Delay"), "ns"),
+                ("delay_laser_off", "timing_enabled",  _("Laser Off Delay"), "ns"),
+                ("delay_polygon", "timing_enabled", _("Polygon Delay"), "ns"),
+                ("wobble_radius", "wobble_enabled", _("Wobble Radius"), "mm"),
+                ("wobble_interval", "wobble_enabled", _("Wobble Interval"), "mm"),
+                ("wobble_speed", "wobble_enabled", _("Wobble Speed Multiplier"), "x"),
+            ]
+            for entry in balor_choices:
+                self.param_choices.append(entry[0])
+                self.param_override.append(entry[1])
+                self.param_strings.append(entry[2])
+                self.param_units.append(entry[3])
         self.combo_param_1.Clear()
         self.combo_param_1.Set(self.param_strings)
         self.combo_param_2.Clear()
@@ -379,8 +410,28 @@ class TemplatePanel(wx.Panel):
                     else:
                         return
                     this_op.label = s_lbl
-                    setattr(this_op, param_type_1, p_value_1)
-                    setattr(this_op, param_type_2, p_value_2)
+                    if hasattr(this_op, param_type_1):
+                        setattr(this_op, param_type_1, p_value_1)
+                    else: # Try setting
+                        this_op.settings[param_type_1] = p_value_1
+                    # Is there a corresponding xxx_enabled property available?
+                    if param_override_1 is not None:
+                        if hasattr(this_op, param_override_1):
+                            setattr(this_op, param_override_1, True)
+                        else: # Try setting
+                            this_op.settings[param_override_1] = True
+
+                    if hasattr(this_op, param_type_2):
+                        setattr(this_op, param_type_2, p_value_2)
+                    else: # Try setting
+                        this_op.settings[param_type_2] = p_value_2
+                    # Is there a corresponding xxx_enabled property available?
+                    if param_override_2 is not None:
+                        if hasattr(this_op, param_override_2):
+                            setattr(this_op, param_override_2, True)
+                        else: # Try setting
+                            this_op.settings[param_override_2] = True
+
                     set_color = make_color(idx1, count_1, idx2, count_2)
                     this_op.color = set_color
                     # Add op to tree.
@@ -396,11 +447,13 @@ class TemplatePanel(wx.Panel):
                         image = PIL.Image.new(
                             "RGBA",
                             size=(imgsx, imgsy),
-                            color=(set_color.red, set_color.green, set_color.blue, 255)
+                            color=(set_color.red, set_color.green, set_color.blue, 255),
                         )
                         elemnode = ImageNode(image=image)
                         elemnode.matrix.post_translate(xx, yy)
-                        elemnode.matrix.post_scale(UNITS_PER_PIXEL, UNITS_PER_PIXEL, xx, yy)
+                        elemnode.matrix.post_scale(
+                            UNITS_PER_PIXEL, UNITS_PER_PIXEL, xx, yy
+                        )
                         elemnode.modified()
                         self.context.elements.elem_branch.add_node(elemnode)
                     elif shapetype == "rect":
@@ -445,12 +498,14 @@ class TemplatePanel(wx.Panel):
             return
         param_name_1 = self.param_strings[idx]
         param_type_1 = self.param_choices[idx]
+        param_override_1 = self.param_override[idx]
         param_unit_1 = self.param_units[idx]
         idx = self.combo_param_2.GetSelection()
         if idx < 0:
             return
         param_name_2 = self.param_strings[idx]
         param_type_2 = self.param_choices[idx]
+        param_override_2 = self.param_override[idx]
         param_unit_2 = self.param_units[idx]
         if param_type_1 == param_type_2:
             return
