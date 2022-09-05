@@ -362,7 +362,7 @@ class TemplatePanel(wx.Panel):
             text_op.label = "Descriptions"
             operation_branch.add_node(text_op)
             text_x = start_x + expected_width / 2
-            text_y = start_y - float(Length("3cm"))
+            text_y = start_y + expected_height + float(Length("8mm"))
             node = self.context.elements.elem_branch.add(
                 text=f"{param_name_1}",
                 matrix=Matrix(
@@ -373,7 +373,8 @@ class TemplatePanel(wx.Panel):
                 type="elem text",
             )
             text_op.add_reference(node, 0)
-            text_x = start_x - float(Length("3cm"))
+
+            text_x = start_x + expected_width + float(Length("8mm"))
             text_y = start_y + expected_height / 2
             node = self.context.elements.elem_branch.add(
                 text=f"{param_name_2}",
@@ -398,9 +399,9 @@ class TemplatePanel(wx.Panel):
 
                 # Add a text above for each column
                 text_x = xx + 0.5 * size_x
-                text_y = yy - float(Length("5mm"))
+                text_y = yy - min(float(Length("5mm")), 2.5 * gap_y)
                 node = self.context.elements.elem_branch.add(
-                    text=f"{p_value_1:.3f}",
+                    text=f"{p_value_1:.{prec1}f}",
                     matrix=Matrix(
                         f"translate({text_x}, {text_y}) scale({text_scale_x * UNITS_PER_PIXEL})"
                     ),
@@ -413,13 +414,13 @@ class TemplatePanel(wx.Panel):
                 text_op.add_reference(node, 0)
 
                 for idx2 in range(count_2):
-                    s_lbl = f"{param_type_1}={p_value_1:.3f}{param_unit_1}"
-                    s_lbl += f"- {param_type_2}={p_value_2:.3f}{param_unit_2}"
+                    s_lbl = f"{param_type_1}={p_value_1:.{prec1}f}{param_unit_1}"
+                    s_lbl += f"- {param_type_2}={p_value_2:.{prec2}f}{param_unit_2}"
                     if idx1 == 0:  # first row, so add a text above
-                        text_x = xx - float(Length("5mm"))
+                        text_x = xx - min(float(Length("5mm")), 2.5 * gap_x)
                         text_y = yy + 0.5 * size_y
                         node = self.context.elements.elem_branch.add(
-                            text=f"{p_value_2:.3f}",
+                            text=f"{p_value_2:.{prec2}f}",
                             matrix=Matrix(
                                 f"translate({text_x}, {text_y}) scale({text_scale_y * UNITS_PER_PIXEL})"
                             ),
@@ -540,6 +541,8 @@ class TemplatePanel(wx.Panel):
         # 0 = internal_attribute, 1 = secondary_attribute,
         # 2 = Label, 3 = unit,
         # 4 = keep_unit, 5 = needs_to_be_positive)
+        prec1 = 2
+        prec2 = 2
         param_name_1 = self.parameters[idx][2]
         param_type_1 = self.parameters[idx][0]
         param_prepper_1 = self.parameters[idx][1]
