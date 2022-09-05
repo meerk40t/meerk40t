@@ -78,7 +78,7 @@ class TemplatePanel(wx.Panel):
         hline_param_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
         hline_param_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_param_1.Add(self.combo_param_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_param_1.Add(self.combo_param_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
@@ -120,7 +120,7 @@ class TemplatePanel(wx.Panel):
         hline_param_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Parameter:"))
         hline_param_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_param_2.Add(self.combo_param_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_param_2.Add(self.combo_param_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_count_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Count:"))
@@ -163,7 +163,7 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(self.button_create, 0, wx.EXPAND, 0)
 
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
-        self.combo_ops.Bind(wx.EVT_COMBOBOX, self.validate_input)
+        self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_max_1.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_min_2.Bind(wx.EVT_TEXT, self.validate_input)
