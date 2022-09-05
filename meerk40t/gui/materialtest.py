@@ -101,9 +101,11 @@ class TemplatePanel(wx.Panel):
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_1.Add(self.spin_dim_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm," + _("Delta:"))
+        mylbl = wx.StaticText(self, wx.ID_ANY, "mm, " + _("Delta:"))
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_1.Add(self.spin_delta_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_param_x.Add(hline_param_1, 0, wx.EXPAND, 1)
         sizer_param_x.Add(hline_count_1, 0, wx.EXPAND, 1)
@@ -141,9 +143,11 @@ class TemplatePanel(wx.Panel):
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Height:"))
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_2.Add(self.spin_dim_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm," + _("Delta:"))
+        mylbl = wx.StaticText(self, wx.ID_ANY, "mm, " + _("Delta:"))
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         hline_dim_2.Add(self.spin_delta_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_param_y.Add(hline_param_2, 0, wx.EXPAND, 1)
         sizer_param_y.Add(hline_count_2, 0, wx.EXPAND, 1)
@@ -339,6 +343,8 @@ class TemplatePanel(wx.Panel):
                 text_op.add_reference(node, 0)
 
                 for idx2 in range(count_2):
+                    s_lbl = f"{param_type_1}={p_value_1:.3f}{param_unit_1}"
+                    s_lbl += f"- {param_type_2}={p_value_2:.3f}{param_unit_2}"
                     if idx1 == 0:  # first row, so add a text above
                         text_x = xx - float(Length("5mm"))
                         text_y = yy + 0.5 * gap_y
@@ -369,7 +375,7 @@ class TemplatePanel(wx.Panel):
                         usefill = True
                     else:
                         return
-                    this_op.label = f"{param_type_1}={p_value_1:.3f} - {param_type_2}={p_value_2:.3f}"
+                    this_op.label = s_lbl
                     setattr(this_op, param_type_1, p_value_1)
                     setattr(this_op, param_type_2, p_value_2)
                     set_color = make_color(idx1, count_1, idx2, count_2)
@@ -392,6 +398,7 @@ class TemplatePanel(wx.Panel):
                     rectnode = self.context.elements.elem_branch.add(
                         shape=pattern, type="elem rect"
                     )
+                    rectnode.label = s_lbl
                     this_op.add_reference(rectnode, 0)
                     p_value_2 += delta_2
                     yy = yy + gap_y + size_y
@@ -486,13 +493,13 @@ class TemplatePanel(wx.Panel):
         if gap_2 <= 0:
             gap_2 = 5
         message = _("This will delete all existing operations and elements") + "\n"
-        message += _("and replace them by the text-pattern! Are you really sure?")
+        message += _("and replace them by the test-pattern! Are you really sure?")
         caption = _("Create Test-Pattern")
         dlg = wx.MessageDialog(
             self,
             message,
             caption,
-            wx.YES_NO | wx.ICON_QUESTION,
+            wx.YES_NO | wx.ICON_WARNING,
         )
         result = dlg.ShowModal()
         dlg.Destroy()
