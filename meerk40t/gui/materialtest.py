@@ -364,17 +364,19 @@ class TemplatePanel(wx.Panel):
 
             p_value_1 = min_value_1
             xx = start_x
+            text_scale_x = min(1.0, size_y / float(Length("10mm")))
+            text_scale_y = min(1.0, size_x / float(Length("10mm")))
             for idx1 in range(count_1):
                 p_value_2 = min_value_2
                 yy = start_y
 
                 # Add a text above for each column
-                text_x = xx + 0.5 * gap_x
+                text_x = xx + 0.5 * size_x
                 text_y = yy - float(Length("5mm"))
                 node = self.context.elements.elem_branch.add(
                     text=f"{p_value_1:.3f}",
                     matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
+                        f"translate({text_x}, {text_y}) scale({text_scale_x * UNITS_PER_PIXEL})"
                     ),
                     anchor="end",
                     fill=Color("black"),
@@ -389,11 +391,11 @@ class TemplatePanel(wx.Panel):
                     s_lbl += f"- {param_type_2}={p_value_2:.3f}{param_unit_2}"
                     if idx1 == 0:  # first row, so add a text above
                         text_x = xx - float(Length("5mm"))
-                        text_y = yy + 0.5 * gap_y
+                        text_y = yy + 0.5 * size_y
                         node = self.context.elements.elem_branch.add(
                             text=f"{p_value_2:.3f}",
                             matrix=Matrix(
-                                f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
+                                f"translate({text_x}, {text_y}) scale({text_scale_y * UNITS_PER_PIXEL})"
                             ),
                             anchor="end",
                             fill=Color("black"),
@@ -595,10 +597,10 @@ class TemplatePanel(wx.Panel):
         if dimension_2 <= 0:
             dimension_2 = 5
         gap_1 = self.spin_delta_1.GetValue()
-        if gap_1 <= 0:
+        if gap_1 < 0:
             gap_1 = 0
         gap_2 = self.spin_delta_2.GetValue()
-        if gap_2 <= 0:
+        if gap_2 < 0:
             gap_2 = 5
         message = _("This will delete all existing operations and elements") + "\n"
         message += _("and replace them by the test-pattern! Are you really sure?")
