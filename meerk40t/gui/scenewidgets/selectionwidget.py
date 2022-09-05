@@ -2164,7 +2164,7 @@ class SelectionWidget(Widget):
                 show_skew_x = False
 
             self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
-            if self.single_element and show_skew_y:
+            if self.single_element and self.use_handle_size:
                 self.add_widget(
                     -1,
                     ReferenceWidget(
