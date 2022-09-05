@@ -74,6 +74,51 @@ class PathPropertyPanel(ScrolledPanel):
             # print (type(p1).__name__, type(p2).__name__)
             return p1 == p2
 
+        def calc_points(node):
+            from meerk40t.svgelements import (
+                Arc,
+                Close,
+                CubicBezier,
+                Line,
+                Move,
+                QuadraticBezier,
+            )
+            result = 0
+            if hasattr(node, "as_path"):
+                path = node.as_path()
+                target = []
+                first_point = path.first_point
+                if first_point is not None:
+                    pt = (first_point[0], first_point[1], 0)
+                    target.append(pt)
+                for e in path:
+                    if isinstance(e, Move):
+                        pt = (e.end[0], e.end[1], 0)
+                        if pt not in target:
+                            target.append(pt)
+                    elif isinstance(e, Line):
+                        pt = (e.end[0], e.end[1], 0)
+                        if pt not in target:
+                            target.append(pt)
+                    elif isinstance(e, Close):
+                        pass
+                    elif isinstance(e, QuadraticBezier):
+                        pt = (e.end[0], e.end[1], 0)
+                        if pt not in target:
+                            target.append(pt)
+                    elif isinstance(e, CubicBezier):
+                        pt = (e.end[0], e.end[1], 0)
+                        if pt not in target:
+                            target.append(pt)
+                    elif isinstance(e, Arc):
+                        pt = (e.end[0], e.end[1], 0)
+                        if pt not in target:
+                            target.append(pt)
+                result = len(target)
+            elif hasattr(node, "bounds"):
+                result = 4
+            return result
+
         elements = self.context.elements
         _mm = float(Length("1mm"))
         total_area = 0
@@ -85,13 +130,7 @@ class PathPropertyPanel(ScrolledPanel):
 
         total_area = total_area / (_mm * _mm)
         total_length = total_length / _mm
-        try:
-            testpath = self.node.as_path()
-            points = len(testpath.segments())
-            if closed_path(testpath):
-                points = max(0, points - 1)
-        except AttributeError:
-            points = 0
+        points = calc_points(self.node)
 
         self.lbl_info_area.SetValue(f"{total_area:.1f} mm²")
         self.lbl_info_length.SetValue(f"{total_length:.1f} mm")
