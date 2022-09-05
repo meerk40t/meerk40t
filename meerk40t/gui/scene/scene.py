@@ -1015,4 +1015,13 @@ class Scene(Module, Job):
 
     @reference_object.setter
     def reference_object(self, ref_object):
+        prev = self._reference
         self._reference = ref_object
+        dlist = []
+        if prev is not None:
+            dlist.append(prev)
+        if self._reference is not None:
+            dlist.append(self._reference)
+        if len(dlist)>0:
+            self.context.signal("element_property_update", dlist)
+

@@ -27,7 +27,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_vector_20,
-    icons8_vga_20,
+    icons8_r_white,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -370,6 +370,10 @@ class ShadowTree:
             resize=(self.iconsize, self.iconsize), noadjustment=True
         )
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
+        image_id = self.state_images.Add(bitmap=image)
+        image = icons8_r_white.GetBitmap(
+            resize=(self.iconsize, self.iconsize), noadjustment=True
+        )
         image_id = self.state_images.Add(bitmap=image)
         self.wxtree.SetStateImageList(self.state_images)
 
@@ -1171,13 +1175,21 @@ class ShadowTree:
         except (AttributeError, KeyError, TypeError):
             pass
 
+        state_num = -1
         # Has the node a lock attribute?
         if hasattr(node, "lock"):
             lockit = node.lock
         else:
             lockit = False
         if lockit:
-            self.wxtree.SetItemState(node.item, 0)
+            state_num = 0
+
+        scene = getattr(self.context.root, "mainscene", None)
+        if scene is not None:
+            if node == scene.reference_object:
+                state_num = 1
+        if state_num>=0:
+            self.wxtree.SetItemState(node.item, state_num)
         else:
             self.wxtree.SetItemState(node.item, wx.TREE_ITEMSTATE_NONE)
 
