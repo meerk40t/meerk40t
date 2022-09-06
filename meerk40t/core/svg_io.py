@@ -60,7 +60,7 @@ from ..svgelements import (
     Rect,
     SimpleLine,
     SVGImage,
-    SVGText,
+    SVGText, Use,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
 
@@ -679,7 +679,7 @@ class SVGProcessor:
             else:
                 for child in element:
                     self.parse(child, context_node, e_list)
-        elif isinstance(element, Group):
+        elif isinstance(element, (Group, Use)):
             context_node = context_node.add(type="group", id=ident)
             # recurse to children
             if self.reverse:
