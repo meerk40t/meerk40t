@@ -507,9 +507,15 @@ class TemplatePanel(wx.Panel):
 
     def on_button_create_pattern(self, event):
         def make_color(idx1, max1, idx2, max2):
-            r = 255 - int(idx1 / max1 * 255.0)
+            rel = max1 - 1
+            if rel < 1:
+                rel = 1
+            r = 255 - int(idx1 / rel * 255.0)
             g = 0
-            b = 255 - int(idx2 / max2 * 255.0)
+            rel = max2 - 1
+            if rel < 1:
+                rel = 1
+            b = 255 - int(idx2 / rel * 255.0)
             mycolor = Color(r, g, b)
             return mycolor
 
@@ -518,6 +524,18 @@ class TemplatePanel(wx.Panel):
             self.context("element* delete\n")
 
         def create_operations():
+            def shortened(value, digits):
+                result = str(round(value, digits))
+                if "." in result:
+                    while result.endswith("0"):
+                        result = result[:-1]
+                if result.endswith("."):
+                    if result == ".":
+                        result = "0"
+                    else:
+                        result = result[:-1]
+                return result
+
             # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
             display_labels = self.check_labels.GetValue()
             display_values = self.check_values.GetValue()
@@ -538,6 +556,10 @@ class TemplatePanel(wx.Panel):
             start_y = (float(Length(self.context.device.height)) - expected_height) / 2
             operation_branch = self.context.elements._tree.get(type="branch ops")
             element_branch = self.context.elements._tree.get(type="branch elems")
+
+            text_scale_x = min(1.0, size_y / float(Length("20mm")))
+            text_scale_y = min(1.0, size_x / float(Length("20mm")))
+
             # Make one op for text
             if display_labels or display_values:
                 text_op = RasterOpNode()
@@ -546,11 +568,11 @@ class TemplatePanel(wx.Panel):
                 operation_branch.add_node(text_op)
             if display_labels:
                 text_x = start_x + expected_width / 2
-                text_y = start_y - min(float(Length("10mm")), 7.5 * gap_y)
+                text_y = start_y - min(float(Length("10mm")), 3 * gap_y)
                 node = self.context.elements.elem_branch.add(
                     text=f"{param_name_1} [{param_unit_1}]",
                     matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
+                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
                     ),
                     anchor="middle",
                     fill=Color("black"),
@@ -558,12 +580,12 @@ class TemplatePanel(wx.Panel):
                 )
                 text_op.add_reference(node, 0)
 
-                text_x = start_x - min(float(Length("10mm")), 7.5 * gap_x)
+                text_x = start_x - min(float(Length("10mm")), 3 * gap_x)
                 text_y = start_y + expected_height / 2
                 node = self.context.elements.elem_branch.add(
                     text=f"{param_name_2} [{param_unit_2}]",
                     matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
+                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
                     ),
                     anchor="middle",
                     fill=Color("black"),
@@ -575,11 +597,10 @@ class TemplatePanel(wx.Panel):
 
             p_value_1 = min_value_1
 
-            text_scale_x = min(1.0, size_y / float(Length("20mm")))
-            text_scale_y = min(1.0, size_x / float(Length("20mm")))
-
             xx = start_x
             for idx1 in range(count_1):
+                pval1 = shortened(p_value_1, 3)
+
                 p_value_2 = min_value_2
                 yy = start_y
 
@@ -587,7 +608,6 @@ class TemplatePanel(wx.Panel):
                     # Add a text above for each column
                     text_x = xx + 0.5 * size_x
                     text_y = yy - min(float(Length("5mm")), 1.5 * gap_y)
-                    pval1 = round(p_value_1, 7)
                     node = self.context.elements.elem_branch.add(
                         text=f"{pval1}",
                         matrix=Matrix(
@@ -602,7 +622,7 @@ class TemplatePanel(wx.Panel):
                     text_op.add_reference(node, 0)
 
                 for idx2 in range(count_2):
-                    pval2 = round(p_value_2, 7)
+                    pval2 = shortened(p_value_2, 3)
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
                     if display_values and idx1 == 0:  # first row, so add a text above
