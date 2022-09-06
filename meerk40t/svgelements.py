@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.7.5"
+SVGELEMENTS_VERSION = "1.8.0"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -244,7 +244,7 @@ REGEX_CSS_FONT = re.compile(
     r"$"
 )
 REGEX_CSS_FONT_FAMILY = re.compile(
-    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+     r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
 )
 
 svg_parse = [("COMMAND", r"[MmZzLlHhVvCcSsQqTtAa]"), ("SKIP", PATTERN_COMMAWSP)]
@@ -7632,6 +7632,25 @@ class Group(SVGElement, Transformable, list):
         )
 
 
+class Use(SVGElement, list):
+    """
+    Use elements are defined in svg 5.6
+    https://www.w3.org/TR/SVG11/struct.html#UseElement
+
+    Use is a generic container object group-like that use reference objects,
+    """
+
+    def __init__(self, *args, **kwargs):
+        list.__init__(self)
+        SVGElement.__init__(self, *args, **kwargs)
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+
+    def property_by_values(self, values):
+        SVGElement.property_by_values(self, values)
+
+
 class ClipPath(SVGElement, list):
     """
     clipPath elements are defined in svg 14.3.5
@@ -8574,30 +8593,42 @@ class SVG(Group):
         generalized context. Objects ids are read and put into an unparsed shadow tree. <use> objects seamlessly contain
         their definitions.
         """
-        defs = {}
+        event_defs = {}
         parent = None  # Define Root Node.
         children = list()
 
+        # Preprocess iterparse tree. Store all events. Reference all tags.
         for event, elem in iterparse(source, events=("start", "end", "start-ns")):
-            try:
-                tag = elem.tag
-                if tag.startswith("{http://www.w3.org/2000/svg"):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-            except AttributeError:
-                yield None, event, elem
-                continue
-
             if event == "start":
-                attributes = elem.attrib
-                # Create new node.
                 siblings = children  # Parent's children are now my siblings.
                 parent = (parent, children)  # parent is now previous node context
                 children = list()  # new node has no children.
-                node = (tag, elem, children)  # define this node.
+                node = (elem, children)  # define this node.
                 siblings.append(node)  # siblings now includes this node.
+                attributes = elem.attrib
+                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
+                    event_defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
+            elif event == "end":
+                parent, children = parent
+            else:
+                children.append((elem, None))
+        nodes = children
+        # End preprocess
 
+        # Semiparse the nodes. All nodes are given in iterparse ordering with start-ns, start, and end. Use values are inlined.
+        def semiparse(nodes):
+            for elem, children in nodes:
+                if children is None:
+                    yield None, "start-ns", elem
+                    continue
+                tag = elem.tag
+                if tag.startswith("{http://www.w3.org/2000/svg"):
+                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                yield tag, "start", elem
+                yield from semiparse(children)
                 if SVG_TAG_USE == tag:
                     url = None
+                    attributes = elem.attrib
                     if XLINK_HREF in attributes:
                         url = attributes[XLINK_HREF]
                     if SVG_HREF in attributes:
@@ -8630,24 +8661,13 @@ class SVG(Group):
                                     x,
                                     y,
                                 )
-                        yield tag, event, elem
                         try:
-                            shadow_node = defs[url[1:]]
-                            children.append(
-                                shadow_node
-                            )  # Shadow children are children of the use.
-                            for n in SVG._shadow_iter(*shadow_node):
-                                yield n
+                            yield from semiparse([event_defs[url[1:]]])
                         except KeyError:
                             pass  # Failed to find link.
-                else:
-                    yield tag, event, elem
-                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
-                    defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
-            elif event == "end":
-                yield tag, event, elem
-                # event is 'end', pop values.
-                parent, children = parent  # Parent is now node.
+                yield tag, "end", elem
+
+        yield from semiparse(nodes)
 
     @staticmethod
     def parse(
@@ -8676,6 +8696,7 @@ class SVG(Group):
         :param parse_display_none: Parse display_none values anyway.
         :return:
         """
+        use = 0
         clip = 0
         root = context
         styles = {}
@@ -8713,10 +8734,12 @@ class SVG(Group):
                     del values[SVG_ATTR_VIEWBOX]
                 if SVG_ATTR_ID in values:
                     del values[SVG_ATTR_ID]
+                if SVG_ATTR_CLASS in values:
+                    del values[SVG_ATTR_CLASS]
                 if SVG_ATTR_CLIP_PATH in values:
                     del values[SVG_ATTR_CLIP_PATH]
 
-                attributes = elem.attrib  # priority; lowest
+                attributes = dict(elem.attrib)  # priority; lowest
                 attributes[SVG_ATTR_TAG] = tag
 
                 # Split any Style block elements into parts; priority medium
@@ -8790,7 +8813,6 @@ class SVG(Group):
                         attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
 
                 # All class and attribute properties are compiled.
-
                 values.update(attributes)
                 values[SVG_STRUCT_ATTRIB] = attributes
                 if (
@@ -8852,6 +8874,13 @@ class SVG(Group):
                     context = s  # Non-Rendered
                     s.render(ppi=ppi, width=width, height=height)
                     clip += 1
+                elif SVG_TAG_USE == tag:
+                    s = Use(values)
+                    context.append(s)
+                    context = s
+                    use += 1
+                    if SVG_ATTR_ID in attributes and root is not None and use == 1:
+                        root.objects[attributes[SVG_ATTR_ID]] = s
                 elif SVG_TAG_PATTERN == tag:
                     s = Pattern(values)
                     context = s  # Non-rendered
@@ -8919,7 +8948,7 @@ class SVG(Group):
                             s.clip_rule = clip_rule
                     except AttributeError:
                         pass
-                if SVG_ATTR_ID in attributes and root is not None:
+                if SVG_ATTR_ID in attributes and root is not None and use == 0:
                     root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == "end":  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
@@ -8939,7 +8968,7 @@ class SVG(Group):
                     SVG_TAG_STYLE,
                 ):
                     attributes = elem.attrib
-                    if SVG_ATTR_ID in attributes and root is not None:
+                    if SVG_ATTR_ID in attributes and root is not None and use == 0:
                         root.objects[attributes[SVG_ATTR_ID]] = s
                 if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN):
                     s = Text(values, text=elem.text)
@@ -8972,6 +9001,8 @@ class SVG(Group):
                                 styles[sel] += value
                 elif SVG_TAG_CLIPPATH == tag:
                     clip -= 1
+                elif SVG_TAG_USE == tag:
+                    use -= 1
                 if s is not None:
                     # Assign optional linked properties.
                     try:
