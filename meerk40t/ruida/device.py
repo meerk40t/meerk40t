@@ -2096,7 +2096,7 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x0221:
             if self.device is not None:
                 dev_x, dev_y = self.device.current
-                self.x = int(dev_x * UNITS_PER_uM)
+                self.x = int(dev_x / UNITS_PER_uM)
             x = int(self.x)
             return "Axis Preferred Position 1, Pos X", x
         if mem == 0x0223:
@@ -2106,7 +2106,7 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x0231:
             if self.device is not None:
                 dev_x, dev_y = self.device.current
-                self.y = int(dev_y * UNITS_PER_uM)
+                self.y = int(dev_y / UNITS_PER_uM)
             y = int(self.y)
             return "Axis Preferred Position 2, Pos Y", y
         if mem == 0x0233:
