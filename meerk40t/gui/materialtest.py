@@ -26,11 +26,19 @@ class TemplatePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
+        # Setup 5 Op nodes - they aren't saved yet
+        self.default_op = []
+        self.default_op.append(CutOpNode())
+        self.default_op.append(EngraveOpNode())
+        self.default_op.append(RasterOpNode())
+        self.default_op.append(ImageOpNode())
+        self.default_op.append(HatchOpNode())
+
         self.parameters = []
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-
+        self.button_op = wx.Button(self, wx.ID_ANY, _("Predefine Operation"))
         self.combo_param_1 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -49,26 +57,23 @@ class TemplatePanel(wx.Panel):
         self.text_max_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_min_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_max_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.spin_dim_1 = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, min=0.1, max=50.0, initial=10.0
-        )
-        self.spin_dim_2 = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, min=0.1, max=50.0, initial=10.0
-        )
-        self.spin_delta_1 = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, min=0.0, max=50.0, initial=5.0
-        )
-        self.spin_delta_2 = wx.SpinCtrlDouble(
-            self, wx.ID_ANY, min=0.0, max=50.0, initial=5.0
-        )
-
+        self.spin_dim_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.spin_dim_1.set_range(0, 50)
+        self.spin_dim_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.spin_dim_2.set_range(0, 50)
+        self.spin_delta_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.spin_delta_1.set_range(0, 50)
+        self.spin_delta_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.spin_delta_2.set_range(0, 50)
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_param_optype = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Operation to test")), wx.HORIZONTAL
         )
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
         sizer_param_optype.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_param_optype.Add(self.combo_ops, 0, wx.EXPAND, 0)
+        sizer_param_optype.Add(self.combo_ops, 1, wx.EXPAND, 0)
+        sizer_param_optype.Add(self.button_op, 0, wx.EXPAND, 0)
+
         sizer_param_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_param_x = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("First parameter (X-Axis)")), wx.VERTICAL
@@ -99,18 +104,23 @@ class TemplatePanel(wx.Panel):
         hline_dim_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_dim_1.Add(self.spin_dim_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm, " + _("Delta:"))
-        hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_dim_1.Add(self.spin_delta_1, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_dim_1.Add(self.spin_dim_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        hline_delta_1 = wx.BoxSizer(wx.HORIZONTAL)
+        mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
+        hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_delta_1.Add(self.spin_delta_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_param_x.Add(hline_param_1, 0, wx.EXPAND, 1)
         sizer_param_x.Add(hline_count_1, 0, wx.EXPAND, 1)
         sizer_param_x.Add(hline_min_1, 0, wx.EXPAND, 1)
         sizer_param_x.Add(hline_max_1, 0, wx.EXPAND, 1)
         sizer_param_x.Add(hline_dim_1, 0, wx.EXPAND, 1)
+        sizer_param_x.Add(hline_delta_1, 0, wx.EXPAND, 1)
 
         sizer_param_y = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Second parameter (Y-Axis)")), wx.VERTICAL
@@ -141,18 +151,23 @@ class TemplatePanel(wx.Panel):
         hline_dim_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Height:"))
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_dim_2.Add(self.spin_dim_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        mylbl = wx.StaticText(self, wx.ID_ANY, "mm, " + _("Delta:"))
-        hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_dim_2.Add(self.spin_delta_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_dim_2.Add(self.spin_dim_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        hline_delta_2 = wx.BoxSizer(wx.HORIZONTAL)
+        mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
+        hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_delta_2.Add(self.spin_delta_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
+        hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_param_y.Add(hline_param_2, 0, wx.EXPAND, 1)
         sizer_param_y.Add(hline_count_2, 0, wx.EXPAND, 1)
         sizer_param_y.Add(hline_min_2, 0, wx.EXPAND, 1)
         sizer_param_y.Add(hline_max_2, 0, wx.EXPAND, 1)
         sizer_param_y.Add(hline_dim_2, 0, wx.EXPAND, 1)
+        sizer_param_y.Add(hline_delta_2, 0, wx.EXPAND, 1)
 
         sizer_param_xy.Add(sizer_param_x, 1, wx.EXPAND, 0)
         sizer_param_xy.Add(sizer_param_y, 1, wx.EXPAND, 0)
@@ -162,11 +177,17 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(self.button_create, 0, wx.EXPAND, 0)
 
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
+        self.button_op.Bind(wx.EVT_BUTTON, self.on_button_define)
+
         self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_max_1.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_min_2.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_max_2.Bind(wx.EVT_TEXT, self.validate_input)
+        self.spin_dim_1.Bind(wx.EVT_TEXT, self.validate_input)
+        self.spin_delta_1.Bind(wx.EVT_TEXT, self.validate_input)
+        self.spin_dim_2.Bind(wx.EVT_TEXT, self.validate_input)
+        self.spin_delta_2.Bind(wx.EVT_TEXT, self.validate_input)
         self.combo_param_1.Bind(wx.EVT_COMBOBOX, self.on_combo_1)
         self.combo_param_2.Bind(wx.EVT_COMBOBOX, self.on_combo_2)
 
@@ -176,6 +197,9 @@ class TemplatePanel(wx.Panel):
         self.combo_ops.SetSelection(0)
         self.restore_settings()
         self.set_param_according_to_op(None)
+
+    def on_button_define(self, event):
+        return
 
     def set_param_according_to_op(self, event):
 
@@ -321,7 +345,47 @@ class TemplatePanel(wx.Panel):
         self.validate_input(None)
 
     def validate_input(self, event):
+        def valid_float(ctrl):
+            result = True
+            if ctrl.GetValue() == "":
+                result = False
+            else:
+                try:
+                    value = float(ctrl.GetValue())
+                except ValueError:
+                    result = False
+            return result
+
         active = True
+        optype = self.combo_ops.GetSelection()
+        if optype < 0:
+            active = False
+        idx1 = self.combo_param_1.GetSelection()
+        if idx1 < 0:
+            active = False
+        idx2 = self.combo_param_2.GetSelection()
+        if idx2 < 0:
+            active = False
+        if idx1 == idx2:
+           active = False
+        if not valid_float(self.text_min_1):
+            active = False
+        if not valid_float(self.text_max_1):
+            active = False
+        if not valid_float(self.text_min_2):
+            active = False
+        if not valid_float(self.text_max_2):
+            active = False
+        if not valid_float(self.spin_dim_1):
+            active = False
+        if not valid_float(self.spin_delta_1):
+            active = False
+        if not valid_float(self.spin_dim_2):
+            active = False
+        if not valid_float(self.spin_delta_2):
+            active = False
+
+        self.button_op.Enable(False)
         self.button_create.Enable(active)
 
     def on_button_create_pattern(self, event):
@@ -362,9 +426,9 @@ class TemplatePanel(wx.Panel):
             text_op.label = "Descriptions"
             operation_branch.add_node(text_op)
             text_x = start_x + expected_width / 2
-            text_y = start_y + expected_height + float(Length("8mm"))
+            text_y = start_y - min(float(Length("10mm")), 7.5 * gap_y)
             node = self.context.elements.elem_branch.add(
-                text=f"{param_name_1}",
+                text=f"{param_name_1} [{param_unit_1}]",
                 matrix=Matrix(
                     f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
                 ),
@@ -374,10 +438,10 @@ class TemplatePanel(wx.Panel):
             )
             text_op.add_reference(node, 0)
 
-            text_x = start_x + expected_width + float(Length("8mm"))
+            text_x = start_x - min(float(Length("10mm")), 7.5 * gap_x)
             text_y = start_y + expected_height / 2
             node = self.context.elements.elem_branch.add(
-                text=f"{param_name_2}",
+                text=f"{param_name_2} [{param_unit_2}]",
                 matrix=Matrix(
                     f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
                 ),
@@ -390,59 +454,63 @@ class TemplatePanel(wx.Panel):
             text_op.add_reference(node, 0)
 
             p_value_1 = min_value_1
+
+            text_scale_x = min(1.0, size_y / float(Length("20mm")))
+            text_scale_y = min(1.0, size_x / float(Length("20mm")))
+
             xx = start_x
-            text_scale_x = min(1.0, size_y / float(Length("10mm")))
-            text_scale_y = min(1.0, size_x / float(Length("10mm")))
             for idx1 in range(count_1):
                 p_value_2 = min_value_2
                 yy = start_y
 
                 # Add a text above for each column
                 text_x = xx + 0.5 * size_x
-                text_y = yy - min(float(Length("5mm")), 2.5 * gap_y)
+                text_y = yy - min(float(Length("5mm")), 1.5 * gap_y)
+                pval1 = round(p_value_1, 7)
                 node = self.context.elements.elem_branch.add(
-                    text=f"{p_value_1:.{prec1}f}",
+                    text=f"{pval1}",
                     matrix=Matrix(
                         f"translate({text_x}, {text_y}) scale({text_scale_x * UNITS_PER_PIXEL})"
                     ),
-                    anchor="end",
+                    anchor="middle",
                     fill=Color("black"),
                     type="elem text",
                 )
-                node.matrix.post_rotate(tau / 4, text_x, text_y)
+                # node.matrix.post_rotate(tau / 4, text_x, text_y)
                 node.modified()
                 text_op.add_reference(node, 0)
-
                 for idx2 in range(count_2):
-                    s_lbl = f"{param_type_1}={p_value_1:.{prec1}f}{param_unit_1}"
-                    s_lbl += f"- {param_type_2}={p_value_2:.{prec2}f}{param_unit_2}"
+                    pval2 = round(p_value_2, 7)
+                    s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
+                    s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
                     if idx1 == 0:  # first row, so add a text above
-                        text_x = xx - min(float(Length("5mm")), 2.5 * gap_x)
+                        text_x = xx - min(float(Length("5mm")), 1.5 * gap_x)
                         text_y = yy + 0.5 * size_y
                         node = self.context.elements.elem_branch.add(
-                            text=f"{p_value_2:.{prec2}f}",
+                            text=f"{pval2}",
                             matrix=Matrix(
                                 f"translate({text_x}, {text_y}) scale({text_scale_y * UNITS_PER_PIXEL})"
                             ),
-                            anchor="end",
+                            anchor="middle",
                             fill=Color("black"),
                             type="elem text",
                         )
+                        node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                         text_op.add_reference(node, 0)
                     if optype == 0:  # Cut
-                        this_op = CutOpNode()
+                        this_op = copy(self.default_op[optype])
                         usefill = False
                     elif optype == 1:  # Engrave
-                        this_op = EngraveOpNode()
+                        this_op = copy(self.default_op[optype])
                         usefill = False
                     elif optype == 2:  # Raster
-                        this_op = RasterOpNode()
+                        this_op = copy(self.default_op[optype])
                         usefill = True
                     elif optype == 3:  # Image
-                        this_op = ImageOpNode()
+                        this_op = copy(self.default_op[optype])
                         usefill = False
                     elif optype == 4:  # Hatch
-                        this_op = HatchOpNode()
+                        this_op = copy(self.default_op[optype])
                         usefill = True
                     else:
                         return
@@ -541,8 +609,6 @@ class TemplatePanel(wx.Panel):
         # 0 = internal_attribute, 1 = secondary_attribute,
         # 2 = Label, 3 = unit,
         # 4 = keep_unit, 5 = needs_to_be_positive)
-        prec1 = 2
-        prec2 = 2
         param_name_1 = self.parameters[idx][2]
         param_type_1 = self.parameters[idx][0]
         param_prepper_1 = self.parameters[idx][1]
@@ -624,18 +690,33 @@ class TemplatePanel(wx.Panel):
             delta_2 = (max_value_2 - min_value_2) / (count_2 - 1)
         else:
             delta_2 = 0
-        dimension_1 = self.spin_dim_1.GetValue()
+        try:
+            dimension_1 = float(self.spin_dim_1.GetValue())
+        except ValueError:
+            dimension_1 = -1
+        try:
+            dimension_2 = float(self.spin_dim_2.GetValue())
+        except ValueError:
+            dimension_2 = -1
         if dimension_1 <= 0:
             dimension_1 = 5
-        dimension_2 = self.spin_dim_2.GetValue()
         if dimension_2 <= 0:
             dimension_2 = 5
-        gap_1 = self.spin_delta_1.GetValue()
+
+        try:
+            gap_1 = float(self.spin_delta_1.GetValue())
+        except ValueError:
+            gap_1 = -1
+        try:
+            gap_2 = float(self.spin_delta_2.GetValue())
+        except ValueError:
+            gap_2 = -1
+
         if gap_1 < 0:
             gap_1 = 0
-        gap_2 = self.spin_delta_2.GetValue()
         if gap_2 < 0:
             gap_2 = 5
+
         message = _("This will delete all existing operations and elements") + "\n"
         message += _("and replace them by the test-pattern! Are you really sure?")
         caption = _("Create Test-Pattern")
@@ -667,10 +748,10 @@ class TemplatePanel(wx.Panel):
         self.context.setting(str, "template_max2", "")
         self.context.setting(int, "template_count1", 5)
         self.context.setting(int, "template_count2", 5)
-        self.context.setting(float, "template_dim1", 10)
-        self.context.setting(float, "template_dim2", 10)
-        self.context.setting(float, "template_gap1", 5)
-        self.context.setting(float, "template_gap2", 5)
+        self.context.setting(str, "template_dim_1", "10")
+        self.context.setting(str, "template_dim_2", "10")
+        self.context.setting(str, "template_gap_1", "5")
+        self.context.setting(str, "template_gap_2", "5")
 
     def save_settings(self):
         self.context.template_optype = self.combo_ops.GetSelection()
@@ -682,10 +763,10 @@ class TemplatePanel(wx.Panel):
         self.context.template_max2 = self.text_max_2.GetValue()
         self.context.template_count1 = self.spin_count_1.GetValue()
         self.context.template_count2 = self.spin_count_2.GetValue()
-        self.context.template_dim1 = self.spin_dim_1.GetValue()
-        self.context.template_dim2 = self.spin_dim_2.GetValue()
-        self.context.template_gap1 = self.spin_delta_1.GetValue()
-        self.context.template_gap2 = self.spin_delta_2.GetValue()
+        self.context.template_dim_1 = self.spin_dim_1.GetValue()
+        self.context.template_dim_2 = self.spin_dim_2.GetValue()
+        self.context.template_gap_1 = self.spin_delta_1.GetValue()
+        self.context.template_gap_2 = self.spin_delta_2.GetValue()
 
     def restore_settings(self):
         try:
@@ -698,16 +779,18 @@ class TemplatePanel(wx.Panel):
             self.text_max_2.SetValue(self.context.template_max2)
             self.spin_count_1.SetValue(self.context.template_count1)
             self.spin_count_2.SetValue(self.context.template_count2)
-            self.spin_dim_1.SetValue(self.context.template_dim1)
-            self.spin_dim_2.SetValue(self.context.template_dim2)
-            self.spin_delta_1.SetValue(self.context.template_gap1)
-            self.spin_delta_2.SetValue(self.context.template_gap2)
+            self.spin_dim_1.SetValue(self.context.template_dim_1)
+            self.spin_dim_2.SetValue(self.context.template_dim_2)
+            self.spin_delta_1.SetValue(self.context.template_gap_1)
+            self.spin_delta_2.SetValue(self.context.template_gap_2)
         except (AttributeError, ValueError):
-            return
+            pass
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
         self.set_param_according_to_op(None)
+
+
 class TemplateTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(490, 280, submenu="Laser-Tools", *args, **kwds)
