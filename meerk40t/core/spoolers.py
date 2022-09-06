@@ -279,6 +279,7 @@ def plugin(kernel, lifecycle):
             if y is None:
                 spooler.command("set_origin", None, None)
             else:
+                x, y = kernel.device.physical_to_device_position(x, y)
                 spooler.command("set_origin", x, y)
             return "spooler", spooler
 
