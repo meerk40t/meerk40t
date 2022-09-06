@@ -877,7 +877,7 @@ class Planner(Service):
 
 def origin():
     yield "rapid_mode"
-    yield "move_abs", 0, 0
+    yield "move_ori", 0, 0
 
 
 def unlock():

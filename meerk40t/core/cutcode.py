@@ -525,6 +525,11 @@ class CutCode(CutGroup):
                 ny = y + ny
                 x = nx
                 y = ny
+            elif cmd == "move_ori":
+                nx = code[1]
+                ny = code[2]
+                x = nx
+                y = ny
             elif cmd == "move_abs":
                 nx = code[1]
                 ny = code[2]
@@ -1019,7 +1024,7 @@ class GotoCut(CutObject):
         pass
 
     def generate(self):
-        yield "move_abs", self._start_x, self._start_y
+        yield "move_ori", self._start_x, self._start_y
 
 
 class SetOriginCut(CutObject):
