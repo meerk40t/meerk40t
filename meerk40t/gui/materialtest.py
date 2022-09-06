@@ -40,36 +40,38 @@ class TemplatePanel(wx.Panel):
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.combo_param_1 = wx.ComboBox(
-            self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
-        )
-        self.combo_param_2 = wx.ComboBox(
-            self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
-        )
-        self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
-        self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
-        self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
-        self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
 
         self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Labels"))
         self.check_values = wx.CheckBox(self, wx.ID_ANY, _("Values"))
 
+        self.combo_param_1 = wx.ComboBox(
+            self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
         self.spin_count_1 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
-        self.spin_count_2 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
         self.text_min_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_max_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_min_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_max_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_dim_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_dim_1.set_range(0, 50)
-        self.text_dim_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_dim_2.set_range(0, 50)
         self.text_delta_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_delta_1.set_range(0, 50)
+        self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
+        self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
+
+        self.combo_param_2 = wx.ComboBox(
+            self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.spin_count_2 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
+        self.text_min_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_max_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_dim_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_dim_2.set_range(0, 50)
         self.text_delta_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
         self.text_delta_2.set_range(0, 50)
+        self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
+        self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
 
         self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
+        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize = 25))
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_param_optype = wx.BoxSizer(wx.HORIZONTAL)
@@ -191,6 +193,23 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(sizer_param_optype, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_param_xy, 0, wx.EXPAND, 0)
         sizer_main.Add(self.button_create, 0, wx.EXPAND, 0)
+
+        sizer_info = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("How to use it")), wx.VERTICAL
+        )
+        infomsg = _("To provide the best burning results, the parameters of operations")
+        infomsg += " " +_("need to be adjusted according to *YOUR* laser and the specific material")
+        infomsg += " " + _("you want to work with (e.g. one batch of poplar plywoowd from one supplier")
+        infomsg += " " + _("may respond completely different to a batch of another supplier despite")
+        infomsg += " " + _("having the very same specifications on paper).")
+        infomsg += "\n" + _("E.g. for a regular CO2 laser you want to optimize the burn speed")
+        infomsg += " " + _("for a given power to reduce burn marks or decrease execution time).")
+        infomsg += "\n" + _("Meerk40t simplifies this task to find out the optimal settings")
+        infomsg += " "+ _("by creating a testpattern that varies two different parameters.")
+
+        info_label = wx.StaticText(self, wx.ID_ANY, infomsg)
+        sizer_info.Add(info_label, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_info, 1, wx.EXPAND, 0)
 
         self.button_create.SetToolTip(_("Create a grid with your values"))
         s =  _("Operation type for which the testpattern will be generated")
