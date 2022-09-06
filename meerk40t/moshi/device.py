@@ -289,6 +289,7 @@ class MoshiDevice(Service, ViewPort):
             """
             self.controller.estop()
             channel(_("Moshi Channel Aborted."))
+            self.context.signal("pipe;running", False)
 
         @self.console_command(
             "status",

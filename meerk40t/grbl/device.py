@@ -311,6 +311,7 @@ class GRBLDevice(Service, ViewPort):
         )
         def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
+            self.context.signal("pipe;running", False)
 
         @self.console_command(
             "pause",
