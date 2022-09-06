@@ -2,6 +2,7 @@ from copy import copy
 from math import tau
 import PIL
 import wx
+from wx import aui
 
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
@@ -25,6 +26,7 @@ class TemplatePanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.callback = None
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
@@ -38,7 +40,6 @@ class TemplatePanel(wx.Panel):
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.button_op = wx.Button(self, wx.ID_ANY, _("Predefine Operation"))
         self.combo_param_1 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -72,7 +73,6 @@ class TemplatePanel(wx.Panel):
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
         sizer_param_optype.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_param_optype.Add(self.combo_ops, 1, wx.EXPAND, 0)
-        sizer_param_optype.Add(self.button_op, 0, wx.EXPAND, 0)
 
         sizer_param_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_param_x = wx.StaticBoxSizer(
@@ -177,7 +177,6 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(self.button_create, 0, wx.EXPAND, 0)
 
         self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
-        self.button_op.Bind(wx.EVT_BUTTON, self.on_button_define)
 
         self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
@@ -198,11 +197,13 @@ class TemplatePanel(wx.Panel):
         self.restore_settings()
         self.set_param_according_to_op(None)
 
-    def on_button_define(self, event):
-        return
+    def set_callback(self, routine):
+        self.callback = routine
+        idx = self.combo_ops.GetSelection()
+        if self.callback is not None and idx>=0:
+            self.callback(self.default_op[idx])
 
     def set_param_according_to_op(self, event):
-
         def preset_balor_wobble(node=None):
             # Will be called ahead of the modification of a wobble variable
             # to copy the device defaults
@@ -235,6 +236,13 @@ class TemplatePanel(wx.Panel):
             node.settings["delay_polygon"] = self.context.device.delay_polygon
 
         opidx = self.combo_ops.GetSelection()
+        if opidx < 0:
+            opnode = None
+        else:
+            opnode = self.default_op[opidx]
+        if self.callback is not None:
+            self.callback(opnode)
+
         # (internal_attribute, secondary_attribute, Label, unit, keep_unit, needs_to_be_positive)
         self.parameters = [
             ("speed", None, _("Speed"), "mm/s", False, True),
@@ -286,14 +294,70 @@ class TemplatePanel(wx.Panel):
         if allow_balor:
             balor_choices = [
                 ("frequency", None, _("Frequency"), "kHz", False, True),
-                ("rapid_speed", preset_balor_rapid, _("Rapid Speed"), "mm/s", False, True),
-                ("pulse_width", preset_balor_pulse, _("Pulse Width"), "ns", False, True),
-                ("delay_laser_on", preset_balor_timings, _("Laser On Delay"), "µs", False, False),
-                ("delay_laser_off", preset_balor_timings,  _("Laser Off Delay"), "µs", False, False),
-                ("delay_polygon", preset_balor_timings, _("Polygon Delay"), "µs", False, False),
-                ("wobble_radius", preset_balor_wobble, _("Wobble Radius"), "mm", True, True),
-                ("wobble_interval", preset_balor_wobble, _("Wobble Interval"), "mm", True, True),
-                ("wobble_speed", preset_balor_wobble, _("Wobble Speed Multiplier"), "x", False, True),
+                (
+                    "rapid_speed",
+                    preset_balor_rapid,
+                    _("Rapid Speed"),
+                    "mm/s",
+                    False,
+                    True,
+                ),
+                (
+                    "pulse_width",
+                    preset_balor_pulse,
+                    _("Pulse Width"),
+                    "ns",
+                    False,
+                    True,
+                ),
+                (
+                    "delay_laser_on",
+                    preset_balor_timings,
+                    _("Laser On Delay"),
+                    "µs",
+                    False,
+                    False,
+                ),
+                (
+                    "delay_laser_off",
+                    preset_balor_timings,
+                    _("Laser Off Delay"),
+                    "µs",
+                    False,
+                    False,
+                ),
+                (
+                    "delay_polygon",
+                    preset_balor_timings,
+                    _("Polygon Delay"),
+                    "µs",
+                    False,
+                    False,
+                ),
+                (
+                    "wobble_radius",
+                    preset_balor_wobble,
+                    _("Wobble Radius"),
+                    "mm",
+                    True,
+                    True,
+                ),
+                (
+                    "wobble_interval",
+                    preset_balor_wobble,
+                    _("Wobble Interval"),
+                    "mm",
+                    True,
+                    True,
+                ),
+                (
+                    "wobble_speed",
+                    preset_balor_wobble,
+                    _("Wobble Speed Multiplier"),
+                    "x",
+                    False,
+                    True,
+                ),
             ]
             for entry in balor_choices:
                 self.parameters.append(entry)
@@ -367,7 +431,7 @@ class TemplatePanel(wx.Panel):
         if idx2 < 0:
             active = False
         if idx1 == idx2:
-           active = False
+            active = False
         if not valid_float(self.text_min_1):
             active = False
         if not valid_float(self.text_max_1):
@@ -385,7 +449,6 @@ class TemplatePanel(wx.Panel):
         if not valid_float(self.spin_delta_2):
             active = False
 
-        self.button_op.Enable(False)
         self.button_create.Enable(active)
 
     def on_button_create_pattern(self, event):
@@ -526,7 +589,7 @@ class TemplatePanel(wx.Panel):
                         value = p_value_1
                     if hasattr(this_op, param_type_1):
                         setattr(this_op, param_type_1, value)
-                    else: # Try setting
+                    else:  # Try setting
                         this_op.settings[param_type_1] = value
 
                     # Do we need to prep the op?
@@ -539,7 +602,7 @@ class TemplatePanel(wx.Panel):
                         value = p_value_2
                     if hasattr(this_op, param_type_2):
                         setattr(this_op, param_type_2, value)
-                    else: # Try setting
+                    else:  # Try setting
                         this_op.settings[param_type_2] = value
 
                     set_color = make_color(idx1, count_1, idx2, count_2)
@@ -770,9 +833,15 @@ class TemplatePanel(wx.Panel):
 
     def restore_settings(self):
         try:
-            self.combo_ops.SetSelection(min(self.context.template_optype, self.combo_ops.GetCount() -1))
-            self.combo_param_1.SetSelection(min(self.context.template_param1, self.combo_param_1.GetCount() -1))
-            self.combo_param_2.SetSelection(min(self.context.template_param2, self.combo_param_2.GetCount() -1))
+            self.combo_ops.SetSelection(
+                min(self.context.template_optype, self.combo_ops.GetCount() - 1)
+            )
+            self.combo_param_1.SetSelection(
+                min(self.context.template_param1, self.combo_param_1.GetCount() - 1)
+            )
+            self.combo_param_2.SetSelection(
+                min(self.context.template_param2, self.combo_param_2.GetCount() - 1)
+            )
             self.text_min_1.SetValue(self.context.template_min1)
             self.text_max_1.SetValue(self.context.template_max1)
             self.text_min_2.SetValue(self.context.template_min2)
@@ -790,25 +859,131 @@ class TemplatePanel(wx.Panel):
     def on_activate_device(self, origin, device):
         self.set_param_according_to_op(None)
 
-
 class TemplateTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(490, 280, submenu="Laser-Tools", *args, **kwds)
-        self.panel = TemplatePanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
+        self.panel_instances = list()
+        self.panel_template = TemplatePanel(
+            self, wx.ID_ANY, context=self.context,
+        )
+
+        self.notebook_main = wx.aui.AuiNotebook(
+            self,
+            -1,
+            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | wx.aui.AUI_NB_SCROLL_BUTTONS
+            | wx.aui.AUI_NB_TAB_SPLIT
+            | wx.aui.AUI_NB_TAB_MOVE,
+        )
+
+        self.notebook_main.AddPage(self.panel_template, _("Generator"))
+
+        self.panel_template.set_callback(self.set_node)
+
+        self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Parameter-Test"))
 
+    def set_node(self, node):
+        for p in self.panel_instances:
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
+            # self.remove_module_delegate(p)
+
+        def sort_priority(prop):
+            prop_sheet, node = prop
+            return (
+                getattr(prop_sheet, "priority")
+                if hasattr(prop_sheet, "priority")
+                else 0
+            )
+
+        if node is None:
+            return
+        pages_to_instance = []
+        pages_in_node = []
+        found = False
+        for property_sheet in self.context.lookup_all(
+            f"property/{node.__class__.__name__}/.*"
+        ):
+            if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                node
+            ):
+                pages_in_node.append((property_sheet, node))
+                found = True
+        # If we did not have any hits and the node is a reference
+        # then we fall back to the master. So if in the future we
+        # would have a property panel dealing with reference-nodes
+        # then this would no longer apply.
+        if node.type == "reference" and not found:
+            snode = node.node
+            found = False
+            for property_sheet in self.context.lookup_all(
+                f"property/{snode.__class__.__name__}/.*"
+            ):
+                if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
+                    snode
+                ):
+                    pages_in_node.append((property_sheet, snode))
+                    found = True
+
+        pages_in_node.sort(key=sort_priority)
+        pages_to_instance.extend(pages_in_node)
+
+        self.window_close()
+        # self.panel_instances.clear()
+        # Delete all but the first page...
+        while (self.notebook_main.GetPageCount()>1):
+            self.notebook_main.DeletePage(1)
+        for prop_sheet, instance in pages_to_instance:
+            page_panel = prop_sheet(
+                self.notebook_main, wx.ID_ANY, context=self.context, node=instance
+            )
+            try:
+                name = prop_sheet.name
+            except AttributeError:
+                name = instance.__class__.__name__
+
+            self.notebook_main.AddPage(page_panel, name)
+            try:
+                page_panel.set_widgets(instance)
+            except AttributeError:
+                pass
+            # self.add_module_delegate(page_panel)
+            self.panel_instances.append(page_panel)
+            try:
+                page_panel.pane_show()
+            except AttributeError:
+                pass
+            page_panel.Layout()
+            try:
+                page_panel.SetupScrolling()
+            except AttributeError:
+                pass
+
+        self.Layout()
+
+
     def window_open(self):
         pass
 
     def window_close(self):
-        pass
+        for p in self.panel_instances:
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
+        # We do not remove the delegates, they will detach with the closing of the module.
+        self.panel_instances.clear()
 
     def delegates(self):
-        yield self.panel
+        yield self.panel_template
+        for p in self.panel_instances:
+            yield p
 
     @staticmethod
     def submenu():
