@@ -272,7 +272,7 @@ def plugin(kernel, lifecycle):
             output_type="spooler",
             help=_("set_origin <x> <y>: set origin to position"),
         )
-        def move_origin(channel, _, x, y, data=None, **kwgs):
+        def set_origin(channel, _, x, y, data=None, **kwgs):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
