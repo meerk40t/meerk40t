@@ -244,7 +244,7 @@ REGEX_CSS_FONT = re.compile(
     r"$"
 )
 REGEX_CSS_FONT_FAMILY = re.compile(
-     r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
 )
 
 svg_parse = [("COMMAND", r"[MmZzLlHhVvCcSsQqTtAa]"), ("SKIP", PATTERN_COMMAWSP)]
@@ -6941,7 +6941,7 @@ class _RoundShape(Shape):
         if b > a:
             a, b = b, a
         h = ((a - b) * (a - b)) / ((a + b) * (a + b))
-        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
+        return tau / 2 * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
 
 
 class Ellipse(_RoundShape):
@@ -7667,9 +7667,7 @@ class Use(SVGElement, Transformable, list):
         if self.x != 0 or self.y != 0:
             # If x or y is set, apply this to transform
             try:
-                values[
-                    SVG_ATTR_TRANSFORM
-                ] = "%s translate(%s, %s)" % (
+                values[SVG_ATTR_TRANSFORM] = "%s translate(%s, %s)" % (
                     values[SVG_ATTR_TRANSFORM],
                     self.x,
                     self.y,
@@ -8629,21 +8627,6 @@ class SVG(Group):
         return self.viewbox.transform(self)
 
     @staticmethod
-    def _shadow_iter(tag, elem, children):
-        yield tag, "start", elem
-        try:
-            for t, e, c in children:
-                for shadow_tag, shadow_event, shadow_elem in SVG._shadow_iter(t, e, c):
-                    yield shadow_tag, shadow_event, shadow_elem
-        except ValueError:
-            """
-            Strictly speaking it is possible to reference use from other use objects. If this is an infinite loop
-            we should not block the rendering. Just say we finished. See: W3C, struct-use-12-f
-            """
-            pass
-        yield tag, "end", elem
-
-    @staticmethod
     def _use_structure_parse(source):
         """
         SVG structure pass: parses the svg file such that it creates the structure implied by reused objects in a
@@ -8664,7 +8647,9 @@ class SVG(Group):
                 siblings.append(node)  # siblings now includes this node.
                 attributes = elem.attrib
                 if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
-                    event_defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
+                    event_defs[
+                        attributes[SVG_ATTR_ID]
+                    ] = node  # store node value in defs.
             elif event == "end":
                 parent, children = parent
             else:
@@ -8686,11 +8671,11 @@ class SVG(Group):
                 yield from semiparse(children)
                 if SVG_TAG_USE == tag:
                     url = None
-                    attributes = elem.attrib
-                    if XLINK_HREF in attributes:
-                        url = attributes[XLINK_HREF]
-                    if SVG_HREF in attributes:
-                        url = attributes[SVG_HREF]
+                    semiattr = elem.attrib
+                    if XLINK_HREF in semiattr:
+                        url = semiattr[XLINK_HREF]
+                    if SVG_HREF in semiattr:
+                        url = semiattr[SVG_HREF]
                     if url is not None:
                         try:
                             yield from semiparse([event_defs[url[1:]]])
@@ -8910,6 +8895,14 @@ class SVG(Group):
                     if SVG_ATTR_TRANSFORM in s.values:
                         # Update value in case x or y applied.
                         values[SVG_ATTR_TRANSFORM] = s.values[SVG_ATTR_TRANSFORM]
+                    if SVG_ATTR_X in values:
+                        del values[SVG_ATTR_X]
+                    if SVG_ATTR_Y in values:
+                        del values[SVG_ATTR_Y]
+                    if SVG_ATTR_WIDTH in values:
+                        del values[SVG_ATTR_WIDTH]
+                    if SVG_ATTR_HEIGHT in values:
+                        del values[SVG_ATTR_HEIGHT]
                     context.append(s)
                     context = s
                     use += 1
