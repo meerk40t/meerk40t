@@ -1682,9 +1682,20 @@ class ParameterPanel(ScrolledPanel):
 
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
-        # Is this something I should care about? If it is called
-        # from a 'regular' operation inside the tree, then parent is set...
-        if self.operation is None or self.operation.parent is None:
+        # Is this something I should care about?
+        # element_property_reload provides a list of nodes that are affected
+        # if self.operation isn't one of them, then we just let it slip
+        for_me = False
+        if len(args)>0:
+            element = args[0]
+            if isinstance(element, (tuple, list)):
+                for node in element:
+                    if node == self.operation:
+                        for_me = True
+                        break
+            elif self.operation == element:
+                for_me = True
+        if not for_me:
             return
 
         # if origin is None:
