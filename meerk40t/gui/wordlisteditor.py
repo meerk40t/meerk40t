@@ -37,7 +37,7 @@ class WordlistPanel(wx.Panel):
         sizer_index_left = wx.BoxSizer(wx.HORIZONTAL)
         sizer_grid_left.Add(sizer_index_left, 0, wx.EXPAND, 0)
 
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Current Index for CSV-based data:"))
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("Start Index for CSV-based data:"))
         sizer_index_left.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.cbo_Index = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -105,7 +105,7 @@ class WordlistPanel(wx.Panel):
         sizer_edit_buttons.Add(self.btn_edit_button_paste, 0, wx.EXPAND, 0)
 
         sizer_index_right = wx.BoxSizer(wx.HORIZONTAL)
-        label_2 = wx.StaticText(self, wx.ID_ANY, _("Current Index for field:"))
+        label_2 = wx.StaticText(self, wx.ID_ANY, _("Start Index for field:"))
         sizer_index_right.Add(label_2, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.cbo_index_single = wx.ComboBox(
             self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -445,6 +445,7 @@ class ImportPanel(wx.Panel):
         self.parent_panel = par_panel
 
     def on_btn_file(self, event):
+        myfile = ""
         mydlg = wx.FileDialog(
             self,
             message=_("Choose a csv-file"),
@@ -454,8 +455,11 @@ class ImportPanel(wx.Panel):
         if mydlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             myfile = mydlg.GetPath()
-            self.txt_filename.SetValue(myfile)
         mydlg.Destroy()
+        if myfile != "":
+            self.txt_filename.SetValue(myfile)
+            self.on_btn_import(None)
+
 
     def on_btn_import(self, event):
         myfile = self.txt_filename.GetValue()
@@ -566,6 +570,7 @@ class AboutPanel(wx.Panel):
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
+        info_label.SetBackgroundColour(self.GetBackgroundColour())
         info_box.Add(info_label, 1, wx.EXPAND, 0)
         main_sizer.Add(info_box, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)

@@ -207,7 +207,8 @@ class TemplatePanel(wx.Panel):
         infomsg += "\n" + _("Meerk40t simplifies this task to find out the optimal settings")
         infomsg += " "+ _("by creating a testpattern that varies two different parameters.")
 
-        info_label = wx.StaticText(self, wx.ID_ANY, infomsg)
+        info_label = wx.TextCtrl(self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE)
+        info_label.SetBackgroundColour(self.GetBackgroundColour())
         sizer_info.Add(info_label, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_info, 1, wx.EXPAND, 0)
 
