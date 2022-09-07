@@ -174,6 +174,7 @@ class LaserRender:
 
     def __init__(self, context):
         self.context = context
+        self.context.setting(int, "draw_mode", 0)
         self.pen = wx.Pen()
         self.brush = wx.Brush()
         self.color = wx.Colour()
