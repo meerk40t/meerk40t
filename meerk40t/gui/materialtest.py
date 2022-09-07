@@ -242,7 +242,7 @@ class TemplatePanel(wx.Panel):
             "E.g. for a regular CO2 laser you want to optimize the burn speed"
         )
         infomsg += " " + _(
-            "for a given power to reduce burn marks or decrease execution time)."
+            "for a given power to reduce burn marks or decrease execution time."
         )
         infomsg += "\n" + _(
             "Meerk40t simplifies this task to find out the optimal settings"
