@@ -112,7 +112,6 @@ class Settings:
         except AttributeError:
             raise AttributeError("Something is attempting to load a persistent setting after kernel is terminated.")
 
-
     def read_persistent_attributes(self, section: str, obj: Any):
         """
         Reads persistent settings for any value found set on the object so long as the object type is int, float, str
