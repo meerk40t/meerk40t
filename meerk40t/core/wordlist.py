@@ -25,10 +25,14 @@ class Wordlist:
             "version": [0, 2, versionstr],
             "date": [0, 2, self.wordlist_datestr()],
             "time": [0, 2, self.wordlist_timestr()],
+            "op_device": [0, 2, "<device>"],
+            "op_speed": [0, 2, "<speed>"],
+            "op_power": [0, 2, "<power>"],
         }
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.json")
+        self.load_data(self.default_filename)
 
     def add(self, key, value, wtype=None):
         self.add_value(key, value, wtype)

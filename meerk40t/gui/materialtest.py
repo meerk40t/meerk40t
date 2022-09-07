@@ -40,39 +40,57 @@ class TemplatePanel(wx.Panel):
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
+
+        self.check_labels = wx.CheckBox(self, wx.ID_ANY, _("Labels"))
+        self.check_values = wx.CheckBox(self, wx.ID_ANY, _("Values"))
+
         self.combo_param_1 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
+        self.spin_count_1 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
+        self.text_min_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_max_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_dim_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_dim_1.set_range(0, 50)
+        self.text_delta_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_delta_1.set_range(0, 50)
+        self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
+        self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
+
         self.combo_param_2 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
-        self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
-        self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
+        self.spin_count_2 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=100)
+        self.text_min_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_max_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_dim_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_dim_2.set_range(0, 50)
+        self.text_delta_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
+        self.text_delta_2.set_range(0, 50)
         self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
 
         self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
-        self.spin_count_1 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=25)
-        self.spin_count_2 = wx.SpinCtrl(self, wx.ID_ANY, initial=5, min=1, max=25)
-        self.text_min_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_max_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_min_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.text_max_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.spin_dim_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.spin_dim_1.set_range(0, 50)
-        self.spin_dim_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.spin_dim_2.set_range(0, 50)
-        self.spin_delta_1 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.spin_delta_1.set_range(0, 50)
-        self.spin_delta_2 = TextCtrl(self, wx.ID_ANY, limited=True, check="float")
-        self.spin_delta_2.set_range(0, 50)
+        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize = 25))
+
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_param_optype = wx.StaticBoxSizer(
+        sizer_param_optype = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_param_op = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Operation to test")), wx.HORIZONTAL
         )
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Operation:"))
-        sizer_param_optype.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_param_optype.Add(self.combo_ops, 1, wx.EXPAND, 0)
+        sizer_param_op.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_param_op.Add(self.combo_ops, 1, wx.EXPAND, 0)
+
+        sizer_param_check = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Show Labels / Values")), wx.HORIZONTAL
+        )
+        sizer_param_check.Add(self.check_labels, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_param_check.Add(self.check_values, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_param_optype.Add(sizer_param_op, 1, wx.EXPAND, 0)
+        sizer_param_optype.Add(sizer_param_check, 1, wx.EXPAND, 0)
 
         sizer_param_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_param_x = wx.StaticBoxSizer(
@@ -104,14 +122,14 @@ class TemplatePanel(wx.Panel):
         hline_dim_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_dim_1.Add(self.spin_dim_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_dim_1.Add(self.text_dim_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_dim_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_delta_1 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_delta_1.Add(self.spin_delta_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_delta_1.Add(self.text_delta_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -151,14 +169,14 @@ class TemplatePanel(wx.Panel):
         hline_dim_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Height:"))
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_dim_2.Add(self.spin_dim_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_dim_2.Add(self.text_dim_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_dim_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hline_delta_2 = wx.BoxSizer(wx.HORIZONTAL)
         mylbl = wx.StaticText(self, wx.ID_ANY, _("Delta:"))
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        hline_delta_2.Add(self.spin_delta_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_delta_2.Add(self.text_delta_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -176,17 +194,52 @@ class TemplatePanel(wx.Panel):
         sizer_main.Add(sizer_param_xy, 0, wx.EXPAND, 0)
         sizer_main.Add(self.button_create, 0, wx.EXPAND, 0)
 
-        self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
+        sizer_info = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("How to use it")), wx.VERTICAL
+        )
+        infomsg = _("To provide the best burning results, the parameters of operations")
+        infomsg += " " +_("need to be adjusted according to *YOUR* laser and the specific material")
+        infomsg += " " + _("you want to work with (e.g. one batch of poplar plywoowd from one supplier")
+        infomsg += " " + _("may respond completely different to a batch of another supplier despite")
+        infomsg += " " + _("having the very same specifications on paper).")
+        infomsg += "\n" + _("E.g. for a regular CO2 laser you want to optimize the burn speed")
+        infomsg += " " + _("for a given power to reduce burn marks or decrease execution time).")
+        infomsg += "\n" + _("Meerk40t simplifies this task to find out the optimal settings")
+        infomsg += " "+ _("by creating a testpattern that varies two different parameters.")
 
+        info_label = wx.StaticText(self, wx.ID_ANY, infomsg)
+        sizer_info.Add(info_label, 1, wx.EXPAND, 0)
+        sizer_main.Add(sizer_info, 1, wx.EXPAND, 0)
+
+        self.button_create.SetToolTip(_("Create a grid with your values"))
+        s =  _("Operation type for which the testpattern will be generated")
+        s += "\n" + _("You can define the common parameters for this operation in the other tabs on top of this window")
+        self.combo_ops.SetToolTip(s)
+        self.combo_param_1.SetToolTip(_("Choose the first parameter that you want to be tested"))
+        self.combo_param_2.SetToolTip(_("Choose the second parameter that you want to be tested"))
+        self.spin_count_1.SetToolTip(_("Define how many values you want to test in the interval between min and max"))
+        self.spin_count_2.SetToolTip(_("Define how many values you want to test in the interval between min and max"))
+        self.check_labels.SetToolTip(_("Will create a descriptive label at the sides of the grid"))
+        self.check_values.SetToolTip(_("Will create the corresponding values as labels at the sides of the grid"))
+        self.text_min_1.SetToolTip(_("Minimum value for 1st parameter"))
+        self.text_max_1.SetToolTip(_("Maximum value for 1st parameter"))
+        self.text_min_2.SetToolTip(_("Minimum value for 2nd parameter"))
+        self.text_max_2.SetToolTip(_("Maximum value for 2nd parameter"))
+        self.text_dim_1.SetToolTip(_("Width of the to be created pattern"))
+        self.text_dim_2.SetToolTip(_("Height of the to be created pattern"))
+        self.text_delta_1.SetToolTip(_("Horizontal gap between patterns"))
+        self.text_delta_2.SetToolTip(_("Vertical gap between patterns"))
+
+        self.button_create.Bind(wx.EVT_BUTTON, self.on_button_create_pattern)
         self.combo_ops.Bind(wx.EVT_COMBOBOX, self.set_param_according_to_op)
         self.text_min_1.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_max_1.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_min_2.Bind(wx.EVT_TEXT, self.validate_input)
         self.text_max_2.Bind(wx.EVT_TEXT, self.validate_input)
-        self.spin_dim_1.Bind(wx.EVT_TEXT, self.validate_input)
-        self.spin_delta_1.Bind(wx.EVT_TEXT, self.validate_input)
-        self.spin_dim_2.Bind(wx.EVT_TEXT, self.validate_input)
-        self.spin_delta_2.Bind(wx.EVT_TEXT, self.validate_input)
+        self.text_dim_1.Bind(wx.EVT_TEXT, self.validate_input)
+        self.text_delta_1.Bind(wx.EVT_TEXT, self.validate_input)
+        self.text_dim_2.Bind(wx.EVT_TEXT, self.validate_input)
+        self.text_delta_2.Bind(wx.EVT_TEXT, self.validate_input)
         self.combo_param_1.Bind(wx.EVT_COMBOBOX, self.on_combo_1)
         self.combo_param_2.Bind(wx.EVT_COMBOBOX, self.on_combo_2)
 
@@ -230,10 +283,11 @@ class TemplatePanel(wx.Panel):
             # to copy the device defaults
             if node is None or "balor" not in self.context.device._path:
                 return
-            node.settings["timing_enabled"] = True
-            node.settings["delay_laser_on"] = self.context.device.delay_laser_on
-            node.settings["delay_laser_off"] = self.context.device.delay_laser_off
-            node.settings["delay_polygon"] = self.context.device.delay_polygon
+            if not node.settings["timing_enabled"]:
+                node.settings["timing_enabled"] = True
+                node.settings["delay_laser_on"] = self.context.device.delay_laser_on
+                node.settings["delay_laser_off"] = self.context.device.delay_laser_off
+                node.settings["delay_polygon"] = self.context.device.delay_polygon
 
         opidx = self.combo_ops.GetSelection()
         if opidx < 0:
@@ -440,22 +494,28 @@ class TemplatePanel(wx.Panel):
             active = False
         if not valid_float(self.text_max_2):
             active = False
-        if not valid_float(self.spin_dim_1):
+        if not valid_float(self.text_dim_1):
             active = False
-        if not valid_float(self.spin_delta_1):
+        if not valid_float(self.text_delta_1):
             active = False
-        if not valid_float(self.spin_dim_2):
+        if not valid_float(self.text_dim_2):
             active = False
-        if not valid_float(self.spin_delta_2):
+        if not valid_float(self.text_delta_2):
             active = False
 
         self.button_create.Enable(active)
 
     def on_button_create_pattern(self, event):
         def make_color(idx1, max1, idx2, max2):
-            r = 255 - int(idx1 / max1 * 255.0)
+            rel = max1 - 1
+            if rel < 1:
+                rel = 1
+            r = 255 - int(idx1 / rel * 255.0)
             g = 0
-            b = 255 - int(idx2 / max2 * 255.0)
+            rel = max2 - 1
+            if rel < 1:
+                rel = 1
+            b = 255 - int(idx2 / rel * 255.0)
             mycolor = Color(r, g, b)
             return mycolor
 
@@ -464,8 +524,21 @@ class TemplatePanel(wx.Panel):
             self.context("element* delete\n")
 
         def create_operations():
-            # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
+            def shortened(value, digits):
+                result = str(round(value, digits))
+                if "." in result:
+                    while result.endswith("0"):
+                        result = result[:-1]
+                if result.endswith("."):
+                    if result == ".":
+                        result = "0"
+                    else:
+                        result = result[:-1]
+                return result
 
+            # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
+            display_labels = self.check_labels.GetValue()
+            display_values = self.check_values.GetValue()
             if optype < 0 or optype > 4:
                 return
             if optype == 3:
@@ -483,70 +556,76 @@ class TemplatePanel(wx.Panel):
             start_y = (float(Length(self.context.device.height)) - expected_height) / 2
             operation_branch = self.context.elements._tree.get(type="branch ops")
             element_branch = self.context.elements._tree.get(type="branch elems")
-            # Make one op for text
-            text_op = RasterOpNode()
-            text_op.color = Color("black")
-            text_op.label = "Descriptions"
-            operation_branch.add_node(text_op)
-            text_x = start_x + expected_width / 2
-            text_y = start_y - min(float(Length("10mm")), 7.5 * gap_y)
-            node = self.context.elements.elem_branch.add(
-                text=f"{param_name_1} [{param_unit_1}]",
-                matrix=Matrix(
-                    f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
-                ),
-                anchor="middle",
-                fill=Color("black"),
-                type="elem text",
-            )
-            text_op.add_reference(node, 0)
-
-            text_x = start_x - min(float(Length("10mm")), 7.5 * gap_x)
-            text_y = start_y + expected_height / 2
-            node = self.context.elements.elem_branch.add(
-                text=f"{param_name_2} [{param_unit_2}]",
-                matrix=Matrix(
-                    f"translate({text_x}, {text_y}) scale({UNITS_PER_PIXEL})"
-                ),
-                anchor="middle",
-                fill=Color("black"),
-                type="elem text",
-            )
-            node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
-            node.modified()
-            text_op.add_reference(node, 0)
-
-            p_value_1 = min_value_1
 
             text_scale_x = min(1.0, size_y / float(Length("20mm")))
             text_scale_y = min(1.0, size_x / float(Length("20mm")))
 
-            xx = start_x
-            for idx1 in range(count_1):
-                p_value_2 = min_value_2
-                yy = start_y
-
-                # Add a text above for each column
-                text_x = xx + 0.5 * size_x
-                text_y = yy - min(float(Length("5mm")), 1.5 * gap_y)
-                pval1 = round(p_value_1, 7)
+            # Make one op for text
+            if display_labels or display_values:
+                text_op = RasterOpNode()
+                text_op.color = Color("black")
+                text_op.label = "Descriptions"
+                operation_branch.add_node(text_op)
+            if display_labels:
+                text_x = start_x + expected_width / 2
+                text_y = start_y - min(float(Length("10mm")), 3 * gap_y)
                 node = self.context.elements.elem_branch.add(
-                    text=f"{pval1}",
+                    text=f"{param_name_1} [{param_unit_1}]",
                     matrix=Matrix(
-                        f"translate({text_x}, {text_y}) scale({text_scale_x * UNITS_PER_PIXEL})"
+                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
                     ),
                     anchor="middle",
                     fill=Color("black"),
                     type="elem text",
                 )
-                # node.matrix.post_rotate(tau / 4, text_x, text_y)
+                text_op.add_reference(node, 0)
+
+                text_x = start_x - min(float(Length("10mm")), 3 * gap_x)
+                text_y = start_y + expected_height / 2
+                node = self.context.elements.elem_branch.add(
+                    text=f"{param_name_2} [{param_unit_2}]",
+                    matrix=Matrix(
+                        f"translate({text_x}, {text_y}) scale({2 * max(text_scale_x, text_scale_y) * UNITS_PER_PIXEL})"
+                    ),
+                    anchor="middle",
+                    fill=Color("black"),
+                    type="elem text",
+                )
+                node.matrix.post_rotate(tau * 3 / 4, text_x, text_y)
                 node.modified()
                 text_op.add_reference(node, 0)
+
+            p_value_1 = min_value_1
+
+            xx = start_x
+            for idx1 in range(count_1):
+                pval1 = shortened(p_value_1, 3)
+
+                p_value_2 = min_value_2
+                yy = start_y
+
+                if display_values:
+                    # Add a text above for each column
+                    text_x = xx + 0.5 * size_x
+                    text_y = yy - min(float(Length("5mm")), 1.5 * gap_y)
+                    node = self.context.elements.elem_branch.add(
+                        text=f"{pval1}",
+                        matrix=Matrix(
+                            f"translate({text_x}, {text_y}) scale({text_scale_x * UNITS_PER_PIXEL})"
+                        ),
+                        anchor="middle",
+                        fill=Color("black"),
+                        type="elem text",
+                    )
+                    # node.matrix.post_rotate(tau / 4, text_x, text_y)
+                    node.modified()
+                    text_op.add_reference(node, 0)
+
                 for idx2 in range(count_2):
-                    pval2 = round(p_value_2, 7)
+                    pval2 = shortened(p_value_2, 3)
                     s_lbl = f"{param_type_1}={pval1}{param_unit_1}"
                     s_lbl += f"- {param_type_2}={pval2}{param_unit_2}"
-                    if idx1 == 0:  # first row, so add a text above
+                    if display_values and idx1 == 0:  # first row, so add a text above
                         text_x = xx - min(float(Length("5mm")), 1.5 * gap_x)
                         text_y = yy + 0.5 * size_y
                         node = self.context.elements.elem_branch.add(
@@ -754,11 +833,11 @@ class TemplatePanel(wx.Panel):
         else:
             delta_2 = 0
         try:
-            dimension_1 = float(self.spin_dim_1.GetValue())
+            dimension_1 = float(self.text_dim_1.GetValue())
         except ValueError:
             dimension_1 = -1
         try:
-            dimension_2 = float(self.spin_dim_2.GetValue())
+            dimension_2 = float(self.text_dim_2.GetValue())
         except ValueError:
             dimension_2 = -1
         if dimension_1 <= 0:
@@ -767,11 +846,11 @@ class TemplatePanel(wx.Panel):
             dimension_2 = 5
 
         try:
-            gap_1 = float(self.spin_delta_1.GetValue())
+            gap_1 = float(self.text_delta_1.GetValue())
         except ValueError:
             gap_1 = -1
         try:
-            gap_2 = float(self.spin_delta_2.GetValue())
+            gap_2 = float(self.text_delta_2.GetValue())
         except ValueError:
             gap_2 = -1
 
@@ -815,8 +894,12 @@ class TemplatePanel(wx.Panel):
         self.context.setting(str, "template_dim_2", "10")
         self.context.setting(str, "template_gap_1", "5")
         self.context.setting(str, "template_gap_2", "5")
+        self.context.setting(bool, "template_show_labels", True)
+        self.context.setting(bool, "template_show_values", True)
 
     def save_settings(self):
+        self.context.template_show_values = self.check_values.GetValue()
+        self.context.template_show_labels = self.check_labels.GetValue()
         self.context.template_optype = self.combo_ops.GetSelection()
         self.context.template_param1 = self.combo_param_1.GetSelection()
         self.context.template_param2 = self.combo_param_2.GetSelection()
@@ -826,13 +909,15 @@ class TemplatePanel(wx.Panel):
         self.context.template_max2 = self.text_max_2.GetValue()
         self.context.template_count1 = self.spin_count_1.GetValue()
         self.context.template_count2 = self.spin_count_2.GetValue()
-        self.context.template_dim_1 = self.spin_dim_1.GetValue()
-        self.context.template_dim_2 = self.spin_dim_2.GetValue()
-        self.context.template_gap_1 = self.spin_delta_1.GetValue()
-        self.context.template_gap_2 = self.spin_delta_2.GetValue()
+        self.context.template_dim_1 = self.text_dim_1.GetValue()
+        self.context.template_dim_2 = self.text_dim_2.GetValue()
+        self.context.template_gap_1 = self.text_delta_1.GetValue()
+        self.context.template_gap_2 = self.text_delta_2.GetValue()
 
     def restore_settings(self):
         try:
+            self.check_values.SetValue(self.context.template_show_values)
+            self.check_labels.SetValue(self.context.template_show_labels)
             self.combo_ops.SetSelection(
                 min(self.context.template_optype, self.combo_ops.GetCount() - 1)
             )
@@ -848,10 +933,10 @@ class TemplatePanel(wx.Panel):
             self.text_max_2.SetValue(self.context.template_max2)
             self.spin_count_1.SetValue(self.context.template_count1)
             self.spin_count_2.SetValue(self.context.template_count2)
-            self.spin_dim_1.SetValue(self.context.template_dim_1)
-            self.spin_dim_2.SetValue(self.context.template_dim_2)
-            self.spin_delta_1.SetValue(self.context.template_gap_1)
-            self.spin_delta_2.SetValue(self.context.template_gap_2)
+            self.text_dim_1.SetValue(self.context.template_dim_1)
+            self.text_dim_2.SetValue(self.context.template_dim_2)
+            self.text_delta_1.SetValue(self.context.template_gap_1)
+            self.text_delta_2.SetValue(self.context.template_gap_2)
         except (AttributeError, ValueError):
             pass
 
