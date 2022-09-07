@@ -1682,6 +1682,11 @@ class ParameterPanel(ScrolledPanel):
 
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
+        # Is this something I should care about? If it is called
+        # from a 'regular' operation inside the tree, then parent is set...
+        if self.operation is None or self.operation.parent is None:
+            return
+
         # if origin is None:
         #     print ("EPR called with no origin")
         # else:
