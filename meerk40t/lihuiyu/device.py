@@ -457,7 +457,7 @@ class LihuiyuDevice(Service, ViewPort):
         def pipe_abort(channel, _, **kwargs):
             self.driver.reset()
             channel(_("Lihuiyu Channel Aborted."))
-            self.context.signal("pipe;running", False)
+            self.signal("pipe;running", False)
 
         @self.console_argument(
             "rapid_x", type=float, help=_("limit x speed for rapid.")
