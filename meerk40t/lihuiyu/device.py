@@ -2632,6 +2632,8 @@ class LihuiyuController:
 
         while True:
             if self.state != STATE_WAIT:
+                if self.state == STATE_TERMINATE:
+                    return  # Abort all the processes was requested. This state change would be after clearing.
                 self.update_state(STATE_WAIT)
             self.update_status()
             status = self._status[1]
