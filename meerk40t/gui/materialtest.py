@@ -232,7 +232,7 @@ class TemplatePanel(wx.Panel):
             "need to be adjusted according to *YOUR* laser and the specific material"
         )
         infomsg += " " + _(
-            "you want to work with (e.g. one batch of poplar plywoowd from one supplier"
+            "you want to work with (e.g. one batch of poplar plywood from one supplier"
         )
         infomsg += " " + _(
             "may respond completely different to a batch of another supplier despite"
