@@ -613,7 +613,9 @@ class RuidaEmulator(Module, Parameters):
             self.plotcut.plot_append(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
-
+            desc = (
+                f"Move Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
+            )
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
                 if self.speed < 40:
