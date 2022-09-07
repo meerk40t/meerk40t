@@ -2463,7 +2463,7 @@ class Angle(float):
 
 
 class Matrix:
-    """ "
+    """
     Provides svg matrix interfacing.
 
     SVG 7.15.3 defines the matrix form as:
