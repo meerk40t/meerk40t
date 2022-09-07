@@ -37,6 +37,8 @@ class TemplatePanel(wx.Panel):
         self.default_op.append(HatchOpNode())
 
         self.parameters = []
+        color_choices = [_("Red"), _("Green"), _("Blue")]
+
         self.combo_ops = wx.ComboBox(
             self, id=wx.ID_ANY, choices=opchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
@@ -56,6 +58,13 @@ class TemplatePanel(wx.Panel):
         self.text_delta_1.set_range(0, 50)
         self.unit_param_1a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_1b = wx.StaticText(self, wx.ID_ANY, "")
+        self.combo_color_1 = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=color_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.check_color_direction_1 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
 
         self.combo_param_2 = wx.ComboBox(
             self, id=wx.ID_ANY, style=wx.CB_DROPDOWN | wx.CB_READONLY
@@ -69,9 +78,16 @@ class TemplatePanel(wx.Panel):
         self.text_delta_2.set_range(0, 50)
         self.unit_param_2a = wx.StaticText(self, wx.ID_ANY, "")
         self.unit_param_2b = wx.StaticText(self, wx.ID_ANY, "")
+        self.combo_color_2 = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=color_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.check_color_direction_2 = wx.CheckBox(self, wx.ID_ANY, _("Growing"))
 
         self.button_create = wx.Button(self, wx.ID_ANY, _("Create Pattern"))
-        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize = 25))
+        self.button_create.SetBitmap(icons8_detective_50.GetBitmap(resize=25))
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_param_optype = wx.BoxSizer(wx.HORIZONTAL)
@@ -133,12 +149,19 @@ class TemplatePanel(wx.Panel):
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_delta_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_param_x.Add(hline_param_1, 0, wx.EXPAND, 1)
-        sizer_param_x.Add(hline_count_1, 0, wx.EXPAND, 1)
-        sizer_param_x.Add(hline_min_1, 0, wx.EXPAND, 1)
-        sizer_param_x.Add(hline_max_1, 0, wx.EXPAND, 1)
-        sizer_param_x.Add(hline_dim_1, 0, wx.EXPAND, 1)
-        sizer_param_x.Add(hline_delta_1, 0, wx.EXPAND, 1)
+        hline_color_1 = wx.BoxSizer(wx.HORIZONTAL)
+        mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
+        hline_color_1.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_color_1.Add(self.combo_color_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_color_1.Add(self.check_color_direction_1, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_param_x.Add(hline_param_1, 0, wx.EXPAND, 0)
+        sizer_param_x.Add(hline_count_1, 0, wx.EXPAND, 0)
+        sizer_param_x.Add(hline_min_1, 0, wx.EXPAND, 0)
+        sizer_param_x.Add(hline_max_1, 0, wx.EXPAND, 0)
+        sizer_param_x.Add(hline_dim_1, 0, wx.EXPAND, 0)
+        sizer_param_x.Add(hline_delta_1, 0, wx.EXPAND, 0)
+        sizer_param_x.Add(hline_color_1, 0, wx.EXPAND, 0)
 
         sizer_param_y = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Second parameter (Y-Axis)")), wx.VERTICAL
@@ -180,12 +203,19 @@ class TemplatePanel(wx.Panel):
         mylbl = wx.StaticText(self, wx.ID_ANY, "mm")
         hline_delta_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_param_y.Add(hline_param_2, 0, wx.EXPAND, 1)
-        sizer_param_y.Add(hline_count_2, 0, wx.EXPAND, 1)
-        sizer_param_y.Add(hline_min_2, 0, wx.EXPAND, 1)
-        sizer_param_y.Add(hline_max_2, 0, wx.EXPAND, 1)
-        sizer_param_y.Add(hline_dim_2, 0, wx.EXPAND, 1)
-        sizer_param_y.Add(hline_delta_2, 0, wx.EXPAND, 1)
+        hline_color_2 = wx.BoxSizer(wx.HORIZONTAL)
+        mylbl = wx.StaticText(self, wx.ID_ANY, _("Color:"))
+        hline_color_2.Add(mylbl, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_color_2.Add(self.combo_color_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        hline_color_2.Add(self.check_color_direction_2, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_param_y.Add(hline_param_2, 0, wx.EXPAND, 0)
+        sizer_param_y.Add(hline_count_2, 0, wx.EXPAND, 0)
+        sizer_param_y.Add(hline_min_2, 0, wx.EXPAND, 0)
+        sizer_param_y.Add(hline_max_2, 0, wx.EXPAND, 0)
+        sizer_param_y.Add(hline_dim_2, 0, wx.EXPAND, 0)
+        sizer_param_y.Add(hline_delta_2, 0, wx.EXPAND, 0)
+        sizer_param_y.Add(hline_color_2, 0, wx.EXPAND, 0)
 
         sizer_param_xy.Add(sizer_param_x, 1, wx.EXPAND, 0)
         sizer_param_xy.Add(sizer_param_y, 1, wx.EXPAND, 0)
@@ -198,30 +228,84 @@ class TemplatePanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("How to use it")), wx.VERTICAL
         )
         infomsg = _("To provide the best burning results, the parameters of operations")
-        infomsg += " " +_("need to be adjusted according to *YOUR* laser and the specific material")
-        infomsg += " " + _("you want to work with (e.g. one batch of poplar plywoowd from one supplier")
-        infomsg += " " + _("may respond completely different to a batch of another supplier despite")
+        infomsg += " " + _(
+            "need to be adjusted according to *YOUR* laser and the specific material"
+        )
+        infomsg += " " + _(
+            "you want to work with (e.g. one batch of poplar plywood from one supplier"
+        )
+        infomsg += " " + _(
+            "may respond completely different to a batch of another supplier despite"
+        )
         infomsg += " " + _("having the very same specifications on paper).")
-        infomsg += "\n" + _("E.g. for a regular CO2 laser you want to optimize the burn speed")
-        infomsg += " " + _("for a given power to reduce burn marks or decrease execution time).")
-        infomsg += "\n" + _("Meerk40t simplifies this task to find out the optimal settings")
-        infomsg += " "+ _("by creating a testpattern that varies two different parameters.")
+        infomsg += "\n" + _(
+            "E.g. for a regular CO2 laser you want to optimize the burn speed"
+        )
+        infomsg += " " + _(
+            "for a given power to reduce burn marks or decrease execution time)."
+        )
+        infomsg += "\n" + _(
+            "Meerk40t simplifies this task to find out the optimal settings"
+        )
+        infomsg += " " + _(
+            "by creating a testpattern that varies two different parameters."
+        )
 
-        info_label = wx.TextCtrl(self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE)
+        info_label = wx.TextCtrl(
+            self, wx.ID_ANY, value=infomsg, style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
         info_label.SetBackgroundColour(self.GetBackgroundColour())
         sizer_info.Add(info_label, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_info, 1, wx.EXPAND, 0)
 
         self.button_create.SetToolTip(_("Create a grid with your values"))
-        s =  _("Operation type for which the testpattern will be generated")
-        s += "\n" + _("You can define the common parameters for this operation in the other tabs on top of this window")
+        s = _("Operation type for which the testpattern will be generated")
+        s += "\n" + _(
+            "You can define the common parameters for this operation in the other tabs on top of this window"
+        )
         self.combo_ops.SetToolTip(s)
-        self.combo_param_1.SetToolTip(_("Choose the first parameter that you want to be tested"))
-        self.combo_param_2.SetToolTip(_("Choose the second parameter that you want to be tested"))
-        self.spin_count_1.SetToolTip(_("Define how many values you want to test in the interval between min and max"))
-        self.spin_count_2.SetToolTip(_("Define how many values you want to test in the interval between min and max"))
-        self.check_labels.SetToolTip(_("Will create a descriptive label at the sides of the grid"))
-        self.check_values.SetToolTip(_("Will create the corresponding values as labels at the sides of the grid"))
+        self.combo_param_1.SetToolTip(
+            _("Choose the first parameter that you want to be tested")
+        )
+        self.combo_param_2.SetToolTip(
+            _("Choose the second parameter that you want to be tested")
+        )
+        self.combo_color_1.SetToolTip(
+            _(
+                "Choose the color aspect for the second parameter. NB: the colors for both parameters will be combined"
+            )
+        )
+        self.combo_color_2.SetToolTip(
+            _(
+                "Choose the color aspect for the second parameter. NB: the colors for both parameters will be combined"
+            )
+        )
+        self.check_color_direction_1.SetToolTip(
+            _(
+                "If checked, then the color aspect will grow from min to max values, if not then shrink"
+            )
+        )
+        self.check_color_direction_2.SetToolTip(
+            _(
+                "If checked, then the color aspect will grow from min to max values, if not then shrink"
+            )
+        )
+        self.spin_count_1.SetToolTip(
+            _(
+                "Define how many values you want to test in the interval between min and max"
+            )
+        )
+        self.spin_count_2.SetToolTip(
+            _(
+                "Define how many values you want to test in the interval between min and max"
+            )
+        )
+        self.check_labels.SetToolTip(
+            _("Will create a descriptive label at the sides of the grid")
+        )
+        self.check_values.SetToolTip(
+            _("Will create the corresponding values as labels at the sides of the grid")
+        )
         self.text_min_1.SetToolTip(_("Minimum value for 1st parameter"))
         self.text_max_1.SetToolTip(_("Maximum value for 1st parameter"))
         self.text_min_2.SetToolTip(_("Minimum value for 2nd parameter"))
@@ -254,7 +338,7 @@ class TemplatePanel(wx.Panel):
     def set_callback(self, routine):
         self.callback = routine
         idx = self.combo_ops.GetSelection()
-        if self.callback is not None and idx>=0:
+        if self.callback is not None and idx >= 0:
             self.callback(self.default_op[idx])
 
     def set_param_according_to_op(self, event):
@@ -507,16 +591,38 @@ class TemplatePanel(wx.Panel):
         self.button_create.Enable(active)
 
     def on_button_create_pattern(self, event):
-        def make_color(idx1, max1, idx2, max2):
+        def make_color(idx1, max1, idx2, max2, aspect1, growing1, aspect2, growing2):
+            r = 0
+            g = 0
+            b = 0
+
             rel = max1 - 1
             if rel < 1:
                 rel = 1
-            r = 255 - int(idx1 / rel * 255.0)
-            g = 0
+            if growing1:
+                val1 = int(idx1 / rel * 255.0)
+            else:
+                val1 = 255 - int(idx1 / rel * 255.0)
+
             rel = max2 - 1
             if rel < 1:
                 rel = 1
-            b = 255 - int(idx2 / rel * 255.0)
+            if growing2:
+                val2 = int(idx2 / rel * 255.0)
+            else:
+                val2 = 255 - int(idx2 / rel * 255.0)
+            if aspect1 == 1:
+                g = val1
+            elif aspect1 == 2:
+                b = val1
+            else:
+                r = val1
+            if aspect2 == 1:
+                g = val1
+            elif aspect2 == 2:
+                b = val2
+            else:
+                r = val2
             mycolor = Color(r, g, b)
             return mycolor
 
@@ -540,6 +646,11 @@ class TemplatePanel(wx.Panel):
             # opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
             display_labels = self.check_labels.GetValue()
             display_values = self.check_values.GetValue()
+            color_aspect_1 = max(0, self.combo_color_1.GetSelection())
+            color_aspect_2 = max(0, self.combo_color_2.GetSelection())
+            color_growing_1 = self.check_color_direction_1.GetValue()
+            color_growing_2 = self.check_color_direction_2.GetValue()
+
             if optype < 0 or optype > 4:
                 return
             if optype == 3:
@@ -685,7 +796,16 @@ class TemplatePanel(wx.Panel):
                     else:  # Try setting
                         this_op.settings[param_type_2] = value
 
-                    set_color = make_color(idx1, count_1, idx2, count_2)
+                    set_color = make_color(
+                        idx1,
+                        count_1,
+                        idx2,
+                        count_2,
+                        color_aspect_1,
+                        color_growing_1,
+                        color_aspect_2,
+                        color_growing_2,
+                    )
                     this_op.color = set_color
                     # Add op to tree.
                     operation_branch.add_node(this_op)
@@ -800,8 +920,8 @@ class TemplatePanel(wx.Panel):
             return
 
         if param_unit_1 == "deg":
-            min_value_1 = f"{Angle.parse(self.text_min_1.GetValue()).as_degrees}deg"
-            max_value_1 = f"{Angle.parse(self.text_max_1.GetValue()).as_degrees}deg"
+            min_value_1 = Angle(self.text_min_1.GetValue()).degrees
+            max_value_1 = Angle(self.text_max_1.GetValue()).degrees
         elif param_unit_1 == "ppi":
             min_value_1 = max(min_value_1, 0)
             max_value_1 = min(max_value_1, 1000)
@@ -812,8 +932,8 @@ class TemplatePanel(wx.Panel):
                 max_value_1 = max(max_value_1, 0)
 
         if param_unit_2 == "deg":
-            min_value_2 = f"{Angle.parse(self.text_min_2.GetValue()).as_degrees}deg"
-            max_value_2 = f"{Angle.parse(self.text_max_2.GetValue()).as_degrees}deg"
+            min_value_2 = Angle(self.text_min_2.GetValue()).degrees
+            max_value_2 = Angle(self.text_max_2.GetValue()).degrees
         elif param_unit_2 == "ppi":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 1000)
@@ -897,6 +1017,10 @@ class TemplatePanel(wx.Panel):
         self.context.setting(str, "template_gap_2", "5")
         self.context.setting(bool, "template_show_labels", True)
         self.context.setting(bool, "template_show_values", True)
+        self.context.setting(int, "template_color1", 0)
+        self.context.setting(int, "template_color2", 2)
+        self.context.setting(bool, "template_coldir1", False)
+        self.context.setting(bool, "template_coldir2", False)
 
     def save_settings(self):
         self.context.template_show_values = self.check_values.GetValue()
@@ -914,9 +1038,21 @@ class TemplatePanel(wx.Panel):
         self.context.template_dim_2 = self.text_dim_2.GetValue()
         self.context.template_gap_1 = self.text_delta_1.GetValue()
         self.context.template_gap_2 = self.text_delta_2.GetValue()
+        self.context.template_color1 = self.combo_color_1.GetSelection()
+        self.context.template_color2 = self.combo_color_2.GetSelection()
+        self.context.template_coldir1 = self.check_color_direction_1.GetValue()
+        self.context.template_coldir2 = self.check_color_direction_2.GetValue()
 
     def restore_settings(self):
         try:
+            self.check_color_direction_1.SetValue(self.context.template_coldir1)
+            self.check_color_direction_2.SetValue(self.context.template_coldir2)
+            self.combo_color_1.SetSelection(
+                min(self.context.template_color1, self.combo_color_1.GetCount() - 1)
+            )
+            self.combo_color_2.SetSelection(
+                min(self.context.template_color2, self.combo_color_2.GetCount() - 1)
+            )
             self.check_values.SetValue(self.context.template_show_values)
             self.check_labels.SetValue(self.context.template_show_labels)
             self.combo_ops.SetSelection(
@@ -945,12 +1081,15 @@ class TemplatePanel(wx.Panel):
     def on_activate_device(self, origin, device):
         self.set_param_according_to_op(None)
 
+
 class TemplateTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(490, 280, submenu="Laser-Tools", *args, **kwds)
         self.panel_instances = list()
         self.panel_template = TemplatePanel(
-            self, wx.ID_ANY, context=self.context,
+            self,
+            wx.ID_ANY,
+            context=self.context,
         )
 
         self.notebook_main = wx.aui.AuiNotebook(
@@ -996,9 +1135,7 @@ class TemplateTool(MWindow):
         for property_sheet in self.context.lookup_all(
             f"property/{node.__class__.__name__}/.*"
         ):
-            if not hasattr(property_sheet, "accepts") or property_sheet.accepts(
-                node
-            ):
+            if not hasattr(property_sheet, "accepts") or property_sheet.accepts(node):
                 pages_in_node.append((property_sheet, node))
                 found = True
         # If we did not have any hits and the node is a reference
@@ -1023,7 +1160,7 @@ class TemplateTool(MWindow):
         self.window_close()
         # self.panel_instances.clear()
         # Delete all but the first page...
-        while (self.notebook_main.GetPageCount()>1):
+        while self.notebook_main.GetPageCount() > 1:
             self.notebook_main.DeletePage(1)
         for prop_sheet, instance in pages_to_instance:
             page_panel = prop_sheet(
@@ -1052,7 +1189,6 @@ class TemplateTool(MWindow):
                 pass
 
         self.Layout()
-
 
     def window_open(self):
         pass
