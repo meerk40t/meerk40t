@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.8.0"
+SVGELEMENTS_VERSION = "1.8.1"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -244,7 +244,7 @@ REGEX_CSS_FONT = re.compile(
     r"$"
 )
 REGEX_CSS_FONT_FAMILY = re.compile(
-     r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
+    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
 )
 
 svg_parse = [("COMMAND", r"[MmZzLlHhVvCcSsQqTtAa]"), ("SKIP", PATTERN_COMMAWSP)]
@@ -2463,7 +2463,7 @@ class Angle(float):
 
 
 class Matrix:
-    """ "
+    """
     Provides svg matrix interfacing.
 
     SVG 7.15.3 defines the matrix form as:
@@ -6941,7 +6941,7 @@ class _RoundShape(Shape):
         if b > a:
             a, b = b, a
         h = ((a - b) * (a - b)) / ((a + b) * (a + b))
-        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
+        return tau / 2 * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
 
 
 class Ellipse(_RoundShape):
@@ -7561,14 +7561,14 @@ class Group(SVGElement, Transformable, list):
         if conditional is None:
             for subitem in self:
                 yield subitem
-                if isinstance(subitem, Group):
+                if isinstance(subitem, (Group, Use)):
                     for s in subitem.select(conditional):
                         yield s
         else:
             for subitem in self:
                 if conditional(subitem):
                     yield subitem
-                if isinstance(subitem, Group):
+                if isinstance(subitem, (Group, Use)):
                     for s in subitem.select(conditional):
                         yield s
 
@@ -7632,7 +7632,7 @@ class Group(SVGElement, Transformable, list):
         )
 
 
-class Use(SVGElement, list):
+class Use(SVGElement, Transformable, list):
     """
     Use elements are defined in svg 5.6
     https://www.w3.org/TR/SVG11/struct.html#UseElement
@@ -7642,13 +7642,68 @@ class Use(SVGElement, list):
 
     def __init__(self, *args, **kwargs):
         list.__init__(self)
-        SVGElement.__init__(self, *args, **kwargs)
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        Transformable.__init__(self, *args, **kwargs)
+        SVGElement.__init__(
+            self, *args, **kwargs
+        )  # Must go last, triggers, by_object, by_value, by_arg functions.
 
     def property_by_object(self, s):
         SVGElement.property_by_object(self, s)
+        Transformable.property_by_object(self, s)
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
 
     def property_by_values(self, values):
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, 1)).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, 1)).value()
+        if self.x != 0 or self.y != 0:
+            # If x or y is set, apply this to transform
+            try:
+                values[SVG_ATTR_TRANSFORM] = "%s translate(%s, %s)" % (
+                    values[SVG_ATTR_TRANSFORM],
+                    self.x,
+                    self.y,
+                )
+            except KeyError:
+                values[SVG_ATTR_TRANSFORM] = "translate(%s, %s)" % (
+                    self.x,
+                    self.y,
+                )
         SVGElement.property_by_values(self, values)
+        Transformable.property_by_values(self, values)
+
+    def render(self, **kwargs):
+        SVGElement.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+
+    def select(self, conditional=None):
+        """
+        Finds all flattened subobjects of this group for which the conditional returns
+        true.
+
+        :param conditional: function taking element and returns True to include or False if exclude
+        """
+        if conditional is None:
+            for subitem in self:
+                yield subitem
+                if isinstance(subitem, (Group, Use)):
+                    for s in subitem.select(conditional):
+                        yield s
+        else:
+            for subitem in self:
+                if conditional(subitem):
+                    yield subitem
+                if isinstance(subitem, (Group, Use)):
+                    for s in subitem.select(conditional):
+                        yield s
 
 
 class ClipPath(SVGElement, list):
@@ -8572,21 +8627,6 @@ class SVG(Group):
         return self.viewbox.transform(self)
 
     @staticmethod
-    def _shadow_iter(tag, elem, children):
-        yield tag, "start", elem
-        try:
-            for t, e, c in children:
-                for shadow_tag, shadow_event, shadow_elem in SVG._shadow_iter(t, e, c):
-                    yield shadow_tag, shadow_event, shadow_elem
-        except ValueError:
-            """
-            Strictly speaking it is possible to reference use from other use objects. If this is an infinite loop
-            we should not block the rendering. Just say we finished. See: W3C, struct-use-12-f
-            """
-            pass
-        yield tag, "end", elem
-
-    @staticmethod
     def _use_structure_parse(source):
         """
         SVG structure pass: parses the svg file such that it creates the structure implied by reused objects in a
@@ -8607,7 +8647,9 @@ class SVG(Group):
                 siblings.append(node)  # siblings now includes this node.
                 attributes = elem.attrib
                 if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
-                    event_defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
+                    event_defs[
+                        attributes[SVG_ATTR_ID]
+                    ] = node  # store node value in defs.
             elif event == "end":
                 parent, children = parent
             else:
@@ -8615,7 +8657,8 @@ class SVG(Group):
         nodes = children
         # End preprocess
 
-        # Semiparse the nodes. All nodes are given in iterparse ordering with start-ns, start, and end. Use values are inlined.
+        # Semiparse the nodes. All nodes are given in iterparse ordering with start-ns, start, and end.
+        # Use values are inlined.
         def semiparse(nodes):
             for elem, children in nodes:
                 if children is None:
@@ -8628,39 +8671,12 @@ class SVG(Group):
                 yield from semiparse(children)
                 if SVG_TAG_USE == tag:
                     url = None
-                    attributes = elem.attrib
-                    if XLINK_HREF in attributes:
-                        url = attributes[XLINK_HREF]
-                    if SVG_HREF in attributes:
-                        url = attributes[SVG_HREF]
+                    semiattr = elem.attrib
+                    if XLINK_HREF in semiattr:
+                        url = semiattr[XLINK_HREF]
+                    if SVG_HREF in semiattr:
+                        url = semiattr[SVG_HREF]
                     if url is not None:
-                        transform = False
-                        try:
-                            x = attributes[SVG_ATTR_X]
-                            del attributes[SVG_ATTR_X]
-                            transform = True
-                        except KeyError:
-                            x = "0"
-                        try:
-                            y = attributes[SVG_ATTR_Y]
-                            del attributes[SVG_ATTR_Y]
-                            transform = True
-                        except KeyError:
-                            y = "0"
-                        if transform:
-                            try:
-                                attributes[
-                                    SVG_ATTR_TRANSFORM
-                                ] = "%s translate(%s, %s)" % (
-                                    attributes[SVG_ATTR_TRANSFORM],
-                                    x,
-                                    y,
-                                )
-                            except KeyError:
-                                attributes[SVG_ATTR_TRANSFORM] = "translate(%s, %s)" % (
-                                    x,
-                                    y,
-                                )
                         try:
                             yield from semiparse([event_defs[url[1:]]])
                         except KeyError:
@@ -8876,6 +8892,17 @@ class SVG(Group):
                     clip += 1
                 elif SVG_TAG_USE == tag:
                     s = Use(values)
+                    if SVG_ATTR_TRANSFORM in s.values:
+                        # Update value in case x or y applied.
+                        values[SVG_ATTR_TRANSFORM] = s.values[SVG_ATTR_TRANSFORM]
+                    if SVG_ATTR_X in values:
+                        del values[SVG_ATTR_X]
+                    if SVG_ATTR_Y in values:
+                        del values[SVG_ATTR_Y]
+                    if SVG_ATTR_WIDTH in values:
+                        del values[SVG_ATTR_WIDTH]
+                    if SVG_ATTR_HEIGHT in values:
+                        del values[SVG_ATTR_HEIGHT]
                     context.append(s)
                     context = s
                     use += 1
