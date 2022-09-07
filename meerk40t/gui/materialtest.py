@@ -920,8 +920,8 @@ class TemplatePanel(wx.Panel):
             return
 
         if param_unit_1 == "deg":
-            min_value_1 = f"{Angle.parse(self.text_min_1.GetValue()).as_degrees}deg"
-            max_value_1 = f"{Angle.parse(self.text_max_1.GetValue()).as_degrees}deg"
+            min_value_1 = Angle(self.text_min_1.GetValue()).degrees
+            max_value_1 = Angle(self.text_max_1.GetValue()).degrees
         elif param_unit_1 == "ppi":
             min_value_1 = max(min_value_1, 0)
             max_value_1 = min(max_value_1, 1000)
@@ -932,8 +932,8 @@ class TemplatePanel(wx.Panel):
                 max_value_1 = max(max_value_1, 0)
 
         if param_unit_2 == "deg":
-            min_value_2 = f"{Angle.parse(self.text_min_2.GetValue()).as_degrees}deg"
-            max_value_2 = f"{Angle.parse(self.text_max_2.GetValue()).as_degrees}deg"
+            min_value_2 = Angle(self.text_min_2.GetValue()).degrees
+            max_value_2 = Angle(self.text_max_2.GetValue()).degrees
         elif param_unit_2 == "ppi":
             min_value_2 = max(min_value_2, 0)
             max_value_2 = min(max_value_2, 1000)
