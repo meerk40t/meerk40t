@@ -350,6 +350,8 @@ class RuidaEmulator(Module, Parameters):
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
+        if self.device is not None and self.device.path != origin:
+            return  # This pipe thread change is from the wrong device.
         if not self.control:
             return  # We are not using ruidacontrol mode. Do not update the state.
         if state == STATE_INITIALIZE:
