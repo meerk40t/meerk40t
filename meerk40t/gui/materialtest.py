@@ -1102,20 +1102,13 @@ class TemplateTool(MWindow):
 
         self.panel_template.set_callback(self.set_node)
 
-        # self.add_module_delegate(self.panel_template) #Added with delegate()
+        self.add_module_delegate(self.panel_template)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Parameter-Test"))
 
     def set_node(self, node):
-        for p in self.panel_instances:
-            try:
-                p.pane_hide()
-            except AttributeError:
-                pass
-            # self.remove_module_delegate(p)
-
         def sort_priority(prop):
             prop_sheet, node = prop
             return (
@@ -1154,8 +1147,13 @@ class TemplateTool(MWindow):
         pages_in_node.sort(key=sort_priority)
         pages_to_instance.extend(pages_in_node)
 
-        self.window_close()
-        # self.panel_instances.clear()
+        for p in self.panel_instances:
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
+            self.remove_module_delegate(p)
+
         # Delete all but the first page...
         while self.notebook_main.GetPageCount() > 1:
             self.notebook_main.DeletePage(1)
@@ -1173,7 +1171,7 @@ class TemplateTool(MWindow):
                 page_panel.set_widgets(instance)
             except AttributeError:
                 pass
-            # self.add_module_delegate(page_panel)
+            self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)
             try:
                 page_panel.pane_show()
@@ -1198,11 +1196,6 @@ class TemplateTool(MWindow):
                 pass
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
-
-    def delegates(self):
-        yield self.panel_template
-        for p in self.panel_instances:
-            yield p
 
     @staticmethod
     def submenu():
