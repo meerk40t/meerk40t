@@ -259,7 +259,6 @@ class Planner(Service):
         return self.get_or_make_plan(self._default_plan)
 
     def service_attach(self, *args, **kwargs):
-        self.register("function/interrupt", interrupt_text)
         _ = self.kernel.translation
 
         @self.console_command(
@@ -587,12 +586,3 @@ class Planner(Service):
         for item in self._plan:
             yield item
 
-
-def interrupt_text():
-    input("Interrupted: press enter to continue...\n")
-    print("... continuing")
-
-
-def interrupt():
-    yield "wait_finish"
-    yield "function", interrupt_text

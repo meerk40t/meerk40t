@@ -203,26 +203,6 @@ and a wxpython version <= 4.1.1."""
 
         kernel.prompt = prompt_popup
 
-        def interrupt_popup():
-            import wx
-
-            dlg = wx.MessageDialog(
-                None,
-                _("Spooling Interrupted. Press OK to Continue."),
-                _("Interrupt"),
-                wx.OK,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        kernel_root.planner.register("function/interrupt", interrupt_popup)
-
-        def interrupt():
-            yield "wait_finish"
-            yield "function", kernel_root.lookup("function/interrupt")
-
-        kernel_root.planner.register("plan/interrupt", interrupt)
-
         if kernel._gui:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")
             kernel.console("window open MeerK40t\n")
