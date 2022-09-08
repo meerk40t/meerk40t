@@ -429,7 +429,10 @@ class Kernel(Settings):
         @param lifecycle_object:
         @return:
         """
-        self.delegates.append((delegate, lifecycle_object))
+        add_delegate = (delegate, lifecycle_object)
+        if add_delegate in self.delegates:
+            raise ValueError(f"Attempted to add an already added delegate. {delegate} is a delegate of {lifecycle_object}.")
+        self.delegates.append(add_delegate)
         self.update_linked_lifecycles(lifecycle_object)
 
     def remove_delegate(
