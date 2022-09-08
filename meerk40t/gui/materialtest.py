@@ -427,11 +427,7 @@ class TemplatePanel(wx.Panel):
                 ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
             ]
 
-        if "balor" in self.context.device._path:
-            allow_balor = True
-        else:
-            allow_balor = False
-        if allow_balor:
+        if "balor" in self.context.device.path:
             balor_choices = [
                 ("frequency", None, _("Frequency"), "kHz", False, True),
                 (
