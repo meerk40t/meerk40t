@@ -203,25 +203,59 @@ and a wxpython version <= 4.1.1."""
 
         kernel.prompt = prompt_popup
 
-        def interrupt_popup():
+        @kernel.console_argument("message")
+        @kernel.console_command("notify", hidden=True)
+        def notification_message(message=None, **kwargs):
+            if message is None:
+                message = _("Something requires your attention")
+            from wx.adv import NotificationMessage
+
+            msg = NotificationMessage(title="MeerK40t", message=message)
+            msg.Show()
+
+        @kernel.console_argument(
+            "message", help=_("Message to display, optional"), default=""
+        )
+        @kernel.console_command("interrupt", hidden=True)
+        def interrupt(message="", **kwargs):
+            """
+            Interrupt interrupts but does so in the gui thread. This is so that some
+            OSes like linux can be properly stopped in the gui. The gui-thread will
+            often be required. But, this will typically be called in the spooler thread.
+
+            If called in the main thread, we call the dialog ourselves to avoid livelock.
+
+            @param message:
+            @param kwargs:
+            @return:
+            """
+            if not message:
+                message = _("Spooling Interrupted.")
+
+            import threading
+
             import wx
 
-            dlg = wx.MessageDialog(
-                None,
-                _("Spooling Interrupted. Press OK to Continue."),
-                _("Interrupt"),
-                wx.OK,
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
+            lock = threading.Lock()
+            lock.acquire(True)
 
-        kernel_root.planner.register("function/interrupt", interrupt_popup)
+            def message_dialog(*args):
+                dlg = wx.MessageDialog(
+                    None,
+                    message + "\n\n" + _("Press OK to Continue."),
+                    _("Interrupt"),
+                    wx.OK,
+                )
+                dlg.ShowModal()
+                dlg.Destroy()
+                lock.release()
 
-        def interrupt():
-            yield "wait_finish"
-            yield "function", kernel_root.lookup("function/interrupt")
-
-        kernel_root.planner.register("plan/interrupt", interrupt)
+            if wx.IsMainThread():
+                # If we're in main thread we much call here or livelock.
+                message_dialog()
+            else:
+                wx.CallAfter(message_dialog, None)
+            lock.acquire(True)
 
         if kernel._gui:
             meerk40tgui = kernel_root.open("module/wxMeerK40t")

@@ -113,8 +113,6 @@ class MoshiDevice(Service, ViewPort):
 
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
-        self.setting(str, "home_x", "0mm")
-        self.setting(str, "home_y", "0mm")
         self.setting(bool, "enable_raster", True)
 
         self.setting(int, "packet_count", 0)
@@ -289,6 +287,7 @@ class MoshiDevice(Service, ViewPort):
             """
             self.controller.estop()
             channel(_("Moshi Channel Aborted."))
+            self.signal("pipe;running", False)
 
         @self.console_command(
             "status",
@@ -476,7 +475,7 @@ class MoshiDriver(Parameters):
                 self._goto_absolute(last_x, last_y, 1)
             elif isinstance(q, HomeCut):
                 self.current_steps += 1
-                self.home(*q.start)
+                self.home()
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
@@ -554,6 +553,18 @@ class MoshiDriver(Parameters):
         self.current_steps = 0
         self.total_steps = 0
 
+    def move_ori(self, x, y):
+        """
+        Requests laser move to origin offset position x,y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
+        x, y = self.service.physical_to_device_position(x, y)
+        self.rapid_mode()
+        self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
+
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -582,28 +593,17 @@ class MoshiDriver(Parameters):
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 
-    def home(self, *values):
+    def home(self):
         """
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        adjust_x = self.service.home_x
-        adjust_y = self.service.home_y
-        try:
-            adjust_x = values[0]
-            adjust_y = values[1]
-        except IndexError:
-            pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y
-        )
-
         self.rapid_mode()
         self.speed = 40
-        self.program_mode(adjust_x, adjust_y, adjust_x, adjust_y)
+        self.program_mode(0, 0, 0, 0)
         self.rapid_mode()
-        self.native_x = adjust_x
-        self.native_y = adjust_y
+        self.native_x = 0
+        self.native_y = 0
 
     def unlock_rail(self):
         """
@@ -1492,6 +1492,8 @@ class MoshiController:
 
         while True:
             if self.state != STATE_WAIT:
+                if self.state == STATE_TERMINATE:
+                    return  # Abort all the processes was requested. This state change would be after clearing.
                 self.update_state(STATE_WAIT)
             self.update_status()
             status = self._status[1]

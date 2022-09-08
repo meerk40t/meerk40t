@@ -42,6 +42,7 @@ from .icons import (
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
+from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
@@ -373,6 +374,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
+        kernel.register("window/Templatetool", TemplateTool)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 

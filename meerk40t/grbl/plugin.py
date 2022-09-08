@@ -27,12 +27,6 @@ def plugin(kernel, lifecycle=None):
             "flip_y", "Y", type=bool, action="store_true", help=_("grbl y-flip")
         )
         @kernel.console_option(
-            "adjust_x", "x", type=int, help=_("adjust grbl home_x position")
-        )
-        @kernel.console_option(
-            "adjust_y", "y", type=int, help=_("adjust grbl home_y position")
-        )
-        @kernel.console_option(
             "port", "p", type=int, default=23, help=_("port to listen on.")
         )
         @kernel.console_option(
@@ -60,8 +54,6 @@ def plugin(kernel, lifecycle=None):
             port=23,
             flip_x=False,
             flip_y=False,
-            adjust_x=0,
-            adjust_y=0,
             verbose=False,
             watch=False,
             quit=False,
@@ -85,7 +77,6 @@ def plugin(kernel, lifecycle=None):
 
                 emulator.scale_x = -1.0 if flip_x else 1.0
                 emulator.scale_y = -1.0 if flip_y else 1.0
-                emulator.home_adjust = (adjust_x, adjust_y)
 
                 # Link emulator and server.
                 root.channel("grbl/recv").watch(emulator.write)

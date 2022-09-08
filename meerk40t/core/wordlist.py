@@ -25,10 +25,14 @@ class Wordlist:
             "version": [0, 2, versionstr],
             "date": [0, 2, self.wordlist_datestr()],
             "time": [0, 2, self.wordlist_timestr()],
+            "op_device": [0, 2, "<device>"],
+            "op_speed": [0, 2, "<speed>"],
+            "op_power": [0, 2, "<power>"],
         }
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.json")
+        self.load_data(self.default_filename)
 
     def add(self, key, value, wtype=None):
         self.add_value(key, value, wtype)
@@ -64,6 +68,19 @@ class Wordlist:
                 2,
             ]  # incomplete, as it will be appended right after this
         self.content[skey].append(value)
+
+    def delete_value(self, skey, idx):
+        skey = skey.lower()
+        if not skey in self.content:
+            return
+        if idx is None or idx < 0:
+            return
+
+        # Zerobased outside + 2 inside
+        idx += 2
+        if idx >= len(self.content[skey]):
+            return
+        self.content[skey].pop(idx)
 
     def set_value(self, skey, value, idx=None, wtype=None):
         # Special treatment:

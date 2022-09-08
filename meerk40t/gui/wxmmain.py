@@ -497,7 +497,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Display-Distance"),
                 "tip": _(
                     "Defines until which distance snap points will be highlighted"
                 ),
@@ -524,7 +524,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Point-Snap-Threshold"),
                 "tip": _(
                     "Set the distance inside which the cursor will snap to the next element point"
                 ),
@@ -552,7 +552,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Point-Snap-Threshold"),
                 "tip": _(
                     "Set the distance inside which the cursor will snap to the next grid intersection"
                 ),
@@ -1204,7 +1204,7 @@ class MeerK40t(MWindow):
             dlg = wx.TextEntryDialog(
                 gui,
                 _(
-                    "Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
+                    "Material must be jigged at 0,0.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
                 ),
                 _("Double Side Flip"),
                 "",
@@ -1288,58 +1288,6 @@ class MeerK40t(MWindow):
                 else:
                     context._stepping_force = None
             dlg.Destroy()
-
-        @context.console_argument("message")
-        @context.console_command("notify", hidden=True)
-        def notification_message(message=None, **kwargs):
-            if message is None:
-                message = _("Something requires your attention")
-            from wx.adv import NotificationMessage
-
-            msg = NotificationMessage(title="MeerK40t", message=message)
-            msg.Show()
-
-        @context.console_argument(
-            "message", help=_("Message to display, optional"), default=""
-        )
-        @context.console_command("interrupt", hidden=True)
-        def interrupt(message="", **kwargs):
-            """
-            Interrupt interrupts but does so in the gui thread. This is so that some
-            OSes like linux can be properly stopped in the gui. The gui-thread will
-            often be required. But, this will typically be called in the spooler thread.
-
-            If called in the main thread, we call the dialog ourselves to avoid livelock.
-
-            @param message:
-            @param kwargs:
-            @return:
-            """
-            if not message:
-                message = _("Spooling Interrupted.")
-
-            import threading
-
-            lock = threading.Lock()
-            lock.acquire(True)
-
-            def message_dialog(*args):
-                dlg = wx.MessageDialog(
-                    None,
-                    message + "\n\n" + _("Press OK to Continue."),
-                    _("Interrupt"),
-                    wx.OK,
-                )
-                dlg.ShowModal()
-                dlg.Destroy()
-                lock.release()
-
-            if wx.IsMainThread():
-                # If we're in main thread we much call here or livelock.
-                message_dialog()
-            else:
-                wx.CallAfter(message_dialog, None)
-            lock.acquire(True)
 
         @context.console_command("dialog_load", hidden=True)
         def load_dialog(**kwargs):
@@ -2198,7 +2146,7 @@ class MeerK40t(MWindow):
             id=menuitem.GetId(),
         )
         menuitem = self.help_menu.Append(
-            wx.ID_ANY, _("&Github"), _("Visit Meerk40t's Github home page")
+            wx.ID_ANY, _("&Github"), _("Visit Meerk40t's Github homepage")
         )
         self.Bind(
             wx.EVT_MENU,

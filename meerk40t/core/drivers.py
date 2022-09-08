@@ -49,6 +49,15 @@ class Driver:
         """
         return self.hold or self.paused
 
+    def move_ori(self, x, y):
+        """
+        Requests laser move to origin offset position x,y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
+
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -123,11 +132,10 @@ class Driver:
         @return:
         """
 
-    def home(self, *values):
+    def home(self):
         """
         Home the laser.
 
-        @param values:
         @return:
         """
 

@@ -1635,7 +1635,7 @@ class ParameterPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: ParameterPanel.__init__
         kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
 
@@ -1677,6 +1677,22 @@ class ParameterPanel(ScrolledPanel):
 
     @signal_listener("element_property_reload")
     def on_element_property_reload(self, origin=None, *args):
+        # Is this something I should care about?
+        # element_property_reload provides a list of nodes that are affected
+        # if self.operation isn't one of them, then we just let it slip
+        for_me = False
+        if len(args) > 0:
+            element = args[0]
+            if isinstance(element, (tuple, list)):
+                for node in element:
+                    if node == self.operation:
+                        for_me = True
+                        break
+            elif self.operation == element:
+                for_me = True
+        if not for_me:
+            return
+
         # if origin is None:
         #     print ("EPR called with no origin")
         # else:

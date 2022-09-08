@@ -1,5 +1,8 @@
+from math import sqrt
+
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
@@ -47,6 +50,19 @@ class PolylineTool(ToolWidget):
             if self.mouse_position is not None:
                 points.append(self.mouse_position)
             gc.DrawLines(points)
+            x0 = points[-2][0]
+            y0 = points[-2][1]
+            x1 = points[-1][0]
+            y1 = points[-1][1]
+            s = "Pts: {pts}, to last point: O=({cx}, {cy}), d={a}".format(
+                pts=len(points),
+                cx=Length(amount=x0, digits=2).length_mm,
+                cy=Length(amount=y0, digits=2).length_mm,
+                a=Length(
+                    amount=sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)), digits=2
+                ).length_mm,
+            )
+            self.scene.context.signal("statusmsg", s)
 
     def event(
         self,
@@ -64,6 +80,7 @@ class PolylineTool(ToolWidget):
                 self.point_series.append((space_pos[0], space_pos[1]))
             else:
                 self.point_series.append((nearest_snap[0], nearest_snap[1]))
+            self.scene.context.signal("statusmsg", "")
             response = RESPONSE_CONSUME
             if (
                 len(self.point_series) > 2
@@ -84,10 +101,13 @@ class PolylineTool(ToolWidget):
                 self.end_tool()
                 response = RESPONSE_ABORT
         elif event_type == "rightdown":
+            was_already_empty = len(self.point_series) == 0
             self.point_series = []
             self.mouse_position = None
             self.scene.tool_active = False
             self.scene.request_refresh()
+            if was_already_empty:
+                self.scene.context("tool none\n")
             response = RESPONSE_CONSUME
         elif event_type == "leftdown":
             self.scene.tool_active = True
@@ -108,6 +128,7 @@ class PolylineTool(ToolWidget):
                 response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.end_tool()
+            self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.tool_active:
@@ -118,6 +139,7 @@ class PolylineTool(ToolWidget):
                 response = RESPONSE_CHAIN
             self.point_series = []
             self.mouse_position = None
+            self.scene.context.signal("statusmsg", "")
         return response
 
     def end_tool(self):

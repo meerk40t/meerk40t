@@ -74,7 +74,7 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
-        kernel.register("format/util home", "{enabled}{element_type}{adjust}")
+        kernel.register("format/util home", "{enabled}{element_type}")
         kernel.register("format/util goto", "{enabled}{element_type}{adjust}")
         kernel.register("format/util origin", "{enabled}{element_type}{adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
@@ -335,6 +335,7 @@ class Elemental(Service):
 
         self.note = None
         self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
 
@@ -7276,7 +7277,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
-            append_operation_origin(node, pos=add_after_index(node), **kwargs)
+            append_operation_goto(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")
@@ -7830,21 +7831,31 @@ class Elemental(Service):
         operation_branch = self._tree.get(type="branch ops")
         for section in list(settings.derivable(name)):
             op_type = settings.read_persistent(str, section, "type")
-            op = operation_branch.add(type=op_type)
+            # That should not happen, but it happens nonetheless...
+            # So recover gracefully
+            try:
+                op = operation_branch.add(type=op_type)
+            except (AttributeError, RuntimeError):
+                print(f"That should not happen, but ops contained: '{op_type}'")
+                continue
+
             op.load(settings, section)
         self.classify(list(self.elems()))
 
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
 
     def altered(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
+        self._emphasized_bounds_painted = None
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
@@ -7867,6 +7878,7 @@ class Elemental(Service):
         self.add_op(CutOpNode())
         if performclassify:
             self.classify(list(self.elems()))
+        self.signal("tree_changed")
 
     def load_default2(self, performclassify=True):
         self.clear_operations()
@@ -7887,6 +7899,7 @@ class Elemental(Service):
         self.add_op(CutOpNode())
         if performclassify:
             self.classify(list(self.elems()))
+        self.signal("tree_changed")
 
     def tree_operations_for_node(self, node):
         for func, m, sname in self.find("tree", node.type, ".*"):
@@ -8420,13 +8433,17 @@ class Elemental(Service):
             for ref in list(node._references):
                 ref.remove_node()
 
-    def selected_area(self):
+    def selected_area(self, painted=False):
         if self._emphasized_bounds_dirty:
             self.validate_selected_area()
-        return self._emphasized_bounds
+        if painted:
+            return self._emphasized_bounds_painted
+        else:
+            return self._emphasized_bounds
 
     def validate_selected_area(self):
         boundary_points = []
+        boundary_points_painted = []
         for e in self.elem_branch.flat(
             types=elem_nodes,
             emphasized=True,
@@ -8442,18 +8459,34 @@ class Elemental(Service):
             boundary_points.append(top_right)
             boundary_points.append(bottom_left)
             boundary_points.append(bottom_right)
+            box = e.paint_bounds
+            top_left = [box[0], box[1]]
+            top_right = [box[2], box[1]]
+            bottom_left = [box[0], box[3]]
+            bottom_right = [box[2], box[3]]
+            boundary_points_painted.append(top_left)
+            boundary_points_painted.append(top_right)
+            boundary_points_painted.append(bottom_left)
+            boundary_points_painted.append(bottom_right)
 
         if len(boundary_points) == 0:
             new_bounds = None
+            new_bounds_painted = None
         else:
             xmin = min([e[0] for e in boundary_points])
             ymin = min([e[1] for e in boundary_points])
             xmax = max([e[0] for e in boundary_points])
             ymax = max([e[1] for e in boundary_points])
             new_bounds = [xmin, ymin, xmax, ymax]
+            xmin = min([e[0] for e in boundary_points_painted])
+            ymin = min([e[1] for e in boundary_points_painted])
+            xmax = max([e[0] for e in boundary_points_painted])
+            ymax = max([e[1] for e in boundary_points_painted])
+            new_bounds_painted = [xmin, ymin, xmax, ymax]
         self._emphasized_bounds_dirty = False
         if self._emphasized_bounds != new_bounds:
             self._emphasized_bounds = new_bounds
+            self._emphasized_bounds_painted = new_bounds_painted
             self.signal("selected_bounds", self._emphasized_bounds)
 
     def highlight_children(self, node_context):
@@ -8558,10 +8591,21 @@ class Elemental(Service):
             max(b[0], b[2]),
             max(b[1], b[3]),
         ]
+        b = self._emphasized_bounds_painted
+        if b is None:
+            return
+        self._emphasized_bounds_painted = [
+            min(b[0], b[2]),
+            min(b[1], b[3]),
+            max(b[0], b[2]),
+            max(b[1], b[3]),
+        ]
         self.signal("selected_bounds", self._emphasized_bounds)
 
     def update_bounds(self, b):
         self._emphasized_bounds = [b[0], b[1], b[2], b[3]]
+        # We dont know it better...
+        self._emphasized_bounds_painted = [b[0], b[1], b[2], b[3]]
         self.signal("selected_bounds", self._emphasized_bounds)
 
     def move_emphasized(self, dx, dy):
@@ -8588,6 +8632,7 @@ class Elemental(Service):
             if (
                 self._emphasized_bounds is not None
                 and contains(self._emphasized_bounds, position)
+                # and contains(self._emphasized_bounds_painted, position)
                 and exit_over_selection
             ):
                 return  # Select by position aborted since selection position within current select bounds.
@@ -8628,6 +8673,7 @@ class Elemental(Service):
                         e = node
             if e is not None:
                 bounds = e.bounds
+                bounds_painted = e.paint_bounds
                 e_list.append(e)
                 if self._emphasized_bounds is not None:
                     cc = self._emphasized_bounds
@@ -8637,11 +8683,20 @@ class Elemental(Service):
                         max(bounds[2], cc[2]),
                         max(bounds[3], cc[3]),
                     )
+                    cc = self._emphasized_bounds_painted
+                    bounds = (
+                        min(bounds_painted[0], cc[0]),
+                        min(bounds_painted[1], cc[1]),
+                        max(bounds_painted[2], cc[2]),
+                        max(bounds_painted[3], cc[3]),
+                    )
         if len(e_list) > 0:
             self._emphasized_bounds = bounds
+            self._emphasized_bounds_painted = bounds_painted
             self.set_emphasis(e_list)
         else:
             self._emphasized_bounds = None
+            self._emphasized_bounds_painted = None
             self.set_emphasis(None)
 
     def classify(self, elements, operations=None, add_op_function=None):
