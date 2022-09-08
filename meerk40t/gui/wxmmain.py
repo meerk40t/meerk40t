@@ -2198,7 +2198,7 @@ class MeerK40t(MWindow):
             id=menuitem.GetId(),
         )
         menuitem = self.help_menu.Append(
-            wx.ID_ANY, _("&Github"), _("Visit Meerk40t's Github home page")
+            wx.ID_ANY, _("&Github"), _("Visit Meerk40t's Github homepage")
         )
         self.Bind(
             wx.EVT_MENU,
