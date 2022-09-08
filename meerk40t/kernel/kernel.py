@@ -26,7 +26,7 @@ from .service import Service
 from .settings import Settings
 from .states import *
 
-KERNEL_VERSION = "0.0.2"
+KERNEL_VERSION = "0.0.10"
 
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
@@ -2592,6 +2592,37 @@ class Kernel(Settings):
             events where calling the console commands is entirely acceptable.
             """
             time.sleep(sleeptime)
+
+        @self.console_argument(
+            "message", help=_("Message to display, optional"), default=""
+        )
+        @self.console_command("interrupt", hidden=True)
+        def interrupt(message="", **kwargs):
+            """
+            Interrupt interrupts but does so in the gui thread.
+
+            @param message:
+            @param kwargs:
+            @return:
+            """
+            if not message:
+                message = _("Spooling Interrupted.")
+
+            import threading
+
+            lock = threading.Lock()
+            lock.acquire(True)
+
+            def message_interrupt(*args):
+                input(f"{message}\n")
+                print("... continuing")
+                lock.release()
+
+            if threading.current_thread() is threading.main_thread():
+                message_interrupt()
+            else:
+                self.add_job(message_interrupt, times=1, run_main=True)
+            lock.acquire(True)
 
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):

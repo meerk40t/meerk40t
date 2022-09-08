@@ -113,8 +113,6 @@ class MoshiDevice(Service, ViewPort):
 
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
-        self.setting(str, "home_x", "0mm")
-        self.setting(str, "home_y", "0mm")
         self.setting(bool, "enable_raster", True)
 
         self.setting(int, "packet_count", 0)
@@ -477,7 +475,7 @@ class MoshiDriver(Parameters):
                 self._goto_absolute(last_x, last_y, 1)
             elif isinstance(q, HomeCut):
                 self.current_steps += 1
-                self.home(*q.start)
+                self.home()
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
@@ -595,28 +593,17 @@ class MoshiDriver(Parameters):
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 
-    def home(self, *values):
+    def home(self):
         """
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        adjust_x = self.service.home_x
-        adjust_y = self.service.home_y
-        try:
-            adjust_x = values[0]
-            adjust_y = values[1]
-        except IndexError:
-            pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y
-        )
-
         self.rapid_mode()
         self.speed = 40
-        self.program_mode(adjust_x, adjust_y, adjust_x, adjust_y)
+        self.program_mode(0, 0, 0, 0)
         self.rapid_mode()
-        self.native_x = adjust_x
-        self.native_y = adjust_y
+        self.native_x = 0
+        self.native_y = 0
 
     def unlock_rail(self):
         """

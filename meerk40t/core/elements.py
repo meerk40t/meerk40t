@@ -74,7 +74,7 @@ def plugin(kernel, lifecycle=None):
 
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
-        kernel.register("format/util home", "{enabled}{element_type}{adjust}")
+        kernel.register("format/util home", "{enabled}{element_type}")
         kernel.register("format/util goto", "{enabled}{element_type}{adjust}")
         kernel.register("format/util origin", "{enabled}{element_type}{adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
@@ -7277,7 +7277,7 @@ class Elemental(Service):
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Return to Origin"), node_type=op_nodes, help="")
         def add_operation_origin(node, **kwargs):
-            append_operation_origin(node, pos=add_after_index(node), **kwargs)
+            append_operation_goto(node, pos=add_after_index(node), **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
         @self.tree_operation(_("Add Beep"), node_type=op_nodes, help="")

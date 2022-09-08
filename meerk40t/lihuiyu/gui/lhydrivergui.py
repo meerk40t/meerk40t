@@ -289,49 +289,6 @@ class ConfigurationLaserPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Laser Parameters")), wx.VERTICAL
         )
 
-        sizer_home = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position")), wx.HORIZONTAL
-        )
-        v_sizer_main.Add(sizer_home, 0, wx.EXPAND, 0)
-
-        h_sizer_x = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("X:")), wx.HORIZONTAL
-        )
-        sizer_home.Add(h_sizer_x, 1, wx.EXPAND, 0)
-
-        self.text_home_x = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "0mm",
-            limited=True,
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_home_x.SetToolTip(_("Translate Home X"))
-        h_sizer_x.Add(self.text_home_x, 1, wx.EXPAND, 0)
-
-        h_sizer_y = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Y:")), wx.HORIZONTAL
-        )
-        sizer_home.Add(h_sizer_y, 1, wx.EXPAND, 0)
-
-        self.text_home_y = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "0mm",
-            limited=True,
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-        )
-        self.text_home_y.SetToolTip(_("Translate Home Y"))
-        h_sizer_y.Add(self.text_home_y, 1, wx.EXPAND, 0)
-
-        self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
-        self.button_home_by_current.SetToolTip(
-            _("Set Home Position based on the current position")
-        )
-        sizer_home.Add(self.button_home_by_current, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-
         sizer_bed = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Bed Dimensions")), wx.HORIZONTAL
         )
@@ -415,8 +372,6 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.SetSizer(v_sizer_main)
 
-        self.text_home_x.SetValue(self.context.home_x)
-        self.text_home_y.SetValue(self.context.home_y)
         self.text_bedwidth.SetValue(self.context.bedwidth)
         self.text_bedheight.SetValue(self.context.bedheight)
         self.text_scale_x.SetValue(f"{self.context.scale_x:.4f}")
@@ -424,11 +379,6 @@ class ConfigurationLaserPanel(wx.Panel):
 
         self.Layout()
 
-        self.text_home_x.SetActionRoutine(self.on_text_home_x)
-        self.text_home_y.SetActionRoutine(self.on_text_home_y)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
-        )
         self.text_bedwidth.SetActionRoutine(self.on_text_bedwidth)
         self.text_bedheight.SetActionRoutine(self.on_text_bedheight)
         self.text_scale_x.SetActionRoutine(self.on_text_x_scale)
@@ -439,27 +389,6 @@ class ConfigurationLaserPanel(wx.Panel):
 
     def pane_hide(self):
         pass
-
-    def on_text_home_x(self):
-        try:
-            length = Length(self.text_home_x.GetValue())
-            self.context.home_x = length.preferred_length
-        except ValueError:
-            return
-
-    def on_text_home_y(self):
-        try:
-            length = Length(self.text_home_y.GetValue())
-            self.context.home_y = length.preferred_length
-        except ValueError:
-            return
-
-    def on_button_set_home_current(self, event=None):
-        current_x, current_y = self.context.device.current
-        self.context.home_x = f"{Length(amount=current_x).mm:.1f}mm"
-        self.context.home_y = f"{Length(amount=current_y).mm:.1f}mm"
-        self.text_home_x.SetValue(self.context.home_x)
-        self.text_home_y.SetValue(self.context.home_y)
 
     def on_text_bedwidth(self):
         ctrl = self.text_bedwidth
@@ -521,7 +450,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
         kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)

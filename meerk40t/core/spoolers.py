@@ -283,21 +283,16 @@ def plugin(kernel, lifecycle):
                 spooler.command("set_origin", x, y)
             return "spooler", spooler
 
-        @kernel.console_argument("x", type=Length, help=_("x offset"))
-        @kernel.console_argument("y", type=Length, help=_("y offset"))
         @kernel.console_command(
             "home",
             input_type=("spooler", None),
             output_type="spooler",
             help=_("home the laser"),
         )
-        def home(x=None, y=None, data=None, **kwgs):
+        def home(data=None, **kwgs):
             if data is None:
                 data = kernel.device.spooler
             spooler = data
-            if x is not None and y is not None:
-                spooler.command("home", x, y)
-                return "spooler", spooler
             spooler.command("home")
             return "spooler", spooler
 

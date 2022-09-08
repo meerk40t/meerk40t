@@ -398,8 +398,6 @@ class GRBLDriver(Parameters):
 
         self.grbl = self.service.channel("grbl", pure=True)
 
-        self.home_adjust = None
-
         self.move_mode = 0
         self.reply = None
         self.elements = None
@@ -616,7 +614,7 @@ class GRBLDriver(Parameters):
                 self.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
                 self.current_steps += 1
-                self.home(q.first)
+                self.home()
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
@@ -698,11 +696,10 @@ class GRBLDriver(Parameters):
             # TODO: Process line does not exist as a function.
             self.process_line(line)
 
-    def home(self, *values):
+    def home(self):
         """
         Home the laser.
 
-        @param values:
         @return:
         """
         self.native_x = 0
@@ -1511,9 +1508,6 @@ class GRBLEmulator(Module, Parameters):
 
                 def realtime_home():
                     yield "home"
-                    if self.home_adjust is not None:
-                        yield "rapid_mode"
-                        yield "move_abs", self.home_adjust[0], self.home_adjust[1]
 
                 self.spooler.send(realtime_home)
                 return 0

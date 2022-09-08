@@ -525,7 +525,7 @@ class LaserRender:
             elif isinstance(cut, WaitCut):
                 pass
             elif isinstance(cut, HomeCut):
-                p.MoveToPoint(start[0] + x, start[1] + y)
+                p.MoveToPoint(0, 0)
             elif isinstance(cut, SetOriginCut):
                 # This may actually need to set a new draw location for loop cuts
                 pass
