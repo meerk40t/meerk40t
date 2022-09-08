@@ -20,6 +20,8 @@ class TestKernel(unittest.TestCase):
                     continue
                 if "loop" in command:
                     continue
+                if "interrupt" in command:
+                    continue
                 if not cmd.regex:
                     print("Testing command: %s" % command)
                     # command should be generated with something like
