@@ -911,7 +911,7 @@ class MovePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.button_navigate_move_to = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap()
+            self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap(resize=32)
         )
         units = self.context.units_name
         default_pos = f"0{units}"
@@ -956,7 +956,7 @@ class MovePanel(wx.Panel):
     def __do_layout(self):
         # begin wxGlade: MovePanel.__do_layout
         main_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Move To:")), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Move Laser to:")), wx.HORIZONTAL
         )
         v_main_sizer = wx.BoxSizer(wx.VERTICAL)
         h_x_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -972,7 +972,7 @@ class MovePanel(wx.Panel):
         h_y_sizer.Add(label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         h_y_sizer.Add(self.text_position_y, 1, wx.EXPAND, 0)
         v_main_sizer.Add(h_y_sizer, 0, wx.EXPAND, 0)
-        main_sizer.Add(v_main_sizer, 1, wx.EXPAND, 0)
+        main_sizer.Add(v_main_sizer, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
         self.Layout()
@@ -1018,7 +1018,7 @@ class PulsePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.button_navigate_pulse = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_laser_beam_52.GetBitmap()
+            self, wx.ID_ANY, icons8_laser_beam_52.GetBitmap(resize=32)
         )
         self.spin_pulse_duration = wx.SpinCtrl(
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="50", min=1, max=1000
@@ -1086,7 +1086,7 @@ class SizePanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Object Dimensions")), wx.HORIZONTAL
         )
         self.button_navigate_resize = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_compress_50.GetBitmap()
+            self, wx.ID_ANY, icons8_compress_50.GetBitmap(resize=32)
         )
         self.label_9 = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         self.label_10 = wx.StaticText(self, wx.ID_ANY, _("Height:"))
@@ -1144,7 +1144,7 @@ class SizePanel(wx.Panel):
         sizer_label.Add(fieldsizer1, 0, wx.EXPAND, 0)
         sizer_label.Add(fieldsizer2, 0, wx.EXPAND, 0)
 
-        self.mainsizer.Add(sizer_label, 1, wx.EXPAND, 0)
+        self.mainsizer.Add(sizer_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.mainsizer.Add(self.btn_lock_ratio, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.SetSizer(self.mainsizer)
