@@ -1204,7 +1204,7 @@ class MeerK40t(MWindow):
             dlg = wx.TextEntryDialog(
                 gui,
                 _(
-                    "Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
+                    "Material must be jigged at 0,0.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
                 ),
                 _("Double Side Flip"),
                 "",

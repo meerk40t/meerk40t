@@ -191,8 +191,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "plot_shift", False)
 
         self.setting(bool, "strict", False)
-        self.setting(str, "home_x", "0mm")
-        self.setting(str, "home_y", "0mm")
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -1155,23 +1153,6 @@ class LihuiyuDriver(Parameters):
         self.native_y = 0
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        adjust_x = self.service.home_x
-        adjust_y = self.service.home_y
-        try:
-            adjust_x = values[0]
-            adjust_y = values[1]
-        except IndexError:
-            pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y
-        )
-        if adjust_x != 0 or adjust_y != 0:
-            # Perform post home adjustment.
-            self._move_relative(adjust_x, adjust_y)
-            # Erase adjustment
-            self.native_x = 0
-            self.native_y = 0
-
         self.service.signal("driver;mode", self.state)
 
         new_current = self.service.current
@@ -1233,7 +1214,7 @@ class LihuiyuDriver(Parameters):
         elif isinstance(plot, HomeCut):
             self.plot_start()
             self.wait_finish()
-            self.home(plot.start[0], plot.start[1])
+            self.home()
         elif isinstance(plot, GotoCut):
             self.plot_start()
             start = plot.start

@@ -891,7 +891,7 @@ def home():
 
 def physicalhome():
     yield "wait_finish"
-    yield "home", 0, 0
+    yield "home"
 
 
 # class offset:

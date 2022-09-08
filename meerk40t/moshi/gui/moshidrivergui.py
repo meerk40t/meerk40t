@@ -19,35 +19,12 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
         self.checkbox_home_right = wx.CheckBox(self, wx.ID_ANY, _("Home Right"))
         self.checkbox_home_bottom = wx.CheckBox(self, wx.ID_ANY, _("Home Bottom"))
-        self.text_home_x = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "0mm",
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-            limited=True,
-        )
-        self.text_home_y = TextCtrl(
-            self,
-            wx.ID_ANY,
-            "0mm",
-            check="length",
-            style=wx.TE_PROCESS_ENTER,
-            limited=True,
-        )
-        self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
-        # self.checkbox_random_ppi = wx.CheckBox(self, wx.ID_ANY, _("Randomize PPI"))
 
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_right, self.checkbox_home_right)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_home_bottom, self.checkbox_home_bottom)
-        self.text_home_x.SetActionRoutine(self.on_text_home_x)
-        self.text_home_y.SetActionRoutine(self.on_text_home_y)
-        self.Bind(
-            wx.EVT_BUTTON, self.on_button_set_home_current, self.button_home_by_current
-        )
         # self.Bind(wx.EVT_CHECKBOX, self.on_check_random_ppi, self.checkbox_random_ppi)
         # end wxGlade
         self.SetupScrolling()
@@ -58,13 +35,6 @@ class MoshiConfigurationPanel(ScrolledPanel):
         )
         self.checkbox_home_bottom.SetToolTip(
             _("Indicates the device Home is on the bottom")
-        )
-        self.text_home_x.SetMinSize((80, 23))
-        self.text_home_x.SetToolTip(_("Translate Home X"))
-        self.text_home_y.SetMinSize((80, 23))
-        self.text_home_y.SetToolTip(_("Translate Home Y"))
-        self.button_home_by_current.SetToolTip(
-            _("Set Home Position based on the current position")
         )
         # self.checkbox_random_ppi.SetToolTip(
         #     _("Rather than orderly PPI, we perform PPI based on a randomized average")
@@ -81,8 +51,6 @@ class MoshiConfigurationPanel(ScrolledPanel):
         sizer_home = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Shift Home Position")), wx.HORIZONTAL
         )
-        sizer_2 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_4 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_config = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Configuration")), wx.HORIZONTAL
         )
@@ -90,17 +58,6 @@ class MoshiConfigurationPanel(ScrolledPanel):
         sizer_config.Add(self.checkbox_home_bottom, 1, wx.EXPAND, 0)
         sizer_main.Add(sizer_config, 0, wx.EXPAND, 0)
 
-        label_9 = wx.StaticText(self, wx.ID_ANY, "X")
-        sizer_4.Add(label_9, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_4.Add(self.text_home_x, 1, wx.EXPAND, 0)
-        sizer_home.Add(sizer_4, 1, wx.EXPAND, 0)
-
-        label_10 = wx.StaticText(self, wx.ID_ANY, "Y")
-        sizer_2.Add(label_10, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_2.Add(self.text_home_y, 1, wx.EXPAND, 0)
-        sizer_home.Add(sizer_2, 1, wx.EXPAND, 0)
-
-        sizer_home.Add(self.button_home_by_current, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_home, 0, wx.EXPAND, 0)
         # sizer_6.Add(self.checkbox_random_ppi, 0, 0, 0)
         sizer_main.Add(sizer_6, 1, wx.EXPAND, 0)
@@ -125,21 +82,6 @@ class MoshiConfigurationPanel(ScrolledPanel):
 
     def on_check_home_bottom(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
-
-    def on_text_home_x(self):  # wxGlade: MoshiDriverGui.<event_handler>
-        self.context.home_x = self.text_home_x.GetValue()
-
-    def on_text_home_y(self):  # wxGlade: MoshiDriverGui.<event_handler>
-        self.context.home_y = self.text_home_y.GetValue()
-
-    def on_button_set_home_current(
-        self, event
-    ):  # wxGlade: MoshiDriverGui.<event_handler>
-        current_x, current_y = self.context.device.current
-        self.context.home_x = f"{Length(amount=current_x).mm:.1f}mm"
-        self.context.home_y = f"{Length(amount=current_y).mm:.1f}mm"
-        self.text_home_x.SetValue(self.context.home_x)
-        self.text_home_y.SetValue(self.context.home_y)
 
     def on_check_random_ppi(self, event):  # wxGlade: MoshiDriverGui.<event_handler>
         pass

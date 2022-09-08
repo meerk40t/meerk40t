@@ -132,11 +132,10 @@ class Driver:
         @return:
         """
 
-    def home(self, *values):
+    def home(self):
         """
         Home the laser.
 
-        @param values:
         @return:
         """
 

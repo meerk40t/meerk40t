@@ -998,7 +998,7 @@ class HomeCut(CutObject):
         pass
 
     def generate(self):
-        yield "home", self._start_x, self._start_y
+        yield "home"
 
 
 class GotoCut(CutObject):
