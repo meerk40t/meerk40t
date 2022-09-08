@@ -1102,7 +1102,7 @@ class TemplateTool(MWindow):
 
         self.panel_template.set_callback(self.set_node)
 
-        self.add_module_delegate(self.panel_template)
+        # self.add_module_delegate(self.panel_template) #Added with delegate()
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_detective_50.GetBitmap())
         self.SetIcon(_icon)
