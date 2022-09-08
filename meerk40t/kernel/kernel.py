@@ -429,7 +429,13 @@ class Kernel(Settings):
         @param lifecycle_object:
         @return:
         """
-        self.delegates.append((delegate, lifecycle_object))
+        add_delegate = (delegate, lifecycle_object)
+        if add_delegate in self.delegates:
+            raise ValueError(f"Attempted to add an already added delegate. {delegate} is a delegate of {lifecycle_object}.")
+        if delegate is lifecycle_object:
+            raise ValueError(
+                f"Attempting to delegate self. {delegate} already linked with self.")
+        self.delegates.append(add_delegate)
         self.update_linked_lifecycles(lifecycle_object)
 
     def remove_delegate(
@@ -1626,25 +1632,35 @@ class Kernel(Settings):
             # No current thread
             pass
         thread = Thread(name=thread_name)
-        channel(_("Thread: {name}, Initialized").format(name=thread_name))
+        if channel:
+            channel(_("Thread: {name}, Initialized").format(name=thread_name))
 
         def run():
             func_result = None
-            channel(_("Thread: {name}, Set").format(name=thread_name))
+            if channel:
+                channel(_("Thread: {name}, Set").format(name=thread_name))
             try:
-                channel(_("Thread: {name}, Start").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, Start").format(name=thread_name))
                 func_result = func(*args)
-                channel(_("Thread: {name}, End ").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, End ").format(name=thread_name))
             except Exception:
-                channel(_("Thread: {name}, Exception-End").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, Exception-End").format(name=thread_name))
                 import sys
-
-                channel(str(sys.exc_info()))
+                if channel:
+                    channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
-            channel(_("Thread: {name}, Unset").format(name=thread_name))
+            if channel:
+                channel(_("Thread: {name}, Unset").format(name=thread_name))
             del self.threads[thread_name]
             if result is not None:
+                if channel:
+                    channel(_("Thread: {name}, Result Function").format(name=thread_name))
                 result(func_result)
+            if channel:
+                channel(_("Thread: {name}, Finished").format(name=thread_name))
 
         thread.run = run
         self.threads[thread_name] = thread
@@ -1874,9 +1890,7 @@ class Kernel(Settings):
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     removed = False
-                    ct = 0
                     for i, listen in enumerate(listeners):
-                        ct += 1
                         listen_funct, listen_lso = listen
                         if (listen_funct == remove_funct or remove_funct is None) and (
                             listen_lso is remove_lso or remove_lso is None
@@ -2653,12 +2667,19 @@ class Kernel(Settings):
                         )
                     )
                     for j, jname in enumerate(context.opened):
-                        module = context.opened[jname]
+                        module_object = context.opened[jname]
                         channel(
                             _("{index}: {object} type of {type}").format(
-                                index=j + 1, object=jname, type=type(module)
+                                index=j + 1, object=jname, type=type(module_object)
                             )
                         )
+                        links = self.get_linked_objects(module_object)
+                        for link_index, link in enumerate(links):
+                            channel(
+                                _("    {index}.{subindex}: linked {name}:{hash:X}").format(
+                                    index=j+1, subindex=link_index, hash=id(link), name=link.__class__.__name__
+                                )
+                            )
                     channel(_("----------"))
                     return
             if path is None:

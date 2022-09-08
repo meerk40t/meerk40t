@@ -28,6 +28,7 @@ class TemplatePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.callback = None
+        self.current_op = None
         opchoices = [_("Cut"), _("Engrave"), _("Raster"), _("Image"), _("Hatch")]
         # Setup 5 Op nodes - they aren't saved yet
         self.default_op = []
@@ -334,7 +335,19 @@ class TemplatePanel(wx.Panel):
         self.setup_settings()
         self.combo_ops.SetSelection(0)
         self.restore_settings()
+        # Repopulate combos
         self.set_param_according_to_op(None)
+        # And then setting it back to the defaults...
+        self.combo_param_1.SetSelection(
+            min(self.context.template_param1, self.combo_param_1.GetCount() - 1)
+        )
+        # Make sure units appear properly
+        self.on_combo_1(None)
+        self.combo_param_2.SetSelection(
+            min(self.context.template_param2, self.combo_param_2.GetCount() - 1)
+        )
+        # Make sure units appear properly
+        self.on_combo_2(None)
 
     def set_callback(self, routine):
         self.callback = routine
@@ -376,6 +389,10 @@ class TemplatePanel(wx.Panel):
                 node.settings["delay_polygon"] = self.context.device.delay_polygon
 
         opidx = self.combo_ops.GetSelection()
+        if self.current_op == opidx:
+            return
+        self.current_op = opidx
+
         if opidx < 0:
             opnode = None
         else:
@@ -1081,7 +1098,7 @@ class TemplatePanel(wx.Panel):
 
 class TemplateTool(MWindow):
     def __init__(self, *args, **kwds):
-        super().__init__(490, 280, submenu="Laser-Tools", *args, **kwds)
+        super().__init__(720, 750, submenu="Laser-Tools", *args, **kwds)
         self.panel_instances = list()
         self.panel_template = TemplatePanel(
             self,
@@ -1109,13 +1126,6 @@ class TemplateTool(MWindow):
         self.SetTitle(_("Parameter-Test"))
 
     def set_node(self, node):
-        for p in self.panel_instances:
-            try:
-                p.pane_hide()
-            except AttributeError:
-                pass
-            # self.remove_module_delegate(p)
-
         def sort_priority(prop):
             prop_sheet, node = prop
             return (
@@ -1154,8 +1164,13 @@ class TemplateTool(MWindow):
         pages_in_node.sort(key=sort_priority)
         pages_to_instance.extend(pages_in_node)
 
-        self.window_close()
-        # self.panel_instances.clear()
+        for p in self.panel_instances:
+            try:
+                p.pane_hide()
+            except AttributeError:
+                pass
+            self.remove_module_delegate(p)
+
         # Delete all but the first page...
         while self.notebook_main.GetPageCount() > 1:
             self.notebook_main.DeletePage(1)
@@ -1173,7 +1188,7 @@ class TemplateTool(MWindow):
                 page_panel.set_widgets(instance)
             except AttributeError:
                 pass
-            # self.add_module_delegate(page_panel)
+            self.add_module_delegate(page_panel)
             self.panel_instances.append(page_panel)
             try:
                 page_panel.pane_show()
@@ -1198,11 +1213,6 @@ class TemplateTool(MWindow):
                 pass
         # We do not remove the delegates, they will detach with the closing of the module.
         self.panel_instances.clear()
-
-    def delegates(self):
-        yield self.panel_template
-        for p in self.panel_instances:
-            yield p
 
     @staticmethod
     def submenu():

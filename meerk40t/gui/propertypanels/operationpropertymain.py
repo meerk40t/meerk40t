@@ -993,17 +993,12 @@ class PanelStartPreference(wx.Panel):
 
     def refresh_in_ui(self):
         """Performs redrawing of the data in the UI thread."""
-        try:
-            shown = self.Shown
-        except RuntimeError:
-            return
-
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-        if shown:
+        if self.Shown:
             if self.raster_lines is None:
                 self.calculate_raster_lines()
             if self.raster_lines is not None:
@@ -1640,7 +1635,7 @@ class ParameterPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: ParameterPanel.__init__
         kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
 
