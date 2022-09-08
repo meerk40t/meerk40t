@@ -170,17 +170,22 @@ class ViewPort:
         x, y = self.physical_to_scene_position(x, y, unitless)
         return self.scene_to_device_position(x, y, vector=True)
 
-    def device_to_scene_position(self, x, y):
+    def device_to_scene_position(self, x, y, vector=False):
         """
         Converts a device position x, y into a scene position of native units (1/65535) inches.
         @param x:
         @param y:
+        @param vector:
         @return:
         """
         if self._imatrix is None:
             self._calculate_matrices()
-        point = self._imatrix.point_in_matrix_space((x, y))
-        return point.x, point.y
+        if vector:
+            point = self._imatrix.transform_vector((x, y))
+            return point.x, point.y
+        else:
+            point = self._imatrix.point_in_matrix_space((x, y))
+            return point.x, point.y
 
     def scene_to_device_position(self, x, y, vector=False):
         """
