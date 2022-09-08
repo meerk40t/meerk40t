@@ -41,15 +41,6 @@ def plugin(kernel, lifecycle=None):
                 "tip": _("Automatically add a home command before all jobs"),
             },
             {
-                "attr": "prephysicalhome",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("Before"),
-                "label": _("Physical Home"),
-                "tip": _("Automatically add a physical home command before all jobs"),
-            },
-            {
                 "attr": "autohome",
                 "object": context,
                 "default": False,
@@ -57,15 +48,6 @@ def plugin(kernel, lifecycle=None):
                 "submenu": _("After"),
                 "label": _("Home"),
                 "tip": _("Automatically add a home command after all jobs"),
-            },
-            {
-                "attr": "autophysicalhome",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("After"),
-                "label": _("Physical Home"),
-                "tip": _("Automatically add a physical home command before all jobs"),
             },
             {
                 "attr": "autoorigin",
@@ -332,7 +314,6 @@ class Planner(Service):
         return self.get_or_make_plan(self._default_plan)
 
     def service_attach(self, *args, **kwargs):
-        self.register("plan/physicalhome", physicalhome)
         self.register("plan/home", home)
         self.register("plan/origin", origin)
         self.register("plan/unlock", unlock)
@@ -711,7 +692,6 @@ class Planner(Service):
         #         raise CommandSyntaxError
         #     # Following must be in same order as added in preprocess()
         #     pre_plan_items = (
-        #         (self.prephysicalhome, physicalhome),
         #         (self.prehome, home),
         #     )
         #     # Following must be in reverse order as added in preprocess()
@@ -720,7 +700,6 @@ class Planner(Service):
         #         (self.autobeep, beep),
         #         (self.postunlock, unlock),
         #         (self.autoorigin, origin),
-        #         (self.autophysicalhome, physicalhome),
         #         (self.autohome, home),
         #     )
         #     post_plan = []
@@ -887,12 +866,6 @@ def unlock():
 
 def home():
     yield "home"
-
-
-def physicalhome():
-    yield "wait_finish"
-    yield "home"
-
 
 # class offset:
 #     def __init__(self, x, y):

@@ -75,11 +75,6 @@ class CutPlan:
         # ==========
         # before
         # ==========
-        if context.prephysicalhome:
-            if not rotary.rotary_enabled:
-                self.plan.insert(0, context.lookup("plan/physicalhome"))
-            else:
-                self.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
         if context.prehome:
             if not rotary.rotary_enabled:
                 self.plan.insert(0, context.lookup("plan/home"))
@@ -93,11 +88,6 @@ class CutPlan:
                 self.plan.append(context.lookup("plan/home"))
             else:
                 self.plan.append(_("Home After: Disabled (Rotary On)"))
-        if context.autophysicalhome:
-            if not rotary.rotary_enabled:
-                self.plan.append(context.lookup("plan/physicalhome"))
-            else:
-                self.plan.append(_("Physical Home After: Disabled (Rotary On)"))
         if context.autoorigin:
             self.plan.append(context.lookup("plan/origin"))
         if context.postunlock:

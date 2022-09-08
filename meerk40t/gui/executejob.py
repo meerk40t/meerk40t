@@ -240,10 +240,6 @@ class PlannerPanel(wx.Panel):
     #         f"plan{self.plan_name} step_repeat {cols} {rows} {x_distance} {y_distance}\n"
     #     )
 
-    def jobadd_physicalhome(self, event=None):
-        self.context(f"plan{self.plan_name} command -o physicalhome\n")
-        self.update_gui()
-
     def jobadd_home(self, event=None):
         self.context(f"plan{self.plan_name} command -o home\n")
         self.update_gui()
@@ -459,11 +455,6 @@ class ExecuteJob(MWindow):
             wx.EVT_MENU,
             self.panel.jobadd_home,
             wx_menu.Append(wx.ID_ANY, _("Home"), _("Add a home")),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            self.panel.jobadd_physicalhome,
-            wx_menu.Append(wx.ID_ANY, _("Physical Home"), _("Add a physicalhome")),
         )
         self.Bind(
             wx.EVT_MENU,
