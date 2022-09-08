@@ -8,6 +8,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
 )
+from meerk40t.core.units import Length
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Circle, Path
 
@@ -66,6 +67,12 @@ class CircleTool(ToolWidget):
             bbox = t.bbox()
             if bbox is not None:
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
+                s = "C=({cx}, {cy}), R={radius}".format(
+                    cx = Length(amount=(bbox[0]+bbox[2])/2, digits=2).length_mm,
+                    cy = Length(amount=(bbox[1]+bbox[3])/2, digits=2).length_mm,
+                    radius=Length(amount=radius, digits=2).length_mm,
+                )
+                self.scene.context.signal("statusmsg", s)
 
     def event(
         self,
@@ -149,10 +156,12 @@ class CircleTool(ToolWidget):
             except IndexError:
                 pass
             self.scene.request_refresh()
+            self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.p1 = None
             self.p2 = None
+            self.scene.context.signal("statusmsg", "")
             if self.scene.tool_active:
                 self.scene.tool_active = False
                 self.scene.request_refresh()

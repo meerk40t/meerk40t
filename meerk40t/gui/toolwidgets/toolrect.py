@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
@@ -48,6 +49,13 @@ class RectTool(ToolWidget):
                     )
                 )
             gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
+            s = "O=({cx}, {cy}), a={a}, b={b}".format(
+                cx = Length(amount=x0, digits=2).length_mm,
+                cy = Length(amount=y0, digits=2).length_mm,
+                a = Length(amount=x1 - x0, digits=2).length_mm,
+                b = Length(amount=y1 - y0, digits=2).length_mm,
+            )
+            self.scene.context.signal("statusmsg", s)
 
     def event(
         self,
@@ -110,6 +118,7 @@ class RectTool(ToolWidget):
             except IndexError:
                 pass
             self.scene.request_refresh()
+            self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.tool_active:
@@ -120,4 +129,5 @@ class RectTool(ToolWidget):
                 response = RESPONSE_CHAIN
             self.p1 = None
             self.p2 = None
+            self.scene.context.signal("statusmsg", "")
         return response

@@ -1,4 +1,7 @@
+from math import sqrt
 import wx
+
+from meerk40t.core.units import Length
 
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
@@ -35,6 +38,17 @@ class VectorTool(ToolWidget):
             gpath = self.render.make_path(gc, path)
             gc.DrawPath(gpath)
             del gpath
+            # x0 = points[-2][0]
+            # y0 = points[-2][1]
+            # x1 = points[-1][0]
+            # y1 = points[-1][1]
+            # s = "Pts: {pts}, to last point: O=({cx}, {cy}), d={a}".format(
+            #     pts = len(points),
+            #     cx = Length(amount=x0, digits=2).length_mm,
+            #     cy = Length(amount=y0, digits=2).length_mm,
+            #     a = Length(amount=sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0)), digits=2).length_mm,
+            # )
+            # self.scene.context.signal("statusmsg", s)
 
     def event(
         self,
@@ -68,6 +82,7 @@ class VectorTool(ToolWidget):
             self.path = None
             self.mouse_position = None
             self.scene.request_refresh()
+            self.scene.context.signal("statusmsg", "")
             if was_already_empty:
                 self.scene.context("tool none\n")
             response = RESPONSE_CONSUME
@@ -113,6 +128,7 @@ class VectorTool(ToolWidget):
                     elements.classify([node])
                 self.notify_created(node)
             self.path = None
+            self.scene.context.signal("statusmsg", "")
             self.mouse_position = None
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
@@ -122,5 +138,6 @@ class VectorTool(ToolWidget):
                 response = RESPONSE_CONSUME
             else:
                 response = RESPONSE_CHAIN
+            self.scene.context.signal("statusmsg", "")
             self.path = None
         return response
