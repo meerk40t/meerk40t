@@ -1136,6 +1136,7 @@ class TemplateTool(MWindow):
 
         if node is None:
             return
+        self.Freeze()
         pages_to_instance = []
         pages_in_node = []
         found = False
@@ -1201,6 +1202,7 @@ class TemplateTool(MWindow):
                 pass
 
         self.Layout()
+        self.Thaw()
 
     def window_open(self):
         pass
