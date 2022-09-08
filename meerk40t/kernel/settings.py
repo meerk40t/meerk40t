@@ -109,10 +109,10 @@ class Settings:
             return t(value)
         except (KeyError, ValueError):
             return default
-        except AttributeError:
+        except AttributeError as e:
             raise AttributeError(
                 "Something is attempting to load a persistent setting after kernel is terminated."
-            )
+            ) from e
 
     def read_persistent_attributes(self, section: str, obj: Any):
         """
