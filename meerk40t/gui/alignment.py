@@ -559,10 +559,10 @@ class DistributionPanel(wx.Panel):
 
             if treat in ("shape", "points") and xmode == "space":
                 self.rbox_dist_x.SetSelection(2)
-                xmode == "center"
+                xmode = "center"
             if treat in ("shape", "points") and ymode == "space":
                 self.rbox_dist_y.SetSelection(2)
-                ymode == "center"
+                ymode = "center"
             if xmode == "none" and ymode == "none":
                 active = False
             if self.first_node is None and esort == "first":
