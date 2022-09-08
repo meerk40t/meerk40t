@@ -10,6 +10,7 @@ from meerk40t.gui.icons import (
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
     icons8_pentagon_50,
+    icons8_save_50,
 )
 from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -143,11 +144,10 @@ class LaserPanel(wx.Panel):
         )
         sizer_control_misc.Add(self.button_simulate, 1, 0, 0)
 
-        # self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
-        # self.button_save_file.SetToolTip(_("Save the job"))
-        # self.button_save_file.SetBitmap(icons8_save_50.GetBitmap())
-        # self.button_save_file.Enable(False)
-        # sizer_control_misc.Add(self.button_save_file, 1, 0, 0)
+        self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save_file.SetToolTip(_("Save the job"))
+        self.button_save_file.SetBitmap(icons8_save_50.GetBitmap(resize=25))
+        sizer_control_misc.Add(self.button_save_file, 1, 0, 0)
 
         # self.button_load = wx.Button(self, wx.ID_ANY, _("Load"))
         # self.button_load.SetToolTip(_("Load job"))
@@ -200,7 +200,7 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         self.button_outline.Bind(wx.EVT_RIGHT_DOWN, self.on_button_outline_right)
-        # self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
+        self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
         # self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
         self.Bind(wx.EVT_BUTTON, self.on_button_clear, self.button_clear)
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
@@ -315,7 +315,23 @@ class LaserPanel(wx.Panel):
         self.context("element* trace complex\n")
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
-        pass
+        gui = self.context.gui
+        extension = "egv"
+        with wx.FileDialog(
+                gui,
+                _("Save Project"),
+                wildcard="*.egv | Engrave Files",
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+
+            if not pathname.lower().endswith(f".{extension}"):
+                pathname += f".{extension}"
+            self.context(
+                f'planz clear copy preprocess validate blob preopt optimize save_job "{pathname}"\n'
+            )
 
     def on_button_load(self, event):  # wxGlade: LaserPanel.<event_handler>
         pass
