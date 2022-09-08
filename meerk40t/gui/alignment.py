@@ -772,6 +772,7 @@ class DistributionPanel(wx.Panel):
                     last_point = (0, 0, 0)
                 dx = this_point[0] - last_point[0]
                 dy = this_point[1] - last_point[1]
+                # TODO: Replace remaining code with atan2
                 # if dx < 1.0E-07:
                 #     dx = 0
                 # if dy < 1.0E-07:
