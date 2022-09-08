@@ -1,21 +1,22 @@
 from copy import copy
 from math import tau
+
 import PIL
 import wx
 from wx import aui
 
+from meerk40t.core.node.elem_image import ImageNode
 from meerk40t.core.node.op_cut import CutOpNode
 from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.node.elem_image import ImageNode
-from meerk40t.core.units import UNITS_PER_PIXEL, UNITS_PER_INCH, Angle, Length
+from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
-from meerk40t.svgelements import Color, Matrix, Rect, Circle
 from meerk40t.kernel import signal_listener
+from meerk40t.svgelements import Circle, Color, Matrix, Rect
 
 _ = wx.GetTranslation
 
