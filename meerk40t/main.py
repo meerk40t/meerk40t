@@ -75,15 +75,6 @@ parser.add_argument("-S", "--speed", type=float, help="set the speed of all oper
 parser.add_argument(
     "-P", "--profile", type=int, default=None, help="Specify a settings profile index"
 )
-choices = ["Lhystudios", "Moshi"]
-parser.add_argument(
-    "-d",
-    "--device",
-    type=str,
-    choices=choices,
-    default="Lhystudios",
-    help="Specify a default boot device type",
-)
 parser.add_argument(
     "-p",
     "--no-plugins",
