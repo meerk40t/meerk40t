@@ -63,7 +63,7 @@ class VectorTool(ToolWidget):
             self.c0 = None
             response = RESPONSE_CONSUME
         elif event_type == "rightdown":
-            was_already_empty = len(self.point_series) == 0
+            was_already_empty = len(self.path) == 0
             self.scene.tool_active = False
             self.path = None
             self.mouse_position = None
