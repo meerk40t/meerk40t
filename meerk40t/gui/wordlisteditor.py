@@ -591,9 +591,6 @@ class WordlistEditor(MWindow):
         self.panel_import.set_parent(self)
         self.panel_about.set_parent(self)
 
-        self.add_module_delegate(self.panel_editor)
-        self.add_module_delegate(self.panel_import)
-        self.add_module_delegate(self.panel_about)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_curly_brackets_50.GetBitmap())
         self.SetIcon(_icon)
