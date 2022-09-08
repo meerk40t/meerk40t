@@ -2656,12 +2656,19 @@ class Kernel(Settings):
                         )
                     )
                     for j, jname in enumerate(context.opened):
-                        module = context.opened[jname]
+                        module_object = context.opened[jname]
                         channel(
                             _("{index}: {object} type of {type}").format(
-                                index=j + 1, object=jname, type=type(module)
+                                index=j + 1, object=jname, type=type(module_object)
                             )
                         )
+                        links = self.get_linked_objects(module_object)
+                        for link_index, link in enumerate(links):
+                            channel(
+                                _("    {index}.{subindex}: linked {name}:{hash:X}").format(
+                                    index=j+1, subindex=link_index, hash=id(link), name=link.__class__.__name__
+                                )
+                            )
                     channel(_("----------"))
                     return
             if path is None:
