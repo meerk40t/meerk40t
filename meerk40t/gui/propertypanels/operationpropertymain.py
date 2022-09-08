@@ -1640,7 +1640,7 @@ class ParameterPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: ParameterPanel.__init__
         kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
         self.operation = node
 
