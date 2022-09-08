@@ -346,28 +346,28 @@ class TemplatePanel(wx.Panel):
         def preset_balor_wobble(node=None):
             # Will be called ahead of the modification of a wobble variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device._path:
+            if node is None or "balor" not in self.context.device.path:
                 return
             node.settings["wobble_enabled"] = True
 
         def preset_balor_rapid(node=None):
             # Will be called ahead of the modification of a rapid variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device._path:
+            if node is None or "balor" not in self.context.device.path:
                 return
             node.settings["rapid_enabled"] = True
 
         def preset_balor_pulse(node=None):
             # Will be called ahead of the modification of a pulse variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device._path:
+            if node is None or "balor" not in self.context.device.path:
                 return
             node.settings["pulse_width_enabled"] = True
 
         def preset_balor_timings(node=None):
             # Will be called ahead of the modification of a timing variable
             # to copy the device defaults
-            if node is None or "balor" not in self.context.device._path:
+            if node is None or "balor" not in self.context.device.path:
                 return
             if not node.settings["timing_enabled"]:
                 node.settings["timing_enabled"] = True
