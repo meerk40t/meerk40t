@@ -66,36 +66,10 @@ class CutPlan:
                 command()
 
     def preprocess(self):
-        """ "
+        """
         Preprocess stage, all small functions from the settings to the job.
         """
         context = self.context
-        _ = context._
-        rotary = context.rotary
-        # ==========
-        # before
-        # ==========
-        if context.prehome:
-            if not rotary.rotary_enabled:
-                self.plan.insert(0, context.lookup("plan/home"))
-            else:
-                self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
-        # ==========
-        # After
-        # ==========
-        if context.autohome:
-            if not rotary.rotary_enabled:
-                self.plan.append(context.lookup("plan/home"))
-            else:
-                self.plan.append(_("Home After: Disabled (Rotary On)"))
-        if context.autoorigin:
-            self.plan.append(context.lookup("plan/origin"))
-        if context.postunlock:
-            self.plan.append(context.lookup("plan/unlock"))
-        if context.autobeep:
-            self.plan.append(context.lookup("plan/beep"))
-        if context.autointerrupt:
-            self.plan.append(context.lookup("plan/interrupt"))
 
         # ==========
         # Preprocess Operations
