@@ -1686,7 +1686,7 @@ class ParameterPanel(ScrolledPanel):
         # element_property_reload provides a list of nodes that are affected
         # if self.operation isn't one of them, then we just let it slip
         for_me = False
-        if len(args)>0:
+        if len(args) > 0:
             element = args[0]
             if isinstance(element, (tuple, list)):
                 for node in element:

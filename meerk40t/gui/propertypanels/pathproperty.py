@@ -83,6 +83,7 @@ class PathPropertyPanel(ScrolledPanel):
                 Move,
                 QuadraticBezier,
             )
+
             result = 0
             if hasattr(node, "as_path"):
                 path = node.as_path()

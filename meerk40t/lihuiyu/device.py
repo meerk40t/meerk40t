@@ -4,7 +4,7 @@ import threading
 import time
 from hashlib import md5
 
-from meerk40t.core.spoolers import Spooler, LaserJob
+from meerk40t.core.spoolers import LaserJob, Spooler
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -487,11 +487,7 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Rapid Limit Off"))
 
         @self.console_argument("filename", type=str)
-        @self.console_command(
-            "save_job",
-            help=_("save job export"),
-            input_type="plan"
-        )
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
         def egv_save(channel, _, filename, data=None, **kwargs):
             if filename is None:
                 raise CommandSyntaxError
@@ -501,7 +497,10 @@ class LihuiyuDevice(Service, ViewPort):
                     f.write(b"File version: 1.0.01\n")
                     f.write(b"Copyright: Unknown\n")
                     f.write(
-                        bytes(f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n", "utf-8")
+                        bytes(
+                            f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n",
+                            "utf-8",
+                        )
                     )
                     f.write(b"\n")
                     f.write(b"%0%0%0%0%\n")
@@ -1332,11 +1331,13 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
+
         def temp_hold():
             try:
                 return len(self.out_pipe) != 0
             except TypeError:
                 return False
+
         self.temp_holds.append(temp_hold)
 
     def status(self):

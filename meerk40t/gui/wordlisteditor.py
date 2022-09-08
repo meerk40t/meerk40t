@@ -460,7 +460,6 @@ class ImportPanel(wx.Panel):
             self.txt_filename.SetValue(myfile)
             self.on_btn_import(None)
 
-
     def on_btn_import(self, event):
         myfile = self.txt_filename.GetValue()
         if os.path.exists(myfile):

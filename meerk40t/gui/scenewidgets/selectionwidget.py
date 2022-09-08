@@ -2177,7 +2177,7 @@ class SelectionWidget(Widget):
                         scene=self.scene,
                         size=msize,
                         is_reference_object=self.is_ref,
-                        show_if_not_active = False,
+                        show_if_not_active=False,
                     ),
                 )
 

@@ -22,7 +22,7 @@ from ..core.cutcode import CutCode, PlotCut
 from ..core.node.cutnode import CutNode
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
-from ..core.units import Length, UNITS_PER_uM, ViewPort, UNITS_PER_MM
+from ..core.units import UNITS_PER_MM, Length, UNITS_PER_uM, ViewPort
 from ..svgelements import Color, Matrix
 
 STATE_ABORT = -1
@@ -615,9 +615,7 @@ class RuidaEmulator(Module, Parameters):
             self.plotcut.plot_append(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
-            desc = (
-                f"Move Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
-            )
+            desc = f"Move Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
                 if self.speed < 40:
@@ -737,9 +735,7 @@ class RuidaEmulator(Module, Parameters):
             self.plotcut.plot_append(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
-            desc = (
-                f"Cut Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
-            )
+            desc = f"Cut Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
@@ -748,7 +744,9 @@ class RuidaEmulator(Module, Parameters):
             self.plotcut.plot_append(
                 int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
-            desc = f"Cut Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
+            desc = (
+                f"Cut Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
+            )
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
@@ -1003,7 +1001,7 @@ class RuidaEmulator(Module, Parameters):
                     for plot in self.cutcode:
                         for i in range(len(plot.plot)):
                             x, y, laser = plot.plot[i]
-                            x, y = matrix.transform_point([x,y])
+                            x, y = matrix.transform_point([x, y])
                             plot.plot[i] = int(x), int(y), laser
                     self.spooler.laserjob([self.cutcode])
                 if self.design and self.elements is not None:

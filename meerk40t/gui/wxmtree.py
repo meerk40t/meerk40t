@@ -19,6 +19,7 @@ from .icons import (
     icons8_laser_beam_20,
     icons8_lock_50,
     icons8_output_20,
+    icons8_r_white,
     icons8_return_20,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -27,7 +28,6 @@ from .icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_vector_20,
-    icons8_r_white,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -1188,7 +1188,7 @@ class ShadowTree:
         if scene is not None:
             if node == scene.reference_object:
                 state_num = 1
-        if state_num>=0:
+        if state_num >= 0:
             self.wxtree.SetItemState(node.item, state_num)
         else:
             self.wxtree.SetItemState(node.item, wx.TREE_ITEMSTATE_NONE)

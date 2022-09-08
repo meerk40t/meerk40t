@@ -7836,7 +7836,7 @@ class Elemental(Service):
             try:
                 op = operation_branch.add(type=op_type)
             except (AttributeError, RuntimeError):
-                print (f"That should not happen, but ops contained: '{op_type}'")
+                print(f"That should not happen, but ops contained: '{op_type}'")
                 continue
 
             op.load(settings, section)

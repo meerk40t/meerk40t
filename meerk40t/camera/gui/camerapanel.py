@@ -366,7 +366,9 @@ class CamInterfaceWidget(Widget):
                 )
             else:
                 gc.DrawText(
-                    _("Fetching URI:{uri} Frame...").format(uri=self.cam.camera.uri), 0, 0
+                    _("Fetching URI:{uri} Frame...").format(uri=self.cam.camera.uri),
+                    0,
+                    0,
                 )
 
     def hit(self):
@@ -521,12 +523,8 @@ class CamInterfaceWidget(Widget):
             camera_context = self.cam.context.get_context("camera")
             uris = camera_context.setting(list, "uris", [])
             for uri in uris:
-                item = sub_menu.Append(
-                    wx.ID_ANY, _("URI: {uri}").format(uri=uri), ""
-                )
-                self.cam.Bind(
-                    wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId()
-                )
+                item = sub_menu.Append(wx.ID_ANY, _("URI: {uri}").format(uri=uri), "")
+                self.cam.Bind(wx.EVT_MENU, self.cam.swap_camera(uri), id=item.GetId())
             if sub_menu.MenuItemCount:
                 sub_menu.AppendSeparator()
 

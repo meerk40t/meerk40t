@@ -60,7 +60,8 @@ from ..svgelements import (
     Rect,
     SimpleLine,
     SVGImage,
-    SVGText, Use,
+    SVGText,
+    Use,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
 

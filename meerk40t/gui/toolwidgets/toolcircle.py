@@ -1,5 +1,7 @@
-import wx
 from math import sqrt
+
+import wx
+
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
@@ -24,7 +26,6 @@ class CircleTool(ToolWidget):
         self.p2 = None
         # 0 -> old mode, 1 define center
         self.creation_mode = 1
-
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
@@ -56,9 +57,7 @@ class CircleTool(ToolWidget):
                     )
                 )
             if self.creation_mode == 1:
-                ellipse = Circle(
-                    cx, cy, radius
-                )
+                ellipse = Circle(cx, cy, radius)
             else:
                 ellipse = Circle(
                     (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
