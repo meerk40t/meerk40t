@@ -1632,25 +1632,35 @@ class Kernel(Settings):
             # No current thread
             pass
         thread = Thread(name=thread_name)
-        channel(_("Thread: {name}, Initialized").format(name=thread_name))
+        if channel:
+            channel(_("Thread: {name}, Initialized").format(name=thread_name))
 
         def run():
             func_result = None
-            channel(_("Thread: {name}, Set").format(name=thread_name))
+            if channel:
+                channel(_("Thread: {name}, Set").format(name=thread_name))
             try:
-                channel(_("Thread: {name}, Start").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, Start").format(name=thread_name))
                 func_result = func(*args)
-                channel(_("Thread: {name}, End ").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, End ").format(name=thread_name))
             except Exception:
-                channel(_("Thread: {name}, Exception-End").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, Exception-End").format(name=thread_name))
                 import sys
-
-                channel(str(sys.exc_info()))
+                if channel:
+                    channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
-            channel(_("Thread: {name}, Unset").format(name=thread_name))
+            if channel:
+                channel(_("Thread: {name}, Unset").format(name=thread_name))
             del self.threads[thread_name]
             if result is not None:
+                if channel:
+                    channel(_("Thread: {name}, Result Function").format(name=thread_name))
                 result(func_result)
+            if channel:
+                channel(_("Thread: {name}, Finished").format(name=thread_name))
 
         thread.run = run
         self.threads[thread_name] = thread
