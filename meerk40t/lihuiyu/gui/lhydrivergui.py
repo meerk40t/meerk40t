@@ -450,7 +450,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def __init__(self, *args, context=None, **kwds):
         # begin wxGlade: ConfigurationInterfacePanel.__init__
         kwds["style"] = kwds.get("style", 0)
-        wx.Panel.__init__(self, *args, **kwds)
+        ScrolledPanel.__init__(self, *args, **kwds)
         self.context = context
 
         sizer_page_1 = wx.BoxSizer(wx.VERTICAL)
