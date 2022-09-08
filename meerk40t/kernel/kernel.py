@@ -432,6 +432,9 @@ class Kernel(Settings):
         add_delegate = (delegate, lifecycle_object)
         if add_delegate in self.delegates:
             raise ValueError(f"Attempted to add an already added delegate. {delegate} is a delegate of {lifecycle_object}.")
+        if delegate is lifecycle_object:
+            raise ValueError(
+                f"Attempting to delegate self. {delegate} already linked with self.")
         self.delegates.append(add_delegate)
         self.update_linked_lifecycles(lifecycle_object)
 
