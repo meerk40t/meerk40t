@@ -431,10 +431,13 @@ class Kernel(Settings):
         """
         add_delegate = (delegate, lifecycle_object)
         if add_delegate in self.delegates:
-            raise ValueError(f"Attempted to add an already added delegate. {delegate} is a delegate of {lifecycle_object}.")
+            raise ValueError(
+                f"Attempted to add an already added delegate. {delegate} is a delegate of {lifecycle_object}."
+            )
         if delegate is lifecycle_object:
             raise ValueError(
-                f"Attempting to delegate self. {delegate} already linked with self.")
+                f"Attempting to delegate self. {delegate} already linked with self."
+            )
         self.delegates.append(add_delegate)
         self.update_linked_lifecycles(lifecycle_object)
 
@@ -1649,6 +1652,7 @@ class Kernel(Settings):
                 if channel:
                     channel(_("Thread: {name}, Exception-End").format(name=thread_name))
                 import sys
+
                 if channel:
                     channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
@@ -1657,7 +1661,9 @@ class Kernel(Settings):
             del self.threads[thread_name]
             if result is not None:
                 if channel:
-                    channel(_("Thread: {name}, Result Function").format(name=thread_name))
+                    channel(
+                        _("Thread: {name}, Result Function").format(name=thread_name)
+                    )
                 result(func_result)
             if channel:
                 channel(_("Thread: {name}, Finished").format(name=thread_name))
@@ -2707,8 +2713,13 @@ class Kernel(Settings):
                         links = self.get_linked_objects(module_object)
                         for link_index, link in enumerate(links):
                             channel(
-                                _("    {index}.{subindex}: linked {name}:{hash:X}").format(
-                                    index=j+1, subindex=link_index, hash=id(link), name=link.__class__.__name__
+                                _(
+                                    "    {index}.{subindex}: linked {name}:{hash:X}"
+                                ).format(
+                                    index=j + 1,
+                                    subindex=link_index,
+                                    hash=id(link),
+                                    name=link.__class__.__name__,
                                 )
                             )
                     channel(_("----------"))

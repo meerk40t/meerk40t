@@ -1,4 +1,5 @@
 from math import sqrt
+
 import wx
 
 from meerk40t.core.units import Length
@@ -54,10 +55,12 @@ class PolylineTool(ToolWidget):
             x1 = points[-1][0]
             y1 = points[-1][1]
             s = "Pts: {pts}, to last point: O=({cx}, {cy}), d={a}".format(
-                pts = len(points),
-                cx = Length(amount=x0, digits=2).length_mm,
-                cy = Length(amount=y0, digits=2).length_mm,
-                a = Length(amount=sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0)), digits=2).length_mm,
+                pts=len(points),
+                cx=Length(amount=x0, digits=2).length_mm,
+                cy=Length(amount=y0, digits=2).length_mm,
+                a=Length(
+                    amount=sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)), digits=2
+                ).length_mm,
             )
             self.scene.context.signal("statusmsg", s)
 

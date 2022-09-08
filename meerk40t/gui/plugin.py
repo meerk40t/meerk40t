@@ -233,6 +233,7 @@ and a wxpython version <= 4.1.1."""
                 message = _("Spooling Interrupted.")
 
             import threading
+
             import wx
 
             lock = threading.Lock()

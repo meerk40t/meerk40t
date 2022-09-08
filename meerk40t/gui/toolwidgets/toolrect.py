@@ -50,10 +50,10 @@ class RectTool(ToolWidget):
                 )
             gc.DrawRectangle(x0, y0, x1 - x0, y1 - y0)
             s = "O=({cx}, {cy}), a={a}, b={b}".format(
-                cx = Length(amount=x0, digits=2).length_mm,
-                cy = Length(amount=y0, digits=2).length_mm,
-                a = Length(amount=x1 - x0, digits=2).length_mm,
-                b = Length(amount=y1 - y0, digits=2).length_mm,
+                cx=Length(amount=x0, digits=2).length_mm,
+                cy=Length(amount=y0, digits=2).length_mm,
+                a=Length(amount=x1 - x0, digits=2).length_mm,
+                b=Length(amount=y1 - y0, digits=2).length_mm,
             )
             self.scene.context.signal("statusmsg", s)
 

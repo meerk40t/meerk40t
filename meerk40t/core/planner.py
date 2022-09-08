@@ -1,7 +1,6 @@
 from copy import copy
 
 from meerk40t.kernel import Service
-from .node.util_console import ConsoleOperation
 
 from ..core.cutcode import CutCode
 from .cutplan import CutPlan, CutPlanningFailedError
@@ -11,6 +10,7 @@ from .node.op_engrave import EngraveOpNode
 from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
+from .node.util_console import ConsoleOperation
 from .units import Length
 
 
@@ -402,10 +402,21 @@ class Planner(Service):
             all_arguments_required=True,
         )
         def plan_command(
-            command, channel, _, data_type=None, data=None, console=None, index=None, **kwgs
+            command,
+            channel,
+            _,
+            data_type=None,
+            data=None,
+            console=None,
+            index=None,
+            **kwgs,
         ):
             if not console:
-                channel(_("plan console... requires a console command to inject into the current plan"))
+                channel(
+                    _(
+                        "plan console... requires a console command to inject into the current plan"
+                    )
+                )
             else:
                 cmd = ConsoleOperation(command=console)
                 if index is None:
@@ -585,4 +596,3 @@ class Planner(Service):
     def plan(self, **kwargs):
         for item in self._plan:
             yield item
-

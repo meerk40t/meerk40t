@@ -1,8 +1,8 @@
 from math import sqrt
+
 import wx
 
 from meerk40t.core.units import Length
-
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
@@ -55,12 +55,12 @@ class PolygonTool(ToolWidget):
             for idx in range(1, len(points)):
                 x0 = points[idx][0]
                 y0 = points[idx][1]
-                x1 = points[idx-1][0]
-                y1 = points[idx-1][1]
-                total_len += sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0))
+                x1 = points[idx - 1][0]
+                y1 = points[idx - 1][1]
+                total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
             s = "Pts: {pts}, Len={a}".format(
-                pts = len(points) - 1,
-                a = Length(amount=total_len, digits=2).length_mm,
+                pts=len(points) - 1,
+                a=Length(amount=total_len, digits=2).length_mm,
             )
             self.scene.context.signal("statusmsg", s)
 
