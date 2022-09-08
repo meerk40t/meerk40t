@@ -993,17 +993,12 @@ class PanelStartPreference(wx.Panel):
 
     def refresh_in_ui(self):
         """Performs redrawing of the data in the UI thread."""
-        try:
-            shown = self.Shown
-        except RuntimeError:
-            return
-
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-        if shown:
+        if self.Shown:
             if self.raster_lines is None:
                 self.calculate_raster_lines()
             if self.raster_lines is not None:
