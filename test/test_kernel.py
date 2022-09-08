@@ -14,11 +14,11 @@ class TestKernel(unittest.TestCase):
                     continue
                 if "ruida" in command:
                     continue
+                if "grbl" in command:
+                    continue
                 if "quit" in command:
                     continue
                 if "shutdown" in command:
-                    continue
-                if "loop" in command:
                     continue
                 if "interrupt" in command:
                     continue
