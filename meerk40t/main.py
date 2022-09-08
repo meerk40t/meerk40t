@@ -71,7 +71,6 @@ parser.add_argument(
     metavar="key=value",
     help="set a device variable",
 )
-parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
 parser.add_argument(
     "-P", "--profile", type=int, default=None, help="Specify a settings profile index"
 )
