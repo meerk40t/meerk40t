@@ -11,7 +11,7 @@ from meerk40t.core.node.op_engrave import EngraveOpNode
 from meerk40t.core.node.op_hatch import HatchOpNode
 from meerk40t.core.node.op_image import ImageOpNode
 from meerk40t.core.node.op_raster import RasterOpNode
-from meerk40t.core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, Angle, Length
+from meerk40t.core.units import UNITS_PER_PIXEL, Angle, Length
 from meerk40t.gui.icons import icons8_detective_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
@@ -1093,13 +1093,13 @@ class TemplateTool(MWindow):
             context=self.context,
         )
 
-        self.notebook_main = wx.aui.AuiNotebook(
+        self.notebook_main = aui.AuiNotebook(
             self,
             -1,
-            style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
-            | wx.aui.AUI_NB_SCROLL_BUTTONS
-            | wx.aui.AUI_NB_TAB_SPLIT
-            | wx.aui.AUI_NB_TAB_MOVE,
+            style=aui.AUI_NB_TAB_EXTERNAL_MOVE
+            | aui.AUI_NB_SCROLL_BUTTONS
+            | aui.AUI_NB_TAB_SPLIT
+            | aui.AUI_NB_TAB_MOVE,
         )
 
         self.notebook_main.AddPage(self.panel_template, _("Generator"))
