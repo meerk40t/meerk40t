@@ -1877,9 +1877,7 @@ class Kernel(Settings):
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     removed = False
-                    ct = 0
                     for i, listen in enumerate(listeners):
-                        ct += 1
                         listen_funct, listen_lso = listen
                         if (listen_funct == remove_funct or remove_funct is None) and (
                             listen_lso is remove_lso or remove_lso is None
