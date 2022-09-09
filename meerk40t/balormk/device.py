@@ -1671,7 +1671,7 @@ class BalorDevice(Service, ViewPort):
             help=_("Resets the galvo laser"),
         )
         def galvo_reset(command, channel, _, remainder=None, **kwgs):
-            reply = self.driver.connection.init_laser()
+            self.driver.connection.init_laser()
             channel(f"Soft reboot: {self.label}")
 
         @self.console_option(

@@ -8722,7 +8722,8 @@ class Elemental(Service):
         if operations is None:
             operations = list(self.ops())
         if add_op_function is None:
-            add_op_function = self.add_op
+            # add_op_function = self.add_op
+            add_op_function = self.add_classify_op
 
         for node in elements:
             # Following lines added to handle 0.7 special ops added to ops list

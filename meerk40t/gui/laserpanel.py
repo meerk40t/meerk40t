@@ -46,7 +46,7 @@ def register_panel_laser(window, context):
     notebook.AddPage(laser_panel, _("Laser"))
     notebook.AddPage(optimize_panel, _("Optimize"))
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     window.context.register("pane/laser", pane)
     choices = [
         {

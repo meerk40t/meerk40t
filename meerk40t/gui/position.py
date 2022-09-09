@@ -22,7 +22,7 @@ def register_panel_position(window, context):
     pane.dock_proportion = 225
     pane.control = PositionPanel(window, wx.ID_ANY, context=context)
     pane.submenu = _("Editing")
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/position", pane)
 
 

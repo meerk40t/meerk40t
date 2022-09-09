@@ -1434,7 +1434,7 @@ class MeerK40t(MWindow):
         @context.console_command(
             "toggleui",
             input_type="panes",
-            help=_("Hides/Restores all the visible panes (except scen)"),
+            help=_("Hides/Restores all the visible panes (except scene)"),
         )
         def toggle_ui(command, _, channel, pane=None, **kwargs):
             # Toggle visibility of all UI-elements
@@ -1549,7 +1549,7 @@ class MeerK40t(MWindow):
                 .CaptionVisible(True)
             )
             _pane.control = panel
-            self.on_pane_add(_pane)
+            self.on_pane_create(_pane)
             if hasattr(panel, "pane_show"):
                 panel.pane_show()
             self.context.register("pane/about", _pane)
@@ -1609,8 +1609,7 @@ class MeerK40t(MWindow):
                     pane.window.lock()
         self._mgr.Update()
 
-    def on_pane_add(self, paneinfo: aui.AuiPaneInfo):
-        pane = self._mgr.GetPane(paneinfo.name)
+    def on_pane_create(self, paneinfo: aui.AuiPaneInfo):
         control = paneinfo.control
         if isinstance(control, wx.aui.AuiNotebook):
             for i in range(control.GetPageCount()):
@@ -1618,6 +1617,10 @@ class MeerK40t(MWindow):
                 self.add_module_delegate(page)
         else:
             self.add_module_delegate(control)
+        self.on_pane_show(paneinfo)
+
+    def on_pane_show(self, paneinfo: aui.AuiPaneInfo):
+        pane = self._mgr.GetPane(paneinfo.name)
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -1627,6 +1630,7 @@ class MeerK40t(MWindow):
                     wx.CallAfter(self.on_pane_changed, None)
                 self._mgr.Update()
             return
+        control = paneinfo.control
         self._mgr.AddPane(
             control,
             paneinfo,
@@ -1702,7 +1706,7 @@ class MeerK40t(MWindow):
                     self._mgr.Update()
                     return
                 pane_init = self.context.lookup("pane", pane_toggle)
-                self.on_pane_add(pane_init)
+                self.on_pane_show(pane_init)
 
             return toggle
 

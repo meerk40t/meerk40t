@@ -859,7 +859,7 @@ class PanelStartPreference(wx.Panel):
         pass
 
     def set_buffer(self):
-        width, height = self.display_panel.ClientSize
+        width, height = self.display_panel.Size
         if width <= 0:
             width = 1
         if height <= 0:
@@ -869,7 +869,7 @@ class PanelStartPreference(wx.Panel):
     def on_size(self, event=None):
         self.Layout()
         self.set_buffer()
-        self.refresh_display()
+        wx.CallAfter(self.refresh_in_ui)
 
     def refresh_display(self):
         if not wx.IsMainThread():
@@ -879,6 +879,7 @@ class PanelStartPreference(wx.Panel):
 
     def calculate_raster_lines(self):
         w, h = self._Buffer.Size
+
         right = True
         top = True
 

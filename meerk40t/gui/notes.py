@@ -24,7 +24,7 @@ def register_panel(window, context):
     pane.control = panel
     pane.submenu = _("Tools")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/notes", pane)
 
 
