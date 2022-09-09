@@ -172,7 +172,7 @@ class TextNode(Node):
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
             return
-        self.text = context.elements.mywordlist.translate(self.text)
+        self.text = context.elements.wordlist_translate(self.text, self)
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False

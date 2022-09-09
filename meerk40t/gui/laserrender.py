@@ -694,7 +694,7 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.mywordlist.translate(text)
+            text = self.context.elements.wordlist_translate(text, node)
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
@@ -834,7 +834,7 @@ class LaserRender:
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.mywordlist.translate(node.text)
+            text = self.context.elements.wordlist_translate(node.text, node)
             node.bounds_with_variables_translated = True
         else:
             text = node.text
