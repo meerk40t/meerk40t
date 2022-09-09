@@ -701,8 +701,10 @@ class MeerK40tScenePanel(wx.Panel):
             self.widget_scene._signal_widget(
                 self.widget_scene.widget_root, "background", None
             )
-
             self.widget_scene.request_refresh()
+
+        def stop_auto_update(event = None):
+            self.context("timer.updatebg --off\n")
 
         gui = self
         menu = wx.Menu()
@@ -745,6 +747,24 @@ class MeerK40tScenePanel(wx.Panel):
             menu.AppendSeparator()
             id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
             self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())
+        # Do we have a timer called .updatebg?
+        we_have_a_job = False
+        try:
+            obj = self.context.kernel.jobs["timer.updatebg"]
+            if obj is not None:
+                we_have_a_job = True
+        except KeyError:
+            pass
+        if we_have_a_job:
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: stop_auto_update(),
+                menu.Append(
+                    wx.ID_ANY,
+                    _("Stop autoupdate"),
+                    _("Stop automatic refresh of background image"),
+                ),
+            )
         menu.AppendSeparator()
         self.Bind(
             wx.EVT_MENU,
