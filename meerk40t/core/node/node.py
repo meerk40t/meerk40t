@@ -250,7 +250,27 @@ class Node:
         self._points_dirty = False
         return self._points
 
-    def copy_of_tree(self, root=None):
+    def restore_tree(self, tree_data):
+        self._children.clear()
+        self._children.extend(tree_data)
+
+    def _build_links(self, links=None):
+        """
+        Build links and copy nodes.
+
+        @param links:
+        @return:
+        """
+        if links is None:
+            links = {id(self): (self, None)}
+        for c in self._children:
+            c._build_links(links=links)
+            node_copy = copy(c)
+            node_copy._root = self._root
+            links[id(c)] = (c, node_copy)
+        return links
+
+    def backup_tree(self):
         """
         Copy of tree creates a copy of a rooted tree at the current node. It should create a copy of the tree structure
         with the children replaced with copied children and the parents replaced with copied parents and the root also
@@ -259,15 +279,23 @@ class Node:
         @param root:
         @return:
         """
-        if root is None:
-            root = self
-        node = copy(self)
-        for c in self._children:
-            child = c.copy_of_tree(root=root)
-            node._children.append(child)
-            child._parent = node
-            child._root = root
-        return node
+        links = self._build_links()
+        for node_id, n in links.items():
+
+            node, node_copy = n
+            if node.type == "reference":
+                continue
+            if node._parent is None:
+                # Root.
+                continue
+            original_parent, copied_parent = links[id(node._parent)]
+            if copied_parent is None:
+                node_copy._parent = self._root
+                continue
+            node_copy._parent = copied_parent
+            copied_parent._children.append(node_copy)
+        backup = [links[id(c)][1] for c in self._children]
+        return backup
 
     def create_label(self, text=None):
         if text is None:

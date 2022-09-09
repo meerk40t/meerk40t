@@ -5743,7 +5743,7 @@ class Elemental(Service):
             del self._undo_stack[0 : self._undo_index]
             if len(self._undo_stack) > 25:
                 del self._undo_stack[25:]
-            self._undo_stack.insert(0, self._tree.copy_of_tree())
+            self._undo_stack.insert(0, self._tree.backup_tree())
             self._undo_index = 0
             return "undo", self._undo_stack[self._undo_index]
 
@@ -5760,7 +5760,7 @@ class Elemental(Service):
                 self._undo_index = len(self._undo_stack) - 1
                 channel("No undo available.")
                 return
-            self._tree = undo
+            self._tree.restore_tree(undo)
             self.signal("refresh_scene")
             self.signal("rebuild_tree")
 
@@ -5780,7 +5780,7 @@ class Elemental(Service):
                 self._undo_index = 0
                 channel("No redo available.")
                 return
-            self._tree = redo
+            self._tree.restore_tree(redo)
             self.signal("refresh_scene")
             self.signal("rebuild_tree")
 
