@@ -73,7 +73,7 @@ def register_panel_navigation(window, context):
     pane.control = panel
     pane.submenu = _("Navigation")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/drag", pane)
     panel = Jog(window, wx.ID_ANY, context=context)
     pane = (
@@ -91,7 +91,7 @@ def register_panel_navigation(window, context):
     pane.control = panel
     pane.submenu = _("Navigation")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/jog", pane)
 
     panel = MovePanel(window, wx.ID_ANY, context=context)
@@ -110,7 +110,7 @@ def register_panel_navigation(window, context):
     pane.control = panel
     pane.submenu = _("Navigation")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/move", pane)
 
     panel = PulsePanel(window, wx.ID_ANY, context=context)
@@ -128,7 +128,7 @@ def register_panel_navigation(window, context):
     pane.control = panel
     pane.submenu = _("Navigation")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/pulse", pane)
 
     panel = SizePanel(window, wx.ID_ANY, context=context)
@@ -146,7 +146,7 @@ def register_panel_navigation(window, context):
     pane.control = panel
     pane.submenu = _("Editing")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/objsizer", pane)
 
     if platform.system() == "Windows":
@@ -171,7 +171,7 @@ def register_panel_navigation(window, context):
     pane.control = panel
     pane.submenu = _("Editing")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/transform", pane)
 
     panel = JogDistancePanel(window, wx.ID_ANY, context=context, pane=True)
@@ -189,7 +189,7 @@ def register_panel_navigation(window, context):
     pane.control = panel
     pane.submenu = _("Navigation")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/jogdist", pane)
 
 

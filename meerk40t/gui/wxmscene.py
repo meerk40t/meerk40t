@@ -73,7 +73,7 @@ def register_panel_scene(window, context):
     #     context("refresh\n")
     # control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/scene", pane)
 
 

@@ -22,7 +22,7 @@ def register_panel_snapoptions(window, context):
     pane.control = panel
     pane.submenu = _("Editing")
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/snapoptions", pane)
 
 
