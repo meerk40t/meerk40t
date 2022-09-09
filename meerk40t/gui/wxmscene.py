@@ -16,7 +16,7 @@ from meerk40t.gui.icons import (
     icons8_reference,
     icons8_ungroup_objects_50,
 )
-from meerk40t.gui.laserrender import DRAW_MODE_GUIDES, LaserRender
+from meerk40t.gui.laserrender import DRAW_MODE_GUIDES, DRAW_MODE_BACKGROUND, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
@@ -74,7 +74,7 @@ def register_panel_scene(window, context):
     #     context("refresh\n")
     # control.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, on_note_page_change, control)
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/scene", pane)
 
 
@@ -637,6 +637,140 @@ class MeerK40tScenePanel(wx.Panel):
                 orgx += 25
                 orgy += 25
             self._tool_widget.set_position(orgx, orgy)
+
+    @signal_listener("scene_right_click")
+    def on_scene_right(self, origin, *args):
+
+        def zoom_to_bed(event = None):
+            zoom = self.context.zoom_margin
+            self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
+
+        def zoom_to_selected(event = None):
+            bbox = self.context.elements.selected_area()
+            if bbox is None:
+                zoom_to_bed(event=event)
+            else:
+                zfact = self.context.zoom_margin / 100.0
+
+                x_delta = (bbox[2] - bbox[0]) * zfact
+                y_delta = (bbox[3] - bbox[1]) * zfact
+                x0 = Length(
+                    amount=bbox[0] - x_delta, relative_length=self.context.device.width
+                ).length_mm
+                y0 = Length(
+                    amount=bbox[1] - y_delta, relative_length=self.context.device.height
+                ).length_mm
+                x1 = Length(
+                    amount=bbox[2] + x_delta, relative_length=self.context.device.width
+                ).length_mm
+                y1 = Length(
+                    amount=bbox[3] + y_delta, relative_length=self.context.device.height
+                ).length_mm
+                self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
+
+        def toggle_background(event = None):
+            """
+            Toggle the draw mode for the background
+            """
+            self.widget_scene.context.draw_mode ^= DRAW_MODE_BACKGROUND
+            self.widget_scene.request_refresh()
+
+        def toggle_grid(gridtype):
+            if gridtype == "primary":
+                self.widget_scene.draw_grid_primary = (
+                    not self.widget_scene.draw_grid_primary
+                )
+            elif gridtype == "secondary":
+                self.widget_scene.draw_grid_secondary = (
+                    not self.widget_scene.draw_grid_secondary
+                )
+            elif gridtype == "circular":
+                self.widget_scene.draw_grid_circular = (
+                    not self.widget_scene.draw_grid_circular
+                )
+            self.widget_scene.request_refresh()
+
+        def toggle_grid_p(event = None):
+            toggle_grid("primary")
+
+        def toggle_grid_s(event = None):
+            toggle_grid("secondary")
+
+        def toggle_grid_c(event = None):
+            toggle_grid("circular")
+
+        def remove_background(event = None):
+            self.widget_scene._signal_widget(
+                self.widget_scene.widget_root, "background", None
+            )
+
+            self.widget_scene.request_refresh()
+
+        gui = self
+        menu = wx.Menu()
+        id1 = menu.Append(
+            wx.ID_ANY,
+            _("Show Background"),
+            _("Display the background picture in the scene"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, toggle_background, id=id1.GetId())
+        menu.Check(
+            id1.GetId(),
+            (self.widget_scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0),
+        )
+        id2 = menu.Append(
+            wx.ID_ANY,
+            _("Show Primary Grid"),
+            _("Display the primary grid in the scene"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, toggle_grid_p, id=id2.GetId())
+        menu.Check(id2.GetId(), self.widget_scene.draw_grid_primary)
+        id3 = menu.Append(
+            wx.ID_ANY,
+            _("Show Secondary Grid"),
+            _("Display the secondary grid in the scene"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, toggle_grid_s, id=id3.GetId())
+        menu.Check(id3.GetId(), self.widget_scene.draw_grid_secondary)
+        id4 = menu.Append(
+            wx.ID_ANY,
+            _("Show Circular Grid"),
+            _("Display the circular grid in the scene"),
+            wx.ITEM_CHECK,
+        )
+        self.Bind(wx.EVT_MENU, toggle_grid_c, id=id4.GetId())
+        menu.Check(id4.GetId(), self.widget_scene.draw_grid_circular)
+        if self.widget_scene.has_background:
+            menu.AppendSeparator()
+            id5 = menu.Append(wx.ID_ANY, _("Remove Background"), "")
+            self.Bind(wx.EVT_MENU, remove_background, id=id5.GetId())
+        menu.AppendSeparator()
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: zoom_to_bed(),
+            menu.Append(
+                wx.ID_ANY,
+                _("&Zoom to Bed"),
+                _("View the whole laser bed"),
+            ),
+        )
+        if self.context.elements.has_emphasis():
+            self.Bind(
+                wx.EVT_MENU,
+                lambda e: zoom_to_selected(),
+                menu.Append(
+                    wx.ID_ANY,
+                    _("Zoom to &Selected"),
+                    _("Fill the scene area with the selected elements"),
+                )
+            )
+
+        if menu.MenuItemCount != 0:
+            gui.PopupMenu(menu)
+            menu.Destroy()
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):

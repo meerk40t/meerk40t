@@ -49,7 +49,7 @@ class EllipseTool(ToolWidget):
                     )
                 )
             gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
-            s = "C=({cx}, {cy}, a={a}, b={b}".format(
+            s = "C=({cx}, {cy}), a={a}, b={b}".format(
                 cx=Length(amount=(x1 + x0) / 2, digits=2).length_mm,
                 cy=Length(amount=(y1 + y0) / 2, digits=2).length_mm,
                 a=Length(amount=(x1 - x0) / 2, digits=2).length_mm,

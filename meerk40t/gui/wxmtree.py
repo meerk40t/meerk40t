@@ -53,7 +53,7 @@ def register_panel_tree(window, context):
     )
     pane.dock_proportion = minwd
     pane.control = wxtree
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/tree", pane)
 
 
