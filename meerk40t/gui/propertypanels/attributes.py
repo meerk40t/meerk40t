@@ -407,14 +407,14 @@ class PositionSizePanel(wx.Panel):
             self.context.elements.signal("element_property_update", self.node)
             self.set_widgets(self.node)
 
-    def on_text_x_enter(self, event):
+    def on_text_x_enter(self):
         self.translate_it()
 
-    def on_text_y_enter(self, event):
+    def on_text_y_enter(self):
         self.translate_it()
 
-    def on_text_w_enter(self, event):
+    def on_text_w_enter(self):
         self.scale_it()
 
-    def on_text_h_enter(self, event):
+    def on_text_h_enter(self):
         self.scale_it()

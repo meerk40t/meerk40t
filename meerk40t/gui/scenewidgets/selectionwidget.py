@@ -1310,7 +1310,7 @@ class ReferenceWidget(Widget):
     dealing with assigning / revoking the reference status
     """
 
-    def __init__(self, master, scene, size, is_reference_object):
+    def __init__(self, master, scene, size, is_reference_object, show_if_not_active):
         self.master = master
         self.scene = scene
         self.half = size / 2
@@ -1320,6 +1320,9 @@ class ReferenceWidget(Widget):
         self.hovering = False
         self.save_width = 0
         self.save_height = 0
+        self.show_if_not_active = show_if_not_active
+        if self.show_if_not_active is None:
+            self.show_if_not_active = False
         self.is_reference_object = is_reference_object
         self.uniform = False
         Widget.__init__(self, scene, -self.half, -self.half, self.half, self.half)
@@ -1340,6 +1343,8 @@ class ReferenceWidget(Widget):
     def process_draw(self, gc):
         if self.master.tool_running:
             # We don't need that overhead
+            return
+        if not (self.show_if_not_active or self.is_reference_object):
             return
         self.update()  # make sure coords are valid
         pen = wx.Pen()
@@ -2164,7 +2169,7 @@ class SelectionWidget(Widget):
                 show_skew_x = False
 
             self.add_widget(-1, BorderWidget(master=self, scene=self.scene))
-            if self.single_element and show_skew_y:
+            if self.single_element and self.use_handle_size:
                 self.add_widget(
                     -1,
                     ReferenceWidget(
@@ -2172,6 +2177,7 @@ class SelectionWidget(Widget):
                         scene=self.scene,
                         size=msize,
                         is_reference_object=self.is_ref,
+                        show_if_not_active=False,
                     ),
                 )
 

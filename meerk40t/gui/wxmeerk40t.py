@@ -42,6 +42,7 @@ from .icons import (
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
+from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
@@ -111,7 +112,7 @@ def register_panel_go(window, context):
     pane.dock_proportion = 98
     pane.control = go
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/go", pane)
 
 
@@ -141,7 +142,7 @@ def register_panel_stop(window, context):
     pane.dock_proportion = 98
     pane.control = stop
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/stop", pane)
 
 
@@ -162,7 +163,7 @@ def register_panel_home(window, context):
     )
     pane.dock_proportion = 98
     pane.control = home
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/home", pane)
 
 
@@ -203,7 +204,7 @@ def register_panel_pause(window, context):
     pane.dock_proportion = 98
     pane.control = pause
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/pause", pane)
 
 
@@ -373,6 +374,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
+        kernel.register("window/Templatetool", TemplateTool)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 

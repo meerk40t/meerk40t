@@ -480,11 +480,11 @@ class Scene(Module, Job):
         if self.screen_refresh_is_requested:
             if self.screen_refresh_lock.acquire(timeout=0.2):
                 try:
-                    self.update_buffer_ui_thread()
+                    self.update_buffer_ui_thread()  # May hit runtime error.
+                    self.gui.Refresh()
+                    self.gui.Update()
                 except RuntimeError:
-                    return
-                self.gui.Refresh()
-                self.gui.Update()
+                    pass
                 self.screen_refresh_is_requested = False
                 self.screen_refresh_lock.release()
             else:
@@ -1015,4 +1015,12 @@ class Scene(Module, Job):
 
     @reference_object.setter
     def reference_object(self, ref_object):
+        prev = self._reference
         self._reference = ref_object
+        dlist = []
+        if prev is not None:
+            dlist.append(prev)
+        if self._reference is not None:
+            dlist.append(self._reference)
+        if len(dlist) > 0:
+            self.context.signal("element_property_update", dlist)

@@ -10,6 +10,7 @@ from meerk40t.gui.icons import (
     instruction_rectangle,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -297,7 +298,7 @@ class LaserToolPanel(wx.Panel):
         sizer_main.Fit(self)
 
         self.Layout()
-
+        self.check_input()
         self.btn_set_circle_1.Bind(wx.EVT_BUTTON, self.on_click_get1)
         self.btn_set_circle_2.Bind(wx.EVT_BUTTON, self.on_click_get2)
         self.btn_set_circle_3.Bind(wx.EVT_BUTTON, self.on_click_get3)
@@ -395,7 +396,6 @@ class LaserToolPanel(wx.Panel):
     def on_click_get1(self, event):
         # Current Laserposition
         self.set_coord(idx=0, position=self.laserposition)
-        event.Skip()
 
     def on_click_get2(self, event):
         # Current Laserposition
@@ -689,14 +689,8 @@ class LaserToolPanel(wx.Panel):
                 self.context("reference\n")
         event.Skip()
 
-    def pane_show(self, *args):
-        self.context.listen("driver;position", self.on_update_laser)
-        self.context.listen("emulator;position", self.on_update_laser)
-
-    def pane_hide(self, *args):
-        self.context.unlisten("driver;position", self.on_update_laser)
-        self.context.unlisten("emulator;position", self.on_update_laser)
-
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
     def on_update_laser(self, origin, pos):
         self.laserposition = (pos[2], pos[3])
 
@@ -705,17 +699,19 @@ class LaserTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
         self.panel = LaserToolPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Laser-Tools"))
 
     def window_open(self):
-        self.panel.pane_show()
+        pass
 
     def window_close(self):
-        self.panel.pane_hide()
+        pass
+
+    def delegates(self):
+        yield self.panel
 
     @staticmethod
     def submenu():
