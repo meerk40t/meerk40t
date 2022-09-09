@@ -31,6 +31,7 @@ class PropertyWindow(MWindow):
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
+        self.Freeze()
         for p in self.panel_instances:
             try:
                 p.pane_hide()
@@ -110,6 +111,7 @@ class PropertyWindow(MWindow):
                 pass
 
         self.Layout()
+        self.Thaw()
 
     @staticmethod
     def sub_register(kernel):
