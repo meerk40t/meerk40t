@@ -805,6 +805,52 @@ class Elemental(Service):
                     continue
         self.signal("tree_changed")
 
+
+    def wordlist_translate(self, pattern, elemnode = None):
+        # This allows to add / set values for a given wordlist
+        node = None
+        if elemnode is not None:
+            # Does it belong to an op?
+            node = elemnode.parent
+            # That only seems to be true during burn...
+            if not node.type.startswith("op"):
+                node = None
+                # print (f"Does not have an op node as parent ({elemnode.text})")
+                for op in list(self.ops()):
+                    for refnode in op.children:
+                        if refnode.type == "reference" and refnode.node == elemnode:
+                            # print (f"Found an associated op for {elemnode.text}")
+                            node = op
+                            break
+                        if node is not None:
+                            break
+
+        for opatt in ("speed", "power", "dpi", "passes"):
+            skey = f"op_{opatt}"
+            found = False
+            value = None
+            if node is not None:
+                if hasattr(node, opatt):
+                    value = getattr(node, opatt, None)
+                    found = True
+                else:  # Try setting
+                    if hasattr(node, "settings"):
+                        try:
+                            value = node.settings[opatt]
+                            found = True
+                        except (AttributeError, KeyError, IndexError):
+                            pass
+            if found:
+                if value is None:
+                    value = ""
+                self.mywordlist.set_value(skey, value)
+            else:
+                value = f"<{opatt}>"
+                self.mywordlist.set_value(skey, value)
+
+        result = self.mywordlist.translate(pattern)
+        return result
+
     def _init_commands(self, kernel):
 
         _ = kernel.translation
