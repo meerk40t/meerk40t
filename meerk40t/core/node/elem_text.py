@@ -341,7 +341,7 @@ class TextNode(Node):
         )
         descent = self.descent if self.descent else height * 0.5
         leading = self.leading if self.leading else 0
-        ymin = -height + descent + leading
+        ymin = -height + descent
         ymax = descent
         if self.anchor == "middle":
             xmin = -width / 2

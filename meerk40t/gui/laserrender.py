@@ -100,7 +100,7 @@ def svgfont_to_wx(textnode):
         wxfont.SetWeight(
             wx.FONTWEIGHT_BOLD if weight > 600 else wx.FONTWEIGHT_NORMAL
         )  # Gets numeric weight.
-    # if the font_list is empty, then we do have a not properly intiialised textnode,
+    # if the font_list is empty, then we do have a not properly initialised textnode,
     # that needs to be resolved...
     if textnode.font_family is None:
         wxfont_to_svg(textnode)
