@@ -689,9 +689,10 @@ class LaserRender:
         self.set_brush(gc, node.fill, alpha=255)
 
         if node.fill is None or node.fill == "none":
-            gc.SetFont(font, wx.BLACK)
+            fill_color = wx.BLACK
         else:
-            gc.SetFont(font, as_wx_color(node.fill))
+            fill_color = as_wx_color(node.fill)
+        gc.SetFont(font, fill_color)
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
