@@ -42,6 +42,7 @@ class TextNode(Node):
         y=0,
         font=None,
         anchor=None,
+        baseline=None,
         matrix=None,
         fill=None,
         stroke=None,
@@ -55,6 +56,7 @@ class TextNode(Node):
         height=None,
         descent=None,
         leading=None,
+        raw_bbox=None,
         path=None,
         label=None,
         settings=None,
@@ -98,11 +100,13 @@ class TextNode(Node):
         self.texttransform = "" if texttransform is None else texttransform
 
         self.anchor = "start" if anchor is None else anchor  # start, middle, end.
+        self.baseline = "hanging" if baseline is None else baseline  # Hanging or baseline (usually).
 
         self.width = width
         self.height = height
         self.descent = descent
         self.leading = leading
+        self.raw_bbox = raw_bbox
         self.path = path
         self.label = label
         self.lock = False
@@ -117,6 +121,7 @@ class TextNode(Node):
             stroke_scale=self._stroke_scaled,
             font=self.font,
             anchor=self.anchor,
+            baseline=self.baseline,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,
@@ -125,6 +130,7 @@ class TextNode(Node):
             height=self.height,
             descent=self.descent,
             leading=self.leading,
+            raw_bbox=self.raw_bbox,
             path=self.path,
             settings=self.settings,
         )
@@ -332,27 +338,20 @@ class TextNode(Node):
                 transformed=True,
                 with_stroke=with_stroke,
             )
-
-        width = self.width if self.width else len(self.text) * self.font_size
-        height = (
-            self.height
-            if self.height
-            else self.line_height * len(list(self.text.split("\n"))) - self.font_size
-        )
-        descent = self.descent if self.descent else height * 0.5
-        leading = self.leading if self.leading else 0
-        ymin = -height + descent + leading
-        ymax = descent
+        if self.raw_bbox is None:
+            return None
+        left, upper, right, lower = self.raw_bbox
+        xmin = left - 2
+        ymin = upper - 2
+        xmax = right + 2
+        ymax = lower + 2
+        width = xmax - xmin
         if self.anchor == "middle":
-            xmin = -width / 2
-            xmax = width / 2
+            xmin -= width / 2
+            xmax -= width / 2
         elif self.anchor == "end":
-            xmin = -width
-            xmax = 0
-        else:  # "start"
-            xmax = width
-            xmin = 0
-
+            xmin -= width
+            xmax -= width
         if transformed:
             p0 = self.matrix.transform_point([xmin, ymin])
             p1 = self.matrix.transform_point([xmin, ymax])

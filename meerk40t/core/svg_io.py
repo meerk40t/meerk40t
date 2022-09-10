@@ -61,7 +61,7 @@ from ..svgelements import (
     SimpleLine,
     SVGImage,
     SVGText,
-    Use,
+    Use, SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
 
@@ -289,6 +289,8 @@ class SVGWriter:
                     subelement.set("line_height", str(c.line_height))
                 if c.anchor:
                     subelement.set(SVG_ATTR_TEXT_ANCHOR, c.anchor)
+                if c.baseline:
+                    subelement.set(SVG_ATTR_TEXT_ALIGNMENT_BASELINE, c.baseline)
                 decor = ""
                 if c.underline:
                     decor += " underline"
@@ -561,6 +563,7 @@ class SVGProcessor:
                 y=element.y,
                 font=element.values.get("font"),
                 anchor=element.values.get(SVG_ATTR_TEXT_ANCHOR),
+                baseline=element.values.get(SVG_ATTR_TEXT_ALIGNMENT_BASELINE, "baseline"),
                 matrix=element.transform,
                 fill=element.fill,
                 stroke=element.stroke,
