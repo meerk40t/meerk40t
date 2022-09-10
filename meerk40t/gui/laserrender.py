@@ -705,25 +705,15 @@ class LaserRender:
                 text = text.upper()
             if ttf == "lowercase":
                 text = text.lower()
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
-        if (
-            node.width != f_width
-            or node.height != f_height
-            or node.descent != f_descent
-            or node.leading != f_external_leading
-        ):
-            node.width = f_width
-            node.height = f_height
-            node.descent = f_descent
-            node.leading = f_external_leading
-            node.set_dirty_bounds()
-        # No offset. Text draw positions should match svg. Draw box over text. Must obscure.
-        dy = f_descent - f_height  # wx=0, convert baseline to correct position.
+        xmin, ymin, xmax, ymax = node.bbox(transformed=False)
+        height = ymax - ymin
+        width = xmax - xmin
+        dy = 0
         dx = 0
         if node.anchor == "middle":
-            dx -= f_width / 2
+            dx -= width / 2
         elif node.anchor == "end":
-            dx -= f_width
+            dx -= width
         gc.DrawText(text, dx, dy)
         gc.PopState()
 
@@ -817,10 +807,7 @@ class LaserRender:
         gc.SetFont(node.wxfont, wx.WHITE)
         gc.DrawText(text, 0, 0)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
-        node.width = f_width
-        node.height = f_height
-        node.descent = f_descent
-        node.leading = f_external_leading
+        node.ascent = f_height - f_descent
         try:
             img = bmp.ConvertToImage()
             buf = img.GetData()
