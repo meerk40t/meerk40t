@@ -507,6 +507,7 @@ class Scene(Module, Job):
             dc.SetUserScale(-1, -1)
             dc.SetLogicalOrigin(w, h)
         gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
         gc.Size = dc.Size
 
         font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
@@ -516,6 +517,7 @@ class Scene(Module, Job):
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
+        del gc.dc
         del dc
 
     def toast(self, message, token=-1):
