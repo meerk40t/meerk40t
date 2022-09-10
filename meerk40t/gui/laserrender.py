@@ -211,7 +211,8 @@ class LaserRender:
             draw_mode = self.context.draw_mode
         if draw_mode & (DRAW_MODE_TEXT | DRAW_MODE_IMAGE | DRAW_MODE_PATH) != 0:
             if draw_mode & DRAW_MODE_PATH:  # Do not draw paths.
-                nodes = [e for e in nodes if e.type != "elem path"]
+                path_elements = ("elem ellipse", "elem path", "elem point", "elem polyline", "elem rect", "elem line")
+                nodes = [e for e in nodes if e.type not in path_elements]
             if draw_mode & DRAW_MODE_IMAGE:  # Do not draw images.
                 nodes = [e for e in nodes if e.type != "elem image"]
             if draw_mode & DRAW_MODE_TEXT:  # Do not draw text.
@@ -694,7 +695,7 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.mywordlist.translate(text)
+            text = self.context.elements.wordlist_translate(text, node)
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
@@ -834,7 +835,7 @@ class LaserRender:
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.mywordlist.translate(node.text)
+            text = self.context.elements.wordlist_translate(node.text, node)
             node.bounds_with_variables_translated = True
         else:
             text = node.text
