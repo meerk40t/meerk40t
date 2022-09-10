@@ -790,6 +790,9 @@ class LaserRender:
         gc.DrawText(text, 0, 0)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
         node.ascent = f_height - f_descent
+        if node.baseline != "hanging":
+            node.baseline = "hanging"
+            node.matrix.pre_translate(0, -node.ascent)
         try:
             img = bmp.ConvertToImage()
             buf = img.GetData()

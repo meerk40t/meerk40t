@@ -42,6 +42,7 @@ class TextNode(Node):
         y=0,
         font=None,
         anchor=None,
+        baseline=None,
         matrix=None,
         fill=None,
         stroke=None,
@@ -99,6 +100,7 @@ class TextNode(Node):
         self.texttransform = "" if texttransform is None else texttransform
 
         self.anchor = "start" if anchor is None else anchor  # start, middle, end.
+        self.baseline = "hanging" if baseline is None else baseline  # Hanging or baseline (usually).
 
         self.width = width
         self.height = height
@@ -119,6 +121,7 @@ class TextNode(Node):
             stroke_scale=self._stroke_scaled,
             font=self.font,
             anchor=self.anchor,
+            baseline=self.baseline,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,
