@@ -341,10 +341,10 @@ class TextNode(Node):
         if self.raw_bbox is None:
             return None
         left, upper, right, lower = self.raw_bbox
-        xmin = left - 1
-        ymin = upper - 1
-        xmax = right + 1
-        ymax = lower + 1
+        xmin = left - 2
+        ymin = upper - 2
+        xmax = right + 2
+        ymax = lower + 2
         width = xmax - xmin
         if self.anchor == "middle":
             xmin -= width / 2
