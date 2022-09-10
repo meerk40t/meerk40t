@@ -782,14 +782,21 @@ class LaserRender:
         """
         Use default measure text routines to calculate height etc.
 
+        Use the real draw of the font to calculate actual size.
+        A 'real' height routine needs to draw the string on an
+        empty canvas and find the first and last dots on a line...
+        We are creating a temporary bitmap and paint on it...
+
         @param node:
         @return:
         """
-
-        bmp = wx.Bitmap(1, 1, 32)
+        bmp = wx.Bitmap(1000, 500, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
+        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
+
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
@@ -808,81 +815,25 @@ class LaserRender:
                 text = text.lower()
         svgfont_to_wx(node)
         gc.SetFont(node.wxfont, wx.WHITE)
+        gc.DrawText(text, 0, 0)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
         node.width = f_width
         node.height = f_height
         node.descent = f_descent
         node.leading = f_external_leading
+        try:
+            img = bmp.ConvertToImage()
+            buf = img.GetData()
+            image = Image.frombuffer(
+                "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
+            )
+            node.text_cache = image
+            node.raw_bbox = image.getbbox()
+        except MemoryError:
+            node.text_cache = None
+            node.raw_bbox = None
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
-        del dc
-
-    def measure_text_render(self, node):
-        """
-        A 'real' height routine needs to draw the string on an
-        empty canvas and find the first and last dots on a line...
-        We are creating a temporary bitmap and paint on it...
-
-        @param node:
-        @return:
-        """
-
-        bmp = wx.Bitmap(1000, 500, 32)
-        dc = wx.MemoryDC()
-        dc.SelectObject(bmp)
-        dc.SetBackground(wx.BLACK_BRUSH)
-        dc.Clear()
-        gc = wx.GraphicsContext.Create(dc)
-        draw_mode = self.context.draw_mode
-        if draw_mode & DRAW_MODE_VARIABLES:
-            # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(node.text, node)
-            node.bounds_with_variables_translated = True
-        else:
-            text = node.text
-            node.bounds_with_variables_translated = False
-        if node.texttransform:
-            ttf = node.texttransform.lower()
-            if ttf == "capitalize":
-                text = text.capitalize()
-            elif ttf == "uppercase":
-                text = text.upper()
-            if ttf == "lowercase":
-                text = text.lower()
-        svgfont_to_wx(node)
-        font = node.wxfont
-        gc.SetFont(font, wx.WHITE)
-        gc.DrawText(text, 0, 0)
-        img = bmp.ConvertToImage()
-        buf = img.GetData()
-        image = Image.frombuffer(
-            "RGB", tuple(bmp.GetSize()), bytes(buf), "raw", "RGB", 0, 1
-        )
-        # As a fallback, calculate these
-        f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
-        offs_x = offs_y = 0
-        # print (f"textextent, Width={f_width}, Height={f_height}")
-        font_bb = image.getbbox()
-        if font_bb is not None:
-            # print(f"Pillow provides: {font_bb}")
-            f_width = font_bb[2] - font_bb[0]
-            f_height = font_bb[3] - font_bb[1]
-            offs_x = -1 * font_bb[0]
-            offs_y = -1 * font_bb[1]
-            # print (f"pillow, Width={f_width}, Height={f_height}")
-            # image.save(f"dbg_{text}.png")
-
-        if node.width != f_width or node.height != f_height:
-            node.set_dirty_bounds()
-        node.width = f_width
-        node.height = f_height
-        node.descent = f_descent
-        node.leading = f_external_leading
-        node.offset_x = offs_x
-        node.offset_y = offs_y
-        __ = node.bounds
-        dc.SelectObject(wx.NullBitmap)
-        gc.Destroy()
         del dc
 
     def validate_text_nodes(self, nodes, translate_variables):
