@@ -762,17 +762,17 @@ class LaserRender:
         @param node:
         @return:
         """
+
         bmp = wx.Bitmap(1000, 500, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(wx.BLACK_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.mywordlist.translate(node.text)
+            text = self.context.elements.wordlist_translate(node.text, node)
             node.bounds_with_variables_translated = True
         else:
             text = node.text
