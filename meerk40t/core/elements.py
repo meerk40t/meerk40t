@@ -5211,12 +5211,18 @@ class Elemental(Service):
                 sy = height / h
                 # Don't do anything if scale is 1
                 if sx == 1.0 and sy == 1.0:
-                    channel(_("resize: nothing to do - scale factors 1"))
-                    return
-
-                matrix = Matrix(
-                    f"translate({x_pos},{y_pos}) scale({sx},{sy}) translate({-x},{-y})"
-                )
+                    scale_str = ""
+                else:
+                    scale_str = f"scale({sx},{sy})"
+                if x_pos == x and y_pos == y:
+                    trans1_str = ""
+                    trans2_str = ""
+                else:
+                    trans1_str = f"translate({x_pos},{y_pos})"
+                    trans2_str = f"translate({-x},{-y})"
+                matrixstr = f"{trans1_str} {scale_str} {trans2_str}".strip()
+                # channel(f"{matrixstr}")
+                matrix = Matrix(matrixstr)
                 if data is None:
                     data = list(self.elems(emphasized=True))
                 for node in data:
