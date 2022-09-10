@@ -253,6 +253,14 @@ class Node:
     def restore_tree(self, tree_data):
         self._children.clear()
         self._children.extend(tree_data)
+        self._validate_tree()
+
+    def _validate_tree(self):
+        for c in self._children:
+            assert c._parent is self
+            assert c._root is self._root
+            assert c in c._parent._children
+            c._validate_tree()
 
     def _build_links(self, links=None):
         """
