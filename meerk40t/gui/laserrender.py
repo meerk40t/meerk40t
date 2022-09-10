@@ -991,6 +991,7 @@ class LaserRender:
             matrix.pre_translate(-raster_width, 0)
 
         gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
         gc.SetInterpolationQuality(wx.INTERPOLATION_BEST)
         gc.PushState()
         if not matrix.is_identity():
@@ -1007,6 +1008,7 @@ class LaserRender:
         gc.PopState()
         dc.SelectObject(wx.NullBitmap)
         gc.Destroy()
+        del gc.dc
         del dc
         if bitmap:
             return bmp
