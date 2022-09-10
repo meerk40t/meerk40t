@@ -6931,12 +6931,41 @@ class Elemental(Service):
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         @self.tree_separator_after()
+        @self.tree_conditional(lambda node: self.classify_autogenerate)
         @self.tree_operation(
-            _("Refresh classification"), node_type="branch ops", help=""
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
         )
-        def refresh_clasifications(node, **kwargs):
+        def refresh_clasifications_1(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and use only existing operations"),
+        )
+        def refresh_clasifications_2(node, **kwargs):
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh ... (incl autogeneration)"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
+        )
+        def refresh_clasifications_3(node, **kwargs):
+            previous = self.classify_autogenerate
+            self.classify_autogenerate = True
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.classify_autogenerate = previous
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         materials = [
