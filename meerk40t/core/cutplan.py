@@ -30,7 +30,20 @@ class CutPlanningFailedError(Exception):
 
 class CutPlan:
     """
-    Cut Plan is a centralized class to modify plans with specific methods.
+    CutPlan is a centralized class to modify plans during cutplanning. It is typically is used to progress from
+    copied operations through the stages to being properly optimized cutcode.
+
+    The stages are:
+    1. Copy: This can be `copy-selected` or `copy` to decide which operations are moved initially into the plan.
+        a. Copied operations are copied to real. All the reference nodes are replaced with copies of the actual elements
+    2. Preprocess: Convert from scene space to device space and add validation operations.
+    3. Validate: Run all the validation operations, this could be anything the nodes added during preprocess.
+        a. Calls `execute` operation.
+    4. Blob: We convert all the operations/elements into proper cutcode. Some operations do not necessarily need to
+        convert to cutcode. They merely need to convert to some type of spoolable operation.
+    5. Preopt: Preoptimize adds in the relevant optimization operations into the cutcode.
+    6. Optimize: This calls the added functions set during the preopt process.
+        a. Calls `execute` operation.
     """
 
     def __init__(self, name, planner):
@@ -57,6 +70,12 @@ class CutPlan:
         return " ".join(parts)
 
     def execute(self):
+        """
+        Execute runs all the commands built during `preprocess` and `preopt` (preoptimize) stages.
+
+        If a command's execution adds a command to commands, this command is also executed.
+        @return:
+        """
         # Using copy of commands, so commands can add ops.
         while self.commands:
             # Executing command can add a command, complete them all.
@@ -67,7 +86,14 @@ class CutPlan:
 
     def preprocess(self):
         """
-        Preprocess stage, all small functions from the settings to the job.
+        Preprocess stage.
+
+        All operation nodes are called with the current context, the matrix converting from scene to device, and
+        commands.
+
+        Nodes are expected to convert relevant properties and shapes from scene coordinates to device coordinate systems
+        if they need operations. They are also expected to add any relevant commands to the commands list. The commands
+        list sequentially in the next stage.
         """
         context = self.context
 
@@ -95,11 +121,11 @@ class CutPlan:
 
     def blob(self):
         """
-        blob converts User operations to CutCode objects.
+        Blob converts User operations to CutCode objects.
 
         In order to have CutCode objects in the correct sequence for merging we need to:
-        1. Break operations into grouped sequences of LaserOperations and special operations.
-           We can only merge within groups of Laser operations.
+        1. Break operations into grouped sequences of Operations and utility operations.
+           We can only merge between contiguous groups of operations (with option set)
         2. The sequence of CutObjects needs to reflect merge settings
            Normal sequence is to iterate operations and then passes for each operation.
            With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
@@ -235,7 +261,9 @@ class CutPlan:
 
     def preopt(self):
         """
-        Add commands for optimize stage.
+        Add commands for optimize stage. This stage tends to do very little but checks the settings and adds the
+        relevant operations.
+
         @return:
         """
         context = self.context
