@@ -351,6 +351,17 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
+            def init_settings():
+                for prefix in ("prepend", "append"):
+                    str_count = f"{prefix}_op_count"
+                    self.device.setting(int, str_count, 0)
+                    value = getattr(self.context, str_count, 0)
+                    if value>0:
+                        for idx in range(value):
+                            attr1 = f"{prefix}_op_{idx:2d}"
+                            attr2 = f"{prefix}_op_param_{idx:2d}"
+                            self.device.setting(str, attr1, "")
+                            self.device.setting(str, attr2, "")
 
             def add_ops(is_prepend):
                 # Do we have have any default actions to include first?
@@ -360,9 +371,9 @@ class Planner(Service):
                     prefix = "append"
                 try:
                     if is_prepend:
-                        count = self.device._num_prepend
+                        count = self.device.prepend_op_count
                     else:
-                        count = self.device._num_append
+                        count = self.device.append_op_count
                 except AttributeError:
                     count = 0
                 idx = 0
@@ -458,6 +469,8 @@ class Planner(Service):
 
                     idx += 1
 
+
+            init_settings()
             operations = self.elements.get(type="branch ops")
 
             # Add default start ops
