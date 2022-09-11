@@ -14,6 +14,24 @@ try:
     # richtext is used for the Console panel.
     import wx
     from wx import richtext
+
+    # Let's check whether we have an incompatible version of wxpython and python
+    # Python 3.10 onwards no longer supports automatic casts of decimals to ints:
+    # Builtin and extension functions that take integer arguments no longer accept
+    # Decimals, Fractions and other objects that can be converted to integers only
+    # with a loss (e.g. that have the __int__() method but do not have the __index__() method).
+    # wxpython up to 4.1.1 exposes this issue
+
+    if wx.VERSION[:2] <= (4, 1):
+        # This causes a TypeError in python 3.10 wxPython 4.1.1 (or other combinations)
+        testcase = wx.Size(0.5, 1)
+except TypeError:
+    print("""The version of wxPython you are running is incompatible with your current Python version.
+At the time of writing this is especially true for any Python version >= 3.10
+and a wxpython version <= 4.1.1.""")
+    from ..core.exceptions import Mk40tImportAbort
+
+    raise Mk40tImportAbort("wxpython4.2")
 except ImportError as e:
     from ..core.exceptions import Mk40tImportAbort
 
