@@ -355,11 +355,11 @@ class Planner(Service):
                 for prefix in ("prepend", "append"):
                     str_count = f"{prefix}_op_count"
                     self.device.setting(int, str_count, 0)
-                    value = getattr(self.context, str_count, 0)
+                    value = getattr(self.device, str_count, 0)
                     if value>0:
                         for idx in range(value):
-                            attr1 = f"{prefix}_op_{idx:2d}"
-                            attr2 = f"{prefix}_op_param_{idx:2d}"
+                            attr1 = f"{prefix}_op_{idx:02d}"
+                            attr2 = f"{prefix}_op_param_{idx:02d}"
                             self.device.setting(str, attr1, "")
                             self.device.setting(str, attr2, "")
 
@@ -379,8 +379,8 @@ class Planner(Service):
                 idx = 0
                 while (idx<=count - 1):
                     addop = None
-                    attr1 = f"{prefix}_op_{idx:2d}"
-                    attr2 = f"{prefix}_op_param_{idx:2d}"
+                    attr1 = f"{prefix}_op_{idx:02d}"
+                    attr2 = f"{prefix}_op_param_{idx:02d}"
                     if hasattr(self.device, attr1):
                         optype = getattr(self.device, attr1, None)
                         opparam = getattr(self.device, attr2, None)
