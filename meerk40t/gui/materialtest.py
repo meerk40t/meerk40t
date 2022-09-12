@@ -404,6 +404,7 @@ class TemplatePanel(wx.Panel):
         self.parameters = [
             ("speed", None, _("Speed"), "mm/s", False, True),
             ("power", None, _("Power"), "ppi", False, True),
+            ("passes", None, _("Passes"), "x", False, True),
         ]
 
         if opidx == 0:
@@ -412,18 +413,21 @@ class TemplatePanel(wx.Panel):
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", None, _("Passes"), "x", False, True),
             ]
         elif opidx == 1:
             # Engrave
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", None, _("Passes"), "x", False, True),
             ]
         elif opidx == 2:
             # Raster
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", None, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
             ]
@@ -432,6 +436,7 @@ class TemplatePanel(wx.Panel):
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", None, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
             ]
@@ -440,6 +445,7 @@ class TemplatePanel(wx.Panel):
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", None, _("Passes"), "x", False, True),
                 ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
                 ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
             ]
