@@ -141,15 +141,33 @@ class DefaultActionPanel(wx.Panel):
         self.button_add_append.SetToolTip(
             _("Add the selected operation to the default 'Job End' list")
         )
-        self.button_del_prepend.SetToolTip(_("Remove the selected operation from the list"))
-        self.button_del_append.SetToolTip(_("Remove the selected operation from the list"))
-        self.button_down_prepend.SetToolTip(_("Decrease the position of the selected operation"))
-        self.button_up_prepend.SetToolTip(_("Increase the position of the selected operation"))
-        self.button_down_append.SetToolTip(_("Decrease the position of the selected operation"))
-        self.button_up_append.SetToolTip(_("Increase the position of the selected operation"))
-        self.text_param_option.SetToolTip(_("Modify the default parameter of the operation to be added"))
-        self.text_param_prepend.SetToolTip(_("Modify the parameter of the selected operation"))
-        self.text_param_append.SetToolTip(_("Modify the parameter of the selected operation"))
+        self.button_del_prepend.SetToolTip(
+            _("Remove the selected operation from the list")
+        )
+        self.button_del_append.SetToolTip(
+            _("Remove the selected operation from the list")
+        )
+        self.button_down_prepend.SetToolTip(
+            _("Decrease the position of the selected operation")
+        )
+        self.button_up_prepend.SetToolTip(
+            _("Increase the position of the selected operation")
+        )
+        self.button_down_append.SetToolTip(
+            _("Decrease the position of the selected operation")
+        )
+        self.button_up_append.SetToolTip(
+            _("Increase the position of the selected operation")
+        )
+        self.text_param_option.SetToolTip(
+            _("Modify the default parameter of the operation to be added")
+        )
+        self.text_param_prepend.SetToolTip(
+            _("Modify the parameter of the selected operation")
+        )
+        self.text_param_append.SetToolTip(
+            _("Modify the parameter of the selected operation")
+        )
 
         # Logic for manipulation of existing entries
         self.prepend_list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.prepend_single_click)

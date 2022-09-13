@@ -100,7 +100,9 @@ class TextNode(Node):
         self.texttransform = "" if texttransform is None else texttransform
 
         self.anchor = "start" if anchor is None else anchor  # start, middle, end.
-        self.baseline = "hanging" if baseline is None else baseline  # Hanging or baseline (usually).
+        self.baseline = (
+            "hanging" if baseline is None else baseline
+        )  # Hanging or baseline (usually).
 
         self.width = width
         self.height = height

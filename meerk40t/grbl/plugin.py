@@ -62,7 +62,9 @@ def plugin(kernel, lifecycle=None):
             root = kernel.root
             root.setting(bool, "developer_mode", False)
             if not root.developer_mode:
-                channel("This was not fully tested prior to feature freeze for the 0.8.x version of MeerK40t. So it was disabled. Look for it in a future version.")
+                channel(
+                    "This was not fully tested prior to feature freeze for the 0.8.x version of MeerK40t. So it was disabled. Look for it in a future version."
+                )
                 return
             root = kernel.root
             try:

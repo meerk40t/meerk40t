@@ -16,7 +16,7 @@ from meerk40t.gui.icons import (
     icons8_reference,
     icons8_ungroup_objects_50,
 )
-from meerk40t.gui.laserrender import DRAW_MODE_GUIDES, DRAW_MODE_BACKGROUND, LaserRender
+from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.scene.scenepanel import ScenePanel
 from meerk40t.gui.scenewidgets.attractionwidget import AttractionWidget
@@ -638,12 +638,11 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("scene_right_click")
     def on_scene_right(self, origin, *args):
-
-        def zoom_to_bed(event = None):
+        def zoom_to_bed(event=None):
             zoom = self.context.zoom_margin
             self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
 
-        def zoom_to_selected(event = None):
+        def zoom_to_selected(event=None):
             bbox = self.context.elements.selected_area()
             if bbox is None:
                 zoom_to_bed(event=event)
@@ -666,7 +665,7 @@ class MeerK40tScenePanel(wx.Panel):
                 ).length_mm
                 self.context(f"scene focus -a {x0} {y0} {x1} {y1}\n")
 
-        def toggle_background(event = None):
+        def toggle_background(event=None):
             """
             Toggle the draw mode for the background
             """
@@ -688,22 +687,22 @@ class MeerK40tScenePanel(wx.Panel):
                 )
             self.widget_scene.request_refresh()
 
-        def toggle_grid_p(event = None):
+        def toggle_grid_p(event=None):
             toggle_grid("primary")
 
-        def toggle_grid_s(event = None):
+        def toggle_grid_s(event=None):
             toggle_grid("secondary")
 
-        def toggle_grid_c(event = None):
+        def toggle_grid_c(event=None):
             toggle_grid("circular")
 
-        def remove_background(event = None):
+        def remove_background(event=None):
             self.widget_scene._signal_widget(
                 self.widget_scene.widget_root, "background", None
             )
             self.widget_scene.request_refresh()
 
-        def stop_auto_update(event = None):
+        def stop_auto_update(event=None):
             self.context("timer.updatebg --off\n")
 
         gui = self
@@ -783,7 +782,7 @@ class MeerK40tScenePanel(wx.Panel):
                     wx.ID_ANY,
                     _("Zoom to &Selected"),
                     _("Fill the scene area with the selected elements"),
-                )
+                ),
             )
 
         if menu.MenuItemCount != 0:

@@ -804,7 +804,7 @@ class TemplatePanel(wx.Panel):
                         value = p_value_1
                     if hasattr(this_op, param_type_1):
                         # quick and dirty
-                        if param_type_1=="passes":
+                        if param_type_1 == "passes":
                             value = int(value)
                         setattr(this_op, param_type_1, value)
                     else:  # Try setting
@@ -819,7 +819,7 @@ class TemplatePanel(wx.Panel):
                     else:
                         value = p_value_2
                     if hasattr(this_op, param_type_2):
-                        if param_type_2=="passes":
+                        if param_type_2 == "passes":
                             value = int(value)
                         setattr(this_op, param_type_2, value)
                     else:  # Try setting

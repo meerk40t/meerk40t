@@ -96,7 +96,9 @@ def plugin(kernel, lifecycle=None):
             root = kernel.root
             root.setting(bool, "developer_mode", False)
             if not root.developer_mode:
-                channel("Use the 0.7.x series version of ruidacontrol. This still had some bugs in it and was disabled for now.")
+                channel(
+                    "Use the 0.7.x series version of ruidacontrol. This still had some bugs in it and was disabled for now."
+                )
                 return
             try:
                 r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)

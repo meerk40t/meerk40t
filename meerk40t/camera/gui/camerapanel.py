@@ -414,8 +414,11 @@ class CamInterfaceWidget(Widget):
             def live_view(c_frames, c_sec):
                 def runcam(event=None):
                     ratio = c_sec / c_frames
-                    self.cam.context (f"timer.updatebg 0 {ratio} camera{self.cam.index} background\n")
+                    self.cam.context(
+                        f"timer.updatebg 0 {ratio} camera{self.cam.index} background\n"
+                    )
                     return
+
                 return runcam
 
             def live_stop():
@@ -423,18 +426,18 @@ class CamInterfaceWidget(Widget):
 
             submenu = wx.Menu()
             menu.AppendSubMenu(submenu, _("...refresh"))
-            rates = ((2, 1), (1, 1), (1, 2), (1, 5), (1, 10) )
+            rates = ((2, 1), (1, 1), (1, 2), (1, 5), (1, 10))
             for myrate in rates:
                 rate_frame = myrate[0]
                 rate_sec = myrate[1]
-                item=submenu.Append(wx.ID_ANY, f"{rate_frame}x / {rate_sec}sec")
+                item = submenu.Append(wx.ID_ANY, f"{rate_frame}x / {rate_sec}sec")
                 self.cam.Bind(
                     wx.EVT_MENU,
                     live_view(rate_frame, rate_sec),
                     id=item.GetId(),
-            )
+                )
             submenu.AppendSeparator()
-            item=submenu.Append(wx.ID_ANY, "Disable")
+            item = submenu.Append(wx.ID_ANY, "Disable")
             self.cam.Bind(
                 wx.EVT_MENU,
                 lambda e: live_stop(),

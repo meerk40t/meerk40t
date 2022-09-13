@@ -805,8 +805,7 @@ class Elemental(Service):
                     continue
         self.signal("tree_changed")
 
-
-    def wordlist_translate(self, pattern, elemnode = None):
+    def wordlist_translate(self, pattern, elemnode=None):
         # This allows to add / set values for a given wordlist
         node = None
         if elemnode is not None:

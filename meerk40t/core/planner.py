@@ -11,12 +11,11 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.util_console import ConsoleOperation
-from .node.util_home import HomeOperation
-from .node.util_wait import WaitOperation
 from .node.util_goto import GotoOperation
+from .node.util_home import HomeOperation
 from .node.util_origin import SetOriginOperation
 from .node.util_output import OutputOperation
-
+from .node.util_wait import WaitOperation
 from .units import Length
 
 
@@ -356,7 +355,7 @@ class Planner(Service):
                     str_count = f"{prefix}_op_count"
                     self.device.setting(int, str_count, 0)
                     value = getattr(self.device, str_count, 0)
-                    if value>0:
+                    if value > 0:
                         for idx in range(value):
                             attr1 = f"{prefix}_op_{idx:02d}"
                             attr2 = f"{prefix}_op_param_{idx:02d}"
@@ -377,7 +376,7 @@ class Planner(Service):
                 except AttributeError:
                     count = 0
                 idx = 0
-                while (idx<=count - 1):
+                while idx <= count - 1:
                     addop = None
                     attr1 = f"{prefix}_op_{idx:02d}"
                     attr2 = f"{prefix}_op_param_{idx:02d}"
@@ -385,60 +384,60 @@ class Planner(Service):
                         optype = getattr(self.device, attr1, None)
                         opparam = getattr(self.device, attr2, None)
                         if optype is not None:
-                            if optype=="util console":
+                            if optype == "util console":
                                 addop = ConsoleOperation(command=opparam)
-                            elif optype=="util home":
+                            elif optype == "util home":
                                 addop = HomeOperation()
-                            elif optype=="util output":
+                            elif optype == "util output":
                                 if opparam is not None:
                                     params = opparam.split(",")
                                     mask = 0
                                     setvalue = 0
-                                    if len(params)>0:
+                                    if len(params) > 0:
                                         try:
                                             mask = int(params[0])
                                         except ValueError:
                                             mask = 0
-                                    if len(params)>1:
+                                    if len(params) > 1:
                                         try:
                                             setvalue = int(params[1])
                                         except ValueError:
                                             setvalue = 0
                                     if mask != 0 or setvalue != 0:
                                         addop = OutputOperation(mask, setvalue)
-                            elif optype=="util goto":
+                            elif optype == "util goto":
                                 if opparam is not None:
                                     params = opparam.split(",")
                                     x = 0
                                     y = 0
-                                    if len(params)>0:
+                                    if len(params) > 0:
                                         try:
                                             x = float(Length(params[0]))
                                         except ValueError:
                                             x = 0
-                                    if len(params)>1:
+                                    if len(params) > 1:
                                         try:
                                             y = float(Length(params[1]))
                                         except ValueError:
                                             y = 0
                                     addop = GotoOperation(x=x, y=y)
-                            elif optype=="util origin":
+                            elif optype == "util origin":
                                 if opparam is not None:
                                     params = opparam.split(",")
                                     x = 0
                                     y = 0
-                                    if len(params)>0:
+                                    if len(params) > 0:
                                         try:
                                             x = float(Length(params[0]))
                                         except ValueError:
                                             x = 0
-                                    if len(params)>1:
+                                    if len(params) > 1:
                                         try:
                                             y = float(Length(params[1]))
                                         except ValueError:
                                             y = 0
                                     addop = SetOriginOperation(x=x, y=y)
-                            elif optype=="util wait":
+                            elif optype == "util wait":
                                 if opparam is not None:
                                     try:
                                         opparam = float(opparam)
@@ -468,7 +467,6 @@ class Planner(Service):
                         data.plan.append(copy_c)
 
                     idx += 1
-
 
             init_settings()
             operations = self.elements.get(type="branch ops")

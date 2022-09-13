@@ -1103,7 +1103,10 @@ class ShadowTree:
                 checker = checker.replace(" ", "_")
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
-                    if isinstance(maxspeed_minpower, (tuple, list)) and len(maxspeed_minpower) == 8:
+                    if (
+                        isinstance(maxspeed_minpower, (tuple, list))
+                        and len(maxspeed_minpower) == 8
+                    ):
                         # minpower, maxposer, minspeed, maxspeed
                         # print ("Yes: ", checker, maxspeed_minpower)
                         danger = False
@@ -1134,7 +1137,10 @@ class ShadowTree:
                 checker = checker.replace(" ", "_")
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
-                    if isinstance(maxspeed_minpower, (tuple, list)) and len(maxspeed_minpower) == 8:
+                    if (
+                        isinstance(maxspeed_minpower, (tuple, list))
+                        and len(maxspeed_minpower) == 8
+                    ):
                         # minpower, maxposer, minspeed, maxspeed
                         # print ("Yes: ", checker, maxspeed_minpower)
                         danger = False
