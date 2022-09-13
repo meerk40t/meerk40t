@@ -583,18 +583,6 @@ class SVGProcessor:
                 label=my_label,
                 settings=element.values,
             )
-            # Maybe superseded by concrete values later, so do it first
-            if "font" in element.values:
-                node.font = element.values.get("font")
-            else:
-                node.font_size = element.values.get(SVG_ATTR_FONT_SIZE)
-                node.font_style = element.values.get(SVG_ATTR_FONT_STYLE)
-                node.font_variant = element.values.get(SVG_ATTR_FONT_VARIANT)
-                node.font_weight = element.values.get(SVG_ATTR_FONT_WEIGHT)
-                node.font_stretch = element.values.get(SVG_ATTR_FONT_STRETCH)
-                node.font_family = element.values.get(SVG_ATTR_FONT_FAMILY)
-                node.validate_font()
-
             e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:

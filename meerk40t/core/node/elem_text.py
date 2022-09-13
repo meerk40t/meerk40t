@@ -4,7 +4,8 @@ from math import sqrt
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
-from meerk40t.svgelements import Matrix
+from meerk40t.svgelements import Matrix, SVG_ATTR_FONT_SIZE, SVG_ATTR_FONT_STYLE, SVG_ATTR_FONT_VARIANT, \
+    SVG_ATTR_FONT_WEIGHT, SVG_ATTR_FONT_STRETCH, SVG_ATTR_FONT_FAMILY
 
 REGEX_CSS_FONT = re.compile(
     r"^"
@@ -91,6 +92,14 @@ class TextNode(Node):
 
         if font is not None:
             self.parse_font(font)
+        else:
+            self.font_size = self.settings.get(SVG_ATTR_FONT_SIZE)
+            self.font_style = self.settings.get(SVG_ATTR_FONT_STYLE)
+            self.font_variant = self.settings.get(SVG_ATTR_FONT_VARIANT)
+            self.font_weight = self.settings.get(SVG_ATTR_FONT_WEIGHT)
+            self.font_stretch = self.settings.get(SVG_ATTR_FONT_STRETCH)
+            self.font_family = self.settings.get(SVG_ATTR_FONT_FAMILY)
+            self.validate_font()
 
         self.underline = False if underline is None else underline
         self.strikethrough = False if strikethrough is None else strikethrough
