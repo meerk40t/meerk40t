@@ -72,7 +72,7 @@ class DefaultActionPanel(wx.Panel):
         self.option_list = wx.ListCtrl(
             self,
             wx.ID_ANY,
-            style=wx.LC_LIST,
+            style=wx.LC_REPORT,
         )
         self.option_list.AppendColumn(_("Operation"), format=wx.LIST_FORMAT_LEFT)
 
