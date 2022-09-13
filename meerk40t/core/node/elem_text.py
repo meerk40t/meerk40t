@@ -339,7 +339,7 @@ class TextNode(Node):
                 with_stroke=with_stroke,
             )
         if self.raw_bbox is None:
-            return None
+            self.raw_bbox = [0, 0, 0, 0]
         left, upper, right, lower = self.raw_bbox
         xmin = left - 2
         ymin = upper - 2
