@@ -805,6 +805,51 @@ class Elemental(Service):
                     continue
         self.signal("tree_changed")
 
+    def wordlist_translate(self, pattern, elemnode=None):
+        # This allows to add / set values for a given wordlist
+        node = None
+        if elemnode is not None:
+            # Does it belong to an op?
+            node = elemnode.parent
+            # That only seems to be true during burn...
+            if not node.type.startswith("op"):
+                node = None
+                # print (f"Does not have an op node as parent ({elemnode.text})")
+                for op in list(self.ops()):
+                    for refnode in op.children:
+                        if refnode.type == "reference" and refnode.node == elemnode:
+                            # print (f"Found an associated op for {elemnode.text}")
+                            node = op
+                            break
+                        if node is not None:
+                            break
+
+        for opatt in ("speed", "power", "dpi", "passes"):
+            skey = f"op_{opatt}"
+            found = False
+            value = None
+            if node is not None:
+                if hasattr(node, opatt):
+                    value = getattr(node, opatt, None)
+                    found = True
+                else:  # Try setting
+                    if hasattr(node, "settings"):
+                        try:
+                            value = node.settings[opatt]
+                            found = True
+                        except (AttributeError, KeyError, IndexError):
+                            pass
+            if found:
+                if value is None:
+                    value = ""
+                self.mywordlist.set_value(skey, value)
+            else:
+                value = f"<{opatt}>"
+                self.mywordlist.set_value(skey, value)
+
+        result = self.mywordlist.translate(pattern)
+        return result
+
     def _init_commands(self, kernel):
 
         _ = kernel.translation
@@ -5165,12 +5210,18 @@ class Elemental(Service):
                 sy = height / h
                 # Don't do anything if scale is 1
                 if sx == 1.0 and sy == 1.0:
-                    channel(_("resize: nothing to do - scale factors 1"))
-                    return
-
-                matrix = Matrix(
-                    f"translate({x_pos},{y_pos}) scale({sx},{sy}) translate({-x},{-y})"
-                )
+                    scale_str = ""
+                else:
+                    scale_str = f"scale({sx},{sy})"
+                if x_pos == x and y_pos == y:
+                    trans1_str = ""
+                    trans2_str = ""
+                else:
+                    trans1_str = f"translate({x_pos},{y_pos})"
+                    trans2_str = f"translate({-x},{-y})"
+                matrixstr = f"{trans1_str} {scale_str} {trans2_str}".strip()
+                # channel(f"{matrixstr}")
+                matrix = Matrix(matrixstr)
                 if data is None:
                     data = list(self.elems(emphasized=True))
                 for node in data:
@@ -6885,12 +6936,41 @@ class Elemental(Service):
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         @self.tree_separator_after()
+        @self.tree_conditional(lambda node: self.classify_autogenerate)
         @self.tree_operation(
-            _("Refresh classification"), node_type="branch ops", help=""
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
         )
-        def refresh_clasifications(node, **kwargs):
+        def refresh_clasifications_1(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and use only existing operations"),
+        )
+        def refresh_clasifications_2(node, **kwargs):
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh ... (incl autogeneration)"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
+        )
+        def refresh_clasifications_3(node, **kwargs):
+            previous = self.classify_autogenerate
+            self.classify_autogenerate = True
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.classify_autogenerate = previous
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         materials = [

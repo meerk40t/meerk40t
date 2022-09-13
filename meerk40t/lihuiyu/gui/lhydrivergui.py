@@ -2,6 +2,7 @@
 import wx
 
 from meerk40t.core.units import Length
+from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
@@ -1093,35 +1094,41 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.panels = []
 
-        self.ConfigurationPanel = ConfigurationInterfacePanel(
+        panel_config = ConfigurationInterfacePanel(
             self.notebook_main, wx.ID_ANY, context=self.context
         )
-        self.notebook_main.AddPage(self.ConfigurationPanel, _("Configuration"))
 
-        self.SetupPanel = ConfigurationSetupPanel(
+        panel_setup = ConfigurationSetupPanel(
             self.notebook_main, wx.ID_ANY, context=self.context
         )
-        self.notebook_main.AddPage(self.SetupPanel, _("Setup"))
 
-        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
-        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+        panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
+
+        self.panels.append(panel_config)
+        self.panels.append(panel_setup)
+        self.panels.append(panel_warn)
+        self.panels.append(panel_actions)
+
+        self.notebook_main.AddPage(panel_config, _("Configuration"))
+        self.notebook_main.AddPage(panel_setup, _("Setup"))
+        self.notebook_main.AddPage(panel_warn, _("Warning"))
+        self.notebook_main.AddPage(panel_actions, _("Default Actions"))
 
         self.Layout()
 
-        self.add_module_delegate(self.ConfigurationPanel)
-        self.add_module_delegate(self.SetupPanel)
-        self.add_module_delegate(self.panel_warn)
+        for panel in self.panels:
+            self.add_module_delegate(panel)
 
     def window_open(self):
-        self.SetupPanel.pane_show()
-        self.ConfigurationPanel.pane_show()
-        self.panel_warn.pane_show()
+        for panel in self.panels:
+            panel.pane_show()
 
     def window_close(self):
-        self.SetupPanel.pane_hide()
-        self.ConfigurationPanel.pane_hide()
-        self.panel_warn.pane_hide()
+        for panel in self.panels:
+            panel.pane_hide()
 
     def window_preserve(self):
         return False

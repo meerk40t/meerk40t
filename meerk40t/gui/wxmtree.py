@@ -1103,23 +1103,31 @@ class ShadowTree:
                 checker = checker.replace(" ", "_")
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
-                    # minpower, maxposer, minspeed, maxspeed
-                    # print ("Yes: ", checker, maxspeed_minpower)
-                    danger = False
-                    if hasattr(node.node, "power"):
-                        value = node.node.power
-                        if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
-                            danger = True
-                        if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
-                            danger = True
-                    if hasattr(node.node, "speed"):
-                        value = node.node.speed
-                        if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
-                            danger = True
-                        if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
-                            danger = True
-                    if hasattr(node.node, "dangerous"):
-                        node.node.dangerous = danger
+                    if (
+                        isinstance(maxspeed_minpower, (tuple, list))
+                        and len(maxspeed_minpower) == 8
+                    ):
+                        # minpower, maxposer, minspeed, maxspeed
+                        # print ("Yes: ", checker, maxspeed_minpower)
+                        danger = False
+                        if hasattr(node.node, "power"):
+                            value = node.node.power
+                            if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
+                                danger = True
+                            if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
+                                danger = True
+                        if hasattr(node.node, "speed"):
+                            value = node.node.speed
+                            if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
+                                danger = True
+                            if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
+                                danger = True
+                        if hasattr(node.node, "dangerous"):
+                            node.node.dangerous = danger
+                    else:
+                        print(
+                            f"Thats strange {checker}: {type(maxspeed_minpower).__name__}"
+                        )
                 # node.node.is_dangerous(maxspeed, minpower)
             label = "*" + node.node.create_label(formatter)
         else:
@@ -1129,23 +1137,31 @@ class ShadowTree:
                 checker = checker.replace(" ", "_")
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
-                    # minpower, maxposer, minspeed, maxspeed
-                    # print ("Yes: ", checker, maxspeed_minpower)
-                    danger = False
-                    if hasattr(node, "power"):
-                        value = float(node.power)
-                        if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
-                            danger = True
-                        if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
-                            danger = True
-                    if hasattr(node, "speed"):
-                        value = float(node.speed)
-                        if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
-                            danger = True
-                        if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
-                            danger = True
-                    if hasattr(node, "dangerous"):
-                        node.dangerous = danger
+                    if (
+                        isinstance(maxspeed_minpower, (tuple, list))
+                        and len(maxspeed_minpower) == 8
+                    ):
+                        # minpower, maxposer, minspeed, maxspeed
+                        # print ("Yes: ", checker, maxspeed_minpower)
+                        danger = False
+                        if hasattr(node, "power"):
+                            value = float(node.power)
+                            if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
+                                danger = True
+                            if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
+                                danger = True
+                        if hasattr(node, "speed"):
+                            value = float(node.speed)
+                            if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
+                                danger = True
+                            if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
+                                danger = True
+                        if hasattr(node, "dangerous"):
+                            node.dangerous = danger
+                    else:
+                        print(
+                            f"Thats strange {checker}: {type(maxspeed_minpower).__name__}"
+                        )
             label = node.create_label(formatter)
 
         self.wxtree.SetItemText(node.item, label)

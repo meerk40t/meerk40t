@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
@@ -25,38 +26,39 @@ class GRBLConfiguration(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
-
-        self.panel_main = ChoicePropertyPanel(
+        self.panels = []
+        panel_main = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-connection"
         )
-        self.panel_global = ChoicePropertyPanel(
+        panel_global = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="grbl-global"
         )
-        self.panel_dim = ChoicePropertyPanel(
+        panel_dim = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices="bed_dim"
         )
-        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
-        self.notebook_main.AddPage(self.panel_main, _("Connection"))
-        self.notebook_main.AddPage(self.panel_dim, _("Dimensions"))
-        self.notebook_main.AddPage(self.panel_global, _("Global Settings"))
-        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+        panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(panel_main)
+        self.panels.append(panel_global)
+        self.panels.append(panel_dim)
+        self.panels.append(panel_warn)
+        self.panels.append(panel_actions)
+        self.notebook_main.AddPage(panel_main, _("Connection"))
+        self.notebook_main.AddPage(panel_dim, _("Dimensions"))
+        self.notebook_main.AddPage(panel_global, _("Global Settings"))
+        self.notebook_main.AddPage(panel_warn, _("Warning"))
+        self.notebook_main.AddPage(panel_actions, _("Default Actions"))
         self.Layout()
-        self.add_module_delegate(self.panel_main)
-        self.add_module_delegate(self.panel_global)
-        self.add_module_delegate(self.panel_dim)
-        self.add_module_delegate(self.panel_warn)
+        for panel in self.panels:
+            self.add_module_delegate(panel)
 
     def window_open(self):
-        self.panel_main.pane_show()
-        self.panel_global.pane_show()
-        self.panel_dim.pane_show()
-        self.panel_warn.pane_show()
+        for panel in self.panels:
+            panel.pane_show()
 
     def window_close(self):
-        self.panel_main.pane_hide()
-        self.panel_global.pane_hide()
-        self.panel_dim.pane_hide()
-        self.panel_warn.pane_hide()
+        for panel in self.panels:
+            panel.pane_hide()
 
     def window_preserve(self):
         return False

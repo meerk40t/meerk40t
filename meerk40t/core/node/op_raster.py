@@ -54,7 +54,7 @@ class RasterOpNode(Node, Parameters):
             "elem rect",
             "elem line",
             "elem text",
-            "elem image",
+            #            "elem image",
         )
         # To which attributes do the classification color check respond
         # Can be extended / reduced by add_color_attribute / remove_color_attribute

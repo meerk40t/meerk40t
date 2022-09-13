@@ -24,7 +24,9 @@ from ..svgelements import (
     SVG_ATTR_STROKE_OPACITY,
     SVG_ATTR_STROKE_WIDTH,
     SVG_ATTR_TAG,
+    SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
     SVG_ATTR_TEXT_ANCHOR,
+    SVG_ATTR_TEXT_DOMINANT_BASELINE,
     SVG_ATTR_TRANSFORM,
     SVG_ATTR_VECTOR_EFFECT,
     SVG_ATTR_VERSION,
@@ -289,6 +291,8 @@ class SVGWriter:
                     subelement.set("line_height", str(c.line_height))
                 if c.anchor:
                     subelement.set(SVG_ATTR_TEXT_ANCHOR, c.anchor)
+                if c.baseline:
+                    subelement.set(SVG_ATTR_TEXT_DOMINANT_BASELINE, c.baseline)
                 decor = ""
                 if c.underline:
                     decor += " underline"
@@ -561,6 +565,10 @@ class SVGProcessor:
                 y=element.y,
                 font=element.values.get("font"),
                 anchor=element.values.get(SVG_ATTR_TEXT_ANCHOR),
+                baseline=element.values.get(
+                    SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
+                    element.values.get(SVG_ATTR_TEXT_DOMINANT_BASELINE, "baseline"),
+                ),
                 matrix=element.transform,
                 fill=element.fill,
                 stroke=element.stroke,
@@ -577,18 +585,6 @@ class SVGProcessor:
                 label=my_label,
                 settings=element.values,
             )
-            # Maybe superseded by concrete values later, so do it first
-            if "font" in element.values:
-                node.font = element.values.get("font")
-            else:
-                node.font_size = element.values.get(SVG_ATTR_FONT_SIZE)
-                node.font_style = element.values.get(SVG_ATTR_FONT_STYLE)
-                node.font_variant = element.values.get(SVG_ATTR_FONT_VARIANT)
-                node.font_weight = element.values.get(SVG_ATTR_FONT_WEIGHT)
-                node.font_stretch = element.values.get(SVG_ATTR_FONT_STRETCH)
-                node.font_family = element.values.get(SVG_ATTR_FONT_FAMILY)
-                node.validate_font()
-
             e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
