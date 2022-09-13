@@ -26,6 +26,7 @@ from ..svgelements import (
     SVG_ATTR_TAG,
     SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
     SVG_ATTR_TEXT_ANCHOR,
+    SVG_ATTR_TEXT_DOMINANT_BASELINE,
     SVG_ATTR_TRANSFORM,
     SVG_ATTR_VECTOR_EFFECT,
     SVG_ATTR_VERSION,
@@ -62,7 +63,7 @@ from ..svgelements import (
     SimpleLine,
     SVGImage,
     SVGText,
-    Use, SVG_ATTR_TEXT_DOMINANT_BASELINE,
+    Use,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
 
@@ -565,7 +566,8 @@ class SVGProcessor:
                 font=element.values.get("font"),
                 anchor=element.values.get(SVG_ATTR_TEXT_ANCHOR),
                 baseline=element.values.get(
-                    SVG_ATTR_TEXT_ALIGNMENT_BASELINE, element.values.get(SVG_ATTR_TEXT_DOMINANT_BASELINE, "baseline")
+                    SVG_ATTR_TEXT_ALIGNMENT_BASELINE,
+                    element.values.get(SVG_ATTR_TEXT_DOMINANT_BASELINE, "baseline"),
                 ),
                 matrix=element.transform,
                 fill=element.fill,

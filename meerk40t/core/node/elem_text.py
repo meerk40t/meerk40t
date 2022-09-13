@@ -4,8 +4,15 @@ from math import sqrt
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
-from meerk40t.svgelements import Matrix, SVG_ATTR_FONT_SIZE, SVG_ATTR_FONT_STYLE, SVG_ATTR_FONT_VARIANT, \
-    SVG_ATTR_FONT_WEIGHT, SVG_ATTR_FONT_STRETCH, SVG_ATTR_FONT_FAMILY
+from meerk40t.svgelements import (
+    SVG_ATTR_FONT_FAMILY,
+    SVG_ATTR_FONT_SIZE,
+    SVG_ATTR_FONT_STRETCH,
+    SVG_ATTR_FONT_STYLE,
+    SVG_ATTR_FONT_VARIANT,
+    SVG_ATTR_FONT_WEIGHT,
+    Matrix,
+)
 
 REGEX_CSS_FONT = re.compile(
     r"^"
