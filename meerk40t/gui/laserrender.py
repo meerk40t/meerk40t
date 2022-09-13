@@ -796,10 +796,6 @@ class LaserRender:
         gc.SetFont(node.wxfont, wx.WHITE)
         gc.DrawText(text, 0, 0)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
-        node.ascent = f_height - f_descent
-        if node.baseline != "hanging":
-            node.baseline = "hanging"
-            node.matrix.pre_translate(0, -node.ascent)
         try:
             img = bmp.ConvertToImage()
             buf = img.GetData()
@@ -808,9 +804,17 @@ class LaserRender:
             )
             node.text_cache = image
             node.raw_bbox = image.getbbox()
+            height = node.raw_bbox[3] - node.raw_bbox[1] + 1
         except MemoryError:
             node.text_cache = None
             node.raw_bbox = None
+            height = f_height
+        node.ascent = f_height - f_descent
+        if node.baseline != "hanging":
+            node.matrix.pre_translate(0, -node.ascent)
+            if node.baseline == "middle":
+                node.matrix.pre_translate(0, node.ascent / 2)
+            node.baseline = "hanging"
         dc.SelectObject(wx.NullBitmap)
         dc.Destroy()
         del dc
