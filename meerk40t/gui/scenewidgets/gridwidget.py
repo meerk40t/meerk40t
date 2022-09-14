@@ -53,10 +53,8 @@ class GridWidget(Widget):
         self.tleny1 = 0
         self.tlenx2 = 0
         self.tleny2 = 0
-        self.sxx1 = 0
-        self.syy1 = 0
-        self.sxx2 = 0
-        self.syy2 = 0
+        self.zero_x = 0
+        self.zero_y = 0
         # Circular Grid
         self.min_radius = float("inf")
         self.max_radius = -float("inf")
@@ -119,40 +117,67 @@ class GridWidget(Widget):
         """
         Based on the current matrix calculate the grid within the bed-space.
         """
+        mat = self.scene.widget_root.scene_widget.matrix
+        if mat.is_identity():
+            return
         start_time = time()
         context = self.scene.context
-        units_width = float(context.device.unit_width)
-        units_height = float(context.device.unit_height)
+        p = self.scene.context
+        units_width = float(p.device.unit_width)
+        units_height = float(p.device.unit_height)
         starts = []
         ends = []
         starts2 = []
         ends2 = []
         # Primary grid
-        x = self.sxx1
+        zer_x = p.device.unit_width * p.device.show_origin_x
+        zer_y = p.device.unit_height * p.device.show_origin_y
+        self.zero_x, self.zero_y = self.scene.convert_scene_to_window([zer_x, zer_y])
+
+        x = self.zero_x
         while x <= self.max_x:
             starts.append((x, 0.0))
             ends.append((x, units_height))
             x += self.tlenx1
+        x = self.zero_x - self.tlenx1
+        while x>=self.min_x:
+            starts.append((x, 0.0))
+            ends.append((x, units_height))
+            x -= self.tlenx1
 
-        y = self.syy1
+        y = self.zero_y
         while y <= self.max_y:
             starts.append((0.0, y))
             ends.append((units_width, y))
             y += self.tleny1
+        y = self.zero_y - self.tleny1
+        while y >= self.min_y:
+            starts.append((0.0, y))
+            ends.append((units_width, y))
+            y -= self.tleny1
 
         # Secondary grid
 
-        x = self.sxx2
+        x = self.zero_x
         while x <= self.max_x:
             starts2.append((x, 0.0))
             ends2.append((x, units_height))
             x += self.tlenx2
-        y = self.syy2
+        x = self.zero_x - self.tlenx2
+        while x>=self.min_x:
+            starts.append((x, 0.0))
+            ends.append((x, units_height))
+            x -= self.tlenx2
+        y = self.zero_y
         while y <= self.max_y:
             starts2.append((0.0, y))
             ends2.append((units_width, y))
             y += self.tleny2
-
+        y = self.zero_y - self.tleny2
+        while y >= self.min_y:
+            starts.append((0.0, y))
+            ends.append((units_width, y))
+            y -= self.tleny2
         self.grid = starts, ends
         self.grid2 = starts2, ends2
         end_time = time()
@@ -279,30 +304,9 @@ class GridWidget(Widget):
             tlen = float(Length("10mm"))
         self.tlenx1 = tlen
         self.tleny1 = tlen
-        self.sxx1 = round(self.min_x / self.tlenx1, 0) * (self.tlenx1 + 1)
-        while self.sxx1 > self.min_x:
-            self.sxx1 -= self.tlenx1
-        if self.sxx1 < self.min_x:
-            self.sxx1 += self.tlenx1
-        self.syy1 = round(self.min_y / self.tleny1, 0) * (self.tleny1 + 1)
-        while self.syy1 > self.min_y:
-            self.syy1 -= self.tleny1
-        if self.syy1 < self.min_y:
-            self.syy1 += self.tleny1
 
-        self.tlenx2 = tlen * self.scene.grid_secondary_scale_x
-        self.tleny2 = tlen * self.scene.grid_secondary_scale_y
-        self.sxx2 = round(self.min_x / self.tlenx2, 0) * (self.tlenx2 + 1)
-        while self.sxx2 > self.min_x:
-            self.sxx2 -= self.tlenx2
-        if self.sxx2 < self.min_x:
-            self.sxx2 += self.tlenx2
-        self.syy2 = round(self.min_y / self.tleny2, 0) * (self.tleny2 + 1)
-        while self.syy2 > self.min_y:
-            self.syy2 -= self.tleny2
-        if self.syy2 < self.min_y:
-            self.syy2 += self.tleny2
-
+        self.tlenx2 = self.tlenx1 * self.scene.grid_secondary_scale_x
+        self.tleny2 = self.tleny1 * self.scene.grid_secondary_scale_y
         # lets establish which circles we really have to draw
         self.min_radius = float("inf")
         self.max_radius = -float("inf")
@@ -422,8 +426,9 @@ class GridWidget(Widget):
 
     def calculate_grid_points(self):
         """
-        Looks at all elements (all_points=True) or at non-selected elements (all_points=False) and identifies all
-        attraction points (center, corners, sides)
+        Looks at all elements (all_points=True) or at non-selected elements (all_points=False)
+        and identifies all attraction points (center, corners, sides)
+        Notabene this calculation generates SCREEN coordinates
         """
         from time import time
 
@@ -437,15 +442,29 @@ class GridWidget(Widget):
         p = self.scene.context
         if self.scene.draw_grid_primary:
             # That's easy just the rectangular stuff
-            x = self.sxx1
+            x = self.zero_x
             while x <= self.max_x:
-                y = self.syy1
+                y = self.zero_y
                 while y <= self.max_y:
                     self.scene.grid_points.append([x, y])
                     y += self.tleny1
+                y = self.zero_y - self.tleny1
+                while y >= self.min_y:
+                    self.scene.grid_points.append([x, y])
+                    y -= self.tleny1
                 x += self.tlenx1
+            x = self.zero_x - self.tlenx1
+            while x >= self.min_x:
+                y = self.zero_y
+                while y <= self.max_y:
+                    self.scene.grid_points.append([x, y])
+                    y += self.tleny1
+                y = self.zero_y - self.tleny1
+                while y >= self.min_y:
+                    self.scene.grid_points.append([x, y])
+                    y -= self.tleny1
+                x -= self.tlenx1
         prim_ct = len(self.scene.grid_points)
-
         s_time_2 = time()
         if self.scene.draw_grid_secondary:
             # is it identical to the primary?
@@ -456,14 +475,28 @@ class GridWidget(Widget):
                 or self.scene.grid_secondary_scale_x != 1
                 or self.scene.grid_secondary_scale_y != 1
             ):
-                x = self.sxx2
+                x = self.zero_x
                 while x <= self.max_x:
-                    y = self.syy2
+                    y = self.zero_y
                     while y <= self.max_y:
                         self.scene.grid_points.append([x, y])
                         y += self.tleny2
+                    y = self.zero_y - self.tleny2
+                    while y >= self.min_y:
+                        self.scene.grid_points.append([x, y])
+                        y -= self.tleny2
                     x += self.tlenx2
-
+                x = self.zero_x - self.tlenx2
+                while x >= self.min_x:
+                    y = self.zero_y
+                    while y <= self.max_y:
+                        self.scene.grid_points.append([x, y])
+                        y += self.tleny2
+                    y = self.zero_y - self.tleny2
+                    while y >= self.min_y:
+                        self.scene.grid_points.append([x, y])
+                        y -= self.tleny2
+                    x -= self.tlenx2
         second_ct = len(self.scene.grid_points) - prim_ct
 
         s_time_3 = time()
@@ -553,7 +586,7 @@ class GridWidget(Widget):
             self.grid = None
 
         if self.scene.context.draw_mode & DRAW_MODE_GRID == 0:
-            if self.grid is None:
+            if self.grid is None or self.grid2 is None:
                 self.calculate_grid()
                 self.calculate_grid_points()
 
