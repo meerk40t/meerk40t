@@ -209,6 +209,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             elif isinstance(sig, (tuple, list)):
                 for _sig in sig:
                     additional_signal.append(_sig)
+
             # Do we have a parameter to hide the control unless in expert mode
             hidden = c.get("hidden", False)
             hidden = (
@@ -296,19 +297,22 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(data)
                 control.SetMinSize(wx.Size(-1, 23))
 
-                def on_checkbox_check(param, ctrl, obj):
+                def on_checkbox_check(param, ctrl, obj, addsig):
                     def check(event=None):
                         v = ctrl.GetValue()
                         current_value = getattr(obj, param)
                         if current_value != bool(v):
                             setattr(obj, param, bool(v))
                             self.context.signal(param, v)
-                            for _sig in additional_signal:
+                            for _sig in addsig:
                                 self.context.signal(_sig)
 
                     return check
 
-                control.Bind(wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj))
+                control.Bind(
+                    wx.EVT_CHECKBOX,
+                    on_checkbox_check(attr, control, obj, additional_signal),
+                )
 
                 current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == str and data_style == "file":
@@ -322,7 +326,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         filename = _("No File")
                     control.SetLabel(filename)
 
-                def on_button_filename(param, ctrl, obj, wildcard):
+                def on_button_filename(param, ctrl, obj, wildcard, addsig):
                     def click(event=None):
                         with wx.FileDialog(
                             self,
@@ -340,7 +344,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 try:
                                     setattr(obj, param, pathname)
                                     self.context.signal(param, pathname)
-                                    for _sig in additional_signal:
+                                    for _sig in addsig:
                                         self.context.signal(_sig)
                                 except ValueError:
                                     # cannot cast to data_type, pass
@@ -352,7 +356,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
                 control.Bind(
                     wx.EVT_BUTTON,
-                    on_button_filename(attr, control, obj, c.get("wildcard", "*")),
+                    on_button_filename(
+                        attr, control, obj, c.get("wildcard", "*"), additional_signal
+                    ),
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (int, float) and data_style == "slider":
@@ -376,14 +382,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                     style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
                 )
 
-                def on_slider(param, ctrl, obj, dtype):
+                def on_slider(param, ctrl, obj, dtype, addsig):
                     def select(event=None):
                         v = dtype(ctrl.GetValue())
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
                             self.context.signal(param, v)
-                            for _sig in additional_signal:
+                            for _sig in addsig:
                                 self.context.signal(_sig)
 
                     return select
@@ -391,7 +397,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
                 control.Bind(
                     wx.EVT_SLIDER,
-                    on_slider(attr, control, obj, data_type),
+                    on_slider(attr, control, obj, data_type, additional_signal),
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combo":
@@ -421,14 +427,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if least is not None:
                             control.SetValue(least)
 
-                def on_combo_text(param, ctrl, obj, dtype):
+                def on_combo_text(param, ctrl, obj, dtype, addsig):
                     def select(event=None):
                         v = dtype(ctrl.GetValue())
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
                             self.context.signal(param, v)
-                            for _sig in additional_signal:
+                            for _sig in addsig:
                                 self.context.signal(_sig)
 
                     return select
@@ -436,7 +442,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
-                    on_combo_text(attr, control, obj, data_type),
+                    on_combo_text(attr, control, obj, data_type, additional_signal),
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combosmall":
@@ -470,14 +476,14 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if least is not None:
                             control.SetValue(least)
 
-                def on_combosmall_text(param, ctrl, obj, dtype):
+                def on_combosmall_text(param, ctrl, obj, dtype, addsig):
                     def select(event=None):
                         v = dtype(ctrl.GetValue())
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
                             self.context.signal(param, v)
-                            for _sig in additional_signal:
+                            for _sig in addsig:
                                 self.context.signal(_sig)
 
                     return select
@@ -491,7 +497,9 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control_sizer.Add(control, 1, wx.ALIGN_CENTER_VERTICAL, 0)
                 control.Bind(
                     wx.EVT_COMBOBOX,
-                    on_combosmall_text(attr, control, obj, data_type),
+                    on_combosmall_text(
+                        attr, control, obj, data_type, additional_signal
+                    ),
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == int and data_style == "binary":
@@ -506,7 +514,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
                 )
 
-                def on_checkbox_check(param, ctrl, obj, bit, enable_ctrl=None):
+                def on_checkbox_check(param, ctrl, obj, bit, addsig, enable_ctrl=None):
                     def check(event=None):
                         v = ctrl.GetValue()
                         if enable_ctrl is not None:
@@ -520,7 +528,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         if current_value != current:
                             setattr(obj, param, current)
                             self.context.signal(f"{param}", v)
-                            for _sig in additional_signal:
+                            for _sig in addsig:
                                 self.context.signal(_sig)
 
                     return check
@@ -559,7 +567,8 @@ class ChoicePropertyPanel(ScrolledPanel):
                     if mask:
                         control.Enable(bool((mask_bits >> b) & 1))
                     control.Bind(
-                        wx.EVT_CHECKBOX, on_checkbox_check(attr, control, obj, b)
+                        wx.EVT_CHECKBOX,
+                        on_checkbox_check(attr, control, obj, b, additional_signal),
                     )
 
                     # mask bit
@@ -569,7 +578,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                         mask_ctrl.Bind(
                             wx.EVT_CHECKBOX,
                             on_checkbox_check(
-                                mask, mask_ctrl, obj, b, enable_ctrl=control
+                                mask,
+                                mask_ctrl,
+                                obj,
+                                b,
+                                additional_signal,
+                                enable_ctrl=control,
                             ),
                         )
                         bit_sizer.Add(mask_ctrl, 0, wx.EXPAND, 0)
@@ -594,7 +608,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         ctrl.SetForegroundColour(wx.WHITE)
                     ctrl.color = color
 
-                def on_button_color(param, ctrl, obj):
+                def on_button_color(param, ctrl, obj, addsig):
                     def click(event=None):
                         color_data = wx.ColourData()
                         color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
@@ -611,7 +625,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 if current_value != data_v:
                                     setattr(obj, param, data_v)
                                     self.context.signal(param, data_v)
-                                    for _sig in additional_signal:
+                                    for _sig in addsig:
                                         self.context.signal(_sig)
                             except ValueError:
                                 # cannot cast to data_type, pass
@@ -626,7 +640,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 color_info = wx.StaticText(self, wx.ID_ANY, label)
                 control_sizer.Add(color_info, 1, wx.ALIGN_CENTER_VERTICAL)
 
-                control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
+                control.Bind(
+                    wx.EVT_BUTTON,
+                    on_button_color(attr, control, obj, additional_signal),
+                )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
 
             elif data_type in (str, int, float):
@@ -650,7 +667,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_generic_text(param, ctrl, obj, dtype):
+                def on_generic_text(param, ctrl, obj, dtype, addsig):
                     def text():
                         v = ctrl.GetValue()
                         try:
@@ -659,7 +676,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if current_value != dtype_v:
                                 setattr(obj, param, dtype_v)
                                 self.context.signal(param, dtype_v)
-                                for _sig in additional_signal:
+                                for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
                             # cannot cast to data_type, pass
@@ -667,7 +684,9 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return text
 
-                control.SetActionRoutine(on_generic_text(attr, control, obj, data_type))
+                control.SetActionRoutine(
+                    on_generic_text(attr, control, obj, data_type, additional_signal)
+                )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
@@ -684,7 +703,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_length_text(param, ctrl, obj, dtype):
+                def on_length_text(param, ctrl, obj, dtype, addsig):
                     def text():
                         try:
                             v = Length(ctrl.GetValue())
@@ -693,7 +712,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if str(current_value) != str(data_v):
                                 setattr(obj, param, data_v)
                                 self.context.signal(param, data_v)
-                                for _sig in additional_signal:
+                                for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
                             # cannot cast to data_type, pass
@@ -701,7 +720,9 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return text
 
-                control.SetActionRoutine(on_length_text(attr, control, obj, data_type))
+                control.SetActionRoutine(
+                    on_length_text(attr, control, obj, data_type, additional_signal)
+                )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
@@ -718,7 +739,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
-                def on_angle_text(param, ctrl, obj, dtype):
+                def on_angle_text(param, ctrl, obj, dtype, addsig):
                     def text():
                         try:
                             v = Angle(ctrl.GetValue(), digits=5)
@@ -727,7 +748,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if current_value != data_v:
                                 setattr(obj, param, data_v)
                                 self.context.signal(param, data_v)
-                                for _sig in additional_signal:
+                                for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
                             # cannot cast to data_type, pass
@@ -735,7 +756,9 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                     return text
 
-                control.SetActionRoutine(on_angle_text(attr, control, obj, data_type))
+                control.SetActionRoutine(
+                    on_angle_text(attr, control, obj, data_type, additional_signal)
+                )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
@@ -755,7 +778,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         ctrl.SetForegroundColour(wx.WHITE)
                     ctrl.color = color
 
-                def on_button_color(param, ctrl, obj):
+                def on_button_color(param, ctrl, obj, addsig):
                     def click(event=None):
                         color_data = wx.ColourData()
                         color_data.SetColour(wx.Colour(swizzlecolor(ctrl.color)))
@@ -772,7 +795,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 if current_value != data_v:
                                     setattr(obj, param, data_v)
                                     self.context.signal(param, data_v)
-                                    for _sig in additional_signal:
+                                    for _sig in addsig:
                                         self.context.signal(_sig)
                             except ValueError:
                                 # cannot cast to data_type, pass
@@ -783,7 +806,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                 set_color(control, data)
                 control_sizer.Add(control, 0, wx.EXPAND, 0)
 
-                control.Bind(wx.EVT_BUTTON, on_button_color(attr, control, obj))
+                control.Bind(
+                    wx.EVT_BUTTON,
+                    on_button_color(attr, control, obj, additional_signal),
+                )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             else:
                 # Requires a registered data_type
