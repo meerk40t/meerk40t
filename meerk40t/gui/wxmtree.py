@@ -1056,6 +1056,16 @@ class ShadowTree:
                 else:
                     self.tree_images.Replace(index=image_id, bitmap=image)
                 tree.SetItemImage(item, image=image_id)
+                # Lets have a look at all references....
+                for subnode in node._references:
+                    try:
+                        subitem = subnode.item
+                    except AttributeError:
+                        subitem = None
+                    if subitem is None:
+                        continue
+                    tree.SetItemImage(subitem, image=image_id)
+
             if c is not None:
                 self.set_color(node, c)
 
