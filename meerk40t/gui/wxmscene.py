@@ -803,6 +803,26 @@ class MeerK40tScenePanel(wx.Panel):
         if scene_name == "Scene":
             self.request_refresh()
 
+    @signal_listener("bedsize")
+    def on_bedsize_simple(self, origin, *args):
+        dimx = None
+        if hasattr(self.context.device, "bedwidth"):
+            dimx = self.context.device.bedwidth
+            dimy = self.context.device.bedheight
+        elif hasattr(self.context.device, "lens_size"):
+            dimx = self.context.device.lens_size
+            dimy = dimx
+        # if dimx is not None:
+        #     print(f"Set dimensions to {dimx}, {dimy}")
+        #     self.context.signal(
+        #         "bed_size", (dimx, dimy)
+        #     )
+        self.context.device.realize()
+        self.context("viewport_update\n")
+        self.scene.signal("guide")
+        self.scene.signal("grid")
+        self.request_refresh(origin)
+
     @signal_listener("magnet-attraction")
     def on_magnet(self, origin, strength, *args):
         strength = int(strength)
