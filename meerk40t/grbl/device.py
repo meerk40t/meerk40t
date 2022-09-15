@@ -95,6 +95,7 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
+                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
@@ -104,6 +105,7 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
+                "signals": "bedsize",
             },
             {
                 "attr": "scale_x",
@@ -137,6 +139,7 @@ class GRBLDevice(Service, ViewPort):
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "Flip Axis",
+                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -148,6 +151,7 @@ class GRBLDevice(Service, ViewPort):
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "Flip Axis",
+                "signals": "bedsize",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -356,6 +360,10 @@ class GRBLDevice(Service, ViewPort):
         """
         return self.current[1]
 
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
 
 class GRBLDriver(Parameters):
     def __init__(self, service, **kwargs):
