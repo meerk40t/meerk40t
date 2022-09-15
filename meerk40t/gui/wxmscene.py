@@ -408,8 +408,9 @@ class MeerK40tScenePanel(wx.Panel):
         @self.context.console_command("rotate", input_type="scene")
         def scene_rotate(command, _, channel, data, angle, **kwgs):
             matrix = data.widget_root.scene_widget.matrix
-            matrix.post_rotate(angle)
-            data.request_refresh()
+            if angle is not None:
+                matrix.post_rotate(angle)
+                data.request_refresh()
             channel(str(matrix))
             return "scene", data
 
