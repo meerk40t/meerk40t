@@ -1934,7 +1934,6 @@ class BalorDevice(Service, ViewPort):
             if lens_size is None:
                 raise SyntaxError
             self.lens_size = lens_size
-            self.lens_size = lens_size
             self.width = lens_size
             self.height = lens_size
             self.signal("bed_size", (self.lens_size, self.lens_size))
