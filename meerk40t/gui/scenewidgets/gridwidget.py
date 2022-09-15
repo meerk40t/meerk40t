@@ -480,26 +480,26 @@ class GridWidget(Widget):
             while x <= self.max_x:
                 y = self.zero_y
                 while y <= self.max_y:
-                    mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([mx, my])
+                    # mx, my = self.scene.convert_scene_to_window([x, y])
+                    self.scene.grid_points.append([x, y])
                     y += self.tleny1
                 y = self.zero_y - self.tleny1
                 while y >= self.min_y:
-                    mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([mx, my])
+                    # mx, my = self.scene.convert_scene_to_window([x, y])
+                    self.scene.grid_points.append([x, y])
                     y -= self.tleny1
                 x += self.tlenx1
             x = self.zero_x - self.tlenx1
             while x >= self.min_x:
                 y = self.zero_y
                 while y <= self.max_y:
-                    mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([mx, my])
+                    # mx, my = self.scene.convert_scene_to_window([x, y])
+                    self.scene.grid_points.append([x, y])
                     y += self.tleny1
                 y = self.zero_y - self.tleny1
                 while y >= self.min_y:
-                    mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([mx, my])
+                    # mx, my = self.scene.convert_scene_to_window([x, y])
+                    self.scene.grid_points.append([x, y])
                     y -= self.tleny1
                 x -= self.tlenx1
         prim_ct = len(self.scene.grid_points)
@@ -517,26 +517,26 @@ class GridWidget(Widget):
                 while x <= self.max_x:
                     y = self.zero_y
                     while y <= self.max_y:
-                        mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([mx, my])
+                        # mx, my = self.scene.convert_scene_to_window([x, y])
+                        self.scene.grid_points.append([x, y])
                         y += self.tleny2
                     y = self.zero_y - self.tleny2
                     while y >= self.min_y:
-                        mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([mx, my])
+                        # mx, my = self.scene.convert_scene_to_window([x, y])
+                        self.scene.grid_points.append([x, y])
                         y -= self.tleny2
                     x += self.tlenx2
                 x = self.zero_x - self.tlenx2
                 while x >= self.min_x:
                     y = self.zero_y
                     while y <= self.max_y:
-                        mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([mx, my])
+                        # mx, my = self.scene.convert_scene_to_window([x, y])
+                        self.scene.grid_points.append([x, y])
                         y += self.tleny2
                     y = self.zero_y - self.tleny2
                     while y >= self.min_y:
-                        mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([mx, my])
+                        # mx, my = self.scene.convert_scene_to_window([x, y])
+                        self.scene.grid_points.append([x, y])
                         y -= self.tleny2
                     x -= self.tlenx2
         second_ct = len(self.scene.grid_points) - prim_ct
@@ -548,8 +548,8 @@ class GridWidget(Widget):
             start_y = self.cy
             x = start_x
             y = start_y
-            mx, my = self.scene.convert_scene_to_window([x, y])
-            self.scene.grid_points.append([mx, my])
+            # mx, my = self.scene.convert_scene_to_window([x, y])
+            self.scene.grid_points.append([x, y])
             max_r = sqrt(
                 p.device.unit_width * p.device.unit_width
                 + p.device.unit_height * p.device.unit_height
@@ -579,8 +579,8 @@ class GridWidget(Widget):
                     y = start_y + r * sin(c_angle)
 
                     if self.min_x <= x <= self.max_x and self.min_y <= y <= self.max_y:
-                        mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([mx, my])
+                        # mx, my = self.scene.convert_scene_to_window([x, y])
+                        self.scene.grid_points.append([x, y])
 
                 i += 1
                 r_angle += tau / segments
