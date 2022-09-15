@@ -39,7 +39,7 @@ class ImageNode(Node):
             settings = dict()
         settings.update(kwargs)
         super(ImageNode, self).__init__(type="elem image", **settings)
-        self.__formatter = "{element_type} {width}x{height}"
+        self.__formatter = "{element_type} {id} {width}x{height}"
         if matrix is None:
             matrix = Matrix()
 
