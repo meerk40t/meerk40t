@@ -536,6 +536,27 @@ class ShadowTree:
         self.wxtree.ExpandAllChildren(item)
         self.set_expanded(item, 1)
 
+    def collapse_within(self, node):
+        # Tries to collaps children first, if there were any open,
+        # return TRUE, if all were already collapsed, return FALSE
+        result = False
+        startnode = node.item
+        try:
+            pnode, cookie = self.wxtree.GetFirstChild(startnode)
+        except:
+            return
+        were_expanded = []
+        while pnode.IsOk():
+            state = self.wxtree.IsExpanded(pnode)
+            if state:
+                result = True
+                were_expanded.append(pnode)
+            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+        for pnode in were_expanded:
+            cnode = self.wxtree.GetItemData(pnode)
+            cnode.notify_collapse()
+        return result
+
     def collapse(self, node):
         """
         Notified that this node was collapsed.
@@ -546,6 +567,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
+        # Special treatment for branches, they only collapse fully,
+        # if all their childrens were collapsed already
+        if node.type.startswith("branch"):
+            if self.collapse_within(node):
+                return
         self.wxtree.CollapseAllChildren(item)
         if (
             item is self.wxtree.GetRootItem()
