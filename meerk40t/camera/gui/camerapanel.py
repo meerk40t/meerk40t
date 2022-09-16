@@ -127,7 +127,11 @@ class CameraPanel(wx.Panel, Job):
                 )
             )
             self.button_detect.SetSize(self.button_detect.GetBestSize())
-            self.slider_fps.SetToolTip(_("Set the camera frames per second. A value of 0 means a frame every 5 seconds."))
+            self.slider_fps.SetToolTip(
+                _(
+                    "Set the camera frames per second. A value of 0 means a frame every 5 seconds."
+                )
+            )
             self.check_fisheye.SetToolTip(
                 _("Corrects Fisheye lensing, must be trained with checkerboard image.")
             )

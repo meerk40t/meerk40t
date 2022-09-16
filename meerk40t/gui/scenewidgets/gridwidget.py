@@ -152,7 +152,7 @@ class GridWidget(Widget):
             x += self.tlenx1
 
         x = self.zero_x - self.tlenx1
-        while x>=self.min_x:
+        while x >= self.min_x:
             starts.append((x, self.min_y))
             ends.append((x, self.max_y))
             # starts.append((x, 0))
@@ -183,7 +183,7 @@ class GridWidget(Widget):
             x += self.tlenx2
 
         x = self.zero_x - self.tlenx2
-        while x>=self.min_x:
+        while x >= self.min_x:
             starts2.append((x, self.min_y))
             ends2.append((x, self.max_y))
             x -= self.tlenx2

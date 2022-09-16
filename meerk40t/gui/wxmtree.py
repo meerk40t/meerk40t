@@ -64,7 +64,12 @@ class TreePanel(wx.Panel):
         self.context = context
         # Define Tree
         self.wxtree = wx.TreeCtrl(
-            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT | wx.TR_LINES_AT_ROOT
+            self,
+            wx.ID_ANY,
+            style=wx.TR_MULTIPLE
+            | wx.TR_HAS_BUTTONS
+            | wx.TR_HIDE_ROOT
+            | wx.TR_LINES_AT_ROOT,
         )
         if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))

@@ -372,6 +372,7 @@ class GRBLDevice(Service, ViewPort):
         self.height = self.bedheight
         super().realize()
 
+
 class GRBLDriver(Parameters):
     def __init__(self, service, **kwargs):
         super().__init__(**kwargs)

@@ -304,6 +304,7 @@ class RuidaDevice(Service, ViewPort):
         """
         return 0, 0
 
+
 class RuidaParser:
     def __init__(self):
         pass

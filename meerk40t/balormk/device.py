@@ -2072,7 +2072,7 @@ class BalorDevice(Service, ViewPort):
 
     def realize(self):
         self.width = self.lens_size
-        self.height= self.lens_size
+        self.height = self.lens_size
         super().realize()
 
     @property
