@@ -335,7 +335,7 @@ class CutPlan:
         @return:
         """
         try:
-            last = self.context.device.native_x, self.context.device.native_y
+            last = self.context.device.native
         except AttributeError:
             last = None
         channel = self.context.channel("optimize", timestamp=True)
