@@ -893,6 +893,9 @@ class PanelStartPreference(wx.Panel):
         d_end = list()
         factor = 3
         unidirectional = self.operation.raster_swing
+        dpi = self.operation.dpi
+        if dpi <= 1:
+            dpi = 1
 
         if direction == 0 or direction == 1 or direction == 4:
             # Direction Line
@@ -910,7 +913,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.05 + 4))
                 start = int(h * 0.9)
                 end = int(h * 0.1)
-                step = -1000 / self.operation.dpi * factor
+                step = -1000 / dpi * factor
             else:
                 # Top to Bottom or Crosshatch
                 if self.operation.raster_preference_top > 0:
@@ -922,7 +925,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 - 4, h * 0.95 - 4))
                 start = int(h * 0.1)
                 end = int(h * 0.9)
-                step = 1000 / self.operation.dpi * factor
+                step = 1000 / dpi * factor
             pos = start
             while min(start, end) <= pos <= max(start, end):
                 # Primary Line Horizontal Raster
@@ -957,7 +960,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.05 + 4, h * 0.05 - 4))
                 start = int(w * 0.9)
                 end = int(w * 0.1)
-                step = -1000 / self.operation.dpi * factor
+                step = -1000 / dpi * factor
             else:
                 # Left to Right or Crosshatch
                 if self.operation.raster_preference_left > 0:
@@ -969,7 +972,7 @@ class PanelStartPreference(wx.Panel):
                 d_end.append((w * 0.95 - 4, h * 0.05 - 4))
                 start = int(w * 0.1)
                 end = int(w * 0.9)
-                step = 1000 / self.operation.dpi * factor
+                step = 1000 / dpi * factor
             pos = start
             while min(start, end) <= pos <= max(start, end):
                 # Primary Line Vertical Raster.
