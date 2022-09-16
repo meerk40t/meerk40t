@@ -334,7 +334,10 @@ class CutPlan:
         Optimize travel at optimize stage on cutcode.
         @return:
         """
-        last = None
+        try:
+            last = self.context.device.native_x, self.context.device.native_y
+        except AttributeError:
+            last = None
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
