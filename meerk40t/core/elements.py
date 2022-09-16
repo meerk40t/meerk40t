@@ -5754,17 +5754,15 @@ class Elemental(Service):
             if self._undo_index == len(self._undo_stack) - 1:
                 # At head of stack push the current state in an undo.
                 self._undo_stack.append(self._tree.backup_tree())
-            self._undo_index -= 1
-
-            if self._undo_index >= 0:
-                undo = self._undo_stack[self._undo_index]
-                self._tree.restore_tree(undo)
-                self.signal("refresh_scene")
-                self.signal("rebuild_tree")
-            else:
-                self._undo_index = 0
+            if self._undo_index == 0:
+                # At bottom of stack.
                 channel("No undo available.")
                 return
+            self._undo_index -= 1
+            undo = self._undo_stack[self._undo_index]
+            self._tree.restore_tree(undo)
+            self.signal("refresh_scene")
+            self.signal("rebuild_tree")
 
         @self.console_command(
             "redo",
@@ -5776,12 +5774,7 @@ class Elemental(Service):
                 channel("No redo available.")
                 return
             self._undo_index += 1
-            try:
-                redo = self._undo_stack[self._undo_index]
-            except IndexError:
-                self._undo_index = 0
-                channel("No redo available.")
-                return
+            redo = self._undo_stack[self._undo_index]
             self._tree.restore_tree(redo)
             self.signal("refresh_scene")
             self.signal("rebuild_tree")
