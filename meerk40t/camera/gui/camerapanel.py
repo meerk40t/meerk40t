@@ -92,7 +92,7 @@ class CameraPanel(wx.Panel, Job):
                 wx.ID_ANY,
                 30,
                 0,
-                100,
+                120,
                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
             )
             self.button_detect = wx.BitmapButton(
