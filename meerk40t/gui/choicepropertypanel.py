@@ -20,6 +20,66 @@ class ChoicePropertyPanel(ScrolledPanel):
     either registered in the Kernel as a choice or called directly on the ChoicePropertyPanel you can make dynamic
     controls to set various properties. This avoids needing to create a new static window when a panel is just
     providing options to change settings.
+    The choices need to be provided either as list of dictionaries or indirectly via
+    a string indicating a stored list registered in the given context under "choices"
+    The dictionary recognizes the following entries:
+
+        "object": The object to which the property defined in attr belongs to
+        "attr": The name of the atttribute
+        "default": The default value if no value has been given before
+        "label": The labelwill be used for labelling the to be created UI-elements
+        "tip": The tooltip that will be used for this element
+        "type": This can be one of (no quotation marks, real python data types):
+            bool: will always be represented by a checkbox
+            str: normally be represented by a textbox (may be influenced by style)
+            int: normally be represented by a textbox (may be influenced by style)
+            float: normally be represented by a textbox (may be influenced by style)
+            Length: represented by a textbox
+            Angle: represented by a textbox
+            Color: represented by a color picker
+        "style": If given then the standard representation for a data-type (see above)
+            will be replaced by more tailored UI-elements:
+            "file": (only available for str) a file selection dialog is used,
+                this recognizes a further property "wildcard"
+            "slider:" Creates a slider (for int and float) that will use two additional
+                entries, "min" and "max.
+            "combo":
+            "combosmall": Available for str, int, float will fill the combo
+                with values defined in "choices" (additional parameter)
+            "binary": uses two additional settings "mask" and "bit" to
+                allow the bitwise manipulation of a int data type
+
+    UI-Appearance
+        "page":
+        "section":
+        "subsection":
+        "priority":
+            These entries will create visible separation/joining of elements.
+            The dictionary list will be sorted first by priority, then page,
+            then section, then subsection. While normally every item ends up
+            on a new line, elements within a subsection remain in one horizontal
+            container.
+        Notabene:
+            a) to influence ordering without compromising the intended Page,
+            Section etc. names, the routine will remove a leading "_xxxx_" string
+            b) The Page, Section etc. names will be translated, so please provide
+            them in plain English
+
+    There are some special hacks to influence appearance / internal logic
+        "hidden": if set then this expert property will only appear if the
+            developer-mode has been set
+        "enabled": Is the control enabled (default yes, so does not need to be
+            provided)
+        "conditional": if given then the (boolean) value of another property provided (as
+            string) in the very same object as the regular property decides whether
+            it will be enabled or not
+        "signals": This for advanced treatment, normally any change to a property
+            will be announced to the wider mk-universe by sending a signal with the
+            attributes name as signal-indicator (this is used to inform other UI-
+            elements with the same content of such a change). If you want to invoke
+            additional logic (or don't want to write a specific signal-listen routine
+            to forward it to other routines) then you can add a single signal-name
+            or a list of signal-names to be called
     """
 
     def __init__(
