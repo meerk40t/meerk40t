@@ -2086,5 +2086,12 @@ class BalorDevice(Service, ViewPort):
         )
 
     @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
+
+    @property
     def calibration_file(self):
         return None

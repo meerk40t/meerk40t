@@ -338,6 +338,13 @@ class MoshiDevice(Service, ViewPort):
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
+
     def realize(self):
         self.width = self.bedwidth
         self.height = self.bedheight

@@ -130,3 +130,10 @@ class DummyDevice(Service, ViewPort):
         @return: the location in nm for the current known x value.
         """
         return self.device_to_scene_position(self.native_x, self.native_y)
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.native_x, self.native_y
