@@ -40,7 +40,6 @@ class Camera(Service):
         self.max_tries_frame = 10
         self.setting(int, "width", 640)
         self.setting(int, "height", 480)
-        self.setting(int, "fps", 40)
         self.setting(bool, "correction_fisheye", False)
         self.setting(bool, "correction_perspective", False)
         self.setting(list, "fisheye", None)
