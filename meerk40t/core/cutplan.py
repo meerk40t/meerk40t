@@ -216,11 +216,8 @@ class CutPlan:
 
             if self._should_merge(context, blob):
                 if blob.constrained:
-                    self.plan[
-                        -1
-                    ].constrained = (
-                        True  # if merge is constrained new blob is constrained.
-                    )
+                    # if merge is constrained new blob is also constrained.
+                    self.plan[-1].constrained = True
                 self.plan[-1].extend(blob)
             else:
                 if isinstance(blob, CutObject) and not isinstance(blob, CutCode):
@@ -232,8 +229,15 @@ class CutPlan:
                     self.plan.append(blob)
 
     def _should_merge(self, context, blob):
+        """
+        Checks whether we should merge the blob with the current plan.
+        """
         # We can only merge and check for other criteria if we have the right objects
-        if not len(self.plan) or not isinstance(self.plan[-1], CutCode) or not isinstance(blob, CutObject):
+        if not self.plan:
+            return False
+        if not isinstance(self.plan[-1], CutCode):
+            return False
+        if not isinstance(blob, CutObject):
             return False
 
         # Override merge if opt_merge_passes is off, and pass_index do not match
