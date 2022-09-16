@@ -216,7 +216,7 @@ class CutPlan:
 
             if self._should_merge(context, blob):
                 if blob.constrained:
-                    # if merge is constrained new blob is also constrained.
+                    # if any merged object is constrained combined blob is also constrained.
                     self.plan[-1].constrained = True
                 self.plan[-1].extend(blob)
             else:
@@ -228,7 +228,7 @@ class CutPlan:
                 else:
                     self.plan.append(blob)
 
-    def _should_merge(self, context, blob):
+    def _should_merge(self, context, current_item):
         """
         Checks whether we should merge the blob with the current plan.
 
@@ -237,20 +237,21 @@ class CutPlan:
         if not self.plan:
             # The plan is empty we can't merge with nothing.
             return False
-        if not isinstance(self.plan[-1], CutCode):
+        last_item = self.plan[-1]
+        if not isinstance(last_item, CutCode):
             # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
             return False
-        if not isinstance(blob, CutObject):
+        if not isinstance(current_item, CutObject):
             # The object to be merged is not a cutObject and cannot be added to Cutcode.
             return False
-        if not context.opt_merge_passes and self.plan[-1].pass_index != blob.pass_index:
+        if not context.opt_merge_passes and last_item.pass_index != current_item.pass_index:
             # Do not merge if opt_merge_passes is off, and pass_index do not match
             return False
-        if not context.opt_merge_ops and self.plan[-1].settings is not blob.settings:
+        if not context.opt_merge_ops and last_item.settings is not current_item.settings:
             # Do not merge if opt_merge_ops is off, and the original ops do not match
             # Same settings object implies same original operation
             return False
-        if not context.opt_inner_first and self.plan[-1].original_op == "op cut":
+        if not context.opt_inner_first and last_item.original_op == "op cut":
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
             return False
         return True  # No reason these should not be merged.
