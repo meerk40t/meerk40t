@@ -69,7 +69,7 @@ class CameraPanel(wx.Panel, Job):
 
         self.context(f"camera{self.index}\n")  # command activates Camera service
         self.camera = self.context.get_context(f"camera/{self.index}")
-        self.camera.setting(int, "frames_per_second", 40)
+        self.camera.setting(int, "frames_per_second", 30)
         # camera service location.
         self.last_frame_index = -1
 
@@ -90,9 +90,9 @@ class CameraPanel(wx.Panel, Job):
             self.slider_fps = wx.Slider(
                 self,
                 wx.ID_ANY,
-                24,
+                30,
                 0,
-                100,
+                120,
                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
             )
             self.button_detect = wx.BitmapButton(
