@@ -5740,11 +5740,9 @@ class Elemental(Service):
             "save_restore_point",
         )
         def undo_mark(data=None, **kwgs):
-            del self._undo_stack[0 : self._undo_index]
-            if len(self._undo_stack) > 25:
-                del self._undo_stack[25:]
-            self._undo_stack.insert(0, self._tree.backup_tree())
-            self._undo_index = 0
+            del self._undo_stack[self._undo_index+1:]
+            self._undo_stack.append(self._tree.backup_tree())
+            self._undo_index = len(self._undo_stack) - 1
             return "undo", self._undo_stack[self._undo_index]
 
         @self.console_command(
@@ -5753,16 +5751,20 @@ class Elemental(Service):
         def undo_undo(command, channel, _, **kwgs):
             if not self._undo_stack:
                 return
-            self._undo_index += 1
-            try:
+            if self._undo_index == len(self._undo_stack) - 1:
+                # At head of stack push the current state in an undo.
+                self._undo_stack.append(self._tree.backup_tree())
+            self._undo_index -= 1
+
+            if self._undo_index >= 0:
                 undo = self._undo_stack[self._undo_index]
-            except IndexError:
-                self._undo_index = len(self._undo_stack) - 1
+                self._tree.restore_tree(undo)
+                self.signal("refresh_scene")
+                self.signal("rebuild_tree")
+            else:
+                self._undo_index = 0
                 channel("No undo available.")
                 return
-            self._tree.restore_tree(undo)
-            self.signal("refresh_scene")
-            self.signal("rebuild_tree")
 
         @self.console_command(
             "redo",
@@ -5770,10 +5772,10 @@ class Elemental(Service):
         def undo_redo(command, channel, _, data=None, **kwgs):
             if not self._undo_stack:
                 return
-            if self._undo_index <= 0:
+            if self._undo_index + 1 >= len(self._undo_stack) - 1:
                 channel("No redo available.")
                 return
-            self._undo_index -= 1
+            self._undo_index += 1
             try:
                 redo = self._undo_stack[self._undo_index]
             except IndexError:
