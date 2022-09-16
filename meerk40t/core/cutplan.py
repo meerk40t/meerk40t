@@ -213,42 +213,11 @@ class CutPlan:
                 blob.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
-            # We can only merge and check for other criteria if we have the right objects
-            merge = (
-                len(self.plan)
-                and isinstance(self.plan[-1], CutCode)
-                and isinstance(blob, CutObject)
-            )
-            # Override merge if opt_merge_passes is off, and pass_index do not match
-            if (
-                merge
-                and not context.opt_merge_passes
-                and self.plan[-1].pass_index != blob.pass_index
-            ):
-                merge = False
-            # Override merge if opt_merge_ops is off, and operations original ops do not match
-            # Same settings object implies same original operation
-            if (
-                merge
-                and not context.opt_merge_ops
-                and self.plan[-1].settings is not blob.settings
-            ):
-                merge = False
-            # Override merge if opt_inner_first is off, and operation was originally a cut.
-            if (
-                merge
-                and not context.opt_inner_first
-                and self.plan[-1].original_op == "op cut"
-            ):
-                merge = False
 
-            if merge:
+            if self._should_merge(context, blob):
                 if blob.constrained:
-                    self.plan[
-                        -1
-                    ].constrained = (
-                        True  # if merge is constrained new blob is constrained.
-                    )
+                    # if any merged object is constrained combined blob is also constrained.
+                    self.plan[-1].constrained = True
                 self.plan[-1].extend(blob)
             else:
                 if isinstance(blob, CutObject) and not isinstance(blob, CutCode):
@@ -258,6 +227,44 @@ class CutPlan:
                     self.plan.append(cc)
                 else:
                     self.plan.append(blob)
+
+    def _should_merge(self, context, current_item):
+        """
+        Checks whether we should merge the blob with the current plan.
+
+        We can only merge things if we have the right objects and settings.
+        """
+        if not self.plan:
+            # The plan is empty we can't merge with nothing.
+            return False
+        last_item = self.plan[-1]
+        if not isinstance(last_item, CutCode):
+            # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
+            return False
+        if not isinstance(current_item, CutObject):
+            # The object to be merged is not a cutObject and cannot be added to Cutcode.
+            return False
+        if last_item.original_op.startswith(
+            "util"
+        ) or current_item.original_op.startswith("util"):
+            return False
+        if (
+            not context.opt_merge_passes
+            and last_item.pass_index != current_item.pass_index
+        ):
+            # Do not merge if opt_merge_passes is off, and pass_index do not match
+            return False
+        if (
+            not context.opt_merge_ops
+            and last_item.settings is not current_item.settings
+        ):
+            # Do not merge if opt_merge_ops is off, and the original ops do not match
+            # Same settings object implies same original operation
+            return False
+        if not context.opt_inner_first and last_item.original_op == "op cut":
+            # Do not merge if opt_inner_first is off, and operation was originally a cut.
+            return False
+        return True  # No reason these should not be merged.
 
     def preopt(self):
         """
@@ -334,7 +341,10 @@ class CutPlan:
         Optimize travel at optimize stage on cutcode.
         @return:
         """
-        last = None
+        try:
+            last = self.context.device.native
+        except AttributeError:
+            last = None
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
@@ -343,8 +353,7 @@ class CutPlan:
                     self.plan[i] = inner_first_ident(c, channel=channel)
                     c = self.plan[i]
                 if last is not None:
-                    cur = self.plan[i]
-                    cur._start_x, cur._start_y = last
+                    c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
                     channel=channel,

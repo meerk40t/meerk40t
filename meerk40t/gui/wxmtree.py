@@ -64,7 +64,12 @@ class TreePanel(wx.Panel):
         self.context = context
         # Define Tree
         self.wxtree = wx.TreeCtrl(
-            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT
+            self,
+            wx.ID_ANY,
+            style=wx.TR_MULTIPLE
+            | wx.TR_HAS_BUTTONS
+            | wx.TR_HIDE_ROOT
+            | wx.TR_LINES_AT_ROOT,
         )
         if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
@@ -536,6 +541,27 @@ class ShadowTree:
         self.wxtree.ExpandAllChildren(item)
         self.set_expanded(item, 1)
 
+    def collapse_within(self, node):
+        # Tries to collaps children first, if there were any open,
+        # return TRUE, if all were already collapsed, return FALSE
+        result = False
+        startnode = node.item
+        try:
+            pnode, cookie = self.wxtree.GetFirstChild(startnode)
+        except:
+            return
+        were_expanded = []
+        while pnode.IsOk():
+            state = self.wxtree.IsExpanded(pnode)
+            if state:
+                result = True
+                were_expanded.append(pnode)
+            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+        for pnode in were_expanded:
+            cnode = self.wxtree.GetItemData(pnode)
+            cnode.notify_collapse()
+        return result
+
     def collapse(self, node):
         """
         Notified that this node was collapsed.
@@ -546,6 +572,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
+        # Special treatment for branches, they only collapse fully,
+        # if all their childrens were collapsed already
+        if node.type.startswith("branch"):
+            if self.collapse_within(node):
+                return
         self.wxtree.CollapseAllChildren(item)
         if (
             item is self.wxtree.GetRootItem()
@@ -1056,6 +1087,16 @@ class ShadowTree:
                 else:
                     self.tree_images.Replace(index=image_id, bitmap=image)
                 tree.SetItemImage(item, image=image_id)
+                # Lets have a look at all references....
+                for subnode in node._references:
+                    try:
+                        subitem = subnode.item
+                    except AttributeError:
+                        subitem = None
+                    if subitem is None:
+                        continue
+                    tree.SetItemImage(subitem, image=image_id)
+
             if c is not None:
                 self.set_color(node, c)
 

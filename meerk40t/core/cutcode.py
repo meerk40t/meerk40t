@@ -239,6 +239,8 @@ class CutGroup(list, CutObject, ABC):
 
     @property
     def start(self):
+        if self._start_x is not None and self._start_y is not None:
+            return self._start_x, self._start_y
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse

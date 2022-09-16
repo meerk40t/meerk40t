@@ -128,6 +128,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                "section": "_00_General",
             },
             {
                 "attr": "bedwidth",
@@ -136,6 +137,9 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "section": "_10_Dimensions",
+                "subsection": "Bed",
+                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
@@ -144,6 +148,9 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "section": "_10_Dimensions",
+                "subsection": "Bed",
+                "signals": "bedsize",
             },
             {
                 "attr": "scale_x",
@@ -154,6 +161,8 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "section": "_10_Dimensions",
+                "subsection": "Scale",
             },
             {
                 "attr": "scale_y",
@@ -164,6 +173,8 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "section": "_10_Dimensions",
+                "subsection": "Scale",
             },
             {
                 "attr": "interpolate",
@@ -172,6 +183,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
+                "section": "_20_Behaviour",
             },
             {
                 "attr": "mock",
@@ -182,6 +194,7 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                "section": "_30_Interface",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -324,6 +337,18 @@ class MoshiDevice(Service, ViewPort):
         @return: the location in units for the current known position.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
+
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
 
 
 class MoshiDriver(Parameters):
@@ -479,7 +504,9 @@ class MoshiDriver(Parameters):
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
-                self._goto_absolute(self.origin_x + start[0], self.origin_y + start[1])
+                self._goto_absolute(
+                    self.origin_x + start[0], self.origin_y + start[1], 0
+                )
             elif isinstance(q, SetOriginCut):
                 self.current_steps += 1
                 if q.set_current:

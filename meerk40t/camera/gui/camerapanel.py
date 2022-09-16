@@ -92,7 +92,7 @@ class CameraPanel(wx.Panel, Job):
                 wx.ID_ANY,
                 24,
                 0,
-                60,
+                100,
                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
             )
             self.button_detect = wx.BitmapButton(
@@ -127,7 +127,11 @@ class CameraPanel(wx.Panel, Job):
                 )
             )
             self.button_detect.SetSize(self.button_detect.GetBestSize())
-            self.slider_fps.SetToolTip(_("Set the camera frames per second"))
+            self.slider_fps.SetToolTip(
+                _(
+                    "Set the camera frames per second. A value of 0 means a frame every 5 seconds."
+                )
+            )
             self.check_fisheye.SetToolTip(
                 _("Corrects Fisheye lensing, must be trained with checkerboard image.")
             )
@@ -191,6 +195,7 @@ class CameraPanel(wx.Panel, Job):
         else:
             self.camera(f"camera{self.index} start\n")
         self.camera.schedule(self)
+        # This listener is because you can have frames and windows and both need to care about the slider.
         self.camera.listen("camera;fps", self.on_fps_change)
         self.camera.listen("camera;stopped", self.on_camera_stop)
         self.camera.gui = self
@@ -215,11 +220,11 @@ class CameraPanel(wx.Panel, Job):
         if origin != self.camera.path:
             # Not this window.
             return
-        fps = self.camera.frames_per_second
-        if fps == 0:
+        camera_fps = self.camera.frames_per_second
+        if camera_fps == 0:
             tick = 5
         else:
-            tick = 1.0 / fps
+            tick = 1.0 / camera_fps
         self.interval = tick
 
     @signal_listener("refresh_scene")
