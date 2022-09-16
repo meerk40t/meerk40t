@@ -331,7 +331,7 @@ class Elemental(Service):
             self, kernel, "elements" if index is None else f"elements{index}"
         )
         self._undo_stack = []
-        self._undo_index = 0
+        self._undo_index = -1
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -5740,9 +5740,9 @@ class Elemental(Service):
             "save_restore_point",
         )
         def undo_mark(data=None, **kwgs):
-            del self._undo_stack[self._undo_index+1:]
-            self._undo_stack.append(self._tree.backup_tree())
-            self._undo_index = len(self._undo_stack) - 1
+            self._undo_index += 1
+            self._undo_stack.insert(self._undo_index, self._tree.backup_tree())
+            del self._undo_stack[self._undo_index + 1:]
             return "undo", self._undo_stack[self._undo_index]
 
         @self.console_command(
@@ -5751,9 +5751,6 @@ class Elemental(Service):
         def undo_undo(command, channel, _, **kwgs):
             if not self._undo_stack:
                 return
-            if self._undo_index == len(self._undo_stack) - 1:
-                # At head of stack push the current state in an undo.
-                self._undo_stack.append(self._tree.backup_tree())
             if self._undo_index == 0:
                 # At bottom of stack.
                 channel("No undo available.")
@@ -5770,7 +5767,7 @@ class Elemental(Service):
         def undo_redo(command, channel, _, data=None, **kwgs):
             if not self._undo_stack:
                 return
-            if self._undo_index + 1 >= len(self._undo_stack) - 1:
+            if self._undo_index >= len(self._undo_stack) - 1:
                 channel("No redo available.")
                 return
             self._undo_index += 1
@@ -5785,7 +5782,7 @@ class Elemental(Service):
         def undo_list(command, channel, _, **kwgs):
             for i, v in enumerate(self._undo_stack):
                 q = "*" if i == self._undo_index else " "
-                channel("%s%s: undo %s elements" % (q, str(i).ljust(5), str(v)))
+                channel(f"{q}{str(i).ljust(5)}: undo {id(v)}:{str(v)} elements ")
 
         # ==========
         # CLIPBOARD COMMANDS
