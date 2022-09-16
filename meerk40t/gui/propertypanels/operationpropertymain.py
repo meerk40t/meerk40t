@@ -1104,6 +1104,7 @@ class RasterSettingsPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
+        self.text_dpi.set_error_level(1, 100000)
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
         sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
