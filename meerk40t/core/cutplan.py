@@ -234,10 +234,13 @@ class CutPlan:
         """
         # We can only merge and check for other criteria if we have the right objects
         if not self.plan:
+            # The plan is empty we can't merge with nothing.
             return False
         if not isinstance(self.plan[-1], CutCode):
+            # The last plan is not cutcode, merge is only between cutcode.
             return False
         if not isinstance(blob, CutObject):
+            # The object to be merged is not a cutObject and cannot be added to Cutcode.
             return False
 
         # Override merge if opt_merge_passes is off, and pass_index do not match
