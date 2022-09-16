@@ -244,6 +244,8 @@ class CutPlan:
         if not isinstance(current_item, CutObject):
             # The object to be merged is not a cutObject and cannot be added to Cutcode.
             return False
+        if last_item.original_op.startswith("util") or current_item.original_op.startswith("util"):
+            return False
         if not context.opt_merge_passes and last_item.pass_index != current_item.pass_index:
             # Do not merge if opt_merge_passes is off, and pass_index do not match
             return False
