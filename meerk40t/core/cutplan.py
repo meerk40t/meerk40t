@@ -344,10 +344,8 @@ class CutPlan:
             if isinstance(c, CutCode):
                 if c.constrained:
                     self.plan[i] = inner_first_ident(c, channel=channel)
-                    c = self.plan[i]
                 if last is not None:
-                    cur = self.plan[i]
-                    cur._start_x, cur._start_y = last
+                    c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
                     channel=channel,
