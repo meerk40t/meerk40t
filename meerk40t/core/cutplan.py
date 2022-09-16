@@ -231,30 +231,29 @@ class CutPlan:
     def _should_merge(self, context, blob):
         """
         Checks whether we should merge the blob with the current plan.
+
+        We can only merge things if we have the right objects and settings.
         """
-        # We can only merge and check for other criteria if we have the right objects
         if not self.plan:
             # The plan is empty we can't merge with nothing.
             return False
         if not isinstance(self.plan[-1], CutCode):
-            # The last plan is not cutcode, merge is only between cutcode.
+            # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
             return False
         if not isinstance(blob, CutObject):
             # The object to be merged is not a cutObject and cannot be added to Cutcode.
             return False
-
-        # Override merge if opt_merge_passes is off, and pass_index do not match
         if not context.opt_merge_passes and self.plan[-1].pass_index != blob.pass_index:
+            # Do not merge if opt_merge_passes is off, and pass_index do not match
             return False
-        # Override merge if opt_merge_ops is off, and operations original ops do not match
-        # Same settings object implies same original operation
         if not context.opt_merge_ops and self.plan[-1].settings is not blob.settings:
+            # Do not merge if opt_merge_ops is off, and the original ops do not match
+            # Same settings object implies same original operation
             return False
-        # Override merge if opt_inner_first is off, and operation was originally a cut.
         if not context.opt_inner_first and self.plan[-1].original_op == "op cut":
+            # Do not merge if opt_inner_first is off, and operation was originally a cut.
             return False
-        # No reason these should not be merged.
-        return True
+        return True  # No reason these should not be merged.
 
     def preopt(self):
         """
