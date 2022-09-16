@@ -213,36 +213,8 @@ class CutPlan:
                 blob.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
-            # We can only merge and check for other criteria if we have the right objects
-            merge = (
-                len(self.plan)
-                and isinstance(self.plan[-1], CutCode)
-                and isinstance(blob, CutObject)
-            )
-            # Override merge if opt_merge_passes is off, and pass_index do not match
-            if (
-                merge
-                and not context.opt_merge_passes
-                and self.plan[-1].pass_index != blob.pass_index
-            ):
-                merge = False
-            # Override merge if opt_merge_ops is off, and operations original ops do not match
-            # Same settings object implies same original operation
-            if (
-                merge
-                and not context.opt_merge_ops
-                and self.plan[-1].settings is not blob.settings
-            ):
-                merge = False
-            # Override merge if opt_inner_first is off, and operation was originally a cut.
-            if (
-                merge
-                and not context.opt_inner_first
-                and self.plan[-1].original_op == "op cut"
-            ):
-                merge = False
 
-            if merge:
+            if self._should_merge(context, blob):
                 if blob.constrained:
                     self.plan[
                         -1
@@ -258,6 +230,24 @@ class CutPlan:
                     self.plan.append(cc)
                 else:
                     self.plan.append(blob)
+
+    def _should_merge(self, context, blob):
+        # We can only merge and check for other criteria if we have the right objects
+        if not len(self.plan) or not isinstance(self.plan[-1], CutCode) or not isinstance(blob, CutObject):
+            return False
+
+        # Override merge if opt_merge_passes is off, and pass_index do not match
+        if not context.opt_merge_passes and self.plan[-1].pass_index != blob.pass_index:
+            return False
+        # Override merge if opt_merge_ops is off, and operations original ops do not match
+        # Same settings object implies same original operation
+        if not context.opt_merge_ops and self.plan[-1].settings is not blob.settings:
+            return False
+        # Override merge if opt_inner_first is off, and operation was originally a cut.
+        if not context.opt_inner_first and self.plan[-1].original_op == "op cut":
+            return False
+        # No reason these should not be merged.
+        return True
 
     def preopt(self):
         """
