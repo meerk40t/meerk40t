@@ -9,9 +9,6 @@ from meerk40t.gui.icons import (
     icons8_small_beam_20,
     icons8_home_20,
     icons8_return_20,
-    icons8_bell_20,
-    icons8_stop_gesture_20,
-    icons8_close_window_20,
     icons8_timer_20,
     icons8_home_20,
     icons8_return_20,
@@ -27,6 +24,7 @@ from meerk40t.gui.icons import (
     icons8_text_50,
     icons8_image_50,
     icons8_vector_50,
+    icons8_detective_50,
 )
 from meerk40t.core.element_types import op_nodes, elem_group_nodes, elem_ref_nodes
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
@@ -104,6 +102,8 @@ class FormatterPanel(wx.Panel):
                 default == ""
             self.context.setting(bool, f"formatter_{lbl}_active", False)
             self.context.setting(str, f"formatter_{lbl}", default)
+            # We have a pair of a checkbox and a textinput
+            available = self.get_node_patterns(node)
             choices.append(
                 {
                     "object": self.context,
@@ -114,7 +114,7 @@ class FormatterPanel(wx.Panel):
                     "tip": _("Do yo want to use a bespoke formatter"),
                     "section": sectname,
                     "subsection": f"_{node}_",
-                    "signals": "tree_changed",
+                    "signals": "rebuild_tree",
                 }
             )
             choices.append(
@@ -125,14 +125,14 @@ class FormatterPanel(wx.Panel):
                     "type": str,
                     "weight": 2,
                     "width": 250,
-                    "tip": _("Bespoke formatter for this node-type"),
+                    "tip": _("Bespoke formatter for this node-type") + available,
                     "conditional": (self.context, f"formatter_{lbl}_active"),
                     "section": sectname,
                     "subsection": f"_{node}_",
-                    "signals": "tree_changed",
+                    "signals": "rebuild_tree",
                 }
             )
-            # We have a pair of checkboxes and textinputs
+            # tree_changed does not suffice
         patternpanel = ChoicePropertyPanel(self, wx.ID_ANY, context=self.context, choices=choices)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -141,6 +141,103 @@ class FormatterPanel(wx.Panel):
         self.Layout()
 
         self.update_widgets()
+
+    def get_node_patterns(self, nodetype):
+        from meerk40t.core.node.elem_ellipse import EllipseNode
+        from meerk40t.core.node.elem_image import ImageNode
+        from meerk40t.core.node.elem_line import LineNode
+        from meerk40t.core.node.elem_path import PathNode
+        from meerk40t.core.node.elem_point import PointNode
+        from meerk40t.core.node.elem_polyline import PolylineNode
+        from meerk40t.core.node.elem_rect import RectNode
+        from meerk40t.core.node.elem_text import TextNode
+        from meerk40t.core.node.filenode import FileNode
+        from meerk40t.core.node.groupnode import GroupNode
+        from meerk40t.core.node.op_cut import CutOpNode
+        from meerk40t.core.node.op_dots import DotsOpNode
+        from meerk40t.core.node.op_engrave import EngraveOpNode
+        from meerk40t.core.node.op_hatch import HatchOpNode
+        from meerk40t.core.node.op_image import ImageOpNode
+        from meerk40t.core.node.op_raster import RasterOpNode
+        from meerk40t.core.node.refnode import ReferenceNode
+        from meerk40t.core.node.util_console import ConsoleOperation
+        from meerk40t.core.node.util_goto import GotoOperation
+        from meerk40t.core.node.util_home import HomeOperation
+        from meerk40t.core.node.util_input import InputOperation
+        from meerk40t.core.node.util_origin import SetOriginOperation
+        from meerk40t.core.node.util_output import OutputOperation
+        from meerk40t.core.node.util_wait import WaitOperation
+        from meerk40t.svgelements import Ellipse, Rect, Path, Polyline, Image
+        bootstrap = {
+            "op cut": CutOpNode,
+            "op engrave": EngraveOpNode,
+            "op raster": RasterOpNode,
+            "op image": ImageOpNode,
+            "op dots": DotsOpNode,
+            "op hatch": HatchOpNode,
+            "util console": ConsoleOperation,
+            "util wait": WaitOperation,
+            "util origin": SetOriginOperation,
+            "util home": HomeOperation,
+            "util goto": GotoOperation,
+            "util input": InputOperation,
+            "util output": OutputOperation,
+            "group": GroupNode,
+            "elem ellipse": EllipseNode,
+            "elem line": LineNode,
+            "elem rect": RectNode,
+            "elem path": PathNode,
+            "elem point": PointNode,
+            "elem polyline": PolylineNode,
+            "elem image": ImageNode,
+            "elem text": TextNode,
+            "reference": ReferenceNode,
+            "file": FileNode,
+        }
+        node = None
+        available = ""
+        if nodetype in bootstrap:
+            # print (f"Try to get an instance of {nodetype}")
+            if nodetype.startswith("elem"):
+                param = None
+                shape = None
+                image = None
+                path = None
+                # might need a shape
+                if nodetype == "elem rect":
+                    shape = Rect(0, 0, 10, 10)
+                elif nodetype == "elem ellipse":
+                    shape = Ellipse(0, 0, 10, 10)
+                elif nodetype == "elem path":
+                    path = Path(Ellipse(0, 0, 10, 10))
+                elif nodetype == "elem image":
+                    image = Image()
+                    image.image = icons8_detective_50.GetImage()
+                elif nodetype == "elem polyline":
+                    shape = Polyline()
+
+                if shape is not None:
+                    node = bootstrap[nodetype](shape=shape)
+                elif image is not None:
+                    node = bootstrap[nodetype](image=image)
+                elif path is not None:
+                    node = bootstrap[nodetype](path=path)
+                elif param is not None:
+                    node = bootstrap[nodetype](param)
+                else:
+                    node = bootstrap[nodetype]()
+            else:
+                node = bootstrap[nodetype]()
+
+        if node is not None:
+            mymap = node.default_map()
+            for entry in mymap:
+                if available != "":
+                    available += ", "
+                available += "{" + entry + "}"
+            available = "\n" + available
+
+        return available
 
     def on_checkbox_check(self, entry, isMax):
         def check(event=None):

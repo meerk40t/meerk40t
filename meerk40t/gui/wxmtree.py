@@ -1087,6 +1087,19 @@ class ShadowTree:
         @param node:
         @return:
         """
+        def get_formatter(nodetype):
+            default = self.context.elements.lookup(f"format/{nodetype}")
+            lbl = nodetype.replace(" ", "_")
+            check_string = f"formatter_{lbl}_active"
+            pattern_string = f"formatter_{lbl}"
+            self.context.device.setting(bool, check_string, False)
+            self.context.device.setting(str, pattern_string, default)
+            bespoke = getattr(self.context.device, check_string, False)
+            pattern = getattr(self.context.device, pattern_string, "")
+            if bespoke and pattern is not None and pattern != "":
+                default = pattern
+            return default
+
         if force is None:
             force = False
         if node.item is None:
@@ -1095,9 +1108,8 @@ class ShadowTree:
             return
 
         self.set_icon(node, force=force)
-
         if hasattr(node, "node") and node.node is not None:
-            formatter = self.elements.lookup(f"format/{node.node.type}")
+            formatter = get_formatter(node.node.type)
             if node.node.type.startswith("op "):
                 checker = "dangerlevel " + node.node.type
                 checker = checker.replace(" ", "_")
@@ -1131,7 +1143,7 @@ class ShadowTree:
                 # node.node.is_dangerous(maxspeed, minpower)
             label = "*" + node.node.create_label(formatter)
         else:
-            formatter = self.elements.lookup(f"format/{node.type}")
+            formatter = get_formatter(node.type)
             if node.type.startswith("op "):
                 checker = "dangerlevel " + node.type
                 checker = checker.replace(" ", "_")
