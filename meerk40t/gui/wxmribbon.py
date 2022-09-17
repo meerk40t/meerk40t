@@ -136,22 +136,21 @@ class MyRibbonPanel(RB.RibbonPanel):
         else:
             wd = size[0]
             ht = size[1]
-        if platform.system != "Windows":
-            ht = max(ht, 120)
-            maxw = 0
-            ct = 0
+        ht = max(ht, 120)
+        maxw = 0
+        ct = 0
 
-            for bar in self.GetChildren():
-                if isinstance(bar, RB.RibbonButtonBar):
-                    # Look for the largest button
-                    for button in bar._buttons:
-                        w, h = button.bitmap_large.GetSize()
-                        maxw = max(maxw, w + 10)
-                        ct += 1
-                    # Needs to have a minimum size of 25 though
-                    maxw = max(maxw, 25 + 10)
-            # print ("Ct=%d, widest=%d, wd=%.1f, wd2=%.1f, ht=%.1f, oldh=%.1f" % (ct, maxw, wd, 1.5*ct*maxw, ht, oldh))
-            wd = max(wd, int(1.5 * ct * maxw))
+        for bar in self.GetChildren():
+            if isinstance(bar, RB.RibbonButtonBar):
+                # Look for the largest button
+                for button in bar._buttons:
+                    w, h = button.bitmap_large.GetSize()
+                    maxw = max(maxw, w + 10)
+                    ct += 1
+                # Needs to have a minimum size of 25 though
+                maxw = max(maxw, 25 + 10)
+        # print ("Ct=%d, widest=%d, wd=%.1f, wd2=%.1f, ht=%.1f, oldh=%.1f" % (ct, maxw, wd, 1.5*ct*maxw, ht, oldh))
+        wd = max(wd, int(1.5 * ct * maxw))
         size = wx.Size(wd, ht)
         # print (size, size2)
         # size = size2
