@@ -301,7 +301,8 @@ class RibbonPanel(wx.Panel):
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
             self,
-            agwStyle=RB.RIBBON_BAR_DEFAULT_STYLE
+            agwStyle=RB.RIBBON_BAR_FLOW_HORIZONTAL
+            | RB.RIBBON_BAR_SHOW_PAGE_LABELS
             | RB.RIBBON_BAR_SHOW_PANEL_EXT_BUTTONS
             | RB.RIBBON_BAR_SHOW_PANEL_MINIMISE_BUTTONS,
         )
