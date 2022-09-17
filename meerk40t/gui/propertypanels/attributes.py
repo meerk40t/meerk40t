@@ -94,6 +94,7 @@ class ColorPanel(wx.Panel):
                     self.callback()
                 self.mark_color(bidx)
                 break
+        self.node.focus()
 
     def pane_hide(self):
         pass
