@@ -1019,3 +1019,12 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
     ]
     _set_ribbon_colour(provider, lowlights, INACTIVE_BG)
+    font = wx.Font(1, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+    provider.SetFont(RB.RIBBON_ART_BUTTON_BAR_LABEL_FONT, font)
+    provider.SetFont(RB.RIBBON_ART_PANEL_LABEL_FONT, font)
+
+    fontcolors = [
+        RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
+        RB.RIBBON_ART_PANEL_LABEL_COLOUR,
+    ]
+    _set_ribbon_colour(provider, fontcolors, BTNFACE)
