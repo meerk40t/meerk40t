@@ -736,9 +736,9 @@ class RibbonPanel(wx.Panel):
     def __set_ribbonbar(self):
         self.ribbonbar_caption_visible = False
 
-        if self.is_dark:
-            provider = self._ribbon.GetArtProvider()
-            _update_ribbon_artprovider_for_dark_mode(provider)
+        # if self.is_dark:
+        provider = self._ribbon.GetArtProvider()
+        _update_ribbon_artprovider_for_dark_mode(provider)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
