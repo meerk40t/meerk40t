@@ -241,7 +241,7 @@ def register_panel_ribbon(window, context):
         .Top()
         .RightDockable(False)
         .LeftDockable(False)
-        .MinSize(300, minh)
+        .MinSize(300, iconsize)
         .FloatingSize(640, minh)
         .Caption(_("Ribbon"))
         .CaptionVisible(not context.pane_lock)
