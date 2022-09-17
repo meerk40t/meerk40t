@@ -786,6 +786,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
             self, wx.ID_ANY, _("Override Rapid Movements")
         )
         sizer_rapid_override.Add(self.check_override_rapid, 0, wx.EXPAND, 0)
+        self.check_override_rapid.SetMaxSize(wx.Size(300, -1))
 
         sizer_speed_xy = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -839,6 +840,8 @@ class ConfigurationSetupPanel(ScrolledPanel):
                 "Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"
             )
         )
+        self.check_fix_speeds.SetMaxSize(wx.Size(300, -1))
+
         sizer_32.Add(self.check_fix_speeds, 1, wx.EXPAND, 0)
 
         self.text_fix_rated_speed = TextCtrl(
@@ -855,6 +858,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
                 "Scale any given speeds to this device by this amount. If set to 1.1, all speeds are 10% faster than rated."
             )
         )
+        self.check_scale_speed.SetMaxSize(wx.Size(300, -1))
         h_sizer_y9.Add(self.check_scale_speed, 1, wx.EXPAND, 0)
 
         self.text_speed_scale_amount = TextCtrl(
@@ -881,6 +885,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_max_speed_vector.SetToolTip(
             _("Limit the maximum vector speed to this value")
         )
+        self.check_max_speed_vector.SetMaxSize(wx.Size(300, -1))
         sizer_30.Add(self.check_max_speed_vector, 1, wx.EXPAND, 0)
 
         self.text_max_speed_vector = TextCtrl(
@@ -905,6 +910,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_max_speed_raster.SetToolTip(
             _("Limit the maximum raster speed to this value")
         )
+        self.check_max_speed_raster.SetMaxSize(wx.Size(300, -1))
         sizer_31.Add(self.check_max_speed_raster, 1, wx.EXPAND, 0)
 
         self.text_max_speed_raster = TextCtrl(
