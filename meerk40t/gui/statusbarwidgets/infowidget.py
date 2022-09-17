@@ -295,7 +295,7 @@ class BurnProgressPanel(SimpleInfoWidget):
         self._driver = spooler.driver
 
         self._queue_len = len(spooler.queue)
-        # Lest establish the start time, as the queue grows and shrinks
+        # Let's establish the start time, as the queue grows and shrinks
         # we only reset the start_time if the queue became empty.
         if self._queue_len == 0:
             self._start_time = 0
