@@ -226,6 +226,12 @@ class CameraPanel(wx.Panel, Job):
         else:
             tick = 1.0 / camera_fps
         self.interval = tick
+        # Set the scene fps if it's needed to support the camera.
+        scene_fps = self.camera.frames_per_second
+        if scene_fps < 30:
+            scene_fps = 30
+        if self.camera.fps != scene_fps:
+            self.display_camera.scene.set_fps(scene_fps)
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
