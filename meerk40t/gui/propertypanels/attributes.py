@@ -35,7 +35,7 @@ class ColorPanel(wx.Panel):
         color_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(color_sizer, 0, wx.EXPAND, 0)
         self.btn_color = []
-        self.lbl_color = []
+        self.underliner = []
         bgcolors = (
             0xFFFFFF,
             0x000000,
@@ -48,17 +48,25 @@ class ColorPanel(wx.Panel):
             0xFFFFFF,
         )
         for i in range(len(bgcolors)):
-            self.lbl_color.append(wx.StaticText(self, wx.ID_ANY, ""))
+            self.underliner.append(
+                wx.StaticBitmap(self, wx.ID_ANY)
+            )
+            self.underliner[i].SetBackgroundColour(wx.BLUE)
+            self.underliner[i].SetMaxSize(wx.Size(-1, 3))
             # self.lbl_color[i].SetMinSize((-1, 20))
             self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
             if i == 0:
                 self.btn_color[i].SetForegroundColour(wx.RED)
                 self.btn_color[i].SetLabel("X")
+            else:
+                self.btn_color[i].SetForegroundColour(wx.Colour(bgcolors[i]))
+                colinfo = wx.Colour(bgcolors[i]).GetAsString(wx.C2S_NAME)
+                self.btn_color[i].SetLabel(_(colinfo))
             self.btn_color[i].SetMinSize((10, 23))
             self.btn_color[i].SetBackgroundColour(wx.Colour(bgcolors[i]))
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(self.btn_color[i], 0, wx.EXPAND, 0)
-            sizer.Add(self.lbl_color[i], 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+            sizer.Add(self.underliner[i], 0, wx.EXPAND, 0)
             color_sizer.Add(sizer, 1, wx.EXPAND, 0)
             self.btn_color[i].Bind(wx.EVT_BUTTON, self.on_button)
         self.SetSizer(main_sizer)
@@ -140,11 +148,11 @@ class ColorPanel(wx.Panel):
                             idx = i
                             break
 
-        for i, label in enumerate(self.lbl_color):
+        for i, liner in enumerate(self.underliner):
             if i == idx:
-                label.SetLabel("x")
+                liner.Show(True)
             else:
-                label.SetLabel("")
+                liner.Show(False)
         self.Layout()
 
 
