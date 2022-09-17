@@ -984,7 +984,7 @@ class ShadowTree:
         defaultcolor = Color("black")
         if node.type == "elem image":
             image = self.renderer.make_thumbnail(
-                node.image, width=self.iconsize, height=self.iconsize
+                node.active_image, width=self.iconsize, height=self.iconsize
             )
         else:
             # Establish colors (and some images)
