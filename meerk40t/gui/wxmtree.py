@@ -202,6 +202,7 @@ class TreePanel(wx.Panel):
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
 
+    @signal_listener("activate;device")
     @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, target=None, *args):
         """
