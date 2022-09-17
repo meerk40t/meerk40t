@@ -1751,7 +1751,7 @@ class ImageLoader:
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    matrix.post_scale(DEFAULT_PPI / float(dpi[0]), DEFAULT_PPI / float(dpi[1]))
+                    # matrix.post_scale(DEFAULT_PPI / float(dpi[0]), DEFAULT_PPI / float(dpi[1]))
                     mydpi = round((float(dpi[0]) + float(dpi[1]))/2, 0)
         except (KeyError, IndexError):
             pass
