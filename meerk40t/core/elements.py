@@ -4648,6 +4648,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -4743,6 +4745,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -5356,6 +5360,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
@@ -5385,6 +5391,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
