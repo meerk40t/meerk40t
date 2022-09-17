@@ -725,9 +725,23 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_alternative_raster = wx.CheckBox(
             self, wx.ID_ANY, _("Alt Raster Style")
         )
+        self.check_alternative_raster.SetToolTip(
+            _(
+                "This feature uses an alternative raster method performing a raster turn around using NSE rather than G00x encoding."
+            )
+        )
+
         sizer_general.Add(self.check_alternative_raster, 0, wx.EXPAND, 0)
 
         self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Twitch Vectors"))
+        self.check_twitches.SetToolTip(
+            _(
+                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
+                "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
+                "This option allows you to turn on the previous mode if you experience problems."
+            )
+        )
         sizer_general.Add(self.check_twitches, 0, wx.EXPAND, 0)
 
         sizer_jog = wx.StaticBoxSizer(
