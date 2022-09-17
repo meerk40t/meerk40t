@@ -624,6 +624,8 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Lens Size"),
                 "section": "_00_General",
                 "priority": "20",
+                "signals": "bedsize",
+                # intentionally not bed_size
             },
             {
                 "attr": "offset_x",
@@ -674,6 +676,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Flip the X axis for the Balor device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
+                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -684,6 +687,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Flip the Y axis for the Balor device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
+                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -1929,12 +1933,11 @@ class BalorDevice(Service, ViewPort):
             """
             if lens_size is None:
                 raise SyntaxError
-            self.bedwidth = lens_size
-            self.bedheight = lens_size
-
-            channel(f"Set Bed Size : ({self.bedwidth}, {self.bedheight}).")
-
-            self.signal("bed_size")
+            self.lens_size = lens_size
+            self.width = lens_size
+            self.height = lens_size
+            self.signal("bed_size", (self.lens_size, self.lens_size))
+            channel(f"Set Bed Size : ({self.lens_size}, {self.lens_size}).")
 
         @self.console_option(
             "count",
@@ -2067,6 +2070,11 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def realize(self):
+        self.width = self.lens_size
+        self.height = self.lens_size
+        super().realize()
+
     @property
     def current(self):
         """
@@ -2076,6 +2084,13 @@ class BalorDevice(Service, ViewPort):
             self.driver.native_x,
             self.driver.native_y,
         )
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
 
     @property
     def calibration_file(self):

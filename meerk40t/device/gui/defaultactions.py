@@ -67,7 +67,6 @@ class DefaultActionPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("At job end")), wx.VERTICAL
         )
         sizer_middle = wx.BoxSizer(wx.VERTICAL)
-        self.button_add_prepend = wx.Button(self, wx.ID_ANY, _("<- Add"))
 
         self.option_list = wx.ListCtrl(
             self,
@@ -77,7 +76,8 @@ class DefaultActionPanel(wx.Panel):
 
         self.text_param_option = wx.TextCtrl(self, wx.ID_ANY)
 
-        self.button_add_append = wx.Button(self, wx.ID_ANY, _("<- Add"))
+        self.button_add_prepend = wx.Button(self, wx.ID_ANY, _("Add to Job Start"))
+        self.button_add_append = wx.Button(self, wx.ID_ANY, _("Add to Job End"))
 
         self.prepend_list = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
         self.text_param_prepend = wx.TextCtrl(self, wx.ID_ANY)
@@ -102,11 +102,13 @@ class DefaultActionPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Operation parameter:")), wx.HORIZONTAL
         )
         sizer_param.Add(self.text_param_option, 1, wx.EXPAND, 0)
+        sizer_button = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_button.Add(self.button_add_prepend, 1, wx.EXPAND, 0)
+        sizer_button.Add(self.button_add_append, 1, wx.EXPAND, 0)
 
-        sizer_middle.Add(self.button_add_prepend, 0, wx.EXPAND, 0)
         sizer_middle.Add(self.option_list, 1, wx.EXPAND, 0)
         sizer_middle.Add(sizer_param, 0, wx.EXPAND, 0)
-        sizer_middle.Add(self.button_add_append, 0, wx.EXPAND, 0)
+        sizer_middle.Add(sizer_button, 0, wx.EXPAND, 0)
 
         hsizer_prepend = wx.BoxSizer(wx.HORIZONTAL)
         hsizer_prepend.Add(self.text_param_prepend, 1, wx.EXPAND, 0)
@@ -512,6 +514,10 @@ class DefaultActionPanel(wx.Panel):
 
     def fill_prepend_list(self):
         self.prepend_list.DeleteAllItems()
+        self.text_param_prepend.Enable(False)
+        self.button_del_prepend.Enable(False)
+        self.button_up_prepend.Enable(False)
+        self.button_down_prepend.Enable(False)
 
         for idx, entry in enumerate(self.prepend_ops):
             if entry[1] is None:
@@ -535,6 +541,10 @@ class DefaultActionPanel(wx.Panel):
 
     def fill_append_list(self):
         self.append_list.DeleteAllItems()
+        self.text_param_append.Enable(False)
+        self.button_del_append.Enable(False)
+        self.button_up_append.Enable(False)
+        self.button_down_append.Enable(False)
         for idx, entry in enumerate(self.append_ops):
             if entry[1] is None:
                 entry[1] = ""

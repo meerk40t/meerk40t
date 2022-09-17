@@ -292,6 +292,18 @@ class RuidaDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return 0, 0
+
 
 class RuidaParser:
     def __init__(self):

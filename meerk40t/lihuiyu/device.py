@@ -719,9 +719,16 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known postion.
+        @return: the location in scene units for the current known position.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
 
     @property
     def output(self):
