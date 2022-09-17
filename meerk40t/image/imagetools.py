@@ -1740,6 +1740,7 @@ class ImageLoader:
             return False
         image.copy()  # Throws error for .eps without ghostscript
         matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
+        mydpi = DEFAULT_PPI
         try:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
@@ -1751,6 +1752,7 @@ class ImageLoader:
                     and dpi[1] != 0
                 ):
                     matrix.post_scale(DEFAULT_PPI / dpi[0], DEFAULT_PPI / dpi[1])
+                    mydpi = round((dpi[0] + dpi[1])/2, 0)
         except (KeyError, IndexError):
             pass
 
@@ -1759,7 +1761,7 @@ class ImageLoader:
         file_node = element_branch.add(type="file", label=os.path.basename(pathname))
         file_node.filepath = pathname
         n = file_node.add(
-            image=image, matrix=matrix, type="elem image"
+            image=image, matrix=matrix, type="elem image", dpi=mydpi,
         )
         file_node.focus()
         elements_service.classify([n])
