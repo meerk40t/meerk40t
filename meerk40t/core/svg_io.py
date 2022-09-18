@@ -308,14 +308,14 @@ class SVGWriter:
                     subelement.set("text-decoration", decor)
                 element = c
             elif c.type == "group":
-                # This is a structural group node of elements. Recurse call to write flat values.
+                # This is a structural group node of elements. Recurse call to write values.
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                 if hasattr(c, "label") and c.label is not None and c.label != "":
                     group_element.set("inkscape:label", c.label)
                 SVGWriter._write_elements(group_element, c)
                 continue
             elif c.type == "file":
-                # This is a structural group node of elements. Recurse call to write flat values.
+                # This is a structural group node of elements. Recurse call to write values.
                 SVGWriter._write_elements(xml_tree, c)
                 continue
             else:
@@ -666,11 +666,21 @@ class SVGProcessor:
                     operations = None
 
                 if element.image is not None:
+                    dpi = element.image.info["dpi"]
+                    _dpi = 500
+                    if (
+                            isinstance(dpi, tuple)
+                            and len(dpi) >= 2
+                            and dpi[0] != 0
+                            and dpi[1] != 0
+                    ):
+                        _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
                     node = context_node.add(
                         image=element.image,
                         matrix=element.transform,
                         type="elem image",
                         id=ident,
+                        dpi=_dpi,
                         label=my_label,
                         operations=operations,
                     )
