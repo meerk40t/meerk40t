@@ -1464,7 +1464,7 @@ class MeerK40t(MWindow):
         @context.console_command(
             "float",
             input_type="panes",
-            help=_("show the pane"),
+            help=_("Float the pane"),
             all_arguments_required=True,
         )
         def float_pane(command, _, channel, always=False, pane=None, **kwargs):
@@ -1477,6 +1477,25 @@ class MeerK40t(MWindow):
                 if pane.IsShown():
                     pane.Float()
                     pane.Dockable(not always)
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "dock",
+            input_type="panes",
+            help=_("Dock the pane"),
+            all_arguments_required=True,
+        )
+        def dock_pane(command, _, channel, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Dock()
                     pane.CaptionVisible(not self.context.pane_lock)
                     self._mgr.Update()
 
