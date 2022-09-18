@@ -1998,6 +1998,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom &Out\tCtrl--"),
                 "help": _("Make the scene smaller"),
                 "action": self.on_click_zoom_out,
+                "id": wx.ID_ZOOM_OUT,
                 "level": 1,
                 "segment": "",
             },
@@ -2005,6 +2006,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom &In\tCtrl-+"),
                 "help": _("Make the scene larger"),
                 "action": self.on_click_zoom_in,
+                "id": wx.ID_ZOOM_IN,
                 "level": 1,
                 "segment": "",
             },
@@ -2012,6 +2014,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom to &Selected\tCtrl-Shift-B"),
                 "help": _("Fill the scene area with the selected elements"),
                 "action": self.on_click_zoom_selected,
+                "id": wx.ID_ZOOM_100,
                 "level": 1,
                 "segment": "",
             },
@@ -2019,6 +2022,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom to &Bed\tCtrl-B"),
                 "help": _("View the whole laser bed"),
                 "action": self.on_click_zoom_bed,
+                "id": wx.ID_ZOOM_FIT,
                 "level": 1,
                 "segment": "",
             },
@@ -2319,6 +2323,11 @@ class MeerK40t(MWindow):
                 c_param = choice["parameter"]
             except KeyError:
                 c_param = None
+
+            try:
+                c_id = choice["id"]
+            except KeyError:
+                c_id = wx.ID_ANY
             # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
             if c_segment != current_segment:
                 current_segment = c_segment
@@ -2357,14 +2366,14 @@ class MeerK40t(MWindow):
             else:
                 if c_criteria is None:
                     menu_item = current_menu.Append(
-                        wx.ID_ANY,
+                        c_id,
                         c_label,
                         c_help,
                         wx.ITEM_NORMAL,
                     )
                 else:
                     menu_item = current_menu.Append(
-                        wx.ID_ANY,
+                        c_id,
                         c_label,
                         c_help,
                         wx.ITEM_CHECK,
