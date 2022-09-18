@@ -444,6 +444,16 @@ class SpoolerPanel(wx.Panel):
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 6, "-")
 
+            try:
+                loop = spool_obj.loops_executed
+                total = spool_obj.loops
+
+                if isinf(total):
+                    total = "∞"
+                self.list_job_spool.SetItem(list_id, 4, f"{loop}/{total}")
+            except AttributeError:
+                self.list_job_spool.SetItem(list_id, 4, "-")
+
             # Estimate Time
             try:
                 t = spool_obj.estimate_time()
