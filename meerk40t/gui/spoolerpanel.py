@@ -1,3 +1,5 @@
+import json
+import os
 import time
 from math import isinf
 
@@ -100,6 +102,7 @@ class SpoolerPanel(wx.Panel):
         self.elements_progress_total = 0
         self.command_index = 0
         self.history = []
+        self.reload_history()
         self.listener_list = None
         self.list_lookup = {}
         if index == -1:
@@ -175,6 +178,7 @@ class SpoolerPanel(wx.Panel):
     def on_btn_clear(self, event):
         self.history = []
         self.list_job_history.DeleteAllItems()
+        self.save_history()
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -332,7 +336,8 @@ class SpoolerPanel(wx.Panel):
             result = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
             return result
 
-        self.history.insert(0, newestinfo)
+        if newestinfo is not None:
+            self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         for idx, info in enumerate(self.history):
             list_id = self.list_job_history.InsertItem(
@@ -349,6 +354,27 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(list_id, 4, runtime)
             self.list_job_history.SetItem(list_id, 5, info[3])
 
+    def reload_history(self):
+        self.history = []
+        directory = os.path.dirname(self.context.elements.op_data._config_file)
+        filename = os.path.join(directory, "history.json")
+        if os.path.exists(filename):
+            try:
+                with open(filename, "r") as f:
+                    self.history = json.load(f)
+            except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+                pass
+        self.refresh_history(None)
+
+    def save_history(self):
+        directory = os.path.dirname(self.context.elements.op_data._config_file)
+        filename = os.path.join(directory, "history.json")
+        try:
+            with open(filename, "w") as f:
+                json.dump(self.history, f)
+        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+            pass
+
     @signal_listener("spooler;completed")
     def on_spooler_completed(self, origin, info, *args):
         # Info is just a tuple with the label and the runtime
@@ -358,6 +384,7 @@ class SpoolerPanel(wx.Panel):
         if info is None:
             return
         self.refresh_history(info)
+        self.save_history()
 
     @signal_listener("spooler;queue")
     @signal_listener("spooler;idle")
