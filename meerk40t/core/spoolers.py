@@ -735,12 +735,18 @@ class Spooler:
         with self._lock:
             if index is None:
                 try:
+                    loop = element.loops_executed
+                    total = element.loops
+                    if isinf(total):
+                        total = "∞"
+                    passinfo = f"{loop}/{total}"
                     element.stop()
                     info = (
                         element.label,
                         element.time_started,
                         element.runtime,
                         self.context.label,
+                        passinfo,
                     )
                 except AttributeError:
                     pass
