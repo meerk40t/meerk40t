@@ -318,20 +318,22 @@ class ImageNode(Node):
         except ValueError:
             return None
 
-    def _apply_mask(self, image, mask):
+    def _apply_mask(self, image, mask, reject_color=None):
         """
         Fill in original image with reject pixels.
 
         @param image: Image to be masked off.
         @param mask: Mask to apply to image
-        @return: image with mask pixels filled in with reject pixels (reject pixels colors depend on self.invert).
+        @param reject_color: Optional specified reject color override. Reject is usually "white" or black if inverted.
+        @return: image with mask pixels filled in with reject pixels
         """
         if not mask:
             return image
-
+        if reject_color is None:
+            reject_color = "black" if self.invert else "white"
         from PIL import Image
         background = image.copy()
-        reject = Image.new("L", image.size, "black" if self.invert else "white")
+        reject = Image.new("L", image.size, reject_color)
         background.paste(reject, mask=mask)
         return background
 
