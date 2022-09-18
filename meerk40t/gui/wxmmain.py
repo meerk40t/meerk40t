@@ -1459,6 +1459,26 @@ class MeerK40t(MWindow):
                         wx.CallAfter(self.on_pane_changed, None)
                     self._mgr.Update()
 
+        @context.console_option("always", "a", type=bool, action="store_true")
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "float",
+            input_type="panes",
+            help=_("show the pane"),
+            all_arguments_required=True,
+        )
+        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Float()
+                    pane.Dockable(not always)
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
 
         @context.console_command(
             "toggleui",
@@ -1487,27 +1507,6 @@ class MeerK40t(MWindow):
                             pane.Hide()
                 self._mgr.Update()
                 channel(_("Panes hidden."))
-
-        @context.console_option("always", "a", type=bool, action="store_true")
-        @context.console_argument("pane", help=_("pane to be shown"))
-        @context.console_command(
-            "float",
-            input_type="panes",
-            help=_("show the pane"),
-            all_arguments_required=True,
-        )
-        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
-            _pane = context.lookup("pane", pane)
-            if _pane is None:
-                channel(_("Pane not found."))
-                return
-            pane = self._mgr.GetPane(_pane.name)
-            if len(pane.name):
-                if pane.IsShown():
-                    pane.Float()
-                    pane.Dockable(not always)
-                    pane.CaptionVisible(not self.context.pane_lock)
-                    self._mgr.Update()
 
         @context.console_command(
             "reset",
