@@ -615,7 +615,9 @@ class ImageNode(Node):
 
         image = self._process_script(image)
 
-        image = self._apply_mask(image, reject_mask, reject_color="white")
+        background = Image.new("L", image.size, "white")
+        background.paste(image, mask=reject_mask)
+        image = background
 
         image = self._apply_dither(image)
         return actualized_matrix, image
