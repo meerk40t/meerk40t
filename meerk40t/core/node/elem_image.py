@@ -284,6 +284,71 @@ class ImageNode(Node):
             self.process_image_failed = True
         self.altered()
 
+    def _convert_image_to_grayscale(self, image):
+        # Precalculate RGB for L conversion.
+        r = self.red * 0.299
+        g = self.green * 0.587
+        b = self.blue * 0.114
+        v = self.lightness
+        c = r + g + b
+        try:
+            c /= v
+            r = r / c
+            g = g / c
+            b = b / c
+        except ZeroDivisionError:
+            pass
+
+        # Convert image to L type.
+        if image.mode != "L":
+            image = image.convert("RGB")
+            image = image.convert("L", matrix=(r, g, b, 1.0))
+        return image
+
+    def _get_transparent_mask(self, image):
+        """
+        Create Transparency Mask.
+        @param image:
+        @return:
+        """
+        if "transparency" in image.info:
+            image = image.convert("RGBA")
+        try:
+            return image.getchannel("A").point(lambda e: 255 - e)
+        except ValueError:
+            return None
+
+    def _apply_mask(self, image, mask):
+        """
+        Fill in original image with reject pixels.
+
+        @param image: Image to be masked off.
+        @param mask: Mask to apply to image
+        @return: image with mask pixels filled in with reject pixels (reject pixels colors depend on self.invert).
+        """
+        if not mask:
+            return image
+
+        from PIL import Image
+        background = image.copy()
+        reject = Image.new("L", image.size, "black" if self.invert else "white")
+        background.paste(reject, mask=mask)
+        return background
+
+    def _get_crop_box(self, image):
+        """
+        Get the bbox cutting off the reject edges. The reject edges depend on the image's invert setting.
+        @param image: Image to get crop box for.
+        @return:
+        """
+        try:
+            if self.invert:
+                return image.getbbox()
+            else:
+                return image.point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            return None
+
     def _process_image(self, step_x, step_y, crop=True):
         """
         This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
@@ -300,57 +365,21 @@ class ImageNode(Node):
 
         image = self.image
 
-        # Precalculate RGB for L conversion.
-        r = self.red * 0.299
-        g = self.green * 0.587
-        b = self.blue * 0.114
-        v = self.lightness
-        c = r + g + b
-        try:
-            c /= v
-            r = r / c
-            g = g / c
-            b = b / c
-        except ZeroDivisionError:
-            pass
+        transparent_mask = self._get_transparent_mask(image)
 
-        # Create Transparency Mask.
-        if "transparency" in image.info:
-            image = image.convert("RGBA")
-        try:
-            transparent_mask = image.getchannel("A").point(lambda e: 255 - e)
-        except ValueError:
-            transparent_mask = None
+        image = self._convert_image_to_grayscale(image)
 
-        transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
-
-        # Convert image to L type.
-        if image.mode != "L":
-            image = image.convert("RGB")
-            image = image.convert("L", matrix=(r, g, b, 1.0))
-
-        # Paste Transparency mask.
-        if transparent_mask:
-            # Fill in original transparent values with reject pixels
-            background = image.copy()
-            reject = Image.new("L", image.size, "black" if self.invert else "white")
-            background.paste(reject, mask=transparent_mask)
-            image = background
+        image = self._apply_mask(image, transparent_mask)
 
         # Calculate image box.
         box = None
         if crop:
-            try:
-                # Get the bbox cutting off the white edges.
-                if self.invert:
-                    box = image.getbbox()
-                else:
-                    box = image.point(lambda e: 255 - e).getbbox()
-            except ValueError:
-                pass
+            box = self._get_crop_box(image)
         if box is None:
             # If box is entirely white, bbox caused value error, or crop not set.
             box = (0, 0, image.width, image.height)
+
+        transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
         # Find the boundary points of the rotated box edges.
         boundary_points = [
@@ -416,14 +445,7 @@ class ImageNode(Node):
 
         # If crop applies, apply crop.
         if crop:
-            box = None
-            try:
-                if self.invert:
-                    box = image.getbbox()
-                else:
-                    box = image.point(lambda e: 255 - e).getbbox()
-            except ValueError:
-                pass
+            box = self._get_crop_box(image)
             if box is not None:
                 width = box[2] - box[0]
                 height = box[3] - box[1]
