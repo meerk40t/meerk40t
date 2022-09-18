@@ -351,6 +351,150 @@ class ImageNode(Node):
         except ValueError:
             return None
 
+    def _process_script(self, image):
+        """
+        Process actual raster script operations. Any required grayscale, inversion, and masking will already have
+        occurred. If there were reject pixels before they will be masked off after this process.
+
+        @param image: image to process with self.operation script.
+
+        @return: processed image
+        """
+        from PIL import ImageEnhance, ImageFilter, ImageOps
+        for op in self.operations:
+            name = op["name"]
+            if name == "crop":
+                try:
+                    if op["enable"] and op["bounds"] is not None:
+                        crop = op["bounds"]
+                        left = int(crop[0])
+                        upper = int(crop[1])
+                        right = int(crop[2])
+                        lower = int(crop[3])
+                        image = image.crop((left, upper, right, lower))
+                except KeyError:
+                    pass
+            elif name == "edge_enhance":
+                try:
+                    if op["enable"]:
+                        if image.mode == "P":
+                            image = image.convert("L")
+                        image = image.filter(filter=ImageFilter.EDGE_ENHANCE)
+                except KeyError:
+                    pass
+            elif name == "auto_contrast":
+                try:
+                    if op["enable"]:
+                        if image.mode not in ("RGB", "L"):
+                            # Auto-contrast raises NotImplementedError if P
+                            # Auto-contrast raises OSError if not RGB, L.
+                            image = image.convert("L")
+                        image = ImageOps.autocontrast(image, cutoff=op["cutoff"])
+                except KeyError:
+                    pass
+            elif name == "tone":
+                try:
+                    if op["enable"] and op["values"] is not None:
+                        if image.mode == "L":
+                            image = image.convert("P")
+                            tone_values = op["values"]
+                            if op["type"] == "spline":
+                                spline = ImageNode.spline(tone_values)
+                            else:
+                                tone_values = [q for q in tone_values if q is not None]
+                                spline = ImageNode.line(tone_values)
+                            if len(spline) < 256:
+                                spline.extend([255] * (256 - len(spline)))
+                            if len(spline) > 256:
+                                spline = spline[:256]
+                            image = image.point(spline)
+                            if image.mode != "L":
+                                image = image.convert("L")
+                except KeyError:
+                    pass
+            elif name == "contrast":
+                try:
+                    if op["enable"]:
+                        if op["contrast"] is not None and op["brightness"] is not None:
+                            contrast = ImageEnhance.Contrast(image)
+                            c = (op["contrast"] + 128.0) / 128.0
+                            image = contrast.enhance(c)
+
+                            brightness = ImageEnhance.Brightness(image)
+                            b = (op["brightness"] + 128.0) / 128.0
+                            image = brightness.enhance(b)
+                except KeyError:
+                    pass
+            elif name == "gamma":
+                try:
+                    if op["enable"] and op["factor"] is not None:
+                        if image.mode == "L":
+                            gamma_factor = float(op["factor"])
+
+                            def crimp(px):
+                                px = int(round(px))
+                                if px < 0:
+                                    return 0
+                                if px > 255:
+                                    return 255
+                                return px
+
+                            if gamma_factor == 0:
+                                gamma_lut = [0] * 256
+                            else:
+                                gamma_lut = [
+                                    crimp(pow(i / 255, (1.0 / gamma_factor)) * 255)
+                                    for i in range(256)
+                                ]
+                            image = image.point(gamma_lut)
+                            if image.mode != "L":
+                                image = image.convert("L")
+                except KeyError:
+                    pass
+            elif name == "unsharp_mask":
+                try:
+                    if (
+                        op["enable"]
+                        and op["percent"] is not None
+                        and op["radius"] is not None
+                        and op["threshold"] is not None
+                    ):
+                        unsharp = ImageFilter.UnsharpMask(
+                            radius=op["radius"],
+                            percent=op["percent"],
+                            threshold=op["threshold"],
+                        )
+                        image = image.filter(unsharp)
+                except (KeyError, ValueError):  # Value error if wrong type of image.
+                    pass
+            elif name == "halftone":
+                try:
+                    if op["enable"]:
+                        image = RasterScripts.halftone(
+                            image,
+                            sample=op["sample"],
+                            angle=op["angle"],
+                            oversample=op["oversample"],
+                            black=op["black"],
+                        )
+                except KeyError:
+                    pass
+        return image
+
+    def _apply_dither(self, image):
+        """
+        Dither image to 1 bit. Floyd-Steinberg is performed by Pillow, other dithers require custom code.
+
+        @param image: grayscale image to dither.
+        @return: 1 bit dithered image
+        """
+        from meerk40t.image.imagetools import dither
+        if self.dither and self.dither_type is not None:
+            if self.dither_type != "Floyd-Steinberg":
+                image = dither(image, self.dither_type)
+            image = image.convert("1")
+        return image
+
     def _process_image(self, step_x, step_y, crop=True):
         """
         This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
@@ -472,125 +616,7 @@ class ImageNode(Node):
         # Find rejection mask of white pixels.
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
 
-        # Process operations.
-        for op in self.operations:
-            name = op["name"]
-            if name == "crop":
-                try:
-                    if op["enable"] and op["bounds"] is not None:
-                        crop = op["bounds"]
-                        left = int(crop[0])
-                        upper = int(crop[1])
-                        right = int(crop[2])
-                        lower = int(crop[3])
-                        image = image.crop((left, upper, right, lower))
-                except KeyError:
-                    pass
-            elif name == "edge_enhance":
-                try:
-                    if op["enable"]:
-                        if image.mode == "P":
-                            image = image.convert("L")
-                        image = image.filter(filter=ImageFilter.EDGE_ENHANCE)
-                except KeyError:
-                    pass
-            elif name == "auto_contrast":
-                try:
-                    if op["enable"]:
-                        if image.mode not in ("RGB", "L"):
-                            # Auto-contrast raises NotImplementedError if P
-                            # Auto-contrast raises OSError if not RGB, L.
-                            image = image.convert("L")
-                        image = ImageOps.autocontrast(image, cutoff=op["cutoff"])
-                except KeyError:
-                    pass
-            elif name == "tone":
-                try:
-                    if op["enable"] and op["values"] is not None:
-                        if image.mode == "L":
-                            image = image.convert("P")
-                            tone_values = op["values"]
-                            if op["type"] == "spline":
-                                spline = ImageNode.spline(tone_values)
-                            else:
-                                tone_values = [q for q in tone_values if q is not None]
-                                spline = ImageNode.line(tone_values)
-                            if len(spline) < 256:
-                                spline.extend([255] * (256 - len(spline)))
-                            if len(spline) > 256:
-                                spline = spline[:256]
-                            image = image.point(spline)
-                            if image.mode != "L":
-                                image = image.convert("L")
-                except KeyError:
-                    pass
-            elif name == "contrast":
-                try:
-                    if op["enable"]:
-                        if op["contrast"] is not None and op["brightness"] is not None:
-                            contrast = ImageEnhance.Contrast(image)
-                            c = (op["contrast"] + 128.0) / 128.0
-                            image = contrast.enhance(c)
-
-                            brightness = ImageEnhance.Brightness(image)
-                            b = (op["brightness"] + 128.0) / 128.0
-                            image = brightness.enhance(b)
-                except KeyError:
-                    pass
-            elif name == "gamma":
-                try:
-                    if op["enable"] and op["factor"] is not None:
-                        if image.mode == "L":
-                            gamma_factor = float(op["factor"])
-
-                            def crimp(px):
-                                px = int(round(px))
-                                if px < 0:
-                                    return 0
-                                if px > 255:
-                                    return 255
-                                return px
-
-                            if gamma_factor == 0:
-                                gamma_lut = [0] * 256
-                            else:
-                                gamma_lut = [
-                                    crimp(pow(i / 255, (1.0 / gamma_factor)) * 255)
-                                    for i in range(256)
-                                ]
-                            image = image.point(gamma_lut)
-                            if image.mode != "L":
-                                image = image.convert("L")
-                except KeyError:
-                    pass
-            elif name == "unsharp_mask":
-                try:
-                    if (
-                        op["enable"]
-                        and op["percent"] is not None
-                        and op["radius"] is not None
-                        and op["threshold"] is not None
-                    ):
-                        unsharp = ImageFilter.UnsharpMask(
-                            radius=op["radius"],
-                            percent=op["percent"],
-                            threshold=op["threshold"],
-                        )
-                        image = image.filter(unsharp)
-                except (KeyError, ValueError):  # Value error if wrong type of image.
-                    pass
-            elif name == "halftone":
-                try:
-                    if op["enable"]:
-                        image = RasterScripts.halftone(
-                            image,
-                            sample=op["sample"],
-                            angle=op["angle"],
-                            oversample=op["oversample"],
-                            black=op["black"],
-                        )
-                except KeyError:
-                    pass
+        image = self._process_script(image)
 
         # Remask image removing pixels that were white before operations were processed.
         background = Image.new("L", image.size, "white")
