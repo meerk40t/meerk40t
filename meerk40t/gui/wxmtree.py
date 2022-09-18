@@ -1201,7 +1201,7 @@ class ShadowTree:
                             node.dangerous = danger
                     else:
                         print(
-                            f"Thats strange {checker}: {type(maxspeed_minpower).__name__}"
+                            f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
             label = node.create_label(formatter)
 
