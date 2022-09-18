@@ -269,6 +269,7 @@ class ImageNode(Node):
         """
 
         from PIL import Image
+
         if step_x is None:
             step_x = self.step_x
         if step_y is None:
@@ -321,7 +322,7 @@ class ImageNode(Node):
         except ValueError:
             transparent_mask = None
 
-        matrix = copy(self.matrix)  # Prevent Knock-on effect.
+        transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
         # Convert image to L type.
         if image.mode != "L":
@@ -353,10 +354,10 @@ class ImageNode(Node):
 
         # Find the boundary points of the rotated box edges.
         boundary_points = [
-            matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
-            matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
-            matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
-            matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
+            transform_matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
+            transform_matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
+            transform_matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
+            transform_matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
         ]
         xs = [e[0] for e in boundary_points]
         ys = [e[1] for e in boundary_points]
@@ -371,24 +372,28 @@ class ImageNode(Node):
         image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
         tx = bbox[0]
         ty = bbox[1]
-        matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale_x, step_scale_y)
+        transform_matrix.post_translate(-tx, -ty)
+        transform_matrix.post_scale(step_scale_x, step_scale_y)
         if step_y < 0:
             # If step_y is negative, translate
-            matrix.post_translate(0, image_height)
+            transform_matrix.post_translate(0, image_height)
         if step_x < 0:
             # If step_x is negative, translate
-            matrix.post_translate(image_width, 0)
+            transform_matrix.post_translate(image_width, 0)
+
         try:
-            matrix.inverse()
+            transform_matrix.inverse()
         except ZeroDivisionError:
-            # Rare crash if matrix is malformed and cannot invert.
-            matrix.reset()
-            matrix.post_translate(-tx, -ty)
-            matrix.post_scale(step_scale_x, step_scale_y)
+            # malformed matrix, scale=0 or something.
+            transform_matrix.reset()
 
         # Perform image transform if needed.
-        if self.matrix.a != step_x or self.matrix.b != 0.0 or self.matrix.c != 0.0 or self.matrix.d != step_y:
+        if (
+            self.matrix.a != step_x
+            or self.matrix.b != 0.0
+            or self.matrix.c != 0.0
+            or self.matrix.d != step_y
+        ):
             if image_height <= 0:
                 image_height = 1
             if image_width <= 0:
@@ -396,13 +401,18 @@ class ImageNode(Node):
             image = image.transform(
                 (image_width, image_height),
                 Image.AFFINE,
-                (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
+                (
+                    transform_matrix.a,
+                    transform_matrix.c,
+                    transform_matrix.e,
+                    transform_matrix.b,
+                    transform_matrix.d,
+                    transform_matrix.f,
+                ),
                 resample=Image.BICUBIC,
                 fillcolor="black" if self.invert else "white",
             )
-            matrix.reset()
-        else:
-            matrix = copy(self.matrix)
+        actualized_matrix = Matrix()
 
         # If crop applies, apply crop.
         if crop:
@@ -419,18 +429,17 @@ class ImageNode(Node):
                 height = box[3] - box[1]
                 if width != image_width or height != image_height:
                     image = image.crop(box)
-                    matrix.post_translate(box[0], box[1])
+                    actualized_matrix.post_translate(box[0], box[1])
 
         if step_y < 0:
             # if step_y is negative, translate.
-            matrix.post_translate(0, -image_height)
+            actualized_matrix.post_translate(0, -image_height)
         if step_x < 0:
             # if step_x is negative, translate.
-            matrix.post_translate(-image_width, 0)
+            actualized_matrix.post_translate(-image_width, 0)
 
-        matrix.post_scale(step_x, step_y)
-        matrix.post_translate(tx, ty)
-        actualized_matrix = matrix
+        actualized_matrix.post_scale(step_x, step_y)
+        actualized_matrix.post_translate(tx, ty)
 
         # Invert black to white if needed.
         if self.invert:
