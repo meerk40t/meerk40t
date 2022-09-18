@@ -1428,8 +1428,15 @@ class MeerK40t(MWindow):
             if _pane is None:
                 channel(_("Pane not found."))
                 return
-            _pane.Show()
-            self._mgr.Update()
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if not pane.IsShown():
+                    pane.Show()
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    if hasattr(pane.window, "pane_show"):
+                        pane.window.pane_show()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
 
         @context.console_command(
             "toggleui",
@@ -1471,8 +1478,14 @@ class MeerK40t(MWindow):
             if _pane is None:
                 channel(_("Pane not found."))
                 return
-            _pane.Hide()
-            self._mgr.Update()
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Hide()
+                    if hasattr(pane.window, "pane_hide"):
+                        pane.window.pane_hide()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
 
         @context.console_option("always", "a", type=bool, action="store_true")
         @context.console_argument("pane", help=_("pane to be shown"))
