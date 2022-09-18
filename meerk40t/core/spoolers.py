@@ -380,6 +380,14 @@ class LaserJob:
     def __str__(self):
         return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
 
+    @property
+    def status(self):
+        statusvalue = "Queued"
+        if self.is_running:
+            statusvalue = "Running"
+        return statusvalue
+
+
     def is_running(self):
         return not self._stopped
 
@@ -453,6 +461,8 @@ class LaserJob:
         Stop this current laser-job, cannot be called from the spooler thread.
         @return:
         """
+        if not self._stopped:
+            self.runtime += time.time() - self.time_started
         self._stopped = True
 
     def elapsed_time(self):
@@ -460,11 +470,10 @@ class LaserJob:
         How long is this job already running...
         """
         result = 0
-        if self.runtime != 0:
-            result = self.runtime
+        if self.is_running():
+            result = time.time() - self.time_started
         else:
-            if self.is_running():
-                result = time.time() - self.time_started
+            result = self.runtime
         return result
 
     def estimate_time(self):
@@ -698,7 +707,16 @@ class Spooler:
     def clear_queue(self):
         with self._lock:
             for e in self._queue:
+                needs_signal = e.is_running()
                 e.stop()
+                if needs_signal:
+                    info = (
+                        e.label,
+                        e.time_started,
+                        e.runtime,
+                        self.context.label,
+                    )
+                    self.context.signal("spooler;completed", info)
             self._queue.clear()
             self.context.signal("spooler;queue", len(self._queue))
 
