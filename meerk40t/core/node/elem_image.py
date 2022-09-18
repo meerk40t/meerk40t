@@ -143,7 +143,7 @@ class ImageNode(Node):
         self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
-        self.process_image()
+        self.process_image(self.step_x, self.step_y)
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -243,12 +243,16 @@ class ImageNode(Node):
         """
         while self._needs_update:
             self._needs_update = False
-            self.process_image()
+            # Calculate scene step_x, step_y values
+            step = UNITS_PER_INCH / self.dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y)
             # Unset cache.
             self.wx_bitmap_image = None
             self.cache = None
 
-    def process_image(self, crop=True):
+    def process_image(self, step_x=None, step_y=None, crop=True):
         """
         SVG matrices are defined as follows.
         [a c e]
@@ -265,9 +269,12 @@ class ImageNode(Node):
         """
 
         from PIL import Image
-
+        if step_x is None:
+            step_x = self.step_x
+        if step_y is None:
+            step_y = self.step_y
         try:
-            actualized_matrix, image = self._process_image(crop=crop)
+            actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
             inverted_main_matrix = Matrix(self.matrix).inverse()
             self.processed_matrix = actualized_matrix * inverted_main_matrix
             self.processed_image = image
@@ -276,7 +283,7 @@ class ImageNode(Node):
             self.process_image_failed = True
         self.altered()
 
-    def _process_image(self, crop=True):
+    def _process_image(self, step_x, step_y, crop=True):
         """
         This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
         a post-processed form with resulting post-process matrix. Which should be combined with the main matrix to get
@@ -289,15 +296,6 @@ class ImageNode(Node):
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
         from meerk40t.image.imagetools import dither
-
-        # Calculate device real step.
-        if self.step_x is None:
-            step = UNITS_PER_INCH / self.dpi
-            self.step_x = step
-            self.step_y = step
-        step_x, step_y = self.step_x, self.step_y
-        assert step_x != 0
-        assert step_y != 0
 
         image = self.image
 
