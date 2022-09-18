@@ -1369,7 +1369,7 @@ class MeerK40t(MWindow):
             _("Show/Hide the Keymap window where you can set keyboard accelerators"),
         )
         self.window_menu.rotary = self.window_menu.Append(
-            ID_MENU_ROTARY, _("Rotar&y"), _("Show/Hide the Rotary Setttings window")
+            ID_MENU_ROTARY, _("Rotar&y"), _("Show/Hide the Rotary Settings window")
         )
         self.window_menu.usb = self.window_menu.Append(
             ID_MENU_USB, _("&USB"), _("Show/Hide the USB log")
