@@ -551,7 +551,7 @@ class SVGProcessor:
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
-        my_label = None
+        _label = None
         ink_tag = "inkscape:label"
         try:
             inkscape = element.values.get("inkscape")
@@ -560,11 +560,17 @@ class SVGProcessor:
         except (AttributeError, KeyError):
             pass
         try:
-            my_label = element.values.get(ink_tag)
-            if my_label == "":
-                my_label = None
+            _label = element.values.get(ink_tag)
+            if _label == "":
+                _label = None
             # print ("Found label: %s" % my_label)
         except (AttributeError, KeyError):
+            # Label might simply be "label"
+            _label = element.values.get("label")
+        _lock = None
+        try:
+            _lock = bool(element.values.get("lock") == "True")
+        except (ValueError, TypeError):
             pass
         if isinstance(element, SVGText):
             if element.text is None:
@@ -595,7 +601,7 @@ class SVGProcessor:
                 overline="overline" in decor,
                 texttransform=element.values.get("text-transform"),
                 type="elem text",
-                label=my_label,
+                label=_label,
                 settings=element.values,
             )
             e_list.append(node)
@@ -603,7 +609,7 @@ class SVGProcessor:
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    path=element, type="elem path", id=ident, label=my_label
+                    path=element, type="elem path", id=ident, label=_label, lock=_lock
                 )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
@@ -616,7 +622,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem polyline", id=ident, label=my_label
+                    shape=element, type="elem polyline", id=ident, label=_label, lock=_lock
                 )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
@@ -629,7 +635,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=my_label
+                    shape=element, type="elem ellipse", id=ident, label=_label, lock=_lock
                 )
                 e_list.append(node)
         elif isinstance(element, Ellipse):
@@ -640,7 +646,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=my_label
+                    shape=element, type="elem ellipse", id=ident, label=_label, lock=_lock
                 )
                 e_list.append(node)
         elif isinstance(element, Rect):
@@ -651,7 +657,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem rect", id=ident, label=my_label
+                    shape=element, type="elem rect", id=ident, label=_label, lock=_lock
                 )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
@@ -663,7 +669,7 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem line", id=ident, label=my_label
+                    shape=element, type="elem line", id=ident, label=_label, lock=_lock
                 )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
@@ -685,14 +691,69 @@ class SVGProcessor:
                         and dpi[1] != 0
                     ):
                         _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
+                    _overscan = None
+                    try:
+                        _overscan = str(element.values.get("overscan"))
+                    except (ValueError, TypeError):
+                        pass
+                    _direction = None
+                    try:
+                        _direction = int(element.values.get("direction"))
+                    except (ValueError, TypeError):
+                        pass
+                    _invert = None
+                    try:
+                        _invert = bool(element.values.get("invert") == "True")
+                    except (ValueError, TypeError):
+                        pass
+                    _dither = None
+                    try:
+                        _dither = bool(element.values.get("dither") == "True")
+                    except (ValueError, TypeError):
+                        pass
+                    _dither_type = None
+                    try:
+                        _dither_type = element.values.get("dither_type")
+                    except (ValueError, TypeError):
+                        pass
+                    _red = None
+                    try:
+                        _red = float(element.values.get("red"))
+                    except (ValueError, TypeError):
+                        pass
+                    _green = None
+                    try:
+                        _green = float(element.values.get("green"))
+                    except (ValueError, TypeError):
+                        pass
+                    _blue = None
+                    try:
+                        _blue = float(element.values.get("blue"))
+                    except (ValueError, TypeError):
+                        pass
+                    _lightness = None
+                    try:
+                        _lightness = float(element.values.get("lightness"))
+                    except (ValueError, TypeError):
+                        pass
                     node = context_node.add(
                         image=element.image,
                         matrix=element.transform,
                         type="elem image",
                         id=ident,
+                        overscan=_overscan,
+                        direction=_direction,
                         dpi=_dpi,
-                        label=my_label,
+                        invert=_invert,
+                        dither=_dither,
+                        dither_type=_dither_type,
+                        red=_red,
+                        green=_green,
+                        blue=_blue,
+                        lightness=_lightness,
+                        label=_label,
                         operations=operations,
+                        lock=_lock,
                     )
                     e_list.append(node)
             except OSError:
@@ -706,7 +767,7 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list)
         elif isinstance(element, (Group, Use)):
-            context_node = context_node.add(type="group", id=ident, label=my_label)
+            context_node = context_node.add(type="group", id=ident, label=_label)
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
