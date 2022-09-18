@@ -482,7 +482,7 @@ class LaserRender:
                     cache = None
                 if cache is None:
                     # No valid cache. Generate.
-                    cut.c_width, cut.c_height = image.size
+                    cut._cache_width, cut._cache_height = image.size
                     try:
                         cut.cache = self.make_thumbnail(image, maximum=5000)
                     except (MemoryError, RuntimeError):
@@ -490,15 +490,19 @@ class LaserRender:
                     cut.cache_id = id(image)
                 if cut.cache is not None:
                     # Cache exists and is valid.
-                    gc.DrawBitmap(cut.cache, 0, 0, cut.c_width, cut.c_height)
+                    gc.DrawBitmap(cut.cache, 0, 0, cut._cache_width, cut._cache_height)
                     # gc.SetBrush(wx.RED_BRUSH)
-                    # gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
+                    # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                 else:
                     # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
-                    gc.DrawRectangle(0, 0, cut.c_width, cut.c_height)
+                    gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                     gc.DrawBitmap(
-                        icons8_image_50.GetBitmap(), 0, 0, cut.c_width, cut.c_height
+                        icons8_image_50.GetBitmap(),
+                        0,
+                        0,
+                        cut._cache_width,
+                        cut._cache_height,
                     )
                 gc.PopState()
             elif isinstance(cut, RawCut):
@@ -730,20 +734,20 @@ class LaserRender:
                         max_allowed = node.max_allowed
                     except AttributeError:
                         max_allowed = 2048
-                    node.c_width, node.c_height = image.size
+                    node._cache_width, node._cache_height = image.size
                     node.cache = self.make_thumbnail(
                         image,
                         maximum=max_allowed,
                         alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0,
                     )
-                gc.DrawBitmap(node.cache, 0, 0, node.c_width, node.c_height)
+                gc.DrawBitmap(node.cache, 0, 0, node._cache_width, node._cache_height)
             else:
-                node.c_width, node.c_height = image.size
+                node._cache_width, node._cache_height = image.size
                 try:
                     cache = self.make_thumbnail(
                         image, alphablack=draw_mode & DRAW_MODE_ALPHABLACK == 0
                     )
-                    gc.DrawBitmap(cache, 0, 0, node.c_width, node.c_height)
+                    gc.DrawBitmap(cache, 0, 0, node._cache_width, node._cache_height)
                 except MemoryError:
                     pass
         gc.PopState()
