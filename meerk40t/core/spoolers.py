@@ -1,4 +1,5 @@
 import time
+from math import isinf
 from threading import Lock
 
 from meerk40t.core.cutcode import CutCode
@@ -711,6 +712,11 @@ class Spooler:
         with self._lock:
             for e in self._queue:
                 needs_signal = e.is_running() and e.time_started is not None
+                loop = e.loops_executed
+                total = e.loops
+                if isinf(total):
+                    total = "∞"
+                passinfo = f"{loop}/{total}"
                 e.stop()
                 if needs_signal:
                     info = (
@@ -718,6 +724,7 @@ class Spooler:
                         e.time_started,
                         e.runtime,
                         self.context.label,
+                        passinfo,
                     )
                     self.context.signal("spooler;completed", info)
             self._queue.clear()
@@ -741,12 +748,18 @@ class Spooler:
             else:
                 element = self._queue[index]
                 try:
+                    loop = element.loops_executed
+                    total = element.loops
+                    if isinf(total):
+                        total = "∞"
+                    passinfo = f"{loop}/{total}"
                     element.stop()
                     info = (
                         element.label,
                         element.time_started,
                         element.runtime,
                         self.context.label,
+                        passinfo,
                     )
                 except AttributeError:
                     pass

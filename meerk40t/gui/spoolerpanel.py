@@ -150,6 +150,9 @@ class SpoolerPanel(wx.Panel):
             _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_history.AppendColumn(
+            _("Passes"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
             _("Device"), format=wx.LIST_FORMAT_LEFT, width=143
         )
 
@@ -204,7 +207,6 @@ class SpoolerPanel(wx.Panel):
         except IndexError:
             return
 
-
         menu = wx.Menu()
         if element.status.lower() == "running":
             action = _("Stop")
@@ -212,7 +214,7 @@ class SpoolerPanel(wx.Panel):
             action = _("Remove")
         item = menu.Append(
             wx.ID_ANY,
-            _("{action} {name}").format(action = action, name=str(element)[:25]),
+            _("{action} {name}").format(action=action, name=str(element)[:25]),
             "",
             wx.ITEM_NORMAL,
         )
@@ -362,7 +364,9 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(list_id, 3, starttime)
             runtime = timestr(info[2], False)
             self.list_job_history.SetItem(list_id, 4, runtime)
-            self.list_job_history.SetItem(list_id, 5, info[3])
+            # First passes then device
+            self.list_job_history.SetItem(list_id, 5, info[4])
+            self.list_job_history.SetItem(list_id, 6, info[3])
 
     def reload_history(self):
         self.history = []
@@ -374,6 +378,10 @@ class SpoolerPanel(wx.Panel):
                     self.history = json.load(f)
             except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
                 pass
+        if len(self.history)>0:
+            if len(self.history[0])<5:
+                # Incompatible
+                self.history = []
         self.refresh_history(None)
 
     def save_history(self):
