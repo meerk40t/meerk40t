@@ -99,6 +99,11 @@ class ImageNode(Node):
         self.process_image_failed = False
         self.view_invert = False
         self.text = None
+        if self.operations:
+            step = UNITS_PER_INCH / self.dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y)
 
     def __copy__(self):
         return ImageNode(

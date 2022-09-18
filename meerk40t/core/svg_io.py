@@ -1,3 +1,4 @@
+import ast
 import gzip
 import os
 from base64 import b64encode
@@ -242,6 +243,8 @@ class SVGWriter:
                     "transform",
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
+                if c.operations:
+                    subelement.set("operations", c.operations)
             elif c.type == "elem line":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
@@ -657,6 +660,11 @@ class SVGProcessor:
         elif isinstance(element, SVGImage):
             try:
                 element.load(os.path.dirname(self.pathname))
+                try:
+                    operations = ast.literal_eval(element.values["operations"])
+                except:
+                    operations = None
+
                 if element.image is not None:
                     node = context_node.add(
                         image=element.image,
@@ -664,6 +672,7 @@ class SVGProcessor:
                         type="elem image",
                         id=ident,
                         label=my_label,
+                        operations=operations,
                     )
                     e_list.append(node)
             except OSError:
