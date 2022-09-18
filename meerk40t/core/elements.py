@@ -61,11 +61,11 @@ def plugin(kernel, lifecycle=None):
         )
         kernel.register(
             "format/op raster",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {colcode} {opstop}",
+            "{danger}{defop}{enabled}{pass}{element_type} {direction}{speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op image",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type} {direction}{speed}mm/s @{power}",
         )
         kernel.register(
             "format/op dots",
@@ -75,24 +75,24 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util home", "{enabled}{element_type}")
-        kernel.register("format/util goto", "{enabled}{element_type}{adjust}")
-        kernel.register("format/util origin", "{enabled}{element_type}{adjust}")
+        kernel.register("format/util goto", "{enabled}{element_type} {adjust}")
+        kernel.register("format/util origin", "{enabled}{element_type} {adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
-        kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem ellipse", "{element_type} {desc} {stroke}")
         kernel.register(
-            "format/elem image", "{element_type} {id} {label} {width}x{height} @{dpi}"
+            "format/elem image", "{element_type} {desc} {width}x{height} @{dpi}"
         )
-        kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem polyline", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem rect", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem text", "{element_type} {id} {label}: {text}")
+        kernel.register("format/elem line", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem path", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem point", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem polyline", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem rect", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem text", "{element_type} {desc} {text}")
         kernel.register("format/reference", "*{reference}")
-        kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
-        kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
+        kernel.register("format/group", "{element_type} {desc}({children} elems)")
+        kernel.register("format/blob", "{element_type} {data_type}:{name} @{length}")
         kernel.register("format/file", "{element_type} {filename}")
         kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
@@ -4648,6 +4648,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -4743,6 +4745,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -5141,6 +5145,42 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
+        @self.console_argument("tx", type=self.length_x, help=_("New x value"))
+        @self.console_argument("ty", type=self.length_y, help=_("New y value"))
+        @self.console_command(
+            "position",
+            help=_("position <tx> <ty>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_position(
+            command, channel, _, tx, ty, absolute=False, data=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            if tx is None or ty is None:
+                channel(_("You need to provide a new position."))
+                return
+
+            dbounds = Node.union_bounds(data)
+            for node in data:
+                if (
+                    hasattr(node, "lock")
+                    and node.lock
+                    and not self.lock_allows_move
+                ):
+                    continue
+                nbounds = node.bounds
+                dx = (tx - dbounds[0])
+                dy = (ty - dbounds[1])
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                node.modified()
+            return "elements", data
+
         @self.console_command(
             "move_to_laser",
             help=_("translates the selected element to the laser head"),
@@ -5356,6 +5396,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
@@ -5385,6 +5427,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
