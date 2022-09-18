@@ -205,6 +205,15 @@ class ImageNode(Node):
         return False
 
     def update(self, context):
+        """
+        Update kicks off the image processing thread, which performs RasterWizard script operations on the image node.
+
+        The text should be displayed in the scene by the renderer. And any additional changes will be processed
+        until the new processed image is completed.
+
+        @param context:
+        @return:
+        """
         self._needs_update = True
         self.text = "Processing..."
         context.signal("refresh_scene", "Scene")
@@ -223,10 +232,15 @@ class ImageNode(Node):
             self.processed_image = None
             # self.processed_matrix = None
             self._update_thread = context.threaded(
-                self.process_image_thread, result=clear, daemon=True
+                self._process_image_thread, result=clear, daemon=True
             )
 
-    def process_image_thread(self):
+    def _process_image_thread(self):
+        """
+        The function deletes the caches and processes the image until it no longer needs updating.
+
+        @return:
+        """
         while self._needs_update:
             self._needs_update = False
             self.process_image()
@@ -260,6 +274,15 @@ class ImageNode(Node):
         self.altered()
 
     def _process_image(self, crop=True):
+        """
+        This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
+        a post-processed form with resulting post-process matrix. Which should be combined with the main matrix to get
+        the relevant combined matrix values.
+
+        @param crop: Should the unneeded edges be cropped as part of this process. The need for the edge is determined
+            by the color and the state of the self.invert attribute.
+        @return:
+        """
         from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
         from meerk40t.image.imagetools import dither
