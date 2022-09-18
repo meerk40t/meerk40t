@@ -498,8 +498,7 @@ class ImageNode(Node):
     def _process_image(self, step_x, step_y, crop=True):
         """
         This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
-        a post-processed form with resulting post-process matrix. Which should be combined with the main matrix to get
-        the relevant combined matrix values.
+        a post-processed form with resulting post-process matrix.
 
         @param crop: Should the unneeded edges be cropped as part of this process. The need for the edge is determined
             by the color and the state of the self.invert attribute.
