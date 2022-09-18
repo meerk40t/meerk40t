@@ -91,6 +91,7 @@ class ImageNode(Node):
         if operations is None:
             operations = list()
         self.operations = operations
+        self.view_invert = False
 
         self._needs_update = False
         self._update_thread = None
@@ -98,7 +99,6 @@ class ImageNode(Node):
         self._processed_image = None
         self._processed_matrix = None
         self._process_image_failed = False
-        self.view_invert = False
         self._processing_message = None
         if self.operations:
             step = UNITS_PER_INCH / self.dpi
