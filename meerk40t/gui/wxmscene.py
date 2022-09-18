@@ -60,7 +60,7 @@ def register_panel_scene(window, context):
     # control.AddPage(panel2, "scene2")
 
     control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
-    pane = aui.AuiPaneInfo().CenterPane().Name("scene")
+    pane = aui.AuiPaneInfo().CenterPane().MinSize(200, 200).Name("scene")
     pane.dock_proportion = 600
     pane.control = control
     pane.hide_menu = True
