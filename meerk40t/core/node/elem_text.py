@@ -73,6 +73,9 @@ class TextNode(Node):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
+
         super(TextNode, self).__init__(type="elem text", **settings)
         self._formatter = "{element_type} {id}: {text}"
         self.text = text

@@ -28,6 +28,8 @@ class NumpathNode(Node, Parameters):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super().__init__(*args, **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.path = path

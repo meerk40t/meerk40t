@@ -32,6 +32,8 @@ class LineNode(Node):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(LineNode, self).__init__(type="elem line", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape

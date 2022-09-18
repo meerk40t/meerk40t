@@ -31,6 +31,8 @@ class RectNode(Node):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(RectNode, self).__init__(type="elem rect", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.shape = shape

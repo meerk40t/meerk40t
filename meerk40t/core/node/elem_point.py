@@ -23,6 +23,8 @@ class PointNode(Node):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(PointNode, self).__init__(type="elem point", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.point = point

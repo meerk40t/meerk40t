@@ -28,6 +28,8 @@ class PathNode(Node):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(PathNode, self).__init__(type="elem path")
         self._formatter = "{element_type} {id} {stroke}"
         self.path = path

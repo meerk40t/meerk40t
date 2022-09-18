@@ -38,6 +38,8 @@ class ImageNode(Node):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(ImageNode, self).__init__(type="elem image", **settings)
         self.__formatter = "{element_type} {id} {width}x{height}"
         if matrix is None:

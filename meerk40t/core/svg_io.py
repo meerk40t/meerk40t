@@ -229,7 +229,9 @@ class SVGWriter:
                     c.image.save(stream, format="PNG", dpi=(c.dpi, c.dpi))
                 except OSError:
                     # Edge condition if the original image was CMYK and never touched it can't encode to PNG
-                    c.image.convert("RGBA").save(stream, format="PNG", dpi=(c.dpi, c.dpi))
+                    c.image.convert("RGBA").save(
+                        stream, format="PNG", dpi=(c.dpi, c.dpi)
+                    )
                 subelement.set(
                     "xlink:href",
                     f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
@@ -243,8 +245,6 @@ class SVGWriter:
                     "transform",
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
-                if c.operations:
-                    subelement.set("operations", c.operations)
             elif c.type == "elem line":
                 element = abs(Path(c.shape) * scale)
                 copy_attributes(c, element)
@@ -324,6 +324,16 @@ class SVGWriter:
                 SVGWriter._write_custom(subelement, c)
                 continue
 
+            ###############
+            # GENERIC SAVING STANDARD ELEMENT
+            ###############
+            for key, value in c.__dict__.items():
+                if (
+                    not key.startswith("_")
+                    and value is not None
+                    and isinstance(value, (str, int, float, complex, list, dict))
+                ):
+                    subelement.set(key, str(value))
             ###############
             # SAVE CAP/JOIN/FILL-RULE
             ###############
@@ -669,10 +679,10 @@ class SVGProcessor:
                     dpi = element.image.info["dpi"]
                     _dpi = 500
                     if (
-                            isinstance(dpi, tuple)
-                            and len(dpi) >= 2
-                            and dpi[0] != 0
-                            and dpi[1] != 0
+                        isinstance(dpi, tuple)
+                        and len(dpi) >= 2
+                        and dpi[0] != 0
+                        and dpi[1] != 0
                     ):
                         _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
                     node = context_node.add(
