@@ -67,6 +67,7 @@ class TextNode(Node):
         raw_bbox=None,
         path=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
@@ -130,7 +131,7 @@ class TextNode(Node):
         self.raw_bbox = raw_bbox
         self.path = path
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __copy__(self):
         return TextNode(
@@ -153,6 +154,8 @@ class TextNode(Node):
             leading=self.leading,
             raw_bbox=self.raw_bbox,
             path=self.path,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 

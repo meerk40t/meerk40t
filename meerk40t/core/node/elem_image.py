@@ -32,6 +32,7 @@ class ImageNode(Node):
         blue=None,
         lightness=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
@@ -80,7 +81,7 @@ class ImageNode(Node):
         self.step_x = None
         self.step_y = None
         self.label = label
-        self.lock = False
+        self.lock = lock
 
         self.invert = False if invert is None else invert
         self.red = 1.0 if red is None else red
@@ -123,6 +124,8 @@ class ImageNode(Node):
             green=self.green,
             blue=self.blue,
             lightness=self.lightness,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 

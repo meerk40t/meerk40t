@@ -24,6 +24,7 @@ class EllipseNode(Node):
         stroke_scale=None,
         fillrule=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
@@ -47,7 +48,7 @@ class EllipseNode(Node):
         )
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
@@ -61,6 +62,8 @@ class EllipseNode(Node):
             stroke_width=copy(self.stroke_width),
             stroke_scale=self._stroke_scaled,
             fillrule=self.fillrule,
+            label=self.label,
+            lock=self.lock,
             setting=self.settings,
         )
 

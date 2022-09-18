@@ -22,6 +22,7 @@ class NumpathNode(Node, Parameters):
         linejoin=Linejoin.JOIN_MITER,
         fillrule=Fillrule.FILLRULE_EVENODD,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
@@ -43,7 +44,7 @@ class NumpathNode(Node, Parameters):
         self.linejoin = linejoin
         self.fillrule = fillrule
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __copy__(self):
         return NumpathNode(
@@ -55,6 +56,8 @@ class NumpathNode(Node, Parameters):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 
