@@ -9,7 +9,7 @@ or comments against other people's Pull Requests or Issues.
 If your thoughts are not firmed up enough to make a formal submission,
 please come and find us for an informal discussion on:
 *   [IRC](http://kiwiirc.com/client/irc.libera.chat/meerk40t)
-*   [Discord](https://discord.gg/qvASRhFZGB)
+*   [Discord](https://discord.gg/vkDD3HdQq6)
 
 Please note we have a [Code of Conduct](CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
 

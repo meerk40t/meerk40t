@@ -61,11 +61,11 @@ def plugin(kernel, lifecycle=None):
         )
         kernel.register(
             "format/op raster",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {colcode} {opstop}",
+            "{danger}{defop}{enabled}{pass}{element_type} {direction}{speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op image",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type} {direction}{speed}mm/s @{power}",
         )
         kernel.register(
             "format/op dots",
@@ -75,24 +75,24 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util home", "{enabled}{element_type}")
-        kernel.register("format/util goto", "{enabled}{element_type}{adjust}")
-        kernel.register("format/util origin", "{enabled}{element_type}{adjust}")
+        kernel.register("format/util goto", "{enabled}{element_type} {adjust}")
+        kernel.register("format/util origin", "{enabled}{element_type} {adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
-        kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem ellipse", "{element_type} {desc} {stroke}")
         kernel.register(
-            "format/elem image", "{element_type} {label} {width}x{height} @{dpi}"
+            "format/elem image", "{element_type} {desc} {width}x{height} @{dpi}"
         )
-        kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem polyline", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem rect", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem text", "{element_type} {id} {label}: {text}")
+        kernel.register("format/elem line", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem path", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem point", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem polyline", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem rect", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem text", "{element_type} {desc} {text}")
         kernel.register("format/reference", "*{reference}")
-        kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
-        kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
+        kernel.register("format/group", "{element_type} {desc}({children} elems)")
+        kernel.register("format/blob", "{element_type} {data_type}:{name} @{length}")
         kernel.register("format/file", "{element_type} {filename}")
         kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
@@ -717,16 +717,16 @@ class Elemental(Service):
 
         return this_area, this_length
 
-    def align_elements(self, data, alignbounds, positionx, positiony, individually):
+    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
         """
 
         @param data: elements to align
         @param alignbounds: boundary tuple (left, top, right, bottom)
                             to which data needs to be aligned to
-        @param positionx: one of "min", "max", "center"
-        @param positiony: one of "min", "max", "center"
-        @param individually: True, align every element of data to the edge
-                                False, align the group in total
+        @param positionx:   one of "min", "max", "center"
+        @param positiony:   one of "min", "max", "center"
+        @param as_group:    0, align every element of data to the edge
+                            1, align the group in total
         @return:
         """
 
@@ -752,6 +752,14 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
+        if as_group != 0:
+            individually = 2 # all elements as a total
+        else:
+            individually = 0
+            for n in data:
+                if n.type == "group":
+                    individually = 1
+                    break
         # Selection boundaries
         boundary_points = []
         for node in data:
@@ -766,12 +774,13 @@ class Elemental(Service):
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
         # print(f"Alignbounds: {alignbounds[0]:.1f},{alignbounds[1]:.1f},{alignbounds[2]:.1f},{alignbounds[3]:.1f}")
 
-        if individually:
+        if individually in (0, 1):
             groupmatrix = ""
             groupdx = 0
             groupdy = 0
         else:
             groupdx, groupdy = calc_dx_dy()
+            # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
             groupmatrix = f"translate({groupdx}, {groupdy})"
 
         # Looping through all nodes with node.flat can provide
@@ -779,17 +788,26 @@ class Elemental(Service):
         # files and groups nested into each other.
         # To avoid this we create a temporary set which by definition
         # can only contain unique members
-        s = set()
-        for n in data:
-            s = s.union(n.flat(emphasized=True, types=elem_nodes))
+        if individually == 0:
+            s = set()
+            for n in data:
+                # print(f"Node to be resolved: {node.type}")
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+        else:
+            s = set()
+            for n in data:
+                # print(f"Node to be resolved: {node.type}")
+                s = s.union(list([n]))
         for q in s:
-            if individually:
+            # print(f"Node to be treated: {q.type}")
+            if individually in (0, 1):
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
                 right_edge = q.bounds[2]
                 bottom_edge = q.bounds[3]
                 dx, dy = calc_dx_dy()
                 matrix = f"translate({dx}, {dy})"
+                # print (f"{individually} - {dx:.2f}, {dy:.2f}")
             else:
                 dx = groupdx
                 dy = groupdy
@@ -797,13 +815,70 @@ class Elemental(Service):
             if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
                 continue
             else:
-                try:
-                    # q.matrix *= matrix
-                    q.matrix.post_translate(dx, dy)
-                    q.modified()
-                except AttributeError:
-                    continue
+                if q.type in ("group", "file"):
+                    for c in q.flat(emphasized=True, types=elem_nodes):
+                        if hasattr(c, "lock") and c.lock and not self.lock_allows_move:
+                            continue
+                        try:
+                            c.matrix.post_translate(dx, dy)
+                            c.modified()
+                        except AttributeError:
+                            pass
+                            # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
+                else:
+                    try:
+                        # q.matrix *= matrix
+                        q.matrix.post_translate(dx, dy)
+                        q.modified()
+                    except AttributeError:
+                        pass
+                        # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
+
+    def wordlist_translate(self, pattern, elemnode=None):
+        # This allows to add / set values for a given wordlist
+        node = None
+        if elemnode is not None:
+            # Does it belong to an op?
+            node = elemnode.parent
+            # That only seems to be true during burn...
+            if not node.type.startswith("op"):
+                node = None
+                # print (f"Does not have an op node as parent ({elemnode.text})")
+                for op in list(self.ops()):
+                    for refnode in op.children:
+                        if refnode.type == "reference" and refnode.node == elemnode:
+                            # print (f"Found an associated op for {elemnode.text}")
+                            node = op
+                            break
+                        if node is not None:
+                            break
+
+        for opatt in ("speed", "power", "dpi", "passes"):
+            skey = f"op_{opatt}"
+            found = False
+            value = None
+            if node is not None:
+                if hasattr(node, opatt):
+                    value = getattr(node, opatt, None)
+                    found = True
+                else:  # Try setting
+                    if hasattr(node, "settings"):
+                        try:
+                            value = node.settings[opatt]
+                            found = True
+                        except (AttributeError, KeyError, IndexError):
+                            pass
+            if found:
+                if value is None:
+                    value = ""
+                self.mywordlist.set_value(skey, value)
+            else:
+                value = f"<{opatt}>"
+                self.mywordlist.set_value(skey, value)
+
+        result = self.mywordlist.translate(pattern)
+        return result
 
     def _init_commands(self, kernel):
 
@@ -2630,13 +2705,12 @@ class Elemental(Service):
 
             The complete validation stuff...
             """
-            if elements is None or len(elements) == 0:
+            if elements is None:
                 return
             if align_x is None or align_y is None:
                 channel(_("You need to provide parameters for both x and y"))
                 return
             align_bounds = None
-            individually = asgroup == 0
             align_x = align_x.lower()
             align_y = align_y.lower()
 
@@ -2681,7 +2755,7 @@ class Elemental(Service):
                 alignbounds=align_bounds,
                 positionx=align_x,
                 positiony=align_y,
-                individually=individually,
+                as_group=asgroup
             )
 
         @self.console_command(
@@ -2892,8 +2966,10 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
             # Element conversion.
-            # We need to establish, if for a given node within a group all it's siblings are selected as well,
-            # if that's the case then use the parent instead
+            # We need to establish, if for a given node within a group
+            # all it's siblings are selected as well, if that's the case
+            # then use the parent instead - unless there are no other elements
+            # selected ie all selected belong to the same group...
             d = list()
             elem_branch = self.elem_branch
             for node in data:
@@ -2914,7 +2990,13 @@ class Elemental(Service):
                             snode = snode.parent
                 if snode is not None and snode not in d:
                     d.append(snode)
-            data = d
+            if len(d) == 1 and d[0].type == "group":
+                # This is just on single group - expand...
+                data = list(d[0].flat(emphasized=True, types=elem_nodes))
+                for n in data:
+                    n._emphasized_time = d[0]._emphasized_time
+            else:
+                data = d
             return "align", (
                 self._align_mode,
                 self._align_group,
@@ -4603,6 +4685,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -4698,6 +4782,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -5096,6 +5182,42 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
+        @self.console_argument("tx", type=self.length_x, help=_("New x value"))
+        @self.console_argument("ty", type=self.length_y, help=_("New y value"))
+        @self.console_command(
+            "position",
+            help=_("position <tx> <ty>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_position(
+            command, channel, _, tx, ty, absolute=False, data=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            if tx is None or ty is None:
+                channel(_("You need to provide a new position."))
+                return
+
+            dbounds = Node.union_bounds(data)
+            for node in data:
+                if (
+                    hasattr(node, "lock")
+                    and node.lock
+                    and not self.lock_allows_move
+                ):
+                    continue
+                nbounds = node.bounds
+                dx = (tx - dbounds[0])
+                dy = (ty - dbounds[1])
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                node.modified()
+            return "elements", data
+
         @self.console_command(
             "move_to_laser",
             help=_("translates the selected element to the laser head"),
@@ -5165,12 +5287,18 @@ class Elemental(Service):
                 sy = height / h
                 # Don't do anything if scale is 1
                 if sx == 1.0 and sy == 1.0:
-                    channel(_("resize: nothing to do - scale factors 1"))
-                    return
-
-                matrix = Matrix(
-                    f"translate({x_pos},{y_pos}) scale({sx},{sy}) translate({-x},{-y})"
-                )
+                    scale_str = ""
+                else:
+                    scale_str = f"scale({sx},{sy})"
+                if x_pos == x and y_pos == y:
+                    trans1_str = ""
+                    trans2_str = ""
+                else:
+                    trans1_str = f"translate({x_pos},{y_pos})"
+                    trans2_str = f"translate({-x},{-y})"
+                matrixstr = f"{trans1_str} {scale_str} {trans2_str}".strip()
+                # channel(f"{matrixstr}")
+                matrix = Matrix(matrixstr)
                 if data is None:
                     data = list(self.elems(emphasized=True))
                 for node in data:
@@ -5305,6 +5433,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
@@ -5334,6 +5464,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
@@ -6885,12 +7017,41 @@ class Elemental(Service):
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         @self.tree_separator_after()
+        @self.tree_conditional(lambda node: self.classify_autogenerate)
         @self.tree_operation(
-            _("Refresh classification"), node_type="branch ops", help=""
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
         )
-        def refresh_clasifications(node, **kwargs):
+        def refresh_clasifications_1(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and use only existing operations"),
+        )
+        def refresh_clasifications_2(node, **kwargs):
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh ... (incl autogeneration)"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
+        )
+        def refresh_clasifications_3(node, **kwargs):
+            previous = self.classify_autogenerate
+            self.classify_autogenerate = True
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.classify_autogenerate = previous
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         materials = [

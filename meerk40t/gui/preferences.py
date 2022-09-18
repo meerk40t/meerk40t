@@ -418,5 +418,13 @@ class Preferences(MWindow):
         pass
 
     @staticmethod
-    def submenu():
-        return ("Preferences", "General Preferences")
+    def menu_label():
+        return _("Pr&eferences...\tCtrl-,")
+
+    @staticmethod
+    def menu_tip():
+        return _("Show/Hide the Preferences window")
+
+    @staticmethod
+    def menu_id():
+        return wx.ID_PREFERENCES

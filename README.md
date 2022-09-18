@@ -51,7 +51,7 @@ If you need additional support, please research/ask on:
 *   [Youtube - David Olsen's channel](https://www.youtube.com/channel/UCsAUV23O2FyKxC0HN7nkAQQ)
 *   [Youtube - Milan Karakas' channel](https://www.youtube.com/channel/UCXhlGsmGJZ3m5GgTE8xuc_Q)
 *   [IRC - channel #MeerK40t on irc.libera.chat](irc://irc.libera.chat:6667)
-*   [Discord](https://discord.gg/qvASRhFZGB)
+*   [Discord](https://discord.gg/vkDD3HdQq6)
 
 ## Assisting the Project
 
@@ -63,7 +63,7 @@ Open source projects live and die with their support. There are a lots of ways t
 *   Design ( Good design instincts, smooth out the rough edges)
 *   Compile/Testers
 *   Beta testers
-*   Provide feedback, criticism is preferable to praise but both are welcome.
+*   Provide feedback, constructive criticism is preferable to praise but both are welcome.
 *   Make helpful support content
 *   Make guides ("How to setup cameras?", etc)
 *   Bounce ideas around

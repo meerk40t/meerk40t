@@ -95,6 +95,7 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
+                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
@@ -104,6 +105,7 @@ class GRBLDevice(Service, ViewPort):
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
+                "signals": "bedsize",
             },
             {
                 "attr": "scale_x",
@@ -137,6 +139,7 @@ class GRBLDevice(Service, ViewPort):
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "Flip Axis",
+                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -148,6 +151,7 @@ class GRBLDevice(Service, ViewPort):
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "Flip Axis",
+                "signals": "bedsize",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -335,12 +339,19 @@ class GRBLDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in nm for the current known x value.
+        @return: the location in scene units for the current known x value.
         """
         return self.device_to_scene_position(
             self.driver.native_x,
             self.driver.native_y,
         )
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
 
     @property
     def current_x(self):
@@ -355,6 +366,11 @@ class GRBLDevice(Service, ViewPort):
         @return: the location in nm for the current known y value.
         """
         return self.current[1]
+
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
 
 
 class GRBLDriver(Parameters):

@@ -314,8 +314,8 @@ class TextPropertyPanel(ScrolledPanel):
                 self.text_text.SetValue(self.node.text)
                 display_string = self.node.text
                 if self.check_variable.GetValue():
-                    display_string = self.context.elements.mywordlist.translate(
-                        display_string
+                    display_string = self.context.elements.wordlist_translate(
+                        display_string, self.node
                     )
                 self.label_fonttest.SetLabelText(display_string)
                 try:
@@ -514,7 +514,9 @@ class TextPropertyPanel(ScrolledPanel):
         self.rb_align.SetSelection(new_anchor)
         display_string = self.node.text
         if self.check_variable.GetValue():
-            display_string = self.context.elements.mywordlist.translate(display_string)
+            display_string = self.context.elements.wordlist_translate(
+                display_string, self.node
+            )
         self.label_fonttest.SetLabelText(display_string)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
         self.label_fonttest.Refresh()

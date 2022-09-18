@@ -1,4 +1,5 @@
 import time
+from math import isinf
 from threading import Lock
 
 from meerk40t.core.cutcode import CutCode
@@ -380,6 +381,17 @@ class LaserJob:
     def __str__(self):
         return f"{self.__class__.__name__}({self.label}: {self.loops_executed}/{self.loops})"
 
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            statusvalue = "Running"
+        elif not self.is_running:
+            statusvalue = "Disabled"
+        else:
+            statusvalue = "Queued"
+        return statusvalue
+
+
     def is_running(self):
         return not self._stopped
 
@@ -453,6 +465,8 @@ class LaserJob:
         Stop this current laser-job, cannot be called from the spooler thread.
         @return:
         """
+        if not self._stopped:
+            self.runtime += time.time() - self.time_started
         self._stopped = True
 
     def elapsed_time(self):
@@ -460,11 +474,10 @@ class LaserJob:
         How long is this job already running...
         """
         result = 0
-        if self.runtime != 0:
-            result = self.runtime
+        if self.is_running():
+            result = time.time() - self.time_started
         else:
-            if self.is_running():
-                result = time.time() - self.time_started
+            result = self.runtime
         return result
 
     def estimate_time(self):
@@ -698,7 +711,22 @@ class Spooler:
     def clear_queue(self):
         with self._lock:
             for e in self._queue:
+                needs_signal = e.is_running() and e.time_started is not None
+                loop = e.loops_executed
+                total = e.loops
+                if isinf(total):
+                    total = "∞"
+                passinfo = f"{loop}/{total}"
                 e.stop()
+                if needs_signal:
+                    info = (
+                        e.label,
+                        e.time_started,
+                        e.runtime,
+                        self.context.label,
+                        passinfo,
+                    )
+                    self.context.signal("spooler;completed", info)
             self._queue.clear()
             self.context.signal("spooler;queue", len(self._queue))
 
@@ -707,12 +735,18 @@ class Spooler:
         with self._lock:
             if index is None:
                 try:
+                    loop = element.loops_executed
+                    total = element.loops
+                    if isinf(total):
+                        total = "∞"
+                    passinfo = f"{loop}/{total}"
                     element.stop()
                     info = (
                         element.label,
                         element.time_started,
                         element.runtime,
                         self.context.label,
+                        passinfo,
                     )
                 except AttributeError:
                     pass
@@ -720,12 +754,18 @@ class Spooler:
             else:
                 element = self._queue[index]
                 try:
+                    loop = element.loops_executed
+                    total = element.loops
+                    if isinf(total):
+                        total = "∞"
+                    passinfo = f"{loop}/{total}"
                     element.stop()
                     info = (
                         element.label,
                         element.time_started,
                         element.runtime,
                         self.context.label,
+                        passinfo,
                     )
                 except AttributeError:
                     pass
