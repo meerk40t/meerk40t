@@ -1883,11 +1883,20 @@ class MeerK40t(MWindow):
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            if hasattr(window, "required_id"):
-                wxid = window.required_id()
-            else:
-                wxid = wx.ID_ANY
-            menuitem = menu_context.Append(wxid, _(caption), "", wx.ITEM_NORMAL)
+            caption = _(caption)
+            menu_label = caption
+            if hasattr(window, "menu_label"):
+                menu_label = window.menu_label()
+
+            menu_id = wx.ID_ANY
+            if hasattr(window, "menu_id"):
+                menu_id = window.menu_id()
+
+            menu_tip = ""
+            if hasattr(window, "menu_tip"):
+                menu_tip = window.menu_tip()
+
+            menuitem = menu_context.Append(menu_id, menu_label, menu_tip, wx.ITEM_NORMAL)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
