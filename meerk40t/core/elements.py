@@ -717,16 +717,16 @@ class Elemental(Service):
 
         return this_area, this_length
 
-    def align_elements(self, data, alignbounds, positionx, positiony, individually):
+    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
         """
 
         @param data: elements to align
         @param alignbounds: boundary tuple (left, top, right, bottom)
                             to which data needs to be aligned to
-        @param positionx: one of "min", "max", "center"
-        @param positiony: one of "min", "max", "center"
-        @param individually: True, align every element of data to the edge
-                                False, align the group in total
+        @param positionx:   one of "min", "max", "center"
+        @param positiony:   one of "min", "max", "center"
+        @param as_group:    0, align every element of data to the edge
+                            1, align the group in total
         @return:
         """
 
@@ -752,6 +752,14 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
+        if as_group != 0:
+            individually = 2 # all elements as a total
+        else:
+            individually = 0
+            for n in data:
+                if n.type == "group":
+                    individually = 1
+                    break
         # Selection boundaries
         boundary_points = []
         for node in data:
@@ -766,12 +774,13 @@ class Elemental(Service):
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
         # print(f"Alignbounds: {alignbounds[0]:.1f},{alignbounds[1]:.1f},{alignbounds[2]:.1f},{alignbounds[3]:.1f}")
 
-        if individually:
+        if individually in (0, 1):
             groupmatrix = ""
             groupdx = 0
             groupdy = 0
         else:
             groupdx, groupdy = calc_dx_dy()
+            # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
             groupmatrix = f"translate({groupdx}, {groupdy})"
 
         # Looping through all nodes with node.flat can provide
@@ -779,17 +788,26 @@ class Elemental(Service):
         # files and groups nested into each other.
         # To avoid this we create a temporary set which by definition
         # can only contain unique members
-        s = set()
-        for n in data:
-            s = s.union(n.flat(emphasized=True, types=elem_nodes))
+        if individually == 0:
+            s = set()
+            for n in data:
+                # print(f"Node to be resolved: {node.type}")
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+        else:
+            s = set()
+            for n in data:
+                # print(f"Node to be resolved: {node.type}")
+                s = s.union(list([n]))
         for q in s:
-            if individually:
+            # print(f"Node to be treated: {q.type}")
+            if individually in (0, 1):
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
                 right_edge = q.bounds[2]
                 bottom_edge = q.bounds[3]
                 dx, dy = calc_dx_dy()
                 matrix = f"translate({dx}, {dy})"
+                # print (f"{individually} - {dx:.2f}, {dy:.2f}")
             else:
                 dx = groupdx
                 dy = groupdy
@@ -797,12 +815,24 @@ class Elemental(Service):
             if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
                 continue
             else:
-                try:
-                    # q.matrix *= matrix
-                    q.matrix.post_translate(dx, dy)
-                    q.modified()
-                except AttributeError:
-                    continue
+                if q.type in ("group", "file"):
+                    for c in q.flat(emphasized=True, types=elem_nodes):
+                        if hasattr(c, "lock") and c.lock and not self.lock_allows_move:
+                            continue
+                        try:
+                            c.matrix.post_translate(dx, dy)
+                            c.modified()
+                        except AttributeError:
+                            pass
+                            # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
+                else:
+                    try:
+                        # q.matrix *= matrix
+                        q.matrix.post_translate(dx, dy)
+                        q.modified()
+                    except AttributeError:
+                        pass
+                        # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
 
     def wordlist_translate(self, pattern, elemnode=None):
@@ -2675,13 +2705,12 @@ class Elemental(Service):
 
             The complete validation stuff...
             """
-            if elements is None or len(elements) == 0:
+            if elements is None:
                 return
             if align_x is None or align_y is None:
                 channel(_("You need to provide parameters for both x and y"))
                 return
             align_bounds = None
-            individually = asgroup == 0
             align_x = align_x.lower()
             align_y = align_y.lower()
 
@@ -2726,7 +2755,7 @@ class Elemental(Service):
                 alignbounds=align_bounds,
                 positionx=align_x,
                 positiony=align_y,
-                individually=individually,
+                as_group=asgroup
             )
 
         @self.console_command(
@@ -2937,8 +2966,10 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
             # Element conversion.
-            # We need to establish, if for a given node within a group all it's siblings are selected as well,
-            # if that's the case then use the parent instead
+            # We need to establish, if for a given node within a group
+            # all it's siblings are selected as well, if that's the case
+            # then use the parent instead - unless there are no other elements
+            # selected ie all selected belong to the same group...
             d = list()
             elem_branch = self.elem_branch
             for node in data:
@@ -2959,7 +2990,13 @@ class Elemental(Service):
                             snode = snode.parent
                 if snode is not None and snode not in d:
                     d.append(snode)
-            data = d
+            if len(d) == 1 and d[0].type == "group":
+                # This is just on single group - expand...
+                data = list(d[0].flat(emphasized=True, types=elem_nodes))
+                for n in data:
+                    n._emphasized_time = d[0]._emphasized_time
+            else:
+                data = d
             return "align", (
                 self._align_mode,
                 self._align_group,
