@@ -310,7 +310,13 @@ class RuidaParser:
         pass
 
     def parse(self, data, elements):
-        pass
+        emulator = elements.open_as("emulator/ruida", "ruidaparser")
+        emulator.spooler = elements.device.spooler
+        emulator.device = elements.device
+        emulator.elements = elements
+        emulator.design = True
+        emulator.write(BytesIO(emulator.unswizzle(data)))
+        elements.close("ruidaparser")
 
 
 class RuidaEmulator(Module, Parameters):
