@@ -5145,6 +5145,42 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
+        @self.console_argument("tx", type=self.length_x, help=_("New x value"))
+        @self.console_argument("ty", type=self.length_y, help=_("New y value"))
+        @self.console_command(
+            "position",
+            help=_("position <tx> <ty>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_position(
+            command, channel, _, tx, ty, absolute=False, data=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            if tx is None or ty is None:
+                channel(_("You need to provide a new position."))
+                return
+
+            dbounds = Node.union_bounds(data)
+            for node in data:
+                if (
+                    hasattr(node, "lock")
+                    and node.lock
+                    and not self.lock_allows_move
+                ):
+                    continue
+                nbounds = node.bounds
+                dx = (tx - dbounds[0])
+                dy = (ty - dbounds[1])
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                node.modified()
+            return "elements", data
+
         @self.console_command(
             "move_to_laser",
             help=_("translates the selected element to the laser head"),
