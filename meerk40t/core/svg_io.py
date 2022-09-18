@@ -662,7 +662,7 @@ class SVGProcessor:
                 element.load(os.path.dirname(self.pathname))
                 try:
                     operations = ast.literal_eval(element.values["operations"])
-                except:
+                except (ValueError, SyntaxError):
                     operations = None
 
                 if element.image is not None:
