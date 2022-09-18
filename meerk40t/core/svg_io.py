@@ -685,14 +685,75 @@ class SVGProcessor:
                         and dpi[1] != 0
                     ):
                         _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
+                    _overscan = None
+                    try:
+                        _overscan = str(element.values.get("overscan"))
+                    except ValueError:
+                        pass
+                    _direction = None
+                    try:
+                        _direction = int(element.values.get("direction"))
+                    except ValueError:
+                        pass
+                    _invert = None
+                    try:
+                        _invert = bool(element.values.get("invert"))
+                    except ValueError:
+                        pass
+                    _dither = None
+                    try:
+                        _dither = bool(element.values.get("dither"))
+                    except ValueError:
+                        pass
+                    _dither_type = None
+                    try:
+                        _dither_type = element.values.get("dither_type")
+                    except ValueError:
+                        pass
+                    _red = None
+                    try:
+                        _red = float(element.values.get("red"))
+                    except ValueError:
+                        pass
+                    _green = None
+                    try:
+                        _green = float(element.values.get("green"))
+                    except ValueError:
+                        pass
+                    _blue = None
+                    try:
+                        _blue = float(element.values.get("blue"))
+                    except ValueError:
+                        pass
+                    _lightness = None
+                    try:
+                        _lightness = float(element.values.get("lightness"))
+                    except ValueError:
+                        pass
+                    _lock = None
+                    try:
+                        _lock = bool(element.values.get("lock") == "True")
+                    except ValueError:
+                        pass
+
                     node = context_node.add(
                         image=element.image,
                         matrix=element.transform,
                         type="elem image",
                         id=ident,
+                        overscan=_overscan,
+                        direction=_direction,
                         dpi=_dpi,
+                        invert=_invert,
+                        dither=_dither,
+                        dither_type=_dither_type,
+                        red=_red,
+                        green=_green,
+                        blue=_blue,
+                        lightness=_lightness,
                         label=my_label,
                         operations=operations,
+                        lock=_lock,
                     )
                     e_list.append(node)
             except OSError:
