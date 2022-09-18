@@ -6971,7 +6971,7 @@ class Elemental(Service):
             elements = list(cutcode.as_elements())
             n = None
             for element in elements:
-                n = self.elem_branch.add(element, type="elem path")
+                n = self.elem_branch.add(type="elem path", path=element)
             node.remove_node()
             if n is not None:
                 n.focus()
