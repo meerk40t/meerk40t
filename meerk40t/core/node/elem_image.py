@@ -592,7 +592,7 @@ class ImageNode(Node):
             if box is not None:
                 width = box[2] - box[0]
                 height = box[3] - box[1]
-                if width != image_width or height != image_height:
+                if width != image.width or height != image.height:
                     image = image.crop(box)
                     actualized_matrix.post_translate(box[0], box[1])
 
