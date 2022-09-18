@@ -712,7 +712,7 @@ class LaserRender:
         gc.PushState()
         if matrix is not None and not matrix.is_identity():
             gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
-        if node.process_image_failed:
+        if node._process_image_failed:
             image_width, image_height = image.size
             gc.SetBrush(wx.RED_BRUSH)
             gc.SetPen(wx.RED_PEN)
@@ -747,7 +747,7 @@ class LaserRender:
                 except MemoryError:
                     pass
         gc.PopState()
-        txt = node.text
+        txt = node._processing_message
         if txt is not None:
             gc.PushState()
             gc.SetTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(None)))

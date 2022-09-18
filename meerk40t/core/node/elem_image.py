@@ -71,6 +71,7 @@ class ImageNode(Node):
             self.image = image
 
         self.settings = settings
+
         self.overscan = overscan
         self.direction = direction
         self.dpi = dpi
@@ -94,11 +95,11 @@ class ImageNode(Node):
         self._needs_update = False
         self._update_thread = None
         self._update_lock = threading.Lock()
-        self.processed_image = None
-        self.processed_matrix = None
-        self.process_image_failed = False
+        self._processed_image = None
+        self._processed_matrix = None
+        self._process_image_failed = False
         self.view_invert = False
-        self.text = None
+        self._processing_message = None
         if self.operations:
             step = UNITS_PER_INCH / self.dpi
             step_x = step
@@ -128,16 +129,16 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
-        if self.processed_image is not None:
-            return self.processed_image
+        if self._processed_image is not None:
+            return self._processed_image
         else:
             return self.image
 
     @property
     def active_matrix(self):
-        if self.processed_matrix is None:
+        if self._processed_matrix is None:
             return self.matrix
-        return self.processed_matrix * self.matrix
+        return self._processed_matrix * self.matrix
 
     def preprocess(self, context, matrix, commands):
         """
@@ -220,21 +221,21 @@ class ImageNode(Node):
         @return:
         """
         self._needs_update = True
-        self.text = "Processing..."
+        self._processing_message = "Processing..."
         context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
             def clear(result):
-                if self.process_image_failed:
-                    self.text = "Process image could not exist in memory."
+                if self._process_image_failed:
+                    self._processing_message = "Process image could not exist in memory."
                 else:
-                    self.text = None
+                    self._processing_message = None
                 self._needs_update = False
                 self._update_thread = None
                 context.signal("refresh_scene", "Scene")
                 context.signal("image updated", self)
 
-            self.processed_image = None
+            self._processed_image = None
             # self.processed_matrix = None
             self._update_thread = context.threaded(
                 self._process_image_thread, result=clear, daemon=True
@@ -282,11 +283,11 @@ class ImageNode(Node):
         try:
             actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
             inverted_main_matrix = Matrix(self.matrix).inverse()
-            self.processed_matrix = actualized_matrix * inverted_main_matrix
-            self.processed_image = image
-            self.process_image_failed = False
+            self._processed_matrix = actualized_matrix * inverted_main_matrix
+            self._processed_image = image
+            self._process_image_failed = False
         except (MemoryError, Image.DecompressionBombError):
-            self.process_image_failed = True
+            self._process_image_failed = True
         self.altered()
 
     def _convert_image_to_grayscale(self, image):
