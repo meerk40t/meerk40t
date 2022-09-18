@@ -418,5 +418,9 @@ class Preferences(MWindow):
         pass
 
     @staticmethod
+    def required_id():
+        return wx.ID_PREFERENCES
+
+    @staticmethod
     def submenu():
         return ("Preferences", "General Preferences")

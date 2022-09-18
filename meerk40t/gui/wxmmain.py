@@ -1495,6 +1495,7 @@ class MeerK40t(MWindow):
             pane = self._mgr.GetPane(_pane.name)
             if len(pane.name):
                 if pane.IsShown():
+                    pane.Dockable(True)
                     pane.Dock()
                     pane.CaptionVisible(not self.context.pane_lock)
                     self._mgr.Update()
@@ -1882,7 +1883,11 @@ class MeerK40t(MWindow):
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            menuitem = menu_context.Append(wx.ID_ANY, _(caption), "", wx.ITEM_NORMAL)
+            if hasattr(window, "required_id"):
+                wxid = window.required_id()
+            else:
+                wxid = wx.ID_ANY
+            menuitem = menu_context.Append(wxid, _(caption), "", wx.ITEM_NORMAL)
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
