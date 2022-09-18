@@ -267,7 +267,10 @@ class ImageNode(Node):
         from PIL import Image
 
         try:
-            self._process_image(crop=crop)
+            actualized_matrix, image = self._process_image(crop=crop)
+            inverted_main_matrix = Matrix(self.matrix).inverse()
+            self.processed_matrix = actualized_matrix * inverted_main_matrix
+            self.processed_image = image
             self.process_image_failed = False
         except (MemoryError, Image.DecompressionBombError):
             self.process_image_failed = True
@@ -297,7 +300,6 @@ class ImageNode(Node):
         assert step_y != 0
 
         image = self.image
-        main_matrix = self.matrix
 
         # Precalculate RGB for L conversion.
         r = self.red * 0.299
@@ -313,13 +315,6 @@ class ImageNode(Node):
         except ZeroDivisionError:
             pass
 
-        transform_is_needed = (
-            main_matrix.a != step_x
-            or main_matrix.b != 0.0
-            or main_matrix.c != 0.0
-            or main_matrix.d != step_y
-        )
-
         # Create Transparency Mask.
         if "transparency" in image.info:
             image = image.convert("RGBA")
@@ -328,7 +323,7 @@ class ImageNode(Node):
         except ValueError:
             transparent_mask = None
 
-        matrix = copy(main_matrix)  # Prevent Knock-on effect.
+        matrix = copy(self.matrix)  # Prevent Knock-on effect.
 
         # Convert image to L type.
         if image.mode != "L":
@@ -395,7 +390,7 @@ class ImageNode(Node):
             matrix.post_scale(step_scale_x, step_scale_y)
 
         # Perform image transform if needed.
-        if transform_is_needed:
+        if self.matrix.a != step_x or self.matrix.b != 0.0 or self.matrix.c != 0.0 or self.matrix.d != step_y:
             if image_height <= 0:
                 image_height = 1
             if image_width <= 0:
@@ -409,7 +404,7 @@ class ImageNode(Node):
             )
             matrix.reset()
         else:
-            matrix = copy(main_matrix)
+            matrix = copy(self.matrix)
 
         # If crop applies, apply crop.
         if crop:
@@ -577,10 +572,7 @@ class ImageNode(Node):
                 image = dither(image, self.dither_type)
             image = image.convert("1")
 
-        # Set final values.
-        inverted_main_matrix = Matrix(main_matrix).inverse()
-        self.processed_matrix = actualized_matrix * inverted_main_matrix
-        self.processed_image = image
+        return actualized_matrix, image
 
     @staticmethod
     def line(p):
