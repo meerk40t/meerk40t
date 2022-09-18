@@ -688,52 +688,52 @@ class SVGProcessor:
                     _overscan = None
                     try:
                         _overscan = str(element.values.get("overscan"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _direction = None
                     try:
                         _direction = int(element.values.get("direction"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _invert = None
                     try:
                         _invert = bool(element.values.get("invert"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _dither = None
                     try:
                         _dither = bool(element.values.get("dither"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _dither_type = None
                     try:
                         _dither_type = element.values.get("dither_type")
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _red = None
                     try:
                         _red = float(element.values.get("red"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _green = None
                     try:
                         _green = float(element.values.get("green"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _blue = None
                     try:
                         _blue = float(element.values.get("blue"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _lightness = None
                     try:
                         _lightness = float(element.values.get("lightness"))
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
                     _lock = None
                     try:
                         _lock = bool(element.values.get("lock") == "True")
-                    except ValueError:
+                    except (ValueError, TypeError):
                         pass
 
                     node = context_node.add(
