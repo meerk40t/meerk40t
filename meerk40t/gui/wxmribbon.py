@@ -287,6 +287,8 @@ class RibbonPanel(wx.Panel):
         self.ribbon_bars = []
         self.ribbon_panels = []
         self.ribbon_pages = []
+        context.setting(bool, "ribbon_art", False)
+        context.setting(bool, "ribbon_hide_labels", False)
 
         # Some helper variables for showing / hiding the toolbar
         self.panels_shown = True
@@ -737,9 +739,9 @@ class RibbonPanel(wx.Panel):
     def __set_ribbonbar(self):
         self.ribbonbar_caption_visible = False
 
-        if self.is_dark:
+        if self.is_dark or self.context.ribbon_art:
             provider = self._ribbon.GetArtProvider()
-            _update_ribbon_artprovider_for_dark_mode(provider)
+            _update_ribbon_artprovider_for_dark_mode(provider, hide_labels=self.context.ribbon_hide_labels)
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
@@ -913,7 +915,7 @@ class RibbonPanel(wx.Panel):
 # RIBBON_ART_TOOLBAR_FACE_COLOUR = 88
 
 
-def _update_ribbon_artprovider_for_dark_mode(provider):
+def _update_ribbon_artprovider_for_dark_mode(provider, hide_labels=False):
     def _set_ribbon_colour(provider, art_id_list, colour):
         for id_ in art_id_list:
             try:
@@ -1020,3 +1022,12 @@ def _update_ribbon_artprovider_for_dark_mode(provider):
         RB.RIBBON_ART_TAB_HOVER_BACKGROUND_TOP_GRADIENT_COLOUR,
     ]
     _set_ribbon_colour(provider, lowlights, INACTIVE_BG)
+    if hide_labels:
+        font = wx.Font(1, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        provider.SetFont(RB.RIBBON_ART_BUTTON_BAR_LABEL_FONT, font)
+        provider.SetFont(RB.RIBBON_ART_PANEL_LABEL_FONT, font)
+        fontcolors = [
+            RB.RIBBON_ART_BUTTON_BAR_LABEL_COLOUR,
+            RB.RIBBON_ART_PANEL_LABEL_COLOUR,
+        ]
+        _set_ribbon_colour(provider, fontcolors, BTNFACE)
