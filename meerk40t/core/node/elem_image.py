@@ -13,7 +13,7 @@ class ImageNode(Node):
     ImageNode is the bootstrapped node type for the 'elem image' type.
 
     ImageNode contains a main matrix, main image. A processed image and a processed matrix.
-    The processed matrix must be concated with the main matrix to be accurate.
+    The processed matrix must be concatenated with the main matrix to be accurate.
     """
 
     def __init__(
@@ -290,7 +290,7 @@ class ImageNode(Node):
         except ZeroDivisionError:
             pass
 
-        transform = (
+        transform_is_needed = (
             main_matrix.a != step_x
             or main_matrix.b != 0.0
             or main_matrix.c != 0.0
@@ -372,7 +372,7 @@ class ImageNode(Node):
             matrix.post_scale(step_scale_x, step_scale_y)
 
         # Perform image transform if needed.
-        if transform:
+        if transform_is_needed:
             if image_height <= 0:
                 image_height = 1
             if image_width <= 0:
