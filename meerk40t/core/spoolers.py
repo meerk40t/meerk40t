@@ -382,9 +382,12 @@ class LaserJob:
 
     @property
     def status(self):
-        statusvalue = "Queued"
-        if self.is_running:
+        if self.is_running and self.time_started is not None:
             statusvalue = "Running"
+        elif not self.is_running:
+            statusvalue = "Disabled"
+        else:
+            statusvalue = "Queued"
         return statusvalue
 
 
@@ -707,7 +710,7 @@ class Spooler:
     def clear_queue(self):
         with self._lock:
             for e in self._queue:
-                needs_signal = e.is_running()
+                needs_signal = e.is_running() and e.time_started is not None
                 e.stop()
                 if needs_signal:
                     info = (

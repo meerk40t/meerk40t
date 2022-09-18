@@ -203,10 +203,16 @@ class SpoolerPanel(wx.Panel):
             element = spooler.queue[index]
         except IndexError:
             return
+
+
         menu = wx.Menu()
+        if element.status.lower() == "running":
+            action = _("Stop")
+        else:
+            action = _("Remove")
         item = menu.Append(
             wx.ID_ANY,
-            _("Remove {name}").format(name=str(element)[:16]),
+            _("{action} {name}").format(action = action, name=str(element)[:25]),
             "",
             wx.ITEM_NORMAL,
         )
@@ -275,10 +281,10 @@ class SpoolerPanel(wx.Panel):
                     )
 
                 # STATUS
-                try:
-                    status = spool_obj.status
-                except AttributeError:
-                    status = _("Queued")
+                # try:
+                status = spool_obj.status
+                # except AttributeError:
+                # status = _("Queued")
                 self.list_job_spool.SetItem(list_id, 2, status)
 
                 # TYPE
@@ -329,10 +335,14 @@ class SpoolerPanel(wx.Panel):
 
     def refresh_history(self, newestinfo):
         def timestr(t, oneday):
-            hours, remainder = divmod(t, 3600)
             if oneday:
-                hours = hours % 24
-            minutes, seconds = divmod(remainder, 60)
+                localt = time.localtime(t)
+                hours = localt[3]
+                minutes = localt[4]
+                seconds = localt[5]
+            else:
+                hours, remainder = divmod(t, 3600)
+                minutes, seconds = divmod(remainder, 60)
             result = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
             return result
 
@@ -379,8 +389,6 @@ class SpoolerPanel(wx.Panel):
     def on_spooler_completed(self, origin, info, *args):
         # Info is just a tuple with the label and the runtime
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
-        # print(origin)
-        # print(info)
         if info is None:
             return
         self.refresh_history(info)
