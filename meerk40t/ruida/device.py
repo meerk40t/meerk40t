@@ -2257,7 +2257,7 @@ class RDLoader:
         with open(pathname, "rb") as f:
             op_branch = service.get(type="branch ops")
             op_branch.add(
-                data=bytearray(f.read()), data_type="ruida", type="blob", name=basename
+                data=bytearray(f.read()), data_type="ruida", type="blob", label=basename
             )
             kernel.root.close(basename)
             return True

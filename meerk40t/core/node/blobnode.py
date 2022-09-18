@@ -10,12 +10,12 @@ class BlobNode(Node):
 
     def __init__(self, data_type=None, data=None, **kwargs):
         super().__init__(type="blob", **kwargs)
-        self._formatter = "{element_type}:{data_type}:{name} @{length}"
-        if "name" in kwargs:
-            self.name = kwargs["name"]
-            del kwargs["name"]
+        self._formatter = "{element_type}:{data_type}:{label} @{length}"
+        if "label" in kwargs:
+            self.label = kwargs["label"]
+            del kwargs["label"]
         else:
-            self.name = "Blob"
+            self.label = "Blob"
         self.data = data
         self.data_type = data_type
         self.output = True
@@ -23,7 +23,7 @@ class BlobNode(Node):
 
     def __copy__(self):
         return BlobNode(
-            data_type=self.data_type, data=self.data, name=self.name, **self.settings
+            data_type=self.data_type, data=self.data, label=self.label, **self.settings
         )
 
     def __len__(self):
@@ -33,7 +33,7 @@ class BlobNode(Node):
         default_map = super(BlobNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Blob"
         default_map["data_type"] = self.data_type
-        default_map["name"] = self.name
+        default_map["label"] = self.label
         d = 0
         if self.data is not None:
             d = len(self.data)
