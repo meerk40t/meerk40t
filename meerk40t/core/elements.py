@@ -6968,6 +6968,8 @@ class Elemental(Service):
         )
         def cutcode2pathcut(node, **kwargs):
             cutcode = node.cutcode
+            if cutcode is None:
+                return
             elements = list(cutcode.as_elements())
             n = None
             for element in elements:
