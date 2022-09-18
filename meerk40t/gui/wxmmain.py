@@ -1495,6 +1495,7 @@ class MeerK40t(MWindow):
             pane = self._mgr.GetPane(_pane.name)
             if len(pane.name):
                 if pane.IsShown():
+                    pane.Dockable(True)
                     pane.Dock()
                     pane.CaptionVisible(not self.context.pane_lock)
                     self._mgr.Update()
