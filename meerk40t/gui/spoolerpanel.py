@@ -365,7 +365,10 @@ class SpoolerPanel(wx.Panel):
             runtime = timestr(info[2], False)
             self.list_job_history.SetItem(list_id, 4, runtime)
             # First passes then device
-            self.list_job_history.SetItem(list_id, 5, info[4])
+            if len(info)>=5:
+                self.list_job_history.SetItem(list_id, 5, info[4])
+            else:
+                self.list_job_history.SetItem(list_id, 5, "???")
             self.list_job_history.SetItem(list_id, 6, info[3])
 
     def reload_history(self):
