@@ -622,12 +622,7 @@ class ImageNode(Node):
         background.paste(image, mask=reject_mask)
         image = background
 
-        # Dither image to 1 bit.
-        if self.dither and self.dither_type is not None:
-            if self.dither_type != "Floyd-Steinberg":
-                image = dither(image, self.dither_type)
-            image = image.convert("1")
-
+        image = self._apply_dither(image)
         return actualized_matrix, image
 
     @staticmethod
