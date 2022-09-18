@@ -332,6 +332,7 @@ class ImageNode(Node):
         if reject_color is None:
             reject_color = "black" if self.invert else "white"
         from PIL import Image
+
         background = image.copy()
         reject = Image.new("L", image.size, reject_color)
         background.paste(reject, mask=mask)
@@ -361,6 +362,7 @@ class ImageNode(Node):
         @return: processed image
         """
         from PIL import ImageEnhance, ImageFilter, ImageOps
+
         for op in self.operations:
             name = op["name"]
             if name == "crop":
@@ -489,6 +491,7 @@ class ImageNode(Node):
         @return: 1 bit dithered image
         """
         from meerk40t.image.imagetools import dither
+
         if self.dither and self.dither_type is not None:
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
