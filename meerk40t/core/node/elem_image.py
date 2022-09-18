@@ -504,9 +504,7 @@ class ImageNode(Node):
             by the color and the state of the self.invert attribute.
         @return:
         """
-        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
-
-        from meerk40t.image.imagetools import dither
+        from PIL import Image, ImageOps
 
         image = self.image
 
@@ -612,15 +610,12 @@ class ImageNode(Node):
         if self.invert:
             image = ImageOps.invert(image)
 
-        # Find rejection mask of white pixels.
+        # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
 
         image = self._process_script(image)
 
-        # Remask image removing pixels that were white before operations were processed.
-        background = Image.new("L", image.size, "white")
-        background.paste(image, mask=reject_mask)
-        image = background
+        image = self._apply_mask(image, reject_mask, reject_color="white")
 
         image = self._apply_dither(image)
         return actualized_matrix, image
