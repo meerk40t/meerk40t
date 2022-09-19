@@ -210,19 +210,27 @@ class ViewPort:
         """
         Calculate the matricies between the scene and device units.
         """
-        self._matrix = Matrix(self.scene_to_device_matrix())
+        self._matrix = Matrix(self._scene_to_device_transform())
         self._imatrix = Matrix(self._matrix)
         self._imatrix.inverse()
 
     def device_to_scene_matrix(self):
         """
-        Returns the device-to-scene matrix. Positions calculated with this matrix should
+        Returns the device-to-scene matrix.
         """
         if self._matrix is None:
             self._calculate_matrices()
         return self._imatrix
 
     def scene_to_device_matrix(self):
+        """
+        Returns the scene-to-device matrix.
+        """
+        if self._matrix is None:
+            self._calculate_matrices()
+        return self._matrix
+
+    def _scene_to_device_transform(self):
         ops = []
         if self._scale_x != 1.0 or self._scale_y != 1.0:
             ops.append(f"scale({1.0 / self._scale_x:.13f}, {1.0 / self._scale_y:.13f})")
@@ -237,7 +245,7 @@ class ViewPort:
         return " ".join(ops)
 
     def native_mm(self):
-        matrix = Matrix(self.scene_to_device_matrix())
+        matrix = self.scene_to_device_matrix()
         return abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
 
     def length(
