@@ -1428,8 +1428,77 @@ class MeerK40t(MWindow):
             if _pane is None:
                 channel(_("Pane not found."))
                 return
-            _pane.Show()
-            self._mgr.Update()
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if not pane.IsShown():
+                    pane.Show()
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    if hasattr(pane.window, "pane_show"):
+                        pane.window.pane_show()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be hidden"))
+        @context.console_command(
+            "hide",
+            input_type="panes",
+            help=_("show the pane"),
+            all_arguments_required=True,
+        )
+        def hide_pane(command, _, channel, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Hide()
+                    if hasattr(pane.window, "pane_hide"):
+                        pane.window.pane_hide()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
+
+        @context.console_option("always", "a", type=bool, action="store_true")
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "float",
+            input_type="panes",
+            help=_("Float the pane"),
+            all_arguments_required=True,
+        )
+        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Float()
+                    pane.Dockable(not always)
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_command(
+            "dock",
+            input_type="panes",
+            help=_("Dock the pane"),
+            all_arguments_required=True,
+        )
+        def dock_pane(command, _, channel, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Dockable(True)
+                    pane.Dock()
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
 
         @context.console_command(
             "toggleui",
@@ -1458,39 +1527,6 @@ class MeerK40t(MWindow):
                             pane.Hide()
                 self._mgr.Update()
                 channel(_("Panes hidden."))
-
-        @context.console_argument("pane", help=_("pane to be hidden"))
-        @context.console_command(
-            "hide",
-            input_type="panes",
-            help=_("show the pane"),
-            all_arguments_required=True,
-        )
-        def hide_pane(command, _, channel, pane=None, **kwargs):
-            _pane = context.lookup("pane", pane)
-            if _pane is None:
-                channel(_("Pane not found."))
-                return
-            _pane.Hide()
-            self._mgr.Update()
-
-        @context.console_option("always", "a", type=bool, action="store_true")
-        @context.console_argument("pane", help=_("pane to be shown"))
-        @context.console_command(
-            "float",
-            input_type="panes",
-            help=_("show the pane"),
-            all_arguments_required=True,
-        )
-        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
-            _pane = context.lookup("pane", pane)
-            if _pane is None:
-                channel(_("Pane not found."))
-                return
-            _pane.Float()
-            _pane.Show()
-            _pane.Dockable(not always)
-            self._mgr.Update()
 
         @context.console_command(
             "reset",
@@ -1847,7 +1883,22 @@ class MeerK40t(MWindow):
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            menuitem = menu_context.Append(wx.ID_ANY, _(caption), "", wx.ITEM_NORMAL)
+            caption = _(caption)
+            menu_label = caption
+            if hasattr(window, "menu_label"):
+                menu_label = window.menu_label()
+
+            menu_id = wx.ID_ANY
+            if hasattr(window, "menu_id"):
+                menu_id = window.menu_id()
+
+            menu_tip = ""
+            if hasattr(window, "menu_tip"):
+                menu_tip = window.menu_tip()
+
+            menuitem = menu_context.Append(
+                menu_id, menu_label, menu_tip, wx.ITEM_NORMAL
+            )
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
@@ -1949,6 +2000,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom &Out\tCtrl--"),
                 "help": _("Make the scene smaller"),
                 "action": self.on_click_zoom_out,
+                "id": wx.ID_ZOOM_OUT,
                 "level": 1,
                 "segment": "",
             },
@@ -1956,6 +2008,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom &In\tCtrl-+"),
                 "help": _("Make the scene larger"),
                 "action": self.on_click_zoom_in,
+                "id": wx.ID_ZOOM_IN,
                 "level": 1,
                 "segment": "",
             },
@@ -1963,6 +2016,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom to &Selected\tCtrl-Shift-B"),
                 "help": _("Fill the scene area with the selected elements"),
                 "action": self.on_click_zoom_selected,
+                "id": wx.ID_ZOOM_100,
                 "level": 1,
                 "segment": "",
             },
@@ -1970,6 +2024,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom to &Bed\tCtrl-B"),
                 "help": _("View the whole laser bed"),
                 "action": self.on_click_zoom_bed,
+                "id": wx.ID_ZOOM_FIT,
                 "level": 1,
                 "segment": "",
             },
@@ -2270,6 +2325,11 @@ class MeerK40t(MWindow):
                 c_param = choice["parameter"]
             except KeyError:
                 c_param = None
+
+            try:
+                c_id = choice["id"]
+            except KeyError:
+                c_id = wx.ID_ANY
             # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
             if c_segment != current_segment:
                 current_segment = c_segment
@@ -2308,14 +2368,14 @@ class MeerK40t(MWindow):
             else:
                 if c_criteria is None:
                     menu_item = current_menu.Append(
-                        wx.ID_ANY,
+                        c_id,
                         c_label,
                         c_help,
                         wx.ITEM_NORMAL,
                     )
                 else:
                     menu_item = current_menu.Append(
-                        wx.ID_ANY,
+                        c_id,
                         c_label,
                         c_help,
                         wx.ITEM_CHECK,

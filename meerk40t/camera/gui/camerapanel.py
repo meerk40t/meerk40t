@@ -69,7 +69,7 @@ class CameraPanel(wx.Panel, Job):
 
         self.context(f"camera{self.index}\n")  # command activates Camera service
         self.camera = self.context.get_context(f"camera/{self.index}")
-        self.camera.setting(int, "frames_per_second", 40)
+        self.camera.setting(int, "frames_per_second", 30)
         # camera service location.
         self.last_frame_index = -1
 
@@ -90,9 +90,9 @@ class CameraPanel(wx.Panel, Job):
             self.slider_fps = wx.Slider(
                 self,
                 wx.ID_ANY,
-                24,
+                30,
                 0,
-                100,
+                120,
                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
             )
             self.button_detect = wx.BitmapButton(
@@ -226,6 +226,12 @@ class CameraPanel(wx.Panel, Job):
         else:
             tick = 1.0 / camera_fps
         self.interval = tick
+        # Set the scene fps if it's needed to support the camera.
+        scene_fps = self.camera.frames_per_second
+        if scene_fps < 30:
+            scene_fps = 30
+        if self.camera.fps != scene_fps:
+            self.display_camera.scene.set_fps(scene_fps)
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):

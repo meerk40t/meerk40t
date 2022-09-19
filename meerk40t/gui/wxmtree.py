@@ -984,7 +984,7 @@ class ShadowTree:
         defaultcolor = Color("black")
         if node.type == "elem image":
             image = self.renderer.make_thumbnail(
-                node.image, width=self.iconsize, height=self.iconsize
+                node.active_image, width=self.iconsize, height=self.iconsize
             )
         else:
             # Establish colors (and some images)
@@ -1167,7 +1167,7 @@ class ShadowTree:
                             node.node.dangerous = danger
                     else:
                         print(
-                            f"Thats strange {checker}: {type(maxspeed_minpower).__name__}"
+                            f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
                 # node.node.is_dangerous(maxspeed, minpower)
             label = "*" + node.node.create_label(formatter)
@@ -1201,7 +1201,7 @@ class ShadowTree:
                             node.dangerous = danger
                     else:
                         print(
-                            f"Thats strange {checker}: {type(maxspeed_minpower).__name__}"
+                            f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
             label = node.create_label(formatter)
 

@@ -60,7 +60,7 @@ def register_panel_scene(window, context):
     # control.AddPage(panel2, "scene2")
 
     control = MeerK40tScenePanel(window, wx.ID_ANY, context=context)
-    pane = aui.AuiPaneInfo().CenterPane().Name("scene")
+    pane = aui.AuiPaneInfo().CenterPane().MinSize(200, 200).Name("scene")
     pane.dock_proportion = 600
     pane.control = control
     pane.hide_menu = True
@@ -852,9 +852,9 @@ class MeerK40tScenePanel(wx.Panel):
     @signal_listener("driver;mode")
     def on_driver_mode(self, origin, state):
         if state == 0:
-            self.widget_scene.background_brush = wx.Brush("Grey")
+            self.widget_scene.overrule_background = None
         else:
-            self.widget_scene.background_brush = wx.Brush("Red")
+            self.widget_scene.overrule_background = wx.RED
         self.widget_scene.request_refresh_for_animation()
 
     @signal_listener("background")

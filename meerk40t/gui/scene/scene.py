@@ -206,7 +206,8 @@ class Scene(Module, Job):
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
-
+        # If set this color will be used for the scene background (used during burn)
+        self.overrule_background = None
         # Stuff for magnet-lines
         self.magnet_x = []
         self.magnet_y = []
@@ -499,7 +500,10 @@ class Scene(Module, Job):
             buf = self.gui._Buffer
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
-        self.background_brush.SetColour(self.colors.color_background)
+        if self.overrule_background is None:
+            self.background_brush.SetColour(self.colors.color_background)
+        else:
+            self.background_brush.SetColour(self.overrule_background)
         dc.SetBackground(self.background_brush)
         dc.Clear()
         w, h = dc.Size

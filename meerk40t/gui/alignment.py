@@ -3,6 +3,8 @@ from math import atan, sqrt, tau
 import numpy as np
 import wx
 
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.node.node import Node
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -78,6 +80,7 @@ class InfoPanel(wx.Panel):
             c = None
             # Do we have a standard representation?
             defaultcolor = Color("black")
+            data = None
             if node.type.startswith("elem "):
                 if (
                     hasattr(node, "stroke")
@@ -86,9 +89,15 @@ class InfoPanel(wx.Panel):
                 ):
                     c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
+                data = node
+                bounds = node.paint_bounds
+            elif node.type in ("group", "file"):
+                data = list(node.flat(types=elem_nodes))
+                bounds = Node.union_bounds(data, attr="paint_bounds")
+            if data is not None:
                 image = self.make_raster(
-                    node,
-                    node.paint_bounds,
+                    data,
+                    bounds,
                     width=iconsize,
                     height=iconsize,
                     bitmap=True,
@@ -107,10 +116,10 @@ class InfoPanel(wx.Panel):
         last_node = None
         msg = ""
         if has_emph:
-            xdata = list(self.context.elements.flat(emphasized=True))
+            xdata = list(self.context.elements.elems_nodes(emphasized=True))
             data = []
             for n in xdata:
-                if n.type.startswith("elem"):
+                if n.type.startswith("elem"):  # n.type == "group":
                     data.append(n)
             count = len(data)
             self.lbl_info_main.SetLabel(
