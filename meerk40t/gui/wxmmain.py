@@ -1896,7 +1896,9 @@ class MeerK40t(MWindow):
             if hasattr(window, "menu_tip"):
                 menu_tip = window.menu_tip()
 
-            menuitem = menu_context.Append(menu_id, menu_label, menu_tip, wx.ITEM_NORMAL)
+            menuitem = menu_context.Append(
+                menu_id, menu_label, menu_tip, wx.ITEM_NORMAL
+            )
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),

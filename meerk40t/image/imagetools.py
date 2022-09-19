@@ -3,7 +3,7 @@ from copy import copy
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
+from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path
 
 
@@ -1751,8 +1751,10 @@ class ImageLoader:
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    matrix.post_scale(DEFAULT_PPI / float(dpi[0]), DEFAULT_PPI / float(dpi[1]))
-                    mydpi = round((float(dpi[0]) + float(dpi[1]))/2, 0)
+                    matrix.post_scale(
+                        DEFAULT_PPI / float(dpi[0]), DEFAULT_PPI / float(dpi[1])
+                    )
+                    mydpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
         except (KeyError, IndexError):
             pass
 
@@ -1761,7 +1763,10 @@ class ImageLoader:
         file_node = element_branch.add(type="file", label=os.path.basename(pathname))
         file_node.filepath = pathname
         n = file_node.add(
-            image=image, matrix=matrix, type="elem image", dpi=mydpi,
+            image=image,
+            matrix=matrix,
+            type="elem image",
+            dpi=mydpi,
         )
         file_node.focus()
         elements_service.classify([n])

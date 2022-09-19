@@ -48,9 +48,7 @@ class ColorPanel(wx.Panel):
             0xFFFFFF,
         )
         for i in range(len(bgcolors)):
-            self.underliner.append(
-                wx.StaticBitmap(self, wx.ID_ANY)
-            )
+            self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
             self.underliner[i].SetBackgroundColour(wx.BLUE)
             self.underliner[i].SetMaxSize(wx.Size(-1, 3))
             # self.lbl_color[i].SetMinSize((-1, 20))

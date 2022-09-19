@@ -1,4 +1,3 @@
-
 import wx
 
 from meerk40t.kernel import signal_listener

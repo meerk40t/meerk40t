@@ -741,7 +741,9 @@ class RibbonPanel(wx.Panel):
 
         if self.is_dark or self.context.ribbon_art:
             provider = self._ribbon.GetArtProvider()
-            _update_ribbon_artprovider_for_dark_mode(provider, hide_labels=self.context.ribbon_hide_labels)
+            _update_ribbon_artprovider_for_dark_mode(
+                provider, hide_labels=self.context.ribbon_hide_labels
+            )
         self.ribbon_position_aspect_ratio = True
         self.ribbon_position_ignore_update = False
 
@@ -1023,7 +1025,9 @@ def _update_ribbon_artprovider_for_dark_mode(provider, hide_labels=False):
     ]
     _set_ribbon_colour(provider, lowlights, INACTIVE_BG)
     if hide_labels:
-        font = wx.Font(1, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        font = wx.Font(
+            1, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
         provider.SetFont(RB.RIBBON_ART_BUTTON_BAR_LABEL_FONT, font)
         provider.SetFont(RB.RIBBON_ART_PANEL_LABEL_FONT, font)
         fontcolors = [

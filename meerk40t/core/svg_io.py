@@ -622,7 +622,11 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem polyline", id=ident, label=_label, lock=_lock
+                    shape=element,
+                    type="elem polyline",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
                 )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
@@ -635,7 +639,11 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=_label, lock=_lock
+                    shape=element,
+                    type="elem ellipse",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
                 )
                 e_list.append(node)
         elif isinstance(element, Ellipse):
@@ -646,7 +654,11 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=_label, lock=_lock
+                    shape=element,
+                    type="elem ellipse",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
                 )
                 e_list.append(node)
         elif isinstance(element, Rect):

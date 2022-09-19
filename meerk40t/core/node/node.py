@@ -272,7 +272,13 @@ class Node:
             default_map = dict()
         default_map["id"] = str(self.id) if self.id is not None else "-"
         default_map["label"] = self.label if self.label is not None else ""
-        default_map["desc"] = self.label if self.label is not None else str(self.id) if self.id is not None else "-"
+        default_map["desc"] = (
+            self.label
+            if self.label is not None
+            else str(self.id)
+            if self.id is not None
+            else "-"
+        )
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
