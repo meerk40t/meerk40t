@@ -319,13 +319,19 @@ class ViewPort:
         return self._scene_to_show_matrix
 
     def _scene_to_device_transform(self):
+        """
+        Transform for moving from scene units to device units. This takes into account the user and native scaling, the
+        shift in origin point, flips to the y-axis, flips to the x-axis, and axis_swapping.
+
+        @return:
+        """
         ops = []
         _scale_x = self.user_scale_x * self.native_scale_x
         _scale_y = self.user_scale_y * self.native_scale_y
         if _scale_x != 1.0 or _scale_y != 1.0:
             ops.append(f"scale({1.0 / _scale_x:.13f}, {1.0 / _scale_y:.13f})")
-        _offset_x = self._width * self.origin_x
-        _offset_y = self._height * self.origin_y
+        _offset_x = self.unit_width * self.origin_x
+        _offset_y = self.unit_height * self.origin_y
         if _offset_x != 0 or _offset_y != 0:
             ops.append(f"translate({_offset_x:.13f}, {_offset_y:.13f})")
         if self.flip_y:
@@ -341,8 +347,9 @@ class ViewPort:
         @return:
         """
         ops = []
-        offset_x = -self._width * self.show_origin_x
-        offset_y = -self._height * self.show_origin_y
+
+        offset_x = -self.unit_width * self.show_origin_x
+        offset_y = -self.unit_height * self.show_origin_y
         if offset_x != 0 or offset_y != 0:
             ops.append(f"translate({offset_x:.13f}, {offset_y:.13f})")
         if self.flip_y:
