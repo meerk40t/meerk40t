@@ -152,6 +152,18 @@ class ViewPort:
         x, y = self.physical_to_scene_position(x, y, unitless)
         return self.scene_to_device_position(x, y)
 
+    def physical_to_show_position(self, x, y, unitless=1):
+        """
+        Converts a physical X,Y position into show units.
+
+        @param x:
+        @param y:
+        @param unitless:
+        @return:
+        """
+        x, y = self.physical_to_scene_position(x, y, unitless)
+        return self.scene_to_show_position(x, y)
+
     def physical_to_device_length(self, x, y, unitless=1):
         """
         Converts a physical X,Y vector into device vector (dx, dy).
