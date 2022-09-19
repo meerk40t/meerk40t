@@ -208,7 +208,7 @@ class ViewPort:
 
     def _calculate_matrices(self):
         """
-        Calculate the matricies between the scene and device units.
+        Calculate the matrices between the scene and device units.
         """
         self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
         self._device_to_scene_matrix = Matrix(self._scene_to_device_matrix)
