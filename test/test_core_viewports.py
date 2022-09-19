@@ -232,17 +232,17 @@ class TestViewport(unittest.TestCase):
         self.assertGreaterEqual(10, y)
 
         hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertEqual(hx, 0)
-        self.assertEqual(hy, 0)
+        self.assertAlmostEqual(hx, 0)
+        self.assertAlmostEqual(hy, 0)
 
         sx, sy = view.device_to_scene_position(0, 0)
-        self.assertEqual(sx, 0)
-        self.assertEqual(sy, 0)
+        self.assertAlmostEqual(sx, 0)
+        self.assertAlmostEqual(sy, 0)
 
         cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
         qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertEqual(cx, qx)
-        self.assertEqual(cy, qy)
+        self.assertAlmostEqual(cx, qx)
+        self.assertAlmostEqual(cy, qy)
 
     def test_viewport_balor_flip_y(self):
         """
@@ -278,8 +278,8 @@ class TestViewport(unittest.TestCase):
         self.assertGreaterEqual(10, y)
 
         hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertEqual(hx, 0)
-        self.assertEqual(hy, 0)
+        self.assertAlmostEqual(hx, 0)
+        self.assertAlmostEqual(hy, 0)
 
         sx, sy = view.device_to_scene_position(0, 0)
         self.assertAlmostEqual(sx, 0)
@@ -293,7 +293,7 @@ class TestViewport(unittest.TestCase):
     def test_viewport_balor_flip_x(self):
         """
         Test Balor-esque viewport.
-        Center x, y. flip_x
+        Center x, y. flip_x, flip_y and swap
 
         :return:
         """
@@ -324,8 +324,8 @@ class TestViewport(unittest.TestCase):
         self.assertGreaterEqual(10, y)
 
         hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertEqual(hx, 0)
-        self.assertEqual(hy, 0)
+        self.assertAlmostEqual(hx, 0)
+        self.assertAlmostEqual(hy, 0)
 
         sx, sy = view.device_to_scene_position(0, 0)
         self.assertAlmostEqual(sx, view.unit_width)
@@ -371,8 +371,8 @@ class TestViewport(unittest.TestCase):
         self.assertGreaterEqual(10, y)
 
         hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertEqual(hx, 0)
-        self.assertEqual(hy, 0)
+        self.assertAlmostEqual(hx, 0)
+        self.assertAlmostEqual(hy, 0)
 
         sx, sy = view.device_to_scene_position(0, 0)
         self.assertAlmostEqual(sx, view.unit_width)
@@ -380,5 +380,55 @@ class TestViewport(unittest.TestCase):
 
         cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
         qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertEqual(cx, qx)
-        self.assertEqual(cy, qy)
+        self.assertAlmostEqual(cx, qx)
+        self.assertAlmostEqual(cy, qy)
+
+    def test_viewport_balor_flip_xy_swap_nonlinear(self):
+        """
+        Test Balor-esque viewport.
+        Center x, y. flip_x, flip_y, swap and offset
+
+        :return:
+        """
+        lens_size_x = "110mm"
+        lens_size_y = "100mm" # 10mm less
+        unit_size_x = float(Length(lens_size_x))
+        unit_size_y = float(Length(lens_size_y))
+        galvo_range = 0xFFFF
+        units_per_galvo_x = unit_size_x / galvo_range
+        units_per_galvo_y = unit_size_y / galvo_range
+
+        flip_x = True
+        flip_y = True
+        view = ViewPort(
+            lens_size_x,
+            lens_size_y,
+            native_scale_x=units_per_galvo_x,
+            native_scale_y=units_per_galvo_y,
+            origin_x=1.0 if flip_x else 0.0,
+            origin_y=1.0 if flip_y else 0.0,
+            show_origin_x=0.5,
+            show_origin_y=0.5,
+            flip_x=flip_x,
+            flip_y=flip_y,
+            swap_xy=True,
+        )
+
+        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
+        self.assertGreaterEqual(x, -10)
+        self.assertGreaterEqual(10, x)
+        self.assertGreaterEqual(y, -10)
+        self.assertGreaterEqual(10, y)
+
+        hx, hy = view.physical_to_show_position("50mm", "55mm")
+        self.assertAlmostEqual(hx, 0)
+        self.assertAlmostEqual(hy, 0)
+
+        sx, sy = view.device_to_scene_position(0, 0)
+        self.assertAlmostEqual(sx, view.unit_width)
+        self.assertAlmostEqual(sy, view.unit_height)
+
+        cx, cy = view.physical_to_scene_position("-55mm", "-50mm")  # Offset half/bed
+        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
+        self.assertAlmostEqual(cx, qx)
+        self.assertAlmostEqual(cy, qy)
