@@ -329,8 +329,8 @@ class ViewPort:
         @return:
         """
         ops = []
-        offset_x = self._width * self.show_origin_x
-        offset_y = self._height * self.show_origin_y
+        offset_x = -self._width * self.show_origin_x
+        offset_y = -self._height * self.show_origin_y
         if offset_x != 0 or offset_y != 0:
             ops.append(f"translate({offset_x:.13f}, {offset_y:.13f})")
         if self.flip_y:
