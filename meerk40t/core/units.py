@@ -185,6 +185,20 @@ class ViewPort:
             point = self.device_to_scene_matrix().point_in_matrix_space((x, y))
             return point.x, point.y
 
+    def device_to_show_position(self, x, y, vector=False):
+        """
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
+        if vector:
+            point = self.device_to_show_matrix().transform_vector((x, y))
+            return point.x, point.y
+        else:
+            point = self.device_to_show_matrix().point_in_matrix_space((x, y))
+            return point.x, point.y
+
     def scene_to_device_position(self, x, y, vector=False):
         """
         Converts scene to a device position (or vector). Converts x, y from scene units (1/65535) inches into
@@ -200,6 +214,34 @@ class ViewPort:
             return point[0], point[1]
         else:
             point = self.scene_to_device_matrix().point_in_matrix_space((x, y))
+            return point.x, point.y
+
+    def scene_to_show_position(self, x, y, vector=False):
+        """
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
+        if vector:
+            point = self.scene_to_show_matrix().transform_vector([x, y])
+            return point[0], point[1]
+        else:
+            point = self.scene_to_show_matrix().point_in_matrix_space((x, y))
+            return point.x, point.y
+
+    def show_to_device_position(self, x, y, vector=False):
+        """
+        @param x:
+        @param y:
+        @param vector:
+        @return:
+        """
+        if vector:
+            point = self.show_to_device_matrix().transform_vector((x, y))
+            return point.x, point.y
+        else:
+            point = self.show_to_device_matrix().point_in_matrix_space((x, y))
             return point.x, point.y
 
     def _calculate_matrices(self):
