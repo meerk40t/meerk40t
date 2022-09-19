@@ -232,7 +232,9 @@ class ImageNode(Node):
 
             def clear(result):
                 if self._process_image_failed:
-                    self._processing_message = "Process image could not exist in memory."
+                    self._processing_message = (
+                        "Process image could not exist in memory."
+                    )
                 else:
                     self._processing_message = None
                 self._needs_update = False

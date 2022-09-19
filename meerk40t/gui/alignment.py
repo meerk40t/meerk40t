@@ -2,9 +2,9 @@ from math import atan, sqrt, tau
 
 import numpy as np
 import wx
-from meerk40t.core.node.node import Node
-from meerk40t.core.element_types import elem_nodes
 
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.node.node import Node
 from meerk40t.svgelements import (
     Arc,
     Close,

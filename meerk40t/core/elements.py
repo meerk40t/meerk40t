@@ -753,7 +753,7 @@ class Elemental(Service):
             return dx, dy
 
         if as_group != 0:
-            individually = 2 # all elements as a total
+            individually = 2  # all elements as a total
         else:
             individually = 0
             for n in data:
@@ -2755,7 +2755,7 @@ class Elemental(Service):
                 alignbounds=align_bounds,
                 positionx=align_x,
                 positiony=align_y,
-                as_group=asgroup
+                as_group=asgroup,
             )
 
         @self.console_command(
@@ -5204,15 +5204,11 @@ class Elemental(Service):
 
             dbounds = Node.union_bounds(data)
             for node in data:
-                if (
-                    hasattr(node, "lock")
-                    and node.lock
-                    and not self.lock_allows_move
-                ):
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     continue
                 nbounds = node.bounds
-                dx = (tx - dbounds[0])
-                dy = (ty - dbounds[1])
+                dx = tx - dbounds[0]
+                dy = ty - dbounds[1]
                 if dx != 0 or dy != 0:
                     node.matrix.post_translate(dx, dy)
                 node.modified()

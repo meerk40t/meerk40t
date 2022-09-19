@@ -87,8 +87,8 @@ class ViewPort:
         show_origin_x=None,
         show_origin_y=None,
     ):
-        self._matrix = None
-        self._imatrix = None
+        self._scene_to_device_matrix = None
+        self._device_to_scene_matrix = None
         self.width = width
         self.height = height
         self.origin_x = origin_x
@@ -116,8 +116,8 @@ class ViewPort:
         self.realize()
 
     def realize(self):
-        self._imatrix = None
-        self._matrix = None
+        self._device_to_scene_matrix = None
+        self._scene_to_device_matrix = None
         self._width = Length(self.width).units
         self._height = Length(self.height).units
         self._offset_x = self._width * self.origin_x
@@ -178,13 +178,13 @@ class ViewPort:
         @param vector:
         @return:
         """
-        if self._imatrix is None:
+        if self._device_to_scene_matrix is None:
             self._calculate_matrices()
         if vector:
-            point = self._imatrix.transform_vector((x, y))
+            point = self._device_to_scene_matrix.transform_vector((x, y))
             return point.x, point.y
         else:
-            point = self._imatrix.point_in_matrix_space((x, y))
+            point = self._device_to_scene_matrix.point_in_matrix_space((x, y))
             return point.x, point.y
 
     def scene_to_device_position(self, x, y, vector=False):
@@ -197,32 +197,40 @@ class ViewPort:
         @param vector:
         @return:
         """
-        if self._matrix is None:
+        if self._scene_to_device_matrix is None:
             self._calculate_matrices()
         if vector:
-            point = self._matrix.transform_vector([x, y])
+            point = self._scene_to_device_matrix.transform_vector([x, y])
             return point[0], point[1]
         else:
-            point = self._matrix.point_in_matrix_space((x, y))
+            point = self._scene_to_device_matrix.point_in_matrix_space((x, y))
             return point.x, point.y
 
     def _calculate_matrices(self):
         """
-        Calculate the matricies between the scene and device units.
+        Calculate the matrices between the scene and device units.
         """
-        self._matrix = Matrix(self.scene_to_device_matrix())
-        self._imatrix = Matrix(self._matrix)
-        self._imatrix.inverse()
+        self._scene_to_device_matrix = Matrix(self._scene_to_device_transform())
+        self._device_to_scene_matrix = Matrix(self._scene_to_device_matrix)
+        self._device_to_scene_matrix.inverse()
 
     def device_to_scene_matrix(self):
         """
-        Returns the device-to-scene matrix. Positions calculated with this matrix should
+        Returns the device-to-scene matrix.
         """
-        if self._matrix is None:
+        if self._device_to_scene_matrix is None:
             self._calculate_matrices()
-        return self._imatrix
+        return self._device_to_scene_matrix
 
     def scene_to_device_matrix(self):
+        """
+        Returns the scene-to-device matrix.
+        """
+        if self._scene_to_device_matrix is None:
+            self._calculate_matrices()
+        return self._scene_to_device_matrix
+
+    def _scene_to_device_transform(self):
         ops = []
         if self._scale_x != 1.0 or self._scale_y != 1.0:
             ops.append(f"scale({1.0 / self._scale_x:.13f}, {1.0 / self._scale_y:.13f})")
@@ -237,7 +245,7 @@ class ViewPort:
         return " ".join(ops)
 
     def native_mm(self):
-        matrix = Matrix(self.scene_to_device_matrix())
+        matrix = self.scene_to_device_matrix()
         return abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
 
     def length(
@@ -345,9 +353,7 @@ class ViewPort:
         unit_x = UNITS_PER_INCH
         unit_y = UNITS_PER_INCH
         if matrix is None:
-            if self._matrix is None:
-                self._calculate_matrices()
-            matrix = self._matrix
+            matrix = self.scene_to_device_matrix()
         oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
         oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
         step_x = float(oneinch_x / dpi)

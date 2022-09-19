@@ -393,7 +393,6 @@ class LaserJob:
             statusvalue = "Queued"
         return statusvalue
 
-
     def is_running(self):
         return not self._stopped
 

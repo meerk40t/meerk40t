@@ -123,12 +123,14 @@ class SceneSpaceWidget(Widget):
             self._placement_event = None
             self._placement_event_type = None
         elif event_type == "wheelup":
-            if bool(self.scene.context.mouse_wheel_pan) == bool("ctrl" not in modifiers):
+            if bool(self.scene.context.mouse_wheel_pan) == bool(
+                "ctrl" not in modifiers
+            ):
                 self.scene_widget.matrix.post_translate(0, -self.pan_factor)
             else:
                 if (
-                        self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff
-                        and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff
+                    self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff
+                    and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff
                 ):
                     self.scene_widget.matrix.post_scale(
                         self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]

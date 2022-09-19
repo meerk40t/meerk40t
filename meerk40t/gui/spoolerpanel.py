@@ -412,7 +412,7 @@ class SpoolerPanel(wx.Panel):
             runtime = timestr(info[2], False)
             self.list_job_history.SetItem(list_id, 4, runtime)
             # First passes then device
-            if len(info)>=5:
+            if len(info) >= 5:
                 self.list_job_history.SetItem(list_id, 5, info[4])
             else:
                 self.list_job_history.SetItem(list_id, 5, "???")
@@ -428,8 +428,8 @@ class SpoolerPanel(wx.Panel):
                     self.history = json.load(f)
             except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
                 pass
-        if len(self.history)>0:
-            if len(self.history[0])<5:
+        if len(self.history) > 0:
+            if len(self.history[0]) < 5:
                 # Incompatible
                 self.history = []
         self.refresh_history(None)

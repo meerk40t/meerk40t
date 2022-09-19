@@ -346,9 +346,9 @@ class PositionPanel(wx.Panel):
                 or abs(self.position_h - self.org_h) >= delta
             ):
                 if self.org_w != 0 and self.org_h != 0:
-                    sx = round(self.position_w/self.org_w, 6)
-                    sy = round(self.position_h/self.org_h, 6)
-                    if sx!= 1.0 or sy != 1.0:
+                    sx = round(self.position_w / self.org_w, 6)
+                    sy = round(self.position_h / self.org_h, 6)
+                    if sx != 1.0 or sy != 1.0:
                         cmd2 = f"scale {sx} {sy}\n"
             # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
             # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
@@ -411,9 +411,9 @@ class PositionPanel(wx.Panel):
                 or abs(self.position_h - self.org_h) >= delta
             ):
                 if self.org_w != 0 and self.org_h != 0:
-                    sx = round(self.position_w/self.org_w, 6)
-                    sy = round(self.position_h/self.org_h, 6)
-                    if sx!= 1.0 or sy != 1.0:
+                    sx = round(self.position_w / self.org_w, 6)
+                    sy = round(self.position_h / self.org_h, 6)
+                    if sx != 1.0 or sy != 1.0:
                         cmd2 = f"scale {sx} {sy}\n"
             # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
             # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"

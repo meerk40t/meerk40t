@@ -1,10 +1,7 @@
-import math
-
 import wx
 
 from meerk40t.kernel import signal_listener
 
-from ..core.node.node import Node
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import STD_ICON_SIZE, icons8_laser_beam_52
 from .mwindow import MWindow
@@ -61,6 +58,9 @@ class PlannerPanel(wx.Panel):
         self.stage = 0
         if index == -1:
             disable_window(self)
+
+    def delegates(self):
+        yield self.panel_optimize
 
     def __set_properties(self):
         # begin wxGlade: Preview.__set_properties
@@ -253,7 +253,7 @@ class ExecuteJob(MWindow):
         self.panel = PlannerPanel(
             self, wx.ID_ANY, context=self.context, plan_name=plan_name
         )
-        self.add_module_delegate(self.panel)
+        # self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_52.GetBitmap())
         self.SetIcon(_icon)
@@ -271,6 +271,9 @@ class ExecuteJob(MWindow):
                 "size": STD_ICON_SIZE,
             },
         )
+
+    def delegates(self):
+        yield self.panel
 
     def window_open(self):
         self.panel.pane_show()
