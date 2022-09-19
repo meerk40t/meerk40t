@@ -100,7 +100,7 @@ class CutPlan:
         # ==========
         # Preprocess Operations
         # ==========
-        matrix = Matrix(self.context.device.scene_to_device_matrix())
+        matrix = self.context.device.scene_to_device_matrix()
 
         # TODO: Correct rotary.
         # rotary = self.context.rotary

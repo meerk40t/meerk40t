@@ -1022,7 +1022,7 @@ class RuidaEmulator(Module, Parameters):
             # If not saving send to spooler in control or elements if `design` is set.
             if not self.saving and len(self.cutcode):
                 if self.control:
-                    matrix = Matrix(self.device.scene_to_device_matrix())
+                    matrix = self.device.scene_to_device_matrix()
                     for plot in self.cutcode:
                         for i in range(len(plot.plot)):
                             x, y, laser = plot.plot[i]
