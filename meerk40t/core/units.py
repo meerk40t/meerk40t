@@ -122,8 +122,8 @@ class ViewPort:
         self._show_to_scene_matrix = None
         self._scene_to_show_matrix = None
         self._device_to_show_matrix = None
-        self._width = Length(self.width).units
-        self._height = Length(self.height).units
+        self._width = self.unit_width
+        self._height = self.unit_height
 
     def physical_to_scene_position(self, x, y, unitless=1):
         """
