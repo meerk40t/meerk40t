@@ -197,12 +197,14 @@ _confined = True
 
 
 def get_movement(device, dx, dy):
-    global _confined
-    conf = _confined
     try:
         current_x, current_y = device.current
     except AttributeError:
         return dx, dy
+
+    if not _confined:
+        return dx, dy
+
     newx = float(Length(dx))
     newy = float(Length(dy))
     min_x = 0
