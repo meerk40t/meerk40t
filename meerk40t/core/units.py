@@ -113,10 +113,6 @@ class ViewPort:
 
         self._width = None
         self._height = None
-        self._offset_x = None
-        self._offset_y = None
-        self._scale_x = None
-        self._scale_y = None
         self.realize()
 
     def realize(self):
@@ -128,10 +124,6 @@ class ViewPort:
         self._device_to_show_matrix = None
         self._width = Length(self.width).units
         self._height = Length(self.height).units
-        self._offset_x = self._width * self.origin_x
-        self._offset_y = self._height * self.origin_y
-        self._scale_x = self.user_scale_x * self.native_scale_x
-        self._scale_y = self.user_scale_y * self.native_scale_y
 
     def physical_to_scene_position(self, x, y, unitless=1):
         """
@@ -278,10 +270,14 @@ class ViewPort:
 
     def _scene_to_device_transform(self):
         ops = []
-        if self._scale_x != 1.0 or self._scale_y != 1.0:
-            ops.append(f"scale({1.0 / self._scale_x:.13f}, {1.0 / self._scale_y:.13f})")
-        if self._offset_x != 0 or self._offset_y != 0:
-            ops.append(f"translate({self._offset_x:.13f}, {self._offset_y:.13f})")
+        _scale_x = self.user_scale_x * self.native_scale_x
+        _scale_y = self.user_scale_y * self.native_scale_y
+        if _scale_x != 1.0 or _scale_y != 1.0:
+            ops.append(f"scale({1.0 / _scale_x:.13f}, {1.0 / _scale_y:.13f})")
+        _offset_x = self._width * self.origin_x
+        _offset_y = self._height * self.origin_y
+        if _offset_x != 0 or _offset_y != 0:
+            ops.append(f"translate({_offset_x:.13f}, {_offset_y:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
