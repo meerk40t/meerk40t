@@ -215,15 +215,30 @@ class TestViewport(unittest.TestCase):
             lens_size,
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
-            origin_x=0.5,
-            origin_y=0.5,
+            origin_x=0,
+            origin_y=0,
+            show_origin_x=0.5,
+            show_origin_y=0.5,
         )
 
-        x, y = view.device_to_scene_position(0x8000, 0x8000)
+        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
         self.assertGreaterEqual(x, -10)
         self.assertGreaterEqual(10, x)
         self.assertGreaterEqual(y, -10)
         self.assertGreaterEqual(10, y)
+
+        hx, hy = view.physical_to_show_position("55mm", "55mm")
+        self.assertEqual(hx, 0)
+        self.assertEqual(hy, 0)
+
+        sx, sy = view.device_to_scene_position(0, 0)
+        self.assertEqual(sx, 0)
+        self.assertEqual(sy, 0)
+
+        cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
+        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
+        self.assertEqual(cx, qx)
+        self.assertEqual(cy, qy)
 
     def test_viewport_balor_flip_y(self):
         """
