@@ -178,13 +178,11 @@ class ViewPort:
         @param vector:
         @return:
         """
-        if self._device_to_scene_matrix is None:
-            self._calculate_matrices()
         if vector:
-            point = self._device_to_scene_matrix.transform_vector((x, y))
+            point = self.device_to_scene_matrix().transform_vector((x, y))
             return point.x, point.y
         else:
-            point = self._device_to_scene_matrix.point_in_matrix_space((x, y))
+            point = self.device_to_scene_matrix().point_in_matrix_space((x, y))
             return point.x, point.y
 
     def scene_to_device_position(self, x, y, vector=False):
@@ -197,13 +195,11 @@ class ViewPort:
         @param vector:
         @return:
         """
-        if self._scene_to_device_matrix is None:
-            self._calculate_matrices()
         if vector:
-            point = self._scene_to_device_matrix.transform_vector([x, y])
+            point = self.scene_to_device_matrix().transform_vector([x, y])
             return point[0], point[1]
         else:
-            point = self._scene_to_device_matrix.point_in_matrix_space((x, y))
+            point = self.scene_to_device_matrix().point_in_matrix_space((x, y))
             return point.x, point.y
 
     def _calculate_matrices(self):
