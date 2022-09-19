@@ -210,15 +210,19 @@ class TestViewport(unittest.TestCase):
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
 
+        flip_x = False
+        flip_y = False
         view = ViewPort(
             lens_size,
             lens_size,
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
-            origin_x=0,
-            origin_y=0,
+            origin_x=1.0 if flip_x else 0.0,
+            origin_y=1.0 if flip_y else 0.0,
             show_origin_x=0.5,
             show_origin_y=0.5,
+            flip_x=flip_x,
+            flip_y=flip_y,
         )
 
         x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
@@ -252,16 +256,19 @@ class TestViewport(unittest.TestCase):
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
 
+        flip_x = False
+        flip_y = True
         view = ViewPort(
             lens_size,
             lens_size,
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
-            origin_x=0,
-            origin_y=1,
+            origin_x=1.0 if flip_x else 0.0,
+            origin_y=1.0 if flip_y else 0.0,
             show_origin_x=0.5,
             show_origin_y=0.5,
-            flip_y=True,
+            flip_x=flip_x,
+            flip_y=flip_y,
         )
 
         x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
@@ -275,13 +282,13 @@ class TestViewport(unittest.TestCase):
         self.assertEqual(hy, 0)
 
         sx, sy = view.device_to_scene_position(0, 0)
-        self.assertEqual(sx, 0)
-        self.assertEqual(sy, view.unit_height)
+        self.assertAlmostEqual(sx, 0)
+        self.assertAlmostEqual(sy, view.unit_height)
 
         cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
         qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertEqual(cx, qx)
-        self.assertEqual(cy, qy)
+        self.assertAlmostEqual(cx, qx)
+        self.assertAlmostEqual(cy, qy)
 
     def test_viewport_balor_flip_x(self):
         """
@@ -295,18 +302,83 @@ class TestViewport(unittest.TestCase):
         galvo_range = 0xFFFF
         units_per_galvo = unit_size / galvo_range
 
+        flip_x = True
+        flip_y = False
         view = ViewPort(
             lens_size,
             lens_size,
             native_scale_x=units_per_galvo,
             native_scale_y=units_per_galvo,
-            origin_x=0.5,
-            origin_y=0.5,
-            flip_x=True,
+            origin_x=1.0 if flip_x else 0.0,
+            origin_y=1.0 if flip_y else 0.0,
+            show_origin_x=0.5,
+            show_origin_y=0.5,
+            flip_x=flip_x,
+            flip_y=flip_y,
         )
 
-        x, y = view.device_to_scene_position(0x8000, 0x8000)
+        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
         self.assertGreaterEqual(x, -10)
         self.assertGreaterEqual(10, x)
         self.assertGreaterEqual(y, -10)
         self.assertGreaterEqual(10, y)
+
+        hx, hy = view.physical_to_show_position("55mm", "55mm")
+        self.assertEqual(hx, 0)
+        self.assertEqual(hy, 0)
+
+        sx, sy = view.device_to_scene_position(0, 0)
+        self.assertAlmostEqual(sx, view.unit_width)
+        self.assertAlmostEqual(sy, 0)
+
+        cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
+        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
+        self.assertAlmostEqual(cx, qx)
+        self.assertAlmostEqual(cy, qy)
+
+    def test_viewport_balor_flip_xy_swap(self):
+        """
+        Test Balor-esque viewport.
+        Center x, y. flip_x
+
+        :return:
+        """
+        lens_size = "110mm"
+        unit_size = float(Length(lens_size))
+        galvo_range = 0xFFFF
+        units_per_galvo = unit_size / galvo_range
+
+        flip_x = True
+        flip_y = True
+        view = ViewPort(
+            lens_size,
+            lens_size,
+            native_scale_x=units_per_galvo,
+            native_scale_y=units_per_galvo,
+            origin_x=1.0 if flip_x else 0.0,
+            origin_y=1.0 if flip_y else 0.0,
+            show_origin_x=0.5,
+            show_origin_y=0.5,
+            flip_x=flip_x,
+            flip_y=flip_y,
+            swap_xy=True,
+        )
+
+        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
+        self.assertGreaterEqual(x, -10)
+        self.assertGreaterEqual(10, x)
+        self.assertGreaterEqual(y, -10)
+        self.assertGreaterEqual(10, y)
+
+        hx, hy = view.physical_to_show_position("55mm", "55mm")
+        self.assertEqual(hx, 0)
+        self.assertEqual(hy, 0)
+
+        sx, sy = view.device_to_scene_position(0, 0)
+        self.assertAlmostEqual(sx, view.unit_width)
+        self.assertAlmostEqual(sy, view.unit_height)
+
+        cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
+        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
+        self.assertEqual(cx, qx)
+        self.assertEqual(cy, qy)
