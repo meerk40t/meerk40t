@@ -375,8 +375,8 @@ class TestViewport(unittest.TestCase):
         self.assertAlmostEqual(hy, 0)
 
         sx, sy = view.device_to_scene_position(0, 0)
-        self.assertAlmostEqual(sx, view.unit_width)
-        self.assertAlmostEqual(sy, view.unit_height)
+        self.assertAlmostEqual(sx, view.unit_height)  # Swap_XY
+        self.assertAlmostEqual(sy, view.unit_width)
 
         cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
         qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
@@ -425,8 +425,8 @@ class TestViewport(unittest.TestCase):
         self.assertAlmostEqual(hy, 0)
 
         sx, sy = view.device_to_scene_position(0, 0)
-        self.assertAlmostEqual(sx, view.unit_width)
-        self.assertAlmostEqual(sy, view.unit_height)
+        self.assertAlmostEqual(sx, view.unit_height)
+        self.assertAlmostEqual(sy, view.unit_width)
 
         cx, cy = view.physical_to_scene_position("-55mm", "-50mm")  # Offset half/bed
         qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
