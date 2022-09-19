@@ -371,7 +371,7 @@ class RuidaEmulator(Module, Parameters):
         self.state = 22
 
     def __repr__(self):
-        return f"Ruida({self.name}, {len(self.cutcode)} cuts)"
+        return f"Ruida({self.name}, {len(self.cutcode)} cuts @{hex(id(self))})"
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
