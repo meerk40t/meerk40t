@@ -193,18 +193,11 @@ def register_panel_navigation(window, context):
     context.register("pane/jogdist", pane)
 
 
-_confined = True
-
-
 def get_movement(device, dx, dy):
     try:
         current_x, current_y = device.current
     except AttributeError:
         return dx, dy
-
-    if not _confined:
-        return dx, dy
-
     newx = float(Length(dx))
     newy = float(Length(dy))
     min_x = 0
@@ -521,21 +514,20 @@ class Drag(wx.Panel):
             y = (bbox[3] + bbox[1]) / 2.0
         else:
             return
-        if _confined:
-            min_x = 0
-            max_x = float(Length(self.context.device.width))
-            min_y = 0
-            max_y = float(Length(self.context.device.height))
-            if x < min_x or x > max_x or y < min_y or y > max_y:
-                dlg = wx.MessageDialog(
-                    None,
-                    _("Cannot move outside bed dimensions"),
-                    _("Error"),
-                    wx.ICON_WARNING,
-                )
-                dlg.ShowModal()
-                dlg.Destroy()
-                return
+        min_x = 0
+        max_x = float(Length(self.context.device.width))
+        min_y = 0
+        max_y = float(Length(self.context.device.height))
+        if x < min_x or x > max_x or y < min_y or y > max_y:
+            dlg = wx.MessageDialog(
+                None,
+                _("Cannot move outside bed dimensions"),
+                _("Error"),
+                wx.ICON_WARNING,
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
         self.context(
             f"move_absolute {Length(amount=x).length_mm} {Length(amount=y).length_mm}\n"
         )
@@ -706,9 +698,6 @@ class Jog(wx.Panel):
         self.button_navigate_lock = wx.BitmapButton(
             self, wx.ID_ANY, icons8_lock_50.GetBitmap()
         )
-        self.button_confine = wx.BitmapButton(
-            self, wx.ID_ANY, icons8_constraint_50.GetBitmap()
-        )
         self.__set_properties()
         self.__do_layout()
 
@@ -737,7 +726,6 @@ class Jog(wx.Panel):
         self.Bind(
             wx.EVT_BUTTON, self.on_button_navigate_lock, self.button_navigate_lock
         )
-        self.Bind(wx.EVT_BUTTON, self.on_button_confinement, self.button_confine)
         # end wxGlade
 
     def __set_properties(self):
@@ -777,8 +765,6 @@ class Jog(wx.Panel):
         self.button_navigate_unlock.SetSize(self.button_navigate_unlock.GetBestSize())
         self.button_navigate_lock.SetToolTip(_("Lock the laser rail"))
         self.button_navigate_lock.SetSize(self.button_navigate_lock.GetBestSize())
-        self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
-        self.button_confine.SetSize(self.button_confine.GetBestSize())
         # end wxGlade
 
     def __do_layout(self):
@@ -794,57 +780,12 @@ class Jog(wx.Panel):
         navigation_sizer.Add(self.button_navigate_down, 0, 0, 0)
         navigation_sizer.Add(self.button_navigate_down_right, 0, 0, 0)
         navigation_sizer.Add(self.button_navigate_unlock, 0, 0, 0)
-        navigation_sizer.Add(self.button_confine, 0, 0, 0)
         navigation_sizer.Add(self.button_navigate_lock, 0, 0, 0)
+
         self.SetSizer(navigation_sizer)
         navigation_sizer.Fit(self)
         self.Layout()
         # end wxGlade
-
-    @property
-    def confined(self):
-        global _confined
-        return _confined
-
-    @confined.setter
-    def confined(self, value):
-        global _confined
-        # Let's see whether the device has a current option...
-        try:
-            dummyx, dummy = self.context.device.current
-        except AttributeError:
-            value = False
-
-        _confined = value
-        if value == 0:
-            self.button_confine.SetBitmap(icons8_expansion_50.GetBitmap())
-            self.button_confine.SetToolTip(
-                _("Caution: allow laser movement outside bed size")
-            )
-            # self.context("confine 0")
-        else:
-            self.button_confine.SetBitmap(icons8_constraint_50.GetBitmap())
-            self.button_confine.SetToolTip(_("Limit laser movement to bed size"))
-            # self.context("confine 1")
-
-    def on_button_confinement(self, event=None):  # wxGlade: Navigation.<event_handler>
-        self.confined = not self.confined
-        try:
-            current_x, current_y = self.context.device.current
-        except AttributeError:
-            self.confined = False
-        if self.confined:
-            min_x = 0
-            max_x = float(Length(self.context.device.width))
-            min_y = 0
-            max_y = float(Length(self.context.device.height))
-            # Are we outside? Then lets move back to the edge...
-            new_x = min(max_x, max(min_x, current_x))
-            new_y = min(max_y, max(min_y, current_y))
-            if new_x != current_x or new_y != current_y:
-                self.context(
-                    f"move_absolute {Length(amount=new_x).mm:.3f}mm {Length(amount=new_y).mm:.3f}mm\n"
-                )
 
     def move_rel(self, dx, dy):
         nx, ny = get_movement(self.context.device, dx, dy)
