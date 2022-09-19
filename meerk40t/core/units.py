@@ -353,9 +353,7 @@ class ViewPort:
         unit_x = UNITS_PER_INCH
         unit_y = UNITS_PER_INCH
         if matrix is None:
-            if self._scene_to_device_matrix is None:
-                self._calculate_matrices()
-            matrix = self._scene_to_device_matrix
+            matrix = self.scene_to_device_matrix()
         oneinch_x = abs(complex(*matrix.transform_vector([unit_x, 0])))
         oneinch_y = abs(complex(*matrix.transform_vector([0, unit_y])))
         step_x = float(oneinch_x / dpi)
