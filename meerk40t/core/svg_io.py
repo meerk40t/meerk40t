@@ -748,6 +748,11 @@ class SVGProcessor:
                         _lightness = float(element.values.get("lightness"))
                     except (ValueError, TypeError):
                         pass
+                    _passthrough = None
+                    try:
+                        _passthrough = float(element.values.get("passthrough"))
+                    except (ValueError, TypeError):
+                        pass
                     node = context_node.add(
                         image=element.image,
                         matrix=element.transform,
@@ -763,6 +768,7 @@ class SVGProcessor:
                         green=_green,
                         blue=_blue,
                         lightness=_lightness,
+                        passthrough=_passthrough,
                         label=_label,
                         operations=operations,
                         lock=_lock,
