@@ -36,7 +36,7 @@ class ColorPanel(wx.Panel):
         main_sizer.Add(color_sizer, 0, wx.EXPAND, 0)
         self.btn_color = []
         self.underliner = []
-        bgcolors = (
+        self.bgcolors = [
             0xFFFFFF,
             0x000000,
             0xFF0000,
@@ -46,8 +46,10 @@ class ColorPanel(wx.Panel):
             0xFF00FF,
             0x00FFFF,
             0xFFFFFF,
-        )
-        for i in range(len(bgcolors)):
+            None,
+        ]
+        self.last_col_idx = len(self.bgcolors) - 1
+        for i in range(len(self.bgcolors)):
             self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
             self.underliner[i].SetBackgroundColour(wx.BLUE)
             self.underliner[i].SetMaxSize(wx.Size(-1, 3))
@@ -56,42 +58,73 @@ class ColorPanel(wx.Panel):
             if i == 0:
                 self.btn_color[i].SetForegroundColour(wx.RED)
                 self.btn_color[i].SetLabel("X")
+            elif i == len(self.bgcolors) - 1:
+                self.btn_color[i].SetLabel(_("Custom"))
             else:
-                self.btn_color[i].SetForegroundColour(wx.Colour(bgcolors[i]))
-                colinfo = wx.Colour(bgcolors[i]).GetAsString(wx.C2S_NAME)
+                self.btn_color[i].SetForegroundColour(wx.Colour(self.bgcolors[i]))
+                colinfo = wx.Colour(self.bgcolors[i]).GetAsString(wx.C2S_NAME)
                 self.btn_color[i].SetLabel(_(colinfo))
             self.btn_color[i].SetMinSize((10, 23))
-            self.btn_color[i].SetBackgroundColour(wx.Colour(bgcolors[i]))
+            self.btn_color[i].SetBackgroundColour(wx.Colour(self.bgcolors[i]))
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(self.btn_color[i], 0, wx.EXPAND, 0)
             sizer.Add(self.underliner[i], 0, wx.EXPAND, 0)
             color_sizer.Add(sizer, 1, wx.EXPAND, 0)
             self.btn_color[i].Bind(wx.EVT_BUTTON, self.on_button)
+        font = wx.Font(
+            7,
+            wx.FONTFAMILY_SWISS,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_BOLD,
+        )
+        self.btn_color[self.last_col_idx].SetFont(font)
         self.SetSizer(main_sizer)
         self.Layout()
         self.set_widgets(self.node)
 
     def on_button(self, event):
+        value = None
         button = event.GetEventObject()
-        for bidx, sbtn in enumerate(self.btn_color):
-            if sbtn == button:
-                value = None
-                if bidx == 0:
+        bidx = None
+        if button == self.btn_color[self.last_col_idx]:
+            nodecol = None
+            cvalue = getattr(self.node, self.attribute, None)
+            if cvalue == "none":
+                cvalue = None
+            if cvalue is not None:
+                nodecol = wx.Colour(swizzlecolor(cvalue))
+            color_data = wx.ColourData()
+            color_data.SetColour(wx.Colour(nodecol))
+            dlg = wx.ColourDialog(self, color_data)
+            if dlg.ShowModal() == wx.ID_OK:
+                color_data = dlg.GetColourData()
+                cvalue = color_data.GetColour()
+                value = Color(
+                    swizzlecolor(cvalue.GetRGB()), 1.0
+                )
+                button.SetBackgroundColour(cvalue)
+            else:
+                return
+        else:
+            for bidx, sbtn in enumerate(self.btn_color):
+                if sbtn == button:
                     value = None
-                else:
-                    if bidx < 0 or bidx >= len(self.btn_color):
-                        bidx = -1
+                    if bidx == 0:
+                        value = None
                     else:
-                        bcolor = button.GetBackgroundColour()
-                        rgb = bcolor.GetRGB()
-                        color = swizzlecolor(rgb)
-                        value = Color(color, 1.0)
-                setattr(self.node, self.attribute, value)
-                self.context.elements.signal("element_property_update", self.node)
-                if self.callback is not None:
-                    self.callback()
-                self.mark_color(bidx)
-                break
+                        if bidx < 0 or bidx >= len(self.btn_color):
+                            bidx = -1
+                        else:
+                            bcolor = button.GetBackgroundColour()
+                            rgb = bcolor.GetRGB()
+                            color = swizzlecolor(rgb)
+                            value = Color(color, 1.0)
+                    break
+        setattr(self.node, self.attribute, value)
+        self.context.elements.signal("element_property_update", self.node)
+        if self.callback is not None:
+            self.callback()
+        self.mark_color(bidx)
         self.node.focus()
 
     def pane_hide(self):
@@ -113,16 +146,34 @@ class ColorPanel(wx.Panel):
         self.Show()
 
     def mark_color(self, idx):
+        def countercolor(bgcolor):
+            background = swizzlecolor(bgcolor)
+            c1 = Color("Black")
+            c2 = Color("White")
+            if Color.distance(background, c1) > Color.distance(background, c2):
+                textcolor = c1
+            else:
+                textcolor = c2
+            wxcolor = wx.Colour(swizzlecolor(textcolor))
+            return wxcolor
+
+
         if self.node is None:
             idx = -1
+            self.btn_color[self.last_col_idx].SetBackgroundColour(None)
+            self.bgcolors[self.last_col_idx] = None
         else:
             value = getattr(self.node, self.attribute, None)
             nodecol = None
             if value == "none":
                 value = None
+
             colinfo = "None"
             if value is not None:
                 nodecol = wx.Colour(swizzlecolor(value))
+                self.bgcolors[self.last_col_idx] = nodecol
+                self.btn_color[self.last_col_idx].SetBackgroundColour(self.bgcolors[self.last_col_idx])
+                self.btn_color[self.last_col_idx].SetForegroundColour(countercolor(self.bgcolors[self.last_col_idx]))
                 s = ""
                 try:
                     s = nodecol.GetAsString(wx.C2S_NAME)
