@@ -812,6 +812,10 @@ class MeerK40tScenePanel(wx.Panel):
         elif hasattr(self.context.device, "lens_size"):
             dimx = self.context.device.lens_size
             dimy = dimx
+        if hasattr(self.context.device, "home_bottom") and hasattr(self.context.device, "origin_y"):
+            self.context.device.origin_y = 1.0 if self.context.device.home_bottom else 0.0
+        if hasattr(self.context.device, "home_right") and hasattr(self.context.device, "origin_x"):
+            self.context.device.origin_x = 1.0 if self.context.device.home_right else 0.0
         # if dimx is not None:
         #     print(f"Set dimensions to {dimx}, {dimy}")
         #     self.context.signal(
