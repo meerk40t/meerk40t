@@ -71,6 +71,13 @@ class ColorPanel(wx.Panel):
             sizer.Add(self.underliner[i], 0, wx.EXPAND, 0)
             color_sizer.Add(sizer, 1, wx.EXPAND, 0)
             self.btn_color[i].Bind(wx.EVT_BUTTON, self.on_button)
+        font = wx.Font(
+            7,
+            wx.FONTFAMILY_SWISS,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_BOLD,
+        )
+        self.btn_color[self.last_col_idx].SetFont(font)
         self.SetSizer(main_sizer)
         self.Layout()
         self.set_widgets(self.node)
@@ -95,7 +102,6 @@ class ColorPanel(wx.Panel):
                 value = Color(
                     swizzlecolor(cvalue.GetRGB()), 1.0
                 )
-                self.bgcolors[self.last_col_idx] = cvalue
                 button.SetBackgroundColour(cvalue)
             else:
                 return
@@ -140,6 +146,18 @@ class ColorPanel(wx.Panel):
         self.Show()
 
     def mark_color(self, idx):
+        def countercolor(bgcolor):
+            background = swizzlecolor(bgcolor)
+            c1 = Color("Black")
+            c2 = Color("White")
+            if Color.distance(background, c1) > Color.distance(background, c2):
+                textcolor = c1
+            else:
+                textcolor = c2
+            wxcolor = wx.Colour(swizzlecolor(textcolor))
+            return wxcolor
+
+
         if self.node is None:
             idx = -1
             self.btn_color[self.last_col_idx].SetBackgroundColour(None)
@@ -155,6 +173,7 @@ class ColorPanel(wx.Panel):
                 nodecol = wx.Colour(swizzlecolor(value))
                 self.bgcolors[self.last_col_idx] = nodecol
                 self.btn_color[self.last_col_idx].SetBackgroundColour(self.bgcolors[self.last_col_idx])
+                self.btn_color[self.last_col_idx].SetForegroundColour(countercolor(self.bgcolors[self.last_col_idx]))
                 s = ""
                 try:
                     s = nodecol.GetAsString(wx.C2S_NAME)
