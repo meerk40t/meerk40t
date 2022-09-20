@@ -342,7 +342,7 @@ class GRBLDevice(Service, ViewPort):
             if filename is None:
                 raise CommandSyntaxError
             try:
-                with open(filename, "wb") as f:
+                with open(filename, "w") as f:
                     # f.write(b"(MeerK40t)\n")
                     driver = GRBLDriver(self)
                     job = LaserJob(filename, list(data.plan), driver=driver)
