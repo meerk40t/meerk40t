@@ -573,7 +573,21 @@ class MeerK40t(MWindow):
                     "The scene-menu will appear if you right-click on the scene-background"
                 ),
                 "page": "Gui",
+                "hidden": True,
                 "section": "Scene",
+            },
+            {
+                "attr": "process_while_typing",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Process input while typing"),
+                "tip": _("Try to immediatly use values you enter in dialog-textfields - ") + "\n" +
+                    _("otherwise they will get applied only after a deliberate confirmation") + "\n" +
+                    _("by enter or stepping out of the field)"),
+                "page": "Gui",
+                "hidden": True,
+                "section": "Misc.",
             },
         ]
         context.kernel.register_choices("preferences", choices)

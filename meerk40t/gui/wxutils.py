@@ -348,7 +348,7 @@ class TextCtrl(wx.TextCtrl):
             validator=validator,
             name=name,
         )
-
+        self.parent = parent
         self._check = check
         self._style = style
         # For the sake of readibility we allow multiple occurences of
@@ -597,7 +597,13 @@ class TextCtrl(wx.TextCtrl):
         except ValueError:
             status = "error"
         self.warn_status = status
-
+        # Is it a valid value?
+        if status == "modified" and hasattr(self.parent, "context"):
+            if getattr(self.parent.context.root, "process_while_typing", False):
+                if self._action_routine is not None:
+                    self._event_generated = wx.EVT_TEXT
+                    self._action_routine()
+                    self._event_generated = None
 
 class CheckBox(wx.CheckBox):
     def __init__(
