@@ -7,7 +7,7 @@ import time
 import serial
 from serial import SerialException
 
-from meerk40t.kernel import Module, Service
+from meerk40t.kernel import Module, Service, CommandSyntaxError
 
 from ..core.cutcode import (
     CubicCut,
@@ -25,7 +25,7 @@ from ..core.cutcode import (
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
-from ..core.spoolers import Spooler
+from ..core.spoolers import Spooler, LaserJob
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, ViewPort
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 
@@ -335,6 +335,23 @@ class GRBLDevice(Service, ViewPort):
         )
         def resume(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.resume()
+
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def gcode_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "w") as f:
+                    # f.write(b"(MeerK40t)\n")
+                    driver = GRBLDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    driver.grbl = f.write
+                    job.execute()
+
+            except (PermissionError, IOError):
+                channel(_("Could not save: {filename}").format(filename=filename))
+
 
     @property
     def current(self):
