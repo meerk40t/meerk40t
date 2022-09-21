@@ -611,7 +611,7 @@ class ViewPort:
         return Length(f"{amount}{units}").preferred
 
 
-ACCEPTED_UNITS = ("", "cm", "mm", "in", "mil", "pt", "pc", "px", "%")
+ACCEPTED_UNITS = ("", "cm", "mm", "in", "inch", "inches", "mil", "pt", "pc", "px", "%")
 
 
 class Length(object):
