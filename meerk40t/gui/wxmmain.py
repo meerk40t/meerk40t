@@ -494,10 +494,13 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
-                context.save(pathname)
-                gui.validate_save()
-                gui.working_file = pathname
-                gui.set_file_as_recently_used(gui.working_file)
+                try:
+                    context.save(pathname)
+                    gui.validate_save()
+                    gui.working_file = pathname
+                    gui.set_file_as_recently_used(gui.working_file)
+                except PermissionError:
+                    pass
 
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
