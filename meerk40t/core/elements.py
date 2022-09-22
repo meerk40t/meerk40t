@@ -384,6 +384,7 @@ class Elemental(Service):
 
     @property
     def default_stroke(self):
+        # We dont allow en empty stroke color as default (why not?!)
         if self._default_stroke is None:
             mystroke = Color("blue")
         else:
@@ -392,11 +393,7 @@ class Elemental(Service):
 
     @default_stroke.setter
     def default_stroke(self, color):
-        if color is None:
-            # Intentionally so
-            self._default_stroke = "none"
-        else:
-            self._default_stroke = color
+        self._default_stroke = color
 
     @property
     def default_fill(self):
