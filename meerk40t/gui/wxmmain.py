@@ -499,8 +499,15 @@ class MeerK40t(MWindow):
                     gui.validate_save()
                     gui.working_file = pathname
                     gui.set_file_as_recently_used(gui.working_file)
-                except PermissionError:
-                    pass
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
