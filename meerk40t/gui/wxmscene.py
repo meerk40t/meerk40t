@@ -805,23 +805,8 @@ class MeerK40tScenePanel(wx.Panel):
 
     @signal_listener("bedsize")
     def on_bedsize_simple(self, origin, *args):
-        dimx = None
-        if hasattr(self.context.device, "bedwidth"):
-            dimx = self.context.device.bedwidth
-            dimy = self.context.device.bedheight
-        elif hasattr(self.context.device, "lens_size"):
-            dimx = self.context.device.lens_size
-            dimy = dimx
-        if hasattr(self.context.device, "home_bottom") and hasattr(self.context.device, "origin_y"):
-            self.context.device.origin_y = 1.0 if self.context.device.home_bottom else 0.0
-        if hasattr(self.context.device, "home_right") and hasattr(self.context.device, "origin_x"):
-            self.context.device.origin_x = 1.0 if self.context.device.home_right else 0.0
-        # if dimx is not None:
-        #     print(f"Set dimensions to {dimx}, {dimy}")
-        #     self.context.signal(
-        #         "bed_size", (dimx, dimy)
-        #     )
-        self.context.device.realize()
+        # The next two are more or less the same, so we remove the direct invocation...
+        # self.context.device.realize()
         self.context("viewport_update\n")
         self.scene.signal("guide")
         self.scene.signal("grid")

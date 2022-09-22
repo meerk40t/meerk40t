@@ -426,6 +426,8 @@ class GRBLDevice(Service, ViewPort):
     def realize(self):
         self.width = self.bedwidth
         self.height = self.bedheight
+        self.origin_x=1.0 if self.home_right else 0.0
+        self.origin_y=1.0 if self.home_bottom else 0.0
         super().realize()
 
 
