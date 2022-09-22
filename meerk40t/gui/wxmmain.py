@@ -1375,9 +1375,19 @@ class MeerK40t(MWindow):
             if gui.working_file is None:
                 context(".dialog_save_as\n")
             else:
-                gui.set_file_as_recently_used(gui.working_file)
-                gui.validate_save()
-                context.elements.save(gui.working_file)
+                try:
+                    gui.set_file_as_recently_used(gui.working_file)
+                    gui.validate_save()
+                    context.elements.save(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
         @context.console_command("dialog_import_egv", hidden=True)
         def egv_in_dialog(**kwargs):
