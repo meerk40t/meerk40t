@@ -111,7 +111,7 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Default Operation Empty"),
-                "tip": _("Leave empty operations or default Other/Red/Blue"),
+                "tip": _("Leave empty operations, don't load a default set"),
                 "page": "Classification",
                 "section": "",
             },
@@ -127,18 +127,19 @@ def plugin(kernel, lifecycle=None):
                 "page": "Classification",
                 "section": "",
             },
-            {
-                "attr": "legacy_classification",
-                "object": elements,
-                "default": False,
-                "type": bool,
-                "label": _("Legacy Classify"),
-                "tip": _(
-                    "Use the legacy classification algorithm rather than the modern classification algorithm."
-                ),
-                "page": "Classification",
-                "section": "",
-            },
+            # No longer used...
+            # {
+            #     "attr": "legacy_classification",
+            #     "object": elements,
+            #     "default": False,
+            #     "type": bool,
+            #     "label": _("Legacy Classify"),
+            #     "tip": _(
+            #         "Use the legacy classification algorithm rather than the modern classification algorithm."
+            #     ),
+            #     "page": "Classification",
+            #     "section": "",
+            # },
             {
                 "attr": "classify_new",
                 "object": elements,
@@ -383,6 +384,7 @@ class Elemental(Service):
 
     @property
     def default_stroke(self):
+        # We dont allow en empty stroke color as default (why not?!)
         if self._default_stroke is None:
             mystroke = Color("blue")
         else:
@@ -391,11 +393,7 @@ class Elemental(Service):
 
     @default_stroke.setter
     def default_stroke(self, color):
-        if color is None:
-            # Intentionally so
-            self._default_stroke = "none"
-        else:
-            self._default_stroke = color
+        self._default_stroke = color
 
     @property
     def default_fill(self):
