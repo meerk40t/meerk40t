@@ -593,6 +593,8 @@ class LaserToolPanel(wx.Panel):
         if result:
             p = self.context
             units = p.units_name
+            cx = float(Length(amount=center[0], digits=5, preferred_units=units))
+            cy = float(Length(amount=center[1], digits=5, preferred_units=units))
             if self.check_circle.GetValue():
                 self.context(
                     f"circle "
@@ -600,13 +602,39 @@ class LaserToolPanel(wx.Panel):
                     f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
                     f"1mm stroke black\n"
                 )
-
+            if (
+                cx < 0
+                or cy < 0
+                or cx > self.context.device.unit_width
+                or cy > self.context.device.unit_height
+            ):
+                message = (
+                    _("The circles center seems to lie outside the bed-dimensions!")
+                    + "\n"
+                )
+                message += (
+                    _("If you continue to move to the center, then the laserhead might")
+                    + "\n"
+                )
+                message += _(
+                    "slam into the walls and get damaged! Do you really want to proeed?"
+                )
+                caption = _("Dangerous coordinates")
+                dlg = wx.MessageDialog(
+                    self,
+                    message,
+                    caption,
+                    wx.YES_NO | wx.ICON_WARNING,
+                )
+                dlgresult = dlg.ShowModal()
+                dlg.Destroy()
+                if dlgresult != wx.ID_YES:
+                    return
             self.context(
                 f"move_absolute "
                 f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=center[1], digits=5, preferred_units=units))}\n"
             )
-        event.Skip()
 
     def on_btn_create_circle(self, event):  # wxGlade: clsLasertools.<event_handler>
         result, center, radius = self.calculate_center()
