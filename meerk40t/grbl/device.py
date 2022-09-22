@@ -1293,7 +1293,8 @@ class TCPOutput:
 
     def write(self, data):
         self.service.signal("tcp;write", data)
-        data = bytes(data, "utf-8")
+        if isinstance(data, str):
+            data = bytes(data, "utf-8")
         with self.lock:
             self.buffer += data
             self.service.signal("tcp;buffer", len(self.buffer))
