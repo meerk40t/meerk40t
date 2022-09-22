@@ -393,6 +393,8 @@ class Elemental(Service):
 
     @default_stroke.setter
     def default_stroke(self, color):
+        if isinstance(color, str):
+            color = Color(str)
         self._default_stroke = color
 
     @property
