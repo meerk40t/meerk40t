@@ -401,6 +401,8 @@ class Elemental(Service):
 
     @default_fill.setter
     def default_fill(self, color):
+        if isinstance(color, str):
+            color = Color(str)
         self._default_fill = color
 
     @property
