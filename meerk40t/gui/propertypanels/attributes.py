@@ -375,47 +375,50 @@ class PositionSizePanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def _set_widgets_hidden(self):
+        self.text_x.SetValue("")
+        self.text_y.SetValue("")
+        self.text_w.SetValue("")
+        self.text_h.SetValue("")
+        self.Hide()
+
     def set_widgets(self, node):
         self.node = node
-        vis = node is not None
-        bb = None
         try:
             bb = node.bounds
         except:
-            vis = False
+            # Node is none or bounds threw an error.
+            bb = None
 
-        if vis:
-            if hasattr(self.node, "lock"):
-                self.check_lock.Enable(True)
-                self.check_lock.SetValue(self.node.lock)
-            else:
-                self.check_lock.SetValue(False)
-                self.check_lock.Enable(False)
-
-            en_xy = (
-                not getattr(self.node, "lock", False)
-                or self.context.elements.lock_allows_move
-            )
-            en_wh = not getattr(self.node, "lock", False)
-            x = bb[0]
-            y = bb[1]
-            w = bb[2] - bb[0]
-            h = bb[3] - bb[1]
-            self.text_x.SetValue(Length(x, digits=4).length_mm)
-            self.text_y.SetValue(Length(y, digits=4).length_mm)
-            self.text_w.SetValue(Length(w, digits=4).length_mm)
-            self.text_h.SetValue(Length(h, digits=4).length_mm)
-            self.text_x.Enable(en_xy)
-            self.text_y.Enable(en_xy)
-            self.text_w.Enable(en_wh)
-            self.text_h.Enable(en_wh)
-            self.Show()
+        if bb is None:
+            # Bounds was genuinely none, or node threw an error.
+            self._set_widgets_hidden()
+            return
+        if hasattr(self.node, "lock"):
+            self.check_lock.Enable(True)
+            self.check_lock.SetValue(self.node.lock)
         else:
-            self.text_x.SetValue("")
-            self.text_y.SetValue("")
-            self.text_w.SetValue("")
-            self.text_h.SetValue("")
-            self.Hide()
+            self.check_lock.SetValue(False)
+            self.check_lock.Enable(False)
+
+        en_xy = (
+            not getattr(self.node, "lock", False)
+            or self.context.elements.lock_allows_move
+        )
+        en_wh = not getattr(self.node, "lock", False)
+        x = bb[0]
+        y = bb[1]
+        w = bb[2] - bb[0]
+        h = bb[3] - bb[1]
+        self.text_x.SetValue(Length(x, digits=4).length_mm)
+        self.text_y.SetValue(Length(y, digits=4).length_mm)
+        self.text_w.SetValue(Length(w, digits=4).length_mm)
+        self.text_h.SetValue(Length(h, digits=4).length_mm)
+        self.text_x.Enable(en_xy)
+        self.text_y.Enable(en_xy)
+        self.text_w.Enable(en_wh)
+        self.text_h.Enable(en_wh)
+        self.Show()
 
     def translate_it(self):
         if (
