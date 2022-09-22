@@ -201,6 +201,7 @@ class PathPropertyPanel(ScrolledPanel):
             mynode = self.node
             wasemph = self.node.emphasized
             self.context("declassify\nclassify\n")
+            self.context.elements.signal("tree_changed")
             self.context.elements.signal("element_property_update", self.node)
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
