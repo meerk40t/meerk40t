@@ -429,7 +429,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
 
     def selected(self, node):
         """
@@ -502,7 +506,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
         try:
             c = node.color
             self.set_color(node, c)
@@ -520,7 +528,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
         try:
             c = node.color
             self.set_color(node, c)
@@ -636,11 +648,18 @@ class ShadowTree:
         if isinstance(element, (tuple, list)):
             for node in element:
                 if hasattr(node, "node"):
-                    self.update_decorations(node.node, force=True)
-                else:
+                    node = node.node
+                try:
                     self.update_decorations(node, force=True)
+                except RuntimeError:
+                    # A timer can update after the tree closes.
+                    return
         else:
-            self.update_decorations(element, force=True)
+            try:
+                self.update_decorations(element, force=True)
+            except RuntimeError:
+                # A timer can update after the tree closes.
+                return
 
     def on_element_update(self, *args):
         """
@@ -652,11 +671,18 @@ class ShadowTree:
         if isinstance(element, (tuple, list)):
             for node in element:
                 if hasattr(node, "node"):
-                    self.update_decorations(node.node, force=True)
-                else:
+                    node = node.node
+                try:
                     self.update_decorations(node, force=True)
+                except RuntimeError:
+                    # A timer can update after the tree closes.
+                    return
         else:
-            self.update_decorations(element, force=True)
+            try:
+                self.update_decorations(element, force=True)
+            except RuntimeError:
+                # A timer can update after the tree closes.
+                return
 
     def refresh_tree(self, node=None, level=0, source=""):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
