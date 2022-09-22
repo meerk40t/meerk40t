@@ -1389,39 +1389,6 @@ class MeerK40t(MWindow):
                     dlg.ShowModal()
                     dlg.Destroy()
 
-        @context.console_command("dialog_import_egv", hidden=True)
-        def egv_in_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui,
-                _("Import EGV"),
-                wildcard=files,
-                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Loading File...")):
-                context(f"egv_import {pathname}\n")
-                return
-
-        @context.console_command("dialog_export_egv", hidden=True)
-        def egv_out_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Saving File...")):
-                context(f"egv_export {pathname}\n")
-                return
-
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", False)
 
