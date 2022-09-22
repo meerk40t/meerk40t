@@ -43,10 +43,10 @@ class LhystudiosConfigurationPanel(wx.Panel):
             self, wx.ID_ANY, _("Strict Programmed Speed Mode")
         )
         self.spin_home_x = wx.SpinCtrl(
-            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+            self, wx.ID_ANY, "0.0", min=-50000, max=50000
         )
         self.spin_home_y = wx.SpinCtrl(
-            self, wx.ID_ANY, "0.0", min=-50000.0, max=50000.0
+            self, wx.ID_ANY, "0.0", min=-50000, max=50000
         )
         self.button_home_by_current = wx.Button(self, wx.ID_ANY, _("Set Current"))
         self.checkbox_plot_shift = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
