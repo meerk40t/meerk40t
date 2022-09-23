@@ -8863,6 +8863,7 @@ class Elemental(Service):
                         max(bounds[2], cc[2]),
                         max(bounds[3], cc[3]),
                     )
+                if self._emphasized_bounds_painted is not None:
                     cc = self._emphasized_bounds_painted
                     bounds = (
                         min(bounds_painted[0], cc[0]),
