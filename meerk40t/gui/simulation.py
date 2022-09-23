@@ -804,7 +804,6 @@ class Simulation(MWindow):
             plan_name=plan_name,
             auto_clear=auto_clear,
         )
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
@@ -834,6 +833,9 @@ class Simulation(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    def delegates(self):
+        yield self.panel
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):
