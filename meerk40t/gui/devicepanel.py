@@ -282,6 +282,7 @@ class DevicePanel(wx.Panel):
                 return
             try:
                 service.destroy()
+                self.context.signal("device;modified")
             except AttributeError:
                 pass
             self.refresh_device_tree()
@@ -325,6 +326,7 @@ class DevicePanel(wx.Panel):
                 return
             try:
                 service.destroy()
+                self.context.signal("device;modified")
             except AttributeError:
                 pass
             self.refresh_device_tree()
