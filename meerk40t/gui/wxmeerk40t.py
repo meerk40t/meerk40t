@@ -533,6 +533,7 @@ class wxMeerK40t(wx.App, Module):
         def window_open(
             command, channel, _, data, multi=None, window=None, args=(), **kwargs
         ):
+            context = kernel.root
             path = data
             try:
                 parent = context.gui
@@ -597,6 +598,7 @@ class wxMeerK40t(wx.App, Module):
         )
         def window_close(channel, _, data, window=None, args=(), **kwargs):
             path = data
+            context = kernel.root
             try:
                 parent = context.gui if hasattr(context, "gui") else None
                 if wx.IsMainThread():
@@ -627,18 +629,21 @@ class wxMeerK40t(wx.App, Module):
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
+            context = kernel.root
             context.signal("refresh_scene", "Scene")
             context.signal("rebuild_tree")
             channel(_("Refreshed."))
 
         @kernel.console_command("tooltips_enable", hidden=True)
         def tooltip_enable(command, channel, _, **kwargs):
+            context = kernel.root
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = False
             wx.ToolTip.Enable(not context.disable_tool_tips)
 
         @kernel.console_command("tooltips_disable", hidden=True)
         def tooltip_disable(command, channel, _, **kwargs):
+            context = kernel.root
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
