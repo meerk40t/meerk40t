@@ -697,7 +697,10 @@ class SVGProcessor:
                     operations = None
 
                 if element.image is not None:
-                    dpi = element.image.info["dpi"]
+                    try:
+                        dpi = element.image.info["dpi"]
+                    except KeyError:
+                        dpi = None
                     _dpi = 500
                     if (
                         isinstance(dpi, tuple)

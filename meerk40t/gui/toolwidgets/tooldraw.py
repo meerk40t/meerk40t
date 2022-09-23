@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
@@ -41,6 +42,11 @@ class DrawTool(ToolWidget):
         if self.series is None:
             self.series = []
         if event_type == "leftdown":
+            self.pen = wx.Pen()
+            self.pen.SetColour(
+                wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+            )
+            self.pen.SetWidth(1000)
             self.add_point(space_pos[:2])
             response = RESPONSE_CONSUME
         elif event_type == "move":
@@ -59,12 +65,18 @@ class DrawTool(ToolWidget):
                 response = RESPONSE_CHAIN
         elif event_type == "leftup":
             try:
-                t = Path(stroke="blue", stroke_width=1000)
+                t = Path()
                 t.move(self.series[0])
                 for m in self.series:
                     t.line(m)
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(path=t, type="elem path")
+                node = elements.elem_branch.add(
+                    path=t,
+                    type="elem path",
+                    stroke_width=1000.0,
+                    stroke=self.scene.context.elements.default_stroke,
+                    fill=self.scene.context.elements.default_fill,
+                )
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)

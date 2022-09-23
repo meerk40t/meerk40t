@@ -107,17 +107,16 @@ class EllipseTool(ToolWidget):
                     (y1 + y0) / 2.0,
                     abs(x0 - x1) / 2,
                     abs(y0 - y1) / 2,
-                    stroke="blue",
-                    stroke_width=1000,
                 )
                 if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
-                    node = elements.elem_branch.add(shape=ellipse, type="elem ellipse")
-                    if self.scene.context.elements.default_stroke is not None:
-                        node.stroke = self.scene.context.elements.default_stroke
-                    if self.scene.context.elements.default_fill is not None:
-                        node.fill = self.scene.context.elements.default_fill
-
+                    node = elements.elem_branch.add(
+                        shape=ellipse,
+                        type="elem ellipse",
+                        stroke_width=1000.0,
+                        stroke=self.scene.context.elements.default_stroke,
+                        fill=self.scene.context.elements.default_fill,
+                    )
                     if elements.classify_new:
                         elements.classify([node])
                     self.notify_created(node)
