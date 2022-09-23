@@ -109,7 +109,7 @@ class MeerK40t(MWindow):
             pass
 
         self.context.gui = self
-        self.usb_running = False
+        self._usb_running = dict()
         context = self.context
         self.register_options_and_choices(context)
 
@@ -2606,7 +2606,7 @@ class MeerK40t(MWindow):
         self.__set_titlebar()
 
     def window_close_veto(self):
-        if self.usb_running:
+        if self.any_device_running:
             message = _("The device is actively sending data. Really quit?")
             answer = wx.MessageBox(
                 message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
@@ -2700,9 +2700,18 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @property
+    def any_device_running(self):
+        running = self._usb_running
+        for v in running:
+            q = running[v]
+            if q:
+                return True
+        return False
+
     @signal_listener("pipe;running")
     def on_usb_running(self, origin, value):
-        self.usb_running = value
+        self._usb_running[origin] = value
 
     @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
