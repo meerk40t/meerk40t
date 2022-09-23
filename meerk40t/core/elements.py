@@ -111,7 +111,7 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Default Operation Empty"),
-                "tip": _("Leave empty operations or default Other/Red/Blue"),
+                "tip": _("Leave empty operations, don't load a default set"),
                 "page": "Classification",
                 "section": "",
             },
@@ -127,18 +127,19 @@ def plugin(kernel, lifecycle=None):
                 "page": "Classification",
                 "section": "",
             },
-            {
-                "attr": "legacy_classification",
-                "object": elements,
-                "default": False,
-                "type": bool,
-                "label": _("Legacy Classify"),
-                "tip": _(
-                    "Use the legacy classification algorithm rather than the modern classification algorithm."
-                ),
-                "page": "Classification",
-                "section": "",
-            },
+            # No longer used...
+            # {
+            #     "attr": "legacy_classification",
+            #     "object": elements,
+            #     "default": False,
+            #     "type": bool,
+            #     "label": _("Legacy Classify"),
+            #     "tip": _(
+            #         "Use the legacy classification algorithm rather than the modern classification algorithm."
+            #     ),
+            #     "page": "Classification",
+            #     "section": "",
+            # },
             {
                 "attr": "classify_new",
                 "object": elements,
@@ -244,6 +245,20 @@ def plugin(kernel, lifecycle=None):
                 + _(
                     "- provided no elements are assigned to it yet (ie works only for an empty op)!"
                 ),
+                "page": "Classification",
+                "section": "",
+            },
+            {
+                "attr": "classify_on_color",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Classify after color-change"),
+                "tip": _("Whenever you change an elements color (stroke or fill),")
+                + "\n"
+                + _("MK will then reclassify an element. You can turn this feature off")
+                + "\n"
+                + _("by disabling this option."),
                 "page": "Classification",
                 "section": "",
             },
@@ -383,19 +398,16 @@ class Elemental(Service):
 
     @property
     def default_stroke(self):
-        if self._default_stroke is None:
-            mystroke = Color("blue")
-        else:
-            mystroke = self._default_stroke
-        return mystroke
+        # We dont allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
+        if self._default_stroke is not None:
+            return self._default_stroke
+        return Color("blue")
 
     @default_stroke.setter
     def default_stroke(self, color):
-        if color is None:
-            # Intentionally so
-            self._default_stroke = "none"
-        else:
-            self._default_stroke = color
+        if isinstance(color, str):
+            color = Color(str)
+        self._default_stroke = color
 
     @property
     def default_fill(self):
@@ -403,6 +415,8 @@ class Elemental(Service):
 
     @default_fill.setter
     def default_fill(self, color):
+        if isinstance(color, str):
+            color = Color(str)
         self._default_fill = color
 
     @property
@@ -4099,7 +4113,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 if e.type == "elem text":
                     old_anchor = e.anchor
@@ -4333,7 +4349,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_width = stroke_width
                 e.altered()
@@ -4357,7 +4375,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_scaled = command == "enable_stroke_scale"
                 e.altered()
@@ -4432,7 +4452,7 @@ class Elemental(Service):
                             if hasattr(e, "lock") and e.lock:
                                 channel(
                                     _("Can't modify a locked element: {name}").format(
-                                        str(e)
+                                        name=str(e)
                                     )
                                 )
                                 continue
@@ -4519,7 +4539,7 @@ class Elemental(Service):
                             if hasattr(e, "lock") and e.lock:
                                 channel(
                                     _("Can't modify a locked element: {name}").format(
-                                        str(e)
+                                        name=str(e)
                                     )
                                 )
                                 continue
@@ -4594,7 +4614,7 @@ class Elemental(Service):
                             if hasattr(e, "lock") and e.lock:
                                 channel(
                                     _("Can't modify a locked element: {name}").format(
-                                        str(e)
+                                        name=str(e)
                                     )
                                 )
                                 continue
@@ -4663,7 +4683,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = None
@@ -4672,7 +4694,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = Color(color)
@@ -4760,7 +4784,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = None
@@ -4769,7 +4795,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = Color(color)
@@ -8810,7 +8838,8 @@ class Elemental(Service):
                 continue
             if contains(bounds, position):
                 f_list.append(node)
-
+        bounds = None
+        bounds_painted = None
         if len(f_list) > 0:
             # We checked that before, f_list contains only elements with valid bounds...
             e = None
@@ -8842,6 +8871,7 @@ class Elemental(Service):
                         max(bounds[2], cc[2]),
                         max(bounds[3], cc[3]),
                     )
+                if self._emphasized_bounds_painted is not None:
                     cc = self._emphasized_bounds_painted
                     bounds = (
                         min(bounds_painted[0], cc[0]),
@@ -8923,12 +8953,12 @@ class Elemental(Service):
                         break
             if not was_classified and autogen:
                 # Despite all efforts we couldn't classify the element, so let's add an op
-                op = None
+                stdops = []
                 if node.type == "elem image":
-                    op = ImageOpNode(output=False)
+                    stdops.append(ImageOpNode(output=False))
                 elif node.type == "elem point":
-                    op = DotsOpNode(output=False)
-                elif (
+                    stdops.append(DotsOpNode(output=False))
+                if (
                     hasattr(node, "stroke")
                     and node.stroke is not None
                     and node.stroke.argb is not None
@@ -8938,17 +8968,16 @@ class Elemental(Service):
                     else:
                         is_cut = Color("red") == node.stroke
                     if is_cut:
-                        op = CutOpNode(color=Color("red"), speed=5.0)
+                        stdops.append(CutOpNode(color=Color("red"), speed=5.0))
                     else:
-                        op = EngraveOpNode(color=node.stroke, speed=35.0)
-                elif (
+                        stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
+                if (
                     hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    op = RasterOpNode(color=0, output=True)
-
-                if op is not None:
+                    stdops.append(RasterOpNode(color=0, output=True))
+                for op in stdops:
                     # Lets make sure we don't have something like that already
                     already_found = False
                     for testop in self.ops():

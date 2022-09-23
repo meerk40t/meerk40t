@@ -447,7 +447,7 @@ class SimulationPanel(wx.Panel, Job):
             gui.PopupMenu(menu)
             menu.Destroy()
 
-    def refresh_my_plan(self):
+    def _refresh_simulated_plan(self):
         # Stop animation
         if self.running:
             self._stop()
@@ -471,7 +471,7 @@ class SimulationPanel(wx.Panel, Job):
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         if plan_name == self.plan_name:
-            self.refresh_my_plan()
+            self._refresh_simulated_plan()
 
     def update_fields(self):
         step = self.progress
@@ -565,7 +565,7 @@ class SimulationPanel(wx.Panel, Job):
                     plan=self.plan_name
                 )
             )
-        self.refresh_my_plan()
+        self._refresh_simulated_plan()
 
     def pane_show(self):
         self.context.setting(str, "units_name", "mm")
@@ -804,7 +804,6 @@ class Simulation(MWindow):
             plan_name=plan_name,
             auto_clear=auto_clear,
         )
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_laser_beam_hazard2_50.GetBitmap())
         self.SetIcon(_icon)
@@ -834,6 +833,9 @@ class Simulation(MWindow):
 
     def window_close(self):
         self.panel.pane_hide()
+
+    def delegates(self):
+        yield self.panel
 
     @signal_listener("background")
     def on_background_signal(self, origin, background):

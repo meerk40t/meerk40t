@@ -7,7 +7,7 @@ import time
 import serial
 from serial import SerialException
 
-from meerk40t.kernel import Module, Service
+from meerk40t.kernel import CommandSyntaxError, Module, Service
 
 from ..core.cutcode import (
     CubicCut,
@@ -25,7 +25,7 @@ from ..core.cutcode import (
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
-from ..core.spoolers import Spooler
+from ..core.spoolers import LaserJob, Spooler
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, ViewPort
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 
@@ -138,8 +138,8 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "Flip Axis",
-                "signals": "bedsize",
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
             },
             {
                 "attr": "flip_y",
@@ -150,7 +150,39 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "Flip Axis",
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
+            },
+            {
+                "attr": "swap_xy",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Swap XY"),
+                "tip": _(
+                    "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+                ),
+                "subsection": "_20_Axis corrections",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_bottom",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Home Bottom"),
+                "tip": _("Indicates the device Home is on the bottom"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_right",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Right"),
+                "tip": _("Indicates the device Home is at the right side"),
+                "subsection": "_30_Home position",
                 "signals": "bedsize",
             },
         ]
@@ -184,8 +216,9 @@ class GRBLDevice(Service, ViewPort):
             native_scale_y=UNITS_PER_MIL,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            origin_x=0.0,
-            origin_y=1.0,
+            swap_xy=self.swap_xy,
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
         )
 
         self.settings = dict()
@@ -336,6 +369,30 @@ class GRBLDevice(Service, ViewPort):
         def resume(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.resume()
 
+        @self.console_command(
+            "viewport_update",
+            hidden=True,
+            help=_("Update moshi codes for movement"),
+        )
+        def codes_update(**kwargs):
+            self.realize()
+
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def gcode_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "w") as f:
+                    # f.write(b"(MeerK40t)\n")
+                    driver = GRBLDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    driver.grbl = f.write
+                    job.execute()
+
+            except (PermissionError, IOError):
+                channel(_("Could not save: {filename}").format(filename=filename))
+
     @property
     def current(self):
         """
@@ -370,6 +427,8 @@ class GRBLDevice(Service, ViewPort):
     def realize(self):
         self.width = self.bedwidth
         self.height = self.bedheight
+        self.origin_x = 1.0 if self.home_right else 0.0
+        self.origin_y = 1.0 if self.home_bottom else 0.0
         super().realize()
 
 
@@ -1276,6 +1335,8 @@ class TCPOutput:
 
     def write(self, data):
         self.service.signal("tcp;write", data)
+        if isinstance(data, str):
+            data = bytes(data, "utf-8")
         with self.lock:
             self.buffer += data
             self.service.signal("tcp;buffer", len(self.buffer))

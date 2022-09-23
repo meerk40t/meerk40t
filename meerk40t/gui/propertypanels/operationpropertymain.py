@@ -151,19 +151,21 @@ class LayerSettingPanel(wx.Panel):
         except AttributeError:
             self.has_fill = None
 
-        try:
-            self.has_stop = self.operation.has_color_attribute("stopop")
-            self.checkbox_stop = wx.CheckBox(self, wx.ID_ANY, _("Stop"))
-            self.checkbox_stop.SetToolTip(
-                _("If active, then this op will prevent further classification")
-                + "\n"
-                + _("from other ops if it could classify an element by itself.")
-            )
-            self.checkbox_stop.SetValue(1 if self.has_stop else 0)
-            h_classify_sizer.Add(self.checkbox_stop, 1, 0, 0)
-            self.Bind(wx.EVT_CHECKBOX, self.on_check_stop, self.checkbox_stop)
-        except AttributeError:
-            self.has_stop = None
+        self.checkbox_stop = wx.CheckBox(self, wx.ID_ANY, _("Stop"))
+        self.checkbox_stop.SetToolTip(
+            _("If active, then this op will prevent further classification")
+            + "\n"
+            + _("from other ops if it could classify an element by itself.")
+        )
+        h_classify_sizer.Add(self.checkbox_stop, 1, 0, 0)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_stop, self.checkbox_stop)
+        self.has_stop = hasattr(self.operation, "stopop")
+        if not self.has_stop:
+            self.checkbox_stop.SetValue(False)
+            self.checkbox_stop.Enable(False)
+        else:
+            self.checkbox_stop.SetValue(self.operation.stopop)
+            self.checkbox_stop.Enable(True)
 
         if (
             self.has_fill is not None
@@ -265,11 +267,14 @@ class LayerSettingPanel(wx.Panel):
                 )
         except AttributeError:
             pass
-        try:
-            if self.has_stop:
-                self.checkbox_stop.SetValue(self.operation.stopop)
-        except AttributeError:
-            pass
+        self.has_stop = hasattr(self.operation, "stopop")
+        if not self.has_stop:
+            self.checkbox_stop.SetValue(False)
+            self.checkbox_stop.Enable(False)
+        else:
+            self.checkbox_stop.SetValue(self.operation.stopop)
+            self.checkbox_stop.Enable(True)
+
         self.Layout()
         self.Show()
 
@@ -1407,6 +1412,15 @@ class HatchSettingsPanel(wx.Panel):
             self.refresh_display()
         except ValueError:
             return
+        try:
+            h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
+            while h_angle > self.slider_angle.GetMax():
+                h_angle -= 360
+            while h_angle < self.slider_angle.GetMin():
+                h_angle += 360
+            self.slider_angle.SetValue(int(h_angle))
+        except ValueError:
+            pass
 
     def on_slider_angle(self, event):  # wxGlade: HatchSettingsPanel.<event_handler>
         value = self.slider_angle.GetValue()

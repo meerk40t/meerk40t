@@ -220,8 +220,6 @@ def plugin(kernel, lifecycle=None):
                 continue
             image_node = copy(node)
             image_node.image = image_node.image.copy()
-            if image_node.needs_actualization():
-                image_node.make_actual()
             img = image_node.image
             img = img.convert("L")
 

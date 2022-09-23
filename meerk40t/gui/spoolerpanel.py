@@ -82,12 +82,14 @@ class SpoolerPanel(wx.Panel):
 
         self.__set_properties()
         self.__do_layout()
-
+        self.current_item = None
         self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
+        self.list_job_spool.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
+        self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool
         )
@@ -178,6 +180,9 @@ class SpoolerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def on_item_selected(self, event):
+        self.current_item = event.Index
+
     def on_btn_clear(self, event):
         self.history = []
         self.list_job_history.DeleteAllItems()
@@ -198,6 +203,42 @@ class SpoolerPanel(wx.Panel):
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         # Todo: Drag to reprioritise jobs
         event.Skip()
+
+    def on_item_doubleclick(self, event):
+        def item_info(item):
+            result = ""
+            count = 0
+            if isinstance(item, tuple):
+                attr = item[0]
+                result = f"function(tuple): {attr}"
+                count += 1
+            elif isinstance(item, str):
+                attr = item
+                result = f"function(str): {attr}"
+                count += 1
+            if hasattr(item, "generate"):
+                item = getattr(item, "generate")
+                result = "Generator:"
+                # Generator item
+                for p in item():
+                    dummy, subct = item_info(p)
+                    count += subct
+                    result += "\n" + dummy
+                    count += 1
+
+            return result, count
+
+        index = self.current_item
+        spooler = self.selected_device.spooler
+        try:
+            element = spooler.queue[index]
+        except IndexError:
+            return
+        msgstr = f"{element.label}: \n"
+        for idx, item in enumerate(element.items):
+            info, ct = item_info(item)
+            msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
+        print(msgstr)
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index
@@ -304,7 +345,9 @@ class SpoolerPanel(wx.Panel):
 
                     if isinf(total):
                         total = "∞"
-                    self.list_job_spool.SetItem(list_id, 4, f"{loop}/{total}")
+                    pass_str = f"{loop}/{total}"
+                    pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
+                    self.list_job_spool.SetItem(list_id, 4, pass_str)
                 except AttributeError:
                     self.list_job_spool.SetItem(list_id, 4, "-")
 
@@ -327,9 +370,12 @@ class SpoolerPanel(wx.Panel):
                 # Estimate Time
                 try:
                     t = spool_obj.estimate_time()
-                    hours, remainder = divmod(t, 3600)
-                    minutes, seconds = divmod(remainder, 60)
-                    runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                    if isinf(t):
+                        runtime = "∞"
+                    else:
+                        hours, remainder = divmod(t, 3600)
+                        minutes, seconds = divmod(remainder, 60)
+                        runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                     self.list_job_spool.SetItem(list_id, 7, runtime)
                 except AttributeError:
                     self.list_job_spool.SetItem(list_id, 7, "-")
@@ -468,9 +514,13 @@ class SpoolerPanel(wx.Panel):
             # Estimate Time
             try:
                 t = spool_obj.estimate_time()
-                hours, remainder = divmod(t, 3600)
-                minutes, seconds = divmod(remainder, 60)
-                runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                if isinf(t):
+                    runtime = "∞"
+                else:
+                    hours, remainder = divmod(t, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 7, runtime)
             except (AttributeError, AssertionError):

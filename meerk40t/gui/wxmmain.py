@@ -573,7 +573,27 @@ class MeerK40t(MWindow):
                     "The scene-menu will appear if you right-click on the scene-background"
                 ),
                 "page": "Gui",
+                "hidden": True,
                 "section": "Scene",
+            },
+            {
+                "attr": "process_while_typing",
+                "object": context.root,
+                "default": True,
+                "type": bool,
+                "label": _("Process input while typing"),
+                "tip": _(
+                    "Try to immediatly use values you enter in dialog-textfields - "
+                )
+                + "\n"
+                + _(
+                    "otherwise they will get applied only after a deliberate confirmation"
+                )
+                + "\n"
+                + _("by enter or stepping out of the field)"),
+                "page": "Gui",
+                "hidden": True,
+                "section": "Misc.",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -1341,52 +1361,39 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(f".{extension}"):
                     pathname += f".{extension}"
-                context.elements.save(pathname, version=version)
-                gui.validate_save()
-                gui.working_file = pathname
-                gui.set_file_as_recently_used(gui.working_file)
+                try:
+                    context.elements.save(pathname, version=version)
+                    gui.validate_save()
+                    gui.working_file = pathname
+                    gui.set_file_as_recently_used(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
             if gui.working_file is None:
                 context(".dialog_save_as\n")
             else:
-                gui.set_file_as_recently_used(gui.working_file)
-                gui.validate_save()
-                context.elements.save(gui.working_file)
-
-        @context.console_command("dialog_import_egv", hidden=True)
-        def egv_in_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui,
-                _("Import EGV"),
-                wildcard=files,
-                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Loading File...")):
-                context(f"egv_import {pathname}\n")
-                return
-
-        @context.console_command("dialog_export_egv", hidden=True)
-        def egv_out_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Saving File...")):
-                context(f"egv_export {pathname}\n")
-                return
+                try:
+                    gui.set_file_as_recently_used(gui.working_file)
+                    gui.validate_save()
+                    context.elements.save(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", False)
@@ -3134,23 +3141,26 @@ class MeerK40t(MWindow):
         self.status_update()
 
     def on_menu_highlight(self, event):
-        menuid = event.GetId()
-        menu = event.GetMenu()
-        if menuid == wx.ID_SEPARATOR:
-            self.update_statusbar("...")
-            return
-        if not self.top_menu and not menu:
-            self.status_update()
-            return
-        if menu and not self.top_menu:
-            self.top_menu = menu
-        if self.top_menu and not menu:
-            menu = self.top_menu
-        menuitem, submenu = menu.FindItem(menuid)
-        if not menuitem:
-            self.update_statusbar("...")
-            return
-        helptext = menuitem.GetHelp()
-        if not helptext:
-            helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
-        self.update_statusbar(helptext)
+        try:
+            menuid = event.GetId()
+            menu = event.GetMenu()
+            if menuid == wx.ID_SEPARATOR:
+                self.update_statusbar("...")
+                return
+            if not self.top_menu and not menu:
+                self.status_update()
+                return
+            if menu and not self.top_menu:
+                self.top_menu = menu
+            if self.top_menu and not menu:
+                menu = self.top_menu
+            menuitem, submenu = menu.FindItem(menuid)
+            if not menuitem:
+                self.update_statusbar("...")
+                return
+            helptext = menuitem.GetHelp()
+            if not helptext:
+                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+            self.update_statusbar(helptext)
+        except RuntimeError:
+            pass

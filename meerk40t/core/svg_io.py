@@ -496,6 +496,9 @@ class SVGProcessor:
         self.parse(svg, file_node, self.element_list)
         if self.operations_cleared:
             for op in self.elements.ops():
+                if not hasattr(op, "settings"):
+                    # Some special nodes might lack settings these can't have references.
+                    continue
                 refs = op.settings.get("references")
                 if refs is None:
                     continue
@@ -690,7 +693,7 @@ class SVGProcessor:
                 element.load(os.path.dirname(self.pathname))
                 try:
                     operations = ast.literal_eval(element.values["operations"])
-                except (ValueError, SyntaxError):
+                except (ValueError, SyntaxError, KeyError):
                     operations = None
 
                 if element.image is not None:

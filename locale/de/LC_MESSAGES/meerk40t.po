@@ -2072,7 +2072,7 @@ msgid "steps"
 msgstr "Schritte"
 
 #: meerk40t/gui/panes/position.py:86 meerk40t/gui/settings.py:26
-msgid "Units:"
+msgid "Units"
 msgstr "Einheiten"
 
 #: meerk40t/gui/settings.py:35
@@ -2104,7 +2104,7 @@ msgid "Print Shutdown"
 msgstr "Shutdown-Protokoll"
 
 #: meerk40t/gui/settings.py:53
-msgid "Print shutdown log when Meerk40t is closed."
+msgid "Print shutdown log when closed."
 msgstr "Drucke das Shutdown-Protokoll, wenn Meerk40t beendet wird."
 
 #: meerk40t/gui/settings.py:58
@@ -2192,7 +2192,7 @@ msgstr "Dreht die Richtung des Mausrad beim Zoomen um"
 
 #: meerk40t/gui/settings.py:126
 msgid "Default Operation Other/Red/Blue"
-msgstr "Standard Verhalten Sonstiges/Rot/Blau"
+msgstr "Standard Verhalten: Sonstiges/Rot/Blau"
 
 #: meerk40t/gui/settings.py:127
 msgid "Sets Operations to Other/Red/Blue if loaded with no operations."
@@ -2200,7 +2200,15 @@ msgstr ""
 "Setze die Arbeitsabläufe auf Sonstiges/Rot/Blau falls keine Anweisungen "
 "spezifiziert sind."
 
-#: meerk40t/gui/settings.py:132
+msgid "Classification"
+msgstr "Klassifizierung"
+
+msgid "Default Operation Empty"
+msgstr "Kein automatisches Laden von Operationen"
+
+msgid "Leave empty operations, don't load a default set"
+msgstr "Bei leerer Operations-Liste kein Standard-Set laden"
+
 msgid "Classify Reversed"
 msgstr "Elemente in inverser Reihenfolge zuordnen"
 
@@ -2211,14 +2219,90 @@ msgid ""
 msgstr "Ordnet Elemente den Abläufen in umgekehrter Reihenfolge zu, damit sie "
 "Inkscapes Objekt-Liste entsprechen"
 
-#: meerk40t/gui/settings.py:134
-msgid "Legacy Classify"
-msgstr "Elemente in inverser Reihenfolge zuordnen"
+msgid "Classify newly created elements"
+msgstr "Klassifiziere neu hinzugefügte Elemente"
+
+msgid "MK will immediately try to classify an element as soon as it is created,"
+msgstr "MK versucht sofort nach Erstellen eines Elements dieses zu klassifizieren,"
+
+msgid "if you want to defer this to apply manual classification, then untick this option."
+msgstr "falls eine manuelle Zuordnung stattdessen bevorzugt wird, sollte diese Option abgewählt werden"
+
+msgid "Fuzzy color-logic"
+msgstr "Unscharfe Farb-Logik"
+
+msgid "Unticked: Classify elements into operations with an *exact* color match"
+msgstr "Abgewählt: MK achtet bei der Klassifizierung auf eine *exakte* Farbübereinstimmung"
+
+msgid "Ticked: Allow a certain color-distance for classification"
+msgstr "Ausgewählt: Es wird eine gewisse Farbtoleranz beim Vergleich eingeräumt"
+
+msgid "Color distance"
+msgstr "Farbtoleranz"
+
+msgid "The color distance of an element to an operations that will still allow classifiation"
+msgstr "Die Farbtoleranz bei der ein Element noch zu einer Operation zugeordnet wird"
+
+msgid "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
+msgstr "Werte: 0 Identisch, 100 Sehr ähnlich, 300 tolerant, 400 Farbenblind"
+
+msgid "Assign to default operations"
+msgstr "Standard-Operation verwenden"
+
+msgid "If classification did not find a match,"
+msgstr "Falls die Klassifizierung keinen passenden Partner anhand des"
+
+msgid "either with color matching (exact or fuzzy, see above)"
+msgstr "Farbvergleichs (egal ob genau oder unscharf s.o.) gefunden hat,"
+
+msgid "then it will try to assign it to matching 'default' operation"
+msgstr "wird stattdessen eine als 'Standard' gekennzeichnete Operation verwendet"
+
+msgid "Autogenerate Operations"
+msgstr "Erzeuge automatisch Operationen"
+
+msgid "If classification did not find a match,"
+msgstr "Falls die Klassifizierung keinen passenden Partner gefunden hat,"
+
+msgid "either with color matching (exact or fuzzy, see above)"
+msgstr "sei es durch Farbvergleich oder durch Zuordnung zu einer Standard-"
+
+msgid "or by assigning to a default operation (see above),"
+msgstr "Operation (siehe oben), dann kann MK bei aktiver Option"
+
+msgid "then MeerK40t can create a matching operation for you."
+msgstr "automatisch eine passende neue Operation anlegen"
+
+msgid "Autoinherit for empty operation"
+msgstr "Farbe übernehmen"
+
+msgid "If you drag and drop an element into an operation to assign it there,"
+msgstr "Falls ein Element durch Drag-and-Drop einer Operation zugeordnet wird,"
+
+msgid "then the op can (if this option is ticked) inherit the color from the element"
+msgstr "dann kann die Operation die Farbe des Elements als neuen Standard übernehmen,"
+
+msgid "and adopt not only the dragged element but all elements with the same color"
+msgstr "und automatisch alle anderen Elemente der gleichen Farbe ebenfalls zuordnen."
+
+msgid "- provided no elements are assigned to it yet (ie works only for an empty op)!"
+msgstr "Voraussetzung: die Operation ist leer (also es wurden noch keine Elemente zugeordnet)"
+
+msgid "Classify after color-change"
+msgstr "Klassifizieren bei Farbänderung"
+
+msgid "Whenever you change an elements color (stroke or fill),"
+msgstr "Bei einer Änderung der Element-Farbe (Umriss oder Füllung)"
+
+msgid "MK will then reclassify an element. You can turn this feature off"
+msgstr "wird MK das Element neu klassifizieren. Dies kann durch"
+
+msgid "by disabling this option."
+msgstr "Deaktivieren dieser Option abgeschaltet werden."
 
 #: meerk40t/gui/settings.py:135
 msgid "Use the legacy classification algorithm rather than the modern classification algorithm."
 msgstr "Nutze für die Zuordnung der Elemente den 'alten' Algorithmus."
-
 
 #: meerk40t/gui/settings.py:140
 msgid "Disable ToolTips"
@@ -2300,7 +2384,7 @@ msgid "SVG Pixels Per Inch:"
 msgstr "SVG Pixel pro Zoll"
 
 #: meerk40t/gui/settings.py:283
-msgid "Language:"
+msgid "Language"
 msgstr "Sprache"
 
 #: meerk40t/gui/simulation.py:155
@@ -2584,7 +2668,7 @@ msgstr "Striche ausblenden"
 
 #: meerk40t/gui/wxmeerk40t.py:1740
 msgid "No Stroke-Width Render"
-msgstr ""
+msgstr "Strichbreite beim Rendern ignorieren"
 
 #: meerk40t/gui/wxmeerk40t.py:1743
 msgid "Hide Laserpath"
@@ -3687,7 +3771,7 @@ msgid "Opens Controller Window"
 msgstr "Öffnet Controller-Fenster"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:29
-msgid "Opens DeviceManager Window"
+msgid "Opens Devices Window
 msgstr "Öffnet Geräte-Manager"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:29
@@ -6698,7 +6782,7 @@ msgstr ""
 
 #: meerk40t/device/ruida/ruidadevice.py:39
 msgid "shutdown current ruidaserver"
-msgstr ""
+msgstr "Beende den laufenden Ruida-Server"
 
 #: meerk40t/device/ruida/ruidadevice.py:42
 msgid "activate the ruidaserver."
@@ -7371,6 +7455,14 @@ msgstr "Scharfschalten"
 msgid "Arm the job for execution"
 msgstr "Schaltet den Job zur Ausführung scharf"
 
+msgid "Enable Laser Arm"
+msgstr "'Scharfschalten' Feature verwenden"
+
+msgid "Enable Laser Panel Arm/Disarm feature."
+msgstr ""
+"Benutze das 'Scharfschalten' Feature im Laser-Panel, das ein versehentliches "
+"Auslösen eines Laserjobs verhindern soll."
+
 #: meerk40t/gui/panes/laserpanel.py:136
 msgid "Outline"
 msgstr "Umriss abfahren"
@@ -7779,3 +7871,33 @@ msgstr "Nur zur Info: es fehlen %d Eckpunkte gegenüber dem regulären Polygon..
 #: meerk40t/core/elements.py:3684
 msgid "To hit all, the density parameters should be e.g. %s"
 msgstr "Um alle Eckpunkte zu 'erwischen', sollte eine der folgenden Kombinationen verwendet werden: %s"
+
+msgid "Selection"
+msgstr "Auswahl"
+
+msgid "Bed"
+msgstr "Laserbett"
+
+msgid "Grid"
+msgstr "Gitter"
+
+msgid "Guide"
+msgstr "Lineal"
+
+msgid "Laserpath"
+msgstr "Laserpfad"
+
+msgid "Measure"
+msgstr "Ausmessen"
+
+msgid "Magnetline"
+msgstr "Magnet-Linien"
+
+msgid "Snap"
+msgstr "Einrasten"
+
+msgid "Colors"
+msgstr "Farben"
+
+msgid "Scene"
+msgstr "Arbeitsbereich"

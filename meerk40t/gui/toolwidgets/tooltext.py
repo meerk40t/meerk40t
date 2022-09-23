@@ -51,12 +51,14 @@ class TextTool(ToolWidget):
                 fill=Color("black"),
                 type="elem text",
             )
+            self.scene.context.elements.set_selected([node])
             activate = self.scene.context.kernel.lookup(
                 "function/open_property_window_for_node"
             )
             if activate is not None:
                 activate(node)
-                self.scene.context.signal("textselect")
+            self.scene.context.signal("selected")
+            self.scene.context.signal("textselect", node)
 
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):

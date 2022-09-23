@@ -140,7 +140,7 @@ class Parameters:
             elif type == "op engrave":
                 return Color("blue")
             elif type == "op hatch":
-                return Color("green")
+                return Color("lime")
             elif type == "op raster":
                 return Color("black")
             elif type == "op image":

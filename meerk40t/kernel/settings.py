@@ -100,7 +100,7 @@ class Settings:
             elif t in (list, tuple):
                 if ";" in value:
                     # This is backwards compatibility code. And may be removed at a later date.
-                    value = f"[{value.replace(';', ', ')}]"
+                    value = value.replace(";", ", ").replace("'", "")
                 try:
                     return ast.literal_eval(value)
                 except (ValueError, SyntaxError):
