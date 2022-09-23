@@ -3135,23 +3135,26 @@ class MeerK40t(MWindow):
         self.status_update()
 
     def on_menu_highlight(self, event):
-        menuid = event.GetId()
-        menu = event.GetMenu()
-        if menuid == wx.ID_SEPARATOR:
-            self.update_statusbar("...")
-            return
-        if not self.top_menu and not menu:
-            self.status_update()
-            return
-        if menu and not self.top_menu:
-            self.top_menu = menu
-        if self.top_menu and not menu:
-            menu = self.top_menu
-        menuitem, submenu = menu.FindItem(menuid)
-        if not menuitem:
-            self.update_statusbar("...")
-            return
-        helptext = menuitem.GetHelp()
-        if not helptext:
-            helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
-        self.update_statusbar(helptext)
+        try:
+            menuid = event.GetId()
+            menu = event.GetMenu()
+            if menuid == wx.ID_SEPARATOR:
+                self.update_statusbar("...")
+                return
+            if not self.top_menu and not menu:
+                self.status_update()
+                return
+            if menu and not self.top_menu:
+                self.top_menu = menu
+            if self.top_menu and not menu:
+                menu = self.top_menu
+            menuitem, submenu = menu.FindItem(menuid)
+            if not menuitem:
+                self.update_statusbar("...")
+                return
+            helptext = menuitem.GetHelp()
+            if not helptext:
+                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+            self.update_statusbar(helptext)
+        except RuntimeError:
+            pass
