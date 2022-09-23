@@ -15,7 +15,7 @@ class PathPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.context.setting(bool, "auto_classify", True)
+        self.context.setting(bool, "_auto_classify", self.context.elements.classify_on_color)
         self.node = node
 
         self.panel_id = IdPanel(
@@ -51,7 +51,7 @@ class PathPropertyPanel(ScrolledPanel):
         self.check_classify = wx.CheckBox(
             self, wx.ID_ANY, _("Immediately classify after colour change")
         )
-        self.check_classify.SetValue(self.context.auto_classify)
+        self.check_classify.SetValue(self.context._auto_classify)
 
         self.__set_properties()
         self.__do_layout()
@@ -192,7 +192,7 @@ class PathPropertyPanel(ScrolledPanel):
         # end wxGlade
 
     def on_check_classify(self, event):
-        self.context.auto_classify = self.check_classify.GetValue()
+        self.context._auto_classify = self.check_classify.GetValue()
 
     def update_label(self):
         return

@@ -249,6 +249,26 @@ def plugin(kernel, lifecycle=None):
                 "section": "",
             },
             {
+                "attr": "classify_on_color",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Classify after color-change"),
+                "tip": _(
+                    "Whenever you change an elements color (stroke or fill),"
+                )
+                + "\n"
+                + _(
+                    "MK will then reclassify an element. You can turn this feature off"
+                )
+                + "\n"
+                + _(
+                    "by disabling this option."
+                ),
+                "page": "Classification",
+                "section": "",
+            },
+            {
                 "attr": "lock_allows_move",
                 "object": elements,
                 "default": True,
