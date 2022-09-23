@@ -15,7 +15,9 @@ class PathPropertyPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.context.setting(bool, "_auto_classify", self.context.elements.classify_on_color)
+        self.context.setting(
+            bool, "_auto_classify", self.context.elements.classify_on_color
+        )
         self.node = node
 
         self.panel_id = IdPanel(

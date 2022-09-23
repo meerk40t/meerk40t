@@ -605,6 +605,7 @@ class TextCtrl(wx.TextCtrl):
                     self._action_routine()
                     self._event_generated = None
 
+
 class CheckBox(wx.CheckBox):
     def __init__(
         self,

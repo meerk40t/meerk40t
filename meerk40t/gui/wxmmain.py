@@ -582,9 +582,15 @@ class MeerK40t(MWindow):
                 "default": True,
                 "type": bool,
                 "label": _("Process input while typing"),
-                "tip": _("Try to immediatly use values you enter in dialog-textfields - ") + "\n" +
-                    _("otherwise they will get applied only after a deliberate confirmation") + "\n" +
-                    _("by enter or stepping out of the field)"),
+                "tip": _(
+                    "Try to immediatly use values you enter in dialog-textfields - "
+                )
+                + "\n"
+                + _(
+                    "otherwise they will get applied only after a deliberate confirmation"
+                )
+                + "\n"
+                + _("by enter or stepping out of the field)"),
                 "page": "Gui",
                 "hidden": True,
                 "section": "Misc.",

@@ -238,8 +238,7 @@ class SpoolerPanel(wx.Panel):
         for idx, item in enumerate(element.items):
             info, ct = item_info(item)
             msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
-        print (msgstr)
-
+        print(msgstr)
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index

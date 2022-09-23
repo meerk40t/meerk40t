@@ -7,7 +7,7 @@ import time
 import serial
 from serial import SerialException
 
-from meerk40t.kernel import Module, Service, CommandSyntaxError
+from meerk40t.kernel import CommandSyntaxError, Module, Service
 
 from ..core.cutcode import (
     CubicCut,
@@ -25,7 +25,7 @@ from ..core.cutcode import (
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
-from ..core.spoolers import Spooler, LaserJob
+from ..core.spoolers import LaserJob, Spooler
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, ViewPort
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 
@@ -159,7 +159,9 @@ class GRBLDevice(Service, ViewPort):
                 "default": False,
                 "type": bool,
                 "label": _("Swap XY"),
-                "tip": _("Swaps the X and Y axis. This happens before the FlipX and FlipY."),
+                "tip": _(
+                    "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+                ),
                 "subsection": "_20_Axis corrections",
                 "signals": "bedsize",
             },
@@ -391,7 +393,6 @@ class GRBLDevice(Service, ViewPort):
             except (PermissionError, IOError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
-
     @property
     def current(self):
         """
@@ -426,8 +427,8 @@ class GRBLDevice(Service, ViewPort):
     def realize(self):
         self.width = self.bedwidth
         self.height = self.bedheight
-        self.origin_x=1.0 if self.home_right else 0.0
-        self.origin_y=1.0 if self.home_bottom else 0.0
+        self.origin_x = 1.0 if self.home_right else 0.0
+        self.origin_y = 1.0 if self.home_bottom else 0.0
         super().realize()
 
 

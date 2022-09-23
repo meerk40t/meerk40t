@@ -532,15 +532,22 @@ class LaserJob:
             # We know the pass of passes and we know the steps of total steps...
             if self.avg_time_per_pass is None:
                 time_for_past_passes = 0
-                time_for_future_passes = max(self.loops - self.loops_executed - 1, 0) * self._estimate
+                time_for_future_passes = (
+                    max(self.loops - self.loops_executed - 1, 0) * self._estimate
+                )
             else:
                 time_for_past_passes = self.time_pass_started - self.time_started
-                time_for_future_passes = self.avg_time_per_pass * max(self.loops - self.loops_executed - 1, 0)
+                time_for_future_passes = self.avg_time_per_pass * max(
+                    self.loops - self.loops_executed - 1, 0
+                )
 
             if self.time_pass_started is not None:
                 this_pass_seconds = time.time() - self.time_pass_started
                 if this_pass_seconds >= 5:
-                    result = max(self._estimate, this_pass_seconds / max(self.steps_done, 1) * self.steps_total)
+                    result = max(
+                        self._estimate,
+                        this_pass_seconds / max(self.steps_done, 1) * self.steps_total,
+                    )
                 else:
                     result = self._estimate
             # print (f"Passes: {self.loops_executed} / {self.loops}")

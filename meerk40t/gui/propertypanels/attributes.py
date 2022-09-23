@@ -99,9 +99,7 @@ class ColorPanel(wx.Panel):
             if dlg.ShowModal() == wx.ID_OK:
                 color_data = dlg.GetColourData()
                 cvalue = color_data.GetColour()
-                value = Color(
-                    swizzlecolor(cvalue.GetRGB()), 1.0
-                )
+                value = Color(swizzlecolor(cvalue.GetRGB()), 1.0)
                 button.SetBackgroundColour(cvalue)
             else:
                 return
@@ -157,7 +155,6 @@ class ColorPanel(wx.Panel):
             wxcolor = wx.Colour(swizzlecolor(textcolor))
             return wxcolor
 
-
         if self.node is None:
             idx = -1
             self.btn_color[self.last_col_idx].SetBackgroundColour(None)
@@ -172,8 +169,12 @@ class ColorPanel(wx.Panel):
             if value is not None:
                 nodecol = wx.Colour(swizzlecolor(value))
                 self.bgcolors[self.last_col_idx] = nodecol
-                self.btn_color[self.last_col_idx].SetBackgroundColour(self.bgcolors[self.last_col_idx])
-                self.btn_color[self.last_col_idx].SetForegroundColour(countercolor(self.bgcolors[self.last_col_idx]))
+                self.btn_color[self.last_col_idx].SetBackgroundColour(
+                    self.bgcolors[self.last_col_idx]
+                )
+                self.btn_color[self.last_col_idx].SetForegroundColour(
+                    countercolor(self.bgcolors[self.last_col_idx])
+                )
                 s = ""
                 try:
                     s = nodecol.GetAsString(wx.C2S_NAME)
@@ -193,7 +194,7 @@ class ColorPanel(wx.Panel):
                     idx = 0
                 else:
                     for i, btn in enumerate(self.btn_color):
-                        if i==0:  # We skip the none color...
+                        if i == 0:  # We skip the none color...
                             continue
                         col = self.btn_color[i].GetBackgroundColour()
                         if nodecol == col:

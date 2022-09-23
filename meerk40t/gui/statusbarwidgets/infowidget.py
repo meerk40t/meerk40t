@@ -1,5 +1,5 @@
-from math import isinf
 import time
+from math import isinf
 
 import wx
 

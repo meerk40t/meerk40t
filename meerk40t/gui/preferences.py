@@ -70,7 +70,6 @@ class PreferencesUnitsPanel(wx.Panel):
         p.units_name = "inch"
         p.signal("units", p.units_name)
 
-
     def set_mil(self):
         p = self.context.root
         p.units_name = "mil"

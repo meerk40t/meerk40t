@@ -281,7 +281,9 @@ class ViewPort:
         self._scene_to_show_matrix = Matrix(self._scene_to_show_transform())
         self._show_to_scene_matrix = Matrix(self._scene_to_show_matrix)
         self._show_to_scene_matrix.inverse()
-        self._show_to_device_matrix = self._show_to_scene_matrix * self._scene_to_device_matrix
+        self._show_to_device_matrix = (
+            self._show_to_scene_matrix * self._scene_to_device_matrix
+        )
         self._device_to_show_matrix = Matrix(self._show_to_device_matrix)
         self._device_to_show_matrix.inverse()
 

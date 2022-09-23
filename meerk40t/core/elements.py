@@ -254,17 +254,11 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Classify after color-change"),
-                "tip": _(
-                    "Whenever you change an elements color (stroke or fill),"
-                )
+                "tip": _("Whenever you change an elements color (stroke or fill),")
                 + "\n"
-                + _(
-                    "MK will then reclassify an element. You can turn this feature off"
-                )
+                + _("MK will then reclassify an element. You can turn this feature off")
                 + "\n"
-                + _(
-                    "by disabling this option."
-                ),
+                + _("by disabling this option."),
                 "page": "Classification",
                 "section": "",
             },
@@ -4119,7 +4113,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 if e.type == "elem text":
                     old_anchor = e.anchor
@@ -4353,7 +4349,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_width = stroke_width
                 e.altered()
@@ -4377,7 +4375,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(name=str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_scaled = command == "enable_stroke_scale"
                 e.altered()
@@ -4683,7 +4683,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = None
@@ -4692,7 +4694,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = Color(color)
@@ -4780,7 +4784,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = None
@@ -4789,7 +4795,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(name=str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = Color(color)

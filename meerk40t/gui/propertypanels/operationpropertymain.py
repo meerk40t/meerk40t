@@ -1414,9 +1414,9 @@ class HatchSettingsPanel(wx.Panel):
             return
         try:
             h_angle = float(Angle.parse(self.operation.hatch_angle).as_degrees)
-            while h_angle>self.slider_angle.GetMax():
+            while h_angle > self.slider_angle.GetMax():
                 h_angle -= 360
-            while h_angle<self.slider_angle.GetMin():
+            while h_angle < self.slider_angle.GetMin():
                 h_angle += 360
             self.slider_angle.SetValue(int(h_angle))
         except ValueError:
