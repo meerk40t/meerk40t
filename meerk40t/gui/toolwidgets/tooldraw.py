@@ -63,12 +63,12 @@ class DrawTool(ToolWidget):
                 response = RESPONSE_CHAIN
         elif event_type == "leftup":
             try:
-                t = Path(stroke="blue", stroke_width=1000)
+                t = Path()
                 t.move(self.series[0])
                 for m in self.series:
                     t.line(m)
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(path=t, type="elem path")
+                node = elements.elem_branch.add(path=t, type="elem path", stroke_width=1000.0, stroke=self.scene.context.elements.default_stroke, fill=self.scene.context.elements.default_fill)
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)

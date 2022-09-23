@@ -102,14 +102,10 @@ class RectTool(ToolWidget):
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
-                rect = Rect(x0, y0, x1 - x0, y1 - y0, stroke="blue", stroke_width=1000)
+                rect = Rect(x0, y0, x1 - x0, y1 - y0)
                 if not rect.is_degenerate():
                     elements = self.scene.context.elements
-                    node = elements.elem_branch.add(shape=rect, type="elem rect")
-                    if self.scene.context.elements.default_stroke is not None:
-                        node.stroke = self.scene.context.elements.default_stroke
-                    if self.scene.context.elements.default_fill is not None:
-                        node.fill = self.scene.context.elements.default_fill
+                    node = elements.elem_branch.add(shape=rect, type="elem rect", stroke_width=1000.0, stroke=self.scene.context.elements.default_stroke, fill=self.scene.context.elements.default_fill)
                     if elements.classify_new:
                         elements.classify([node])
                     self.notify_created(node)

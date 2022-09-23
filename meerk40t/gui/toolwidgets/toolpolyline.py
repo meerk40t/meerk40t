@@ -143,13 +143,9 @@ class PolylineTool(ToolWidget):
         return response
 
     def end_tool(self):
-        polyline = Polyline(*self.point_series, stroke="blue", stroke_width=1000)
+        polyline = Polyline(*self.point_series)
         elements = self.scene.context.elements
-        node = elements.elem_branch.add(shape=polyline, type="elem polyline")
-        if self.scene.context.elements.default_stroke is not None:
-            node.stroke = self.scene.context.elements.default_stroke
-        if self.scene.context.elements.default_fill is not None:
-            node.fill = self.scene.context.elements.default_fill
+        node = elements.elem_branch.add(shape=polyline, type="elem polyline", stroke_width=1000.0, stroke=self.scene.context.elements.default_stroke, fill=self.scene.context.elements.default_fill)
         if elements.classify_new:
             elements.classify([node])
         self.scene.tool_active = False
