@@ -1300,6 +1300,7 @@ class MockConnection:
         if self.just_connected:
             self.just_connected = False
             return "grbl version fake"
+        time.sleep(0.05)  # takes some time
         if self.write_lines:
             self.write_lines -= 1
             return "ok"
