@@ -2104,7 +2104,7 @@ msgid "Print Shutdown"
 msgstr "Shutdown-Protokoll"
 
 #: meerk40t/gui/settings.py:53
-msgid "Print shutdown log when Meerk40t is closed."
+msgid "Print shutdown log when closed."
 msgstr "Drucke das Shutdown-Protokoll, wenn Meerk40t beendet wird."
 
 #: meerk40t/gui/settings.py:58
@@ -2207,7 +2207,7 @@ msgid "Default Operation Empty"
 msgstr "Kein automatisches Laden von Operationen"
 
 msgid "Leave empty operations, don't load a default set"
-mgstr "Bei leerer Operations-Liste kein Standard-Set laden"
+msgstr "Bei leerer Operations-Liste kein Standard-Set laden"
 
 msgid "Classify Reversed"
 msgstr "Elemente in inverser Reihenfolge zuordnen"
@@ -2265,7 +2265,7 @@ msgid "If classification did not find a match,"
 msgstr "Falls die Klassifizierung keinen passenden Partner gefunden hat,"
 
 msgid "either with color matching (exact or fuzzy, see above)"
-msgstr "sei es durch Farbvergleich oder durch Zurodnung zu einer Standard-"
+msgstr "sei es durch Farbvergleich oder durch Zuordnung zu einer Standard-"
 
 msgid "or by assigning to a default operation (see above),"
 msgstr "Operation (siehe oben), dann kann MK bei aktiver Option"
@@ -2274,7 +2274,7 @@ msgid "then MeerK40t can create a matching operation for you."
 msgstr "automatisch eine passende neue Operation anlegen"
 
 msgid "Autoinherit for empty operation"
-msgstr "Farbe übernehemen"
+msgstr "Farbe übernehmen"
 
 msgid "If you drag and drop an element into an operation to assign it there,"
 msgstr "Falls ein Element durch Drag-and-Drop einer Operation zugeordnet wird,"
@@ -2288,10 +2288,21 @@ msgstr "und automatisch alle anderen Elemente der gleichen Farbe ebenfalls zuord
 msgid "- provided no elements are assigned to it yet (ie works only for an empty op)!"
 msgstr "Voraussetzung: die Operation ist leer (also es wurden noch keine Elemente zugeordnet)"
 
+msgid "Classify after color-change"
+msgstr "Klassifizieren bei Farbänderung"
+
+msgid "Whenever you change an elements color (stroke or fill),"
+msgstr "Bei einer Änderung der Element-Farbe (Umriss oder Füllung)"
+
+msgid "MK will then reclassify an element. You can turn this feature off"
+msgstr "wird MK das Element neu klassifizieren. Dies kann durch"
+
+msgid "by disabling this option."
+msgstr "Deaktivieren dieser Option abgeschaltet werden."
+
 #: meerk40t/gui/settings.py:135
 msgid "Use the legacy classification algorithm rather than the modern classification algorithm."
 msgstr "Nutze für die Zuordnung der Elemente den 'alten' Algorithmus."
-
 
 #: meerk40t/gui/settings.py:140
 msgid "Disable ToolTips"
@@ -3760,7 +3771,7 @@ msgid "Opens Controller Window"
 msgstr "Öffnet Controller-Fenster"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:29
-msgid "Opens DeviceManager Window"
+msgid "Opens Devices Window
 msgstr "Öffnet Geräte-Manager"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:29
@@ -6771,7 +6782,7 @@ msgstr ""
 
 #: meerk40t/device/ruida/ruidadevice.py:39
 msgid "shutdown current ruidaserver"
-msgstr ""
+msgstr "Beende den laufenden Ruida-Server"
 
 #: meerk40t/device/ruida/ruidadevice.py:42
 msgid "activate the ruidaserver."
@@ -7444,6 +7455,14 @@ msgstr "Scharfschalten"
 msgid "Arm the job for execution"
 msgstr "Schaltet den Job zur Ausführung scharf"
 
+msgid "Enable Laser Arm"
+msgstr "'Scharfschalten' Feature verwenden"
+
+msgid "Enable Laser Panel Arm/Disarm feature."
+msgstr ""
+"Benutze das 'Scharfschalten' Feature im Laser-Panel, das ein versehentliches "
+"Auslösen eines Laserjobs verhindern soll."
+
 #: meerk40t/gui/panes/laserpanel.py:136
 msgid "Outline"
 msgstr "Umriss abfahren"
@@ -7852,3 +7871,33 @@ msgstr "Nur zur Info: es fehlen %d Eckpunkte gegenüber dem regulären Polygon..
 #: meerk40t/core/elements.py:3684
 msgid "To hit all, the density parameters should be e.g. %s"
 msgstr "Um alle Eckpunkte zu 'erwischen', sollte eine der folgenden Kombinationen verwendet werden: %s"
+
+msgid "Selection"
+msgstr "Auswahl"
+
+msgid "Bed"
+msgstr "Laserbett"
+
+msgid "Grid"
+msgstr "Gitter"
+
+msgid "Guide"
+msgstr "Lineal"
+
+msgid "Laserpath"
+msgstr "Laserpfad"
+
+msgid "Measure"
+msgstr "Ausmessen"
+
+msgid "Magnetline"
+msgstr "Magnet-Linien"
+
+msgid "Snap"
+msgstr "Einrasten"
+
+msgid "Colors"
+msgstr "Farben"
+
+msgid "Scene"
+msgstr "Arbeitsbereich"
