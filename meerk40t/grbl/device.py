@@ -1151,6 +1151,8 @@ class GrblController:
         self.service.signal("serial;write", data)
         with self.lock_realtime_queue:
             self.realtime_queue.append(data)
+            if "\x18" in data:
+                self.sending_queue.clear()
             self.service.signal("serial;buffer", len(self.sending_queue) + len(self.realtime_queue))
 
     def start(self):
