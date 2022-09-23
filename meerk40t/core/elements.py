@@ -2385,10 +2385,11 @@ class Elemental(Service):
                 else:
                     y_pos = dy
                 add_elem = list(map(copy, data))
+                matrix = None
                 if x_pos != 0 or y_pos != 0:
                     matrix = Matrix.translate(dx, dy)
                 for e in add_elem:
-                    if x_pos != 0 or y_pos != 0:
+                    if matrix:
                         e.matrix *= matrix
                     self.elem_branch.add_node(e)
                 self.signal("refresh_scene", "Scene")
