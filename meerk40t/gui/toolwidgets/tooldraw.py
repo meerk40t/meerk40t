@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CHAIN,
     RESPONSE_CONSUME,
@@ -41,6 +42,9 @@ class DrawTool(ToolWidget):
         if self.series is None:
             self.series = []
         if event_type == "leftdown":
+            self.pen = wx.Pen()
+            self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke)))
+            self.pen.SetWidth(1000)
             self.add_point(space_pos[:2])
             response = RESPONSE_CONSUME
         elif event_type == "move":
