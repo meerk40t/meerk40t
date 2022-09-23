@@ -297,6 +297,7 @@ class GRBLDevice(Service, ViewPort):
         self.driver = GRBLDriver(self)
         self.controller = GrblController(self)
         self.channel("grbl").watch(self.controller.write)
+        self.channel("grbl-realtime").watch(self.controller.realtime)
 
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
@@ -472,6 +473,7 @@ class GRBLDriver(Parameters):
         self._g91_absolute()
 
         self.grbl = self.service.channel("grbl", pure=True)
+        self.grbl_realtime = self.service.channel("grbl-realtime", pure=True)
 
         self.move_mode = 0
         self.reply = None
@@ -907,7 +909,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = True
-        self.grbl("!")
+        self.grbl_realtime("!")
 
     def resume(self, *args):
         """
@@ -919,7 +921,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = False
-        self.grbl("~")
+        self.grbl_realtime("~")
 
     def reset(self, *args):
         """
@@ -930,7 +932,7 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
-        self.grbl("\x18")
+        self.grbl_realtime("\x18")
 
     def status(self):
         """
@@ -938,7 +940,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        self.grbl("?")
+        self.grbl_realtime("?")
 
         parts = list()
         parts.append(f"x={self.native_x}")
@@ -1067,6 +1069,9 @@ class GrblController:
         self.lock_sending_queue = threading.RLock()
         self.sending_queue = []
 
+        self.lock_realtime_queue = threading.RLock()
+        self.realtime_queue = []
+
         self.commands_in_device_buffer = []
         self.buffer_mode = 1  # 1:1 okay, send lines.
         self.buffered_characters = 0
@@ -1139,7 +1144,14 @@ class GrblController:
         self.service.signal("serial;write", data)
         with self.lock_sending_queue:
             self.sending_queue.append(data)
-            self.service.signal("serial;buffer", len(self.sending_queue))
+            self.service.signal("serial;buffer", len(self.sending_queue) + len(self.realtime_queue))
+
+    def realtime(self, data):
+        self.start()
+        self.service.signal("serial;write", data)
+        with self.lock_realtime_queue:
+            self.realtime_queue.append(data)
+            self.service.signal("serial;buffer", len(self.sending_queue) + len(self.realtime_queue))
 
     def start(self):
         self.open()
@@ -1158,6 +1170,13 @@ class GrblController:
     def _sending(self):
         while self.connection.connected:
             write = 0
+            while len(self.realtime_queue):
+                line = self.realtime_queue[0]
+                self.connection.write(line)
+                self.send(line)
+                self.realtime_queue.pop(0)
+                write += 1
+
             if len(self.sending_queue):
                 if len(self.commands_in_device_buffer) <= 1:
                     line = self.sending_queue[0]
@@ -1202,7 +1221,7 @@ class GrblController:
         return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
 
     def __len__(self):
-        return len(self.sending_queue)
+        return len(self.sending_queue) + len(self.realtime_queue)
 
 
 class SerialConnection:
