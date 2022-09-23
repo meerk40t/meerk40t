@@ -932,7 +932,10 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
+        self.service.spooler.clear_queue()
+        self.plot_planner.clear()
         self.grbl_realtime("\x18")
+        self.paused = False
 
     def status(self):
         """
@@ -1302,8 +1305,8 @@ class MockConnection:
         if self.just_connected:
             self.just_connected = False
             return "grbl version fake"
-        time.sleep(0.2)  # takes some time
         if self.write_lines:
+            time.sleep(0.2)  # takes some time
             self.write_lines -= 1
             return "ok"
         else:
