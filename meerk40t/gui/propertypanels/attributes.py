@@ -193,6 +193,8 @@ class ColorPanel(wx.Panel):
                     idx = 0
                 else:
                     for i, btn in enumerate(self.btn_color):
+                        if i==0:  # We skip the none color...
+                            continue
                         col = self.btn_color[i].GetBackgroundColour()
                         if nodecol == col:
                             idx = i
