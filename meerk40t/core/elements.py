@@ -8810,7 +8810,8 @@ class Elemental(Service):
                 continue
             if contains(bounds, position):
                 f_list.append(node)
-
+        bounds = None
+        bounds_painted = None
         if len(f_list) > 0:
             # We checked that before, f_list contains only elements with valid bounds...
             e = None
