@@ -1221,6 +1221,9 @@ class GrblController:
                 read += 1
             if read == 0 and write == 0:
                 time.sleep(0.05)
+                self.service.signal("pipe;running", False)
+            else:
+                self.service.signal("pipe;running", True)
 
     def __repr__(self):
         return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
