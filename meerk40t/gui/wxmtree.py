@@ -1191,6 +1191,7 @@ class ShadowTree:
                         if hasattr(node.node, "dangerous"):
                             node.node.dangerous = danger
                     else:
+                        setattr(self.context.device, checker, [False, 0] * 4)
                         print(
                             f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
@@ -1224,6 +1225,7 @@ class ShadowTree:
                         if hasattr(node, "dangerous"):
                             node.dangerous = danger
                     else:
+                        setattr(self.context.device, checker, [False, 0] * 4)
                         print(
                             f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
