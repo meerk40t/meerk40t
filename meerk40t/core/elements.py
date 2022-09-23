@@ -8923,12 +8923,12 @@ class Elemental(Service):
                         break
             if not was_classified and autogen:
                 # Despite all efforts we couldn't classify the element, so let's add an op
-                op = None
+                stdops = []
                 if node.type == "elem image":
-                    op = ImageOpNode(output=False)
+                    stdops.append(ImageOpNode(output=False))
                 elif node.type == "elem point":
-                    op = DotsOpNode(output=False)
-                elif (
+                    stdops.append(DotsOpNode(output=False))
+                if (
                     hasattr(node, "stroke")
                     and node.stroke is not None
                     and node.stroke.argb is not None
@@ -8938,17 +8938,16 @@ class Elemental(Service):
                     else:
                         is_cut = Color("red") == node.stroke
                     if is_cut:
-                        op = CutOpNode(color=Color("red"), speed=5.0)
+                        stdops.append(CutOpNode(color=Color("red"), speed=5.0))
                     else:
-                        op = EngraveOpNode(color=node.stroke, speed=35.0)
-                elif (
+                        stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
+                if (
                     hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
                 ):
-                    op = RasterOpNode(color=0, output=True)
-
-                if op is not None:
+                    stdops.append(RasterOpNode(color=0, output=True))
+                for op in stdops:
                     # Lets make sure we don't have something like that already
                     already_found = False
                     for testop in self.ops():
