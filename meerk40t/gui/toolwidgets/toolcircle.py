@@ -139,7 +139,13 @@ class CircleTool(ToolWidget):
 
                 if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
-                    node = elements.elem_branch.add(shape=ellipse, type="elem ellipse", stroke_width=1000.0, stroke=self.scene.context.elements.default_stroke, fill=self.scene.context.elements.default_fill)
+                    node = elements.elem_branch.add(
+                        shape=ellipse,
+                        type="elem ellipse",
+                        stroke_width=1000.0,
+                        stroke=self.scene.context.elements.default_stroke,
+                        fill=self.scene.context.elements.default_fill,
+                    )
                     if elements.classify_new:
                         elements.classify([node])
                     self.notify_created(node)

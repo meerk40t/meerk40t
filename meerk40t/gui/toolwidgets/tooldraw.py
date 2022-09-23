@@ -43,7 +43,9 @@ class DrawTool(ToolWidget):
             self.series = []
         if event_type == "leftdown":
             self.pen = wx.Pen()
-            self.pen.SetColour(wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke)))
+            self.pen.SetColour(
+                wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+            )
             self.pen.SetWidth(1000)
             self.add_point(space_pos[:2])
             response = RESPONSE_CONSUME
@@ -68,7 +70,13 @@ class DrawTool(ToolWidget):
                 for m in self.series:
                     t.line(m)
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(path=t, type="elem path", stroke_width=1000.0, stroke=self.scene.context.elements.default_stroke, fill=self.scene.context.elements.default_fill)
+                node = elements.elem_branch.add(
+                    path=t,
+                    type="elem path",
+                    stroke_width=1000.0,
+                    stroke=self.scene.context.elements.default_stroke,
+                    fill=self.scene.context.elements.default_fill,
+                )
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)
