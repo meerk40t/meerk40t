@@ -579,11 +579,11 @@ class MeerK40t(MWindow):
             {
                 "attr": "process_while_typing",
                 "object": context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Process input while typing"),
                 "tip": _(
-                    "Try to immediatly use values you enter in dialog-textfields - "
+                    "Try to immediately use values you enter in dialog-textfields - "
                 )
                 + "\n"
                 + _(
