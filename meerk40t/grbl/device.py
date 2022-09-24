@@ -1550,13 +1550,9 @@ class GRBLEmulator(Module, Parameters):
             x /= self.scale
             y /= self.scale
             z = 0.0
-            parts = list()
-            parts.append(state)
-            parts.append("MPos:%f,%f,%f" % (x, y, z))
             f = self.feed_invert(driver.speed)
             s = driver.power
-            parts.append("FS:%f,%d" % (f, s))
-            self.grbl_write("<%s>\r\n" % "|".join(parts))
+            self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
         elif bytes_to_write == "~":  # Resume.
             self.spooler.laserjob("resume")
         elif bytes_to_write == "!":  # Pause.
