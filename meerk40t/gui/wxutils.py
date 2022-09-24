@@ -456,8 +456,6 @@ class TextCtrl(wx.TextCtrl):
         return self._event_generated
 
     def SetValue(self, newvalue):
-        if self._last_valid_value == newvalue:
-            return
         self._last_valid_value = newvalue
         super().SetValue(newvalue)
 
