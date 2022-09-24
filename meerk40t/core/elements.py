@@ -4112,6 +4112,7 @@ class Elemental(Service):
             )
             node.font_size = size
             node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -8978,6 +8979,7 @@ class Elemental(Service):
                     if (hasattr(node, "stroke")
                         and node.stroke is not None
                         and node.stroke.argb is not None
+                        and node.type != "elem text"
                     ):
                         if fuzzy:  # No need to distinguish tempfuzzy here
                             is_black = Color.distance("black", node.stroke) <= fuzzydistance
@@ -8988,8 +8990,14 @@ class Elemental(Service):
                         and is_black
                         and isinstance(op, RasterOpNode)
                     ):
-                        # print ("Skip Raster")
                         whisperer = False
+                    elif (
+                        self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, EngraveOpNode)
+                    ):
+                        whisperer = False
+                    # print (f"Normal, {node.type}, black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
                     if hasattr(op, "classify") and whisperer:
 
                         classified, should_break = op.classify(
@@ -9019,6 +9027,7 @@ class Elemental(Service):
                     if (hasattr(node, "stroke")
                         and node.stroke is not None
                         and node.stroke.argb is not None
+                        and node.type != "elem text"
                     ):
                         if fuzzy:  # No need to distinguish tempfuzzy here
                             is_black = Color.distance("black", node.stroke) <= fuzzydistance
@@ -9031,6 +9040,13 @@ class Elemental(Service):
                     ):
                         # print ("Default Skip Raster")
                         whisperer = False
+                    elif (
+                        self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, EngraveOpNode)
+                    ):
+                        whisperer = False
+                    # print (f"Default, {node.type}, black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
                     if hasattr(op, "classifys") and whisperer:
                         classified, should_break = op.classify(
                             node,
