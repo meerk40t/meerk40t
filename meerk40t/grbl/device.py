@@ -357,8 +357,8 @@ class GRBLDevice(Service, ViewPort):
             input_type=None,
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
-            self.driver.pause()
             self.driver.reset()
+            self.driver.clear_alarm()
             self.signal("pipe;running", False)
 
         @self.console_command(
@@ -946,6 +946,14 @@ class GRBLDriver(Parameters):
         self.plot_planner.clear()
         self.grbl_realtime("\x18")
         self.paused = False
+
+    def clear_alarm(self):
+        """
+        GRBL clear alarm signal.
+
+        @return:
+        """
+        self.grbl_realtime("$X\n")
 
     def status(self):
         """
