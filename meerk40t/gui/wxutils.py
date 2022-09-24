@@ -392,6 +392,7 @@ class TextCtrl(wx.TextCtrl):
         self._warn_status = "modified"
 
         self._last_valid_value = None
+        self._last_update = False
         self._event_generated = None
         self._action_routine = None
 
@@ -456,6 +457,7 @@ class TextCtrl(wx.TextCtrl):
         return self._event_generated
 
     def SetValue(self, newvalue):
+        self._last_update = self._last_valid_value == newvalue
         self._last_valid_value = newvalue
         super().SetValue(newvalue)
 
@@ -555,7 +557,7 @@ class TextCtrl(wx.TextCtrl):
 
     def on_check(self, event):
         event.Skip()
-        status = "modified"
+        status = "modified" if not self._last_update else "unmodified"
         try:
             txt = self.GetValue()
             value = None
