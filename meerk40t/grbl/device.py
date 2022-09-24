@@ -1546,8 +1546,9 @@ class GRBLEmulator(Module, Parameters):
                 state = "Idle"
             else:
                 state = "Busy"
-            x = driver.current_x / self.scale
-            y = driver.current_y / self.scale
+            x, y = driver.current
+            x /= self.scale
+            y /= self.scale
             z = 0.0
             parts = list()
             parts.append(state)
@@ -1557,11 +1558,11 @@ class GRBLEmulator(Module, Parameters):
             parts.append("FS:%f,%d" % (f, s))
             self.grbl_write("<%s>\r\n" % "|".join(parts))
         elif bytes_to_write == "~":  # Resume.
-            self.spooler.send("resume")
+            self.spooler.laserjob("resume")
         elif bytes_to_write == "!":  # Pause.
-            self.spooler.send("pause")
+            self.spooler.laserjob("pause")
         elif bytes_to_write == "\x18":  # Soft reset.
-            self.spooler.send("abort")
+            self.spooler.laserjob("abort")
 
     def write(self, data):
         if isinstance(data, bytes):
@@ -1677,10 +1678,10 @@ class GRBLEmulator(Module, Parameters):
                     pass
                 elif v == 8:
                     # Flood coolant On
-                    self.spooler.send("signal", ("coolant", True))
+                    self.spooler.laserjob(["signal", ("coolant", True)])
                 elif v == 9:
                     # Flood coolant Off
-                    self.spooler.send("signal", ("coolant", False))
+                    self.spooler.laserjob(["signal", ("coolant", False)])
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
