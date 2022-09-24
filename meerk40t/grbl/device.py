@@ -343,11 +343,21 @@ class GRBLDevice(Service, ViewPort):
                 self.channel("grbl")(remainder + "\r")
 
         @self.console_command(
-            ("soft_reset", "estop"),
+            "soft_reset",
             help=_("Send realtime soft reset gcode to the device"),
             input_type=None,
         )
         def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
+            self.driver.reset()
+            self.signal("pipe;running", False)
+
+        @self.console_command(
+            "estop",
+            help=_("Send estop to the laser"),
+            input_type=None,
+        )
+        def estop(command, channel, _, data=None, remainder=None, **kwgs):
+            self.driver.pause()
             self.driver.reset()
             self.signal("pipe;running", False)
 
