@@ -770,22 +770,25 @@ class Spooler:
     def clear_queue(self):
         with self._lock:
             for e in self._queue:
-                needs_signal = e.is_running() and e.time_started is not None
-                loop = e.loops_executed
-                total = e.loops
-                if isinf(total):
-                    total = "∞"
-                passinfo = f"{loop}/{total}"
-                e.stop()
-                if needs_signal:
-                    info = (
-                        e.label,
-                        e.time_started,
-                        e.runtime,
-                        self.context.label,
-                        passinfo,
-                    )
-                    self.context.signal("spooler;completed", info)
+                try:
+                    needs_signal = e.is_running() and e.time_started is not None
+                    loop = e.loops_executed
+                    total = e.loops
+                    if isinf(total):
+                        total = "∞"
+                    passinfo = f"{loop}/{total}"
+                    e.stop()
+                    if needs_signal:
+                        info = (
+                            e.label,
+                            e.time_started,
+                            e.runtime,
+                            self.context.label,
+                            passinfo,
+                        )
+                        self.context.signal("spooler;completed", info)
+                except AttributeError:
+                    pass
             self._queue.clear()
             self.context.signal("spooler;queue", len(self._queue))
 
