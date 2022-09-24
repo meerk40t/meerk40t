@@ -110,10 +110,10 @@ def plugin(kernel, lifecycle=None):
                 "object": elements,
                 "default": True,
                 "type": bool,
-                "label": _("Default Operation Empty"),
+                "label": _("Don't autoload operations on empty set"),
                 "tip": _("Leave empty operations, don't load a default set"),
                 "page": "Classification",
-                "section": "",
+                "section": "_90_Auto-Generation",
             },
             {
                 "attr": "classify_reverse",
@@ -125,7 +125,7 @@ def plugin(kernel, lifecycle=None):
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             # No longer used...
             # {
@@ -154,7 +154,7 @@ def plugin(kernel, lifecycle=None):
                     "if you want to defer this to apply manual classification, then untick this option."
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "classify_fuzzy",
@@ -168,7 +168,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("Ticked: Allow a certain color-distance for classification"),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_fuzzydistance",
@@ -192,7 +192,7 @@ def plugin(kernel, lifecycle=None):
                     "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_default",
@@ -206,7 +206,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then it will try to assign it to matching 'default' operation"),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_autogenerate",
@@ -222,7 +222,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then MeerK40t can create a matching operation for you."),
                 "page": "Classification",
-                "section": "",
+                "section": "_90_Auto-Generation",
             },
             {
                 "attr": "classify_auto_inherit",
@@ -246,7 +246,7 @@ def plugin(kernel, lifecycle=None):
                     "- provided no elements are assigned to it yet (ie works only for an empty op)!"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "classify_on_color",
@@ -260,7 +260,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("by disabling this option."),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "lock_allows_move",
