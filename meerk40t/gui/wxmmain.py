@@ -1423,6 +1423,32 @@ class MeerK40t(MWindow):
         def panes(**kwargs):
             return "panes", self
 
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "load",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def load_pane(command, _, channel, configuration=None, **kwargs):
+            perspective = context.setting(str, f"perspective_{configuration}", None)
+            if not perspective:
+                channel(_("Perspective not found"))
+                return
+            self.on_panes_closed()
+            self._mgr.LoadPerspective(perspective, update=True)
+            self.on_config_panes()
+
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "save",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def save_pane(command, _, channel, configuration=None, **kwargs):
+            setattr(context, f"perspective_{configuration}", self._mgr.SavePerspective())
+
         @context.console_argument("pane", help=_("pane to be shown"))
         @context.console_command(
             "show",
@@ -1467,7 +1493,7 @@ class MeerK40t(MWindow):
                     self._mgr.Update()
 
         @context.console_option("always", "a", type=bool, action="store_true")
-        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_argument("pane", help=_("pane to be float"))
         @context.console_command(
             "float",
             input_type="panes",
@@ -1487,7 +1513,7 @@ class MeerK40t(MWindow):
                     pane.CaptionVisible(not self.context.pane_lock)
                     self._mgr.Update()
 
-        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_argument("pane", help=_("pane to be dock"))
         @context.console_command(
             "dock",
             input_type="panes",
