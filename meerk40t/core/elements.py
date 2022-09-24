@@ -8980,8 +8980,6 @@ class Elemental(Service):
                         break
                 # So we are the end of the first pass, if there was already a classification
                 # then we call it a day and dont call the fuzzy part
-                if is_black:
-                    print(f"Was classified: {was_classified}")
                 if was_classified or should_break:
                     break
 
@@ -9045,7 +9043,7 @@ class Elemental(Service):
                             is_raster = Color("black") == node.stroke
                     else:
                         is_raster = False
-                    print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
+                    # print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
                     if is_cut:
                         stdops.append(CutOpNode(color=Color("red"), speed=5.0))
                     elif is_raster:
