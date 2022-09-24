@@ -49,11 +49,12 @@ class EllipseTool(ToolWidget):
                     )
                 )
             gc.DrawEllipse(x0, y0, x1 - x0, y1 - y0)
+            units = self.scene.context.units_name
             s = "C=({cx}, {cy}), a={a}, b={b}".format(
-                cx=Length(amount=(x1 + x0) / 2, digits=2).length_mm,
-                cy=Length(amount=(y1 + y0) / 2, digits=2).length_mm,
-                a=Length(amount=(x1 - x0) / 2, digits=2).length_mm,
-                b=Length(amount=(y1 - y0) / 2, digits=2).length_mm,
+                cx=Length(amount=(x1 + x0) / 2, digits=2, preferred_units=units),
+                cy=Length(amount=(y1 + y0) / 2, digits=2, preferred_units=units),
+                a=Length(amount=(x1 - x0) / 2, digits=2, preferred_units=units),
+                b=Length(amount=(y1 - y0) / 2, digits=2, preferred_units=units),
             )
             self.scene.context.signal("statusmsg", s)
 
