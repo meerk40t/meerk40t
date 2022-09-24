@@ -1539,19 +1539,19 @@ class GRBLEmulator(Module, Parameters):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        driver = self.device
+        device = self.device
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if driver.state == 0:
+            if device.state == 0:
                 state = "Idle"
             else:
                 state = "Busy"
-            x, y = driver.current
+            x, y = device.current
             x /= self.scale
             y /= self.scale
             z = 0.0
-            f = self.feed_invert(driver.speed)
-            s = driver.power
+            f = self.feed_invert(device.speed)
+            s = device.power
             self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
         elif bytes_to_write == "~":  # Resume.
             self.spooler.laserjob("resume")
@@ -1559,6 +1559,8 @@ class GRBLEmulator(Module, Parameters):
             self.spooler.laserjob("pause")
         elif bytes_to_write == "\x18":  # Soft reset.
             self.spooler.laserjob("abort")
+        elif bytes_to_write == "\x85":
+            pass # Jog Abort.
 
     def write(self, data):
         if isinstance(data, bytes):
