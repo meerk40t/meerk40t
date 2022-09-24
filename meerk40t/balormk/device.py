@@ -36,6 +36,15 @@ class ElementLightJob:
         self.time_started = time.time()
         self.runtime = 0
 
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
+
     def is_running(self):
         return not self.stopped and self.started
 
@@ -162,6 +171,15 @@ class LiveSelectionLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
+
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
 
     def is_running(self):
         return not self.stopped
@@ -327,6 +345,15 @@ class LiveFullLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
+
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
 
     def is_running(self):
         return not self.stopped
