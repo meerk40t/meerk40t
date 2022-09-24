@@ -608,16 +608,9 @@ class SVGProcessor:
                 settings=element.values,
             )
             e_list.append(node)
-        elif isinstance(element, Path):
-            if len(element) >= 0:
-                element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    path=element, type="elem path", id=ident, label=_label, lock=_lock
-                )
-                self.check_for_line_attributes(node, element)
-                self.check_for_fill_attributes(node, element)
-                e_list.append(node)
-        elif isinstance(element, (Polygon, Polyline)):
+        elif isinstance(element, (Polygon, Polyline)) or (
+            isinstance(element, Path) and element.values.get("type") == "elem polyline"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -634,7 +627,9 @@ class SVGProcessor:
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
-        elif isinstance(element, Circle):
+        elif isinstance(element, Circle) or (
+            isinstance(element, Path) and element.values.get("type") == "elem circle"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -649,7 +644,9 @@ class SVGProcessor:
                     lock=_lock,
                 )
                 e_list.append(node)
-        elif isinstance(element, Ellipse):
+        elif isinstance(element, Ellipse) or (
+            isinstance(element, Path) and element.values.get("type") == "elem ellipse"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -664,7 +661,9 @@ class SVGProcessor:
                     lock=_lock,
                 )
                 e_list.append(node)
-        elif isinstance(element, Rect):
+        elif isinstance(element, Rect) or (
+            isinstance(element, Path) and element.values.get("type") == "elem rect"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -676,7 +675,9 @@ class SVGProcessor:
                 )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
-        elif isinstance(element, SimpleLine):
+        elif isinstance(element, SimpleLine) or (
+            isinstance(element, Path) and element.values.get("type") == "elem line"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -687,6 +688,15 @@ class SVGProcessor:
                     shape=element, type="elem line", id=ident, label=_label, lock=_lock
                 )
                 self.check_for_line_attributes(node, element)
+                e_list.append(node)
+        elif isinstance(element, Path):
+            if len(element) >= 0:
+                element.approximate_arcs_with_cubics()
+                node = context_node.add(
+                    path=element, type="elem path", id=ident, label=_label, lock=_lock
+                )
+                self.check_for_line_attributes(node, element)
+                self.check_for_fill_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
