@@ -386,12 +386,11 @@ class LaserJob:
     @property
     def status(self):
         if self.is_running and self.time_started is not None:
-            statusvalue = "Running"
+            return "Running"
         elif not self.is_running:
-            statusvalue = "Disabled"
+            return "Disabled"
         else:
-            statusvalue = "Queued"
-        return statusvalue
+            return "Queued"
 
     def is_running(self):
         return not self._stopped
