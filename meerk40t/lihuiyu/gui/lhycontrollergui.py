@@ -47,7 +47,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.button_controller_control = wx.Button(
             self, wx.ID_ANY, _("Start Controller")
         )
-        self.button_controller_control.function = lambda e: self.context("start\n")
+        self.button_controller_control.function = lambda: self.context("start\n")
         self.text_controller_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
