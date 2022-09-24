@@ -84,7 +84,7 @@ def process_event(
             widget.tool(space_pos, dx, dy, -1, modifiers)
             return RESPONSE_CONSUME
     elif event_type == "middledown":
-        # Hmm, I think this is never called due to the consumption of this evennt by scene pane...
+        # Hmm, I think this is never called due to the consumption of this event by scene pane...
         widget.was_lb_raised = False
         widget.save_width = widget.master.width
         widget.save_height = widget.master.height
