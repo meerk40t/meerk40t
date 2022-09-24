@@ -289,6 +289,21 @@ def plugin(kernel, lifecycle=None):
                 "page": "Scene",
                 "section": "General",
             },
+            {
+                "attr": "op_show_default",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Display 'default' for unchanged values"),
+                "tip": _(
+                    "Ticked: For power and speed display a 'default' string if default values in place."
+                ) + "\n" +
+                _(
+                    "Unticked: Show their current value."
+                ),
+                "page": "Scene",
+                "section": "Operation",
+            },
         ]
         kernel.register_choices("preferences", choices)
     elif lifecycle == "prestart":
@@ -8434,6 +8449,11 @@ class Elemental(Service):
         """
         operation_branch = self._tree.get(type="branch ops")
         operation_branch.add_node(op, pos=pos)
+        if not self.op_show_default:
+            if hasattr(op, "speed"):
+                op.speed = op.speed
+            if hasattr(op, "power"):
+                op.power = op.power
         self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
@@ -8441,6 +8461,11 @@ class Elemental(Service):
         items = []
         for op in adding_ops:
             operation_branch.add_node(op)
+            if not self.op_show_default:
+                if hasattr(op, "speed"):
+                    op.speed = op.speed
+                if hasattr(op, "power"):
+                    op.power = op.power
             items.append(op)
         self.signal("add_operation", items)
         return items
