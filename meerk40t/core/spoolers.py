@@ -812,7 +812,10 @@ class Spooler:
                     pass
                 self._queue.remove(element)
             else:
-                element = self._queue[index]
+                try:
+                    element = self._queue[index]
+                except IndexError:
+                    return
                 try:
                     loop = element.loops_executed
                     total = element.loops
