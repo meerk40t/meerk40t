@@ -8964,7 +8964,7 @@ class Elemental(Service):
             if fuzzy:
                 fuzzy_param = (False, True)
             else:
-                fuzzy_param = (False)
+                fuzzy_param = (False,)
             for tempfuzzy in fuzzy_param:
                 was_classified = False
                 should_break = False
