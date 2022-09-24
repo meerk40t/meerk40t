@@ -227,8 +227,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "max_speed_raster_enabled", False)
         self.setting(float, "max_speed_raster", 750.0)
 
-        self.state = 0
-
         self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
@@ -730,6 +728,10 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def power(self):
         return self.driver.power
+
+    @property
+    def state(self):
+        return self.driver.state
 
     @property
     def native(self):
