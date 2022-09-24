@@ -724,6 +724,14 @@ class LihuiyuDevice(Service, ViewPort):
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
 
     @property
+    def speed(self):
+        return self.driver.speed
+
+    @property
+    def power(self):
+        return self.driver.power
+
+    @property
     def native(self):
         """
         @return: the location in device native units for the current known position.
