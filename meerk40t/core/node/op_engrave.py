@@ -282,7 +282,7 @@ class EngraveOpNode(Node, Parameters):
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
-            elif node.type in ("elem point", "elem text"):
+            elif node.type not in self._allowed_elements_dnd:
                 # These aren't valid.
                 continue
             else:
