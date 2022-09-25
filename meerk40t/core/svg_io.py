@@ -376,11 +376,7 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_width = (
-                        str(c.stroke_width)
-                        if c.stroke_width is not None
-                        else SVG_VALUE_NONE
-                    )
+                    stroke_width = SVG_VALUE_NONE
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError:
                     pass
