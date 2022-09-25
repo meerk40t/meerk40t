@@ -358,6 +358,14 @@ class GRBLDevice(Service, ViewPort):
         )
         def estop(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
+            self.signal("pipe;running", False)
+
+        @self.console_command(
+            "clear_alarm",
+            help=_("Send clear_alarm to the laser"),
+            input_type=None,
+        )
+        def clear_alarm(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.clear_alarm()
             self.signal("pipe;running", False)
 
@@ -1539,47 +1547,47 @@ class GRBLEmulator(Module, Parameters):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        driver = self.device
+        device = self.device
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if driver.state == 0:
+            if device.state == 0:
                 state = "Idle"
             else:
                 state = "Busy"
-            x, y = driver.current
+            x, y = device.current
             x /= self.scale
             y /= self.scale
             z = 0.0
-            parts = list()
-            parts.append(state)
-            parts.append("MPos:%f,%f,%f" % (x, y, z))
-            f = self.feed_invert(driver.speed)
-            s = driver.power
-            parts.append("FS:%f,%d" % (f, s))
-            self.grbl_write("<%s>\r\n" % "|".join(parts))
+            f = self.feed_invert(device.speed)
+            s = device.power
+            self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
         elif bytes_to_write == "~":  # Resume.
             self.spooler.laserjob("resume")
         elif bytes_to_write == "!":  # Pause.
             self.spooler.laserjob("pause")
         elif bytes_to_write == "\x18":  # Soft reset.
             self.spooler.laserjob("abort")
+        elif bytes_to_write == "\x85":
+            pass # Jog Abort.
 
     def write(self, data):
-        if isinstance(data, bytes):
-            data = data.decode()
-        if "?" in data:
-            data = data.replace("?", "")
+        if b"?" in data:
+            data = data.replace(b"?", b"")
             self.realtime_write("?")
-        if "~" in data:
-            data = data.replace("~", "")
+        if b"~" in data:
+            data = data.replace(b"~", b"")
             self.realtime_write("~")
-        if "!" in data:
-            data = data.replace("!", "")
+        if b"!" in data:
+            data = data.replace(b"!", b"")
             self.realtime_write("!")
-        if "\x18" in data:
-            data = data.replace("\x18", "")
+        if b"\x18" in data:
+            data = data.replace(b"\x18", b"")
             self.realtime_write("\x18")
-        self.buffer += data
+        if b"\x85" in data:
+            data = data.replace(b"\x85", b"")
+            self.realtime_write("\x85")
+
+        self.buffer += data.decode("utf-8")
         while "\b" in self.buffer:
             self.buffer = re.sub(".\b", "", self.buffer, count=1)
             if self.buffer.startswith("\b"):
