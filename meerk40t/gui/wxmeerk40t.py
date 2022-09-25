@@ -109,6 +109,7 @@ def register_panel_go(window, context):
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = go
 
@@ -139,6 +140,7 @@ def register_panel_stop(window, context):
         .Hide()
         .CaptionVisible(not context.pane_lock)
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = stop
 
@@ -161,6 +163,7 @@ def register_panel_home(window, context):
         .Hide()
         .CaptionVisible(not context.pane_lock)
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = home
     window.on_pane_create(pane)
@@ -201,6 +204,7 @@ def register_panel_pause(window, context):
         .Hide()
         .CaptionVisible(not context.pane_lock)
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = pause
 
