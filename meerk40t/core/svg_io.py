@@ -875,6 +875,7 @@ class SVGProcessor:
                 except AttributeError:
                     pass
                 elem.id = node_id
+                e_list.append(elem)
 
 
 class SVGLoader:
