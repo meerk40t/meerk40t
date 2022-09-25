@@ -537,7 +537,7 @@ class AboutPanel(wx.Panel):
             r"if you want to batch-burn a couple of name-tags). The standard use {NAME} indicates"
         )
         s += " " + _(
-            r"the value at position #index of the loaded list, {NAME#+1} (not the plus sign)"
+            r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
         )
         s += " " + _(
             r"uses the next entry, {NAME#+2} the second entry after the current."
