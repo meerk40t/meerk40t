@@ -9090,7 +9090,7 @@ class Elemental(Service):
                     stdops.append(ImageOpNode(output=False))
                 elif node.type == "elem point":
                     stdops.append(DotsOpNode(output=False))
-                if (
+                elif (
                     hasattr(node, "stroke")
                     and node.stroke is not None
                     and node.stroke.argb is not None

@@ -281,6 +281,9 @@ class CutOpNode(Node, Parameters):
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
+            elif node.type in ("elem point", "elem text"):
+                # These aren't valid.
+                continue
             else:
                 path = abs(Path(node.shape))
                 path.approximate_arcs_with_cubics()
