@@ -566,10 +566,9 @@ class Node:
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
-        @param data_object:
-        @param type:
-        @param label: display name for this node
-        @param pos:
+        @param type: Node type to be bootstrapped
+        @param id: Node id to be set
+        @param pos: Position within current node to add this node
         @return:
         """
         node_class = self._root.bootstrap.get(type, Node)

@@ -110,10 +110,10 @@ def plugin(kernel, lifecycle=None):
                 "object": elements,
                 "default": True,
                 "type": bool,
-                "label": _("Default Operation Empty"),
+                "label": _("Don't autoload operations on empty set"),
                 "tip": _("Leave empty operations, don't load a default set"),
                 "page": "Classification",
-                "section": "",
+                "section": "_90_Auto-Generation",
             },
             {
                 "attr": "classify_reverse",
@@ -125,7 +125,7 @@ def plugin(kernel, lifecycle=None):
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             # No longer used...
             # {
@@ -154,7 +154,7 @@ def plugin(kernel, lifecycle=None):
                     "if you want to defer this to apply manual classification, then untick this option."
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "classify_fuzzy",
@@ -168,7 +168,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("Ticked: Allow a certain color-distance for classification"),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_fuzzydistance",
@@ -192,13 +192,32 @@ def plugin(kernel, lifecycle=None):
                     "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
+            },
+            {
+                "attr": "classify_black_as_raster",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _(
+                    "Treat 'Black' as raster even for basic elements (like Whisperer does)"
+                ),
+                "tip": _(
+                    "Ticked: Classify will assign black elements to a raster operation"
+                )
+                + "\n"
+                + _(
+                    "Unticked: Classify will assign black elements to an engrave operation"
+                ),
+                "page": "Classification",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_default",
                 "object": elements,
                 "default": True,
                 "type": bool,
+                "hidden": True,
                 "label": _("Assign to default operations"),
                 "tip": _("If classification did not find a match,")
                 + "\n"
@@ -206,7 +225,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then it will try to assign it to matching 'default' operation"),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_autogenerate",
@@ -222,7 +241,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then MeerK40t can create a matching operation for you."),
                 "page": "Classification",
-                "section": "",
+                "section": "_90_Auto-Generation",
             },
             {
                 "attr": "classify_auto_inherit",
@@ -246,7 +265,7 @@ def plugin(kernel, lifecycle=None):
                     "- provided no elements are assigned to it yet (ie works only for an empty op)!"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "classify_on_color",
@@ -256,11 +275,13 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Classify after color-change"),
                 "tip": _("Whenever you change an elements color (stroke or fill),")
                 + "\n"
-                + _("MK will then reclassify an element. You can turn this feature off")
+                + _(
+                    "MK will then reclassify this element. You can turn this feature off"
+                )
                 + "\n"
                 + _("by disabling this option."),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "lock_allows_move",
@@ -273,6 +294,20 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Scene",
                 "section": "General",
+            },
+            {
+                "attr": "op_show_default",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Display 'default' for unchanged values"),
+                "tip": _(
+                    "Ticked: For power and speed display a 'default' string if default values in place."
+                )
+                + "\n"
+                + _("Unticked: Show their current value."),
+                "page": "Scene",
+                "section": "Operation",
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -4082,6 +4117,7 @@ class Elemental(Service):
             )
             node.font_size = size
             node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -8419,6 +8455,11 @@ class Elemental(Service):
         """
         operation_branch = self._tree.get(type="branch ops")
         operation_branch.add_node(op, pos=pos)
+        if not self.op_show_default:
+            if hasattr(op, "speed"):
+                op.speed = op.speed
+            if hasattr(op, "power"):
+                op.power = op.power
         self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
@@ -8426,6 +8467,11 @@ class Elemental(Service):
         items = []
         for op in adding_ops:
             operation_branch.add_node(op)
+            if not self.op_show_default:
+                if hasattr(op, "speed"):
+                    op.speed = op.speed
+                if hasattr(op, "power"):
+                    op.power = op.power
             items.append(op)
         self.signal("add_operation", items)
         return items
@@ -8920,17 +8966,69 @@ class Elemental(Service):
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
-            was_classified = False
-            for op in operations:
-                if hasattr(op, "classify"):
-                    classified, should_break = op.classify(
-                        node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=False
-                    )
-                else:
-                    continue
-                if classified:
-                    was_classified = True
-                if should_break:
+            # Even for fuzzy we check first a direct hit
+            if fuzzy:
+                fuzzy_param = (False, True)
+            else:
+                fuzzy_param = (False,)
+            for tempfuzzy in fuzzy_param:
+                was_classified = False
+                should_break = False
+
+                for op in operations:
+                    # One special case: is this a rasterop and the stroke
+                    # color is black and the option 'classify_black_as_raster'
+                    # is not set? Then skip...
+                    is_black = False
+                    whisperer = True
+                    if (
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and node.stroke.argb is not None
+                        and node.type != "elem text"
+                    ):
+                        if fuzzy:  # No need to distinguish tempfuzzy here
+                            is_black = (
+                                Color.distance("black", node.stroke) <= fuzzydistance
+                                or Color.distance("white", node.stroke) <= fuzzydistance
+                            )
+                        else:
+                            is_black = (
+                                Color("black") == node.stroke
+                                or Color("white") == node.stroke
+                            )
+                    if (
+                        not self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, RasterOpNode)
+                    ):
+                        whisperer = False
+                    elif (
+                        self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, EngraveOpNode)
+                    ):
+                        whisperer = False
+                    # print (f"Normal, {node.type}, black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
+                    if hasattr(op, "classify") and whisperer:
+
+                        classified, should_break = op.classify(
+                            node,
+                            fuzzy=tempfuzzy,
+                            fuzzydistance=fuzzydistance,
+                            usedefault=False,
+                        )
+                    else:
+                        continue
+                    if classified:
+                        was_classified = True
+                        # if hasattr(node, "stroke"):
+                        #     print(f"Was classified: {node.stroke} matching operation: {type(op).__name__}")
+                    if should_break:
+                        break
+                # So we are the end of the first pass, if there was already a classification
+                # then we call it a day and dont call the fuzzy part
+                if was_classified or should_break:
                     break
 
             ######################
@@ -8939,7 +9037,39 @@ class Elemental(Service):
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
                 for op in operations:
-                    if hasattr(op, "classify"):
+                    is_black = False
+                    whisperer = True
+                    if (
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and node.stroke.argb is not None
+                        and node.type != "elem text"
+                    ):
+                        if fuzzy:
+                            is_black = (
+                                Color.distance("black", node.stroke) <= fuzzydistance
+                                or Color.distance("white", node.stroke) <= fuzzydistance
+                            )
+                        else:
+                            is_black = (
+                                Color("black") == node.stroke
+                                or Color("white") == node.stroke
+                            )
+                    if (
+                        not self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, RasterOpNode)
+                    ):
+                        # print ("Default Skip Raster")
+                        whisperer = False
+                    elif (
+                        self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, EngraveOpNode)
+                    ):
+                        whisperer = False
+                    # print (f"Default, {node.type}, black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
+                    if hasattr(op, "classifys") and whisperer:
                         classified, should_break = op.classify(
                             node,
                             fuzzy=fuzzy,
@@ -8955,11 +9085,12 @@ class Elemental(Service):
             if not was_classified and autogen:
                 # Despite all efforts we couldn't classify the element, so let's add an op
                 stdops = []
+                has_raster = False
                 if node.type == "elem image":
                     stdops.append(ImageOpNode(output=False))
                 elif node.type == "elem point":
                     stdops.append(DotsOpNode(output=False))
-                if (
+                elif (
                     hasattr(node, "stroke")
                     and node.stroke is not None
                     and node.stroke.argb is not None
@@ -8968,14 +9099,32 @@ class Elemental(Service):
                         is_cut = Color.distance("red", node.stroke) <= fuzzydistance
                     else:
                         is_cut = Color("red") == node.stroke
+                    if self.classify_black_as_raster:
+                        if fuzzy:
+                            is_raster = (
+                                Color.distance("black", node.stroke) <= fuzzydistance
+                                or Color.distance("white", node.stroke) <= fuzzydistance
+                            )
+                        else:
+                            is_raster = (
+                                Color("black") == node.stroke
+                                or Color("white") == node.stroke
+                            )
+                    else:
+                        is_raster = False
+                    # print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
                     if is_cut:
                         stdops.append(CutOpNode(color=Color("red"), speed=5.0))
+                    elif is_raster:
+                        stdops.append(RasterOpNode(color=node.stroke, output=True))
+                        has_raster = True
                     else:
                         stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
                 if (
                     hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
+                    and not has_raster
                 ):
                     stdops.append(RasterOpNode(color=0, output=True))
                 for op in stdops:

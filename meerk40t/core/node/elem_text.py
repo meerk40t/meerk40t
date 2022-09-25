@@ -87,7 +87,7 @@ class TextNode(Node):
         self.stroke_width = stroke_width
         self._stroke_scaled = stroke_scale
         if x != 0 or y != 0:
-            matrix.pre_translate(x, y)
+            self.matrix.pre_translate(x, y)
 
         self.font_style = "normal"
         self.font_variant = "normal"

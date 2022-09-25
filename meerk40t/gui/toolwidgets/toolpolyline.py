@@ -54,13 +54,15 @@ class PolylineTool(ToolWidget):
             y0 = points[-2][1]
             x1 = points[-1][0]
             y1 = points[-1][1]
+            units = self.scene.context.units_name
             s = "Pts: {pts}, to last point: O=({cx}, {cy}), d={a}".format(
                 pts=len(points),
-                cx=Length(amount=x0, digits=2).length_mm,
-                cy=Length(amount=y0, digits=2).length_mm,
+                cx=Length(amount=x0, digits=2, preferred_units=units),
+                cy=Length(amount=y0, digits=2, preferred_units=units),
                 a=Length(
-                    amount=sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)), digits=2
-                ).length_mm,
+                    amount=sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)),
+                    digits=2, preferred_units=units
+                )
             )
             self.scene.context.signal("statusmsg", s)
 

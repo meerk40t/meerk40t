@@ -579,11 +579,11 @@ class MeerK40t(MWindow):
             {
                 "attr": "process_while_typing",
                 "object": context.root,
-                "default": True,
+                "default": False,
                 "type": bool,
                 "label": _("Process input while typing"),
                 "tip": _(
-                    "Try to immediatly use values you enter in dialog-textfields - "
+                    "Try to immediately use values you enter in dialog-textfields - "
                 )
                 + "\n"
                 + _(
@@ -1423,6 +1423,32 @@ class MeerK40t(MWindow):
         def panes(**kwargs):
             return "panes", self
 
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "load",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def load_pane(command, _, channel, configuration=None, **kwargs):
+            perspective = context.setting(str, f"perspective_{configuration}", None)
+            if not perspective:
+                channel(_("Perspective not found"))
+                return
+            self.on_panes_closed()
+            self._mgr.LoadPerspective(perspective, update=True)
+            self.on_config_panes()
+
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "save",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def save_pane(command, _, channel, configuration=None, **kwargs):
+            setattr(context, f"perspective_{configuration}", self._mgr.SavePerspective())
+
         @context.console_argument("pane", help=_("pane to be shown"))
         @context.console_command(
             "show",
@@ -1467,7 +1493,7 @@ class MeerK40t(MWindow):
                     self._mgr.Update()
 
         @context.console_option("always", "a", type=bool, action="store_true")
-        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_argument("pane", help=_("pane to be float"))
         @context.console_command(
             "float",
             input_type="panes",
@@ -1487,7 +1513,7 @@ class MeerK40t(MWindow):
                     pane.CaptionVisible(not self.context.pane_lock)
                     self._mgr.Update()
 
-        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_argument("pane", help=_("pane to be dock"))
         @context.console_command(
             "dock",
             input_type="panes",
@@ -1753,6 +1779,15 @@ class MeerK40t(MWindow):
 
             return toggle
 
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
+
         self.panes_menu = wx.Menu()
         label = _("Panes")
         index = self.main_menubar.FindMenu(label)
@@ -1761,6 +1796,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.panes_menu, label)
         submenus = {}
+        panedata = []
         for pane, _path, suffix_path in self.context.find("pane/.*"):
             try:
                 suppress = pane.hide_menu
@@ -1768,9 +1804,19 @@ class MeerK40t(MWindow):
                     continue
             except AttributeError:
                 pass
+            try:
+                submenu = pane.submenu
+            except AttributeError:
+                submenu = ""
+            if submenu == "":
+                submenu = "_ZZZZZZZZZZZZZZZZ_"
+            panedata.append([pane, _path, suffix_path, submenu])
+        panedata.sort(key=lambda row: row[3])
+        for pane, _path, suffix_path, dummy in panedata:
             submenu = None
             try:
                 submenu_name = pane.submenu
+                submenu_name = unsorted_label(submenu_name)
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:

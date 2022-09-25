@@ -47,6 +47,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.button_controller_control = wx.Button(
             self, wx.ID_ANY, _("Start Controller")
         )
+        self.button_controller_control.function = lambda: self.context("start\n")
         self.text_controller_status = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
@@ -448,7 +449,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
                 self.context("start\n")
                 self.context("hold\n")
 
-            self.Bind(wx.EVT_BUTTON, f, button)
+            button.function = f
             button.SetBackgroundColour("#009900")
             button.SetLabel(_("Hold Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
@@ -463,7 +464,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             def f(event=None):
                 self.context("continue\n")
 
-            self.Bind(wx.EVT_BUTTON, f, button)
+            button.function = f
             button.SetBackgroundColour("#dddd00")
             button.SetLabel(_("Force Continue"))
             button.SetBitmap(icons8_laser_beam_hazard_50.GetBitmap(use_theme=False))
@@ -473,7 +474,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             def f(event=None):
                 self.context("resume\n")
 
-            self.Bind(wx.EVT_BUTTON, f, button)
+            button.function = f
             button.SetBackgroundColour("#00dd00")
             button.SetLabel(_("Resume Controller"))
             button.SetBitmap(icons8_play_50.GetBitmap(use_theme=False))
@@ -483,7 +484,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             def f(event=None):
                 self.context("hold\n")
 
-            self.Bind(wx.EVT_BUTTON, f, button)
+            button.function = f
             button.SetBackgroundColour("#00ff00")
             button.SetLabel(_("Pause Controller"))
             button.SetBitmap(icons8_pause_50.GetBitmap(use_theme=False))
@@ -493,7 +494,7 @@ class LihuiyuControllerPanel(ScrolledPanel):
             def f(event=None):
                 self.context("abort\n")
 
-            self.Bind(wx.EVT_BUTTON, f, button)
+            button.function = f
             button.SetBackgroundColour("#00ffff")
             button.SetLabel(_("Manual Reset"))
             button.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(use_theme=False))
@@ -504,8 +505,8 @@ class LihuiyuControllerPanel(ScrolledPanel):
         self.retries = count
 
     def on_button_start_controller(self, event=None):
-        print("Event handler 'on_button_start_controller' not implemented!")
         event.Skip()
+        self.button_controller_control.function()
 
     def on_check_show_usb_log(self, event=None):
         on = self.checkbox_show_usb_log.GetValue()

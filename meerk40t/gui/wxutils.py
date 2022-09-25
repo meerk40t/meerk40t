@@ -396,8 +396,8 @@ class TextCtrl(wx.TextCtrl):
         self._action_routine = None
 
         if self._check is not None and self._check != "":
-            self.Bind(wx.EVT_TEXT, self.on_check)
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
+            self.Bind(wx.EVT_KEY_UP, self.on_check)
         self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
         if self._style & wx.TE_PROCESS_ENTER != 0:

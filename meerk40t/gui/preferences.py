@@ -27,7 +27,7 @@ class PreferencesUnitsPanel(wx.Panel):
             self,
             wx.ID_ANY,
             _("Units"),
-            choices=[_("mm"), _("cm"), _("inch"), _("mils")],
+            choices=["mm", "cm", "inch", "mils"],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
