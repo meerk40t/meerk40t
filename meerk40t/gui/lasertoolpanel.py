@@ -258,7 +258,7 @@ class LaserToolPanel(wx.Panel):
         size_width.Add(label_wd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_width = wx.TextCtrl(self.nb_square, wx.ID_ANY, DEFAULT_LEN)
-        self.txt_width.SetToolTip(_("Extension of the square to create "))
+        self.txt_width.SetToolTip(_("Extension of the square to create"))
         self.txt_width.SetMinSize((60, -1))
         size_width.Add(self.txt_width, 0, wx.EXPAND, 0)
 
@@ -595,12 +595,17 @@ class LaserToolPanel(wx.Panel):
             units = p.units_name
             cx = float(Length(amount=center[0], digits=5, preferred_units=units))
             cy = float(Length(amount=center[1], digits=5, preferred_units=units))
+            if self.context.elements.classify_new:
+                option = " --classify"
+            else:
+                option = ""
+
             if self.check_circle.GetValue():
                 self.context(
                     f"circle "
                     f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                     f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
-                    f"1mm stroke black\n"
+                    f"1mm stroke blue{option}\n"
                 )
             if (
                 cx < 0
@@ -641,19 +646,22 @@ class LaserToolPanel(wx.Panel):
         if result:
             p = self.context
             units = p.units_name
+            if self.context.elements.classify_new:
+                option = " --classify"
+            else:
+                option = ""
             if self.check_circle.GetValue():
                 self.context(
                     f"circle "
                     f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                     f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
-                    f"1mm stroke black\n"
+                    f"1mm stroke blue{option}\n"
                 )
-            # TODO: Should this be else?
             self.context(
                 f"circle "
                 f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
-                f"{str(Length(amount=radius, digits=5, preferred_units=units))}\n"
+                f"{str(Length(amount=radius, digits=5, preferred_units=units))}{option}\n"
             )
             if self.check_ref_circle.GetValue():
                 self.context("reference\n")
@@ -665,13 +673,18 @@ class LaserToolPanel(wx.Panel):
         if result:
             p = self.context
             units = p.units_name
+            if self.context.elements.classify_new:
+                option = " --classify"
+            else:
+                option = ""
 
             self.context(
                 f"rect "
                 f"{str(Length(amount=left_top[0], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=left_top[1], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=width, digits=5, preferred_units=units))} "
-                f"{str(Length(amount=height, digits=5, preferred_units=units))}\n"
+                f"{str(Length(amount=height, digits=5, preferred_units=units))}"
+                f"{option}\n"
             )
             if self.check_ref_frame.GetValue():
                 self.context("reference\n")
