@@ -330,7 +330,7 @@ class SVGWriter:
             for key, value in c.__dict__.items():
                 if (
                     not key.startswith("_")
-                    and not key == "settings"
+                    and key not in ("settings", "attributes")
                     and value is not None
                     and isinstance(value, (str, int, float, complex, list, dict))
                 ):
