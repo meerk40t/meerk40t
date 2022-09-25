@@ -361,8 +361,8 @@ class SVGWriter:
             ###############
             # SAVE STROKE
             ###############
-            if hasattr(element, "stroke"):
-                stroke = element.stroke
+            if hasattr(c, "stroke"):
+                stroke = c.stroke
             else:
                 stroke = None
             if stroke is not None:
@@ -377,8 +377,8 @@ class SVGWriter:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
                     stroke_width = (
-                        str(element.stroke_width)
-                        if element.stroke_width is not None
+                        str(c.stroke_width)
+                        if c.stroke_width is not None
                         else SVG_VALUE_NONE
                     )
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
@@ -388,8 +388,8 @@ class SVGWriter:
             ###############
             # SAVE FILL
             ###############
-            if hasattr(element, "fill"):
-                fill = element.fill
+            if hasattr(c, "fill"):
+                fill = c.fill
             else:
                 fill = None
             if fill is not None:
@@ -871,6 +871,8 @@ class SVGProcessor:
                     element.values["matrix"] = Matrix(element.values["transform"])
                 if "settings" in element.values:
                     del element.values["settings"]  # If settings was set, delete it or it will mess things up
+                if "lock" in element.values:
+                    element.values["lock"] = _lock
                 elem = context_node.add(type=node_type, **element.values)
                 try:
                     elem.validate()
