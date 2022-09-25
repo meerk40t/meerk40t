@@ -36,7 +36,7 @@ class DevicePanel(wx.Panel):
         self.context = context
 
         sizer_1 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Your Devices"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Your Devices")), wx.VERTICAL
         )
 
         self.devices_list = wx.ListCtrl(
