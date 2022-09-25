@@ -91,8 +91,8 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.widget_scene = self.scene.scene
         context = self.context
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
