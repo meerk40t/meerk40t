@@ -869,6 +869,8 @@ class SVGProcessor:
                     element.values["stroke"] = Color(element.values["stroke"])
                 if "transform" in element.values:
                     element.values["matrix"] = Matrix(element.values["transform"])
+                if "settings" in element.values:
+                    del element.values["settings"]  # If settings was set, delete it or it will mess things up
                 elem = context_node.add(type=node_type, **element.values)
                 try:
                     elem.validate()
