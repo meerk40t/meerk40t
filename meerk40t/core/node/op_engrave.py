@@ -49,7 +49,6 @@ class EngraveOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
-            "elem dot",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
