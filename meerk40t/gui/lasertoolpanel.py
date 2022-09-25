@@ -596,10 +596,11 @@ class LaserToolPanel(wx.Panel):
             cx = float(Length(amount=center[0], digits=5, preferred_units=units))
             cy = float(Length(amount=center[1], digits=5, preferred_units=units))
             if self.context.elements.classify_new:
-                option = " --classify"
+                option = " classify"
+                postsignal = "tree_changed"
             else:
                 option = ""
-
+                postsignal = ""
             if self.check_circle.GetValue():
                 self.context(
                     f"circle "
@@ -607,6 +608,8 @@ class LaserToolPanel(wx.Panel):
                     f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
                     f"1mm stroke blue{option}\n"
                 )
+            if postsignal != "":
+                self.context.signal(postsignal)
             if (
                 cx < 0
                 or cy < 0
@@ -647,9 +650,11 @@ class LaserToolPanel(wx.Panel):
             p = self.context
             units = p.units_name
             if self.context.elements.classify_new:
-                option = " --classify"
+                option = " classify"
+                postsignal = "tree_changed"
             else:
                 option = ""
+                postsignal = ""
             if self.check_circle.GetValue():
                 self.context(
                     f"circle "
@@ -665,6 +670,8 @@ class LaserToolPanel(wx.Panel):
             )
             if self.check_ref_circle.GetValue():
                 self.context("reference\n")
+            if postsignal != "":
+                self.context.signal(postsignal)
         event.Skip()
 
     def on_btn_create_frame(self, event):  # wxGlade: clsLasertools.<event_handler>
@@ -674,9 +681,11 @@ class LaserToolPanel(wx.Panel):
             p = self.context
             units = p.units_name
             if self.context.elements.classify_new:
-                option = " --classify"
+                option = " classify"
+                postsignal = "tree_changed"
             else:
                 option = ""
+                postsignal = ""
 
             self.context(
                 f"rect "
@@ -688,6 +697,8 @@ class LaserToolPanel(wx.Panel):
             )
             if self.check_ref_frame.GetValue():
                 self.context("reference\n")
+            if postsignal != "":
+                self.context.signal(postsignal)
         event.Skip()
 
     def on_btn_create_square(self, event):  # wxGlade: clsLasertools.<event_handler>
