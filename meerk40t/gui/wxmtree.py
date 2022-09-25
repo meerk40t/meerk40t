@@ -1166,6 +1166,12 @@ class ShadowTree:
         if hasattr(node, "node") and node.node is not None:
             formatter = self.elements.lookup(f"format/{node.node.type}")
             if node.node.type.startswith("op "):
+                if not self.context.elements.op_show_default:
+                    if hasattr(node.node, "speed"):
+                        node.node.speed = node.node.speed
+                    if hasattr(node.node, "power"):
+                        node.node.power = node.node.power
+
                 checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
@@ -1200,6 +1206,12 @@ class ShadowTree:
         else:
             formatter = self.elements.lookup(f"format/{node.type}")
             if node.type.startswith("op "):
+                # Not too elegant... op nodes should have a property default_speed, default_power
+                if not self.context.elements.op_show_default:
+                    if hasattr(node, "speed"):
+                        node.speed = node.speed
+                    if hasattr(node, "power"):
+                        node.power = node.power
                 checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
