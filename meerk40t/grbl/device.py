@@ -1241,7 +1241,7 @@ class GrblController:
                 if response.startswith("echo:"):
                     self.service.channel("console")(response[5:])
                 if response.startswith("ALARM"):
-                    self.service.signal("warning", f"GRBL: {response}")
+                    self.service.signal("warning", f"GRBL: {response}", response, _("Alarm"), 4)
                 if response.startswith("error"):
                     self.channel(f"ERROR: {response}")
                 else:
