@@ -71,7 +71,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/drag", pane)
@@ -89,7 +89,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/jog", pane)
@@ -108,7 +108,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = iconsize + 100
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/move", pane)
@@ -126,7 +126,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = iconsize + 60
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/pulse", pane)
@@ -144,7 +144,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 150
     pane.control = panel
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
 
     window.on_pane_create(pane)
     context.register("pane/objsizer", pane)
@@ -169,7 +169,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = max(3 * iconsize, 3 * 57)
     pane.control = panel
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
 
     window.on_pane_create(pane)
     context.register("pane/transform", pane)
@@ -187,7 +187,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 110
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/jogdist", pane)

@@ -1779,6 +1779,15 @@ class MeerK40t(MWindow):
 
             return toggle
 
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
+
         self.panes_menu = wx.Menu()
         label = _("Panes")
         index = self.main_menubar.FindMenu(label)
@@ -1787,6 +1796,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.panes_menu, label)
         submenus = {}
+        panedata = []
         for pane, _path, suffix_path in self.context.find("pane/.*"):
             try:
                 suppress = pane.hide_menu
@@ -1794,9 +1804,19 @@ class MeerK40t(MWindow):
                     continue
             except AttributeError:
                 pass
+            try:
+                submenu = pane.submenu
+            except AttributeError:
+                submenu = ""
+            if submenu == "":
+                submenu = "_ZZZZZZZZZZZZZZZZ_"
+            panedata.append([pane, _path, suffix_path, submenu])
+        panedata.sort(key=lambda row: row[3])
+        for pane, _path, suffix_path, dummy in panedata:
             submenu = None
             try:
                 submenu_name = pane.submenu
+                submenu_name = unsorted_label(submenu_name)
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:

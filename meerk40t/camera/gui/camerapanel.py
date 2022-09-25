@@ -43,7 +43,7 @@ def register_panel_camera(window, context):
         )
         pane.dock_proportion = 200
         pane.control = panel
-        pane.submenu = _("Camera")
+        pane.submenu = "_60_" + _("Camera")
         window.on_pane_create(pane)
         context.register(f"pane/camera{index}", pane)
 

@@ -37,10 +37,11 @@ def register_panel_laser(window, context):
         .MinSize(245, 210)
         .FloatingSize(255, 270)
         .MaxSize(500, 300)
-        .Caption(_("Laser"))
+        .Caption(_("Laser-Control"))
         .CaptionVisible(not context.pane_lock)
         .Name("laser")
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.control = notebook
     pane.dock_proportion = 150
     notebook.AddPage(laser_panel, _("Laser"))
