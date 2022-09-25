@@ -49,7 +49,6 @@ class EngraveOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
-            "elem dot",
         )
         # Which elements do we consider for automatic classification?
         self._allowed_elements = (
@@ -283,7 +282,7 @@ class EngraveOpNode(Node, Parameters):
             elif node.type == "elem path":
                 path = abs(node.path)
                 path.approximate_arcs_with_cubics()
-            elif node.type in ("elem point", "elem text"):
+            elif node.type not in self._allowed_elements_dnd:
                 # These aren't valid.
                 continue
             else:
