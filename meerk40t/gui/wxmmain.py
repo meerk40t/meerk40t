@@ -1881,6 +1881,15 @@ class MeerK40t(MWindow):
 
             return toggle
 
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
+
         label = _("Tools")
         self.window_menu = wx.Menu()
         index = self.main_menubar.FindMenu(label)
@@ -1890,6 +1899,7 @@ class MeerK40t(MWindow):
             self.main_menubar.Append(self.window_menu, label)
 
         submenus = {}
+        menudata = []
         for window, _path, suffix_path in self.context.find("window/.*"):
             try:
                 name = window.name
@@ -1897,7 +1907,6 @@ class MeerK40t(MWindow):
                 name = suffix_path
             if not window.window_menu(None):
                 continue
-            submenu = None
             win_caption = ""
             try:
                 returnvalue = window.submenu()
@@ -1914,18 +1923,8 @@ class MeerK40t(MWindow):
                     win_caption = ""
             except AttributeError:
                 submenu_name = ""
-            if submenu_name != "":
-                if submenu_name in submenus:
-                    submenu = submenus[submenu_name]
-                elif submenu_name is not None:
-                    submenu = wx.Menu()
-                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
-                    submenus[submenu_name] = submenu
-            menu_context = submenu if submenu is not None else self.window_menu
-            try:
-                name = window.name
-            except AttributeError:
-                name = suffix_path
+            if submenu_name == "":
+                submenu_name = "_ZZZZZZZZZZZZZZZZ_"
             if win_caption != "":
                 caption = win_caption
             else:
@@ -1935,6 +1934,21 @@ class MeerK40t(MWindow):
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
+            menudata.append([submenu_name, caption, name, window])
+        # Now that we have everything lets sort...
+        menudata.sort(key=lambda row: row[0])
+
+        for submenu_name, caption, name, window in menudata:
+            submenu = None
+            submenu_name = unsorted_label(submenu_name)
+            if submenu_name != "":
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = wx.Menu()
+                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
+                    submenus[submenu_name] = submenu
+            menu_context = submenu if submenu is not None else self.window_menu
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
             caption = _(caption)
             menu_label = caption
