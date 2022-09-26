@@ -149,6 +149,9 @@ class CutOpNode(Node, Parameters):
         if attribute in self.allowed_attributes:
             self.allowed_attributes.remove(attribute)
 
+    def has_attributes(self):
+        return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
+
     def valid_node(self, node):
         return True
 
@@ -172,7 +175,7 @@ class CutOpNode(Node, Parameters):
 
         if node.type in self._allowed_elements:
             if not self.default:
-                if len(self.allowed_attributes) > 0:
+                if self.has_attributes():
                     for attribute in self.allowed_attributes:
                         if (
                             hasattr(node, attribute)

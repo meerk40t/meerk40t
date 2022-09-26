@@ -455,8 +455,54 @@ class TextCtrl(wx.TextCtrl):
         """
         return self._event_generated
 
+    def get_warn_status(self, txt):
+        status = ""
+        try:
+            value = None
+            if self._check == "float":
+                value = float(txt)
+            elif self._check == "percent":
+                if txt.endswith("%"):
+                    value = float(txt[:-1]) / 100.0
+                else:
+                    value = float(txt)
+            elif self._check == "int":
+                value = int(txt)
+            elif self._check == "empty":
+                if len(txt) == 0:
+                    status = "error"
+            elif self._check == "length":
+                value = Length(txt)
+            elif self._check == "angle":
+                value = Angle(txt)
+            # we passed so far, thus the values are syntactically correct
+            # Now check for content compliance
+            if value is not None:
+                if self.lower_limit is not None and value < self.lower_limit:
+                    value = self.lower_limit
+                    self.SetValue(str(value))
+                    status = "default"
+                if self.upper_limit is not None and value > self.upper_limit:
+                    value = self.upper_limit
+                    self.SetValue(str(value))
+                    status = "default"
+                if self.lower_limit_warn is not None and value < self.lower_limit_warn:
+                    status = "warning"
+                if self.upper_limit_warn is not None and value > self.upper_limit_warn:
+                    status = "warning"
+                if self.lower_limit_err is not None and value < self.lower_limit_err:
+                    status = "error"
+                if self.upper_limit_err is not None and value > self.upper_limit_err:
+                    status = "error"
+        except ValueError:
+            status = "error"
+        return status
+
     def SetValue(self, newvalue):
         self._last_valid_value = newvalue
+        status = self.get_warn_status(newvalue)
+        self.warn_status = status
+
         super().SetValue(newvalue)
 
     def set_error_level(self, err_min, err_max):
@@ -555,47 +601,10 @@ class TextCtrl(wx.TextCtrl):
 
     def on_check(self, event):
         event.Skip()
-        status = "modified"
-        try:
-            txt = self.GetValue()
-            value = None
-            if self._check == "float":
-                value = float(txt)
-            elif self._check == "percent":
-                if txt.endswith("%"):
-                    value = float(txt[:-1]) / 100.0
-                else:
-                    value = float(txt)
-            elif self._check == "int":
-                value = int(txt)
-            elif self._check == "empty":
-                if len(txt) == 0:
-                    status = "error"
-            elif self._check == "length":
-                value = Length(txt)
-            elif self._check == "angle":
-                value = Angle(txt)
-            # we passed so far, thus the values are syntactically correct
-            # Now check for content compliance
-            if value is not None:
-                if self.lower_limit is not None and value < self.lower_limit:
-                    value = self.lower_limit
-                    self.SetValue(str(value))
-                    status = "default"
-                if self.upper_limit is not None and value > self.upper_limit:
-                    value = self.upper_limit
-                    self.SetValue(str(value))
-                    status = "default"
-                if self.lower_limit_warn is not None and value < self.lower_limit_warn:
-                    status = "warning"
-                if self.upper_limit_warn is not None and value > self.upper_limit_warn:
-                    status = "warning"
-                if self.lower_limit_err is not None and value < self.lower_limit_err:
-                    status = "error"
-                if self.upper_limit_err is not None and value > self.upper_limit_err:
-                    status = "error"
-        except ValueError:
-            status = "error"
+        txt = self.GetValue()
+        status = self.get_warn_status(txt)
+        if status == "":
+            status = "modified"
         self.warn_status = status
         # Is it a valid value?
         if status == "modified" and hasattr(self.parent, "context"):

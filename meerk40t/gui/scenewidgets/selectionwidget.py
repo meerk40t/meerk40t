@@ -35,7 +35,6 @@ def process_event(
         inside = widget.contains(space_pos[0], space_pos[1])
     except TypeError:
         # Widget already destroyed ?!
-        # print ("Something went wrong for %s" % widget_identifier)
         return RESPONSE_CHAIN
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
@@ -49,10 +48,11 @@ def process_event(
         return RESPONSE_CHAIN
 
     if event_type == "hover_start":
-        widget.scene.cursor(widget.cursor)
-        widget.hovering = True
-        widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        if inside:
+            widget.scene.cursor(widget.cursor)
+            widget.hovering = True
+            widget.scene.context.signal("statusmsg", _(helptext))
+            return RESPONSE_CONSUME
     elif event_type == "hover_end" or event_type == "lost":
         widget.scene.cursor("arrow")
         widget.hovering = False
@@ -1295,7 +1295,7 @@ class MoveWidget(Widget):
 
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
-    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
+    def tool(self, sposition, snearest_snap, dx, dy, event=0, modifiers=None):
         """
         Change the position of the selected elements.
         """
@@ -1310,13 +1310,15 @@ class MoveWidget(Widget):
             self.translate(dx, dy)
 
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-
+        position = [sposition[0], sposition[1], sposition[2], sposition[3], sposition[4], sposition[5]]
         elements = self.scene.context.elements
         lastdx = 0
         lastdy = 0
-        if nearest_snap is None:
+        if snearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.last_snap
+        else:
+            nearest_snap = [snearest_snap[0], snearest_snap[1], sposition[2], sposition[3], sposition[4], sposition[5]]
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
@@ -2231,19 +2233,31 @@ class SelectionWidget(Widget):
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
-            self.hovering = True
-            self.scene.context.signal("statusmsg", "")
-            self.tool_running = False
+            if self.contains(space_pos[0], space_pos[1]):
+                self.hovering = True
+                self.scene.context.signal("statusmsg", "")
+                self.tool_running = False
 
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
+            for subwidget in self:
+                if hasattr(subwidget, "hovering") and subwidget.hovering and not subwidget.contains(space_pos[0], space_pos[1]):
+                    subwidget.hovering = False
+            self.scene.cursor("arrow")
             self.scene.context.signal("statusmsg", "")
         elif event_type == "hover":
             if self.hovering:
                 self.scene.cursor(self.cursor)
             # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
+
+            for subwidget in self:
+                if hasattr(subwidget, "hovering") and subwidget.hovering and not subwidget.contains(space_pos[0], space_pos[1]):
+                    subwidget.hovering = False
+                    self.scene.cursor("arrow")
+                    self.scene.context.signal("statusmsg", "")
+
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
             # self.scene.tool_active = False
             pass

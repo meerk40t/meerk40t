@@ -21,6 +21,8 @@ class AttractionWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         # Respond to Snap is not necessary, but for the sake of completeness...
+        # We want to be unrecognized
+        self.transparent = True
         self.context = self.scene.context
         self.attraction_points = None  # Clear all
         self.my_x = None
@@ -76,7 +78,7 @@ class AttractionWidget(Widget):
             "leftup",
             "leftclick",
             "move",
-            "hover",
+            # "hover",
         ):
             # Check whether shift key is pressed...
             if "shift" not in modifiers:
@@ -110,7 +112,6 @@ class AttractionWidget(Widget):
                         ):
                             # Is the distance small enough?
                             response = (RESPONSE_CHAIN, new_x, new_y)
-
         return response
 
     def draw_caret(self, gc, x, y, closeup):

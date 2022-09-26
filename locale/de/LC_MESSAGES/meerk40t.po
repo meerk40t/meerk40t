@@ -1629,7 +1629,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:2097
 msgid "frequency <kHz>"
-msgstr ""
+msgstr "Frequenz <kHz>"
 
 #: meerk40t/core/elements.py:2113
 msgid "Frequency for '{name}' is currently: {frequency}"
@@ -1649,7 +1649,7 @@ msgstr "<passes> Wiederholungen"
 
 #: meerk40t/core/elements.py:2148
 msgid "Passes for '{name}' is currently: {passes}"
-msgstr ""
+msgstr "Wiederholungen für '{name}': {passes}"
 
 #: meerk40t/core/elements.py:2159
 msgid "Passes for '{name}' updated {old_passes} -> {passes}"
@@ -2794,7 +2794,7 @@ msgstr "Umwandeln zu Schneiden"
 
 #: meerk40t/core/elements.py:6556
 msgid "Convert to Hatch"
-msgstr "Konvertiere zu Gitter"
+msgstr "Umwandeln zu Gitter"
 
 #: meerk40t/core/elements.py:6565
 msgid "Convert to Dots"
@@ -2806,7 +2806,7 @@ msgstr "Raster-Assistent"
 
 #: meerk40t/core/elements.py:6574
 msgid "Set to None"
-msgstr ""
+msgstr "Zurücksetzen"
 
 #: meerk40t/core/elements.py:6586
 msgid "Apply: {script}"
@@ -2849,7 +2849,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:6659
 msgid "Passes {passvalue}"
-msgstr ""
+msgstr "{passvalue} Durchläufe"
 
 #: meerk40t/core/elements.py:6683
 msgid "Burn Direction"
@@ -3063,7 +3063,7 @@ msgstr "Füge 'Einzelpunkt' hinzu"
 #: meerk40t/core/elements.py:7297 meerk40t/core/elements.py:7306
 #: meerk40t/core/elements.py:7315
 msgid "Append special operation(s)"
-msgstr "Hänge speziellen Vorgang am Ende der Liste an"
+msgstr "Hänge speziellen Aktion am Ende der Liste an"
 
 #: meerk40t/core/elements.py:7212
 msgid "Append Home"
@@ -3191,18 +3191,18 @@ msgstr "Füge Schneiden hinzu"
 
 #: meerk40t/core/elements.py:7482
 msgid "Add Hatch"
-msgstr ""
+msgstr "Füge Gitter hinzu"
 
 #: meerk40t/core/elements.py:7487
 msgid "Add Dots"
-msgstr ""
+msgstr "Füge Einzelpunkt hinzu"
 
 #: meerk40t/core/elements.py:7491 meerk40t/core/elements.py:7496
 #: meerk40t/core/elements.py:7501 meerk40t/core/elements.py:7506
 #: meerk40t/core/elements.py:7511 meerk40t/core/elements.py:7521
 #: meerk40t/core/elements.py:7526 meerk40t/core/elements.py:7531
 msgid "Insert special operation(s)"
-msgstr ""
+msgstr "Füge spezielle Aktionen ein"
 
 #: meerk40t/core/elements.py:7492
 msgid "Add Home"
@@ -3222,31 +3222,31 @@ msgstr "Füge 'Anhalten' hinzu"
 
 #: meerk40t/core/elements.py:7515
 msgid "Add Wait"
-msgstr ""
+msgstr "Füge 'Warten' hinzu"
 
 #: meerk40t/core/elements.py:7522
 msgid "Add Output"
-msgstr ""
+msgstr "Füge 'Output' hinzu"
 
 #: meerk40t/core/elements.py:7527
 msgid "Add Input"
-msgstr ""
+msgstr "Füge 'Input' hinzu"
 
 #: meerk40t/core/elements.py:7532
 msgid "Add Home/Beep/Interrupt"
-msgstr ""
+msgstr "Füge 'Home + Beep + Nachricht' hinzu"
 
 #: meerk40t/core/elements.py:7543
 msgid "Reload '{name}'"
-msgstr ""
+msgstr "Lade '{name}' erneut"
 
 #: meerk40t/core/elements.py:7550
 msgid "Open in System: '{name}'"
-msgstr ""
+msgstr "Öffne mit Standard-Applikation: '{name}'"
 
 #: meerk40t/core/elements.py:7552
 msgid "Open this file in the system application associated with this type of file"
-msgstr ""
+msgstr "Öffnet die Datei mit der im System hinterlegten Standardapplikation für diesen Dateityp"
 
 #: meerk40t/core/elements.py:7580 meerk40t/core/elements.py:7611
 #: meerk40t/core/elements.py:7627 meerk40t/core/elements.py:7643
@@ -3279,7 +3279,7 @@ msgstr "Nimm Füllfarbe und klassifziere Ähnliche"
 
 #: meerk40t/core/elements.py:7648
 msgid "Operation will inherit element fill color"
-msgstr ""
+msgstr "Arbeitsablauf übernimmt Element-Farbe"
 
 #: meerk40t/core/elements.py:7683
 msgid "Convert to path"
@@ -3287,7 +3287,7 @@ msgstr "Wandle in Pfad um"
 
 #: meerk40t/core/elements.py:7697 meerk40t/core/elements.py:7715
 msgid "Flip"
-msgstr ""
+msgstr "Spiegeln"
 
 #: meerk40t/core/elements.py:7702
 msgid "Horizontally"
@@ -3312,7 +3312,7 @@ msgstr "Skalieren"
 
 #: meerk40t/core/elements.py:7736
 msgid "Scale {scale_percent}%"
-msgstr ""
+msgstr "Skalieren {scale_percent}%"
 
 #: meerk40t/core/elements.py:7738
 msgid "Scale Element"
@@ -3325,7 +3325,7 @@ msgstr "Drehen"
 
 #: meerk40t/core/elements.py:7784
 msgid "Rotate {angle}°"
-msgstr ""
+msgstr "Drehen um {angle}°"
 
 #: meerk40t/core/elements.py:7799
 msgid "Reify User Changes"
@@ -3349,23 +3349,23 @@ msgstr "Verbinde alle Unter-Knoten zu einem Pfad."
 
 #: meerk40t/core/elements.py:7832
 msgid "Unlock element, allows manipulation"
-msgstr ""
+msgstr "Entsperrt Element, erlaubt Änderungen"
 
 #: meerk40t/core/elements.py:7840
 msgid "Lock elements, prevents manipulations"
-msgstr ""
+msgstr "Sperrt Element, verhindert Änderungen"
 
 #: meerk40t/core/elements.py:7848
 msgid "Toggle visibility of regmarks"
-msgstr ""
+msgstr "Schalte Sichtbarkeit der Registriermarken um"
 
 #: meerk40t/core/elements.py:7856
 msgid "Move back to elements"
-msgstr ""
+msgstr "Zurück zu 'Elementen' verschieben"
 
 #: meerk40t/core/elements.py:7874
 msgid "Move to regmarks"
-msgstr ""
+msgstr "In 'Registriermarken' verschieben"
 
 #: meerk40t/core/elements.py:7896
 msgid "Actualize pixels"
@@ -3377,7 +3377,7 @@ msgstr "Zerlegen gemäß Z-Tiefe"
 
 #: meerk40t/core/elements.py:7904
 msgid "Divide into {divide} images"
-msgstr ""
+msgstr "Zerlege in {divide} Bilder"
 
 #: meerk40t/core/elements.py:7916 meerk40t/core/elements.py:7922
 #: meerk40t/core/elements.py:7928 meerk40t/core/elements.py:7934
@@ -7814,7 +7814,7 @@ msgstr "Invertieren"
 
 #: meerk40t/gui/wxmmain.py:2206
 msgid "Show a negative image of the scene by inverting colours"
-msgstr ""
+msgstr "Zeige ein Negativ des Arbeitsbereich durch Invertieren aller Farben"
 
 #: meerk40t/gui/wxmmain.py:2215
 msgid "Flip XY"
@@ -12129,7 +12129,7 @@ msgid "GUI-Appearance"
 msgstr "GUI-Erscheinungsbild"
 
 msgid "Display Options"
-msgstr "Anzeige Optionen"
+msgstr "Anzeige"
 
 msgid "Shape-Attributes"
 msgstr "Element-Attribute"
@@ -13922,7 +13922,7 @@ msgstr "Sonstiges"
 #~ msgstr "Arbeitsgang hinzufügen"
 
 #~ msgid "Special operations"
-#~ msgstr "Spezielle Arbeitsabläufe"
+#~ msgstr "Spezielle Aktionen"
 
 #~ msgid "Add Shutdown"
 #~ msgstr "Füge 'Shutdown' hinzu"
@@ -14520,3 +14520,9 @@ msgstr "Erzwinge Verbindungs-Aufbau / -Abbruch für dieses Gerät"
 
 msgid "GRBL Serial Controller"
 msgstr "GRBL Controller für serielle Schnittstelle"
+
+msgid "Debug Classification"
+msgstr "Debugge Klasifizierung"
+
+msgid "Shows info about the classification process in the console"
+msgstr "Zeigt Informationen zur Klassifizierung in der Konsole an"
