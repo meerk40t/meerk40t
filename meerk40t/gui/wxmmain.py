@@ -1934,11 +1934,11 @@ class MeerK40t(MWindow):
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
-            menudata.append([submenu_name, caption, name, window])
+            menudata.append([submenu_name, caption, name, window, suffix_path])
         # Now that we have everything lets sort...
         menudata.sort(key=lambda row: row[0])
 
-        for submenu_name, caption, name, window in menudata:
+        for submenu_name, caption, name, window, suffix_path in menudata:
             submenu = None
             submenu_name = unsorted_label(submenu_name)
             if submenu_name != "":
