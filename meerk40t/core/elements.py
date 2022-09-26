@@ -414,6 +414,7 @@ class Elemental(Service):
         self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
         self.setting(bool, "classify_debug", False)
+        self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
