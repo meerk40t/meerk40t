@@ -7814,7 +7814,7 @@ msgstr "Invertieren"
 
 #: meerk40t/gui/wxmmain.py:2206
 msgid "Show a negative image of the scene by inverting colours"
-msgstr ""
+msgstr "Zeige ein Negativ des Arbeitsbereich durch Invertieren aller Farben"
 
 #: meerk40t/gui/wxmmain.py:2215
 msgid "Flip XY"
@@ -12129,7 +12129,7 @@ msgid "GUI-Appearance"
 msgstr "GUI-Erscheinungsbild"
 
 msgid "Display Options"
-msgstr "Anzeige Optionen"
+msgstr "Anzeige"
 
 msgid "Shape-Attributes"
 msgstr "Element-Attribute"
