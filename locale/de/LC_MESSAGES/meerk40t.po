@@ -14520,3 +14520,12 @@ msgstr "Erzwinge Verbindungs-Aufbau / -Abbruch für dieses Gerät"
 
 msgid "GRBL Serial Controller"
 msgstr "GRBL Controller für serielle Schnittstelle"
+
+msgid "Do yo want to use a bespoke formatter?"
+msgstr "Soll ein eigener Format-Code verwendet werden?"
+
+msgid "Bespoke formatter for this node-type"
+msgstr "Eigener Format-Code für diesen Arbeitsablauf"
+
+msgid "Operations (Special)"
+msgstr "Spezielle Aktionen"

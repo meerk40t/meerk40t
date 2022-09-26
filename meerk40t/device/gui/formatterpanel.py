@@ -111,7 +111,7 @@ class FormatterPanel(wx.Panel):
                     "label": f"{node}",
                     "type": bool,
                     "icon": image,
-                    "tip": _("Do yo want to use a bespoke formatter"),
+                    "tip": _("Do yo want to use a bespoke formatter?"),
                     "section": sectname,
                     "subsection": f"_{node}_",
                     "signals": "rebuild_tree",
