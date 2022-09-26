@@ -412,6 +412,7 @@ class ImportPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent_panel = None
         self.context = context
+        self.wlist = self.context.elements.mywordlist
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Import CSV")),
