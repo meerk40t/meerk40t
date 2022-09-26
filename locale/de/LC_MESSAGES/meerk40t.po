@@ -14520,3 +14520,9 @@ msgstr "Erzwinge Verbindungs-Aufbau / -Abbruch für dieses Gerät"
 
 msgid "GRBL Serial Controller"
 msgstr "GRBL Controller für serielle Schnittstelle"
+
+msgid "Debug Classification"
+msgstr "Debugge Klasifizierung"
+
+msgid "Shows info about the classification process in the console"
+msgstr "Zeigt Informationen zur Klassifizierung in der Konsole an"
