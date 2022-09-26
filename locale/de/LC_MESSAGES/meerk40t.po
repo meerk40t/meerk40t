@@ -2794,7 +2794,7 @@ msgstr "Umwandeln zu Schneiden"
 
 #: meerk40t/core/elements.py:6556
 msgid "Convert to Hatch"
-msgstr "Konvertiere zu Gitter"
+msgstr "Umwandeln zu Gitter"
 
 #: meerk40t/core/elements.py:6565
 msgid "Convert to Dots"
@@ -2806,7 +2806,7 @@ msgstr "Raster-Assistent"
 
 #: meerk40t/core/elements.py:6574
 msgid "Set to None"
-msgstr ""
+msgstr "Zurücksetzen"
 
 #: meerk40t/core/elements.py:6586
 msgid "Apply: {script}"
@@ -3377,7 +3377,7 @@ msgstr "Zerlegen gemäß Z-Tiefe"
 
 #: meerk40t/core/elements.py:7904
 msgid "Divide into {divide} images"
-msgstr ""
+msgstr "Zerlege in {divide} Bilder"
 
 #: meerk40t/core/elements.py:7916 meerk40t/core/elements.py:7922
 #: meerk40t/core/elements.py:7928 meerk40t/core/elements.py:7934
