@@ -1123,7 +1123,7 @@ msgstr "wird stattdessen eine als 'Standard' gekennzeichnete Operation verwendet
 
 #: meerk40t/core/elements.py:231
 msgid "Autogenerate Operations"
-msgstr "Erzeuge automatisch Operationen"
+msgstr "Erzeuge automatisch Arbeitsabläufe"
 
 #: meerk40t/core/elements.py:236
 msgid "or by assigning to a default operation (see above),"
@@ -14526,3 +14526,23 @@ msgstr "Debugge Klasifizierung"
 
 msgid "Shows info about the classification process in the console"
 msgstr "Zeigt Informationen zur Klassifizierung in der Konsole an"
+
+msgid "Autogenerate both for fill and stroke"
+msgstr "Erzeuge Arbeitsabläufe für Umriss + Füllung"
+
+msgid "Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation"
+msgstr ""
+"Aktiv: für beide Attribute Umriss + Füllung wird indiviudell auf einen Treffer geprüft, "
+"wurde keiner gefunden so erzeugen wir für das Attribut einen passenden Arbeitsablauf"
+
+msgid "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
+msgstr ""
+"Inaktiv: mindestens ein Treffer für Umriss oder Füllung "
+"verhindert das Erzeugen eines weiteren Arbeitsablaufs"
+
+msgid "Clear unused"
+msgstr "Entferne ungenutzte Arbeitsabläufe"
+
+msgid "Clear operations without children"
+msgstr "Entferne alle Arbeitsabläufe, denen keine Element zugeordnet sind"
+
