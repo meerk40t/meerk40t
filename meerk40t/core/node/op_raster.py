@@ -205,9 +205,11 @@ class RasterOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
+        feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
                 if self.has_attributes():
+                    result = False
                     for attribute in self.allowed_attributes:
                         if (
                             hasattr(node, attribute)
@@ -217,9 +219,12 @@ class RasterOpNode(Node, Parameters):
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
+                                    result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
-                                    return True, self.stopop
+                                    feedback.append(attribute)
+                    if result:
+                        return True, self.stopop, feedback
                 else:  # empty ? Anything with either a solid fill or a plain white stroke goes
                     if self.valid_node(node):
                         addit = False
@@ -232,22 +237,27 @@ class RasterOpNode(Node, Parameters):
                                 # if matching_color(node.fill, Color("black")):
                                 #     addit = True
                                 addit = True
+                                feedback.append("fill")
                         if hasattr(node, "stroke"):
                             if node.stroke is not None and node.stroke.argb is not None:
                                 if matching_color(node.stroke, Color("white")):
                                     addit = True
+                                    feedback.append("stroke")
                                 if matching_color(node.stroke, Color("black")):
                                     addit = True
+                                    feedback.append("stroke")
                         if addit:
                             self.add_reference(node)
                             # Have classified but more classification might be needed
-                            return True, self.stopop
+                            return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
                     self.add_reference(node)
-                    return True, self.stopop
-        return False, False
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

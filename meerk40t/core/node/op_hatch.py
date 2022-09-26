@@ -195,9 +195,11 @@ class HatchOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
+        feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
                 if self.has_attributes():
+                    result = False
                     for attribute in self.allowed_attributes:
                         if (
                             hasattr(node, attribute)
@@ -207,20 +209,27 @@ class HatchOpNode(Node, Parameters):
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
+                                    result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
-                                    return True, self.stopop
+                                    feedback.append(attribute)
+                    if result:
+                        return True, self.stopop, feedback
                 else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
                         # Have classified but more classification might be needed
-                        return True, self.stopop
+                        feedback.append("stroke")
+                        feedback.append("fill")
+                        return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
                     self.add_reference(node)
-                    return True, self.stopop
-        return False, False
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)

@@ -131,11 +131,14 @@ class ImageOpNode(Node, Parameters):
         return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        feedback = []
         if node.type in self._allowed_elements:
             self.add_reference(node)
             # Have classified and no more classification are needed
-            return True, self.stopop
-        return False, False
+            feedback.append("stroke")
+            feedback.append("fill")
+            return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
