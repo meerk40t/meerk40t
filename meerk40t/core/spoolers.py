@@ -812,7 +812,11 @@ class Spooler:
                     )
                 except AttributeError:
                     pass
-                self._queue.remove(element)
+                try:
+                    self._queue.remove(element)
+                except ValueError:
+                    # We might have waited for too long, the job is no longer there...
+                    pass
             else:
                 try:
                     element = self._queue[index]
