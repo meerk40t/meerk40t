@@ -1,3 +1,4 @@
+import ast
 import gzip
 import os
 from base64 import b64encode
@@ -225,10 +226,12 @@ class SVGWriter:
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
                 stream = BytesIO()
                 try:
-                    c.image.save(stream, format="PNG")
+                    c.image.save(stream, format="PNG", dpi=(c.dpi, c.dpi))
                 except OSError:
                     # Edge condition if the original image was CMYK and never touched it can't encode to PNG
-                    c.image.convert("RGBA").save(stream, format="PNG")
+                    c.image.convert("RGBA").save(
+                        stream, format="PNG", dpi=(c.dpi, c.dpi)
+                    )
                 subelement.set(
                     "xlink:href",
                     f"data:image/png;base64,{b64encode(stream.getvalue()).decode('utf8')}",
@@ -305,14 +308,14 @@ class SVGWriter:
                     subelement.set("text-decoration", decor)
                 element = c
             elif c.type == "group":
-                # This is a structural group node of elements. Recurse call to write flat values.
+                # This is a structural group node of elements. Recurse call to write values.
                 group_element = SubElement(xml_tree, SVG_TAG_GROUP)
                 if hasattr(c, "label") and c.label is not None and c.label != "":
                     group_element.set("inkscape:label", c.label)
                 SVGWriter._write_elements(group_element, c)
                 continue
             elif c.type == "file":
-                # This is a structural group node of elements. Recurse call to write flat values.
+                # This is a structural group node of elements. Recurse call to write values.
                 SVGWriter._write_elements(xml_tree, c)
                 continue
             else:
@@ -321,6 +324,17 @@ class SVGWriter:
                 SVGWriter._write_custom(subelement, c)
                 continue
 
+            ###############
+            # GENERIC SAVING STANDARD ELEMENT
+            ###############
+            for key, value in c.__dict__.items():
+                if (
+                    not key.startswith("_")
+                    and key not in ("settings", "attributes")
+                    and value is not None
+                    and isinstance(value, (str, int, float, complex, list, dict))
+                ):
+                    subelement.set(key, str(value))
             ###############
             # SAVE CAP/JOIN/FILL-RULE
             ###############
@@ -347,8 +361,8 @@ class SVGWriter:
             ###############
             # SAVE STROKE
             ###############
-            if hasattr(element, "stroke"):
-                stroke = element.stroke
+            if hasattr(c, "stroke"):
+                stroke = c.stroke
             else:
                 stroke = None
             if stroke is not None:
@@ -362,11 +376,7 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_width = (
-                        str(element.stroke_width)
-                        if element.stroke_width is not None
-                        else SVG_VALUE_NONE
-                    )
+                    stroke_width = SVG_VALUE_NONE
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError:
                     pass
@@ -374,8 +384,8 @@ class SVGWriter:
             ###############
             # SAVE FILL
             ###############
-            if hasattr(element, "fill"):
-                fill = element.fill
+            if hasattr(c, "fill"):
+                fill = c.fill
             else:
                 fill = None
             if fill is not None:
@@ -483,6 +493,9 @@ class SVGProcessor:
         self.parse(svg, file_node, self.element_list)
         if self.operations_cleared:
             for op in self.elements.ops():
+                if not hasattr(op, "settings"):
+                    # Some special nodes might lack settings these can't have references.
+                    continue
                 refs = op.settings.get("references")
                 if refs is None:
                     continue
@@ -538,7 +551,7 @@ class SVGProcessor:
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
-        my_label = None
+        _label = None
         ink_tag = "inkscape:label"
         try:
             inkscape = element.values.get("inkscape")
@@ -547,11 +560,17 @@ class SVGProcessor:
         except (AttributeError, KeyError):
             pass
         try:
-            my_label = element.values.get(ink_tag)
-            if my_label == "":
-                my_label = None
+            _label = element.values.get(ink_tag)
+            if _label == "":
+                _label = None
             # print ("Found label: %s" % my_label)
         except (AttributeError, KeyError):
+            # Label might simply be "label"
+            _label = element.values.get("label")
+        _lock = None
+        try:
+            _lock = bool(element.values.get("lock") == "True")
+        except (ValueError, TypeError):
             pass
         if isinstance(element, SVGText):
             if element.text is None:
@@ -582,88 +601,184 @@ class SVGProcessor:
                 overline="overline" in decor,
                 texttransform=element.values.get("text-transform"),
                 type="elem text",
-                label=my_label,
+                label=_label,
                 settings=element.values,
             )
             e_list.append(node)
+        elif isinstance(element, (Polygon, Polyline)) or (
+            isinstance(element, Path) and element.values.get("type") == "elem polyline"
+        ):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                node = context_node.add(
+                    shape=element,
+                    type="elem polyline",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
+                )
+                self.check_for_line_attributes(node, element)
+                self.check_for_fill_attributes(node, element)
+                e_list.append(node)
+        elif isinstance(element, Circle) or (
+            isinstance(element, Path) and element.values.get("type") == "elem circle"
+        ):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                node = context_node.add(
+                    shape=element,
+                    type="elem ellipse",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
+                )
+                e_list.append(node)
+        elif isinstance(element, Ellipse) or (
+            isinstance(element, Path) and element.values.get("type") == "elem ellipse"
+        ):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                node = context_node.add(
+                    shape=element,
+                    type="elem ellipse",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
+                )
+                e_list.append(node)
+        elif isinstance(element, Rect) or (
+            isinstance(element, Path) and element.values.get("type") == "elem rect"
+        ):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                node = context_node.add(
+                    shape=element, type="elem rect", id=ident, label=_label, lock=_lock
+                )
+                self.check_for_line_attributes(node, element)
+                e_list.append(node)
+        elif isinstance(element, SimpleLine) or (
+            isinstance(element, Path) and element.values.get("type") == "elem line"
+        ):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
+                node = context_node.add(
+                    shape=element, type="elem line", id=ident, label=_label, lock=_lock
+                )
+                self.check_for_line_attributes(node, element)
+                e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    path=element, type="elem path", id=ident, label=my_label
+                    path=element, type="elem path", id=ident, label=_label, lock=_lock
                 )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
-                e_list.append(node)
-        elif isinstance(element, (Polygon, Polyline)):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem polyline", id=ident, label=my_label
-                )
-                self.check_for_line_attributes(node, element)
-                self.check_for_fill_attributes(node, element)
-                e_list.append(node)
-        elif isinstance(element, Circle):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=my_label
-                )
-                e_list.append(node)
-        elif isinstance(element, Ellipse):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=my_label
-                )
-                e_list.append(node)
-        elif isinstance(element, Rect):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem rect", id=ident, label=my_label
-                )
-                self.check_for_line_attributes(node, element)
-                e_list.append(node)
-        elif isinstance(element, SimpleLine):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem line", id=ident, label=my_label
-                )
-                self.check_for_line_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
                 element.load(os.path.dirname(self.pathname))
+                try:
+                    operations = ast.literal_eval(element.values["operations"])
+                except (ValueError, SyntaxError, KeyError):
+                    operations = None
+
                 if element.image is not None:
+                    try:
+                        dpi = element.image.info["dpi"]
+                    except KeyError:
+                        dpi = None
+                    _dpi = 500
+                    if (
+                        isinstance(dpi, tuple)
+                        and len(dpi) >= 2
+                        and dpi[0] != 0
+                        and dpi[1] != 0
+                    ):
+                        _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
+                    _overscan = None
+                    try:
+                        _overscan = str(element.values.get("overscan"))
+                    except (ValueError, TypeError):
+                        pass
+                    _direction = None
+                    try:
+                        _direction = int(element.values.get("direction"))
+                    except (ValueError, TypeError):
+                        pass
+                    _invert = None
+                    try:
+                        _invert = bool(element.values.get("invert") == "True")
+                    except (ValueError, TypeError):
+                        pass
+                    _dither = None
+                    try:
+                        _dither = bool(element.values.get("dither") == "True")
+                    except (ValueError, TypeError):
+                        pass
+                    _dither_type = None
+                    try:
+                        _dither_type = element.values.get("dither_type")
+                    except (ValueError, TypeError):
+                        pass
+                    _red = None
+                    try:
+                        _red = float(element.values.get("red"))
+                    except (ValueError, TypeError):
+                        pass
+                    _green = None
+                    try:
+                        _green = float(element.values.get("green"))
+                    except (ValueError, TypeError):
+                        pass
+                    _blue = None
+                    try:
+                        _blue = float(element.values.get("blue"))
+                    except (ValueError, TypeError):
+                        pass
+                    _lightness = None
+                    try:
+                        _lightness = float(element.values.get("lightness"))
+                    except (ValueError, TypeError):
+                        pass
                     node = context_node.add(
                         image=element.image,
                         matrix=element.transform,
                         type="elem image",
                         id=ident,
-                        label=my_label,
+                        overscan=_overscan,
+                        direction=_direction,
+                        dpi=_dpi,
+                        invert=_invert,
+                        dither=_dither,
+                        dither_type=_dither_type,
+                        red=_red,
+                        green=_green,
+                        blue=_blue,
+                        lightness=_lightness,
+                        label=_label,
+                        operations=operations,
+                        lock=_lock,
                     )
                     e_list.append(node)
             except OSError:
@@ -677,7 +792,7 @@ class SVGProcessor:
                 for child in element:
                     self.parse(child, context_node, e_list)
         elif isinstance(element, (Group, Use)):
-            context_node = context_node.add(type="group", id=ident, label=my_label)
+            context_node = context_node.add(type="group", id=ident, label=_label)
             # recurse to children
             if self.reverse:
                 for child in reversed(element):
@@ -750,12 +865,17 @@ class SVGProcessor:
                     element.values["stroke"] = Color(element.values["stroke"])
                 if "transform" in element.values:
                     element.values["matrix"] = Matrix(element.values["transform"])
+                if "settings" in element.values:
+                    del element.values["settings"]  # If settings was set, delete it or it will mess things up
+                if "lock" in element.values:
+                    element.values["lock"] = _lock
                 elem = context_node.add(type=node_type, **element.values)
                 try:
                     elem.validate()
                 except AttributeError:
                     pass
                 elem.id = node_id
+                e_list.append(elem)
 
 
 class SVGLoader:

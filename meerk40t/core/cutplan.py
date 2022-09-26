@@ -100,7 +100,7 @@ class CutPlan:
         # ==========
         # Preprocess Operations
         # ==========
-        matrix = Matrix(self.context.device.scene_to_device_matrix())
+        matrix = self.context.device.scene_to_device_matrix()
 
         # TODO: Correct rotary.
         # rotary = self.context.rotary
@@ -244,10 +244,15 @@ class CutPlan:
         if not isinstance(current_item, CutObject):
             # The object to be merged is not a cutObject and cannot be added to Cutcode.
             return False
-        if last_item.original_op.startswith(
-            "util"
-        ) or current_item.original_op.startswith("util"):
+        last_op = last_item.original_op
+        if last_op is None:
+            last_op = ""
+        current_op = current_item.original_op
+        if current_op is None:
+            current_op = ""
+        if last_op.startswith("util") or current_op.startswith("util"):
             return False
+
         if (
             not context.opt_merge_passes
             and last_item.pass_index != current_item.pass_index

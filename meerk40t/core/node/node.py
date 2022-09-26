@@ -276,6 +276,13 @@ class Node:
             default_map = dict()
         default_map["id"] = str(self.id) if self.id is not None else "-"
         default_map["label"] = self.label if self.label is not None else ""
+        default_map["desc"] = (
+            self.label
+            if self.label is not None
+            else str(self.id)
+            if self.id is not None
+            else "-"
+        )
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
@@ -563,10 +570,9 @@ class Node:
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
-        @param data_object:
-        @param type:
-        @param label: display name for this node
-        @param pos:
+        @param type: Node type to be bootstrapped
+        @param id: Node id to be set
+        @param pos: Position within current node to add this node
         @return:
         """
         node_class = self._root.bootstrap.get(type, Node)

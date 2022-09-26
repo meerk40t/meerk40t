@@ -75,7 +75,11 @@ class ColorWidget(StatusBarWidget):
                 color_str = "none"
             else:
                 color_str = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-            self.context(f"stroke {color_str} --classify\n")
+            if self.context.elements.classify_on_color:
+                option = " --classify"
+            else:
+                option = ""
+            self.context(f"stroke {color_str}{option}\n")
             self.context.signal("selstroke", rgb)
 
     def on_button_color_right(self, event):
@@ -88,7 +92,11 @@ class ColorWidget(StatusBarWidget):
                 color_str = "none"
             else:
                 color_str = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-            self.context(f"fill {color_str} --classify\n")
+            if self.context.elements.classify_on_color:
+                option = " --classify"
+            else:
+                option = ""
+            self.context(f"fill {color_str}{option}\n")
             self.context.signal("selfill", rgb)
 
 

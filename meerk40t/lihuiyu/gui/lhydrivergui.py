@@ -726,9 +726,23 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_alternative_raster = wx.CheckBox(
             self, wx.ID_ANY, _("Alt Raster Style")
         )
+        self.check_alternative_raster.SetToolTip(
+            _(
+                "This feature uses an alternative raster method performing a raster turn around using NSE rather than G00x encoding."
+            )
+        )
+
         sizer_general.Add(self.check_alternative_raster, 0, wx.EXPAND, 0)
 
         self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Twitch Vectors"))
+        self.check_twitches.SetToolTip(
+            _(
+                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
+                "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
+                "This option allows you to turn on the previous mode if you experience problems."
+            )
+        )
         sizer_general.Add(self.check_twitches, 0, wx.EXPAND, 0)
 
         sizer_jog = wx.StaticBoxSizer(
@@ -787,6 +801,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
             self, wx.ID_ANY, _("Override Rapid Movements")
         )
         sizer_rapid_override.Add(self.check_override_rapid, 0, wx.EXPAND, 0)
+        self.check_override_rapid.SetMaxSize(wx.Size(300, -1))
 
         sizer_speed_xy = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -840,6 +855,8 @@ class ConfigurationSetupPanel(ScrolledPanel):
                 "Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"
             )
         )
+        self.check_fix_speeds.SetMaxSize(wx.Size(300, -1))
+
         sizer_32.Add(self.check_fix_speeds, 1, wx.EXPAND, 0)
 
         self.text_fix_rated_speed = TextCtrl(
@@ -856,6 +873,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
                 "Scale any given speeds to this device by this amount. If set to 1.1, all speeds are 10% faster than rated."
             )
         )
+        self.check_scale_speed.SetMaxSize(wx.Size(300, -1))
         h_sizer_y9.Add(self.check_scale_speed, 1, wx.EXPAND, 0)
 
         self.text_speed_scale_amount = TextCtrl(
@@ -882,6 +900,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_max_speed_vector.SetToolTip(
             _("Limit the maximum vector speed to this value")
         )
+        self.check_max_speed_vector.SetMaxSize(wx.Size(300, -1))
         sizer_30.Add(self.check_max_speed_vector, 1, wx.EXPAND, 0)
 
         self.text_max_speed_vector = TextCtrl(
@@ -906,6 +925,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_max_speed_raster.SetToolTip(
             _("Limit the maximum raster speed to this value")
         )
+        self.check_max_speed_raster.SetMaxSize(wx.Size(300, -1))
         sizer_31.Add(self.check_max_speed_raster, 1, wx.EXPAND, 0)
 
         self.text_max_speed_raster = TextCtrl(

@@ -1,3 +1,5 @@
+import json
+import os
 import time
 from math import isinf
 
@@ -80,12 +82,14 @@ class SpoolerPanel(wx.Panel):
 
         self.__set_properties()
         self.__do_layout()
-
+        self.current_item = None
         self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
+        self.list_job_spool.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
+        self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
         self.Bind(
             wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_item_rightclick, self.list_job_spool
         )
@@ -100,6 +104,7 @@ class SpoolerPanel(wx.Panel):
         self.elements_progress_total = 0
         self.command_index = 0
         self.history = []
+        self.reload_history()
         self.listener_list = None
         self.list_lookup = {}
         if index == -1:
@@ -147,6 +152,9 @@ class SpoolerPanel(wx.Panel):
             _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
         )
         self.list_job_history.AppendColumn(
+            _("Passes"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
             _("Device"), format=wx.LIST_FORMAT_LEFT, width=143
         )
 
@@ -172,9 +180,13 @@ class SpoolerPanel(wx.Panel):
         self.Layout()
         # end wxGlade
 
+    def on_item_selected(self, event):
+        self.current_item = event.Index
+
     def on_btn_clear(self, event):
         self.history = []
         self.list_job_history.DeleteAllItems()
+        self.save_history()
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -192,6 +204,42 @@ class SpoolerPanel(wx.Panel):
         # Todo: Drag to reprioritise jobs
         event.Skip()
 
+    def on_item_doubleclick(self, event):
+        def item_info(item):
+            result = ""
+            count = 0
+            if isinstance(item, tuple):
+                attr = item[0]
+                result = f"function(tuple): {attr}"
+                count += 1
+            elif isinstance(item, str):
+                attr = item
+                result = f"function(str): {attr}"
+                count += 1
+            if hasattr(item, "generate"):
+                item = getattr(item, "generate")
+                result = "Generator:"
+                # Generator item
+                for p in item():
+                    dummy, subct = item_info(p)
+                    count += subct
+                    result += "\n" + dummy
+                    count += 1
+
+            return result, count
+
+        index = self.current_item
+        spooler = self.selected_device.spooler
+        try:
+            element = spooler.queue[index]
+        except IndexError:
+            return
+        msgstr = f"{element.label}: \n"
+        for idx, item in enumerate(element.items):
+            info, ct = item_info(item)
+            msgstr += f"{idx:2d}: {info}\n Steps: {ct}"
+        print(msgstr)
+
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
         index = event.Index
         spooler = self.selected_device.spooler
@@ -199,10 +247,15 @@ class SpoolerPanel(wx.Panel):
             element = spooler.queue[index]
         except IndexError:
             return
+
         menu = wx.Menu()
+        if element.status.lower() == "running":
+            action = _("Stop")
+        else:
+            action = _("Remove")
         item = menu.Append(
             wx.ID_ANY,
-            _("Remove {name}").format(name=str(element)[:16]),
+            _("{action} {name}").format(action=action, name=str(element)[:25]),
             "",
             wx.ITEM_NORMAL,
         )
@@ -271,10 +324,10 @@ class SpoolerPanel(wx.Panel):
                     )
 
                 # STATUS
-                try:
-                    status = spool_obj.status
-                except AttributeError:
-                    status = _("Queued")
+                # try:
+                status = spool_obj.status
+                # except AttributeError:
+                # status = _("Queued")
                 self.list_job_spool.SetItem(list_id, 2, status)
 
                 # TYPE
@@ -292,7 +345,9 @@ class SpoolerPanel(wx.Panel):
 
                     if isinf(total):
                         total = "∞"
-                    self.list_job_spool.SetItem(list_id, 4, f"{loop}/{total}")
+                    pass_str = f"{loop}/{total}"
+                    pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
+                    self.list_job_spool.SetItem(list_id, 4, pass_str)
                 except AttributeError:
                     self.list_job_spool.SetItem(list_id, 4, "-")
 
@@ -315,9 +370,12 @@ class SpoolerPanel(wx.Panel):
                 # Estimate Time
                 try:
                     t = spool_obj.estimate_time()
-                    hours, remainder = divmod(t, 3600)
-                    minutes, seconds = divmod(remainder, 60)
-                    runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                    if isinf(t):
+                        runtime = "∞"
+                    else:
+                        hours, remainder = divmod(t, 3600)
+                        minutes, seconds = divmod(remainder, 60)
+                        runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                     self.list_job_spool.SetItem(list_id, 7, runtime)
                 except AttributeError:
                     self.list_job_spool.SetItem(list_id, 7, "-")
@@ -325,14 +383,19 @@ class SpoolerPanel(wx.Panel):
 
     def refresh_history(self, newestinfo):
         def timestr(t, oneday):
-            hours, remainder = divmod(t, 3600)
             if oneday:
-                hours = hours % 24
-            minutes, seconds = divmod(remainder, 60)
+                localt = time.localtime(t)
+                hours = localt[3]
+                minutes = localt[4]
+                seconds = localt[5]
+            else:
+                hours, remainder = divmod(t, 3600)
+                minutes, seconds = divmod(remainder, 60)
             result = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
             return result
 
-        self.history.insert(0, newestinfo)
+        if newestinfo is not None:
+            self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         for idx, info in enumerate(self.history):
             list_id = self.list_job_history.InsertItem(
@@ -347,17 +410,46 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(list_id, 3, starttime)
             runtime = timestr(info[2], False)
             self.list_job_history.SetItem(list_id, 4, runtime)
-            self.list_job_history.SetItem(list_id, 5, info[3])
+            # First passes then device
+            if len(info) >= 5:
+                self.list_job_history.SetItem(list_id, 5, info[4])
+            else:
+                self.list_job_history.SetItem(list_id, 5, "???")
+            self.list_job_history.SetItem(list_id, 6, info[3])
+
+    def reload_history(self):
+        self.history = []
+        directory = os.path.dirname(self.context.elements.op_data._config_file)
+        filename = os.path.join(directory, "history.json")
+        if os.path.exists(filename):
+            try:
+                with open(filename, "r") as f:
+                    self.history = json.load(f)
+            except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+                pass
+        if len(self.history) > 0:
+            if len(self.history[0]) < 5:
+                # Incompatible
+                self.history = []
+        self.refresh_history(None)
+
+    def save_history(self):
+        directory = os.path.dirname(self.context.elements.op_data._config_file)
+        filename = os.path.join(directory, "history.json")
+        try:
+            with open(filename, "w") as f:
+                json.dump(self.history, f)
+        except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+            pass
 
     @signal_listener("spooler;completed")
     def on_spooler_completed(self, origin, info, *args):
         # Info is just a tuple with the label and the runtime
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
-        # print(origin)
-        # print(info)
         if info is None:
             return
         self.refresh_history(info)
+        self.save_history()
 
     @signal_listener("spooler;queue")
     @signal_listener("spooler;idle")
@@ -409,12 +501,26 @@ class SpoolerPanel(wx.Panel):
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 6, "-")
 
+            try:
+                loop = spool_obj.loops_executed
+                total = spool_obj.loops
+
+                if isinf(total):
+                    total = "∞"
+                self.list_job_spool.SetItem(list_id, 4, f"{loop}/{total}")
+            except AttributeError:
+                self.list_job_spool.SetItem(list_id, 4, "-")
+
             # Estimate Time
             try:
                 t = spool_obj.estimate_time()
-                hours, remainder = divmod(t, 3600)
-                minutes, seconds = divmod(remainder, 60)
-                runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                if isinf(t):
+                    runtime = "∞"
+                else:
+                    hours, remainder = divmod(t, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+
                 if list_id < self.list_job_spool.GetItemCount():
                     self.list_job_spool.SetItem(list_id, 7, runtime)
             except (AttributeError, AssertionError):

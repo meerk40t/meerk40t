@@ -430,7 +430,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
 
     def selected(self, node):
         """
@@ -503,7 +507,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
         try:
             c = node.color
             self.set_color(node, c)
@@ -521,7 +529,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
         try:
             c = node.color
             self.set_color(node, c)
@@ -637,11 +649,18 @@ class ShadowTree:
         if isinstance(element, (tuple, list)):
             for node in element:
                 if hasattr(node, "node"):
-                    self.update_decorations(node.node, force=True)
-                else:
+                    node = node.node
+                try:
                     self.update_decorations(node, force=True)
+                except RuntimeError:
+                    # A timer can update after the tree closes.
+                    return
         else:
-            self.update_decorations(element, force=True)
+            try:
+                self.update_decorations(element, force=True)
+            except RuntimeError:
+                # A timer can update after the tree closes.
+                return
 
     def on_element_update(self, *args):
         """
@@ -653,11 +672,18 @@ class ShadowTree:
         if isinstance(element, (tuple, list)):
             for node in element:
                 if hasattr(node, "node"):
-                    self.update_decorations(node.node, force=True)
-                else:
+                    node = node.node
+                try:
                     self.update_decorations(node, force=True)
+                except RuntimeError:
+                    # A timer can update after the tree closes.
+                    return
         else:
-            self.update_decorations(element, force=True)
+            try:
+                self.update_decorations(element, force=True)
+            except RuntimeError:
+                # A timer can update after the tree closes.
+                return
 
     def refresh_tree(self, node=None, level=0, source=""):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -985,7 +1011,7 @@ class ShadowTree:
         defaultcolor = Color("black")
         if node.type == "elem image":
             image = self.renderer.make_thumbnail(
-                node.image, width=self.iconsize, height=self.iconsize
+                node.active_image, width=self.iconsize, height=self.iconsize
             )
         else:
             # Establish colors (and some images)
@@ -1153,8 +1179,13 @@ class ShadowTree:
         if hasattr(node, "node") and node.node is not None:
             formatter = get_formatter(node.node.type)
             if node.node.type.startswith("op "):
-                checker = "dangerlevel " + node.node.type
-                checker = checker.replace(" ", "_")
+                if not self.context.elements.op_show_default:
+                    if hasattr(node.node, "speed"):
+                        node.node.speed = node.node.speed
+                    if hasattr(node.node, "power"):
+                        node.node.power = node.node.power
+
+                checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
                     if (
@@ -1179,16 +1210,22 @@ class ShadowTree:
                         if hasattr(node.node, "dangerous"):
                             node.node.dangerous = danger
                     else:
+                        setattr(self.context.device, checker, [False, 0] * 4)
                         print(
-                            f"Thats strange {checker}: {type(maxspeed_minpower).__name__}"
+                            f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
                 # node.node.is_dangerous(maxspeed, minpower)
             label = "*" + node.node.create_label(formatter)
         else:
             formatter = get_formatter(node.type)
             if node.type.startswith("op "):
-                checker = "dangerlevel " + node.type
-                checker = checker.replace(" ", "_")
+                # Not too elegant... op nodes should have a property default_speed, default_power
+                if not self.context.elements.op_show_default:
+                    if hasattr(node, "speed"):
+                        node.speed = node.speed
+                    if hasattr(node, "power"):
+                        node.power = node.power
+                checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
                     if (
@@ -1213,8 +1250,9 @@ class ShadowTree:
                         if hasattr(node, "dangerous"):
                             node.dangerous = danger
                     else:
+                        setattr(self.context.device, checker, [False, 0] * 4)
                         print(
-                            f"Thats strange {checker}: {type(maxspeed_minpower).__name__}"
+                            f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
             label = node.create_label(formatter)
 

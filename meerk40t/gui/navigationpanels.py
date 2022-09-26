@@ -71,7 +71,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/drag", pane)
@@ -89,7 +89,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 3 * iconsize + dx
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/jog", pane)
@@ -108,7 +108,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = iconsize + 100
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/move", pane)
@@ -126,7 +126,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = iconsize + 60
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/pulse", pane)
@@ -144,7 +144,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 150
     pane.control = panel
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
 
     window.on_pane_create(pane)
     context.register("pane/objsizer", pane)
@@ -169,7 +169,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = max(3 * iconsize, 3 * 57)
     pane.control = panel
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
 
     window.on_pane_create(pane)
     context.register("pane/transform", pane)
@@ -187,7 +187,7 @@ def register_panel_navigation(window, context):
     )
     pane.dock_proportion = 110
     pane.control = panel
-    pane.submenu = _("Navigation")
+    pane.submenu = "_20_" + _("Navigation")
 
     window.on_pane_create(pane)
     context.register("pane/jogdist", pane)
@@ -197,48 +197,46 @@ _confined = True
 
 
 def get_movement(device, dx, dy):
-    global _confined
-    conf = _confined
     try:
         current_x, current_y = device.current
     except AttributeError:
-        conf = False
-    if conf:
-        newx = float(Length(dx))
-        newy = float(Length(dy))
-        min_x = 0
-        max_x = float(Length(device.width))
-        min_y = 0
-        max_y = float(Length(device.height))
-        # print ("Delta:", newx, newy)
-        # print ("Current:", current_x, current_y)
-        if newx + current_x > max_x:
-            tmp = max_x - current_x
-            if newx != 0:
-                newy = newy * tmp / newx
-            newx = tmp
-        elif newx + current_x < min_x:
-            tmp = -1 * current_x
-            if newx != 0:
-                newy = newy * tmp / newx
-            newx = tmp
-        if newy + current_y > max_y:
-            tmp = max_y - current_y
-            if newy != 0:
-                newx = newx * tmp / newy
-            newy = tmp
-        elif newy + current_y < min_y:
-            tmp = -1 * current_y
-            if newy != 0:
-                newx = newx * tmp / newy
-            newy = tmp
-        sx = Length(newx)
-        sy = Length(newy)
-        nx = f"{sx.mm:.4f}mm"
-        ny = f"{sy.mm:.4f}mm"
-    else:
-        nx = dx
-        ny = dy
+        return dx, dy
+
+    if not _confined:
+        return dx, dy
+
+    newx = float(Length(dx))
+    newy = float(Length(dy))
+    min_x = 0
+    max_x = float(Length(device.width))
+    min_y = 0
+    max_y = float(Length(device.height))
+    # print ("Delta:", newx, newy)
+    # print ("Current:", current_x, current_y)
+    if newx + current_x > max_x:
+        tmp = max_x - current_x
+        if newx != 0:
+            newy = newy * tmp / newx
+        newx = tmp
+    elif newx + current_x < min_x:
+        tmp = -1 * current_x
+        if newx != 0:
+            newy = newy * tmp / newx
+        newx = tmp
+    if newy + current_y > max_y:
+        tmp = max_y - current_y
+        if newy != 0:
+            newx = newx * tmp / newy
+        newy = tmp
+    elif newy + current_y < min_y:
+        tmp = -1 * current_y
+        if newy != 0:
+            newx = newx * tmp / newy
+        newy = tmp
+    sx = Length(newx)
+    sy = Length(newy)
+    nx = f"{sx.mm:.4f}mm"
+    ny = f"{sy.mm:.4f}mm"
     return nx, ny
 
 

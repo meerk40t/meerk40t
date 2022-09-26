@@ -333,7 +333,14 @@ class HatchOpNode(Node, Parameters):
                         )
                     )
                     hatch_cache[key] = hatches
-
+                if (
+                    "line_color" not in chain_settings
+                    or chain_settings["line_color"] is None
+                    or chain_settings["line_color"].value is None
+                ):
+                    chain_settings["line_color"] = Color(
+                        chain_settings.get("color", "black")
+                    )
                 for polyline in HatchOpNode.split(hatches):
                     node = PolylineNode(shape=Polyline(*polyline, **chain_settings))
                     node.settings.update(chain_settings)

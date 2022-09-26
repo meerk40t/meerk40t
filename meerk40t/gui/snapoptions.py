@@ -20,7 +20,7 @@ def register_panel_snapoptions(window, context):
     )
     pane.dock_proportion = 150
     pane.control = panel
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
 
     window.on_pane_create(pane)
     context.register("pane/snapoptions", pane)

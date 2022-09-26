@@ -21,32 +21,6 @@ class MoshiConfigurationPanel(ScrolledPanel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.choices = self.context.lookup("choices", "bed_dim")
-        self.choices.append(
-            {
-                "attr": "home_right",
-                "object": self.context,
-                "default": False,
-                "type": bool,
-                "label": _("Home Right"),
-                "tip": _("Indicates the device Home is on the right"),
-                "section": "_10_Dimensions",
-                "subsection": "Home-Position",
-                "signals": "homie",
-            }
-        )
-        self.choices.append(
-            {
-                "attr": "home_bottom",
-                "object": self.context,
-                "default": False,
-                "type": bool,
-                "label": _("Home Bottom"),
-                "tip": _("Indicates the device Home is on the bottom"),
-                "section": "_10_Dimensions",
-                "subsection": "Home-Position",
-                "signals": "homie",
-            }
-        )
         self.panel_pref1 = ChoicePropertyPanel(
             self,
             id=wx.ID_ANY,
@@ -70,12 +44,6 @@ class MoshiConfigurationPanel(ScrolledPanel):
     def on_active_change(self, origin, active):
         # self.Close()
         pass
-
-    @signal_listener("homie")
-    def on_check_home(self, origin):
-        self.context.origin_x = 1.0 if self.context.home_right else 0.0
-        self.context.origin_y = 1.0 if self.context.home_bottom else 0.0
-        self.context("viewport_update\n")
 
 
 class MoshiDriverGui(MWindow):

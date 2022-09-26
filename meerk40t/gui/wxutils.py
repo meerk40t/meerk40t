@@ -348,7 +348,7 @@ class TextCtrl(wx.TextCtrl):
             validator=validator,
             name=name,
         )
-
+        self.parent = parent
         self._check = check
         self._style = style
         # For the sake of readibility we allow multiple occurences of
@@ -396,8 +396,8 @@ class TextCtrl(wx.TextCtrl):
         self._action_routine = None
 
         if self._check is not None and self._check != "":
-            self.Bind(wx.EVT_TEXT, self.on_check)
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
+            self.Bind(wx.EVT_KEY_UP, self.on_check)
         self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
         if self._style & wx.TE_PROCESS_ENTER != 0:
@@ -597,6 +597,13 @@ class TextCtrl(wx.TextCtrl):
         except ValueError:
             status = "error"
         self.warn_status = status
+        # Is it a valid value?
+        if status == "modified" and hasattr(self.parent, "context"):
+            if getattr(self.parent.context.root, "process_while_typing", False):
+                if self._action_routine is not None:
+                    self._event_generated = wx.EVT_TEXT
+                    self._action_routine()
+                    self._event_generated = None
 
 
 class CheckBox(wx.CheckBox):

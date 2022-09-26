@@ -102,7 +102,7 @@ class DefaultActionPanel(wx.Panel):
             wx.StaticBox(self, wx.ID_ANY, _("Operation parameter:")), wx.HORIZONTAL
         )
         sizer_param.Add(self.text_param_option, 1, wx.EXPAND, 0)
-        sizer_button = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_button = wx.BoxSizer(wx.VERTICAL)
         sizer_button.Add(self.button_add_prepend, 1, wx.EXPAND, 0)
         sizer_button.Add(self.button_add_append, 1, wx.EXPAND, 0)
 

@@ -86,7 +86,7 @@ def plugin(kernel, lifecycle=None):
 
                 # Link emulator and server.
                 root.channel("grbl/recv").watch(emulator.write)
-                emulator.recv = root.channel("grbl/send")
+                emulator.reply = root.channel("grbl/send")
 
                 channel(
                     _("TCP Server for GRBL Emulator on port: {port}").format(port=port)

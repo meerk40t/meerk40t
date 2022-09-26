@@ -412,6 +412,7 @@ class ImportPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.parent_panel = None
         self.context = context
+        self.wlist = self.context.elements.mywordlist
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Import CSV")),
@@ -537,7 +538,7 @@ class AboutPanel(wx.Panel):
             r"if you want to batch-burn a couple of name-tags). The standard use {NAME} indicates"
         )
         s += " " + _(
-            r"the value at position #index of the loaded list, {NAME#+1} (not the plus sign)"
+            r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
         )
         s += " " + _(
             r"uses the next entry, {NAME#+2} the second entry after the current."

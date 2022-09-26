@@ -500,7 +500,7 @@ class Planner(Service):
                 except AttributeError:
                     pass
                 try:
-                    if len(c) == 0:
+                    if c.type.startswith("op") and len(c.children) == 0:
                         continue
                 except TypeError:
                     pass

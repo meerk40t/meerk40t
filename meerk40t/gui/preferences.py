@@ -27,7 +27,7 @@ class PreferencesUnitsPanel(wx.Panel):
             self,
             wx.ID_ANY,
             _("Units"),
-            choices=[_("mm"), _("cm"), _("inch"), _("mils")],
+            choices=["mm", "cm", "inch", "mils"],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
         )
@@ -59,7 +59,7 @@ class PreferencesUnitsPanel(wx.Panel):
             return 0
         if units == "cm":
             return 1
-        if units == "inch":
+        if units in ("in", "inch", "inches"):
             return 2
         if units == "mil":
             return 3
@@ -73,17 +73,17 @@ class PreferencesUnitsPanel(wx.Panel):
     def set_mil(self):
         p = self.context.root
         p.units_name = "mil"
-        p.signal("mil", p.units_name)
+        p.signal("units", p.units_name)
 
     def set_cm(self):
         p = self.context.root
         p.units_name = "cm"
-        p.signal("cm", p.units_name)
+        p.signal("units", p.units_name)
 
     def set_mm(self):
         p = self.context.root
         p.units_name = "mm"
-        p.signal("mm", p.units_name)
+        p.signal("units", p.units_name)
 
 
 # end of class PreferencesUnitsPanel
@@ -418,5 +418,13 @@ class Preferences(MWindow):
         pass
 
     @staticmethod
-    def submenu():
-        return ("Preferences", "General Preferences")
+    def menu_label():
+        return _("Pr&eferences...\tCtrl-,")
+
+    @staticmethod
+    def menu_tip():
+        return _("Show/Hide the Preferences window")
+
+    @staticmethod
+    def menu_id():
+        return wx.ID_PREFERENCES

@@ -21,7 +21,7 @@ def register_panel_position(window, context):
     )
     pane.dock_proportion = 225
     pane.control = PositionPanel(window, wx.ID_ANY, context=context)
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
     window.on_pane_create(pane)
     context.register("pane/position", pane)
 
@@ -45,7 +45,7 @@ class PositionPanel(wx.Panel):
         self.button_execute = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
         )
-        self.choices = [_("mm"), _("cm"), _("inch"), _("mil"), "%"]
+        self.choices = ["mm", "cm", "inch", "mil", "%"]
         self.combo_box_units = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -80,8 +80,10 @@ class PositionPanel(wx.Panel):
         self.org_y = None
         self.org_w = None
         self.org_h = None
-        self.context.setting(int, "units_name", "mm")
+        self.context.setting(str, "units_name", "mm")
         self.position_units = self.context.units_name
+        if self.position_units in ("in", "inches"):
+            self.position_units = "inch"
         self._update_position()
 
     def pane_show(self, *args):
@@ -294,14 +296,22 @@ class PositionPanel(wx.Panel):
         self.on_text_y_action(False)
 
     def execute_wh_changes(self, refresh_after=True):
-        if self.position_w == self.org_w and self.position_h == self.org_h:
+        delta = 1.0e-6
+        if (
+            abs(self.position_w - self.org_w) < delta
+            and abs(self.position_h - self.org_h) < delta
+        ):
             return
         if self.chk_indivdually.GetValue():
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                new_w = float(Length(f"{self.position_w}{self.position_units}"))
-                new_h = float(Length(f"{self.position_h}{self.position_units}"))
+                new_w = float(
+                    Length(f"{round(self.position_w, 6)}{self.position_units}")
+                )
+                new_h = float(
+                    Length(f"{round(self.position_h, 6)}{self.position_units}")
+                )
 
                 try:
                     scalex = new_w / (bb[2] - bb[0])
@@ -325,20 +335,47 @@ class PositionPanel(wx.Panel):
                 elem.modified()
         else:
             u = self.position_units
-            cmd = f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n"
+            cmd1 = ""
+            cmd2 = ""
+            if (
+                abs(self.position_x - self.org_x) >= delta
+                or abs(self.position_y - self.org_y) >= delta
+            ):
+                cmd1 = f"position {round(self.position_x, 6)}{u}"
+                cmd1 += f" {round(self.position_y, 6)}{u}\n"
+            if (
+                abs(self.position_w - self.org_w) >= delta
+                or abs(self.position_h - self.org_h) >= delta
+            ):
+                if self.org_w != 0 and self.org_h != 0:
+                    sx = round(self.position_w / self.org_w, 6)
+                    sy = round(self.position_h / self.org_h, 6)
+                    if sx != 1.0 or sy != 1.0:
+                        cmd2 = f"scale {sx} {sy}\n"
+            # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
+            # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
+            cmd = cmd1 + cmd2
             self.context(cmd)
         if refresh_after:
             self.update_position(True)
 
     def execute_xy_changes(self, refresh_after=True):
-        if self.position_x == self.org_x and self.position_y == self.org_y:
+        delta = 1.0e-6
+        if (
+            abs(self.position_x - self.org_x) < delta
+            and abs(self.position_y - self.org_y) < delta
+        ):
             return
         if self.chk_indivdually.GetValue():
             for elem in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 _bb = elem.bounds
                 bb = [_bb[0], _bb[1], _bb[2], _bb[3]]
-                newx = float(Length(f"{self.position_x}{self.position_units}"))
-                newy = float(Length(f"{self.position_y}{self.position_units}"))
+                newx = float(
+                    Length(f"{round(self.position_x, 6)}{self.position_units}")
+                )
+                newy = float(
+                    Length(f"{round(self.position_y, 6)}{self.position_units}")
+                )
                 if self.position_x == self.org_x:
                     dx = 0
                 else:
@@ -363,9 +400,27 @@ class PositionPanel(wx.Panel):
                 elem.modified()
         else:
             u = self.position_units
-            self.context(
-                f"resize {self.position_x}{u} {self.position_y}{u} {self.position_w}{u} {self.position_h}{u}\n"
-            )
+            cmd1 = ""
+            cmd2 = ""
+            if (
+                abs(self.position_x - self.org_x) >= delta
+                or abs(self.position_y - self.org_y) >= delta
+            ):
+                cmd1 = f"position {round(self.position_x, 6)}{u}"
+                cmd1 += f" {round(self.position_y, 6)}{u}\n"
+            if (
+                abs(self.position_w - self.org_w) >= delta
+                or abs(self.position_h - self.org_h) >= delta
+            ):
+                if self.org_w != 0 and self.org_h != 0:
+                    sx = round(self.position_w / self.org_w, 6)
+                    sy = round(self.position_h / self.org_h, 6)
+                    if sx != 1.0 or sy != 1.0:
+                        cmd2 = f"scale {sx} {sy}\n"
+            # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
+            # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
+            cmd = cmd1 + cmd2
+            self.context(cmd)
         if refresh_after:
             self.update_position(True)
 

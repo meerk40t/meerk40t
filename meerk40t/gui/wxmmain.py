@@ -109,7 +109,7 @@ class MeerK40t(MWindow):
             pass
 
         self.context.gui = self
-        self.usb_running = False
+        self._usb_running = dict()
         context = self.context
         self.register_options_and_choices(context)
 
@@ -573,7 +573,27 @@ class MeerK40t(MWindow):
                     "The scene-menu will appear if you right-click on the scene-background"
                 ),
                 "page": "Gui",
+                "hidden": True,
                 "section": "Scene",
+            },
+            {
+                "attr": "process_while_typing",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Process input while typing"),
+                "tip": _(
+                    "Try to immediately use values you enter in dialog-textfields - "
+                )
+                + "\n"
+                + _(
+                    "otherwise they will get applied only after a deliberate confirmation"
+                )
+                + "\n"
+                + _("by enter or stepping out of the field)"),
+                "page": "Gui",
+                "hidden": True,
+                "section": "Misc.",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -1341,52 +1361,39 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(f".{extension}"):
                     pathname += f".{extension}"
-                context.elements.save(pathname, version=version)
-                gui.validate_save()
-                gui.working_file = pathname
-                gui.set_file_as_recently_used(gui.working_file)
+                try:
+                    context.elements.save(pathname, version=version)
+                    gui.validate_save()
+                    gui.working_file = pathname
+                    gui.set_file_as_recently_used(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
             if gui.working_file is None:
                 context(".dialog_save_as\n")
             else:
-                gui.set_file_as_recently_used(gui.working_file)
-                gui.validate_save()
-                context.elements.save(gui.working_file)
-
-        @context.console_command("dialog_import_egv", hidden=True)
-        def egv_in_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui,
-                _("Import EGV"),
-                wildcard=files,
-                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Loading File...")):
-                context(f"egv_import {pathname}\n")
-                return
-
-        @context.console_command("dialog_export_egv", hidden=True)
-        def egv_out_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Saving File...")):
-                context(f"egv_export {pathname}\n")
-                return
+                try:
+                    gui.set_file_as_recently_used(gui.working_file)
+                    gui.validate_save()
+                    context.elements.save(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", False)
@@ -1416,6 +1423,32 @@ class MeerK40t(MWindow):
         def panes(**kwargs):
             return "panes", self
 
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "load",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def load_pane(command, _, channel, configuration=None, **kwargs):
+            perspective = context.setting(str, f"perspective_{configuration}", None)
+            if not perspective:
+                channel(_("Perspective not found"))
+                return
+            self.on_panes_closed()
+            self._mgr.LoadPerspective(perspective, update=True)
+            self.on_config_panes()
+
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "save",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def save_pane(command, _, channel, configuration=None, **kwargs):
+            setattr(context, f"perspective_{configuration}", self._mgr.SavePerspective())
+
         @context.console_argument("pane", help=_("pane to be shown"))
         @context.console_command(
             "show",
@@ -1428,8 +1461,77 @@ class MeerK40t(MWindow):
             if _pane is None:
                 channel(_("Pane not found."))
                 return
-            _pane.Show()
-            self._mgr.Update()
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if not pane.IsShown():
+                    pane.Show()
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    if hasattr(pane.window, "pane_show"):
+                        pane.window.pane_show()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be hidden"))
+        @context.console_command(
+            "hide",
+            input_type="panes",
+            help=_("show the pane"),
+            all_arguments_required=True,
+        )
+        def hide_pane(command, _, channel, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Hide()
+                    if hasattr(pane.window, "pane_hide"):
+                        pane.window.pane_hide()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
+
+        @context.console_option("always", "a", type=bool, action="store_true")
+        @context.console_argument("pane", help=_("pane to be float"))
+        @context.console_command(
+            "float",
+            input_type="panes",
+            help=_("Float the pane"),
+            all_arguments_required=True,
+        )
+        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Float()
+                    pane.Dockable(not always)
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be dock"))
+        @context.console_command(
+            "dock",
+            input_type="panes",
+            help=_("Dock the pane"),
+            all_arguments_required=True,
+        )
+        def dock_pane(command, _, channel, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Dockable(True)
+                    pane.Dock()
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
 
         @context.console_command(
             "toggleui",
@@ -1458,39 +1560,6 @@ class MeerK40t(MWindow):
                             pane.Hide()
                 self._mgr.Update()
                 channel(_("Panes hidden."))
-
-        @context.console_argument("pane", help=_("pane to be hidden"))
-        @context.console_command(
-            "hide",
-            input_type="panes",
-            help=_("show the pane"),
-            all_arguments_required=True,
-        )
-        def hide_pane(command, _, channel, pane=None, **kwargs):
-            _pane = context.lookup("pane", pane)
-            if _pane is None:
-                channel(_("Pane not found."))
-                return
-            _pane.Hide()
-            self._mgr.Update()
-
-        @context.console_option("always", "a", type=bool, action="store_true")
-        @context.console_argument("pane", help=_("pane to be shown"))
-        @context.console_command(
-            "float",
-            input_type="panes",
-            help=_("show the pane"),
-            all_arguments_required=True,
-        )
-        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
-            _pane = context.lookup("pane", pane)
-            if _pane is None:
-                channel(_("Pane not found."))
-                return
-            _pane.Float()
-            _pane.Show()
-            _pane.Dockable(not always)
-            self._mgr.Update()
 
         @context.console_command(
             "reset",
@@ -1710,6 +1779,15 @@ class MeerK40t(MWindow):
 
             return toggle
 
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
+
         self.panes_menu = wx.Menu()
         label = _("Panes")
         index = self.main_menubar.FindMenu(label)
@@ -1718,6 +1796,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.panes_menu, label)
         submenus = {}
+        panedata = []
         for pane, _path, suffix_path in self.context.find("pane/.*"):
             try:
                 suppress = pane.hide_menu
@@ -1725,9 +1804,19 @@ class MeerK40t(MWindow):
                     continue
             except AttributeError:
                 pass
+            try:
+                submenu = pane.submenu
+            except AttributeError:
+                submenu = ""
+            if submenu == "":
+                submenu = "_ZZZZZZZZZZZZZZZZ_"
+            panedata.append([pane, _path, suffix_path, submenu])
+        panedata.sort(key=lambda row: row[3])
+        for pane, _path, suffix_path, dummy in panedata:
             submenu = None
             try:
                 submenu_name = pane.submenu
+                submenu_name = unsorted_label(submenu_name)
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
@@ -1847,7 +1936,22 @@ class MeerK40t(MWindow):
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            menuitem = menu_context.Append(wx.ID_ANY, _(caption), "", wx.ITEM_NORMAL)
+            caption = _(caption)
+            menu_label = caption
+            if hasattr(window, "menu_label"):
+                menu_label = window.menu_label()
+
+            menu_id = wx.ID_ANY
+            if hasattr(window, "menu_id"):
+                menu_id = window.menu_id()
+
+            menu_tip = ""
+            if hasattr(window, "menu_tip"):
+                menu_tip = window.menu_tip()
+
+            menuitem = menu_context.Append(
+                menu_id, menu_label, menu_tip, wx.ITEM_NORMAL
+            )
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
@@ -1949,6 +2053,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom &Out\tCtrl--"),
                 "help": _("Make the scene smaller"),
                 "action": self.on_click_zoom_out,
+                "id": wx.ID_ZOOM_OUT,
                 "level": 1,
                 "segment": "",
             },
@@ -1956,6 +2061,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom &In\tCtrl-+"),
                 "help": _("Make the scene larger"),
                 "action": self.on_click_zoom_in,
+                "id": wx.ID_ZOOM_IN,
                 "level": 1,
                 "segment": "",
             },
@@ -1963,6 +2069,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom to &Selected\tCtrl-Shift-B"),
                 "help": _("Fill the scene area with the selected elements"),
                 "action": self.on_click_zoom_selected,
+                "id": wx.ID_ZOOM_100,
                 "level": 1,
                 "segment": "",
             },
@@ -1970,6 +2077,7 @@ class MeerK40t(MWindow):
                 "label": _("Zoom to &Bed\tCtrl-B"),
                 "help": _("View the whole laser bed"),
                 "action": self.on_click_zoom_bed,
+                "id": wx.ID_ZOOM_FIT,
                 "level": 1,
                 "segment": "",
             },
@@ -2270,6 +2378,11 @@ class MeerK40t(MWindow):
                 c_param = choice["parameter"]
             except KeyError:
                 c_param = None
+
+            try:
+                c_id = choice["id"]
+            except KeyError:
+                c_id = wx.ID_ANY
             # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
             if c_segment != current_segment:
                 current_segment = c_segment
@@ -2308,14 +2421,14 @@ class MeerK40t(MWindow):
             else:
                 if c_criteria is None:
                     menu_item = current_menu.Append(
-                        wx.ID_ANY,
+                        c_id,
                         c_label,
                         c_help,
                         wx.ITEM_NORMAL,
                     )
                 else:
                     menu_item = current_menu.Append(
-                        wx.ID_ANY,
+                        c_id,
                         c_label,
                         c_help,
                         wx.ITEM_CHECK,
@@ -2539,7 +2652,7 @@ class MeerK40t(MWindow):
         self.__set_titlebar()
 
     def window_close_veto(self):
-        if self.usb_running:
+        if self.any_device_running:
             message = _("The device is actively sending data. Really quit?")
             answer = wx.MessageBox(
                 message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
@@ -2633,9 +2746,18 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @property
+    def any_device_running(self):
+        running = self._usb_running
+        for v in running:
+            q = running[v]
+            if q:
+                return True
+        return False
+
     @signal_listener("pipe;running")
     def on_usb_running(self, origin, value):
-        self.usb_running = value
+        self._usb_running[origin] = value
 
     @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
@@ -3074,23 +3196,26 @@ class MeerK40t(MWindow):
         self.status_update()
 
     def on_menu_highlight(self, event):
-        menuid = event.GetId()
-        menu = event.GetMenu()
-        if menuid == wx.ID_SEPARATOR:
-            self.update_statusbar("...")
-            return
-        if not self.top_menu and not menu:
-            self.status_update()
-            return
-        if menu and not self.top_menu:
-            self.top_menu = menu
-        if self.top_menu and not menu:
-            menu = self.top_menu
-        menuitem, submenu = menu.FindItem(menuid)
-        if not menuitem:
-            self.update_statusbar("...")
-            return
-        helptext = menuitem.GetHelp()
-        if not helptext:
-            helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
-        self.update_statusbar(helptext)
+        try:
+            menuid = event.GetId()
+            menu = event.GetMenu()
+            if menuid == wx.ID_SEPARATOR:
+                self.update_statusbar("...")
+                return
+            if not self.top_menu and not menu:
+                self.status_update()
+                return
+            if menu and not self.top_menu:
+                self.top_menu = menu
+            if self.top_menu and not menu:
+                menu = self.top_menu
+            menuitem, submenu = menu.FindItem(menuid)
+            if not menuitem:
+                self.update_statusbar("...")
+                return
+            helptext = menuitem.GetHelp()
+            if not helptext:
+                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+            self.update_statusbar(helptext)
+        except RuntimeError:
+            pass

@@ -67,12 +67,16 @@ class TextNode(Node):
         raw_bbox=None,
         path=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
+
         super(TextNode, self).__init__(type="elem text", **settings)
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
@@ -83,7 +87,7 @@ class TextNode(Node):
         self.stroke_width = stroke_width
         self._stroke_scaled = stroke_scale
         if x != 0 or y != 0:
-            matrix.pre_translate(x, y)
+            self.matrix.pre_translate(x, y)
 
         self.font_style = "normal"
         self.font_variant = "normal"
@@ -127,7 +131,7 @@ class TextNode(Node):
         self.raw_bbox = raw_bbox
         self.path = path
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __copy__(self):
         return TextNode(
@@ -150,6 +154,8 @@ class TextNode(Node):
             leading=self.leading,
             raw_bbox=self.raw_bbox,
             path=self.path,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 

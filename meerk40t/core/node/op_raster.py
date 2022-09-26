@@ -42,7 +42,6 @@ class RasterOpNode(Node, Parameters):
             "elem polyline",
             "elem rect",
             "elem line",
-            "elem dot",
             "elem text",
             "elem image",
         )

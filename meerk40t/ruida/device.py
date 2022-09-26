@@ -310,7 +310,13 @@ class RuidaParser:
         pass
 
     def parse(self, data, elements):
-        pass
+        emulator = elements.open_as("emulator/ruida", "ruidaparser")
+        emulator.spooler = elements.device.spooler
+        emulator.device = elements.device
+        emulator.elements = elements
+        emulator.design = True
+        emulator.write(BytesIO(emulator.unswizzle(data)))
+        elements.close("ruidaparser")
 
 
 class RuidaEmulator(Module, Parameters):
@@ -365,7 +371,7 @@ class RuidaEmulator(Module, Parameters):
         self.state = 22
 
     def __repr__(self):
-        return f"Ruida({self.name}, {len(self.cutcode)} cuts)"
+        return f"Ruida({self.name}, {len(self.cutcode)} cuts @{hex(id(self))})"
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
@@ -1016,7 +1022,7 @@ class RuidaEmulator(Module, Parameters):
             # If not saving send to spooler in control or elements if `design` is set.
             if not self.saving and len(self.cutcode):
                 if self.control:
-                    matrix = Matrix(self.device.scene_to_device_matrix())
+                    matrix = self.device.scene_to_device_matrix()
                     for plot in self.cutcode:
                         for i in range(len(plot.plot)):
                             x, y, laser = plot.plot[i]
@@ -2257,7 +2263,7 @@ class RDLoader:
         with open(pathname, "rb") as f:
             op_branch = service.get(type="branch ops")
             op_branch.add(
-                data=bytearray(f.read()), data_type="ruida", type="blob", name=basename
+                data=bytearray(f.read()), data_type="ruida", type="blob", label=basename
             )
             kernel.root.close(basename)
             return True
