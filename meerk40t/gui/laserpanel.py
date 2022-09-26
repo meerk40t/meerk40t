@@ -74,7 +74,7 @@ class LaserPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
         sizer_devices = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Device")), wx.HORIZONTAL
         )
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
