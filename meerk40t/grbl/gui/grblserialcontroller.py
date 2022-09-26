@@ -22,7 +22,7 @@ class SerialControllerPanel(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
 
         self.state = None
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
+        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetFont(
             wx.Font(
@@ -35,7 +35,7 @@ class SerialControllerPanel(wx.Panel):
             )
         )
         self.button_device_connect.SetToolTip(
-            "Force connection/disconnection from the device."
+            _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
             icons8_connected_50.GetBitmap(use_theme=False)
