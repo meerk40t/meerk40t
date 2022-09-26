@@ -756,10 +756,17 @@ class Scene(Module, Job):
             dy,
         )
         self.last_position = window_pos
+        previous_top_element = None
         try:
-            previous_top_element = self.hit_chain[0][0]
+            idx = 0
+            while idx<len(self.hit_chain):
+                if not self.hit_chain[idx][0].transparent:
+                    previous_top_element = self.hit_chain[idx][0]
+                    break
+                idx += 1
+
         except (IndexError, TypeError):
-            previous_top_element = None
+            pass
 
         if event_type in (
             "key_down",
