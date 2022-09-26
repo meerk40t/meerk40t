@@ -6,7 +6,7 @@ from meerk40t.svgelements import Matrix, Point
 
 class PointNode(Node):
     """
-    PointNode is the bootstrapped node type for the 'elem path' type.
+    PointNode is the bootstrapped node type for the 'elem point' type.
     """
 
     def __init__(
@@ -63,8 +63,8 @@ class PointNode(Node):
         self.set_dirty_bounds()
 
     def bbox(self, transformed=True, with_stroke=False):
-        p = self.matrix.transform_point(self.point)
-        return (p[0], p[1], p[0], p[1])
+        p = self.matrix.point_in_matrix_space(self.point)
+        return p[0], p[1], p[0], p[1]
 
     def default_map(self, default_map=None):
         default_map = super(PointNode, self).default_map(default_map=default_map)
