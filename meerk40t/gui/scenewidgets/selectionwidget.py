@@ -1295,7 +1295,7 @@ class MoveWidget(Widget):
 
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
-    def tool(self, sposition, snearest_snap, dx, dy, event=0, modifiers=None):
+    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         """
         Change the position of the selected elements.
         """
@@ -1310,15 +1310,12 @@ class MoveWidget(Widget):
             self.translate(dx, dy)
 
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
-        position = [sposition[0], sposition[1], sposition[2], sposition[3], sposition[4], sposition[5]]
         elements = self.scene.context.elements
         lastdx = 0
         lastdy = 0
-        if snearest_snap is None:
+        if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.last_snap
-        else:
-            nearest_snap = [snearest_snap[0], snearest_snap[1], sposition[2], sposition[3], sposition[4], sposition[5]]
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
