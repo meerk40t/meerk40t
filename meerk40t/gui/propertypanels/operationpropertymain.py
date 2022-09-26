@@ -10,87 +10,17 @@ from ..wxutils import TextCtrl, set_ctrl_value
 
 _ = wx.GetTranslation
 
+# OPERATION_TYPE_TOOLTIP = _(
+#     """Operation Type
 
-COLOR_TOOLTIP = _(
-    """Change/View color of this layer. When Meerk40t classifies elements to operations, this exact color is used to match elements to this operation."""
-)
+# Cut & Engrave are vector operations, Raster and Image are raster operations.
 
-OPERATION_TYPE_TOOLTIP = _(
-    """Operation Type
-
-Cut & Engrave are vector operations, Raster and Image are raster operations.
-
-Cut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most."""
-)
-
-OPERATION_DEFAULT_TOOLTIP = _(
-    """When classifying elements, Default operations gain all appropriate elements not matched to an existing operation of the same colour, rather than a new operation of that color being created.
-
-Raster operations created automatically."""
-)
-
-OPERATION_SPEED_TOOLTIP = _(
-    """Speed at which the head moves in mm/s.
-For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction.
-
-For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
-    """
-)
-
-OPERATION_POWER_TOOLTIP = _(
-    """Pulses Per Inch - This is software created laser power control.
-1000 is always on, 500 is half power (fire every other step).
-Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines."""
-)
+# Cut and Engrave operations are essentially the same except that for a Cut operation with Cut Outer Paths last, only closed Paths in Cut operations are considered as being Outer-most."""
+# )
 
 
-OPERATION_FREQUENCY_TOOLTIP = _(
-    """Laser frequency in kHz.
-
-For lasers with frequencies that can be set."""
-)
 
 
-OPERATION_PASSES_TOOLTIP = _(
-    """"How many times to repeat this operation?
-
-Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, creating a second identical operation with the same settings and same elements.
-
-The number of Operation Passes can be changed extremely easily, but you cannot change any of the other settings.
-
-Duplicating the Operation gives more flexibility for changing settings, but is far more cumbersome to change the number of duplications because you need to add and delete the duplicates one by one."""
-)
-
-OPERATION_DPI_TOOLTIP = _(
-    """
-In a raster engrave, the step size is the distance between raster lines in 1/1000" and also the number of raster dots that get combined together.
-
-Because the laser dot is >> 1/1000" in diameter, at step 1 the raster lines overlap a lot, and consequently  you can raster with steps > 1 without leaving gaps between the lines.
-
-The step size before you get gaps will depend on your focus and the size of your laser dot.
-
-Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed.
-
-Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed this can prevent your laser from stuttering."""
-)
-
-OPERATION_RASTERDIRECTION_TOOLTIP = _(
-    """Direction to perform a raster
-
-Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T).
-
-This is because rastering in the X-direction involve moving only the laser head which is relatively low mass.
-
-Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself.\n\nThis total mass is much greater, acceleration therefore needs to be much slower, and allow for space at each end of the raster to reverse direction the speed has to be much slower."""
-)
-
-OPERATION_RASTERSWING_TOOLTIP = _(
-    """"Raster on forward and backswing or only forward swing?
-
-Rastering only on forward swings will double the time required to complete the raster.
-
-It seems doubtful that there will be significant quality benefits from rastering in one direction."""
-)
 
 
 class LayerSettingPanel(wx.Panel):
@@ -107,6 +37,10 @@ class LayerSettingPanel(wx.Panel):
 
         self.button_layer_color = wx.Button(self, wx.ID_ANY, "")
         self.button_layer_color.SetBackgroundColour(wx.Colour(0, 0, 0))
+        COLOR_TOOLTIP = _(
+            "Change/View color of this layer. When Meerk40t classifies elements to operations,"
+        ) + _("this exact color is used to match elements to this operation.")
+
         self.button_layer_color.SetToolTip(COLOR_TOOLTIP)
         layer_sizer.Add(self.button_layer_color, 0, wx.EXPAND, 0)
         h_classify_sizer = wx.StaticBoxSizer(
@@ -186,12 +120,20 @@ class LayerSettingPanel(wx.Panel):
 
         self.checkbox_output = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
         self.checkbox_output.SetToolTip(
-            "Enable this operation for inclusion in Execute Job."
+            _("Enable this operation for inclusion in Execute Job.")
         )
         self.checkbox_output.SetValue(1)
         h_property_sizer.Add(self.checkbox_output, 1, 0, 0)
 
         self.checkbox_default = wx.CheckBox(self, wx.ID_ANY, _("Default"))
+        OPERATION_DEFAULT_TOOLTIP = (
+            _(
+                "When classifying elements, Default operations gain all appropriate elements "
+            )
+            + _("not matched to an existing operation of the same colour, ")
+            + _("rather than a new operation of that color being created.")
+        )
+
         self.checkbox_default.SetToolTip(OPERATION_DEFAULT_TOOLTIP)
         self.checkbox_default.SetValue(1)
         h_property_sizer.Add(self.checkbox_default, 1, 0, 0)
@@ -413,6 +355,18 @@ class SpeedPpiPanel(wx.Panel):
         )
         self.text_speed.set_error_level(0, None)
         self.text_speed.set_warn_level(speed_min, speed_max)
+        OPERATION_SPEED_TOOLTIP = (
+            _("Speed at which the head moves in mm/s.")
+            + "\n"
+            + _(
+                "For Cut/Engrave vector operations, this is the speed of the head regardless of direction i.e. the separate x/y speeds vary according to the direction."
+            )
+            + "\n"
+            + _(
+                "For Raster/Image operations, this is the speed of the head as it sweeps backwards and forwards."
+            )
+        )
+
         self.text_speed.SetToolTip(OPERATION_SPEED_TOOLTIP)
         speed_sizer.Add(self.text_speed, 1, wx.EXPAND, 0)
 
@@ -431,6 +385,15 @@ class SpeedPpiPanel(wx.Panel):
         )
         self.text_power.set_range(0, 1000)
         self.text_power.set_warn_level(power_min, power_max)
+        OPERATION_POWER_TOOLTIP = _(
+            _("Pulses Per Inch - This is software created laser power control.")
+            + "\n"
+            + _("1000 is always on, 500 is half power (fire every other step).")
+            + "\n"
+            + _(
+                'Values of 100 or have pulses > 1/10" and are generally used only for dotted or perforated lines.'
+            )
+        )
         self.text_power.SetToolTip(OPERATION_POWER_TOOLTIP)
         power_sizer.Add(self.text_power, 1, wx.EXPAND, 0)
 
@@ -448,6 +411,11 @@ class SpeedPpiPanel(wx.Panel):
                 limited=True,
                 check="float",
                 style=wx.TE_PROCESS_ENTER,
+            )
+            OPERATION_FREQUENCY_TOOLTIP = (
+                _("Laser frequency in kHz.")
+                + "\n"
+                + _("For lasers with frequencies that can be set.")
             )
             self.text_frequency.SetToolTip(OPERATION_FREQUENCY_TOOLTIP)
             self.text_frequency.set_warn_level(*freq)
@@ -561,6 +529,26 @@ class PassesPanel(wx.Panel):
         self.text_passes = TextCtrl(
             self, wx.ID_ANY, "1", limited=True, check="float", style=wx.TE_PROCESS_ENTER
         )
+        OPERATION_PASSES_TOOLTIP = (
+            _("How many times to repeat this operation?")
+            + "\n"
+            + _(
+                "Setting e.g. passes to 2 is essentially equivalent to Duplicating the operation, "
+            )
+            + _(
+                "creating a second identical operation with the same settings and same elements."
+            )
+            + "\n"
+            + _("The number of Operation Passes can be changed extremely easily, ")
+            + _("but you cannot change any of the other settings.")
+            + "\n"
+            + _(
+                "Duplicating the Operation gives more flexibility for changing settings, "
+            )
+            + _("but is far more cumbersome to change the number of duplications ")
+            + _("because you need to add and delete the duplicates one by one.")
+        )
+
         self.text_passes.SetToolTip(OPERATION_PASSES_TOOLTIP)
         sizer_passes.Add(self.text_passes, 1, wx.EXPAND, 0)
 
@@ -1110,6 +1098,21 @@ class RasterSettingsPanel(wx.Panel):
             style=wx.TE_PROCESS_ENTER,
         )
         self.text_dpi.set_error_level(1, 100000)
+        OPERATION_DPI_TOOLTIP = (
+            _("In a raster engrave, the step size is the distance between raster lines in 1/1000\" ") +
+            _("and also the number of raster dots that get combined together.")
+            + "\n" +
+            _("Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines overlap a lot, ") +
+            _("and consequently you can raster with steps > 1 without leaving gaps between the lines.")
+            + "\n" +
+            _("The step size before you get gaps will depend on your focus and the size of your laser dot.")
+            + "\n" +
+            _("Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase ") +
+            _("power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed.")
+            + "\n" +
+            _("Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed") +
+            _("this can prevent your laser from stuttering.")
+        )
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
         sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
@@ -1148,6 +1151,32 @@ class RasterSettingsPanel(wx.Panel):
             ],
             style=wx.CB_DROPDOWN,
         )
+        OPERATION_RASTERDIRECTION_TOOLTIP = (
+            _("Direction to perform a raster")
+            + "\n"
+            + _(
+                "Normally you would raster in an X-direction and select Top-to-Bottom (T2B) or Bottom-to-Top (B2T)."
+            )
+            + "\n"
+            + _(
+                "This is because rastering in the X-direction involve moving only the laser head which is relatively low mass."
+            )
+            + "\n"
+            + _(
+                "Rastering in the Y-direction (Left-to-Right or Right-to-Left) involves moving not only the laser head "
+            )
+            + _(
+                "but additionally the entire x-axis gantry assembly including the stepper motor, mirror and the gantry itself."
+            )
+            + "\n"
+            + _(
+                "This total mass is much greater, acceleration therefore needs to be much slower, "
+            )
+            + _(
+                "and allow for space at each end of the raster to reverse direction the speed has to be much slower."
+            )
+        )
+
         self.combo_raster_direction.SetToolTip(OPERATION_RASTERDIRECTION_TOOLTIP)
         self.combo_raster_direction.SetSelection(0)
         sizer_4.Add(self.combo_raster_direction, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -1156,9 +1185,14 @@ class RasterSettingsPanel(wx.Panel):
             self,
             wx.ID_ANY,
             _("Directional Raster:"),
-            choices=["Bidirectional", "Unidirectional"],
+            choices=[_("Bidirectional"), _("Unidirectional")],
             majorDimension=1,
             style=wx.RA_SPECIFY_ROWS,
+        )
+        OPERATION_RASTERSWING_TOOLTIP = (
+            _("Raster on forward and backswing or only forward swing?") + "\n" +
+            _("Rastering only on forward swings will double the time required to complete the raster.") + "\n" +
+            _("It seems doubtful that there will be significant quality benefits from rastering in one direction.")
         )
         self.radio_directional_raster.SetToolTip(OPERATION_RASTERSWING_TOOLTIP)
         self.radio_directional_raster.SetSelection(0)
