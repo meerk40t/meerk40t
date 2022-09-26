@@ -311,6 +311,20 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "classify_debug",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Debug Classification"),
+                "tip": _("Shows info about the classification process in the console"),
+                "page": "Classification",
+                "section": "_AA_Debug",
+                "hidden": True,
+            },
+        ]
+        kernel.register_choices("preferences", choices)
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file
@@ -399,6 +413,7 @@ class Elemental(Service):
         self.setting(bool, "classify_inherit_exclusive", True)
         self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
+        self.setting(bool, "classify_debug", False)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
@@ -8455,11 +8470,6 @@ class Elemental(Service):
         """
         operation_branch = self._tree.get(type="branch ops")
         operation_branch.add_node(op, pos=pos)
-        if not self.op_show_default:
-            if hasattr(op, "speed"):
-                op.speed = op.speed
-            if hasattr(op, "power"):
-                op.power = op.power
         self.signal("add_operation", op)
 
     def add_ops(self, adding_ops):
@@ -8467,11 +8477,6 @@ class Elemental(Service):
         items = []
         for op in adding_ops:
             operation_branch.add_node(op)
-            if not self.op_show_default:
-                if hasattr(op, "speed"):
-                    op.speed = op.speed
-                if hasattr(op, "power"):
-                    op.power = op.power
             items.append(op)
         self.signal("add_operation", items)
         return items
@@ -8943,6 +8948,15 @@ class Elemental(Service):
                 because of a lack of classification options.
         @return:
         """
+        def emptydebug(value):
+            return
+
+        # I am tired of changing the code all the time, so let's do it properly
+        if self.classify_debug:
+            debug = self.kernel._console_channel
+        else:
+            debug = emptydebug
+
         if elements is None:
             return
 
@@ -8960,7 +8974,6 @@ class Elemental(Service):
         if add_op_function is None:
             # add_op_function = self.add_op
             add_op_function = self.add_classify_op
-
         for node in elements:
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
@@ -8972,6 +8985,7 @@ class Elemental(Service):
             else:
                 fuzzy_param = (False,)
             for tempfuzzy in fuzzy_param:
+                debug (f"Pass 1 (fuzzy={tempfuzzy}): check {node.type}")
                 was_classified = False
                 should_break = False
 
@@ -9009,7 +9023,7 @@ class Elemental(Service):
                         and isinstance(op, EngraveOpNode)
                     ):
                         whisperer = False
-                    # print (f"Normal, {node.type}, black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
+                    debug (f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
                     if hasattr(op, "classify") and whisperer:
 
                         classified, should_break = op.classify(
@@ -9022,8 +9036,15 @@ class Elemental(Service):
                         continue
                     if classified:
                         was_classified = True
-                        # if hasattr(node, "stroke"):
-                        #     print(f"Was classified: {node.stroke} matching operation: {type(op).__name__}")
+                        if hasattr(node, "stroke"):
+                            sstroke = f"s={getattr(node, 'stroke')},"
+                        else:
+                            sstroke = ""
+                        if hasattr(node, "fill"):
+                            sfill = f"s={getattr(node, 'fill')},"
+                        else:
+                            sfill = ""
+                        debug(f"Was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}")
                     if should_break:
                         break
                 # So we are the end of the first pass, if there was already a classification
@@ -9036,6 +9057,7 @@ class Elemental(Service):
             ######################
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
+                debug ("Pass 2 (wasn't classified), looking for default ops")
                 for op in operations:
                     is_black = False
                     whisperer = True
@@ -9068,7 +9090,7 @@ class Elemental(Service):
                         and isinstance(op, EngraveOpNode)
                     ):
                         whisperer = False
-                    # print (f"Default, {node.type}, black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
+                    debug(f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
                     if hasattr(op, "classifys") and whisperer:
                         classified, should_break = op.classify(
                             node,
@@ -9080,16 +9102,20 @@ class Elemental(Service):
                         continue
                     if classified:
                         was_classified = True
+                        debug(f"Was classified to default operation: {type(op).__name__}, break={should_break}")
                     if should_break:
                         break
             if not was_classified and autogen:
                 # Despite all efforts we couldn't classify the element, so let's add an op
+                debug ("Pass 3, not classified by ops or def ops")
                 stdops = []
                 has_raster = False
                 if node.type == "elem image":
                     stdops.append(ImageOpNode(output=False))
+                    debug ("add an op image")
                 elif node.type == "elem point":
                     stdops.append(DotsOpNode(output=False))
+                    debug ("add an op dots")
                 elif (
                     hasattr(node, "stroke")
                     and node.stroke is not None
@@ -9115,11 +9141,14 @@ class Elemental(Service):
                     # print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
                     if is_cut:
                         stdops.append(CutOpNode(color=Color("red"), speed=5.0))
+                        debug ("add an op cut due to stroke")
                     elif is_raster:
                         stdops.append(RasterOpNode(color=node.stroke, output=True))
+                        debug ("add an op raster due to stroke")
                         has_raster = True
                     else:
                         stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
+                        debug ("add an op engrave due to stroke")
                 if (
                     hasattr(node, "fill")
                     and node.fill is not None
@@ -9127,8 +9156,10 @@ class Elemental(Service):
                     and not has_raster
                 ):
                     stdops.append(RasterOpNode(color=0, output=True))
+                    debug ("add an op raster due to fill")
                 for op in stdops:
                     # Lets make sure we don't have something like that already
+                    debug (f"Check for existence of {op.type}")
                     already_found = False
                     for testop in self.ops():
                         if type(op) == type(testop):
@@ -9154,10 +9185,12 @@ class Elemental(Service):
                             samespeed = True
                         # print ("Compare: %s to %s - op=%s, col=%s, speed=%s" % (type(op).__name__, type(testop).__name__, sameop, samecolor, samespeed))
                         if sameop and samecolor and samespeed:
+                            debug(f"A similar operation existed")
                             already_found = True
                             op = testop
                             break
                     if not already_found:
+                        debug(f"Add a new operation {op.type}")
                         if hasattr(op, "output"):
                             op.output = True
                         add_op_function(op)
