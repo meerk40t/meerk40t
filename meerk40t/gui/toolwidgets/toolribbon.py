@@ -94,13 +94,18 @@ class RibbonTool(ToolWidget):
         elif event_type == "leftup":
             self.stop = True
             if self.series:
-                path_stroke = self.scene.context.elements.default_stroke
-                t = Path(stroke=path_stroke, stroke_width=1000)
+                t = Path()
                 t.move(self.series[0])
                 for m in self.series:
                     t.line(m)
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(path=t, type="elem path")
+                node = elements.elem_branch.add(
+                    path=t,
+                    type="elem path",
+                    stroke_width=1000.0,
+                    stroke=self.scene.context.elements.default_stroke,
+                    fill=self.scene.context.elements.default_fill,
+                )
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)

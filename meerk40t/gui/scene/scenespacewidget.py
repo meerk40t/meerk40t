@@ -93,7 +93,7 @@ class SceneSpaceWidget(Widget):
         return 1.0 / zf
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, modifiers=None, **kwargs
     ):
         """
         Process the zooming and panning of otherwise unhit-widget events.

@@ -22,7 +22,7 @@ class SerialControllerPanel(wx.Panel):
         sizer_1 = wx.BoxSizer(wx.VERTICAL)
 
         self.state = None
-        self.button_device_connect = wx.Button(self, wx.ID_ANY, "Connection")
+        self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.button_device_connect.SetBackgroundColour(wx.Colour(102, 255, 102))
         self.button_device_connect.SetFont(
             wx.Font(
@@ -35,7 +35,7 @@ class SerialControllerPanel(wx.Panel):
             )
         )
         self.button_device_connect.SetToolTip(
-            "Force connection/disconnection from the device."
+            _("Force connection/disconnection from the device.")
         )
         self.button_device_connect.SetBitmap(
             icons8_connected_50.GetBitmap(use_theme=False)
@@ -121,6 +121,7 @@ class SerialController(MWindow):
 
         self.serial_panel = SerialControllerPanel(self, wx.ID_ANY, context=self.service)
         self.Layout()
+        self._opened_port = None
         # end wxGlade
 
     @signal_listener("serial;status")
@@ -128,21 +129,24 @@ class SerialController(MWindow):
         self.serial_panel.on_serial_status(origin, state)
 
     def window_open(self):
-        self.context.channel(f"send-{self.service.com_port.lower()}").watch(
+        self._opened_port = self.service.com_port.lower()
+        self.context.channel(f"send-{self._opened_port}").watch(
             self.serial_panel.update_sent
         )
-        self.context.channel(f"recv-{self.service.com_port.lower()}").watch(
+        self.context.channel(f"recv-{self._opened_port}").watch(
             self.serial_panel.update_recv
         )
 
     def window_close(self):
-        # TODO: Can be wrong if we start the window then change com ports.
-        self.context.channel(f"send-{self.service.com_port.lower()}").unwatch(
+        self.context.channel(f"send-{self._opened_port}").unwatch(
             self.serial_panel.update_sent
         )
-        self.context.channel(f"recv-{self.service.com_port.lower()}").unwatch(
+        self.context.channel(f"recv-{self._opened_port}").unwatch(
             self.serial_panel.update_recv
         )
+
+    def delegates(self):
+        yield self.serial_panel
 
     @staticmethod
     def submenu():

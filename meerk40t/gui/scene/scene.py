@@ -224,6 +224,11 @@ class Scene(Module, Job):
         self.reset_grids()
 
         self.tool_active = False
+        self.modif_active = False
+
+        self._last_snap_position = None
+        self._last_snap_ts = 0
+
         self.active_tool = "none"
         self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
 
@@ -237,6 +242,22 @@ class Scene(Module, Job):
             interval=1.0 / 60.0,
         )
         self._toast = None
+
+    @property
+    def last_snap(self):
+        result = self._last_snap_position
+        # Too old? Discard
+        if (time.time() - self._last_snap_ts) > 0.5:
+           result = None
+        return result
+
+    @last_snap.setter
+    def last_snap(self, value):
+        self._last_snap_position = value
+        if value is None:
+            self._last_snap_ts = 0
+        else:
+            self._last_snap_ts = time.time()
 
     def reset_grids(self):
         self.draw_grid_primary = True
@@ -887,6 +908,7 @@ class Scene(Module, Job):
             # PROCESS RESPONSE
             ##################
             if type(response) is tuple:
+                # print (f"Nearest snap provided")
                 # We get two additional parameters which are the screen location of the nearest snap point
                 params = response[1:]
                 response = response[0]
@@ -923,7 +945,7 @@ class Scene(Module, Job):
                             snap_x,
                             snap_y,
                         )
-                        # print ("Snap provided", nearest_snap)
+                        self.last_snap = nearest_snap
             else:
                 params = None
 

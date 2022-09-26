@@ -19,7 +19,7 @@ def register_panel_debugger(window, context):
     )
     pane.dock_proportion = 225
     pane.control = DebugTreePanel(window, wx.ID_ANY, context=context)
-    pane.submenu = _("Debug")
+    pane.submenu = "_ZZ_" + _("Debug")
     window.on_pane_create(pane)
     context.register("pane/debug_tree", pane)
 

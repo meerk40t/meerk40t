@@ -1189,6 +1189,10 @@ class PlotCut(CutObject):
             return False
             # if self.max_dy >= 15 and self.max_dy >= 15:
             #     return False  # This is probably a vector.
+        if self.max_dx is None:
+            return False
+        if self.max_dy is None:
+            return False
         # Above 80 we're likely dealing with a raster.
         if 0 < self.max_dx <= 15:
             self.v_raster = True

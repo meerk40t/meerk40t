@@ -21,7 +21,7 @@ def register_panel_position(window, context):
     )
     pane.dock_proportion = 225
     pane.control = PositionPanel(window, wx.ID_ANY, context=context)
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
     window.on_pane_create(pane)
     context.register("pane/position", pane)
 
@@ -45,7 +45,7 @@ class PositionPanel(wx.Panel):
         self.button_execute = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
         )
-        self.choices = [_("mm"), _("cm"), _("inch"), _("mil"), "%"]
+        self.choices = ["mm", "cm", "inch", "mil", "%"]
         self.combo_box_units = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -80,8 +80,10 @@ class PositionPanel(wx.Panel):
         self.org_y = None
         self.org_w = None
         self.org_h = None
-        self.context.setting(int, "units_name", "mm")
+        self.context.setting(str, "units_name", "mm")
         self.position_units = self.context.units_name
+        if self.position_units in ("in", "inches"):
+            self.position_units = "inch"
         self._update_position()
 
     def pane_show(self, *args):
