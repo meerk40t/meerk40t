@@ -1629,7 +1629,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:2097
 msgid "frequency <kHz>"
-msgstr ""
+msgstr "Frequenz <kHz>"
 
 #: meerk40t/core/elements.py:2113
 msgid "Frequency for '{name}' is currently: {frequency}"
@@ -1649,7 +1649,7 @@ msgstr "<passes> Wiederholungen"
 
 #: meerk40t/core/elements.py:2148
 msgid "Passes for '{name}' is currently: {passes}"
-msgstr ""
+msgstr "Wiederholungen für '{name}': {passes}"
 
 #: meerk40t/core/elements.py:2159
 msgid "Passes for '{name}' updated {old_passes} -> {passes}"
@@ -2849,7 +2849,7 @@ msgstr ""
 
 #: meerk40t/core/elements.py:6659
 msgid "Passes {passvalue}"
-msgstr ""
+msgstr "{passvalue} Durchläufe"
 
 #: meerk40t/core/elements.py:6683
 msgid "Burn Direction"
@@ -3063,7 +3063,7 @@ msgstr "Füge 'Einzelpunkt' hinzu"
 #: meerk40t/core/elements.py:7297 meerk40t/core/elements.py:7306
 #: meerk40t/core/elements.py:7315
 msgid "Append special operation(s)"
-msgstr "Hänge speziellen Vorgang am Ende der Liste an"
+msgstr "Hänge speziellen Aktion am Ende der Liste an"
 
 #: meerk40t/core/elements.py:7212
 msgid "Append Home"
@@ -3191,18 +3191,18 @@ msgstr "Füge Schneiden hinzu"
 
 #: meerk40t/core/elements.py:7482
 msgid "Add Hatch"
-msgstr ""
+msgstr "Füge Gitter hinzu"
 
 #: meerk40t/core/elements.py:7487
 msgid "Add Dots"
-msgstr ""
+msgstr "Füge Einzelpunkt hinzu"
 
 #: meerk40t/core/elements.py:7491 meerk40t/core/elements.py:7496
 #: meerk40t/core/elements.py:7501 meerk40t/core/elements.py:7506
 #: meerk40t/core/elements.py:7511 meerk40t/core/elements.py:7521
 #: meerk40t/core/elements.py:7526 meerk40t/core/elements.py:7531
 msgid "Insert special operation(s)"
-msgstr ""
+msgstr "Füge spezielle Aktionen ein"
 
 #: meerk40t/core/elements.py:7492
 msgid "Add Home"
@@ -3222,31 +3222,31 @@ msgstr "Füge 'Anhalten' hinzu"
 
 #: meerk40t/core/elements.py:7515
 msgid "Add Wait"
-msgstr ""
+msgstr "Füge 'Warten' hinzu"
 
 #: meerk40t/core/elements.py:7522
 msgid "Add Output"
-msgstr ""
+msgstr "Füge 'Output' hinzu"
 
 #: meerk40t/core/elements.py:7527
 msgid "Add Input"
-msgstr ""
+msgstr "Füge 'Input' hinzu"
 
 #: meerk40t/core/elements.py:7532
 msgid "Add Home/Beep/Interrupt"
-msgstr ""
+msgstr "Füge 'Home + Beep + Nachricht' hinzu"
 
 #: meerk40t/core/elements.py:7543
 msgid "Reload '{name}'"
-msgstr ""
+msgstr "Lade '{name}' erneut"
 
 #: meerk40t/core/elements.py:7550
 msgid "Open in System: '{name}'"
-msgstr ""
+msgstr "Öffne mit Standard-Applikation: '{name}'"
 
 #: meerk40t/core/elements.py:7552
 msgid "Open this file in the system application associated with this type of file"
-msgstr ""
+msgstr "Öffnet die Datei mit der im System hinterlegten Standardapplikation für diesen Dateityp"
 
 #: meerk40t/core/elements.py:7580 meerk40t/core/elements.py:7611
 #: meerk40t/core/elements.py:7627 meerk40t/core/elements.py:7643
@@ -13922,7 +13922,7 @@ msgstr "Sonstiges"
 #~ msgstr "Arbeitsgang hinzufügen"
 
 #~ msgid "Special operations"
-#~ msgstr "Spezielle Arbeitsabläufe"
+#~ msgstr "Spezielle Aktionen"
 
 #~ msgid "Add Shutdown"
 #~ msgstr "Füge 'Shutdown' hinzu"

@@ -6719,8 +6719,8 @@ class Elemental(Service):
 
         def get_swing_values():
             return (
-                "Bidirectional",
-                "Unidirectional",
+                _("Bidirectional"),
+                _("Unidirectional"),
             )
 
         def radio_match_swing(node, raster_swing="", **kwargs):
