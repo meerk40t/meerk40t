@@ -9215,7 +9215,7 @@ class Elemental(Service):
                         stdops.append(CutOpNode(color=Color("red"), speed=5.0))
                         debug ("add an op cut due to stroke")
                     elif is_raster:
-                        stdops.append(RasterOpNode(color=node.stroke, output=True))
+                        stdops.append(RasterOpNode(color="black", output=True))
                         debug ("add an op raster due to stroke")
                         has_raster = True
                     else:
@@ -9229,7 +9229,7 @@ class Elemental(Service):
                     and node.fill.argb is not None
                     and not has_raster
                 ):
-                    stdops.append(RasterOpNode(color=0, output=True))
+                    stdops.append(RasterOpNode(color="black", output=True))
                     debug ("add an op raster due to fill")
                 for op in stdops:
                     # Lets make sure we don't have something like that already
@@ -9243,11 +9243,17 @@ class Elemental(Service):
                         samecolor = False
                         if hasattr(op, "color") and hasattr(testop, "color"):
                             # print ("Comparing color %s to %s" % ( op.color, testop.color ))
-                            if op.color == testop.color:
-                                samecolor = True
+                            if fuzzy:
+                                if Color.distance(op.color, testop.color) <= fuzzydistance:
+                                    samecolor = True
+                            else:
+                                if op.color == testop.color:
+                                    samecolor = True
                         elif hasattr(op, "color") != hasattr(testop, "color"):
                             samecolor = False
                         else:
+                            samecolor = True
+                        if op.type == "elem raster":
                             samecolor = True
                         samespeed = False
                         if hasattr(op, "speed") and hasattr(testop, "speed"):
