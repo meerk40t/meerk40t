@@ -3279,7 +3279,7 @@ msgstr "Nimm Füllfarbe und klassifziere Ähnliche"
 
 #: meerk40t/core/elements.py:7648
 msgid "Operation will inherit element fill color"
-msgstr ""
+msgstr "Arbeitsablauf übernimmt Element-Farbe"
 
 #: meerk40t/core/elements.py:7683
 msgid "Convert to path"
@@ -3287,7 +3287,7 @@ msgstr "Wandle in Pfad um"
 
 #: meerk40t/core/elements.py:7697 meerk40t/core/elements.py:7715
 msgid "Flip"
-msgstr ""
+msgstr "Spiegeln"
 
 #: meerk40t/core/elements.py:7702
 msgid "Horizontally"
@@ -3312,7 +3312,7 @@ msgstr "Skalieren"
 
 #: meerk40t/core/elements.py:7736
 msgid "Scale {scale_percent}%"
-msgstr ""
+msgstr "Skalieren {scale_percent}%"
 
 #: meerk40t/core/elements.py:7738
 msgid "Scale Element"
@@ -3325,7 +3325,7 @@ msgstr "Drehen"
 
 #: meerk40t/core/elements.py:7784
 msgid "Rotate {angle}°"
-msgstr ""
+msgstr "Drehen um {angle}°"
 
 #: meerk40t/core/elements.py:7799
 msgid "Reify User Changes"
@@ -3349,23 +3349,23 @@ msgstr "Verbinde alle Unter-Knoten zu einem Pfad."
 
 #: meerk40t/core/elements.py:7832
 msgid "Unlock element, allows manipulation"
-msgstr ""
+msgstr "Entsperrt Element, erlaubt Änderungen"
 
 #: meerk40t/core/elements.py:7840
 msgid "Lock elements, prevents manipulations"
-msgstr ""
+msgstr "Sperrt Element, verhindert Änderungen"
 
 #: meerk40t/core/elements.py:7848
 msgid "Toggle visibility of regmarks"
-msgstr ""
+msgstr "Schalte Sichtbarkeit der Registriermarken um"
 
 #: meerk40t/core/elements.py:7856
 msgid "Move back to elements"
-msgstr ""
+msgstr "Zurück zu 'Elementen' verschieben"
 
 #: meerk40t/core/elements.py:7874
 msgid "Move to regmarks"
-msgstr ""
+msgstr "In 'Registriermarken' verschieben"
 
 #: meerk40t/core/elements.py:7896
 msgid "Actualize pixels"
