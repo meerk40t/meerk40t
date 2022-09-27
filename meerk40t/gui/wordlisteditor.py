@@ -145,6 +145,10 @@ class WordlistPanel(wx.Panel):
         self.btn_restore.SetToolTip(_("Load wordlist from disk"))
         sizer_exit.Add(self.btn_restore, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        self.check_autosave = wx.CheckBox(self, wx.ID_ANY, _("Autosave"))
+        self.check_autosave.SetToolTip(_("All changes to the wordlist will be saved immediately"))
+        sizer_exit.Add(self.check_autosave, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         self.lbl_message = wx.StaticText(self, wx.ID_ANY, "")
         sizer_exit.Add(self.lbl_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -186,12 +190,20 @@ class WordlistPanel(wx.Panel):
     def pane_hide(self):
         pass
 
+    def autosave(self):
+        if self.check_autosave.GetValue():
+            if self.wlist.default_filename is not None:
+                self.wlist.save_data(self.wlist.default_filename)
+                msg = _("Saved to ") + self.wlist.default_filename
+                self.edit_message(msg)
+
     def on_button_edit_add(self, event):
         skey = self.cur_skey
         if skey is None:
             return
         self.wlist.add_value(self.cur_skey, "---", 0)
         self.refresh_grid_content(skey, 0)
+        self.autosave()
 
     def on_button_edit_del(self, event):
         skey = self.cur_skey
@@ -202,6 +214,7 @@ class WordlistPanel(wx.Panel):
             pass
         self.wlist.delete_value(skey, index)
         self.refresh_grid_content(skey, 0)
+        self.autosave()
 
     def on_button_edit_edit(self, event):
         skey = self.cur_skey
@@ -227,6 +240,7 @@ class WordlistPanel(wx.Panel):
                 for entry in lines:
                     self.wlist.add_value(skey, entry, 0)
                 self.refresh_grid_content(skey, 0)
+                self.autosave()
 
     def refresh_grid_wordlist(self):
         self.current_entry = None
@@ -321,6 +335,7 @@ class WordlistPanel(wx.Panel):
             index = self.to_save[1]
             value = event.GetText()
             self.wlist.set_value(skey, value, index)
+            self.autosave()
         self.to_save = None
         event.Allow()
 
@@ -358,6 +373,7 @@ class WordlistPanel(wx.Panel):
             selidx = 0
         self.refresh_grid_wordlist()
         self.grid_wordlist.Select(selidx, True)
+        self.autosave()
 
     def on_btn_add(self, event):
         skey = self.txt_pattern.GetValue()
@@ -365,6 +381,7 @@ class WordlistPanel(wx.Panel):
             if skey in self.wlist.content:
                 self.wlist.delete(skey)
             self.wlist.add_value(skey, "---", 0)
+            self.autosave()
             self.populate_gui()
         event.Skip()
 
@@ -380,13 +397,15 @@ class WordlistPanel(wx.Panel):
             if skey in self.wlist.content:
                 self.wlist.delete(skey)
             self.wlist.add_value(skey, 1, 2)
-            self.populate_gui()
+            self.autosave()
+        self.populate_gui()
         event.Skip()
 
     def on_btn_delete(self, event):
         skey = self.txt_pattern.GetValue()
         if skey is not None and len(skey) > 0:
             self.wlist.delete(skey)
+            self.autosave()
             self.populate_gui()
         event.Skip()
 
@@ -493,75 +512,57 @@ class AboutPanel(wx.Panel):
         self.parent_panel = None
 
         s = _(
-            "The objective of this functionality is to create burning templates, that can be reused"
-        )
-        s += " " + ("for different data with minimal adjustment effort.")
+            "The objective of this functionality is to create burning templates, " +
+            "that can be reused for different data with minimal adjustment effort.")
         s += "\n" + _(
-            "Let's clarify the term variable first: a variable is a placeholder for some text"
-        )
-        s += " " + _(
-            "that can be used as part of the text-definition of a Text-Object."
+            "Let's clarify the term variable first: a variable is a placeholder for " +
+            "some text that can be used as part of the text-definition of a Text-Object."
         )
         s += "\n" + _(
-            "It's reference (i.e. variable name) is used within curly brackets to indicate"
-        )
-        s += " " + _("that it will eventually be replaced by 'real' content.")
+            "Its reference (i.e. variable name) is used within curly brackets to indicate" +
+            "that it will eventually be replaced by 'real' content.")
 
-        s += "\n" + _(
-            "Let's come back to our use-case, imagine you want to create a name-tag pattern that"
+        s += "\n\n" + _(
+            "Let's come back to our use-case, imagine you want to create a name-tag "+
+            "pattern that can be reused. Lets create a text-object inside a frame "+
+            "and set its text to"
         )
-        s += " " + _(
-            "can be reused. Lets create a text-object inside a frame and set its text to"
-        )
-        s += " " + _(
-            r"'This item belongs to {NAME}'. If you define a variable named 'NAME' and"
-        )
-        s += " " + _(
-            "assign a value like 'John' to it, then the burned text will finally state:"
+        s += "\n" + _(r"'This item belongs to {NAME}'")
+        s += _(
+            "If you define a variable named 'NAME' and assign a value like " +
+            "'John' to it, then the burned text will finally state:"
         )
         s += "\n" + _("'This item belongs to John'")
 
-        s += "\n" + _(
-            "You can define a set of variables (called wordlist) that could be populated"
-        )
-        s += " " + _(
-            "by a standard comma-separated CSV file. The you could have not just one"
-        )
-        s += " " + _(
-            "entry defined for 'NAME' but dozens of them. Which of the multiple entries"
-        )
-        s += " " + _("is currently active is decided by its index value.")
-        s += "\n" + _(
-            "You are not restricted to a single use of a variable (useful e.g."
-        )
-        s += " " + _(
-            r"if you want to batch-burn a couple of name-tags). The standard use {NAME} indicates"
-        )
-        s += " " + _(
-            r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
-        )
-        s += " " + _(
-            r"uses the next entry, {NAME#+2} the second entry after the current."
-        )
-        s += "\n" + _(
-            r"Note: This usage does not change the index position, you need to manually advance it."
-        )
-        s += "\n" + _(
-            r"If you want to autoadvance the index after every use, then you can use {NAME++}."
+        s += "\n\n" + _(
+            "You can define a set of variables (called wordlist) that could be populated" +
+            "by a standard comma-separated CSV file. The you could have not just one" +
+            "entry defined for 'NAME' but dozens of them. Which of the multiple entries" +
+            "is currently active is decided by its index value."
         )
         s += "\n\n" + _(
-            "There are couple of predefined variables, that refer to the current burn operation"
+            "You are not restricted to a single use of a variable (useful e.g." +
+            "if you want to batch-burn a couple of name-tags). " +
+            "The standard use {NAME} indicates " +
+            r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)" +
+            r"uses the next entry, {NAME#+2} the second entry after the current."
         )
-        s += " " + _(
-            r"(like {op_power}, {op_speed} or others) or contain date/time-information ({date}, {time})."
+        s += "\n\n" + _(
+            "Note: This usage does not change the index position, you need " +
+            r"to manually advance it. If you want to autoadvance the index after " +
+            "every use, then you can use {NAME++}."
         )
-        s += "\n" + _(
-            "Please note that date and time may be provided in a format that allows to define their"
+        s += "\n\n" + _(
+            "There are couple of predefined variables, that refer to the " +
+            r"current burn operation (like {op_power}, {op_speed} or others)" +
+            r"or contain date/time-information ({date}, {time})."
         )
-        s += " " + _(
-            r"appearance according to local preferences: e.g. {date@%d.%m.%Y} will provide a date"
+        s += "\n\n" + _(
+            "Please note that date and time may be provided in a format that " +
+            r"allows to define their appearance according to local " +
+            r"preferences: e.g. {date@%d.%m.%Y} will provide a date " +
+            r"like 31.12.2022 and {time@%H:%M} a time like 23:59."
         )
-        s += " " + _(r"like 31.12.2022 and {time@%H:%M} a time like 23:59.")
         s += "\n" + _("For a complete set of format-directives see:")
         s += (
             "\n"
