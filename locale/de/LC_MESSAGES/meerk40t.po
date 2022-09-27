@@ -14553,3 +14553,8 @@ msgstr "Benutzerdefiniertes D-Ratio"
 msgid "Enables the ability to modify the diagonal ratio."
 msgstr "Ermöglicht das Verwenden eines benutzerdefinierten Diagonal-Faktors (D-Ratio)"
 
+msgid "Remove all references from all ops"
+msgstr "Lösche alle bestehende Zuordnungen"
+
+msgid "Any existing assignment of this element to operations will be removed"
+msgstr "Dies wird alle Zuordnungen dieses Elements zu Arbeitsgängen entfernen"
