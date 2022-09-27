@@ -8092,7 +8092,8 @@ class Elemental(Service):
                 continue
 
             op.load(settings, section)
-        self.classify(list(self.elems()))
+        if len(list(self.elems())) > 0:
+            self.classify(list(self.elems()))
 
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True
