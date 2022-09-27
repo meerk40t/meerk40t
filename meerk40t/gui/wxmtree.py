@@ -1171,6 +1171,8 @@ class ShadowTree:
                         node.node.speed = node.node.speed
                     if hasattr(node.node, "power"):
                         node.node.power = node.node.power
+                    if hasattr(node.node, "dwell_time"):
+                        node.node.dwell_time = node.node.dwell_time
 
                 checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
@@ -1212,6 +1214,8 @@ class ShadowTree:
                         node.speed = node.speed
                     if hasattr(node, "power"):
                         node.power = node.power
+                    if hasattr(node, "dwell_time"):
+                        node.dwell_time = node.dwell_time
                 checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
