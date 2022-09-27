@@ -814,6 +814,8 @@ class LihuiyuDriver(Parameters):
         def primary_hold():
             if self.out_pipe is None:
                 return True
+            if hasattr(self.out_pipe, "is_shutdown") and self.out_pipe.is_shutdown:
+                raise ConnectionAbortedError("Cannot hold for a shutdown pipe.")
             try:
                 buffer = len(self.out_pipe)
             except TypeError:
