@@ -14546,3 +14546,59 @@ msgstr "Entferne ungenutzte Arbeitsabläufe"
 msgid "Clear operations without children"
 msgstr "Entferne alle Arbeitsabläufe, denen keine Element zugeordnet sind"
 
+msgid "_TREE_Operations"
+msgstr "Arbeitsabläufe"
+
+msgid "_TREE_Elements"
+msgstr "Elemente"
+
+msgid "_TREE_Regmarks"
+msgstr "Registriermarken"
+
+msgid "_TREE_Image"
+msgstr "Bild"
+
+msgid "_TREE_Dots"
+msgstr "Einzelpunkt"
+
+msgid "_TREE_Path"
+msgstr "Pfad"
+
+msgid "_TREE_Line"
+msgstr "Linie"
+
+msgid "_TREE_Ellipse"
+msgstr "Ellipse"
+
+msgid "_TREE_Rect"
+msgstr "Rechteck"
+
+msgid "_TREE_Group"
+msgstr "Gruppe"
+
+msgid "_TREE_File"
+msgstr "Datei"
+
+msgid "_TREE_Point"
+msgstr "Punkt"
+
+msgid "_TREE_Cut"
+msgstr "Schneiden"
+
+msgid "_TREE_Engrave"
+msgstr "Gravieren"
+
+msgid "_TREE_Hatch"
+msgstr "Gitter"
+
+msgid "_TREE_(Disabled) "
+msgstr "(Inaktiv) "
+
+msgid "_TREE_Origin"
+msgstr "Zurück zum Ursprung"
+
+msgid "_TREE_beep"
+msgstr "Signalton"
+
+msgid "_TREE_Wait"
+msgstr "Warte"
