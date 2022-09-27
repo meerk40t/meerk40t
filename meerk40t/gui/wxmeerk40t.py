@@ -51,6 +51,7 @@ from .propertypanels.groupproperties import GroupPropertiesPanel
 from .propertypanels.imageproperty import ImagePropertyPanel
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
+from .propertypanels.pointproperty import PointPropertyPanel
 from .propertypanels.propertywindow import PropertyWindow
 from .propertypanels.rasterwizardpanels import (
     AutoContrastPanel,
@@ -607,6 +608,7 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
         kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
         kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
         kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
         kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
         kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
