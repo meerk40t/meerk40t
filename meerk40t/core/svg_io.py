@@ -594,17 +594,16 @@ class SVGProcessor:
             pass
         is_dot, dot_point = SVGProcessor.is_dot(element)
         if is_dot:
-            if dot_point is not None:
-                node = context_node.add(
-                    point=dot_point,
-                    type="elem point",
-                    matrix=Matrix(),
-                    fill=element.fill,
-                    stroke=element.stroke,
-                    label=_label,
-                    lock=_lock
-                )
-                e_list.append(node)
+            node = context_node.add(
+                point=dot_point,
+                type="elem point",
+                matrix=Matrix(),
+                fill=element.fill,
+                stroke=element.stroke,
+                label=_label,
+                lock=_lock
+            )
+            e_list.append(node)
         elif isinstance(element, SVGText):
             if element.text is None:
                 return
