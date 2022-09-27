@@ -551,6 +551,16 @@ class SVGProcessor:
 
     @staticmethod
     def is_dot(element):
+        """
+        Check for the degenerate shape dots. This could by a Path that consisting of a Move + Close, Move, or Move any
+        path-segment that has a distance of 0 units. It could be a simple line to the same spot. It could be a polyline
+        which has a single point.
+
+        We avoid doing any calculations without checking the degenerate nature of the would-be dot first.
+
+        @param element:
+        @return:
+        """
         if isinstance(element, Path):
             if len(element) > 2 or element.length(error=1, min_depth=1) > 0:
                 return False, None
