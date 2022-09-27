@@ -549,18 +549,23 @@ class SVGProcessor:
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
 
-    def parse(self, element, context_node, e_list):
-        def is_dot(element):
-            if not isinstance(element, Shape):
-                return False, None
-            if not isinstance(element, Path):
-                path = abs(Path(element))
-            else:
-                path = abs(element)
+    @staticmethod
+    def is_dot(element):
+        if isinstance(element, Path):
             if len(element) > 2 or element.length(error=1, min_depth=1) > 0:
                 return False, None
-            return True, path.first_point
+            return True, abs(element).first_point
+        elif isinstance(element, SimpleLine):
+            if element.length() == 0:
+                return True, abs(Path(element)).first_point
+        elif isinstance(element, (Polyline, Polygon)):
+            if len(element) > 1:
+                return False, None
+            if element.length() == 0:
+                return True, abs(Path(element)).first_point
+        return False, None
 
+    def parse(self, element, context_node, e_list):
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list
@@ -587,7 +592,7 @@ class SVGProcessor:
             _lock = bool(element.values.get("lock") == "True")
         except (ValueError, TypeError):
             pass
-        is_dot, dot_point = is_dot(element)
+        is_dot, dot_point = SVGProcessor.is_dot(element)
         if is_dot:
             if dot_point is not None:
                 node = context_node.add(
