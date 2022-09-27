@@ -9218,7 +9218,7 @@ class Elemental(Service):
                     else:
                         stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
                         if debug:
-                            debug ("add an op engrave due to stroke")
+                            debug (f"add an op engrave with color={node.stroke} due to stroke")
                 # Do we need to add a fill operation?
                 if (
                     not classif_info[1]
