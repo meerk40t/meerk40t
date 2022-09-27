@@ -977,8 +977,7 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.program_mode()
-        self.raster_mode()
+        self.rapid_mode()
         self.wait_finish()
         self.laser_on()  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
