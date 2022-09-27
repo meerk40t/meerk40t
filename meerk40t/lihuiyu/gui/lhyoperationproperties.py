@@ -4,35 +4,7 @@ from meerk40t.gui.wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
-OPERATION_ACCEL_TOOLTIP = _(
-    """The m2-nano controller has four acceleration settings, and automatically selects the appropriate setting for the Cut or Raster speed.
-This setting allows you to override the automatic selection and specify your own."""
-)
 
-OPERATION_DRATIO_TOOLTIP = _(
-    """Diagonal ratio is the ratio of additional time needed to perform a diagonal step rather than an orthogonal step. (0.261 default)"""
-)
-
-OPERATION_SHIFT_TOOLTIP = _(
-    """Pulse Grouping is an alternative means of reducing the incidence of stuttering, allowing you potentially to burn at higher speeds.
-
-This setting is an operation-by-operation equivalent to the Pulse Grouping option in Device Config.
-
-It works by swapping adjacent on or off bits to group on and off together and reduce the number of switches.
-
-As an example, instead of 1010 it will burn 1100 - because the laser beam is overlapping, and because a bit is only moved at most 1/1000", the difference should not be visible even under magnification."""
-)
-
-OPERATION_DOTLENGTH_TOOLTIP = _(
-    """For Cut/Engrave operations, when using PPI, Dot Length sets the minimum length for the laser to be on in order to change a continuous lower power burn into a series of dashes.
-
-When this is set, the PPI effectively becomes the ratio of dashes to gaps. For example:
-
-If you set Dot Length to 500 = 1/2", a PPI of 500 would result in 1/2" dashes and 1/2" gaps.
-
-If you set Dot Length to 250 = 1/4", a PPI of 250 would result in 1/4" dashes and 3/4" gaps.
-"""
-)
 
 
 class LhyAdvancedPanel(wx.Panel):
@@ -48,16 +20,16 @@ class LhyAdvancedPanel(wx.Panel):
         extras_sizer = wx.BoxSizer(wx.VERTICAL)
 
         advanced_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Speed Code Features:"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Speed Code Features:")), wx.VERTICAL
         )
         extras_sizer.Add(advanced_sizer, 0, wx.EXPAND, 0)
 
         sizer_11 = wx.BoxSizer(wx.HORIZONTAL)
         advanced_sizer.Add(sizer_11, 0, wx.EXPAND, 0)
 
-        self.check_dratio_custom = wx.CheckBox(self, wx.ID_ANY, "Custom D-Ratio")
+        self.check_dratio_custom = wx.CheckBox(self, wx.ID_ANY, _("Custom D-Ratio"))
         self.check_dratio_custom.SetToolTip(
-            "Enables the ability to modify the diagonal ratio."
+            _("Enables the ability to modify the diagonal ratio.")
         )
         sizer_11.Add(self.check_dratio_custom, 1, 0, 0)
 
@@ -69,24 +41,39 @@ class LhyAdvancedPanel(wx.Panel):
             check="float",
             style=wx.TE_PROCESS_ENTER,
         )
+        OPERATION_DRATIO_TOOLTIP = _(
+            "Diagonal ratio is the ratio of additional time needed to perform a diagonal step "
+            + "rather than an orthogonal step. (0.261 default)"
+        )
+
         self.text_dratio.SetToolTip(OPERATION_DRATIO_TOOLTIP)
         sizer_11.Add(self.text_dratio, 1, 0, 0)
 
         sizer_12 = wx.BoxSizer(wx.HORIZONTAL)
         advanced_sizer.Add(sizer_12, 0, wx.EXPAND, 0)
 
-        self.checkbox_custom_accel = wx.CheckBox(self, wx.ID_ANY, "Acceleration")
-        self.checkbox_custom_accel.SetToolTip("Enables acceleration override")
+        self.checkbox_custom_accel = wx.CheckBox(self, wx.ID_ANY, _("Acceleration"))
+        self.checkbox_custom_accel.SetToolTip(_("Enables acceleration override"))
         sizer_12.Add(self.checkbox_custom_accel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.slider_accel = wx.Slider(
             self, wx.ID_ANY, 1, 1, 4, style=wx.SL_AUTOTICKS | wx.SL_LABELS
         )
+        OPERATION_ACCEL_TOOLTIP = (
+            _(
+                "The m2-nano controller has four acceleration settings, and automatically "
+                + "selects the appropriate setting for the Cut or Raster speed."
+            )
+            + "\n"
+            + _(
+                "This setting allows you to override the automatic selection and specify your own."
+            )
+        )
         self.slider_accel.SetToolTip(OPERATION_ACCEL_TOOLTIP)
         sizer_12.Add(self.slider_accel, 1, wx.EXPAND, 0)
 
         advanced_ppi_sizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Plot Planner"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Plot Planner")), wx.HORIZONTAL
         )
         extras_sizer.Add(advanced_ppi_sizer, 0, wx.EXPAND, 0)
 
@@ -96,12 +83,26 @@ class LhyAdvancedPanel(wx.Panel):
         sizer_20 = wx.BoxSizer(wx.HORIZONTAL)
         sizer_19.Add(sizer_20, 1, wx.EXPAND, 0)
 
-        self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, "Dot Length")
-        self.check_dot_length_custom.SetToolTip("Enable Dot Length")
+        self.check_dot_length_custom = wx.CheckBox(self, wx.ID_ANY, _("Dot Length"))
+        self.check_dot_length_custom.SetToolTip(_("Enable Dot Length"))
         sizer_20.Add(self.check_dot_length_custom, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         self.text_dot_length = TextCtrl(
             self, wx.ID_ANY, "1", limited=True, check="int", style=wx.TE_PROCESS_ENTER
         )
+        OPERATION_DOTLENGTH_TOOLTIP = _(
+            _("For Cut/Engrave operations, when using PPI, Dot Length sets the minimum "
+            + "length for the laser to be on in order to change a continuous lower "
+            + "power burn into a series of dashes.")
+            + "\n" +
+            _("When this is set, the PPI effectively becomes the ratio of " +
+            "dashes to gaps. For example:")
+            + "\n" +
+            _("If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in "+
+            "1/2\" dashes and 1/2\" gaps.")
+            + "\n" +
+            _("If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" dashes and 3/4\" gaps.")
+        )
+
         self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
         sizer_20.Add(self.text_dot_length, 1, wx.EXPAND, 0)
 
@@ -114,7 +115,24 @@ class LhyAdvancedPanel(wx.Panel):
         self.combo_dot_length_units.SetSelection(0)
         sizer_20.Add(self.combo_dot_length_units, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, "Pulse Grouping")
+        self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
+        OPERATION_SHIFT_TOOLTIP = (
+            _(
+            "Pulse Grouping is an alternative means of reducing the incidence of "
+            "stuttering, allowing you potentially to burn at higher speeds.")
+            + "\n" +
+            _(
+            "It works by swapping adjacent on or off bits to group on and off together"
+            " and reduce the number of switches."
+            )
+            + "\n" +
+            _(
+            "As an example, instead of X_X_ it will burn XX__ - because the laser beam"
+            " is overlapping, and because a bit is only moved at most 1/1000\", the "
+            "difference should not be visible even under magnification."
+            )
+        )
+
         self.check_shift_enabled.SetToolTip(OPERATION_SHIFT_TOOLTIP)
         sizer_19.Add(self.check_shift_enabled, 0, 0, 0)
 
