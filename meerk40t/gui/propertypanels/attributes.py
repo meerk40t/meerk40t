@@ -343,16 +343,16 @@ class PositionSizePanel(wx.Panel):
         sizer_h_xy.Add(sizer_x, 1, wx.EXPAND, 0)
         sizer_h_xy.Add(sizer_y, 1, wx.EXPAND, 0)
 
-        sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
-        sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
+        self.sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
+        self.sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
 
-        sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
-        sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
-        sizer_v_xywh.Add(sizer_h_wh, 0, wx.EXPAND, 0)
+        self.sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
+        self.sizer_v_xywh.Add(self.sizer_h_wh, 0, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
-        sizer_main.Add(sizer_v_xywh, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.sizer_v_xywh, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -384,6 +384,13 @@ class PositionSizePanel(wx.Panel):
         self.text_w.SetValue("")
         self.text_h.SetValue("")
         self.Hide()
+
+    def show_hide_wh(self, displaythem):
+        self.text_w.Show(show=displaythem)
+        self.text_h.Show(show=displaythem)
+        self.sizer_h_wh.ShowItems(displaythem)
+        self.sizer_v_xywh.Layout()
+        self.Layout()
 
     def set_widgets(self, node):
         self.node = node
@@ -421,6 +428,7 @@ class PositionSizePanel(wx.Panel):
         self.text_y.Enable(en_xy)
         self.text_w.Enable(en_wh)
         self.text_h.Enable(en_wh)
+        self.show_hide_wh(node.type != "elem point")
         self.Show()
 
     def translate_it(self):

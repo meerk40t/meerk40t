@@ -65,6 +65,10 @@ from ..svgelements import (
     SVGImage,
     SVGText,
     Use,
+    Move,
+    Close,
+    Line,
+    Shape,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
 
@@ -546,6 +550,32 @@ class SVGProcessor:
             node.linejoin = nlj
 
     def parse(self, element, context_node, e_list):
+        def is_dot(element):
+            if not isinstance(element, Shape):
+                return False, None
+            result = False
+            pt = None
+            if isinstance(element, Path):
+                path = element
+            else:
+                path = element.segments()
+            if path is not None:
+                if len(path) == 2 and isinstance(path[0], Move):
+                    if isinstance(path[1], Close):
+                        result = True
+                        pt = path[0].start
+                        if pt is None:
+                            pt = path[0].end
+                        # print (f"Move + Close {pt}")
+                        # if pt is None:
+                        #     print (f"0: start={path[0].start}, end={path[0].end}")
+                        #     print (f"1: start={path[1].start}, end={path[1].end}")
+                    if isinstance(path[1], Line) and path[1].length() == 0:
+                        pt = path[1].start
+                        # print (f"Line {pt}")
+                        result = True
+            return result, pt
+
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list
@@ -572,8 +602,20 @@ class SVGProcessor:
             _lock = bool(element.values.get("lock") == "True")
         except (ValueError, TypeError):
             pass
-
-        if isinstance(element, SVGText):
+        isdot, dotpt = is_dot(element)
+        if isdot:
+            if dotpt is not None:
+                node = context_node.add(
+                    point=dotpt,
+                    type="elem point",
+                    matrix=Matrix(),
+                    # matrix=element.transform,
+                    fill=element.fill,
+                    stroke=element.stroke,
+                    label=_label,
+                )
+                e_list.append(node)
+        elif isinstance(element, SVGText):
             if element.text is None:
                 return
 
