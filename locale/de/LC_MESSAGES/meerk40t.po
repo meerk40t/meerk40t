@@ -6731,52 +6731,49 @@ msgstr "Anleitung"
 
 #: meerk40t/gui/wordlisteditor.py:494
 msgid ""
-"The objective of this functionality is to create burning templates, that "
-"can be reused"
-msgstr "Das Ziel dieser Funktionalität ist es, wiederverwendbare aber variable Brennvorlagen zu unterstützen."
+"The objective of this functionality is to create burning templates, "
+"that can be reused for different data with minimal adjustment effort."
+msgstr ""
+"Das Ziel dieser Funktionalität ist es, wiederverwendbare aber variable "
+"Brennvorlagen zu unterstützen."
 
 #: meerk40t/gui/wordlisteditor.py:498
 msgid ""
 "Let's clarify the term variable first: a variable is a placeholder for "
-"some text"
+"some text that can be used as part of the text-definition of a Text-Object."
 msgstr ""
-"Klären wir erst den Begriff Variable: eine Variable ist ein Platzhalter für beliebigen Text "
-#: meerk40t/gui/wordlisteditor.py:501
-msgid "that can be used as part of the text-definition of a Text-Object."
-msgstr "die als Teil des Text-Inhalts eines Text-Objekts genutzt werden kann."
+"Klären wir erst den Begriff Variable: eine Variable ist ein Platzhalter "
+"für beliebigen Text, der als Teil des Text-Inhalts eines Text-Objekts "
+"genutzt werden kann."
 
 #: meerk40t/gui/wordlisteditor.py:504
 msgid ""
-"It's reference (i.e. variable name) is used within curly brackets to "
-"indicate"
-msgstr "Der Verweis (d.h der Variablen-Name) wird in geschweifte Klammern gesetzt, "
-
-#: meerk40t/gui/wordlisteditor.py:507
-msgid "that it will eventually be replaced by 'real' content."
-msgstr "um anzuzeigen, dass dieser Verweis am Ende durch 'richtigen' Inhalt ersetzt wird."
+"Its reference (i.e. variable name) is used within curly brackets to indicate"
+"that it will eventually be replaced by 'real' content."
+msgstr ""
+"Der Verweis (d.h der Variablen-Name) wird in geschweifte Klammern gesetzt, "
+"um anzuzeigen, dass dieser Verweis am Ende durch 'richtigen' Inhalt ersetzt wird."
 
 #: meerk40t/gui/wordlisteditor.py:509
 msgid ""
 "Let's come back to our use-case, imagine you want to create a name-tag "
-"pattern that"
+"pattern that can be reused. Lets create a text-object inside a frame "
+"and set its text to"
 msgstr ""
-"Kommen wir zu unserem Anwendungsfall: wir wollen eine Namensschild-Vorlage erstellen, "
-
-#: meerk40t/gui/wordlisteditor.py:512
-msgid ""
-"can be reused. Lets create a text-object inside a frame and set its text "
-"to"
-msgstr ""
-"die leicht wiederverwendbar ist. Erstellen wir ein Text-Objekt innerhalb eines Rahmens und "
-"setzen den Inhalt des Objektes auf:"
+"Kommen wir zu unserem Anwendungsfall: wir wollen eine Namensschild-Vorlage "
+"erstellen, die leicht wiederverwendbar ist. Erstellen wir ein Text-Objekt "
+"innerhalb eines Rahmens und setzen den Inhalt des Objektes auf:"
 
 #: meerk40t/gui/wordlisteditor.py:515
-msgid "'This item belongs to {NAME}'. If you define a variable named 'NAME' and"
-msgstr "'Dieser Gegenstand gehört {NAME}'. Wenn wir eine Variable namens 'NAME' definieren,"
+msgid "'This item belongs to {NAME}'"
+msgstr "'Dieser Gegenstand gehört {NAME}'"
 
-#: meerk40t/gui/wordlisteditor.py:518
-msgid "assign a value like 'John' to it, then the burned text will finally state:"
-msgstr "und ihr einen Wert wie 'John' zuordnen, dann wird der finale, zu brennende Text lauten:"
+msgid ""
+"If you define a variable named 'NAME' and assign a value like "
+"'John' to it, then the burned text will finally state:"
+msgstr ""
+"Wenn wir eine Variable namens 'NAME' definieren, und ihr einen "
+"Wert wie 'John' zuordnen, dann wird der finale, zu brennende Text lauten:"
 
 #: meerk40t/gui/wordlisteditor.py:521
 msgid "'This item belongs to John'"
@@ -6784,100 +6781,65 @@ msgstr "'Dieser Gegenstand gehört John'"
 
 #: meerk40t/gui/wordlisteditor.py:523
 msgid ""
-"You can define a set of variables (called wordlist) that could be "
-"populated"
+"You can define a set of variables (called wordlist) that could be populated"
+"by a standard comma-separated CSV file. The you could have not just one"
+"entry defined for 'NAME' but dozens of them. Which of the multiple entries"
+"is currently active is decided by its index value."
 msgstr ""
 "Wir können einen ganzen Satz von Variablen (Wortliste genannt) definieren, der z.B. "
-
-#: meerk40t/gui/wordlisteditor.py:526
-msgid "by a standard comma-separated CSV file. The you could have not just one"
-msgstr ""
 "aus einer Standard Komma-separierten CSV-Datei eingelesen werden kann. "
-"Dann hätten wir nicht nur einen Eintrag für 'NAME', sondern"
-
-#: meerk40t/gui/wordlisteditor.py:529
-msgid "entry defined for 'NAME' but dozens of them. Which of the multiple entries"
-msgstr "Dutzende davon. Welcher der Mehrfach-Einträge gerade aktiv ist "
-
-#: meerk40t/gui/wordlisteditor.py:532
-msgid "is currently active is decided by its index value."
-msgstr "entscheidet der sogenannte Index."
+"Dann hätten wir nicht nur einen Eintrag für 'NAME', sondern "
+"Dutzende davon. Welcher der Mehrfach-Einträge gerade aktiv ist "
+"entscheidet der sogenannte Index."
 
 #: meerk40t/gui/wordlisteditor.py:533
-msgid "You are not restricted to a single use of a variable (useful e.g."
-msgstr "Wir sind nicht beschränkt auf eine einzelne Verwendung einer Variable"
-
-#: meerk40t/gui/wordlisteditor.py:536
 msgid ""
-"if you want to batch-burn a couple of name-tags). The standard use {NAME}"
-" indicates"
+"You are not restricted to a single use of a variable (useful e.g."
+"if you want to batch-burn a couple of name-tags). "
+"The standard use {NAME} indicates "
+"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
+"uses the next entry, {NAME#+2} the second entry after the current."
 msgstr ""
+"Wir sind nicht beschränkt auf eine einzelne Verwendung einer Variable"
 "(nützlich beispielsweise wenn man nicht nur ein Schild sondern gleich mehrere "
 "brennen will). Die Standardverwendung {NAME} nimmt den "
-
-#: meerk40t/gui/wordlisteditor.py:539
-msgid ""
-"the value at position #index of the loaded list, {NAME#+1} (note the plus "
-"sign)"
-msgstr ""
 "Wert an der Position #index der geladenen Liste, {NAME#+1} (beachte das #+1 am Ende) "
-#: meerk40t/gui/wordlisteditor.py:542
-msgid "uses the next entry, {NAME#+2} the second entry after the current."
-msgstr ""
 "verwendet den nächsten Eintrag, {NAME#+2} den übernächsten usw."
 
 #: meerk40t/gui/wordlisteditor.py:545
 msgid ""
-"Note: This usage does not change the index position, you need to manually"
-" advance it."
+"Note: This usage does not change the index position, you need "
+"to manually advance it. If you want to autoadvance the index after "
+"every use, then you can use {NAME++}."
 msgstr ""
 "Achtung: diese Nutzung verändert nicht die Index-Position, "
 "diese muss manuell weitergeschaltet werden."
-
-#: meerk40t/gui/wordlisteditor.py:548
-msgid ""
-"If you want to autoadvance the index after every use, then you can use "
-"{NAME++}."
-msgstr ""
 "Soll der Index bei jedem Aufruf weiterspringen, dann kann {NAME++} verwendet werden."
 
 #: meerk40t/gui/wordlisteditor.py:551
 msgid ""
-"There are couple of predefined variables, that refer to the current burn "
-"operation"
+"There are couple of predefined variables, that refer to the "
+"current burn operation (like {op_power}, {op_speed} or others)"
+"or contain date/time-information ({date}, {time})."
 msgstr ""
 "Es gibt eine Reihe von vordefinierten Variablen, die Infos zum aktuellen Arbeitsgang"
-
-#: meerk40t/gui/wordlisteditor.py:554
-msgid ""
-"(like {op_power}, {op_speed} or others) or contain date/time-information "
-"({date}, {time})."
-msgstr ""
 "(etwa {op_power}, {op_speed} u.a.) oder Datuns-Zeit-Infomationen liefern "
 "({date}, {time})."
 
 #: meerk40t/gui/wordlisteditor.py:557
 msgid ""
-"Please note that date and time may be provided in a format that allows to"
-" define their"
+"Please note that date and time may be provided in a format that "
+"allows to define their appearance according to local "
+"preferences: e.g. {date@%d.%m.%Y} will provide a date "
+"like 31.12.2022 and {time@%H:%M} a time like 23:59."
 msgstr ""
-"Die Variablen date und time können mit einem Format angegeben werden, so dass"
-
-#: meerk40t/gui/wordlisteditor.py:560
-#, python-format
-msgid ""
-"appearance according to local preferences: e.g. {date@%d.%m.%Y} will "
-"provide a date"
-msgstr ""
-"ihr Aussehen mit lokalen Standards übereinstimmt: z.B. {date@%d.%m.%Y} zeigt ein Datum"
-
-#: meerk40t/gui/wordlisteditor.py:563
-msgid "like 31.12.2022 and {time@%H:%M} a time like 23:59."
-msgstr "wie 31.12.2022 und {time@%H:%M} eine Zeit wie 23:59."
+"Die Variablen date und time können mit einem Format angegeben werden, so dass "
+"ihr Aussehen mit lokalen Standards übereinstimmt: z.B. {date@%d.%m.%Y} "
+"zeigt ein Datum wie 31.12.2022 und {time@%H:%M} eine Zeit wie 23:59."
 
 #: meerk40t/gui/wordlisteditor.py:564
 msgid "For a complete set of format-directives see:"
-msgstr "Für eine komplette Lister der Format-Codes:"
+msgstr "Für eine komplette Liste der Format-Codes:"
 
 #: meerk40t/gui/wordlisteditor.py:606
 msgid "Import/Export"
