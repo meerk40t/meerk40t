@@ -15,7 +15,7 @@ class BranchRegmarkNode(Node):
         default_map = super(BranchRegmarkNode, self).default_map(
             default_map=default_map
         )
-        default_map["element_type"] = "Regmark"
+        default_map["element_type"] = "Regmarks"
         return default_map
 
     def drop(self, drag_node, modify=True):

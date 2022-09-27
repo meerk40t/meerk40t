@@ -1154,6 +1154,33 @@ class ShadowTree:
         @param node:
         @return:
         """
+        def my_create_label(node, text=None):
+            if text is None:
+                text = "{element_type}:{id}"
+            # Just for the optical impression (who understands what a "Rect: None" means),
+            # lets replace some of the more obvious ones...
+            mymap = node.default_map()
+            for key in mymap:
+                if hasattr(node, key) and mymap[key] == "None":
+                    if getattr(node, key) is None:
+                        mymap[key] = "-"
+            # There are a couple of translatable entries,
+            # to make sure we don't get an unwanted translation we add
+            # a special pattern to it
+            translatable = (
+                "element_type",
+                "enabled",
+            )
+            pattern = "_TREE_"
+            for key in mymap:
+                if key in translatable:
+                    # Original value
+                    std = mymap[key]
+                    value = _(pattern + std)
+                    if not value.startswith(pattern):
+                        mymap[key] = value
+            return text.format_map(mymap)
+
         if force is None:
             force = False
         if node.item is None:
@@ -1204,7 +1231,8 @@ class ShadowTree:
                             f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
                 # node.node.is_dangerous(maxspeed, minpower)
-            label = "*" + node.node.create_label(formatter)
+            # label = "*" + node.node.create_label(formatter)
+            label = "*" + my_create_label(node.node, formatter)
         else:
             formatter = self.elements.lookup(f"format/{node.type}")
             if node.type.startswith("op "):
@@ -1245,7 +1273,8 @@ class ShadowTree:
                         print(
                             f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
-            label = node.create_label(formatter)
+            # label = node.create_label(formatter)
+            label = my_create_label(node, formatter)
 
         self.wxtree.SetItemText(node.item, label)
         if node.type == "elem text":

@@ -96,9 +96,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/file", "{element_type} {filename}")
         kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
-        kernel.register("format/branch ops", _("Operations {loops}"))
-        kernel.register("format/branch elems", _("Elements"))
-        kernel.register("format/branch reg", _("Regmarks"))
+        kernel.register("format/branch ops", "{element_type} {loops}")
+        kernel.register("format/branch elems", "{element_type}")
+        kernel.register("format/branch reg", "{element_type}")
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
         # kernel.add_service("elements", Elemental(kernel,1))
