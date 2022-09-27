@@ -12325,11 +12325,24 @@ msgstr "Ausgabe"
 #~ msgid "Automatically add an interrupt after all jobs"
 #~ msgstr "Füge ein 'Anhalten' am Ende jedes Jobs an"
 
-#~ msgid "After"
-#~ msgstr "Nach"
+msgid "Presets"
+msgstr "Voreinstellungen"
 
-#~ msgid "Automatic"
-#~ msgstr "Automatisch"
+msgid "Automatic"
+msgstr "Automatisch"
+
+msgid "Set options for a good automatic experience"
+msgstr ""
+"Setze Optionen so, dass MK eine gute automatische Zuordnung von Elementen "
+"zu Arbeitsabläufen vornimmt"
+
+msgid "Manual"
+msgstr "Manuell"
+
+msgid "Set options for complete manual control"
+msgstr ""
+"Setze Optionen so, dass sie weitgehende manuelle Kontrolle "
+"über die Klassifizierung erlauben"
 
 #~ msgid "Add a home"
 #~ msgstr "Füge 'Home' hinzu"
