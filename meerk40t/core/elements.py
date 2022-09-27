@@ -7642,6 +7642,20 @@ class Elemental(Service):
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Assign Operation"))
+        @self.tree_operation(
+            _("Remove all references from all ops"),
+            node_type=elem_nodes,
+            help=_(
+                "Any existing assignment of this element to operations will be removed"
+            ),
+        )
+        def remove_assignments(node, **kwargs):
+            for ref in list(node._references):
+                ref.remove_node()
+            self.signal("tree_changed")
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
         @self.tree_check(exclusive_match)
         @self.tree_operation(
             _("Exclusive assignment"),
