@@ -489,6 +489,13 @@ class Elemental(Service):
         else:
             if self._first_emphasized is node:
                 self._first_emphasized = None
+        # We target the parent, unless these are one of the root branches
+        pnode = node.parent
+        while pnode is not None:
+            if pnode in (self.elem_branch, self.reg_branch, self.op_branch):
+                break
+            pnode.targeted = True
+            pnode = pnode.parent
 
     def load_persistent_penbox(self):
         settings = self.pen_data
