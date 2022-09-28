@@ -844,7 +844,8 @@ class SVGProcessor:
                     self.parse(child, context_node, e_list)
         else:
             # SVGElement is type. Generic or unknown node type.
-            tag = element.values.get(SVG_ATTR_TAG)
+            # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
+            tag = element.values.get(SVG_ATTR_TAG).lower()
             if tag is not None:
                 # We remove the name space.
                 full_ns = f"{{{MEERK40T_NAMESPACE.lower()}}}"
