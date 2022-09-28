@@ -381,13 +381,13 @@ class SVGWriter:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
                     stroke_width = (
-                        Length(amount=c.stroke_width, preferred_units="px").preferred_length
+                        Length(amount=c.stroke_width, digits=6, preferred_units="px").preferred_length
                         if c.stroke_width is not None
                         else SVG_VALUE_NONE
                     )
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
                 except AttributeError as Err:
-                    print (f"Shit happened when trying to set stroke_width: {Err}")
+                    # print (f"Shit happened when trying to set stroke_width: {Err}")
                     pass
 
             ###############
