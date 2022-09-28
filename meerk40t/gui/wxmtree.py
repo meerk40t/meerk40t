@@ -389,7 +389,7 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        pass
+        self.elements.signal("modified")
 
     def node_destroyed(self, node, **kwargs):
         """
@@ -398,7 +398,7 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        pass
+        self.elements.signal("modified")
 
     def node_detached(self, node, **kwargs):
         """
