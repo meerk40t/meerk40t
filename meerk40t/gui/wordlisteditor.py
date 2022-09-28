@@ -194,7 +194,10 @@ class WordlistPanel(wx.Panel):
 
         self.SetSizer(sizer_main)
         self.Layout()
+        self._set_logic()
+        self.populate_gui()
 
+    def _set_logic(self):
         self.btn_add.Bind(wx.EVT_BUTTON, self.on_btn_add)
         self.btn_add_counter.Bind(wx.EVT_BUTTON, self.on_add_counter)
         self.btn_delete.Bind(wx.EVT_BUTTON, self.on_btn_delete)
@@ -217,7 +220,9 @@ class WordlistPanel(wx.Panel):
         self.btn_edit_content_edit.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_edit)
         self.btn_edit_content_paste.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_paste)
         self.cbo_index_single.Bind(wx.EVT_COMBOBOX, self.on_single_index)
-        self.populate_gui()
+        # Key handler for F2
+        self.grid_content.Bind(wx.EVT_CHAR, self.on_key_grid)
+        self.grid_wordlist.Bind(wx.EVT_CHAR, self.on_key_grid)
 
     def set_parent(self, par_panel):
         self.parent_panel = par_panel
@@ -235,6 +240,19 @@ class WordlistPanel(wx.Panel):
                 self.wlist.save_data(self.wlist.default_filename)
                 msg = _("Saved to ") + self.wlist.default_filename
                 self.edit_message(msg)
+
+    def on_key_grid(self, event):
+        grid = event.GetEventObject()
+        key = event.GetKeyCode()
+        if key == wx.WXK_F2:
+            index = grid.GetFirstSelected()
+            if index >= 0:
+                grid.EditLabel(index)
+                # that consumes the key
+                return
+        # Let's make sure the keystroke is processed further
+        event.Skip()
+
 
     def on_checkbox_autosave(self, event):
         self.context.wordlist_autosave = self.check_autosave.GetValue()
