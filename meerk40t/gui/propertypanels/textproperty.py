@@ -269,7 +269,7 @@ class TextPropertyPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_TEXT, self.on_text_change, self.text_text)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.text_text)
-
+        self.Bind(wx.EVT_BUTTON, self.on_button_choose_font, self.button_choose_font)
         self.Bind(wx.EVT_COMBOBOX, self.on_font_choice, self.combo_font)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_font_choice, self.combo_font)
         self.combo_font.Bind(wx.EVT_KILL_FOCUS, self.on_font_choice)
@@ -357,6 +357,7 @@ class TextPropertyPanel(ScrolledPanel):
         special_font2.SetStrikethrough(True)
         self.button_attrib_strikethrough.SetFont(special_font2)
 
+        self.button_choose_font.SetToolTip(_("Choose System-font"))
         self.combo_font.SetToolTip(_("Choose System-font"))
         self.button_attrib_smaller.SetToolTip(_("Decrease fontsize"))
         self.button_attrib_larger.SetToolTip(_("Increase fontsize"))
