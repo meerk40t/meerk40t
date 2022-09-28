@@ -420,10 +420,14 @@ class PositionSizePanel(wx.Panel):
         y = bb[1]
         w = bb[2] - bb[0]
         h = bb[3] - bb[1]
-        self.text_x.SetValue(Length(x, digits=4).length_mm)
-        self.text_y.SetValue(Length(y, digits=4).length_mm)
-        self.text_w.SetValue(Length(w, digits=4).length_mm)
-        self.text_h.SetValue(Length(h, digits=4).length_mm)
+        units = self.context.units_name
+        if units in ("inch", "inches"):
+            units = "in"
+
+        self.text_x.SetValue(f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}")
+        self.text_y.SetValue(f"{Length(amount=y, preferred_units=units, digits=4).preferred_length}")
+        self.text_w.SetValue(f"{Length(amount=w, preferred_units=units, digits=4).preferred_length}")
+        self.text_h.SetValue(f"{Length(amount=h, preferred_units=units, digits=4).preferred_length}")
         self.text_x.Enable(en_xy)
         self.text_y.Enable(en_xy)
         self.text_w.Enable(en_wh)
