@@ -6635,9 +6635,21 @@ msgstr "Füge der aktiven Variable einen neuen Eintrag hinzu"
 msgid "Delete the current entry for the active variable"
 msgstr "Lösche den aktuellen Wert der aktiven Variable"
 
+msgid "Delete the current variable"
+msgstr "Lösche die aktuelle Variable"
+
 #: meerk40t/gui/wordlisteditor.py:90
 msgid "Edit the current entry for the active variable"
 msgstr "Verändere den aktuellen Wert der aktiven Variable"
+
+msgid "Edit the name of the active variable"
+msgstr "Verändere den Namen der aktuellen Variable"
+
+msgid "Can't delete internal variable {key}"
+msgstr "Die interne Variable {key} kann nicht gelöscht werden"
+
+msgid "Can't rename internal variable {key}"
+msgstr "Die interne Variable {key} kann nicht umbenannt werden"
 
 #: meerk40t/gui/wordlisteditor.py:93
 msgid ""

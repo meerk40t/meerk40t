@@ -25,7 +25,10 @@ class WordlistPanel(wx.Panel):
         # For Grid editing
         self.cur_skey = None
         self.cur_index = None
-        self.to_save = None
+        self.to_save_content = None
+        self.to_save_wordlist = None
+
+        self.context.setting(bool, "wordlist_autosave", False)
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_grids = wx.BoxSizer(wx.HORIZONTAL)
@@ -47,7 +50,11 @@ class WordlistPanel(wx.Panel):
         self.grid_wordlist = wx.ListCtrl(
             self,
             wx.ID_ANY,
-            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+            style=wx.LC_HRULES
+            | wx.LC_REPORT
+            | wx.LC_VRULES
+            | wx.LC_SINGLE_SEL
+            | wx.LC_EDIT_LABELS,
         )
         sizer_grid_left.Add(self.grid_wordlist, 1, wx.EXPAND, 0)
 
@@ -61,48 +68,73 @@ class WordlistPanel(wx.Panel):
             | wx.LC_EDIT_LABELS,
         )
 
-        sizer_edit_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_edit_wordlist_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_edit_content_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.btn_edit_button_add = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
-        )
-        self.btn_edit_button_del = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
-        )
-        self.btn_edit_button_edit = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
-        )
-        self.btn_edit_button_paste = wx.StaticBitmap(
-            self, wx.ID_ANY, size=wx.Size(25, 25)
-        )
-        self.btn_edit_button_add.SetBitmap(icons8_add_new_25.GetBitmap())
-        self.btn_edit_button_del.SetBitmap(icons8_remove_25.GetBitmap())
-        self.btn_edit_button_edit.SetBitmap(icons8_edit_25.GetBitmap())
-        self.btn_edit_button_paste.SetBitmap(icons8_paste_25.GetBitmap())
+        dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
+        sizer_index_left.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_index_left.Add(sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.btn_edit_button_add.SetToolTip(
+        self.btn_edit_wordlist_del = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_wordlist_edit = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_content_add = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_content_del = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_content_edit = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_content_paste = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(25, 25)
+        )
+        self.btn_edit_wordlist_del.SetBitmap(icons8_remove_25.GetBitmap())
+        self.btn_edit_wordlist_edit.SetBitmap(icons8_edit_25.GetBitmap())
+        self.btn_edit_content_add.SetBitmap(icons8_add_new_25.GetBitmap())
+        self.btn_edit_content_del.SetBitmap(icons8_remove_25.GetBitmap())
+        self.btn_edit_content_edit.SetBitmap(icons8_edit_25.GetBitmap())
+        self.btn_edit_content_paste.SetBitmap(icons8_paste_25.GetBitmap())
+
+        self.btn_edit_wordlist_del.SetToolTip(
+            _("Delete the current variable")
+        )
+        self.btn_edit_wordlist_edit.SetToolTip(
+            _("Edit the name of the active variable")
+        )
+        self.btn_edit_content_add.SetToolTip(
             _("Add a new entry for the active variable")
         )
-        self.btn_edit_button_del.SetToolTip(
+        self.btn_edit_content_del.SetToolTip(
             _("Delete the current entry for the active variable")
         )
-        self.btn_edit_button_edit.SetToolTip(
+        self.btn_edit_content_edit.SetToolTip(
             _("Edit the current entry for the active variable")
         )
-        self.btn_edit_button_paste.SetToolTip(
+        self.btn_edit_content_paste.SetToolTip(
             _(
                 "Paste the clipboard as new entries for the active variable, any line as new entry"
             )
         )
         minsize = 23
-        self.btn_edit_button_add.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_button_del.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_button_edit.SetMinSize(wx.Size(minsize, minsize))
-        self.btn_edit_button_paste.SetMinSize(wx.Size(minsize, minsize))
-        sizer_edit_buttons.Add(self.btn_edit_button_add, 0, wx.EXPAND, 0)
-        sizer_edit_buttons.Add(self.btn_edit_button_del, 0, wx.EXPAND, 0)
-        sizer_edit_buttons.Add(self.btn_edit_button_edit, 0, wx.EXPAND, 0)
-        sizer_edit_buttons.Add(self.btn_edit_button_paste, 0, wx.EXPAND, 0)
+        self.btn_edit_wordlist_del.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_wordlist_edit.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_content_add.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_content_del.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_content_edit.SetMinSize(wx.Size(minsize, minsize))
+        self.btn_edit_content_paste.SetMinSize(wx.Size(minsize, minsize))
+
+        sizer_edit_wordlist_buttons.Add(self.btn_edit_wordlist_del, 0, wx.EXPAND, 0)
+        sizer_edit_wordlist_buttons.Add(self.btn_edit_wordlist_edit, 0, wx.EXPAND, 0)
+
+        sizer_edit_content_buttons.Add(self.btn_edit_content_add, 0, wx.EXPAND, 0)
+        sizer_edit_content_buttons.Add(self.btn_edit_content_del, 0, wx.EXPAND, 0)
+        sizer_edit_content_buttons.Add(self.btn_edit_content_edit, 0, wx.EXPAND, 0)
+        sizer_edit_content_buttons.Add(self.btn_edit_content_paste, 0, wx.EXPAND, 0)
 
         sizer_index_right = wx.BoxSizer(wx.HORIZONTAL)
         label_2 = wx.StaticText(self, wx.ID_ANY, _("Start Index for field:"))
@@ -114,7 +146,7 @@ class WordlistPanel(wx.Panel):
 
         dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
         sizer_index_right.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_index_right.Add(sizer_edit_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_index_right.Add(sizer_edit_content_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         sizer_grid_right.Add(sizer_index_right, 0, wx.EXPAND, 0)
         sizer_grid_right.Add(self.grid_content, 1, wx.EXPAND, 0)
@@ -148,6 +180,7 @@ class WordlistPanel(wx.Panel):
         self.check_autosave = wx.CheckBox(self, wx.ID_ANY, _("Autosave"))
         self.check_autosave.SetToolTip(_("All changes to the wordlist will be saved immediately"))
         sizer_exit.Add(self.check_autosave, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.check_autosave.SetValue(self.context.wordlist_autosave)
 
         self.lbl_message = wx.StaticText(self, wx.ID_ANY, "")
         sizer_exit.Add(self.lbl_message, 1, wx.ALIGN_CENTER_VERTICAL, 0)
@@ -170,14 +203,21 @@ class WordlistPanel(wx.Panel):
         self.txt_pattern.Bind(wx.EVT_TEXT, self.on_patterntext_change)
         self.cbo_Index.Bind(wx.EVT_COMBOBOX, self.on_cbo_select)
         self.grid_wordlist.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_wordlist)
+        self.grid_wordlist.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_wordlist)
+        self.grid_wordlist.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit_wordlist)
         self.grid_content.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_content)
-        self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit)
-        self.grid_content.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit)
-        self.btn_edit_button_add.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_add)
-        self.btn_edit_button_del.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_del)
-        self.btn_edit_button_edit.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_edit)
-        self.btn_edit_button_paste.Bind(wx.EVT_LEFT_DOWN, self.on_button_edit_paste)
+        self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_content)
+        self.grid_content.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit_content)
+        self.check_autosave.Bind(wx.EVT_CHECKBOX, self.on_checkbox_autosave)
+
+        self.btn_edit_wordlist_del.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_del)
+        self.btn_edit_wordlist_edit.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_edit)
+        self.btn_edit_content_add.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_add)
+        self.btn_edit_content_del.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_del)
+        self.btn_edit_content_edit.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_edit)
+        self.btn_edit_content_paste.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_paste)
         self.cbo_index_single.Bind(wx.EVT_COMBOBOX, self.on_single_index)
+
         self.populate_gui()
 
     def set_parent(self, par_panel):
@@ -197,7 +237,27 @@ class WordlistPanel(wx.Panel):
                 msg = _("Saved to ") + self.wlist.default_filename
                 self.edit_message(msg)
 
-    def on_button_edit_add(self, event):
+    def on_checkbox_autosave(self, event):
+        self.context.wordlist_autosave = self.check_autosave.GetValue()
+        event.Skip()
+
+    def on_btn_edit_wordlist_del(self, event):
+        index = self.grid_wordlist.GetFirstSelected()
+        key = self.get_column_text(self.grid_wordlist, index, 0)
+        if key in self.wlist.prohibited:
+            msg = _("Can't delete internal variable {key}").format(key=key)
+            self.edit_message(msg)
+            return
+        self.wlist.delete(key)
+        self.autosave()
+        self.refresh_grid_wordlist()
+
+    def on_btn_edit_wordlist_edit(self, event):
+        index = self.grid_wordlist.GetFirstSelected()
+        if index >= 0:
+            self.grid_wordlist.EditLabel(index)
+
+    def on_btn_edit_content_add(self, event):
         skey = self.cur_skey
         if skey is None:
             return
@@ -205,7 +265,7 @@ class WordlistPanel(wx.Panel):
         self.refresh_grid_content(skey, 0)
         self.autosave()
 
-    def on_button_edit_del(self, event):
+    def on_btn_edit_content_del(self, event):
         skey = self.cur_skey
         if skey is None:
             return
@@ -216,7 +276,7 @@ class WordlistPanel(wx.Panel):
         self.refresh_grid_content(skey, 0)
         self.autosave()
 
-    def on_button_edit_edit(self, event):
+    def on_btn_edit_content_edit(self, event):
         skey = self.cur_skey
         if skey is None:
             return
@@ -225,7 +285,7 @@ class WordlistPanel(wx.Panel):
             self.cur_index = index
             self.grid_content.EditLabel(self.cur_index)
 
-    def on_button_edit_paste(self, event):
+    def on_btn_edit_content_paste(self, event):
         skey = self.cur_skey
         if skey is None:
             return
@@ -246,18 +306,18 @@ class WordlistPanel(wx.Panel):
         self.current_entry = None
         self.grid_wordlist.ClearAll()
         self.cur_skey = None
-        self.grid_wordlist.InsertColumn(0, _("Type"))
-        self.grid_wordlist.InsertColumn(1, _("Name"))
+        self.grid_wordlist.InsertColumn(0, _("Name"))
+        self.grid_wordlist.InsertColumn(1, _("Type"))
         self.grid_wordlist.InsertColumn(2, _("Index"))
         typestr = [_("Text"), _("CSV"), _("Counter")]
         for skey in self.wlist.content:
             index = self.grid_wordlist.InsertItem(
-                self.grid_wordlist.GetItemCount(), typestr[self.wlist.content[skey][0]]
+                self.grid_wordlist.GetItemCount(), skey
             )
-            self.grid_wordlist.SetItem(index, 1, skey)
+            self.grid_wordlist.SetItem(index, 1, typestr[self.wlist.content[skey][0]])
             self.grid_wordlist.SetItem(index, 2, str(self.wlist.content[skey][1] - 2))
-        self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
-        self.grid_wordlist.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.grid_wordlist.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        self.grid_wordlist.SetColumnWidth(1, wx.LIST_AUTOSIZE_USEHEADER)
         self.grid_wordlist.SetColumnWidth(2, wx.LIST_AUTOSIZE_USEHEADER)
 
     def get_column_text(self, grid, index, col):
@@ -266,14 +326,14 @@ class WordlistPanel(wx.Panel):
 
     def set_column_text(self, grid, index, col, value):
         # item = grid.GetItem(index)
-        grid.SetStringItem(index, col, value)
+        grid.SetItem(index, col, value)
 
     def refresh_grid_content(self, skey, current):
         self.cbo_index_single.Clear()
         choices = []
         selidx = 0
         self.grid_content.ClearAll()
-        self.cur_skey = skey
+        self.cur_skey = skey.lower()
         self.cur_index = None
         self.grid_content.InsertColumn(0, _("Content"))
 
@@ -306,7 +366,7 @@ class WordlistPanel(wx.Panel):
     def on_grid_wordlist(self, event):
         current_item = event.Index
         self.current_entry = current_item
-        skey = self.get_column_text(self.grid_wordlist, current_item, 1)
+        skey = self.get_column_text(self.grid_wordlist, current_item, 0).lower()
         try:
             current = int(self.get_column_text(self.grid_wordlist, current_item, 2))
         except ValueError:
@@ -320,23 +380,53 @@ class WordlistPanel(wx.Panel):
         # Single Click
         event.Skip()
 
-    def on_begin_edit(self, event):
+    def on_begin_edit_wordlist(self, event):
+        index = self.grid_wordlist.GetFirstSelected()
+        if index >= 0:
+            # Is this a prevented value?
+            skey = self.get_column_text(self.grid_wordlist, index, 0)
+            self.to_save_wordlist = (skey, 0)
+            if skey in self.wlist.prohibited:
+                msg = _("Can't rename internal variable {key}").format(key=skey)
+                self.edit_message(msg)
+                self.to_save_wordlist = None
+                event.Veto()
+                return
+        event.Allow()
+
+    def on_end_edit_wordlist(self, event):
+        if self.to_save_wordlist is None:
+            self.edit_message(_("Update failed"))
+        else:
+            skey = self.to_save_wordlist[0]
+            value = event.GetText().lower()
+            # We need to replace it...
+            self.wlist.rename_key(skey, value)
+            self.autosave()
+            self.cur_skey = value
+            self.refresh_grid_content(value, 0)
+            self.txt_pattern.SetValue(value)
+
+        self.to_save_wordlist = None
+        event.Allow()
+
+    def on_begin_edit_content(self, event):
         index = self.grid_content.GetFirstSelected()
         if index >= 0:
             self.cur_index = index
-        self.to_save = (self.cur_skey, self.cur_index)
+        self.to_save_content = (self.cur_skey, self.cur_index)
         event.Allow()
 
-    def on_end_edit(self, event):
-        if self.to_save is None:
+    def on_end_edit_content(self, event):
+        if self.to_save_content is None:
             self.edit_message(_("Update failed"))
         else:
-            skey = self.to_save[0]
-            index = self.to_save[1]
+            skey = self.to_save_content[0]
+            index = self.to_save_content[1]
             value = event.GetText()
             self.wlist.set_value(skey, value, index)
             self.autosave()
-        self.to_save = None
+        self.to_save_content = None
         event.Allow()
 
     def populate_gui(self):
@@ -386,10 +476,17 @@ class WordlistPanel(wx.Panel):
         event.Skip()
 
     def on_patterntext_change(self, event):
-        enab = len(self.txt_pattern.GetValue()) > 0
-        self.btn_add.Enable(enab)
-        self.btn_add_counter.Enable(enab)
-        self.btn_delete.Enable(enab)
+        enab1 = False
+        enab2 = False
+        newname = self.txt_pattern.GetValue().lower()
+        if len(newname)>0:
+            enab2 = True
+            enab1 = True
+            if newname in self.wlist.content:
+                enab1 = False
+        self.btn_add.Enable(enab1)
+        self.btn_add_counter.Enable(enab1)
+        self.btn_delete.Enable(enab2)
 
     def on_add_counter(self, event):  # wxGlade: editWordlist.<event_handler>
         skey = self.txt_pattern.GetValue()
