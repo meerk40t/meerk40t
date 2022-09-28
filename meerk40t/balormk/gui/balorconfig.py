@@ -71,6 +71,7 @@ class BalorConfiguration(MWindow):
 
     def on_viewport_update(self, origin, *args):
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def window_preserve(self):
         return False
