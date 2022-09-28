@@ -435,7 +435,7 @@ class ImportPanel(wx.Panel):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         info_box = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Import CSV")),
-            wx.HORIZONTAL,
+            wx.VERTICAL,
         )
         sizer_csv = wx.BoxSizer(wx.HORIZONTAL)
         info_box.Add(sizer_csv, 1, wx.EXPAND, 0)
@@ -453,7 +453,23 @@ class ImportPanel(wx.Panel):
         self.btn_import = wx.Button(self, wx.ID_ANY, _("Import CSV"))
         sizer_csv.Add(self.btn_import, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
+        sizer_header = wx.BoxSizer(wx.HORIZONTAL)
+        self.rbox_header = wx.RadioBox(
+            self,
+            wx.ID_ANY,
+            _("What does the first row contain:"),
+            choices=(_("Auto-Detect"), _("Contains Data"), _("Contains Variable-Names")),
+            majorDimension=3,
+            style=wx.RA_SPECIFY_COLS,
+        )
+        self.rbox_header.SetSelection(0)
+        sizer_header.Add(self.rbox_header, 1, wx.EXPAND, 0)
+        info_box.Add(sizer_header, 0, wx.EXPAND)
+
+        self.text_preview = wx.TextCtrl(self, wx.ID_ANY, style = wx.TE_READONLY|wx.TE_MULTILINE)
+
         main_sizer.Add(info_box, 0, wx.EXPAND, 0)
+        main_sizer.Add(self.text_preview, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
         self.btn_fileDialog.Bind(wx.EVT_BUTTON, self.on_btn_file)
@@ -483,7 +499,12 @@ class ImportPanel(wx.Panel):
     def on_btn_import(self, event):
         myfile = self.txt_filename.GetValue()
         if os.path.exists(myfile):
-            ct, colcount, headers = self.wlist.load_csv_file(myfile)
+            force_header = None
+            if self.rbox_header.GetSelection() == 1:
+                force_header = False
+            elif self.rbox_header.GetSelection() == 2:
+                force_header = True
+            ct, colcount, headers = self.wlist.load_csv_file(myfile, force_header=force_header)
             msg = _("Imported file, {col} fields, {row} rows").format(
                 col=colcount, row=ct
             )
@@ -497,7 +518,18 @@ class ImportPanel(wx.Panel):
         if os.path.exists(myfile):
             enab = True
         self.btn_import.Enable(enab)
+        self.preview_it()
 
+    def preview_it(self):
+        filename = self.txt_filename.GetValue()
+        buffer = ""
+        if os.path.exists(filename):
+            try:
+                with open(filename, newline="", mode="r") as csvfile:
+                    buffer = csvfile.read(1024)
+            except (PermissionError, OSError, FileNotFoundError):
+                pass
+        self.text_preview.SetValue(buffer)
 
 class AboutPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

@@ -272,13 +272,17 @@ class Wordlist:
         for skey in names:
             self.delete(skey)
 
-    def load_csv_file(self, filename):
+    def load_csv_file(self, filename, force_header = None):
         self.empty_csv()
         headers = []
         try:
             with open(filename, newline="", mode="r") as csvfile:
                 buffer = csvfile.read(1024)
-                has_header = csv.Sniffer().has_header(buffer)
+                if force_header is None:
+                    has_header = csv.Sniffer().has_header(buffer)
+                else:
+                    has_header = force_header
+                # print (f"Header={has_header}, Force={force_header}")
                 dialect = csv.Sniffer().sniff(buffer)
                 csvfile.seek(0)
                 reader = csv.reader(csvfile, dialect)

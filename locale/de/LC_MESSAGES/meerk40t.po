@@ -14558,3 +14558,15 @@ msgstr "Lösche alle bestehende Zuordnungen"
 
 msgid "Any existing assignment of this element to operations will be removed"
 msgstr "Dies wird alle Zuordnungen dieses Elements zu Arbeitsgängen entfernen"
+
+msgid "What does the first row contain:"
+msgstr "Was enthält die erste Zeile:"
+
+msgid "Auto-Detect"
+msgstr "Auto-Detect"
+
+msgid "Contains Data"
+msgstr "Enthält Daten"
+
+msgid "Contains Variable-Names"
+msgstr "Enthält Variablen-Namen"
