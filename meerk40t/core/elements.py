@@ -5886,7 +5886,7 @@ class Elemental(Service):
                     entry = 2
                 channel(
                     _(
-                        "There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4})."
+                        "There were nodes across operations ({c1}), assignments ({c2}), elements ({c3}) and regmarks ({c4})."
                     ).format(
                         c1=typecount[0],
                         c2=typecount[1],
@@ -7650,15 +7650,23 @@ class Elemental(Service):
         @self.tree_separator_before()
         @self.tree_submenu(_("Assign Operation"))
         @self.tree_operation(
-            _("Remove all references from all ops"),
-            node_type=elem_nodes,
+            _("Remove all assignments from operations"),
+            node_type=elem_group_nodes,
             help=_(
                 "Any existing assignment of this element to operations will be removed"
             ),
         )
         def remove_assignments(node, **kwargs):
-            for ref in list(node._references):
-                ref.remove_node()
+            def rem_node(rnode):
+                # recursively remove assignments...
+                if rnode.type in ("file", "group"):
+                    for cnode in list(rnode._children):
+                        rem_node(cnode)
+                else:
+                    for ref in list(rnode._references):
+                        ref.remove_node()
+
+            rem_node (node)
             self.signal("tree_changed")
 
         @self.tree_separator_before()

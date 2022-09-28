@@ -2623,7 +2623,7 @@ msgstr "Nichts zu löschen"
 
 #: meerk40t/core/elements.py:5859
 msgid ""
-"There were nodes across operations ({c1}), references ({c2}), elements "
+"There were nodes across operations ({c1}), assignments ({c2}), elements "
 "({c3}) and regmarks ({c4})."
 msgstr ""
 "Es gab Objekte bei Arbeitsabläufen ({c1}), Zuordnungen ({c2}), Elementen"
@@ -14553,7 +14553,7 @@ msgstr "Benutzerdefiniertes D-Ratio"
 msgid "Enables the ability to modify the diagonal ratio."
 msgstr "Ermöglicht das Verwenden eines benutzerdefinierten Diagonal-Faktors (D-Ratio)"
 
-msgid "Remove all references from all ops"
+msgid "Remove all assignments from operations"
 msgstr "Lösche alle bestehende Zuordnungen"
 
 msgid "Any existing assignment of this element to operations will be removed"
