@@ -389,6 +389,8 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
+        if self._freeze:
+            return
         self.elements.signal("modified")
 
     def node_destroyed(self, node, **kwargs):
@@ -398,6 +400,8 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
+        if self._freeze:
+            return
         self.elements.signal("modified")
 
     def node_detached(self, node, **kwargs):
