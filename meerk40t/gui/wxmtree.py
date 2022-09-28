@@ -747,7 +747,9 @@ class ShadowTree:
             return
         while pnode.IsOk():
             txt = self.wxtree.GetItemText(pnode)
+            # That it s not working as advertised...
             state = self.wxtree.IsExpanded(pnode)
+            state = False    # otherwise every thing gets expanded...
             if state:
                 self.was_already_expanded.append(f"{level}-{txt}")
             self.parse_tree(pnode, level + 1)
