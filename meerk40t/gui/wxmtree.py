@@ -987,7 +987,7 @@ class ShadowTree:
                 tree.SetItemFont(node_item, font)
                 # tree.SetItemBackgroundColour(node_item, wx.Colour(0xA080A0))
         except AttributeError as Err:
-            print (Err)
+            # print (Err)
             pass
 
     def set_color(self, node, color=None):
