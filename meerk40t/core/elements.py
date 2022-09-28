@@ -9112,6 +9112,9 @@ class Elemental(Service):
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
+                if node.type == "elem text":
+                    #even if it has, we are not going to something with it
+                    classif_info[0] = True
             else:
                 classif_info[0] = True
             if hasattr(node, "fill"):
@@ -9183,6 +9186,9 @@ class Elemental(Service):
             # Lets make sure we only consider relevant, ie existing attributes...
             if hasattr(node, "stroke"):
                 if node.stroke is None or node.stroke.argb is None:
+                    classif_info[0] = True
+                if node.type == "elem text":
+                    #even if it has, we are not going to something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
