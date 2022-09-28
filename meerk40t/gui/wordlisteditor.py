@@ -217,7 +217,6 @@ class WordlistPanel(wx.Panel):
         self.btn_edit_content_edit.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_edit)
         self.btn_edit_content_paste.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_paste)
         self.cbo_index_single.Bind(wx.EVT_COMBOBOX, self.on_single_index)
-
         self.populate_gui()
 
     def set_parent(self, par_panel):
@@ -593,6 +592,24 @@ class ImportPanel(wx.Panel):
             self.txt_filename.SetValue(myfile)
             self.on_btn_import(None)
 
+    def import_csv(self, myfile):
+        if os.path.exists(myfile):
+            self.txt_filename.SetValue(myfile)
+            force_header = None
+            if self.rbox_header.GetSelection() == 1:
+                force_header = False
+            elif self.rbox_header.GetSelection() == 2:
+                force_header = True
+            ct, colcount, headers = self.wlist.load_csv_file(myfile, force_header=force_header)
+            msg = _("Imported file, {col} fields, {row} rows").format(
+                col=colcount, row=ct
+            )
+            if self.parent_panel is not None:
+                self.parent_panel.edit_message(msg)
+                self.parent_panel.populate_gui()
+            return True
+        return False
+
     def on_btn_import(self, event):
         myfile = self.txt_filename.GetValue()
         if os.path.exists(myfile):
@@ -737,7 +754,18 @@ class WordlistEditor(MWindow):
         self.notebook_main.AddPage(self.panel_import, _("Import/Export"))
         self.notebook_main.AddPage(self.panel_about, _("How to use"))
         # begin wxGlade: Keymap.__set_properties
+        self.DragAcceptFiles(True)
+        self.Bind(wx.EVT_DROP_FILES, self.on_drop_file)
         self.SetTitle(_("Wordlist Editor"))
+
+    def on_drop_file(self, event):
+        """
+        Drop file handler
+        Accepts only a single file drop.
+        """
+        for pathname in event.GetFiles():
+            if self.panel_import.import_csv(pathname):
+                break
 
     def delegates(self):
         yield self.panel_editor
