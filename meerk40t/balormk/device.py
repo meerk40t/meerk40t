@@ -510,7 +510,10 @@ class LiveFullLightJob:
                 return False
             if self.changed:
                 return True
-            e = node.as_path()
+            try:
+                e = node.as_path()
+            except AttributeError:
+                continue
             if not e:
                 continue
             x, y = e.point(0)

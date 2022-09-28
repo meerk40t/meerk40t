@@ -7753,7 +7753,10 @@ class Elemental(Service):
             help="",
         )
         def convert_to_path(node, **kwargs):
-            path = node.as_path()
+            try:
+                path = node.as_path()
+            except AttributeError:
+                return
             node.replace_node(path=path, type="elem path")
 
         @self.tree_submenu(_("Flip"))
