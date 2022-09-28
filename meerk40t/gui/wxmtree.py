@@ -73,6 +73,7 @@ class TreePanel(wx.Panel):
         )
         if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
+
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(self.wxtree, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
@@ -976,18 +977,13 @@ class ShadowTree:
             return
         tree.SetItemBackgroundColour(node_item, None)
         try:
-            font = tree.GetFont()
-            tree.SetItemFont(node_item, font)
             if node.highlighted:
                 tree.SetItemBackgroundColour(node_item, wx.LIGHT_GREY)
             elif node.emphasized:
                 tree.SetItemBackgroundColour(node_item, wx.Colour(0x80A0A0))
             elif node.targeted:
-                font.MakeItalic()
-                tree.SetItemFont(node_item, font)
-                # tree.SetItemBackgroundColour(node_item, wx.Colour(0xA080A0))
-        except AttributeError as Err:
-            # print (Err)
+                tree.SetItemBackgroundColour(node_item, wx.Colour(0xA080A0))
+        except AttributeError:
             pass
 
     def set_color(self, node, color=None):
