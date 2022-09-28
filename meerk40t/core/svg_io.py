@@ -70,7 +70,7 @@ from ..svgelements import (
     Line,
     Shape,
 )
-from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
+from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -340,7 +340,7 @@ class SVGWriter:
                 ):
                     subelement.set(key, str(value))
             ###############
-            # SAVE CAP/JOIN/FILL-RULE
+            # SAVE STROKE
             ###############
             if hasattr(c, "stroke_scaled"):
                 if not c.stroke_scaled:
@@ -380,9 +380,14 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_width = SVG_VALUE_NONE
+                    stroke_width = (
+                        Length(amount=c.stroke_width, preferred_units="px").preferred_length
+                        if c.stroke_width is not None
+                        else SVG_VALUE_NONE
+                    )
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
-                except AttributeError:
+                except AttributeError as Err:
+                    print (f"Shit happened when trying to set stroke_width: {Err}")
                     pass
 
             ###############
