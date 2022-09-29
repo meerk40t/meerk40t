@@ -892,6 +892,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist):
                 def listen_to_myself(origin, value):
+                    update_needed = False
                     # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
                     data = None
                     if value is not None:
@@ -950,10 +951,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                         pass  # not supported...
                     elif dtype in (str, int, float):
                         if hasattr(ctrl, "GetValue"):
-                            if ctrl.GetValue() != str(data):
+                            try:
+                                if dtype(ctrl.GetValue()) != data:
+                                    update_needed = True
+                            except ValueError:
+                                update_needed = True
+                            if update_needed:
                                 ctrl.SetValue(str(data))
                     elif dtype == Length:
-                        if ctrl.GetValue() != str(data):
+                        if float(data) != float(Length(ctrl.GetValue())):
+                            update_needed = True
+                        if update_needed:
                             ctrl.SetValue(str(data))
                     elif dtype == Angle:
                         if ctrl.GetValue() != str(data):
