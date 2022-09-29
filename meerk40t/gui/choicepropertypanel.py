@@ -164,7 +164,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         current_main_sizer = sizer_main
         current_sec_sizer = sizer_main
         current_sizer = sizer_main
-        # Bey default 0 as we are stacking up stuff
+        # By default 0 as we are stacking up stuff
         expansion_flag = 0
         current_col_entry = -1
         for i, c in enumerate(self.choices):
@@ -302,7 +302,15 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             control = None
             control_sizer = None
-            if data_type == bool and data_style == "button":
+            if data_type == str and data_style == "info":
+                # This is just an info box.
+                wants_listener = False
+                msgs = label.split("\n")
+                controls = []
+                for lbl in msgs:
+                    control = wx.StaticText(self, label=lbl)
+                    current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type == bool and data_style == "button":
                 # This is just a signal to the outside world.
                 wants_listener = False
                 control = wx.Button(self, label=label)
