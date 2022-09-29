@@ -51,7 +51,12 @@ class ChoicePropertyPanel(ScrolledPanel):
         if choices is None:
             return
         if isinstance(choices, str):
-            choices = self.context.lookup("choices", choices)
+            tempchoices = self.context.lookup("choices", choices)
+            # we need to create an independent copy of the lookup, otherwise
+            # any amendments to choices like injector will affect the original
+            choices = []
+            for c in tempchoices:
+                choices.append(c)
             if choices is None:
                 return
         if injector is not None:
