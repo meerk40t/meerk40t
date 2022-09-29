@@ -143,7 +143,20 @@ class GridWidget(Widget):
         # print (f"x: step={self.tlenx1:.3f}, min={self.min_x:.3f}, max={self.max_x:.3f}")
         # print (f"y: step={self.tleny1:.3f}, min={self.min_y:.3f}, max={self.max_y:.3f}")
 
-        x = self.zero_x
+        # We could be way too high
+        start_x = self.zero_x
+        while start_x>self.min_x:
+            start_x -= self.tlenx1
+        start_y = self.zero_y
+        while start_y>self.min_y:
+            start_y -= self.tleny1
+        # But we could be way too low, too
+        while start_x + self.tlenx1 < self.min_x:
+            start_x += self.tlenx1
+        while start_y + self.tleny1 < self.min_y:
+            start_y += self.tleny1
+
+        x = start_x
         while x <= self.max_x:
             starts.append((x, self.min_y))
             ends.append((x, self.max_y))
@@ -151,15 +164,7 @@ class GridWidget(Widget):
             # ends.append((x, units_height))
             x += self.tlenx1
 
-        x = self.zero_x - self.tlenx1
-        while x >= self.min_x:
-            starts.append((x, self.min_y))
-            ends.append((x, self.max_y))
-            # starts.append((x, 0))
-            # ends.append((x, units_height))
-            x -= self.tlenx1
-
-        y = self.zero_y
+        y = start_y
         while y <= self.max_y:
             starts.append((self.min_x, y))
             ends.append((self.max_x, y))
@@ -167,38 +172,32 @@ class GridWidget(Widget):
             # ends.append((units_width, y))
             y += self.tleny1
 
-        y = self.zero_y - self.tleny1
-        while y >= self.min_y:
-            starts.append((self.min_x, y))
-            ends.append((self.max_x, y))
-            # starts.append((0, y))
-            # ends.append((units_height, y))
-            y -= self.tleny1
-
         # Secondary grid
-        x = self.zero_x
+        # We could be way too high
+        start_x = self.zero_x
+        while start_x>self.min_x:
+            start_x -= self.tlenx2
+        start_y = self.zero_y
+        while start_y>self.min_y:
+            start_y -= self.tleny2
+        # But we could be way too low, too
+        while start_x + self.tlenx2 < self.min_x:
+            start_x += self.tlenx2
+        while start_y + self.tleny2 < self.min_y:
+            start_y += self.tleny2
+
+        x = start_x
         while x <= self.max_x:
             starts2.append((x, self.min_y))
             ends2.append((x, self.max_y))
             x += self.tlenx2
 
-        x = self.zero_x - self.tlenx2
-        while x >= self.min_x:
-            starts2.append((x, self.min_y))
-            ends2.append((x, self.max_y))
-            x -= self.tlenx2
-
-        y = self.zero_y
+        y = start_y
         while y <= self.max_y:
             starts2.append((self.min_x, y))
             ends2.append((self.max_x, y))
             y += self.tleny2
 
-        y = self.zero_y - self.tleny2
-        while y >= self.min_y:
-            starts2.append((self.min_x, y))
-            ends2.append((self.max_x, y))
-            y -= self.tleny2
         self.grid = starts, ends
         self.grid2 = starts2, ends2
         end_time = time()
@@ -472,36 +471,30 @@ class GridWidget(Widget):
         circ_ct = 0
         self.scene.grid_points = []  # Clear all
 
-        # Let's add grid points - set the full grid
+        # Let's add grid points - set just the visible part of the grid
         p = self.scene.context
         if self.scene.draw_grid_primary:
             # That's easy just the rectangular stuff
-            x = self.zero_x
+            # We could be way too high
+            start_x = self.zero_x
+            while start_x>self.min_x:
+                start_x -= self.tlenx1
+            start_y = self.zero_y
+            while start_y>self.min_y:
+                start_y -= self.tleny1
+            # But we could be way too low, too
+            while start_x + self.tlenx1 < self.min_x:
+                start_x += self.tlenx1
+            while start_y + self.tleny1 < self.min_y:
+                start_y += self.tleny1
+            x = start_x
             while x <= self.max_x:
-                y = self.zero_y
+                y = start_y
                 while y <= self.max_y:
                     # mx, my = self.scene.convert_scene_to_window([x, y])
                     self.scene.grid_points.append([x, y])
                     y += self.tleny1
-                y = self.zero_y - self.tleny1
-                while y >= self.min_y:
-                    # mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([x, y])
-                    y -= self.tleny1
                 x += self.tlenx1
-            x = self.zero_x - self.tlenx1
-            while x >= self.min_x:
-                y = self.zero_y
-                while y <= self.max_y:
-                    # mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([x, y])
-                    y += self.tleny1
-                y = self.zero_y - self.tleny1
-                while y >= self.min_y:
-                    # mx, my = self.scene.convert_scene_to_window([x, y])
-                    self.scene.grid_points.append([x, y])
-                    y -= self.tleny1
-                x -= self.tlenx1
         prim_ct = len(self.scene.grid_points)
         s_time_2 = time()
         if self.scene.draw_grid_secondary:
@@ -513,32 +506,26 @@ class GridWidget(Widget):
                 or self.scene.grid_secondary_scale_x != 1
                 or self.scene.grid_secondary_scale_y != 1
             ):
-                x = self.zero_x
+                # We could be way too high
+                start_x = self.zero_x
+                while start_x>self.min_x:
+                    start_x -= self.tlenx2
+                start_y = self.zero_y
+                while start_y>self.min_y:
+                    start_y -= self.tleny2
+                # But we could be way too low, too
+                while start_x + self.tlenx2 < self.min_x:
+                    start_x += self.tlenx2
+                while start_y + self.tleny2 < self.min_y:
+                    start_y += self.tleny2
+                x = start_x
                 while x <= self.max_x:
-                    y = self.zero_y
+                    y = start_y
                     while y <= self.max_y:
                         # mx, my = self.scene.convert_scene_to_window([x, y])
                         self.scene.grid_points.append([x, y])
                         y += self.tleny2
-                    y = self.zero_y - self.tleny2
-                    while y >= self.min_y:
-                        # mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([x, y])
-                        y -= self.tleny2
                     x += self.tlenx2
-                x = self.zero_x - self.tlenx2
-                while x >= self.min_x:
-                    y = self.zero_y
-                    while y <= self.max_y:
-                        # mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([x, y])
-                        y += self.tleny2
-                    y = self.zero_y - self.tleny2
-                    while y >= self.min_y:
-                        # mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([x, y])
-                        y -= self.tleny2
-                    x -= self.tlenx2
         second_ct = len(self.scene.grid_points) - prim_ct
 
         s_time_3 = time()
