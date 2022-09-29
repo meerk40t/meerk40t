@@ -331,6 +331,20 @@ class Preferences(MWindow):
                 "section": "_AA_Presets",
                 "subsection": "_0_"
             },
+            {
+                "attr": "dummy",
+                "default": "dummy",
+                "object": self,
+                "type": str,
+                "style": "info",
+                "label":
+                    _("Classification is the (automatic) process of assigning an element to an operation.")
+                    + "\n"
+                    + ("That link between element and operation is called an assignment.")
+                ,
+                "page": "Classification",
+                # "section": "_000_Information",
+            },
         ]
         self.presets = [
             # object, property, automatic, manual
