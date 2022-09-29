@@ -2025,6 +2025,8 @@ class BalorDevice(Service, ViewPort):
                         (bounds[2], bounds[1]),
                         (bounds[2], bounds[3]),
                     ]
+                elif e.type == "elem text":
+                    continue  # We can't outline text.
                 else:
                     try:
                         path = abs(Path(e.shape))
