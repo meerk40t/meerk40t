@@ -670,7 +670,10 @@ class TextCtrl(wx.TextCtrl):
                     purenumber = False
                     break
             if purenumber and hasattr(self.parent, "context"):
-                units = getattr(self.parent.context, "units_name")
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "units_name", "mm")
+                units = root.units_name
                 if units in ("inch", "inches"):
                     units = "in"
                 result = result.strip() + units
