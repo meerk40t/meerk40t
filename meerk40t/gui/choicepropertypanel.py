@@ -20,6 +20,68 @@ class ChoicePropertyPanel(ScrolledPanel):
     either registered in the Kernel as a choice or called directly on the ChoicePropertyPanel you can make dynamic
     controls to set various properties. This avoids needing to create a new static window when a panel is just
     providing options to change settings.
+    The choices need to be provided either as list of dictionaries or indirectly via
+    a string indicating a stored list registered in the given context under "choices"
+    The dictionary recognizes the following entries:
+
+        "object": The object to which the property defined in attr belongs to
+        "attr": The name of the atttribute
+        "default": The default value if no value has been given before
+        "label": The label will be used for labelling the to be created UI-elements
+        "trailer": this text will be displayed immediately after the element
+        "tip": The tooltip that will be used for this element
+        "type": This can be one of (no quotation marks, real python data types):
+            bool: will always be represented by a checkbox
+            str: normally be represented by a textbox (may be influenced by style)
+            int: normally be represented by a textbox (may be influenced by style)
+            float: normally be represented by a textbox (may be influenced by style)
+            Length: represented by a textbox
+            Angle: represented by a textbox
+            Color: represented by a color picker
+        "style": If given then the standard representation for a data-type (see above)
+            will be replaced by more tailored UI-elements:
+            "file": (only available for str) a file selection dialog is used,
+                this recognizes a further property "wildcard"
+            "slider:" Creates a slider (for int and float) that will use two additional
+                entries, "min" and "max.
+            "combo":
+            "combosmall": Available for str, int, float will fill the combo
+                with values defined in "choices" (additional parameter)
+            "binary": uses two additional settings "mask" and "bit" to
+                allow the bitwise manipulation of a int data type
+        "weight": only valid in subsections, default value 1, i.e. equal width
+            allocation, can be changed to force a different sizing behaviour
+    UI-Appearance
+        "page":
+        "section":
+        "subsection":
+        "priority":
+            These entries will create visible separation/joining of elements.
+            The dictionary list will be sorted first by priority, then page,
+            then section, then subsection. While normally every item ends up
+            on a new line, elements within a subsection remain in one horizontal
+            container.
+        Notabene:
+            a) to influence ordering without compromising the intended Page,
+            Section etc. names, the routine will remove a leading "_xxxx_" string
+            b) The Page, Section etc. names will be translated, so please provide
+            them in plain English
+
+    There are some special hacks to influence appearance / internal logic
+        "hidden": if set then this expert property will only appear if the
+            developer-mode has been set
+        "enabled": Is the control enabled (default yes, so does not need to be
+            provided)
+        "conditional": if given as tuple (cond_obj, cond_prop) then the (boolean)
+            value of the property cond_obj.cond_prop will decide if the element
+            will be enabled or not
+        "signals": This for advanced treatment, normally any change to a property
+            will be announced to the wider mk-universe by sending a signal with the
+            attributes name as signal-indicator (this is used to inform other UI-
+            elements with the same content of such a change). If you want to invoke
+            additional logic (or don't want to write a specific signal-listen routine
+            to forward it to other routines) then you can add a single signal-name
+            or a list of signal-names to be called
     """
 
     def __init__(
@@ -282,15 +344,24 @@ class ChoicePropertyPanel(ScrolledPanel):
                 expansion_flag = 0
                 if this_subsection != "":
                     expansion_flag = 1
-                    last_box = wx.StaticBoxSizer(
-                        wx.StaticBox(
-                            self,
-                            id=wx.ID_ANY,
-                            label=_(self.unsorted_label(this_subsection)),
-                        ),
-                        wx.HORIZONTAL,
-                    )
+                    lbl = _(self.unsorted_label(this_subsection))
+                    if lbl != "":
+                        last_box = wx.StaticBoxSizer(
+                            wx.StaticBox(
+                                self,
+                                id=wx.ID_ANY,
+                                label=lbl,
+                            ),
+                            wx.HORIZONTAL,
+                        )
+                    else:
+                        last_box = wx.BoxSizer(wx.HORIZONTAL)
                     current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
+                    img = c.get("icon", None)
+                    if img is not None:
+                        icon =wx.StaticBitmap(self, wx.ID_ANY, bitmap=img)
+                        last_box.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                        last_box.AddSpacer(5)
                 else:
                     last_box = current_sec_sizer
                 current_sizer = last_box
@@ -389,9 +460,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (int, float) and data_style == "slider":
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 minvalue = c.get("min", 0)
                 maxvalue = c.get("max", 0)
                 if data_type == float:
@@ -428,9 +502,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combo":
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
                 control = wx.ComboBox(
                     self,
@@ -537,9 +614,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if mask is not None and hasattr(obj, mask):
                     mask_bits = getattr(obj, mask)
 
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
                 def on_checkbox_check(param, ctrl, obj, bit, addsig, enable_ctrl=None):
                     def check(event=None):
@@ -675,22 +755,31 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 if data_type == int:
                     check_flag = "int"
+                    limit = True
                 elif data_type == float:
                     check_flag = "float"
+                    limit = True
                 else:
                     check_flag = ""
+                    limit = False
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
                     style=wx.TE_PROCESS_ENTER,
-                    limited=True,
+                    limited=limit,
                     check=check_flag,
                 )
+                ctrl_width = c.get("width", 0)
+                if ctrl_width>0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
@@ -717,9 +806,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
@@ -753,9 +845,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
@@ -789,9 +884,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 control = wx.Button(self, -1)
 
                 def set_color(ctrl, color: Color):

@@ -202,6 +202,7 @@ class TreePanel(wx.Panel):
         if self.shadow_tree is not None:
             self.shadow_tree.on_force_element_update(*args)
 
+    @signal_listener("activate;device")
     @signal_listener("rebuild_tree")
     def on_rebuild_tree_signal(self, origin, target=None, *args):
         """
@@ -1186,6 +1187,19 @@ class ShadowTree:
                     if not value.startswith(pattern):
                         mymap[key] = value
             return text.format_map(mymap)
+            
+        def get_formatter(nodetype):
+            default = self.context.elements.lookup(f"format/{nodetype}")
+            lbl = nodetype.replace(" ", "_")
+            check_string = f"formatter_{lbl}_active"
+            pattern_string = f"formatter_{lbl}"
+            self.context.device.setting(bool, check_string, False)
+            self.context.device.setting(str, pattern_string, default)
+            bespoke = getattr(self.context.device, check_string, False)
+            pattern = getattr(self.context.device, pattern_string, "")
+            if bespoke and pattern is not None and pattern != "":
+                default = pattern
+            return default
 
         if force is None:
             force = False
@@ -1195,9 +1209,8 @@ class ShadowTree:
             return
 
         self.set_icon(node, force=force)
-
         if hasattr(node, "node") and node.node is not None:
-            formatter = self.elements.lookup(f"format/{node.node.type}")
+            formatter = get_formatter(node.node.type)
             if node.node.type.startswith("op "):
                 if not self.context.elements.op_show_default:
                     if hasattr(node.node, "speed"):
@@ -1240,7 +1253,7 @@ class ShadowTree:
             # label = "*" + node.node.create_label(formatter)
             label = "*" + my_create_label(node.node, formatter)
         else:
-            formatter = self.elements.lookup(f"format/{node.type}")
+            formatter = get_formatter(node.type)
             if node.type.startswith("op "):
                 # Not too elegant... op nodes should have a property default_speed, default_power
                 if not self.context.elements.op_show_default:

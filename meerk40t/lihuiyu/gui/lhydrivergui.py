@@ -4,6 +4,7 @@ import wx
 from meerk40t.core.units import Length
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
@@ -1135,16 +1136,19 @@ class LihuiyuDriverGui(MWindow):
 
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
+        newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
 
         self.panels.append(panel_config)
         self.panels.append(panel_setup)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
+        self.panels.append(newpanel)
 
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
+        self.notebook_main.AddPage(newpanel, _("Display Options"))
 
         self.Layout()
 

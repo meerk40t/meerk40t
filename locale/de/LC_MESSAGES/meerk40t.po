@@ -14585,3 +14585,13 @@ msgstr "Enthält Daten"
 
 msgid "Contains Variable-Names"
 msgstr "Enthält Variablen-Namen"
+
+msgid "Do yo want to use a bespoke formatter?"
+msgstr "Soll ein eigener Format-Code verwendet werden?"
+
+msgid "Bespoke formatter for this node-type"
+msgstr "Eigener Format-Code für diesen Arbeitsablauf"
+
+msgid "Operations (Special)"
+msgstr "Spezielle Aktionen"
+
