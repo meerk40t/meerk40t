@@ -3520,15 +3520,17 @@ class GraphicObject:
             if not self.apply:
                 return self.stroke_width
             if self.stroke_width is not None:
+                transform = self.transform
                 if (
                     hasattr(self, "values")
                     and SVG_ATTR_VECTOR_EFFECT in self.values
                     and SVG_VALUE_NON_SCALING_STROKE
                     in self.values[SVG_ATTR_VECTOR_EFFECT]
                 ):
-                    return self.stroke_width  # we are not to scale the stroke.
+                    # If we do not apply scaling stroke we still apply viewport transform.
+                    transform = Matrix(self.values.get("viewport_transform", ""))
                 width = self.stroke_width
-                det = self.transform.determinant
+                det = transform.determinant
                 return width * sqrt(abs(det))
         except AttributeError:
             return self.stroke_width
@@ -8864,12 +8866,12 @@ class SVG(Group):
                             # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
                             # "A value of zero disables rendering of the element."
                             return s  # No more parsing will be done.
-
                         if SVG_ATTR_TRANSFORM in values:
                             # transform on SVG element applied as if svg had parent with transform.
                             values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
                         else:
                             values[SVG_ATTR_TRANSFORM] = viewport_transform
+                        values["viewport_transform"] = viewport_transform
                         width, height = s.viewbox.width, s.viewbox.height
                     if context is None:
                         stack[-1] = (context, values)
