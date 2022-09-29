@@ -676,7 +676,10 @@ class TextCtrl(wx.TextCtrl):
                 units = root.units_name
                 if units in ("inch", "inches"):
                     units = "in"
-                result = result.strip() + units
+                result = result.strip()
+                if result.endswith("."):
+                    result += "0"
+                result += units
         return result
 
 
