@@ -145,7 +145,7 @@ def plugin(kernel, lifecycle=None):
                 "object": elements,
                 "default": True,
                 "type": bool,
-                "label": _("Classify newly created elements"),
+                "label": _("Classify elements after creation"),
                 "tip": _(
                     "MK will immediately try to classify (automatically assign) an element as soon as it is created,"
                 )

@@ -1044,7 +1044,7 @@ msgstr ""
 "Inkscapes Objekt-Liste entsprechen"
 
 #: meerk40t/core/elements.py:148
-msgid "Classify newly created elements"
+msgid "Classify elements after creation"
 msgstr "Klassifiziere neu hinzugefügte Elemente"
 
 #: meerk40t/core/elements.py:149
