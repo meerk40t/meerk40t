@@ -608,7 +608,7 @@ class ImportPanel(wx.Panel):
         mydlg.Destroy()
         if myfile != "":
             self.txt_filename.SetValue(myfile)
-            self.on_btn_import(None)
+            # self.on_btn_import(None)
 
     def import_csv(self, myfile):
         if os.path.exists(myfile):
