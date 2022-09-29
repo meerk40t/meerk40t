@@ -130,6 +130,12 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def valid_node(self, node):
+        if node.type in self._allowed_elements_dnd:
+            return True
+        else:
+            return False
+
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         feedback = []
         if node.type in self._allowed_elements:
@@ -339,3 +345,18 @@ class ImageOpNode(Node, Parameters):
                 cut.path = path
                 cut.original_op = self.type
                 yield cut
+
+    def add_reference(self, node=None, pos=None, **kwargs):
+        """
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
+
+        @param node:
+        @param pos:
+        @return:
+        """
+        if node is not None:
+            if not self.valid_node(node):
+                # We could raise a ValueError but that will break things...
+                return
+        return super().add_reference(node=node, pos=pos, **kwargs)

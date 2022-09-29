@@ -162,11 +162,14 @@ class HatchOpNode(Node, Parameters):
                     valid = True
             return valid
 
+        # First check type per se
+        if node.type not in self._allowed_elements_dnd:
+            return False
+        # even then it might not be eligible
         result = False
         if hasattr(node, "path"):
             if is_valid_closed_path(node.path):
                 result = True
-
         elif node.type == "elem polyline":
             # Are they a closed path?
             obj = Path(node.shape)
@@ -372,3 +375,18 @@ class HatchOpNode(Node, Parameters):
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot
+
+    def add_reference(self, node=None, pos=None, **kwargs):
+        """
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
+
+        @param node:
+        @param pos:
+        @return:
+        """
+        if node is not None:
+            if not self.valid_node(node):
+                # We could raise a ValueError but that will break things...
+                return
+        return super().add_reference(node=node, pos=pos, **kwargs)

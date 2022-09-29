@@ -159,7 +159,10 @@ class EngraveOpNode(Node, Parameters):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
     def valid_node(self, node):
-        return True
+        if node.type in self._allowed_elements_dnd:
+            return True
+        else:
+            return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
@@ -376,3 +379,18 @@ class EngraveOpNode(Node, Parameters):
                         cut_obj.next = group[0]
                     cut_obj.previous = group[i - 1]
                 yield group
+
+    def add_reference(self, node=None, pos=None, **kwargs):
+        """
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
+
+        @param node:
+        @param pos:
+        @return:
+        """
+        if node is not None:
+            if not self.valid_node(node):
+                # We could raise a ValueError but that will break things...
+                return
+        return super().add_reference(node=node, pos=pos, **kwargs)
