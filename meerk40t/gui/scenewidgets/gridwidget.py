@@ -129,31 +129,29 @@ class GridWidget(Widget):
         starts2 = []
         ends2 = []
         # Primary grid
-        x_factor = 0.0
+        self.zero_x = p.device.unit_width * p.device.show_origin_x
         if hasattr(p.device, "flip_x"):
             if p.device.flip_x:
-                x_factor = 1.0
-        y_factor = 0.0
+                self.zero_x = p.device.unit_width - self.zero_x
+        self.zero_y = p.device.unit_height * p.device.show_origin_y
         if hasattr(p.device, "flip_y"):
             if p.device.flip_y:
-                y_factor = 1.0
-        self.zero_x = p.device.unit_width * p.device.show_origin_x * (1 - x_factor)
-        self.zero_y = p.device.unit_height * p.device.show_origin_y * (1 - y_factor)
+                self.zero_y = p.device.unit_height - self.zero_y
 
         # print (f"x: step={self.tlenx1:.3f}, min={self.min_x:.3f}, max={self.max_x:.3f}")
         # print (f"y: step={self.tleny1:.3f}, min={self.min_y:.3f}, max={self.max_y:.3f}")
 
         # We could be way too high
         start_x = self.zero_x
-        while start_x>self.min_x:
+        while start_x - self.tlenx1 > self.min_x:
             start_x -= self.tlenx1
         start_y = self.zero_y
-        while start_y>self.min_y:
+        while start_y - self.tleny1 > self.min_y:
             start_y -= self.tleny1
         # But we could be way too low, too
-        while start_x + self.tlenx1 < self.min_x:
+        while start_x < self.min_x:
             start_x += self.tlenx1
-        while start_y + self.tleny1 < self.min_y:
+        while start_y < self.min_y:
             start_y += self.tleny1
 
         x = start_x
@@ -175,15 +173,15 @@ class GridWidget(Widget):
         # Secondary grid
         # We could be way too high
         start_x = self.zero_x
-        while start_x>self.min_x:
+        while start_x - self.tlenx2 > self.min_x:
             start_x -= self.tlenx2
         start_y = self.zero_y
-        while start_y>self.min_y:
+        while start_y - self.tleny2 > self.min_y:
             start_y -= self.tleny2
         # But we could be way too low, too
-        while start_x + self.tlenx2 < self.min_x:
+        while start_x < self.min_x:
             start_x += self.tlenx2
-        while start_y + self.tleny2 < self.min_y:
+        while start_y < self.min_y:
             start_y += self.tleny2
 
         x = start_x
@@ -477,15 +475,15 @@ class GridWidget(Widget):
             # That's easy just the rectangular stuff
             # We could be way too high
             start_x = self.zero_x
-            while start_x>self.min_x:
+            while start_x - self.tlenx1 > self.min_x:
                 start_x -= self.tlenx1
             start_y = self.zero_y
-            while start_y>self.min_y:
+            while start_y - self.tleny1 > self.min_y:
                 start_y -= self.tleny1
             # But we could be way too low, too
-            while start_x + self.tlenx1 < self.min_x:
+            while start_x < self.min_x:
                 start_x += self.tlenx1
-            while start_y + self.tleny1 < self.min_y:
+            while start_y < self.min_y:
                 start_y += self.tleny1
             x = start_x
             while x <= self.max_x:
@@ -508,15 +506,15 @@ class GridWidget(Widget):
             ):
                 # We could be way too high
                 start_x = self.zero_x
-                while start_x>self.min_x:
+                while start_x - self.tlenx2 > self.min_x:
                     start_x -= self.tlenx2
                 start_y = self.zero_y
-                while start_y>self.min_y:
+                while start_y - self.tleny2 > self.min_y:
                     start_y -= self.tleny2
                 # But we could be way too low, too
-                while start_x + self.tlenx2 < self.min_x:
+                while start_x < self.min_x:
                     start_x += self.tlenx2
-                while start_y + self.tleny2 < self.min_y:
+                while start_y < self.min_y:
                     start_y += self.tleny2
                 x = start_x
                 while x <= self.max_x:
