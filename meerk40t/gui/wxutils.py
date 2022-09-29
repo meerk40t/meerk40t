@@ -607,7 +607,10 @@ class TextCtrl(wx.TextCtrl):
             status = "modified"
         self.warn_status = status
         # Is it a valid value?
-        if status == "modified" and hasattr(self.parent, "context"):
+        lenokay = True
+        if len(txt) == 0 and self._check in  ("float", "length", "angle", "int", "percent"):
+            lenokay = False
+        if status == "modified" and hasattr(self.parent, "context") and lenokay:
             if getattr(self.parent.context.root, "process_while_typing", False):
                 if self._action_routine is not None:
                     self._event_generated = wx.EVT_TEXT
