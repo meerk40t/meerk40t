@@ -1224,7 +1224,7 @@ class SizePanel(wx.Panel):
         if float(new_width) == 0 or float(new_height) == 0:
             return
         self.context(
-            f"resize {repr(self.object_x)} {repr(self.object_y)} {new_width} {new_height}"
+            f"resize {self.object_x} {self.object_y} {new_width} {new_height}"
         )
 
     def on_textenter_width(self):  # wxGlade: SizePanel.<event_handler>
