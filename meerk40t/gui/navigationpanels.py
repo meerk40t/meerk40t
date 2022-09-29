@@ -1545,10 +1545,10 @@ class Transform(wx.Panel):
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
             # self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
             # self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
-            l1 = Length(amount=matrix.e, digits=4)
-            l2 = Length(amount=matrix.f, digits=4)
-            self.text_e.SetValue(l1.length_mm)
-            self.text_f.SetValue(l2.length_mm)
+            l1 = Length(amount=matrix.e, digits=2, preferred_units=self.context.units_name)
+            l2 = Length(amount=matrix.f, digits=2, preferred_units=self.context.units_name)
+            self.text_e.SetValue(l1.preferred_length)
+            self.text_f.SetValue(l2.preferred_length)
             m_e = matrix.e
             m_f = matrix.f
             ttip1 = _(
@@ -1758,7 +1758,12 @@ class JogDistancePanel(wx.Panel):
         self.text_jog_amount.SetActionRoutine(self.on_text_jog_amount)
 
     def pane_show(self, *args):
-        self.text_jog_amount.SetValue(str(self.context.jog_amount))
+        try:
+            joglen = Length(self.context.jog_amount, digits=2, preferred_units=self.context.units_name)
+        except:
+            joglen = Length("10mm", digits=2, preferred_units=self.context.units_name)
+
+        self.text_jog_amount.SetValue(joglen.preferred_length)
         self.Children[0].SetFocus()
 
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>
