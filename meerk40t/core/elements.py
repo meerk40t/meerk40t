@@ -147,11 +147,11 @@ def plugin(kernel, lifecycle=None):
                 "type": bool,
                 "label": _("Classify newly created elements"),
                 "tip": _(
-                    "MK will immediately try to classify an element as soon as it is created,"
+                    "MK will immediately try to classify (automatically assign) an element as soon as it is created,"
                 )
                 + "\n"
                 + _(
-                    "if you want to defer this to apply manual classification, then untick this option."
+                    "if you want to defer this to apply manual assignment, then untick this option."
                 ),
                 "page": "Classification",
                 "section": "_30_GUI-Behaviour",
@@ -7370,6 +7370,18 @@ class Elemental(Service):
             self.remove_elements_from_operations(elems)
             self.classify(list(self.elems()))
             self.signal("refresh_tree")
+
+        @self.tree_operation(
+            _("Remove all assignments from operations"), node_type="branch elems",
+            help=_(
+                "Any existing assignment of elements to operations will be removed"
+            ),
+        )
+        def remove_all_assignments(node, **kwargs):
+            for node in self.elems():
+                for ref in list(node._references):
+                    ref.remove_node()
+            self.signal("tree_changed")
 
         @self.tree_operation(
             _("Duplicate operation(s)"),

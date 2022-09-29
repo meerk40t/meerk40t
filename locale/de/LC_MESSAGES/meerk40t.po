@@ -1048,15 +1048,15 @@ msgid "Classify newly created elements"
 msgstr "Klassifiziere neu hinzugefügte Elemente"
 
 #: meerk40t/core/elements.py:149
-msgid "MK will immediately try to classify an element as soon as it is created,"
+msgid "MK will immediately try to classify (automatically assign) an element as soon as it is created,"
 msgstr "MK versucht sofort nach Erstellen eines Elements dieses zu klassifizieren,"
 
 #: meerk40t/core/elements.py:153
 msgid ""
-"if you want to defer this to apply manual classification, then untick "
+"if you want to defer this to apply manual assignment, then untick "
 "this option."
 msgstr ""
-"falls eine manuelle Zuordnung stattdessen bevorzugt wird, sollte diese "
+"falls stattdessen eine manuelle Zuordnung bevorzugt wird, sollte diese "
 "Option abgewählt werden."
 
 #: meerk40t/core/elements.py:164
@@ -14570,6 +14570,9 @@ msgstr "Lösche alle bestehende Zuordnungen"
 
 msgid "Any existing assignment of this element to operations will be removed"
 msgstr "Dies wird alle Zuordnungen dieses Elements zu Arbeitsgängen entfernen"
+
+msgid "Any existing assignment of elements to operations will be removed"
+msgstr "Dies wird alle Zuordnungen zu Arbeitsgängen entfernen"
 
 msgid "What does the first row contain:"
 msgstr "Was enthält die erste Zeile:"
