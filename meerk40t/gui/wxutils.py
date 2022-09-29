@@ -395,6 +395,8 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
+        # You can set this to False, i you don't want logic to interfere with text input
+        self.execute_action_on_change = True
 
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
@@ -518,7 +520,7 @@ class TextCtrl(wx.TextCtrl):
         self.lower_limit = range_min
         self.upper_limit = range_max
 
-    def prevalidate(self, origin = None):
+    def prevalidate(self, origin=None):
         # Check whether the field is okay, if not then put it to the last value
         txt = super().GetValue()
         # print (f"prevalidate called from: {origin}, check={self._check}, content:{txt}")
@@ -526,7 +528,9 @@ class TextCtrl(wx.TextCtrl):
             # ChangeValue is not creating any events...
             self.ChangeValue(self._last_valid_value)
             self.warn_status = ""
-        elif txt != "" and self._check == "length" and self.extend_default_units_if_empty:
+        elif (
+            txt != "" and self._check == "length" and self.extend_default_units_if_empty
+        ):
             # Do we have non-existing units provided? --> Change content
             purenumber = True
             unitstr = "".join(ACCEPTED_UNITS)
@@ -625,9 +629,20 @@ class TextCtrl(wx.TextCtrl):
         self.warn_status = status
         # Is it a valid value?
         lenokay = True
-        if len(txt) == 0 and self._check in  ("float", "length", "angle", "int", "percent"):
+        if len(txt) == 0 and self._check in (
+            "float",
+            "length",
+            "angle",
+            "int",
+            "percent",
+        ):
             lenokay = False
-        if status == "modified" and hasattr(self.parent, "context") and lenokay:
+        if (
+            self.execute_action_on_change
+            and status == "modified"
+            and hasattr(self.parent, "context")
+            and lenokay
+        ):
             if getattr(self.parent.context.root, "process_while_typing", False):
                 if self._action_routine is not None:
                     self._event_generated = wx.EVT_TEXT
@@ -640,7 +655,11 @@ class TextCtrl(wx.TextCtrl):
 
     def GetValue(self):
         result = super().GetValue()
-        if result != "" and self._check == "length" and self.extend_default_units_if_empty:
+        if (
+            result != ""
+            and self._check == "length"
+            and self.extend_default_units_if_empty
+        ):
             purenumber = True
             unitstr = "".join(ACCEPTED_UNITS)
             for c in unitstr:
@@ -653,6 +672,7 @@ class TextCtrl(wx.TextCtrl):
                     units = "in"
                 result = result.strip() + units
         return result
+
 
 class CheckBox(wx.CheckBox):
     def __init__(

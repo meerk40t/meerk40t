@@ -1098,7 +1098,9 @@ class SizePanel(wx.Panel):
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
-
+        # No change of fields during input
+        self.text_height.execute_action_on_change = False
+        self.text_width.execute_action_on_change = False
         self.__set_properties()
         self.__do_layout()
 
