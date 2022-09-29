@@ -912,6 +912,8 @@ class MovePanel(wx.Panel):
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap(resize=32)
         )
         units = self.context.units_name
+        if units in ("inch", "inches"):
+            units = "in"
         default_pos = f"0{units}"
         self.text_position_x = TextCtrl(
             self,
@@ -1215,8 +1217,10 @@ class SizePanel(wx.Panel):
             self.button_navigate_resize.Enable(False)
 
     def on_button_navigate_resize(self, event):
-        new_width = Length(self.text_width.Value, relative_length=self.object_width)
-        new_height = Length(self.text_height.Value, relative_length=self.object_height)
+        new_width = Length(self.text_width.GetValue(), relative_length=self.object_width)
+        new_height = Length(self.text_height.GetValue(), relative_length=self.object_height)
+        if float(new_width) == 0 or float(new_height) == 0:
+            return
         self.context(
             f"resize {repr(self.object_x)} {repr(self.object_y)} {new_width} {new_height}"
         )
@@ -1227,7 +1231,7 @@ class SizePanel(wx.Panel):
                 p = self.context
                 units = p.units_name
                 new_width = Length(
-                    self.text_width.Value,
+                    self.text_width.GetValue(),
                     relative_length=self.object_width,
                     preferred_units=units,
                     digits=3,
@@ -1248,7 +1252,7 @@ class SizePanel(wx.Panel):
                 p = self.context
                 units = p.units_name
                 new_height = Length(
-                    self.text_height.Value,
+                    self.text_height.GetValue(),
                     relative_length=self.object_height,
                     preferred_units=units,
                     digits=3,
