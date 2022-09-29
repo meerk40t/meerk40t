@@ -8871,7 +8871,7 @@ class SVG(Group):
                             values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
                         else:
                             values[SVG_ATTR_TRANSFORM] = viewport_transform
-                        values["viewport_transform"] = viewport_transform
+                        values["viewport_transform"] = values[SVG_ATTR_TRANSFORM]
                         width, height = s.viewbox.width, s.viewbox.height
                     if context is None:
                         stack[-1] = (context, values)
