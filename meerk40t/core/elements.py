@@ -5375,12 +5375,13 @@ class Elemental(Service):
                     scale_str = ""
                 else:
                     scale_str = f"scale({sx},{sy})"
-                if x_pos == x and y_pos == y:
-                    trans1_str = ""
-                    trans2_str = ""
-                else:
-                    trans1_str = f"translate({x_pos},{y_pos})"
-                    trans2_str = f"translate({-x},{-y})"
+                if x_pos == x and y_pos == y and scale_str == "":
+                    return
+                #     trans1_str = ""
+                #     trans2_str = ""
+                # else:
+                trans1_str = f"translate({round(x_pos, 7)},{round(y_pos, 7)})"
+                trans2_str = f"translate({round(-x, 7)},{round(-y, 7)})"
                 matrixstr = f"{trans1_str} {scale_str} {trans2_str}".strip()
                 # channel(f"{matrixstr}")
                 matrix = Matrix(matrixstr)
