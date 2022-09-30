@@ -320,7 +320,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         # We just set it to True to kick it off
                         setattr(obj, param, True)
                         # We don't signal ourselves...
-                        self.context.signal(param, True)
+                        self.context.signal(param, True, obj)
                         for _sig in addsig:
                             self.context.signal(_sig)
 
@@ -343,7 +343,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != bool(v):
                             setattr(obj, param, bool(v))
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -383,7 +383,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if current_value != pathname:
                                 try:
                                     setattr(obj, param, pathname)
-                                    self.context.signal(param, pathname)
+                                    self.context.signal(param, pathname, obj)
                                     for _sig in addsig:
                                         self.context.signal(_sig)
                                 except ValueError:
@@ -428,7 +428,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -473,7 +473,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -522,7 +522,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -567,7 +567,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != current:
                             setattr(obj, param, current)
-                            self.context.signal(f"{param}", v)
+                            self.context.signal(f"{param}", v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -664,7 +664,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 current_value = getattr(obj, param)
                                 if current_value != data_v:
                                     setattr(obj, param, data_v)
-                                    self.context.signal(param, data_v)
+                                    self.context.signal(param, data_v, obj)
                                     for _sig in addsig:
                                         self.context.signal(_sig)
                             except ValueError:
@@ -715,7 +715,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             current_value = getattr(obj, param)
                             if current_value != dtype_v:
                                 setattr(obj, param, dtype_v)
-                                self.context.signal(param, dtype_v)
+                                self.context.signal(param, dtype_v, obj)
                                 for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
@@ -751,7 +751,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             current_value = getattr(obj, param)
                             if str(current_value) != str(data_v):
                                 setattr(obj, param, data_v)
-                                self.context.signal(param, data_v)
+                                self.context.signal(param, data_v, obj)
                                 for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
@@ -787,7 +787,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             current_value = str(getattr(obj, param))
                             if current_value != data_v:
                                 setattr(obj, param, data_v)
-                                self.context.signal(param, data_v)
+                                self.context.signal(param, data_v, obj)
                                 for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
@@ -834,7 +834,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 current_value = getattr(obj, param)
                                 if current_value != data_v:
                                     setattr(obj, param, data_v)
-                                    self.context.signal(param, data_v)
+                                    self.context.signal(param, data_v, obj)
                                     for _sig in addsig:
                                         self.context.signal(_sig)
                             except ValueError:
@@ -890,8 +890,11 @@ class ChoicePropertyPanel(ScrolledPanel):
                     pass
 
             # Now we listen to 'ourselves' as well to learn about changes somewhere else...
-            def on_update_listener(param, ctrl, dtype, dstyle, choicelist):
-                def listen_to_myself(origin, value):
+            def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
+                def listen_to_myself(origin, value, target=None):
+                    if target is None or target != sourceobj:
+                        # print (f"Signal for {param}={value}, but no target given or different to source")
+                        return
                     update_needed = False
                     # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
                     data = None
@@ -985,7 +988,7 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             if wants_listener:
                 update_listener = on_update_listener(
-                    attr, control, data_type, data_style, choice_list
+                    attr, control, data_type, data_style, choice_list, obj
                 )
                 self.listeners.append((attr, update_listener))
                 context.listen(attr, update_listener)
