@@ -162,7 +162,6 @@ class GuideWidget(Widget):
         """
 
         def add_scale_options(self, menu):
-
             def on_user_option(event):
                 dlg = wx.TextEntryDialog(
                     self.scene.context.gui,
@@ -213,8 +212,7 @@ class GuideWidget(Widget):
             for option in self.options:
                 kind = (
                     wx.ITEM_CHECK
-                    if self.scene.tick_distance == option
-                    and not self.scene.auto_tick
+                    if self.scene.tick_distance == option and not self.scene.auto_tick
                     else wx.ITEM_NORMAL
                 )
                 item = menu.Append(
