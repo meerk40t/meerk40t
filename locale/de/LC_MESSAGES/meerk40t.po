@@ -14594,3 +14594,9 @@ msgstr "Benutzerdefinierte Gittergröße"
 
 msgid "Reset Colors to Default"
 msgstr "Farben auf Standard"
+
+msgid "Design"
+msgstr "Elemente"
+
+msgid "Design + Manipulation"
+msgstr "Elemente erzeugen / ändern"

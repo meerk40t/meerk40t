@@ -801,7 +801,7 @@ class RibbonPanel(wx.Panel):
         tool = RB.RibbonPage(
             self._ribbon,
             ID_PAGE_TOOL,
-            _("Tools"),
+            _("Design + Manipulation"),
             icons8_opened_folder_50.GetBitmap(resize=16),
         )
         self.ribbon_pages.append(tool)
@@ -809,7 +809,7 @@ class RibbonPanel(wx.Panel):
         self.tool_panel = MyRibbonPanel(
             parent=tool,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Tools"),
+            label="" if self.is_dark else _("Design"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=panel_style,
         )
