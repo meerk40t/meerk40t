@@ -162,6 +162,34 @@ class GuideWidget(Widget):
         """
 
         def add_scale_options(self, menu):
+
+            def on_user_option(event):
+                dlg = wx.TextEntryDialog(
+                    self.scene.context.gui,
+                    message=_("Please provide the grid-size in {units}").format(
+                        units=self.scene.context.units_name
+                    ),
+                    caption=_("User-defined grid-size"),
+                    value=str(self.scene.tick_distance),
+                )
+                dlg.ShowModal()
+                result = dlg.GetValue()
+                dlg.Destroy()
+                try:
+                    value = float(result)
+                except:
+                    return
+                self.scene.tick_distance = value
+                self.scene.auto_tick = False
+                self.scene._signal_widget(self.scene.widget_root, "grid")
+                self.scene.request_refresh()
+
+            def on_regular_option(option):
+                def check(event):
+                    self.set_auto_tick(option)
+
+                return check
+
             kind = wx.ITEM_CHECK if self.scene.auto_tick else wx.ITEM_NORMAL
             item = menu.Append(wx.ID_ANY, _("Auto-Scale"), "", kind)
             if kind == wx.ITEM_CHECK:
@@ -174,89 +202,45 @@ class GuideWidget(Widget):
             menu.AppendSeparator()
             units = self.scene.context.units_name
             if units == "mm":
-                self.options = [1, 5, 10, 25]
+                self.options = [0.1, 0.5, 1, 5, 10, 25]
             elif units == "cm":
                 self.options = [0.1, 0.5, 1, 5]
             elif units == "inch":
                 self.options = [0.1, 0.25, 0.5, 1]
             else:  # mils
-                self.options = [100, 250, 500, 1000]
+                self.options = [10, 25, 50, 100, 250, 500, 1000]
 
-            # Not elegant but if used with a loop lambda would take the last value of the loop for all...
-            kind = (
-                wx.ITEM_CHECK
-                if self.scene.tick_distance == self.options[0]
-                and not self.scene.auto_tick
-                else wx.ITEM_NORMAL
-            )
+            for option in self.options:
+                kind = (
+                    wx.ITEM_CHECK
+                    if self.scene.tick_distance == option
+                    and not self.scene.auto_tick
+                    else wx.ITEM_NORMAL
+                )
+                item = menu.Append(
+                    wx.ID_ANY,
+                    f"{option:.2f}{units}",
+                    "",
+                    kind,
+                )
+                if kind == wx.ITEM_CHECK:
+                    menu.Check(item.GetId(), True)
+                self.scene.context.gui.Bind(
+                    wx.EVT_MENU,
+                    on_regular_option(option),
+                    id=item.GetId(),
+                )
+
+            menu.AppendSeparator()
             item = menu.Append(
                 wx.ID_ANY,
-                f"{self.options[0]:.2f}{units}",
+                f"User defined value: {self.scene.tick_distance}{units}",
                 "",
-                kind,
+                wx.ITEM_NORMAL,
             )
-            if kind == wx.ITEM_CHECK:
-                menu.Check(item.GetId(), True)
             self.scene.context.gui.Bind(
                 wx.EVT_MENU,
-                lambda e: self.change_tick_event(0),
-                id=item.GetId(),
-            )
-            kind = (
-                wx.ITEM_CHECK
-                if self.scene.tick_distance == self.options[1]
-                and not self.scene.auto_tick
-                else wx.ITEM_NORMAL
-            )
-            item = menu.Append(
-                wx.ID_ANY,
-                f"{self.options[1]:.2f}{units}",
-                "",
-                kind,
-            )
-            if kind == wx.ITEM_CHECK:
-                menu.Check(item.GetId(), True)
-            self.scene.context.gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.change_tick_event(1),
-                id=item.GetId(),
-            )
-            kind = (
-                wx.ITEM_CHECK
-                if self.scene.tick_distance == self.options[2]
-                and not self.scene.auto_tick
-                else wx.ITEM_NORMAL
-            )
-            item = menu.Append(
-                wx.ID_ANY,
-                f"{self.options[2]:.2f}{units}",
-                "",
-                kind,
-            )
-            if kind == wx.ITEM_CHECK:
-                menu.Check(item.GetId(), True)
-            self.scene.context.gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.change_tick_event(2),
-                id=item.GetId(),
-            )
-            kind = (
-                wx.ITEM_CHECK
-                if self.scene.tick_distance == self.options[3]
-                and not self.scene.auto_tick
-                else wx.ITEM_NORMAL
-            )
-            item = menu.Append(
-                wx.ID_ANY,
-                f"{self.options[3]:.2f}{units}",
-                "",
-                kind,
-            )
-            if kind == wx.ITEM_CHECK:
-                menu.Check(item.GetId(), True)
-            self.scene.context.gui.Bind(
-                wx.EVT_MENU,
-                lambda e: self.change_tick_event(3),
+                on_user_option,
                 id=item.GetId(),
             )
 
