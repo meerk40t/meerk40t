@@ -592,7 +592,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("by enter or stepping out of the field)"),
                 "page": "Gui",
-                "hidden": True,
+                # "hidden": True,
                 "section": "Misc.",
             },
         ]
