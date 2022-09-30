@@ -892,7 +892,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
                 def listen_to_myself(origin, value, target=None):
-                    if target is None or target != sourceobj:
+                    if target is None or target is not sourceobj:
                         # print (f"Signal for {param}={value}, but no target given or different to source")
                         return
                     update_needed = False
