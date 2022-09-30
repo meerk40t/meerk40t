@@ -317,6 +317,7 @@ def plugin(kernel, lifecycle=None):
                 "object": elements,
                 "default": True,
                 "type": bool,
+                "conditional": (elements, "classify_autogenerate"),
                 "label": _("Autogenerate both for fill and stroke"),
                 "tip": _(
                     "Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation"
