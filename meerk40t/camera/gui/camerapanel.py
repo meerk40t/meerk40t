@@ -43,7 +43,7 @@ def register_panel_camera(window, context):
         )
         pane.dock_proportion = 200
         pane.control = panel
-        pane.submenu = _("Camera")
+        pane.submenu = "_60_" + _("Camera")
         window.on_pane_create(pane)
         context.register(f"pane/camera{index}", pane)
 
@@ -69,7 +69,7 @@ class CameraPanel(wx.Panel, Job):
 
         self.context(f"camera{self.index}\n")  # command activates Camera service
         self.camera = self.context.get_context(f"camera/{self.index}")
-        self.camera.setting(int, "frames_per_second", 40)
+        self.camera.setting(int, "frames_per_second", 30)
         # camera service location.
         self.last_frame_index = -1
 
@@ -90,9 +90,9 @@ class CameraPanel(wx.Panel, Job):
             self.slider_fps = wx.Slider(
                 self,
                 wx.ID_ANY,
-                24,
+                30,
                 0,
-                60,
+                120,
                 style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL | wx.SL_LABELS,
             )
             self.button_detect = wx.BitmapButton(
@@ -127,7 +127,11 @@ class CameraPanel(wx.Panel, Job):
                 )
             )
             self.button_detect.SetSize(self.button_detect.GetBestSize())
-            self.slider_fps.SetToolTip(_("Set the camera frames per second"))
+            self.slider_fps.SetToolTip(
+                _(
+                    "Set the camera frames per second. A value of 0 means a frame every 5 seconds."
+                )
+            )
             self.check_fisheye.SetToolTip(
                 _("Corrects Fisheye lensing, must be trained with checkerboard image.")
             )
@@ -191,6 +195,7 @@ class CameraPanel(wx.Panel, Job):
         else:
             self.camera(f"camera{self.index} start\n")
         self.camera.schedule(self)
+        # This listener is because you can have frames and windows and both need to care about the slider.
         self.camera.listen("camera;fps", self.on_fps_change)
         self.camera.listen("camera;stopped", self.on_camera_stop)
         self.camera.gui = self
@@ -215,12 +220,18 @@ class CameraPanel(wx.Panel, Job):
         if origin != self.camera.path:
             # Not this window.
             return
-        fps = self.camera.frames_per_second
-        if fps == 0:
+        camera_fps = self.camera.frames_per_second
+        if camera_fps == 0:
             tick = 5
         else:
-            tick = 1.0 / fps
+            tick = 1.0 / camera_fps
         self.interval = tick
+        # Set the scene fps if it's needed to support the camera.
+        scene_fps = self.camera.frames_per_second
+        if scene_fps < 30:
+            scene_fps = 30
+        if self.camera.fps != scene_fps:
+            self.display_camera.scene.set_fps(scene_fps)
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, *args):
@@ -411,6 +422,39 @@ class CamInterfaceWidget(Widget):
                 id=item.GetId(),
             )
 
+            def live_view(c_frames, c_sec):
+                def runcam(event=None):
+                    ratio = c_sec / c_frames
+                    self.cam.context(
+                        f"timer.updatebg 0 {ratio} camera{self.cam.index} background\n"
+                    )
+                    return
+
+                return runcam
+
+            def live_stop():
+                self.cam.context("timer.updatebg --off\n")
+
+            submenu = wx.Menu()
+            menu.AppendSubMenu(submenu, _("...refresh"))
+            rates = ((2, 1), (1, 1), (1, 2), (1, 5), (1, 10))
+            for myrate in rates:
+                rate_frame = myrate[0]
+                rate_sec = myrate[1]
+                item = submenu.Append(wx.ID_ANY, f"{rate_frame}x / {rate_sec}sec")
+                self.cam.Bind(
+                    wx.EVT_MENU,
+                    live_view(rate_frame, rate_sec),
+                    id=item.GetId(),
+                )
+            submenu.AppendSeparator()
+            item = submenu.Append(wx.ID_ANY, "Disable")
+            self.cam.Bind(
+                wx.EVT_MENU,
+                lambda e: live_stop(),
+                id=item.GetId(),
+            )
+            menu.AppendSeparator()
             item = menu.Append(wx.ID_ANY, _("Export Snapshot"), "")
             self.cam.Bind(
                 wx.EVT_MENU,

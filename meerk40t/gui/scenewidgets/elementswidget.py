@@ -67,7 +67,7 @@ class ElementsWidget(Widget):
                     return RESPONSE_CONSUME
                 else:
                     self.scene.context.signal("scene_right_click")
-                    return RESPONSE_CHAIN
+                    return RESPONSE_CONSUME
         elif event_type == "rightdown":  # any modifier
             if self.scene.context.use_toolmenu:
                 self.scene.context("tool_menu")

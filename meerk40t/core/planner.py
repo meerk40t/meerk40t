@@ -11,6 +11,11 @@ from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.util_console import ConsoleOperation
+from .node.util_goto import GotoOperation
+from .node.util_home import HomeOperation
+from .node.util_origin import SetOriginOperation
+from .node.util_output import OutputOperation
+from .node.util_wait import WaitOperation
 from .units import Length
 
 
@@ -345,7 +350,129 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
+            def init_settings():
+                for prefix in ("prepend", "append"):
+                    str_count = f"{prefix}_op_count"
+                    self.device.setting(int, str_count, 0)
+                    value = getattr(self.device, str_count, 0)
+                    if value > 0:
+                        for idx in range(value):
+                            attr1 = f"{prefix}_op_{idx:02d}"
+                            attr2 = f"{prefix}_op_param_{idx:02d}"
+                            self.device.setting(str, attr1, "")
+                            self.device.setting(str, attr2, "")
+
+            def add_ops(is_prepend):
+                # Do we have have any default actions to include first?
+                if is_prepend:
+                    prefix = "prepend"
+                else:
+                    prefix = "append"
+                try:
+                    if is_prepend:
+                        count = self.device.prepend_op_count
+                    else:
+                        count = self.device.append_op_count
+                except AttributeError:
+                    count = 0
+                idx = 0
+                while idx <= count - 1:
+                    addop = None
+                    attr1 = f"{prefix}_op_{idx:02d}"
+                    attr2 = f"{prefix}_op_param_{idx:02d}"
+                    if hasattr(self.device, attr1):
+                        optype = getattr(self.device, attr1, None)
+                        opparam = getattr(self.device, attr2, None)
+                        if optype is not None:
+                            if optype == "util console":
+                                addop = ConsoleOperation(command=opparam)
+                            elif optype == "util home":
+                                addop = HomeOperation()
+                            elif optype == "util output":
+                                if opparam is not None:
+                                    params = opparam.split(",")
+                                    mask = 0
+                                    setvalue = 0
+                                    if len(params) > 0:
+                                        try:
+                                            mask = int(params[0])
+                                        except ValueError:
+                                            mask = 0
+                                    if len(params) > 1:
+                                        try:
+                                            setvalue = int(params[1])
+                                        except ValueError:
+                                            setvalue = 0
+                                    if mask != 0 or setvalue != 0:
+                                        addop = OutputOperation(mask, setvalue)
+                            elif optype == "util goto":
+                                if opparam is not None:
+                                    params = opparam.split(",")
+                                    x = 0
+                                    y = 0
+                                    if len(params) > 0:
+                                        try:
+                                            x = float(Length(params[0]))
+                                        except ValueError:
+                                            x = 0
+                                    if len(params) > 1:
+                                        try:
+                                            y = float(Length(params[1]))
+                                        except ValueError:
+                                            y = 0
+                                    addop = GotoOperation(x=x, y=y)
+                            elif optype == "util origin":
+                                if opparam is not None:
+                                    params = opparam.split(",")
+                                    x = 0
+                                    y = 0
+                                    if len(params) > 0:
+                                        try:
+                                            x = float(Length(params[0]))
+                                        except ValueError:
+                                            x = 0
+                                    if len(params) > 1:
+                                        try:
+                                            y = float(Length(params[1]))
+                                        except ValueError:
+                                            y = 0
+                                    addop = SetOriginOperation(x=x, y=y)
+                            elif optype == "util wait":
+                                if opparam is not None:
+                                    try:
+                                        opparam = float(opparam)
+                                    except ValueError:
+                                        opparam = None
+                                if opparam is not None:
+                                    addop = WaitOperation(wait=opparam)
+                    if addop is not None:
+                        try:
+                            if not addop.output:
+                                continue
+                        except AttributeError:
+                            pass
+                        try:
+                            if len(addop) == 0:
+                                continue
+                        except TypeError:
+                            pass
+                        if addop.type == "cutcode":
+                            # CutNodes are denuded into normal objects.
+                            addop = addop.cutcode
+                        copy_c = copy(addop)
+                        try:
+                            copy_c.copy_children_as_real(addop)
+                        except AttributeError:
+                            pass
+                        data.plan.append(copy_c)
+
+                    idx += 1
+
+            init_settings()
             operations = self.elements.get(type="branch ops")
+
+            # Add default start ops
+            add_ops(True)
             for c in operations.flat(
                 types=(
                     "op cut",
@@ -373,7 +500,7 @@ class Planner(Service):
                 except AttributeError:
                     pass
                 try:
-                    if len(c) == 0:
+                    if c.type.startswith("op") and len(c.children) == 0:
                         continue
                 except TypeError:
                     pass
@@ -386,6 +513,8 @@ class Planner(Service):
                 except AttributeError:
                     pass
                 data.plan.append(copy_c)
+            # Add default trailing ops
+            add_ops(False)
             channel(_("Copied Operations."))
             self.signal("plan", data.name, 1)
             return data_type, data

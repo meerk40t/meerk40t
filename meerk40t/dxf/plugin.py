@@ -1,9 +1,17 @@
 def plugin(kernel, lifecycle=None):
     if lifecycle == "invalidate":
         try:
-            import ezdxf  # pylint: disable=unused-import
+            import ezdxf
         except ImportError:
             print("DXF plugin could not load because ezdxf is not installed.")
+            return True
+        try:
+            # Includes ezdxf and all required imports therein
+            from meerk40t.dxf.dxf_io import DxfLoader
+        except ImportError:
+            print(
+                "DXF plugin could not load because, though ezdxf is installed, the version isn't supported."
+            )
             return True
     elif lifecycle == "register":
         from meerk40t.dxf.dxf_io import DxfLoader

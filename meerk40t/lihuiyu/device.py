@@ -227,8 +227,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "max_speed_raster_enabled", False)
         self.setting(float, "max_speed_raster", 750.0)
 
-        self.state = 0
-
         self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
@@ -719,9 +717,28 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known postion.
+        @return: the location in scene units for the current known position.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+
+    @property
+    def speed(self):
+        return self.driver.speed
+
+    @property
+    def power(self):
+        return self.driver.power
+
+    @property
+    def state(self):
+        return self.driver.state
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
 
     @property
     def output(self):
@@ -797,6 +814,8 @@ class LihuiyuDriver(Parameters):
         def primary_hold():
             if self.out_pipe is None:
                 return True
+            if hasattr(self.out_pipe, "is_shutdown") and self.out_pipe.is_shutdown:
+                raise ConnectionAbortedError("Cannot hold for a shutdown pipe.")
             try:
                 buffer = len(self.out_pipe)
             except TypeError:
@@ -958,8 +977,7 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.program_mode()
-        self.raster_mode()
+        self.rapid_mode()
         self.wait_finish()
         self.laser_on()  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)

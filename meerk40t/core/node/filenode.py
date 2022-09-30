@@ -1,6 +1,5 @@
 import os
 
-from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.node.node import Node
 
 

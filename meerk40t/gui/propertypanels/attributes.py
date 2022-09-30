@@ -35,8 +35,8 @@ class ColorPanel(wx.Panel):
         color_sizer = wx.BoxSizer(wx.HORIZONTAL)
         main_sizer.Add(color_sizer, 0, wx.EXPAND, 0)
         self.btn_color = []
-        self.lbl_color = []
-        bgcolors = (
+        self.underliner = []
+        self.bgcolors = [
             0xFFFFFF,
             0x000000,
             0xFF0000,
@@ -46,46 +46,84 @@ class ColorPanel(wx.Panel):
             0xFF00FF,
             0x00FFFF,
             0xFFFFFF,
-        )
-        for i in range(len(bgcolors)):
-            self.lbl_color.append(wx.StaticText(self, wx.ID_ANY, ""))
+            None,
+        ]
+        self.last_col_idx = len(self.bgcolors) - 1
+        for i in range(len(self.bgcolors)):
+            self.underliner.append(wx.StaticBitmap(self, wx.ID_ANY))
+            self.underliner[i].SetBackgroundColour(wx.BLUE)
+            self.underliner[i].SetMaxSize(wx.Size(-1, 3))
             # self.lbl_color[i].SetMinSize((-1, 20))
             self.btn_color.append(wx.Button(self, wx.ID_ANY, ""))
             if i == 0:
                 self.btn_color[i].SetForegroundColour(wx.RED)
                 self.btn_color[i].SetLabel("X")
+            elif i == len(self.bgcolors) - 1:
+                self.btn_color[i].SetLabel(_("Custom"))
+            else:
+                self.btn_color[i].SetForegroundColour(wx.Colour(self.bgcolors[i]))
+                colinfo = wx.Colour(self.bgcolors[i]).GetAsString(wx.C2S_NAME)
+                self.btn_color[i].SetLabel(_(colinfo))
             self.btn_color[i].SetMinSize((10, 23))
-            self.btn_color[i].SetBackgroundColour(wx.Colour(bgcolors[i]))
+            self.btn_color[i].SetBackgroundColour(wx.Colour(self.bgcolors[i]))
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(self.btn_color[i], 0, wx.EXPAND, 0)
-            sizer.Add(self.lbl_color[i], 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+            sizer.Add(self.underliner[i], 0, wx.EXPAND, 0)
             color_sizer.Add(sizer, 1, wx.EXPAND, 0)
             self.btn_color[i].Bind(wx.EVT_BUTTON, self.on_button)
+        font = wx.Font(
+            7,
+            wx.FONTFAMILY_SWISS,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_BOLD,
+        )
+        self.btn_color[self.last_col_idx].SetFont(font)
         self.SetSizer(main_sizer)
         self.Layout()
         self.set_widgets(self.node)
 
     def on_button(self, event):
+        value = None
         button = event.GetEventObject()
-        for bidx, sbtn in enumerate(self.btn_color):
-            if sbtn == button:
-                value = None
-                if bidx == 0:
+        bidx = None
+        if button == self.btn_color[self.last_col_idx]:
+            nodecol = None
+            cvalue = getattr(self.node, self.attribute, None)
+            if cvalue == "none":
+                cvalue = None
+            if cvalue is not None:
+                nodecol = wx.Colour(swizzlecolor(cvalue))
+            color_data = wx.ColourData()
+            color_data.SetColour(wx.Colour(nodecol))
+            dlg = wx.ColourDialog(self, color_data)
+            if dlg.ShowModal() == wx.ID_OK:
+                color_data = dlg.GetColourData()
+                cvalue = color_data.GetColour()
+                value = Color(swizzlecolor(cvalue.GetRGB()), 1.0)
+                button.SetBackgroundColour(cvalue)
+            else:
+                return
+        else:
+            for bidx, sbtn in enumerate(self.btn_color):
+                if sbtn == button:
                     value = None
-                else:
-                    if bidx < 0 or bidx >= len(self.btn_color):
-                        bidx = -1
+                    if bidx == 0:
+                        value = None
                     else:
-                        bcolor = button.GetBackgroundColour()
-                        rgb = bcolor.GetRGB()
-                        color = swizzlecolor(rgb)
-                        value = Color(color, 1.0)
-                setattr(self.node, self.attribute, value)
-                self.context.elements.signal("element_property_update", self.node)
-                if self.callback is not None:
-                    self.callback()
-                self.mark_color(bidx)
-                break
+                        if bidx < 0 or bidx >= len(self.btn_color):
+                            bidx = -1
+                        else:
+                            bcolor = button.GetBackgroundColour()
+                            rgb = bcolor.GetRGB()
+                            color = swizzlecolor(rgb)
+                            value = Color(color, 1.0)
+                    break
+        setattr(self.node, self.attribute, value)
+        self.context.elements.signal("element_property_update", self.node)
+        if self.callback is not None:
+            self.callback()
+        self.mark_color(bidx)
+        self.node.focus()
 
     def pane_hide(self):
         pass
@@ -106,16 +144,37 @@ class ColorPanel(wx.Panel):
         self.Show()
 
     def mark_color(self, idx):
+        def countercolor(bgcolor):
+            background = swizzlecolor(bgcolor)
+            c1 = Color("Black")
+            c2 = Color("White")
+            if Color.distance(background, c1) > Color.distance(background, c2):
+                textcolor = c1
+            else:
+                textcolor = c2
+            wxcolor = wx.Colour(swizzlecolor(textcolor))
+            return wxcolor
+
         if self.node is None:
             idx = -1
+            self.btn_color[self.last_col_idx].SetBackgroundColour(None)
+            self.bgcolors[self.last_col_idx] = None
         else:
             value = getattr(self.node, self.attribute, None)
             nodecol = None
             if value == "none":
                 value = None
+
             colinfo = "None"
             if value is not None:
                 nodecol = wx.Colour(swizzlecolor(value))
+                self.bgcolors[self.last_col_idx] = nodecol
+                self.btn_color[self.last_col_idx].SetBackgroundColour(
+                    self.bgcolors[self.last_col_idx]
+                )
+                self.btn_color[self.last_col_idx].SetForegroundColour(
+                    countercolor(self.bgcolors[self.last_col_idx])
+                )
                 s = ""
                 try:
                     s = nodecol.GetAsString(wx.C2S_NAME)
@@ -135,16 +194,18 @@ class ColorPanel(wx.Panel):
                     idx = 0
                 else:
                     for i, btn in enumerate(self.btn_color):
+                        if i == 0:  # We skip the none color...
+                            continue
                         col = self.btn_color[i].GetBackgroundColour()
                         if nodecol == col:
                             idx = i
                             break
 
-        for i, label in enumerate(self.lbl_color):
+        for i, liner in enumerate(self.underliner):
             if i == idx:
-                label.SetLabel("x")
+                liner.Show(True)
             else:
-                label.SetLabel("")
+                liner.Show(False)
         self.Layout()
 
 
@@ -282,16 +343,16 @@ class PositionSizePanel(wx.Panel):
         sizer_h_xy.Add(sizer_x, 1, wx.EXPAND, 0)
         sizer_h_xy.Add(sizer_y, 1, wx.EXPAND, 0)
 
-        sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
-        sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
+        self.sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
+        self.sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
 
-        sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
-        sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
-        sizer_v_xywh.Add(sizer_h_wh, 0, wx.EXPAND, 0)
+        self.sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
+        self.sizer_v_xywh.Add(self.sizer_h_wh, 0, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
-        sizer_main.Add(sizer_v_xywh, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.sizer_v_xywh, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -317,47 +378,70 @@ class PositionSizePanel(wx.Panel):
     def pane_show(self):
         pass
 
+    def _set_widgets_hidden(self):
+        self.text_x.SetValue("")
+        self.text_y.SetValue("")
+        self.text_w.SetValue("")
+        self.text_h.SetValue("")
+        self.Hide()
+
+    def show_hide_wh(self, displaythem):
+        self.text_w.Show(show=displaythem)
+        self.text_h.Show(show=displaythem)
+        self.sizer_h_wh.ShowItems(displaythem)
+        self.sizer_v_xywh.Layout()
+        self.Layout()
+
     def set_widgets(self, node):
         self.node = node
-        vis = node is not None
-        bb = None
         try:
             bb = node.bounds
         except:
-            vis = False
+            # Node is none or bounds threw an error.
+            bb = None
 
-        if vis:
-            if hasattr(self.node, "lock"):
-                self.check_lock.Enable(True)
-                self.check_lock.SetValue(self.node.lock)
-            else:
-                self.check_lock.SetValue(False)
-                self.check_lock.Enable(False)
-
-            en_xy = (
-                not getattr(self.node, "lock", False)
-                or self.context.elements.lock_allows_move
-            )
-            en_wh = not getattr(self.node, "lock", False)
-            x = bb[0]
-            y = bb[1]
-            w = bb[2] - bb[0]
-            h = bb[3] - bb[1]
-            self.text_x.SetValue(Length(x, digits=4).length_mm)
-            self.text_y.SetValue(Length(y, digits=4).length_mm)
-            self.text_w.SetValue(Length(w, digits=4).length_mm)
-            self.text_h.SetValue(Length(h, digits=4).length_mm)
-            self.text_x.Enable(en_xy)
-            self.text_y.Enable(en_xy)
-            self.text_w.Enable(en_wh)
-            self.text_h.Enable(en_wh)
-            self.Show()
+        if bb is None:
+            # Bounds was genuinely none, or node threw an error.
+            self._set_widgets_hidden()
+            return
+        if hasattr(self.node, "lock"):
+            self.check_lock.Enable(True)
+            self.check_lock.SetValue(self.node.lock)
         else:
-            self.text_x.SetValue("")
-            self.text_y.SetValue("")
-            self.text_w.SetValue("")
-            self.text_h.SetValue("")
-            self.Hide()
+            self.check_lock.SetValue(False)
+            self.check_lock.Enable(False)
+
+        en_xy = (
+            not getattr(self.node, "lock", False)
+            or self.context.elements.lock_allows_move
+        )
+        en_wh = not getattr(self.node, "lock", False)
+        x = bb[0]
+        y = bb[1]
+        w = bb[2] - bb[0]
+        h = bb[3] - bb[1]
+        units = self.context.units_name
+        if units in ("inch", "inches"):
+            units = "in"
+
+        self.text_x.SetValue(
+            f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_y.SetValue(
+            f"{Length(amount=y, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_w.SetValue(
+            f"{Length(amount=w, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_h.SetValue(
+            f"{Length(amount=h, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_x.Enable(en_xy)
+        self.text_y.Enable(en_xy)
+        self.text_w.Enable(en_wh)
+        self.text_h.Enable(en_wh)
+        self.show_hide_wh(node.type != "elem point")
+        self.Show()
 
     def translate_it(self):
         if (

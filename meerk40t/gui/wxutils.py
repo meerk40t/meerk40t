@@ -348,7 +348,8 @@ class TextCtrl(wx.TextCtrl):
             validator=validator,
             name=name,
         )
-
+        self.parent = parent
+        self.extend_default_units_if_empty = True
         self._check = check
         self._style = style
         # For the sake of readibility we allow multiple occurences of
@@ -394,10 +395,12 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
+        # You can set this to False, i you don't want logic to interfere with text input
+        self.execute_action_on_change = True
 
         if self._check is not None and self._check != "":
-            self.Bind(wx.EVT_TEXT, self.on_check)
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
+            self.Bind(wx.EVT_KEY_UP, self.on_check)
         self.Bind(wx.EVT_SET_FOCUS, self.on_enter_field)
         self.Bind(wx.EVT_KILL_FOCUS, self.on_leave_field)
         if self._style & wx.TE_PROCESS_ENTER != 0:
@@ -455,8 +458,54 @@ class TextCtrl(wx.TextCtrl):
         """
         return self._event_generated
 
+    def get_warn_status(self, txt):
+        status = ""
+        try:
+            value = None
+            if self._check == "float":
+                value = float(txt)
+            elif self._check == "percent":
+                if txt.endswith("%"):
+                    value = float(txt[:-1]) / 100.0
+                else:
+                    value = float(txt)
+            elif self._check == "int":
+                value = int(txt)
+            elif self._check == "empty":
+                if len(txt) == 0:
+                    status = "error"
+            elif self._check == "length":
+                value = Length(txt)
+            elif self._check == "angle":
+                value = Angle(txt)
+            # we passed so far, thus the values are syntactically correct
+            # Now check for content compliance
+            if value is not None:
+                if self.lower_limit is not None and value < self.lower_limit:
+                    value = self.lower_limit
+                    self.SetValue(str(value))
+                    status = "default"
+                if self.upper_limit is not None and value > self.upper_limit:
+                    value = self.upper_limit
+                    self.SetValue(str(value))
+                    status = "default"
+                if self.lower_limit_warn is not None and value < self.lower_limit_warn:
+                    status = "warning"
+                if self.upper_limit_warn is not None and value > self.upper_limit_warn:
+                    status = "warning"
+                if self.lower_limit_err is not None and value < self.lower_limit_err:
+                    status = "error"
+                if self.upper_limit_err is not None and value > self.upper_limit_err:
+                    status = "error"
+        except ValueError:
+            status = "error"
+        return status
+
     def SetValue(self, newvalue):
         self._last_valid_value = newvalue
+        status = self.get_warn_status(newvalue)
+        self.warn_status = status
+
         super().SetValue(newvalue)
 
     def set_error_level(self, err_min, err_max):
@@ -471,21 +520,42 @@ class TextCtrl(wx.TextCtrl):
         self.lower_limit = range_min
         self.upper_limit = range_max
 
-    def prevalidate(self):
+    def prevalidate(self, origin=None):
         # Check whether the field is okay, if not then put it to the last value
+        txt = super().GetValue()
+        # print (f"prevalidate called from: {origin}, check={self._check}, content:{txt}")
         if self.warn_status == "error" and self._last_valid_value is not None:
             # ChangeValue is not creating any events...
             self.ChangeValue(self._last_valid_value)
             self.warn_status = ""
+        elif (
+            txt != "" and self._check == "length" and self.extend_default_units_if_empty
+        ):
+            # Do we have non-existing units provided? --> Change content
+            purenumber = True
+            unitstr = "".join(ACCEPTED_UNITS)
+            for c in unitstr:
+                if c in txt:
+                    purenumber = False
+                    break
+            if purenumber and hasattr(self.parent, "context"):
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "units_name", "mm")
+                units = root.units_name
+                if units in ("inch", "inches"):
+                    units = "in"
+                txt = txt.strip() + units
+                self.ChangeValue(txt)
 
     def on_enter_field(self, event):
-        self._last_valid_value = self.GetValue()
+        self._last_valid_value = super().GetValue()
         event.Skip()
 
     def on_leave_field(self, event):
         # Needs to be passed on
         event.Skip()
-        self.prevalidate()
+        self.prevalidate("leave")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_KILL_FOCUS
             self._action_routine()
@@ -498,7 +568,7 @@ class TextCtrl(wx.TextCtrl):
     def on_enter(self, event):
         # Let others deal with it after me
         event.Skip()
-        self.prevalidate()
+        self.prevalidate("enter")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_TEXT_ENTER
             self._action_routine()
@@ -555,48 +625,62 @@ class TextCtrl(wx.TextCtrl):
 
     def on_check(self, event):
         event.Skip()
-        status = "modified"
-        try:
-            txt = self.GetValue()
-            value = None
-            if self._check == "float":
-                value = float(txt)
-            elif self._check == "percent":
-                if txt.endswith("%"):
-                    value = float(txt[:-1]) / 100.0
-                else:
-                    value = float(txt)
-            elif self._check == "int":
-                value = int(txt)
-            elif self._check == "empty":
-                if len(txt) == 0:
-                    status = "error"
-            elif self._check == "length":
-                value = Length(txt)
-            elif self._check == "angle":
-                value = Angle(txt)
-            # we passed so far, thus the values are syntactically correct
-            # Now check for content compliance
-            if value is not None:
-                if self.lower_limit is not None and value < self.lower_limit:
-                    value = self.lower_limit
-                    self.SetValue(str(value))
-                    status = "default"
-                if self.upper_limit is not None and value > self.upper_limit:
-                    value = self.upper_limit
-                    self.SetValue(str(value))
-                    status = "default"
-                if self.lower_limit_warn is not None and value < self.lower_limit_warn:
-                    status = "warning"
-                if self.upper_limit_warn is not None and value > self.upper_limit_warn:
-                    status = "warning"
-                if self.lower_limit_err is not None and value < self.lower_limit_err:
-                    status = "error"
-                if self.upper_limit_err is not None and value > self.upper_limit_err:
-                    status = "error"
-        except ValueError:
-            status = "error"
+        txt = super().GetValue()
+        status = self.get_warn_status(txt)
+        if status == "":
+            status = "modified"
         self.warn_status = status
+        # Is it a valid value?
+        lenokay = True
+        if len(txt) == 0 and self._check in (
+            "float",
+            "length",
+            "angle",
+            "int",
+            "percent",
+        ):
+            lenokay = False
+        if (
+            self.execute_action_on_change
+            and status == "modified"
+            and hasattr(self.parent, "context")
+            and lenokay
+        ):
+            if getattr(self.parent.context.root, "process_while_typing", False):
+                if self._action_routine is not None:
+                    self._event_generated = wx.EVT_TEXT
+                    self._action_routine()
+                    self._event_generated = None
+
+    @property
+    def Value(self):
+        return self.GetValue()
+
+    def GetValue(self):
+        result = super().GetValue()
+        if (
+            result != ""
+            and self._check == "length"
+            and self.extend_default_units_if_empty
+        ):
+            purenumber = True
+            unitstr = "".join(ACCEPTED_UNITS)
+            for c in unitstr:
+                if c in result:
+                    purenumber = False
+                    break
+            if purenumber and hasattr(self.parent, "context"):
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "units_name", "mm")
+                units = root.units_name
+                if units in ("inch", "inches"):
+                    units = "in"
+                result = result.strip()
+                if result.endswith("."):
+                    result += "0"
+                result += units
+        return result
 
 
 class CheckBox(wx.CheckBox):

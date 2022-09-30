@@ -128,6 +128,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                "section": "_00_General",
             },
             {
                 "attr": "bedwidth",
@@ -136,6 +137,9 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "section": "_10_Dimensions",
+                "subsection": "Bed",
+                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
@@ -144,26 +148,87 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "section": "_10_Dimensions",
+                "subsection": "Bed",
+                "signals": "bedsize",
             },
             {
                 "attr": "scale_x",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("X Scale Factor"),
+                "label": _("X-Axis"),
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
             },
             {
                 "attr": "scale_y",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("Y Scale Factor"),
+                "label": _("Y-Axis"),
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
+            },
+            {
+                "attr": "flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Flip X"),
+                "tip": _(
+                    "+X is standard for grbl but sometimes settings can flip that."
+                ),
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
+            },
+            {
+                "attr": "flip_y",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Flip Y"),
+                "tip": _(
+                    "-Y is standard for grbl but sometimes settings can flip that."
+                ),
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
+            },
+            {
+                "attr": "swap_xy",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Swap XY"),
+                "tip": _(
+                    "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+                ),
+                "subsection": "_20_Axis corrections",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_bottom",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Home Bottom"),
+                "tip": _("Indicates the device Home is on the bottom"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_right",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Right"),
+                "tip": _("Indicates the device Home is at the right side"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
             },
             {
                 "attr": "interpolate",
@@ -172,6 +237,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
+                "section": "_20_Behaviour",
             },
             {
                 "attr": "mock",
@@ -182,6 +248,7 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                "section": "_30_Interface",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -212,9 +279,9 @@ class MoshiDevice(Service, ViewPort):
             user_scale_y=self.scale_y,
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
-            # flip_x=self.flip_x,
-            # flip_y=self.flip_y,
-            # swap_xy=self.swap_xy,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
         )
@@ -324,6 +391,20 @@ class MoshiDevice(Service, ViewPort):
         @return: the location in units for the current known position.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
+
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        self.origin_x = 1.0 if self.home_right else 0.0
+        self.origin_y = 1.0 if self.home_bottom else 0.0
+        super().realize()
 
 
 class MoshiDriver(Parameters):
@@ -479,7 +560,9 @@ class MoshiDriver(Parameters):
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
-                self._goto_absolute(self.origin_x + start[0], self.origin_y + start[1])
+                self._goto_absolute(
+                    self.origin_x + start[0], self.origin_y + start[1], 0
+                )
             elif isinstance(q, SetOriginCut):
                 self.current_steps += 1
                 if q.set_current:

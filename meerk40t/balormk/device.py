@@ -36,6 +36,15 @@ class ElementLightJob:
         self.time_started = time.time()
         self.runtime = 0
 
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
+
     def is_running(self):
         return not self.stopped and self.started
 
@@ -162,6 +171,15 @@ class LiveSelectionLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
+
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
 
     def is_running(self):
         return not self.stopped
@@ -328,6 +346,15 @@ class LiveFullLightJob:
         self.time_started = time.time()
         self.runtime = 0
 
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
+
     def is_running(self):
         return not self.stopped
 
@@ -483,7 +510,10 @@ class LiveFullLightJob:
                 return False
             if self.changed:
                 return True
-            e = node.as_path()
+            try:
+                e = node.as_path()
+            except AttributeError:
+                continue
             if not e:
                 continue
             x, y = e.point(0)
@@ -624,6 +654,8 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Lens Size"),
                 "section": "_00_General",
                 "priority": "20",
+                "signals": "bedsize",
+                # intentionally not bed_size
             },
             {
                 "attr": "offset_x",
@@ -674,6 +706,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Flip the X axis for the Balor device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
+                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -684,6 +717,7 @@ class BalorDevice(Service, ViewPort):
                 "tip": _("Flip the Y axis for the Balor device"),
                 "section": "_10_Parameters",
                 "subsection": "_10_Axis corrections",
+                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -1929,12 +1963,11 @@ class BalorDevice(Service, ViewPort):
             """
             if lens_size is None:
                 raise SyntaxError
-            self.bedwidth = lens_size
-            self.bedheight = lens_size
-
-            channel(f"Set Bed Size : ({self.bedwidth}, {self.bedheight}).")
-
-            self.signal("bed_size")
+            self.lens_size = lens_size
+            self.width = lens_size
+            self.height = lens_size
+            self.signal("bedsize", (self.lens_size, self.lens_size))
+            channel(f"Set Bed Size : ({self.lens_size}, {self.lens_size}).")
 
         @self.console_option(
             "count",
@@ -1992,6 +2025,8 @@ class BalorDevice(Service, ViewPort):
                         (bounds[2], bounds[1]),
                         (bounds[2], bounds[3]),
                     ]
+                elif e.type == "elem text":
+                    continue  # We can't outline text.
                 else:
                     try:
                         path = abs(Path(e.shape))
@@ -2067,6 +2102,11 @@ class BalorDevice(Service, ViewPort):
         def codes_update(**kwargs):
             self.realize()
 
+    def realize(self):
+        self.width = self.lens_size
+        self.height = self.lens_size
+        super().realize()
+
     @property
     def current(self):
         """
@@ -2076,6 +2116,13 @@ class BalorDevice(Service, ViewPort):
             self.driver.native_x,
             self.driver.native_y,
         )
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
 
     @property
     def calibration_file(self):

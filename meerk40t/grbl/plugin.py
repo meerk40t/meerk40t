@@ -46,6 +46,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             ("grblcontrol", "grbldesign", "grblemulator"),
             help=_("activate the grblserver."),
+            hidden=True,
         )
         def grblserver(
             command,
@@ -55,11 +56,16 @@ def plugin(kernel, lifecycle=None):
             flip_x=False,
             flip_y=False,
             verbose=False,
-            watch=False,
             quit=False,
             **kwargs,
         ):
-
+            root = kernel.root
+            root.setting(bool, "developer_mode", False)
+            if not root.developer_mode:
+                channel(
+                    "This was not fully tested prior to feature freeze for the 0.8.x version of MeerK40t. So it was disabled. Look for it in a future version."
+                )
+                return
             root = kernel.root
             try:
                 server = root.open_as("module/TCPServer", "grbl", port=port)
@@ -80,7 +86,7 @@ def plugin(kernel, lifecycle=None):
 
                 # Link emulator and server.
                 root.channel("grbl/recv").watch(emulator.write)
-                emulator.recv = root.channel("grbl/send")
+                emulator.reply = root.channel("grbl/send")
 
                 channel(
                     _("TCP Server for GRBL Emulator on port: {port}").format(port=port)

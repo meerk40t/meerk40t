@@ -2,6 +2,7 @@
 import wx
 
 from meerk40t.core.units import Length
+from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
@@ -404,6 +405,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         self.context.device.realize()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_text_bedheight(self):
         ctrl = self.text_bedheight
@@ -418,6 +420,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         self.context.device.realize()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_text_x_scale(self):
         try:
@@ -428,6 +431,7 @@ class ConfigurationLaserPanel(wx.Panel):
             )
             self.context.device.realize()
             self.context("viewport_update\n")
+            self.context.signal("bedsize", False)
         except ValueError:
             pass
 
@@ -442,6 +446,7 @@ class ConfigurationLaserPanel(wx.Panel):
             )
             self.context.device.realize()
             self.context("viewport_update\n")
+            self.context.signal("bedsize", False)
         except ValueError:
             pass
 
@@ -624,24 +629,29 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def on_check_swapxy(self, event=None):
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_flip_x(self, event=None):
         self.context.flip_x = self.checkbox_flip_x.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_home_right(self, event=None):
         self.context.home_right = self.checkbox_home_right.GetValue()
         self.context.origin_x = 1.0 if self.context.home_right else 0.0
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_flip_y(self, event=None):
         self.context.flip_y = self.checkbox_flip_y.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_home_bottom(self, event=None):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
         self.context.origin_y = 1.0 if self.context.home_bottom else 0.0
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_device_label(self):
         self.context.label = self.text_device_label.GetValue()
@@ -724,9 +734,23 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_alternative_raster = wx.CheckBox(
             self, wx.ID_ANY, _("Alt Raster Style")
         )
+        self.check_alternative_raster.SetToolTip(
+            _(
+                "This feature uses an alternative raster method performing a raster turn around using NSE rather than G00x encoding."
+            )
+        )
+
         sizer_general.Add(self.check_alternative_raster, 0, wx.EXPAND, 0)
 
         self.check_twitches = wx.CheckBox(self, wx.ID_ANY, _("Twitch Vectors"))
+        self.check_twitches.SetToolTip(
+            _(
+                "Twitching is an unnecessary move in an unneeded direction at the start and end of travel moves between vector burns. "
+                "It is most noticeable when you are doing a number of small burns (e.g. stitch holes in leather). "
+                "A twitchless mode is now default in 0.7.6+ or later which results in a noticeable faster travel time. "
+                "This option allows you to turn on the previous mode if you experience problems."
+            )
+        )
         sizer_general.Add(self.check_twitches, 0, wx.EXPAND, 0)
 
         sizer_jog = wx.StaticBoxSizer(
@@ -785,6 +809,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
             self, wx.ID_ANY, _("Override Rapid Movements")
         )
         sizer_rapid_override.Add(self.check_override_rapid, 0, wx.EXPAND, 0)
+        self.check_override_rapid.SetMaxSize(wx.Size(300, -1))
 
         sizer_speed_xy = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -838,6 +863,8 @@ class ConfigurationSetupPanel(ScrolledPanel):
                 "Correct for speed invalidity. Lihuiyu Studios speeds are 92% of the correctly rated speed"
             )
         )
+        self.check_fix_speeds.SetMaxSize(wx.Size(300, -1))
+
         sizer_32.Add(self.check_fix_speeds, 1, wx.EXPAND, 0)
 
         self.text_fix_rated_speed = TextCtrl(
@@ -854,6 +881,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
                 "Scale any given speeds to this device by this amount. If set to 1.1, all speeds are 10% faster than rated."
             )
         )
+        self.check_scale_speed.SetMaxSize(wx.Size(300, -1))
         h_sizer_y9.Add(self.check_scale_speed, 1, wx.EXPAND, 0)
 
         self.text_speed_scale_amount = TextCtrl(
@@ -880,6 +908,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_max_speed_vector.SetToolTip(
             _("Limit the maximum vector speed to this value")
         )
+        self.check_max_speed_vector.SetMaxSize(wx.Size(300, -1))
         sizer_30.Add(self.check_max_speed_vector, 1, wx.EXPAND, 0)
 
         self.text_max_speed_vector = TextCtrl(
@@ -904,6 +933,7 @@ class ConfigurationSetupPanel(ScrolledPanel):
         self.check_max_speed_raster.SetToolTip(
             _("Limit the maximum raster speed to this value")
         )
+        self.check_max_speed_raster.SetMaxSize(wx.Size(300, -1))
         sizer_31.Add(self.check_max_speed_raster, 1, wx.EXPAND, 0)
 
         self.text_max_speed_raster = TextCtrl(
@@ -1093,35 +1123,41 @@ class LihuiyuDriverGui(MWindow):
             | wx.aui.AUI_NB_TAB_SPLIT
             | wx.aui.AUI_NB_TAB_MOVE,
         )
+        self.panels = []
 
-        self.ConfigurationPanel = ConfigurationInterfacePanel(
+        panel_config = ConfigurationInterfacePanel(
             self.notebook_main, wx.ID_ANY, context=self.context
         )
-        self.notebook_main.AddPage(self.ConfigurationPanel, _("Configuration"))
 
-        self.SetupPanel = ConfigurationSetupPanel(
+        panel_setup = ConfigurationSetupPanel(
             self.notebook_main, wx.ID_ANY, context=self.context
         )
-        self.notebook_main.AddPage(self.SetupPanel, _("Setup"))
 
-        self.panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
-        self.notebook_main.AddPage(self.panel_warn, _("Warning"))
+        panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
+        panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
+
+        self.panels.append(panel_config)
+        self.panels.append(panel_setup)
+        self.panels.append(panel_warn)
+        self.panels.append(panel_actions)
+
+        self.notebook_main.AddPage(panel_config, _("Configuration"))
+        self.notebook_main.AddPage(panel_setup, _("Setup"))
+        self.notebook_main.AddPage(panel_warn, _("Warning"))
+        self.notebook_main.AddPage(panel_actions, _("Default Actions"))
 
         self.Layout()
 
-        self.add_module_delegate(self.ConfigurationPanel)
-        self.add_module_delegate(self.SetupPanel)
-        self.add_module_delegate(self.panel_warn)
+        for panel in self.panels:
+            self.add_module_delegate(panel)
 
     def window_open(self):
-        self.SetupPanel.pane_show()
-        self.ConfigurationPanel.pane_show()
-        self.panel_warn.pane_show()
+        for panel in self.panels:
+            panel.pane_show()
 
     def window_close(self):
-        self.SetupPanel.pane_hide()
-        self.ConfigurationPanel.pane_hide()
-        self.panel_warn.pane_hide()
+        for panel in self.panels:
+            panel.pane_hide()
 
     def window_preserve(self):
         return False

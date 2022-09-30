@@ -93,7 +93,7 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 name = instance.__class__.__name__
 
-            self.notebook_main.AddPage(page_panel, name)
+            self.notebook_main.AddPage(page_panel, _(name))
             try:
                 page_panel.set_widgets(instance)
             except AttributeError:

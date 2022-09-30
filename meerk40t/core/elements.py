@@ -61,11 +61,11 @@ def plugin(kernel, lifecycle=None):
         )
         kernel.register(
             "format/op raster",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power} {colcode} {opstop}",
+            "{danger}{defop}{enabled}{pass}{element_type} {direction}{speed}mm/s @{power} {colcode} {opstop}",
         )
         kernel.register(
             "format/op image",
-            "{danger}{defop}{enabled}{pass}{element_type}{direction}{speed}mm/s @{power}",
+            "{danger}{defop}{enabled}{pass}{element_type} {direction}{speed}mm/s @{power}",
         )
         kernel.register(
             "format/op dots",
@@ -75,30 +75,30 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/util console", "{enabled}{command}")
         kernel.register("format/util wait", "{enabled}{element_type} {wait}")
         kernel.register("format/util home", "{enabled}{element_type}")
-        kernel.register("format/util goto", "{enabled}{element_type}{adjust}")
-        kernel.register("format/util origin", "{enabled}{element_type}{adjust}")
+        kernel.register("format/util goto", "{enabled}{element_type} {adjust}")
+        kernel.register("format/util origin", "{enabled}{element_type} {adjust}")
         kernel.register("format/util output", "{enabled}{element_type} {bits}")
         kernel.register("format/util input", "{enabled}{element_type} {bits}")
         kernel.register("format/layer", "{element_type} {name}")
-        kernel.register("format/elem ellipse", "{element_type} {id} {label} {stroke}")
+        kernel.register("format/elem ellipse", "{element_type} {desc} {stroke}")
         kernel.register(
-            "format/elem image", "{element_type} {label} {width}x{height} @{dpi}"
+            "format/elem image", "{element_type} {desc} {width}x{height} @{dpi}"
         )
-        kernel.register("format/elem line", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem path", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem point", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem polyline", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem rect", "{element_type} {id} {label} {stroke}")
-        kernel.register("format/elem text", "{element_type} {id} {label}: {text}")
+        kernel.register("format/elem line", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem path", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem point", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem polyline", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem rect", "{element_type} {desc} {stroke}")
+        kernel.register("format/elem text", "{element_type} {desc} {text}")
         kernel.register("format/reference", "*{reference}")
-        kernel.register("format/group", "{element_type} {id} {label}({children} elems)")
-        kernel.register("format/blob", "{element_type}:{data_type}:{name} @{length}")
+        kernel.register("format/group", "{element_type} {desc}({children} elems)")
+        kernel.register("format/blob", "{element_type} {data_type}:{label} @{length}")
         kernel.register("format/file", "{element_type} {filename}")
         kernel.register("format/lasercode", "{element_type} {command_count}")
         kernel.register("format/cutcode", "{element_type}")
-        kernel.register("format/branch ops", _("Operations {loops}"))
-        kernel.register("format/branch elems", _("Elements"))
-        kernel.register("format/branch reg", _("Regmarks"))
+        kernel.register("format/branch ops", "{element_type} {loops}")
+        kernel.register("format/branch elems", "{element_type}")
+        kernel.register("format/branch reg", "{element_type}")
     elif lifecycle == "register":
         kernel.add_service("elements", Elemental(kernel))
         # kernel.add_service("elements", Elemental(kernel,1))
@@ -110,10 +110,10 @@ def plugin(kernel, lifecycle=None):
                 "object": elements,
                 "default": True,
                 "type": bool,
-                "label": _("Default Operation Empty"),
-                "tip": _("Leave empty operations or default Other/Red/Blue"),
+                "label": _("Don't autoload operations on empty set"),
+                "tip": _("Leave empty operations, don't load a default set"),
                 "page": "Classification",
-                "section": "",
+                "section": "_90_Auto-Generation",
             },
             {
                 "attr": "classify_reverse",
@@ -125,35 +125,36 @@ def plugin(kernel, lifecycle=None):
                     "Classify elements into operations in reverse order e.g. to match Inkscape's Object List"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
-            {
-                "attr": "legacy_classification",
-                "object": elements,
-                "default": False,
-                "type": bool,
-                "label": _("Legacy Classify"),
-                "tip": _(
-                    "Use the legacy classification algorithm rather than the modern classification algorithm."
-                ),
-                "page": "Classification",
-                "section": "",
-            },
+            # No longer used...
+            # {
+            #     "attr": "legacy_classification",
+            #     "object": elements,
+            #     "default": False,
+            #     "type": bool,
+            #     "label": _("Legacy Classify"),
+            #     "tip": _(
+            #         "Use the legacy classification algorithm rather than the modern classification algorithm."
+            #     ),
+            #     "page": "Classification",
+            #     "section": "",
+            # },
             {
                 "attr": "classify_new",
                 "object": elements,
                 "default": True,
                 "type": bool,
-                "label": _("Classify newly created elements"),
+                "label": _("Classify elements after creation"),
                 "tip": _(
-                    "MK will immediately try to classify an element as soon as it is created,"
+                    "MK will immediately try to classify (automatically assign) an element as soon as it is created,"
                 )
                 + "\n"
                 + _(
-                    "if you want to defer this to apply manual classification, then untick this option."
+                    "if you want to defer this to apply manual assignment, then untick this option."
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "classify_fuzzy",
@@ -167,7 +168,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("Ticked: Allow a certain color-distance for classification"),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_fuzzydistance",
@@ -191,13 +192,32 @@ def plugin(kernel, lifecycle=None):
                     "Values: 0 Identical, 100 very close, 200 tolerant, 400 colorblind"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
+            },
+            {
+                "attr": "classify_black_as_raster",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _(
+                    "Treat 'Black' as raster even for basic elements (like Whisperer does)"
+                ),
+                "tip": _(
+                    "Ticked: Classify will assign black elements to a raster operation"
+                )
+                + "\n"
+                + _(
+                    "Unticked: Classify will assign black elements to an engrave operation"
+                ),
+                "page": "Classification",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_default",
                 "object": elements,
                 "default": True,
                 "type": bool,
+                "hidden": True,
                 "label": _("Assign to default operations"),
                 "tip": _("If classification did not find a match,")
                 + "\n"
@@ -205,7 +225,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then it will try to assign it to matching 'default' operation"),
                 "page": "Classification",
-                "section": "",
+                "section": "_10_Assignment-Logic",
             },
             {
                 "attr": "classify_autogenerate",
@@ -221,7 +241,7 @@ def plugin(kernel, lifecycle=None):
                 + "\n"
                 + _("then MeerK40t can create a matching operation for you."),
                 "page": "Classification",
-                "section": "",
+                "section": "_90_Auto-Generation",
             },
             {
                 "attr": "classify_auto_inherit",
@@ -245,7 +265,23 @@ def plugin(kernel, lifecycle=None):
                     "- provided no elements are assigned to it yet (ie works only for an empty op)!"
                 ),
                 "page": "Classification",
-                "section": "",
+                "section": "_30_GUI-Behaviour",
+            },
+            {
+                "attr": "classify_on_color",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Classify after color-change"),
+                "tip": _("Whenever you change an elements color (stroke or fill),")
+                + "\n"
+                + _(
+                    "MK will then reclassify this element. You can turn this feature off"
+                )
+                + "\n"
+                + _("by disabling this option."),
+                "page": "Classification",
+                "section": "_30_GUI-Behaviour",
             },
             {
                 "attr": "lock_allows_move",
@@ -258,6 +294,40 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Scene",
                 "section": "General",
+            },
+            {
+                "attr": "op_show_default",
+                "object": elements,
+                "default": False,
+                "type": bool,
+                "label": _("Display 'default' for unchanged values"),
+                "tip": _(
+                    "Ticked: For power and speed display a 'default' string if default values in place."
+                )
+                + "\n"
+                + _("Unticked: Show their current value."),
+                "page": "Scene",
+                "section": "Operation",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "classify_autogenerate_both",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "conditional": (elements, "classify_autogenerate"),
+                "label": _("Autogenerate both for fill and stroke"),
+                "tip": _(
+                    "Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation"
+                )
+                + "\n"
+                + _(
+                    "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
+                ),
+                "page": "Classification",
+                "section": "_90_Auto-Generation",
             },
         ]
         kernel.register_choices("preferences", choices)
@@ -349,11 +419,13 @@ class Elemental(Service):
         self.setting(bool, "classify_fuzzy", False)
         self.setting(float, "classify_fuzzydistance", 100.0)
         self.setting(bool, "classify_autogenerate", True)
+        self.setting(bool, "classify_autogenerate_both", True)
         self.setting(bool, "classify_inherit_stroke", False)
         self.setting(bool, "classify_inherit_fill", False)
         self.setting(bool, "classify_inherit_exclusive", True)
         self.setting(bool, "classify_auto_inherit", False)
         self.setting(bool, "classify_default", True)
+        self.setting(bool, "op_show_default", False)
         self.setting(bool, "lock_allows_move", True)
         self.setting(bool, "auto_note", True)
         self.setting(bool, "uniform_svg", False)
@@ -388,19 +460,16 @@ class Elemental(Service):
 
     @property
     def default_stroke(self):
-        if self._default_stroke is None:
-            mystroke = Color("blue")
-        else:
-            mystroke = self._default_stroke
-        return mystroke
+        # We dont allow an empty stroke color as default (why not?!) -- Empty stroke colors are hard to see.
+        if self._default_stroke is not None:
+            return self._default_stroke
+        return Color("blue")
 
     @default_stroke.setter
     def default_stroke(self, color):
-        if color is None:
-            # Intentionally so
-            self._default_stroke = "none"
-        else:
-            self._default_stroke = color
+        if isinstance(color, str):
+            color = Color(str)
+        self._default_stroke = color
 
     @property
     def default_fill(self):
@@ -408,6 +477,8 @@ class Elemental(Service):
 
     @default_fill.setter
     def default_fill(self, color):
+        if isinstance(color, str):
+            color = Color(str)
         self._default_fill = color
 
     @property
@@ -428,6 +499,13 @@ class Elemental(Service):
         else:
             if self._first_emphasized is node:
                 self._first_emphasized = None
+        # We target the parent, unless these are one of the root branches
+        # pnode = node.parent
+        # while pnode is not None:
+        #     if pnode.type in ("root", "branch elems", "branch reg", "branch ops"):
+        #         break
+        #     pnode.targeted = True
+        #     pnode = pnode.parent
 
     def load_persistent_penbox(self):
         settings = self.pen_data
@@ -722,16 +800,16 @@ class Elemental(Service):
 
         return this_area, this_length
 
-    def align_elements(self, data, alignbounds, positionx, positiony, individually):
+    def align_elements(self, data, alignbounds, positionx, positiony, as_group):
         """
 
         @param data: elements to align
         @param alignbounds: boundary tuple (left, top, right, bottom)
                             to which data needs to be aligned to
-        @param positionx: one of "min", "max", "center"
-        @param positiony: one of "min", "max", "center"
-        @param individually: True, align every element of data to the edge
-                                False, align the group in total
+        @param positionx:   one of "min", "max", "center"
+        @param positiony:   one of "min", "max", "center"
+        @param as_group:    0, align every element of data to the edge
+                            1, align the group in total
         @return:
         """
 
@@ -757,6 +835,14 @@ class Elemental(Service):
                 ) / 2
             return dx, dy
 
+        if as_group != 0:
+            individually = 2  # all elements as a total
+        else:
+            individually = 0
+            for n in data:
+                if n.type == "group":
+                    individually = 1
+                    break
         # Selection boundaries
         boundary_points = []
         for node in data:
@@ -771,12 +857,13 @@ class Elemental(Service):
             alignbounds = (left_edge, top_edge, right_edge, bottom_edge)
         # print(f"Alignbounds: {alignbounds[0]:.1f},{alignbounds[1]:.1f},{alignbounds[2]:.1f},{alignbounds[3]:.1f}")
 
-        if individually:
+        if individually in (0, 1):
             groupmatrix = ""
             groupdx = 0
             groupdy = 0
         else:
             groupdx, groupdy = calc_dx_dy()
+            # print (f"Group move: {groupdx:.2f}, {groupdy:.2f}")
             groupmatrix = f"translate({groupdx}, {groupdy})"
 
         # Looping through all nodes with node.flat can provide
@@ -784,17 +871,26 @@ class Elemental(Service):
         # files and groups nested into each other.
         # To avoid this we create a temporary set which by definition
         # can only contain unique members
-        s = set()
-        for n in data:
-            s = s.union(n.flat(emphasized=True, types=elem_nodes))
+        if individually == 0:
+            s = set()
+            for n in data:
+                # print(f"Node to be resolved: {node.type}")
+                s = s.union(n.flat(emphasized=True, types=elem_nodes))
+        else:
+            s = set()
+            for n in data:
+                # print(f"Node to be resolved: {node.type}")
+                s = s.union(list([n]))
         for q in s:
-            if individually:
+            # print(f"Node to be treated: {q.type}")
+            if individually in (0, 1):
                 left_edge = q.bounds[0]
                 top_edge = q.bounds[1]
                 right_edge = q.bounds[2]
                 bottom_edge = q.bounds[3]
                 dx, dy = calc_dx_dy()
                 matrix = f"translate({dx}, {dy})"
+                # print (f"{individually} - {dx:.2f}, {dy:.2f}")
             else:
                 dx = groupdx
                 dy = groupdy
@@ -802,13 +898,70 @@ class Elemental(Service):
             if hasattr(q, "lock") and q.lock and not self.lock_allows_move:
                 continue
             else:
-                try:
-                    # q.matrix *= matrix
-                    q.matrix.post_translate(dx, dy)
-                    q.modified()
-                except AttributeError:
-                    continue
+                if q.type in ("group", "file"):
+                    for c in q.flat(emphasized=True, types=elem_nodes):
+                        if hasattr(c, "lock") and c.lock and not self.lock_allows_move:
+                            continue
+                        try:
+                            c.matrix.post_translate(dx, dy)
+                            c.modified()
+                        except AttributeError:
+                            pass
+                            # print(f"Attribute Error for node {c.type} trying to assign {dx:.2f}, {dy:.2f}")
+                else:
+                    try:
+                        # q.matrix *= matrix
+                        q.matrix.post_translate(dx, dy)
+                        q.modified()
+                    except AttributeError:
+                        pass
+                        # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
+
+    def wordlist_translate(self, pattern, elemnode=None):
+        # This allows to add / set values for a given wordlist
+        node = None
+        if elemnode is not None:
+            # Does it belong to an op?
+            node = elemnode.parent
+            # That only seems to be true during burn...
+            if not node.type.startswith("op"):
+                node = None
+                # print (f"Does not have an op node as parent ({elemnode.text})")
+                for op in list(self.ops()):
+                    for refnode in op.children:
+                        if refnode.type == "reference" and refnode.node == elemnode:
+                            # print (f"Found an associated op for {elemnode.text}")
+                            node = op
+                            break
+                        if node is not None:
+                            break
+
+        for opatt in ("speed", "power", "dpi", "passes"):
+            skey = f"op_{opatt}"
+            found = False
+            value = None
+            if node is not None:
+                if hasattr(node, opatt):
+                    value = getattr(node, opatt, None)
+                    found = True
+                else:  # Try setting
+                    if hasattr(node, "settings"):
+                        try:
+                            value = node.settings[opatt]
+                            found = True
+                        except (AttributeError, KeyError, IndexError):
+                            pass
+            if found:
+                if value is None:
+                    value = ""
+                self.mywordlist.set_value(skey, value)
+            else:
+                value = f"<{opatt}>"
+                self.mywordlist.set_value(skey, value)
+
+        result = self.mywordlist.translate(pattern)
+        return result
 
     def _init_commands(self, kernel):
 
@@ -2301,10 +2454,11 @@ class Elemental(Service):
                 else:
                     y_pos = dy
                 add_elem = list(map(copy, data))
+                matrix = None
                 if x_pos != 0 or y_pos != 0:
                     matrix = Matrix.translate(dx, dy)
                 for e in add_elem:
-                    if x_pos != 0 or y_pos != 0:
+                    if matrix:
                         e.matrix *= matrix
                     self.elem_branch.add_node(e)
                 self.signal("refresh_scene", "Scene")
@@ -2635,13 +2789,12 @@ class Elemental(Service):
 
             The complete validation stuff...
             """
-            if elements is None or len(elements) == 0:
+            if elements is None:
                 return
             if align_x is None or align_y is None:
                 channel(_("You need to provide parameters for both x and y"))
                 return
             align_bounds = None
-            individually = asgroup == 0
             align_x = align_x.lower()
             align_y = align_y.lower()
 
@@ -2686,7 +2839,7 @@ class Elemental(Service):
                 alignbounds=align_bounds,
                 positionx=align_x,
                 positiony=align_y,
-                individually=individually,
+                as_group=asgroup,
             )
 
         @self.console_command(
@@ -2897,8 +3050,10 @@ class Elemental(Service):
             if data is None:
                 data = list(self.elems(emphasized=True))
             # Element conversion.
-            # We need to establish, if for a given node within a group all it's siblings are selected as well,
-            # if that's the case then use the parent instead
+            # We need to establish, if for a given node within a group
+            # all it's siblings are selected as well, if that's the case
+            # then use the parent instead - unless there are no other elements
+            # selected ie all selected belong to the same group...
             d = list()
             elem_branch = self.elem_branch
             for node in data:
@@ -2919,7 +3074,13 @@ class Elemental(Service):
                             snode = snode.parent
                 if snode is not None and snode not in d:
                     d.append(snode)
-            data = d
+            if len(d) == 1 and d[0].type == "group":
+                # This is just on single group - expand...
+                data = list(d[0].flat(emphasized=True, types=elem_nodes))
+                for n in data:
+                    n._emphasized_time = d[0]._emphasized_time
+            else:
+                data = d
             return "align", (
                 self._align_mode,
                 self._align_group,
@@ -3990,6 +4151,7 @@ class Elemental(Service):
             )
             node.font_size = size
             node.stroke = self.default_stroke
+            node.fill = self.default_fill
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4022,7 +4184,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 if e.type == "elem text":
                     old_anchor = e.anchor
@@ -4256,7 +4420,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_width = stroke_width
                 e.altered()
@@ -4280,7 +4446,9 @@ class Elemental(Service):
                 return
             for e in data:
                 if hasattr(e, "lock") and e.lock:
-                    channel(_("Can't modify a locked element: {name}").format(str(e)))
+                    channel(
+                        _("Can't modify a locked element: {name}").format(name=str(e))
+                    )
                     continue
                 e.stroke_scaled = command == "enable_stroke_scale"
                 e.altered()
@@ -4355,7 +4523,7 @@ class Elemental(Service):
                             if hasattr(e, "lock") and e.lock:
                                 channel(
                                     _("Can't modify a locked element: {name}").format(
-                                        str(e)
+                                        name=str(e)
                                     )
                                 )
                                 continue
@@ -4442,7 +4610,7 @@ class Elemental(Service):
                             if hasattr(e, "lock") and e.lock:
                                 channel(
                                     _("Can't modify a locked element: {name}").format(
-                                        str(e)
+                                        name=str(e)
                                     )
                                 )
                                 continue
@@ -4517,7 +4685,7 @@ class Elemental(Service):
                             if hasattr(e, "lock") and e.lock:
                                 channel(
                                     _("Can't modify a locked element: {name}").format(
-                                        str(e)
+                                        name=str(e)
                                     )
                                 )
                                 continue
@@ -4586,7 +4754,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = None
@@ -4595,7 +4765,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.stroke = Color(color)
@@ -4608,6 +4780,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -4681,7 +4855,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = None
@@ -4690,7 +4866,9 @@ class Elemental(Service):
                 for e in apply:
                     if hasattr(e, "lock") and e.lock:
                         channel(
-                            _("Can't modify a locked element: {name}").format(str(e))
+                            _("Can't modify a locked element: {name}").format(
+                                name=str(e)
+                            )
                         )
                         continue
                     e.fill = Color(color)
@@ -4703,6 +4881,8 @@ class Elemental(Service):
                 if was_emphasized:
                     for e in apply:
                         e.emphasized = True
+                    if len(apply) == 1:
+                        apply[0].focus()
                 if old_first is not None and old_first in apply:
                     self.first_emphasized = old_first
                 else:
@@ -5101,6 +5281,38 @@ class Elemental(Service):
                 raise CommandSyntaxError
             return "elements", data
 
+        @self.console_argument("tx", type=self.length_x, help=_("New x value"))
+        @self.console_argument("ty", type=self.length_y, help=_("New y value"))
+        @self.console_command(
+            "position",
+            help=_("position <tx> <ty>"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_position(
+            command, channel, _, tx, ty, absolute=False, data=None, **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            if len(data) == 0:
+                channel(_("No selected elements."))
+                return
+            if tx is None or ty is None:
+                channel(_("You need to provide a new position."))
+                return
+
+            dbounds = Node.union_bounds(data)
+            for node in data:
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
+                    continue
+                nbounds = node.bounds
+                dx = tx - dbounds[0]
+                dy = ty - dbounds[1]
+                if dx != 0 or dy != 0:
+                    node.matrix.post_translate(dx, dy)
+                node.modified()
+            return "elements", data
+
         @self.console_command(
             "move_to_laser",
             help=_("translates the selected element to the laser head"),
@@ -5170,12 +5382,19 @@ class Elemental(Service):
                 sy = height / h
                 # Don't do anything if scale is 1
                 if sx == 1.0 and sy == 1.0:
-                    channel(_("resize: nothing to do - scale factors 1"))
+                    scale_str = ""
+                else:
+                    scale_str = f"scale({sx},{sy})"
+                if x_pos == x and y_pos == y and scale_str == "":
                     return
-
-                matrix = Matrix(
-                    f"translate({x_pos},{y_pos}) scale({sx},{sy}) translate({-x},{-y})"
-                )
+                #     trans1_str = ""
+                #     trans2_str = ""
+                # else:
+                trans1_str = f"translate({round(x_pos, 7)},{round(y_pos, 7)})"
+                trans2_str = f"translate({round(-x, 7)},{round(-y, 7)})"
+                matrixstr = f"{trans1_str} {scale_str} {trans2_str}".strip()
+                # channel(f"{matrixstr}")
+                matrix = Matrix(matrixstr)
                 if data is None:
                     data = list(self.elems(emphasized=True))
                 for node in data:
@@ -5310,6 +5529,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
@@ -5339,6 +5560,8 @@ class Elemental(Service):
             if was_emphasized:
                 for e in data:
                     e.emphasized = True
+                if len(data) == 1:
+                    data[0].focus()
                 if old_first is not None and old_first in data:
                     self.first_emphasized = old_first
                 else:
@@ -5674,7 +5897,7 @@ class Elemental(Service):
                     entry = 2
                 channel(
                     _(
-                        "There were nodes across operations ({c1}), references ({c2}), elements ({c3}) and regmarks ({c4})."
+                        "There were nodes across operations ({c1}), assignments ({c2}), elements ({c3}) and regmarks ({c4})."
                     ).format(
                         c1=typecount[0],
                         c2=typecount[1],
@@ -6566,8 +6789,8 @@ class Elemental(Service):
 
         def get_swing_values():
             return (
-                "Bidirectional",
-                "Unidirectional",
+                _("Bidirectional"),
+                _("Unidirectional"),
             )
 
         def radio_match_swing(node, raster_swing="", **kwargs):
@@ -6618,6 +6841,21 @@ class Elemental(Service):
         @self.tree_operation(_("Clear all"), node_type="branch ops", help="")
         def clear_all(node, **kwargs):
             self("operation* delete\n")
+
+        @self.tree_operation(
+            _("Clear unused"),
+            node_type="branch ops",
+            help=_("Clear operations without children"),
+        )
+        def clear_unused(node, **kwargs):
+            to_delete = []
+            for op in self.ops():
+                # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
+                if len(op._children) == 0:
+                    to_delete.append(op)
+            if len(to_delete) > 0:
+                self.remove_operations(to_delete)
+                self.signal("tree_changed")
 
         @self.tree_operation(_("Clear all"), node_type="branch elems", help="")
         def clear_all_ops(node, **kwargs):
@@ -6892,10 +7130,12 @@ class Elemental(Service):
         )
         def cutcode2pathcut(node, **kwargs):
             cutcode = node.cutcode
+            if cutcode is None:
+                return
             elements = list(cutcode.as_elements())
             n = None
             for element in elements:
-                n = self.elem_branch.add(element, type="elem path")
+                n = self.elem_branch.add(type="elem path", path=element)
             node.remove_node()
             if n is not None:
                 n.focus()
@@ -6941,12 +7181,41 @@ class Elemental(Service):
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         @self.tree_separator_after()
+        @self.tree_conditional(lambda node: self.classify_autogenerate)
         @self.tree_operation(
-            _("Refresh classification"), node_type="branch ops", help=""
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
         )
-        def refresh_clasifications(node, **kwargs):
+        def refresh_clasifications_1(node, **kwargs):
             self.remove_elements_from_operations(list(self.elems()))
             self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh classification"),
+            node_type="branch ops",
+            help=_("Reclassify elements and use only existing operations"),
+        )
+        def refresh_clasifications_2(node, **kwargs):
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.signal("refresh_tree", list(self.flat(types="reference")))
+
+        @self.tree_separator_after()
+        @self.tree_conditional(lambda node: not self.classify_autogenerate)
+        @self.tree_operation(
+            _("Refresh ... (incl autogeneration)"),
+            node_type="branch ops",
+            help=_("Reclassify elements and create operations if necessary"),
+        )
+        def refresh_clasifications_3(node, **kwargs):
+            previous = self.classify_autogenerate
+            self.classify_autogenerate = True
+            self.remove_elements_from_operations(list(self.elems()))
+            self.classify(list(self.elems()))
+            self.classify_autogenerate = previous
             self.signal("refresh_tree", list(self.flat(types="reference")))
 
         materials = [
@@ -7167,6 +7436,17 @@ class Elemental(Service):
             self.remove_elements_from_operations(elems)
             self.classify(list(self.elems()))
             self.signal("refresh_tree")
+
+        @self.tree_operation(
+            _("Remove all assignments from operations"),
+            node_type="branch elems",
+            help=_("Any existing assignment of elements to operations will be removed"),
+        )
+        def remove_all_assignments(node, **kwargs):
+            for node in self.elems():
+                for ref in list(node._references):
+                    ref.remove_node()
+            self.signal("tree_changed")
 
         @self.tree_operation(
             _("Duplicate operation(s)"),
@@ -7446,6 +7726,28 @@ class Elemental(Service):
 
         @self.tree_separator_before()
         @self.tree_submenu(_("Assign Operation"))
+        @self.tree_operation(
+            _("Remove all assignments from operations"),
+            node_type=elem_group_nodes,
+            help=_(
+                "Any existing assignment of this element to operations will be removed"
+            ),
+        )
+        def remove_assignments(node, **kwargs):
+            def rem_node(rnode):
+                # recursively remove assignments...
+                if rnode.type in ("file", "group"):
+                    for cnode in list(rnode._children):
+                        rem_node(cnode)
+                else:
+                    for ref in list(rnode._references):
+                        ref.remove_node()
+
+            rem_node(node)
+            self.signal("tree_changed")
+
+        @self.tree_separator_before()
+        @self.tree_submenu(_("Assign Operation"))
         @self.tree_check(exclusive_match)
         @self.tree_operation(
             _("Exclusive assignment"),
@@ -7528,7 +7830,10 @@ class Elemental(Service):
             help="",
         )
         def convert_to_path(node, **kwargs):
-            path = node.as_path()
+            try:
+                path = node.as_path()
+            except AttributeError:
+                return
             node.replace_node(path=path, type="elem path")
 
         @self.tree_submenu(_("Flip"))
@@ -7896,7 +8201,8 @@ class Elemental(Service):
                 continue
 
             op.load(settings, section)
-        self.classify(list(self.elems()))
+        if len(list(self.elems())) > 0:
+            self.classify(list(self.elems()))
 
     def emphasized(self, *args):
         self._emphasized_bounds_dirty = True
@@ -8709,7 +9015,8 @@ class Elemental(Service):
                 continue
             if contains(bounds, position):
                 f_list.append(node)
-
+        bounds = None
+        bounds_painted = None
         if len(f_list) > 0:
             # We checked that before, f_list contains only elements with valid bounds...
             e = None
@@ -8741,6 +9048,7 @@ class Elemental(Service):
                         max(bounds[2], cc[2]),
                         max(bounds[3], cc[3]),
                     )
+                if self._emphasized_bounds_painted is not None:
                     cc = self._emphasized_bounds_painted
                     bounds = (
                         min(bounds_painted[0], cc[0]),
@@ -8765,6 +9073,13 @@ class Elemental(Service):
                 because of a lack of classification options.
         @return:
         """
+
+        def emptydebug(value):
+            return
+
+        # I am tired of changing the code all the time, so let's do it properly
+        debug = self.kernel.channel("classify", timestamp=True)
+
         if elements is None:
             return
 
@@ -8782,33 +9097,163 @@ class Elemental(Service):
         if add_op_function is None:
             # add_op_function = self.add_op
             add_op_function = self.add_classify_op
-
         for node in elements:
             # Following lines added to handle 0.7 special ops added to ops list
             if hasattr(node, "operation"):
                 add_op_function(node)
                 continue
-            was_classified = False
-            for op in operations:
-                if hasattr(op, "classify"):
-                    classified, should_break = op.classify(
-                        node, fuzzy=fuzzy, fuzzydistance=fuzzydistance, usedefault=False
-                    )
-                else:
-                    continue
-                if classified:
-                    was_classified = True
-                if should_break:
+            classif_info = [False, False]
+            # Even for fuzzy we check first a direct hit
+            if fuzzy:
+                fuzzy_param = (False, True)
+            else:
+                fuzzy_param = (False,)
+            for tempfuzzy in fuzzy_param:
+                if debug:
+                    debug(f"Pass 1 (fuzzy={tempfuzzy}): check {node.type}")
+                was_classified = False
+                should_break = False
+
+                for op in operations:
+                    # One special case: is this a rasterop and the stroke
+                    # color is black and the option 'classify_black_as_raster'
+                    # is not set? Then skip...
+                    is_black = False
+                    whisperer = True
+                    if (
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and node.stroke.argb is not None
+                        and node.type != "elem text"
+                    ):
+                        if fuzzy:  # No need to distinguish tempfuzzy here
+                            is_black = (
+                                Color.distance("black", node.stroke) <= fuzzydistance
+                                or Color.distance("white", node.stroke) <= fuzzydistance
+                            )
+                        else:
+                            is_black = (
+                                Color("black") == node.stroke
+                                or Color("white") == node.stroke
+                            )
+                    if (
+                        not self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, RasterOpNode)
+                    ):
+                        whisperer = False
+                    elif (
+                        self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, EngraveOpNode)
+                    ):
+                        whisperer = False
+                    if debug:
+                        debug(
+                            f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
+                        )
+                    if hasattr(op, "classify") and whisperer:
+
+                        classified, should_break, feedback = op.classify(
+                            node,
+                            fuzzy=tempfuzzy,
+                            fuzzydistance=fuzzydistance,
+                            usedefault=False,
+                        )
+                    else:
+                        continue
+                    if classified:
+                        if feedback is not None and "stroke" in feedback:
+                            classif_info[0] = True
+                        if feedback is not None and "fill" in feedback:
+                            classif_info[1] = True
+                        was_classified = True
+                        if hasattr(node, "stroke"):
+                            sstroke = f"s={getattr(node, 'stroke')},"
+                        else:
+                            sstroke = ""
+                        if hasattr(node, "fill"):
+                            sfill = f"s={getattr(node, 'fill')},"
+                        else:
+                            sfill = ""
+                        if debug:
+                            debug(
+                                f"Was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                            )
+                    if should_break:
+                        break
+                # So we are the end of the first pass, if there was already a classification
+                # then we call it a day and dont call the fuzzy part
+                if was_classified or should_break:
                     break
 
             ######################
             # NON-CLASSIFIED ELEMENTS
             ######################
+            if was_classified and debug:
+                debug(f"Classified, stroke={classif_info[0]}, fill={classif_info[1]}")
+            # Lets make sure we only consider relevant, ie existing attributes...
+            if hasattr(node, "stroke"):
+                if node.stroke is None or node.stroke.argb is None:
+                    classif_info[0] = True
+                if node.type == "elem text":
+                    # even if it has, we are not going to something with it
+                    classif_info[0] = True
+            else:
+                classif_info[0] = True
+            if hasattr(node, "fill"):
+                if node.fill is None or node.fill.argb is None:
+                    classif_info[1] = True
+            else:
+                classif_info[1] = True
+
+            if self.classify_autogenerate_both and not (
+                classif_info[0] and classif_info[1]
+            ):
+                # Not fully classified on both stroke and fill
+                was_classified = False
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
+                if debug:
+                    debug("Pass 2 (wasn't classified), looking for default ops")
                 for op in operations:
-                    if hasattr(op, "classify"):
-                        classified, should_break = op.classify(
+                    is_black = False
+                    whisperer = True
+                    if (
+                        hasattr(node, "stroke")
+                        and node.stroke is not None
+                        and node.stroke.argb is not None
+                        and node.type != "elem text"
+                    ):
+                        if fuzzy:
+                            is_black = (
+                                Color.distance("black", node.stroke) <= fuzzydistance
+                                or Color.distance("white", node.stroke) <= fuzzydistance
+                            )
+                        else:
+                            is_black = (
+                                Color("black") == node.stroke
+                                or Color("white") == node.stroke
+                            )
+                    if (
+                        not self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, RasterOpNode)
+                    ):
+                        # print ("Default Skip Raster")
+                        whisperer = False
+                    elif (
+                        self.classify_black_as_raster
+                        and is_black
+                        and isinstance(op, EngraveOpNode)
+                    ):
+                        whisperer = False
+                    if debug:
+                        debug(
+                            f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
+                        )
+                    if hasattr(op, "classifys") and whisperer:
+                        classified, should_break, feedback = op.classify(
                             node,
                             fuzzy=fuzzy,
                             fuzzydistance=fuzzydistance,
@@ -8817,18 +9262,59 @@ class Elemental(Service):
                     else:
                         continue
                     if classified:
+                        if feedback is not None and "stroke" in feedback:
+                            classif_info[0] = True
+                        if feedback is not None and "fill" in feedback:
+                            classif_info[1] = True
                         was_classified = True
+                        if debug:
+                            debug(
+                                f"Was classified to default operation: {type(op).__name__}, break={should_break}"
+                            )
                     if should_break:
                         break
+            # Lets make sure we only consider relevant, ie existing attributes...
+            if hasattr(node, "stroke"):
+                if node.stroke is None or node.stroke.argb is None:
+                    classif_info[0] = True
+                if node.type == "elem text":
+                    # even if it has, we are not going to something with it
+                    classif_info[0] = True
+            else:
+                classif_info[0] = True
+            if hasattr(node, "fill"):
+                if node.fill is None or node.fill.argb is None:
+                    classif_info[1] = True
+            else:
+                classif_info[1] = True
+
+            if self.classify_autogenerate_both and not (
+                classif_info[0] and classif_info[1]
+            ):
+                # Not fully classified on both stroke and fill
+                was_classified = False
             if not was_classified and autogen:
                 # Despite all efforts we couldn't classify the element, so let's add an op
-                op = None
+                if debug:
+                    debug("Pass 3, not classified by ops or def ops")
+                stdops = []
+                has_raster = False
                 if node.type == "elem image":
-                    op = ImageOpNode(output=False)
+                    stdops.append(ImageOpNode(output=False))
+                    if debug:
+                        debug("add an op image")
+                    classif_info[0] = True
+                    classif_info[1] = True
                 elif node.type == "elem point":
-                    op = DotsOpNode(output=False)
-                elif (
-                    hasattr(node, "stroke")
+                    stdops.append(DotsOpNode(output=False))
+                    if debug:
+                        debug("add an op dots")
+                    classif_info[0] = True
+                    classif_info[1] = True
+                # That should leave us with fulfilled criteria or stroke / fill stuff
+                if (
+                    not classif_info[0]
+                    and hasattr(node, "stroke")
                     and node.stroke is not None
                     and node.stroke.argb is not None
                 ):
@@ -8836,19 +9322,50 @@ class Elemental(Service):
                         is_cut = Color.distance("red", node.stroke) <= fuzzydistance
                     else:
                         is_cut = Color("red") == node.stroke
-                    if is_cut:
-                        op = CutOpNode(color=Color("red"), speed=5.0)
+                    if self.classify_black_as_raster:
+                        if fuzzy:
+                            is_raster = (
+                                Color.distance("black", node.stroke) <= fuzzydistance
+                                or Color.distance("white", node.stroke) <= fuzzydistance
+                            )
+                        else:
+                            is_raster = (
+                                Color("black") == node.stroke
+                                or Color("white") == node.stroke
+                            )
                     else:
-                        op = EngraveOpNode(color=node.stroke, speed=35.0)
-                elif (
-                    hasattr(node, "fill")
+                        is_raster = False
+                    # print (f"Need a new op: cut={is_cut},raster={is_raster}, color={node.stroke}")
+                    if is_cut:
+                        stdops.append(CutOpNode(color=Color("red"), speed=5.0))
+                        if debug:
+                            debug("add an op cut due to stroke")
+                    elif is_raster:
+                        stdops.append(RasterOpNode(color="black", output=True))
+                        if debug:
+                            debug("add an op raster due to stroke")
+                        has_raster = True
+                    else:
+                        stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
+                        if debug:
+                            debug(
+                                f"add an op engrave with color={node.stroke} due to stroke"
+                            )
+                # Do we need to add a fill operation?
+                if (
+                    not classif_info[1]
+                    and hasattr(node, "fill")
                     and node.fill is not None
                     and node.fill.argb is not None
+                    and not has_raster
                 ):
-                    op = RasterOpNode(color=0, output=True)
-
-                if op is not None:
+                    stdops.append(RasterOpNode(color="black", output=True))
+                    if debug:
+                        debug("add an op raster due to fill")
+                for op in stdops:
                     # Lets make sure we don't have something like that already
+                    if debug:
+                        debug(f"Check for existence of {op.type}")
                     already_found = False
                     for testop in self.ops():
                         if type(op) == type(testop):
@@ -8858,11 +9375,20 @@ class Elemental(Service):
                         samecolor = False
                         if hasattr(op, "color") and hasattr(testop, "color"):
                             # print ("Comparing color %s to %s" % ( op.color, testop.color ))
-                            if op.color == testop.color:
-                                samecolor = True
+                            if fuzzy:
+                                if (
+                                    Color.distance(op.color, testop.color)
+                                    <= fuzzydistance
+                                ):
+                                    samecolor = True
+                            else:
+                                if op.color == testop.color:
+                                    samecolor = True
                         elif hasattr(op, "color") != hasattr(testop, "color"):
                             samecolor = False
                         else:
+                            samecolor = True
+                        if op.type == "elem raster":
                             samecolor = True
                         samespeed = False
                         if hasattr(op, "speed") and hasattr(testop, "speed"):
@@ -8874,10 +9400,14 @@ class Elemental(Service):
                             samespeed = True
                         # print ("Compare: %s to %s - op=%s, col=%s, speed=%s" % (type(op).__name__, type(testop).__name__, sameop, samecolor, samespeed))
                         if sameop and samecolor and samespeed:
+                            if debug:
+                                debug("A similar operation existed")
                             already_found = True
                             op = testop
                             break
                     if not already_found:
+                        if debug:
+                            debug(f"Add a new operation {op.type}")
                         if hasattr(op, "output"):
                             op.output = True
                         add_op_function(op)

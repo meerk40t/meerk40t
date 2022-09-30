@@ -13,7 +13,7 @@ class ImageNode(Node):
     ImageNode is the bootstrapped node type for the 'elem image' type.
 
     ImageNode contains a main matrix, main image. A processed image and a processed matrix.
-    The processed matrix must be concated with the main matrix to be accurate.
+    The processed matrix must be concatenated with the main matrix to be accurate.
     """
 
     def __init__(
@@ -32,14 +32,17 @@ class ImageNode(Node):
         blue=None,
         lightness=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(ImageNode, self).__init__(type="elem image", **settings)
-        self.__formatter = "{element_type} {width}x{height}"
+        self.__formatter = "{element_type} {id} {width}x{height}"
         if matrix is None:
             matrix = Matrix()
 
@@ -71,13 +74,14 @@ class ImageNode(Node):
             self.image = image
 
         self.settings = settings
+
         self.overscan = overscan
         self.direction = direction
         self.dpi = dpi
         self.step_x = None
         self.step_y = None
         self.label = label
-        self.lock = False
+        self.lock = lock
 
         self.invert = False if invert is None else invert
         self.red = 1.0 if red is None else red
@@ -90,15 +94,20 @@ class ImageNode(Node):
         if operations is None:
             operations = list()
         self.operations = operations
+        self.view_invert = False
 
         self._needs_update = False
         self._update_thread = None
         self._update_lock = threading.Lock()
-        self.processed_image = None
-        self.processed_matrix = None
-        self.process_image_failed = False
-        self.view_invert = False
-        self.text = None
+        self._processed_image = None
+        self._processed_matrix = None
+        self._process_image_failed = False
+        self._processing_message = None
+        if self.operations:
+            step = UNITS_PER_INCH / self.dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y)
 
     def __copy__(self):
         return ImageNode(
@@ -115,6 +124,8 @@ class ImageNode(Node):
             green=self.green,
             blue=self.blue,
             lightness=self.lightness,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 
@@ -123,16 +134,16 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
-        if self.processed_image is not None:
-            return self.processed_image
+        if self._processed_image is not None:
+            return self._processed_image
         else:
             return self.image
 
     @property
     def active_matrix(self):
-        if self.processed_matrix is None:
+        if self._processed_matrix is None:
             return self.matrix
-        return self.processed_matrix * self.matrix
+        return self._processed_matrix * self.matrix
 
     def preprocess(self, context, matrix, commands):
         """
@@ -143,7 +154,7 @@ class ImageNode(Node):
         self.step_x, self.step_y = context.device.dpi_to_steps(self.dpi)
         self.matrix *= matrix
         self.set_dirty_bounds()
-        self.process_image()
+        self.process_image(self.step_x, self.step_y)
 
     def bbox(self, transformed=True, with_stroke=False):
         image_width, image_height = self.active_image.size
@@ -205,36 +216,56 @@ class ImageNode(Node):
         return False
 
     def update(self, context):
+        """
+        Update kicks off the image processing thread, which performs RasterWizard script operations on the image node.
+
+        The text should be displayed in the scene by the renderer. And any additional changes will be processed
+        until the new processed image is completed.
+
+        @param context:
+        @return:
+        """
         self._needs_update = True
-        self.text = "Processing..."
+        self._processing_message = "Processing..."
         context.signal("refresh_scene", "Scene")
         if self._update_thread is None:
 
             def clear(result):
-                if self.process_image_failed:
-                    self.text = "Process image could not exist in memory."
+                if self._process_image_failed:
+                    self._processing_message = (
+                        "Process image could not exist in memory."
+                    )
                 else:
-                    self.text = None
+                    self._processing_message = None
                 self._needs_update = False
                 self._update_thread = None
                 context.signal("refresh_scene", "Scene")
                 context.signal("image updated", self)
 
-            self.processed_image = None
+            self._processed_image = None
             # self.processed_matrix = None
             self._update_thread = context.threaded(
-                self.process_image_thread, result=clear, daemon=True
+                self._process_image_thread, result=clear, daemon=True
             )
 
-    def process_image_thread(self):
+    def _process_image_thread(self):
+        """
+        The function deletes the caches and processes the image until it no longer needs updating.
+
+        @return:
+        """
         while self._needs_update:
             self._needs_update = False
-            self.process_image()
+            # Calculate scene step_x, step_y values
+            step = UNITS_PER_INCH / self.dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y)
             # Unset cache.
             self.wx_bitmap_image = None
             self.cache = None
 
-    def process_image(self, crop=True):
+    def process_image(self, step_x=None, step_y=None, crop=True):
         """
         SVG matrices are defined as follows.
         [a c e]
@@ -252,30 +283,21 @@ class ImageNode(Node):
 
         from PIL import Image
 
+        if step_x is None:
+            step_x = self.step_x
+        if step_y is None:
+            step_y = self.step_y
         try:
-            self._process_image(crop=crop)
-            self.process_image_failed = False
+            actualized_matrix, image = self._process_image(step_x, step_y, crop=crop)
+            inverted_main_matrix = Matrix(self.matrix).inverse()
+            self._processed_matrix = actualized_matrix * inverted_main_matrix
+            self._processed_image = image
+            self._process_image_failed = False
         except (MemoryError, Image.DecompressionBombError):
-            self.process_image_failed = True
+            self._process_image_failed = True
         self.altered()
 
-    def _process_image(self, crop=True):
-        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
-
-        from meerk40t.image.imagetools import dither
-
-        # Calculate device real step.
-        if self.step_x is None:
-            step = UNITS_PER_INCH / self.dpi
-            self.step_x = step
-            self.step_y = step
-        step_x, step_y = self.step_x, self.step_y
-        assert step_x != 0
-        assert step_y != 0
-
-        image = self.image
-        main_matrix = self.matrix
-
+    def _convert_image_to_grayscale(self, image):
         # Precalculate RGB for L conversion.
         r = self.red * 0.299
         g = self.green * 0.587
@@ -290,140 +312,70 @@ class ImageNode(Node):
         except ZeroDivisionError:
             pass
 
-        transform = (
-            main_matrix.a != step_x
-            or main_matrix.b != 0.0
-            or main_matrix.c != 0.0
-            or main_matrix.d != step_y
-        )
-
-        # Create Transparency Mask.
-        if "transparency" in image.info:
-            image = image.convert("RGBA")
-        try:
-            transparent_mask = image.getchannel("A").point(lambda e: 255 - e)
-        except ValueError:
-            transparent_mask = None
-
-        matrix = copy(main_matrix)  # Prevent Knock-on effect.
-
         # Convert image to L type.
         if image.mode != "L":
             image = image.convert("RGB")
             image = image.convert("L", matrix=(r, g, b, 1.0))
+        return image
 
-        # Paste Transparency mask.
-        if transparent_mask:
-            # Fill in original transparent values with reject pixels
-            background = image.copy()
-            reject = Image.new("L", image.size, "black" if self.invert else "white")
-            background.paste(reject, mask=transparent_mask)
-            image = background
-
-        # Calculate image box.
-        box = None
-        if crop:
-            try:
-                # Get the bbox cutting off the white edges.
-                if self.invert:
-                    box = image.getbbox()
-                else:
-                    box = image.point(lambda e: 255 - e).getbbox()
-            except ValueError:
-                pass
-        if box is None:
-            # If box is entirely white, bbox caused value error, or crop not set.
-            box = (0, 0, image.width, image.height)
-
-        # Find the boundary points of the rotated box edges.
-        boundary_points = [
-            matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
-            matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
-            matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
-            matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
-        ]
-        xs = [e[0] for e in boundary_points]
-        ys = [e[1] for e in boundary_points]
-
-        # bbox here is expanded matrix size of box.
-        step_scale_x = 1 / float(step_x)
-        step_scale_y = 1 / float(step_y)
-
-        bbox = min(xs), min(ys), max(xs), max(ys)
-
-        image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
-        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
-        tx = bbox[0]
-        ty = bbox[1]
-        matrix.post_translate(-tx, -ty)
-        matrix.post_scale(step_scale_x, step_scale_y)
-        if step_y < 0:
-            # If step_y is negative, translate
-            matrix.post_translate(0, image_height)
-        if step_x < 0:
-            # If step_x is negative, translate
-            matrix.post_translate(image_width, 0)
+    def _get_transparent_mask(self, image):
+        """
+        Create Transparency Mask.
+        @param image:
+        @return:
+        """
+        if "transparency" in image.info:
+            image = image.convert("RGBA")
         try:
-            matrix.inverse()
-        except ZeroDivisionError:
-            # Rare crash if matrix is malformed and cannot invert.
-            matrix.reset()
-            matrix.post_translate(-tx, -ty)
-            matrix.post_scale(step_scale_x, step_scale_y)
+            return image.getchannel("A").point(lambda e: 255 - e)
+        except ValueError:
+            return None
 
-        # Perform image transform if needed.
-        if transform:
-            if image_height <= 0:
-                image_height = 1
-            if image_width <= 0:
-                image_width = 1
-            image = image.transform(
-                (image_width, image_height),
-                Image.AFFINE,
-                (matrix.a, matrix.c, matrix.e, matrix.b, matrix.d, matrix.f),
-                resample=Image.BICUBIC,
-                fillcolor="black" if self.invert else "white",
-            )
-            matrix.reset()
-        else:
-            matrix = copy(main_matrix)
+    def _apply_mask(self, image, mask, reject_color=None):
+        """
+        Fill in original image with reject pixels.
 
-        # If crop applies, apply crop.
-        if crop:
-            box = None
-            try:
-                if self.invert:
-                    box = image.getbbox()
-                else:
-                    box = image.point(lambda e: 255 - e).getbbox()
-            except ValueError:
-                pass
-            if box is not None:
-                width = box[2] - box[0]
-                height = box[3] - box[1]
-                if width != image_width or height != image_height:
-                    image = image.crop(box)
-                    matrix.post_translate(box[0], box[1])
+        @param image: Image to be masked off.
+        @param mask: Mask to apply to image
+        @param reject_color: Optional specified reject color override. Reject is usually "white" or black if inverted.
+        @return: image with mask pixels filled in with reject pixels
+        """
+        if not mask:
+            return image
+        if reject_color is None:
+            reject_color = "black" if self.invert else "white"
+        from PIL import Image
 
-        if step_y < 0:
-            # if step_y is negative, translate.
-            matrix.post_translate(0, -image_height)
-        if step_x < 0:
-            # if step_x is negative, translate.
-            matrix.post_translate(-image_width, 0)
+        background = image.copy()
+        reject = Image.new("L", image.size, reject_color)
+        background.paste(reject, mask=mask)
+        return background
 
-        matrix.post_scale(step_x, step_y)
-        matrix.post_translate(tx, ty)
-        actualized_matrix = matrix
+    def _get_crop_box(self, image):
+        """
+        Get the bbox cutting off the reject edges. The reject edges depend on the image's invert setting.
+        @param image: Image to get crop box for.
+        @return:
+        """
+        try:
+            if self.invert:
+                return image.getbbox()
+            else:
+                return image.point(lambda e: 255 - e).getbbox()
+        except ValueError:
+            return None
 
-        # Invert black to white if needed.
-        if self.invert:
-            image = ImageOps.invert(image)
+    def _process_script(self, image):
+        """
+        Process actual raster script operations. Any required grayscale, inversion, and masking will already have
+        occurred. If there were reject pixels before they will be masked off after this process.
 
-        # Find rejection mask of white pixels.
-        reject_mask = image.point(lambda e: 0 if e == 255 else 255)
+        @param image: image to process with self.operation script.
 
-        # Process operations.
+        @return: processed image
+        """
+        from PIL import ImageEnhance, ImageFilter, ImageOps
+
         for op in self.operations:
             name = op["name"]
             if name == "crop":
@@ -542,22 +494,149 @@ class ImageNode(Node):
                         )
                 except KeyError:
                     pass
+        return image
 
-        # Remask image removing pixels that were white before operations were processed.
-        background = Image.new("L", image.size, "white")
-        background.paste(image, mask=reject_mask)
-        image = background
+    def _apply_dither(self, image):
+        """
+        Dither image to 1 bit. Floyd-Steinberg is performed by Pillow, other dithers require custom code.
 
-        # Dither image to 1 bit.
+        @param image: grayscale image to dither.
+        @return: 1 bit dithered image
+        """
+        from meerk40t.image.imagetools import dither
+
         if self.dither and self.dither_type is not None:
             if self.dither_type != "Floyd-Steinberg":
                 image = dither(image, self.dither_type)
             image = image.convert("1")
+        return image
 
-        # Set final values.
-        inverted_main_matrix = Matrix(main_matrix).inverse()
-        self.processed_matrix = actualized_matrix * inverted_main_matrix
-        self.processed_image = image
+    def _process_image(self, step_x, step_y, crop=True):
+        """
+        This core code replaces the older actualize and rasterwizard functionalities. It should convert the image to
+        a post-processed form with resulting post-process matrix.
+
+        @param crop: Should the unneeded edges be cropped as part of this process. The need for the edge is determined
+            by the color and the state of the self.invert attribute.
+        @return:
+        """
+        from PIL import Image, ImageOps
+
+        image = self.image
+
+        transparent_mask = self._get_transparent_mask(image)
+
+        image = self._convert_image_to_grayscale(image)
+
+        image = self._apply_mask(image, transparent_mask)
+
+        # Calculate image box.
+        box = None
+        if crop:
+            box = self._get_crop_box(image)
+        if box is None:
+            # If box is entirely white, bbox caused value error, or crop not set.
+            box = (0, 0, image.width, image.height)
+
+        transform_matrix = copy(self.matrix)  # Prevent Knock-on effect.
+
+        # Find the boundary points of the rotated box edges.
+        boundary_points = [
+            transform_matrix.point_in_matrix_space([box[0], box[1]]),  # Top-left
+            transform_matrix.point_in_matrix_space([box[2], box[1]]),  # Top-right
+            transform_matrix.point_in_matrix_space([box[0], box[3]]),  # Bottom-left
+            transform_matrix.point_in_matrix_space([box[2], box[3]]),  # Bottom-right
+        ]
+        xs = [e[0] for e in boundary_points]
+        ys = [e[1] for e in boundary_points]
+
+        # bbox here is expanded matrix size of box.
+        step_scale_x = 1 / float(step_x)
+        step_scale_y = 1 / float(step_y)
+
+        bbox = min(xs), min(ys), max(xs), max(ys)
+
+        image_width = ceil(bbox[2] * step_scale_x) - floor(bbox[0] * step_scale_x)
+        image_height = ceil(bbox[3] * step_scale_y) - floor(bbox[1] * step_scale_y)
+        tx = bbox[0]
+        ty = bbox[1]
+        transform_matrix.post_translate(-tx, -ty)
+        transform_matrix.post_scale(step_scale_x, step_scale_y)
+        if step_y < 0:
+            # If step_y is negative, translate
+            transform_matrix.post_translate(0, image_height)
+        if step_x < 0:
+            # If step_x is negative, translate
+            transform_matrix.post_translate(image_width, 0)
+
+        try:
+            transform_matrix.inverse()
+        except ZeroDivisionError:
+            # malformed matrix, scale=0 or something.
+            transform_matrix.reset()
+
+        # Perform image transform if needed.
+        if (
+            self.matrix.a != step_x
+            or self.matrix.b != 0.0
+            or self.matrix.c != 0.0
+            or self.matrix.d != step_y
+        ):
+            if image_height <= 0:
+                image_height = 1
+            if image_width <= 0:
+                image_width = 1
+            image = image.transform(
+                (image_width, image_height),
+                Image.AFFINE,
+                (
+                    transform_matrix.a,
+                    transform_matrix.c,
+                    transform_matrix.e,
+                    transform_matrix.b,
+                    transform_matrix.d,
+                    transform_matrix.f,
+                ),
+                resample=Image.BICUBIC,
+                fillcolor="black" if self.invert else "white",
+            )
+        actualized_matrix = Matrix()
+
+        # If crop applies, apply crop.
+        if crop:
+            box = self._get_crop_box(image)
+            if box is not None:
+                width = box[2] - box[0]
+                height = box[3] - box[1]
+                if width != image.width or height != image.height:
+                    image = image.crop(box)
+                    actualized_matrix.post_translate(box[0], box[1])
+
+        if step_y < 0:
+            # if step_y is negative, translate.
+            actualized_matrix.post_translate(0, -image_height)
+        if step_x < 0:
+            # if step_x is negative, translate.
+            actualized_matrix.post_translate(-image_width, 0)
+
+        actualized_matrix.post_scale(step_x, step_y)
+        actualized_matrix.post_translate(tx, ty)
+
+        # Invert black to white if needed.
+        if self.invert:
+            image = ImageOps.invert(image)
+
+        # Find rejection mask of white pixels. (already inverted)
+        reject_mask = image.point(lambda e: 0 if e == 255 else 255)
+
+        image = self._process_script(image)
+
+        background = Image.new("L", image.size, "white")
+        background.paste(image, mask=reject_mask)
+        image = background
+
+        image = self._apply_dither(image)
+        return actualized_matrix, image
 
     @staticmethod
     def line(p):

@@ -18,6 +18,7 @@ class RotarySettingsPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.rotary = context
+        self.scene = getattr(context.root, "mainscene", None)
 
         self.checkbox_rotary = wx.CheckBox(self, wx.ID_ANY, _("Enable Rotary"))
         self.Children[0].SetFocus()
@@ -38,7 +39,7 @@ class RotarySettingsPanel(ScrolledPanel):
 
         self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary, self.checkbox_rotary)
         self.text_rotary_scalex.SetActionRoutine(self.on_text_rotary_scale_x)
-        self.text_rotary_scalex.SetActionRoutine(self.on_text_rotary_scale_y)
+        self.text_rotary_scaley.SetActionRoutine(self.on_text_rotary_scale_y)
         # self.Bind(wx.EVT_CHECKBOX, self.on_check_rotary_loop, self.checkbox_rotary_loop)
         # self.text_rotary_rotation.Bind(wx.EVT_TEXT, self.on_text_rotation)
         # self.Bind(
@@ -154,20 +155,39 @@ class RotarySettingsPanel(ScrolledPanel):
         self.rotary.rotary_enabled = self.checkbox_rotary.GetValue()
         self.text_rotary_scalex.Enable(self.checkbox_rotary.GetValue())
         self.text_rotary_scaley.Enable(self.checkbox_rotary.GetValue())
+        self.scene.grid_secondary_scale_x = 1
+        self.scene.grid_secondary_scale_y = 1
+        if self.rotary.rotary_enabled:
+            try:
+                self.scene.grid_secondary_scale_x = self.rotary.scale_x
+                self.scene.grid_secondary_scale_y = self.rotary.scale_y
+            except ValueError:
+                pass
+        # Forces guide and grid refresh
+        self.rotary.signal("units")
+        self.rotary.signal("refresh_scene")
 
     def on_text_rotary_scale_y(self):
-        if self.rotary is not None:
-            try:
-                self.rotary.scale_y = float(self.text_rotary_scaley.GetValue())
-            except ValueError:
-                pass
+        if self.rotary is None:
+            return
+        try:
+            self.rotary.scale_y = float(self.text_rotary_scaley.GetValue())
+        except ValueError:
+            pass
+        self.scene.grid_secondary_scale_y = self.rotary.scale_y
+        self.rotary.signal("units")
+        self.rotary.signal("refresh_scene")
 
     def on_text_rotary_scale_x(self):
-        if self.rotary is not None:
-            try:
-                self.rotary.scale_x = float(self.text_rotary_scalex.GetValue())
-            except ValueError:
-                pass
+        if self.rotary is None:
+            return
+        try:
+            self.rotary.scale_x = float(self.text_rotary_scalex.GetValue())
+        except ValueError:
+            return
+        self.scene.grid_secondary_scale_x = self.rotary.scale_x
+        self.rotary.signal("units")
+        self.rotary.signal("refresh_scene")
 
     # def on_check_rotary_loop(self, event):
     #     print("Event handler 'on_check_rotary_loop' not implemented!")
@@ -200,7 +220,7 @@ class RotarySettings(MWindow):
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: RotarySettings.__set_properties
-        self.SetTitle(_("RotarySettings"))
+        self.SetTitle(_("Rotary-Settings"))
 
     def window_open(self):
         self.panel.pane_show()
@@ -210,4 +230,4 @@ class RotarySettings(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Rotary Setting")
+        return ("Device-Settings", "Rotary-Settings")

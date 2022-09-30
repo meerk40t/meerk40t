@@ -73,6 +73,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             ("ruidacontrol", "ruidadesign", "ruidaemulator"),
             help=_("activate the ruidaserver."),
+            hidden=True,
         )
         def ruidaserver(
             command, channel, _, laser=None, verbose=False, quit=False, **kwargs
@@ -93,6 +94,12 @@ def plugin(kernel, lifecycle=None):
             ruidabounce sends data to the ruidaemulator but sends data to the set bounce server.
             """
             root = kernel.root
+            root.setting(bool, "developer_mode", False)
+            if not root.developer_mode:
+                channel(
+                    "Use the 0.7.x series version of ruidacontrol. This still had some bugs in it and was disabled for now."
+                )
+                return
             try:
                 r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
                 r2mj = root.open_as("module/UDPServer", "rd2mk-jog", port=50207)
@@ -285,13 +292,31 @@ class RuidaDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return 0, 0
+
 
 class RuidaParser:
     def __init__(self):
         pass
 
     def parse(self, data, elements):
-        pass
+        emulator = elements.open_as("emulator/ruida", "ruidaparser")
+        emulator.spooler = elements.device.spooler
+        emulator.device = elements.device
+        emulator.elements = elements
+        emulator.design = True
+        emulator.write(BytesIO(emulator.unswizzle(data)))
+        elements.close("ruidaparser")
 
 
 class RuidaEmulator(Module, Parameters):
@@ -346,7 +371,7 @@ class RuidaEmulator(Module, Parameters):
         self.state = 22
 
     def __repr__(self):
-        return f"Ruida({self.name}, {len(self.cutcode)} cuts)"
+        return f"Ruida({self.name}, {len(self.cutcode)} cuts @{hex(id(self))})"
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
@@ -997,7 +1022,7 @@ class RuidaEmulator(Module, Parameters):
             # If not saving send to spooler in control or elements if `design` is set.
             if not self.saving and len(self.cutcode):
                 if self.control:
-                    matrix = Matrix(self.device.scene_to_device_matrix())
+                    matrix = self.device.scene_to_device_matrix()
                     for plot in self.cutcode:
                         for i in range(len(plot.plot)):
                             x, y, laser = plot.plot[i]
@@ -2238,7 +2263,7 @@ class RDLoader:
         with open(pathname, "rb") as f:
             op_branch = service.get(type="branch ops")
             op_branch.add(
-                data=bytearray(f.read()), data_type="ruida", type="blob", name=basename
+                data=bytearray(f.read()), data_type="ruida", type="blob", label=basename
             )
             kernel.root.close(basename)
             return True

@@ -356,6 +356,10 @@ class TemplatePanel(wx.Panel):
             self.callback(self.default_op[idx])
 
     def set_param_according_to_op(self, event):
+        def preset_passes(node=None):
+            # Will be called ahead of the modification of the passes variable
+            node.passes_custom = True
+
         def preset_balor_wobble(node=None):
             # Will be called ahead of the modification of a wobble variable
             # to copy the device defaults
@@ -404,6 +408,7 @@ class TemplatePanel(wx.Panel):
         self.parameters = [
             ("speed", None, _("Speed"), "mm/s", False, True),
             ("power", None, _("Power"), "ppi", False, True),
+            ("passes", preset_passes, _("Passes"), "x", False, True),
         ]
 
         if opidx == 0:
@@ -412,18 +417,21 @@ class TemplatePanel(wx.Panel):
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", preset_passes, _("Passes"), "x", False, True),
             ]
         elif opidx == 1:
             # Engrave
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", preset_passes, _("Passes"), "x", False, True),
             ]
         elif opidx == 2:
             # Raster
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
             ]
@@ -432,6 +440,7 @@ class TemplatePanel(wx.Panel):
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("dpi", None, _("DPI"), "dpi", False, True),
                 ("overscan", None, _("Overscan"), "mm", False, True),
             ]
@@ -440,6 +449,7 @@ class TemplatePanel(wx.Panel):
             self.parameters = [
                 ("speed", None, _("Speed"), "mm/s", False, True),
                 ("power", None, _("Power"), "ppi", False, True),
+                ("passes", preset_passes, _("Passes"), "x", False, True),
                 ("hatch_distance", None, _("Hatch Distance"), "mm", False, True),
                 ("hatch_angle", None, _("Hatch Angle"), "deg", False, True),
             ]
@@ -793,6 +803,9 @@ class TemplatePanel(wx.Panel):
                     else:
                         value = p_value_1
                     if hasattr(this_op, param_type_1):
+                        # quick and dirty
+                        if param_type_1 == "passes":
+                            value = int(value)
                         setattr(this_op, param_type_1, value)
                     else:  # Try setting
                         this_op.settings[param_type_1] = value
@@ -806,6 +819,8 @@ class TemplatePanel(wx.Panel):
                     else:
                         value = p_value_2
                     if hasattr(this_op, param_type_2):
+                        if param_type_2 == "passes":
+                            value = int(value)
                         setattr(this_op, param_type_2, value)
                     else:  # Try setting
                         this_op.settings[param_type_2] = value
@@ -1184,7 +1199,7 @@ class TemplateTool(MWindow):
             except AttributeError:
                 name = instance.__class__.__name__
 
-            self.notebook_main.AddPage(page_panel, name)
+            self.notebook_main.AddPage(page_panel, _(name))
             try:
                 page_panel.set_widgets(instance)
             except AttributeError:

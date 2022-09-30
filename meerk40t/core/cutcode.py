@@ -239,6 +239,8 @@ class CutGroup(list, CutObject, ABC):
 
     @property
     def start(self):
+        if self._start_x is not None and self._start_y is not None:
+            return self._start_x, self._start_y
         if len(self) == 0:
             return None
         # handle group normal/reverse - start and end already handle segment reverse
@@ -367,9 +369,15 @@ class CutCode(CutGroup):
             elif isinstance(e, RawCut):
                 for x, y, laser in e.plot:
                     if laser:
-                        path.line(x, y)
+                        path.line((x, y))
                     else:
-                        path.move(x, y)
+                        path.move((x, y))
+            elif isinstance(e, PlotCut):
+                for x, y, laser in e.plot:
+                    if laser:
+                        path.line((x, y))
+                    else:
+                        path.move((x, y))
             if previous_settings is not e.settings and previous_settings is not None:
                 if path is not None and len(path) != 0:
                     yield path
@@ -1181,6 +1189,10 @@ class PlotCut(CutObject):
             return False
             # if self.max_dy >= 15 and self.max_dy >= 15:
             #     return False  # This is probably a vector.
+        if self.max_dx is None:
+            return False
+        if self.max_dy is None:
+            return False
         # Above 80 we're likely dealing with a raster.
         if 0 < self.max_dx <= 15:
             self.v_raster = True
