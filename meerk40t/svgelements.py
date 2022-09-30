@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.8.1"
+SVGELEMENTS_VERSION = "1.8.4"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -7588,33 +7588,18 @@ class Group(SVGElement, Transformable, list):
         :param with_stroke: should the stroke-width be included in the bounds of the elements
         :return: union of all bounding boxes of elements within the iterable.
         """
-        boundary_points = []
+        boxes = []
         for e in elements:
-            if not hasattr(e, "bbox"):
+            if not hasattr(e, "bbox") or isinstance(e, (Group, Use)):
                 continue
-            box = e.bbox(transformed=False, with_stroke=with_stroke)
+            box = e.bbox(transformed=transformed, with_stroke=with_stroke)
             if box is None:
                 continue
-            top_left = (box[0], box[1])
-            top_right = (box[2], box[1])
-            bottom_left = (box[0], box[3])
-            bottom_right = (box[2], box[3])
-            if transformed:
-                top_left = e.transform.point_in_matrix_space(top_left)
-                top_right = e.transform.point_in_matrix_space(top_right)
-                bottom_left = e.transform.point_in_matrix_space(bottom_left)
-                bottom_right = e.transform.point_in_matrix_space(bottom_right)
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
+            boxes.append(box)
+        if len(boxes) == 0:
             return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
+        (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
+        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
 
     def bbox(self, transformed=True, with_stroke=False):
         """
@@ -7708,6 +7693,47 @@ class Use(SVGElement, Transformable, list):
                 if isinstance(subitem, (Group, Use)):
                     for s in subitem.select(conditional):
                         yield s
+
+    @staticmethod
+    def union_bbox(elements, transformed=True, with_stroke=False):
+        """
+        Returns the union of the bounding boxes for the elements within the iterator.
+
+        :param transformed: Should the children of this object be properly transformed.
+        :param with_stroke: should the stroke-width be included in the bounds of the elements
+        :return: union of all bounding boxes of elements within the iterable.
+        """
+        boxes = []
+        for e in elements:
+            if not hasattr(e, "bbox") or isinstance(e, (Group, Use)):
+                continue
+            box = e.bbox(transformed=transformed, with_stroke=with_stroke)
+            if box is None:
+                continue
+            boxes.append(box)
+        if len(boxes) == 0:
+            return None
+        (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
+        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
+
+    def bbox(self, transformed=True, with_stroke=False):
+        """
+        Returns the bounding box of the given object.
+
+        In the case of groups this is the union of all the bounding boxes of all bound children.
+
+        Setting transformed to false, may yield unexpected results if subitems are transformed in non-uniform
+        ways.
+
+        :param transformed: bounding box of the properly transformed children.
+        :param with_stroke: should the stroke-width be included in the bounds.
+        :return: bounding box of the given element
+        """
+        return Use.union_bbox(
+            self.select(),
+            transformed=transformed,
+            with_stroke=with_stroke,
+        )
 
 
 class ClipPath(SVGElement, list):
@@ -8866,6 +8892,7 @@ class SVG(Group):
                             # https://www.w3.org/TR/SVG11/struct.html#SVGElementWidthAttribute
                             # "A value of zero disables rendering of the element."
                             return s  # No more parsing will be done.
+
                         if SVG_ATTR_TRANSFORM in values:
                             # transform on SVG element applied as if svg had parent with transform.
                             values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
