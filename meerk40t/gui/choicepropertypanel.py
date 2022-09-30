@@ -875,7 +875,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control.Enable(enabled)
 
                     def on_enable_listener(param, ctrl, obj):
-                        def listen(origin, value):
+                        def listen(origin, value, target=None):
                             try:
                                 ctrl.Enable(bool(getattr(obj, param)))
                             except RuntimeError:
