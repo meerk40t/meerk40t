@@ -1966,7 +1966,7 @@ class BalorDevice(Service, ViewPort):
             self.lens_size = lens_size
             self.width = lens_size
             self.height = lens_size
-            self.signal("bed_size", (self.lens_size, self.lens_size))
+            self.signal("bedsize", (self.lens_size, self.lens_size))
             channel(f"Set Bed Size : ({self.lens_size}, {self.lens_size}).")
 
         @self.console_option(
