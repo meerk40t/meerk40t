@@ -1,5 +1,6 @@
 import ast
 import gzip
+import math
 import os
 from base64 import b64encode
 from io import BytesIO
@@ -380,9 +381,10 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
+                    stroke_scale = math.sqrt(c.matrix.determinant)
                     stroke_width = (
                         Length(
-                            amount=c.stroke_width, digits=6, preferred_units="px"
+                            amount=c.stroke_width * stroke_scale, digits=6, preferred_units="px"
                         ).preferred_length
                         if c.stroke_width is not None
                         else SVG_VALUE_NONE
