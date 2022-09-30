@@ -9,6 +9,7 @@ from .attributes import ColorPanel, IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
+
 class PointPropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -51,7 +52,6 @@ class PointPropertyPanel(ScrolledPanel):
 
         self.__set_properties()
         self.__do_layout()
-
 
     @staticmethod
     def accepts(node):
@@ -107,11 +107,14 @@ class PointPropertyPanel(ScrolledPanel):
             mynode.emphasized = wasemph
             self.set_widgets(mynode)
 
+
 class PointProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):
         super().__init__(288, 303, *args, **kwds)
 
-        self.panel = PointPropertyPanel(self, wx.ID_ANY, context=self.context, node=node)
+        self.panel = PointPropertyPanel(
+            self, wx.ID_ANY, context=self.context, node=node
+        )
         self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         _icon.CopyFromBitmap(icons8_vector_50.GetBitmap())

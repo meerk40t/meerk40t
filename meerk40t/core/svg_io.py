@@ -52,23 +52,23 @@ from ..svgelements import (
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
     Circle,
+    Close,
     Color,
     Ellipse,
     Group,
+    Line,
     Matrix,
+    Move,
     Path,
     Point,
     Polygon,
     Polyline,
     Rect,
+    Shape,
     SimpleLine,
     SVGImage,
     SVGText,
     Use,
-    Move,
-    Close,
-    Line,
-    Shape,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
 
@@ -381,7 +381,9 @@ class SVGWriter:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
                     stroke_width = (
-                        Length(amount=c.stroke_width, digits=6, preferred_units="px").preferred_length
+                        Length(
+                            amount=c.stroke_width, digits=6, preferred_units="px"
+                        ).preferred_length
                         if c.stroke_width is not None
                         else SVG_VALUE_NONE
                     )
@@ -616,7 +618,7 @@ class SVGProcessor:
                 fill=element.fill,
                 stroke=element.stroke,
                 label=_label,
-                lock=_lock
+                lock=_lock,
             )
             e_list.append(node)
         elif isinstance(element, SVGText):
@@ -909,7 +911,9 @@ class SVGProcessor:
             elif tag == "element":
                 # Check if SVGElement: element
                 if "settings" in attrs:
-                    del attrs["settings"]  # If settings was set, delete it or it will mess things up
+                    del attrs[
+                        "settings"
+                    ]  # If settings was set, delete it or it will mess things up
                 elem = context_node.add(type=node_type, **attrs)
                 try:
                     elem.validate()

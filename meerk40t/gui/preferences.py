@@ -317,7 +317,7 @@ class Preferences(MWindow):
                 "tip": _("Set options for a good automatic experience"),
                 "page": "Classification",
                 "section": "_AA_Presets",
-                "subsection": "_0_"
+                "subsection": "_0_",
             },
             {
                 "attr": "preset_classify_manual",
@@ -329,7 +329,7 @@ class Preferences(MWindow):
                 "tip": _("Set options for complete manual control"),
                 "page": "Classification",
                 "section": "_AA_Presets",
-                "subsection": "_0_"
+                "subsection": "_0_",
             },
             {
                 "attr": "dummy",
@@ -337,11 +337,11 @@ class Preferences(MWindow):
                 "object": self,
                 "type": str,
                 "style": "info",
-                "label":
-                    _("Classification is the (automatic) process of assigning an element to an operation.")
-                    + "\n"
-                    + ("That link between element and operation is called an assignment.")
-                ,
+                "label": _(
+                    "Classification is the (automatic) process of assigning an element to an operation."
+                )
+                + "\n"
+                + ("That link between element and operation is called an assignment."),
                 "page": "Classification",
                 # "section": "_000_Information",
             },
@@ -366,7 +366,7 @@ class Preferences(MWindow):
             context=self.context,
             choices="preferences",
             constraint=("Classification"),
-            injector=inject_choices
+            injector=inject_choices,
         )
         self.panel_classification.SetupScrolling()
 

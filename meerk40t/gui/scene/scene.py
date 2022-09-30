@@ -248,7 +248,7 @@ class Scene(Module, Job):
         result = self._last_snap_position
         # Too old? Discard
         if (time.time() - self._last_snap_ts) > 0.5:
-           result = None
+            result = None
         return result
 
     @last_snap.setter
@@ -759,7 +759,7 @@ class Scene(Module, Job):
         previous_top_element = None
         try:
             idx = 0
-            while idx<len(self.hit_chain):
+            while idx < len(self.hit_chain):
                 if not self.hit_chain[idx][0].transparent:
                     previous_top_element = self.hit_chain[idx][0]
                     break

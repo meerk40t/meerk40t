@@ -61,8 +61,9 @@ class PolylineTool(ToolWidget):
                 cy=Length(amount=y0, digits=2, preferred_units=units),
                 a=Length(
                     amount=sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)),
-                    digits=2, preferred_units=units
-                )
+                    digits=2,
+                    preferred_units=units,
+                ),
             )
             self.scene.context.signal("statusmsg", s)
 

@@ -33,10 +33,18 @@ class PositionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.text_x = TextCtrl(self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER)
-        self.text_y = TextCtrl(self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER)
-        self.text_w = TextCtrl(self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER)
-        self.text_h = TextCtrl(self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER)
+        self.text_x = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_y = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_w = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_h = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
         self.text_x.SetMinSize((70, 23))
         self.text_y.SetMinSize((70, 23))
         self.text_w.SetMinSize((70, 23))

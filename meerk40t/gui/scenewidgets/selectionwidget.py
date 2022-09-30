@@ -1299,6 +1299,7 @@ class MoveWidget(Widget):
         """
         Change the position of the selected elements.
         """
+
         def move_to(dx, dy):
             b = elements._emphasized_bounds
             allowlockmove = elements.lock_allows_move
@@ -1310,6 +1311,7 @@ class MoveWidget(Widget):
             self.translate(dx, dy)
 
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+
         elements = self.scene.context.elements
         lastdx = 0
         lastdy = 0
@@ -1489,7 +1491,7 @@ class MoveRotationOriginWidget(Widget):
         **kwargs,
     ):
         s_me = "rotcenter"
-        if event_type=="doubleclick":
+        if event_type == "doubleclick":
             self.master.rotation_cx = None
             self.master.rotation_cy = None
             self.master.invalidate_rot_center()
@@ -2239,7 +2241,11 @@ class SelectionWidget(Widget):
             self.scene.cursor(self.cursor)
             self.hovering = False
             for subwidget in self:
-                if hasattr(subwidget, "hovering") and subwidget.hovering and not subwidget.contains(space_pos[0], space_pos[1]):
+                if (
+                    hasattr(subwidget, "hovering")
+                    and subwidget.hovering
+                    and not subwidget.contains(space_pos[0], space_pos[1])
+                ):
                     subwidget.hovering = False
             self.scene.cursor("arrow")
             self.scene.context.signal("statusmsg", "")
@@ -2250,7 +2256,11 @@ class SelectionWidget(Widget):
             self.scene.context.signal("statusmsg", "")
 
             for subwidget in self:
-                if hasattr(subwidget, "hovering") and subwidget.hovering and not subwidget.contains(space_pos[0], space_pos[1]):
+                if (
+                    hasattr(subwidget, "hovering")
+                    and subwidget.hovering
+                    and not subwidget.contains(space_pos[0], space_pos[1])
+                ):
                     subwidget.hovering = False
                     self.scene.cursor("arrow")
                     self.scene.context.signal("statusmsg", "")

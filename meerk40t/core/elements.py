@@ -318,9 +318,13 @@ def plugin(kernel, lifecycle=None):
                 "default": True,
                 "type": bool,
                 "label": _("Autogenerate both for fill and stroke"),
-                "tip": _("Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation")
+                "tip": _(
+                    "Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation"
+                )
                 + "\n"
-                + _("Inactive: one hit of either stroke or fill is enough to prevent autogeneration"),
+                + _(
+                    "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
+                ),
                 "page": "Classification",
                 "section": "_90_Auto-Generation",
             },
@@ -6781,14 +6785,18 @@ class Elemental(Service):
         def clear_all(node, **kwargs):
             self("operation* delete\n")
 
-        @self.tree_operation(_("Clear unused"), node_type="branch ops", help=_("Clear operations without children"))
+        @self.tree_operation(
+            _("Clear unused"),
+            node_type="branch ops",
+            help=_("Clear operations without children"),
+        )
         def clear_unused(node, **kwargs):
             to_delete = []
             for op in self.ops():
                 # print (f"{op.type}, refs={len(op._references)}, children={len(op._children)}")
                 if len(op._children) == 0:
                     to_delete.append(op)
-            if len(to_delete)>0:
+            if len(to_delete) > 0:
                 self.remove_operations(to_delete)
                 self.signal("tree_changed")
 
@@ -7373,10 +7381,9 @@ class Elemental(Service):
             self.signal("refresh_tree")
 
         @self.tree_operation(
-            _("Remove all assignments from operations"), node_type="branch elems",
-            help=_(
-                "Any existing assignment of elements to operations will be removed"
-            ),
+            _("Remove all assignments from operations"),
+            node_type="branch elems",
+            help=_("Any existing assignment of elements to operations will be removed"),
         )
         def remove_all_assignments(node, **kwargs):
             for node in self.elems():
@@ -7679,7 +7686,7 @@ class Elemental(Service):
                     for ref in list(rnode._references):
                         ref.remove_node()
 
-            rem_node (node)
+            rem_node(node)
             self.signal("tree_changed")
 
         @self.tree_separator_before()
@@ -9007,6 +9014,7 @@ class Elemental(Service):
                 because of a lack of classification options.
         @return:
         """
+
         def emptydebug(value):
             return
 
@@ -9043,7 +9051,7 @@ class Elemental(Service):
                 fuzzy_param = (False,)
             for tempfuzzy in fuzzy_param:
                 if debug:
-                    debug (f"Pass 1 (fuzzy={tempfuzzy}): check {node.type}")
+                    debug(f"Pass 1 (fuzzy={tempfuzzy}): check {node.type}")
                 was_classified = False
                 should_break = False
 
@@ -9082,7 +9090,9 @@ class Elemental(Service):
                     ):
                         whisperer = False
                     if debug:
-                        debug (f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
+                        debug(
+                            f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
+                        )
                     if hasattr(op, "classify") and whisperer:
 
                         classified, should_break, feedback = op.classify(
@@ -9108,7 +9118,9 @@ class Elemental(Service):
                         else:
                             sfill = ""
                         if debug:
-                            debug(f"Was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}")
+                            debug(
+                                f"Was classified: {sstroke} {sfill} matching operation: {type(op).__name__}, break={should_break}"
+                            )
                     if should_break:
                         break
                 # So we are the end of the first pass, if there was already a classification
@@ -9126,7 +9138,7 @@ class Elemental(Service):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
                 if node.type == "elem text":
-                    #even if it has, we are not going to something with it
+                    # even if it has, we are not going to something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
@@ -9136,13 +9148,15 @@ class Elemental(Service):
             else:
                 classif_info[1] = True
 
-            if self.classify_autogenerate_both and not (classif_info[0] and classif_info[1]):
+            if self.classify_autogenerate_both and not (
+                classif_info[0] and classif_info[1]
+            ):
                 # Not fully classified on both stroke and fill
                 was_classified = False
             if not was_classified and usedefault:
                 # let's iterate through the default ops and add them
                 if debug:
-                    debug ("Pass 2 (wasn't classified), looking for default ops")
+                    debug("Pass 2 (wasn't classified), looking for default ops")
                 for op in operations:
                     is_black = False
                     whisperer = True
@@ -9176,7 +9190,9 @@ class Elemental(Service):
                     ):
                         whisperer = False
                     if debug:
-                        debug(f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}")
+                        debug(
+                            f"For {op.type}: black={is_black}, perform={whisperer}, flag={self.classify_black_as_raster}"
+                        )
                     if hasattr(op, "classifys") and whisperer:
                         classified, should_break, feedback = op.classify(
                             node,
@@ -9193,7 +9209,9 @@ class Elemental(Service):
                             classif_info[1] = True
                         was_classified = True
                         if debug:
-                            debug(f"Was classified to default operation: {type(op).__name__}, break={should_break}")
+                            debug(
+                                f"Was classified to default operation: {type(op).__name__}, break={should_break}"
+                            )
                     if should_break:
                         break
             # Lets make sure we only consider relevant, ie existing attributes...
@@ -9201,7 +9219,7 @@ class Elemental(Service):
                 if node.stroke is None or node.stroke.argb is None:
                     classif_info[0] = True
                 if node.type == "elem text":
-                    #even if it has, we are not going to something with it
+                    # even if it has, we are not going to something with it
                     classif_info[0] = True
             else:
                 classif_info[0] = True
@@ -9211,25 +9229,27 @@ class Elemental(Service):
             else:
                 classif_info[1] = True
 
-            if self.classify_autogenerate_both and not (classif_info[0] and classif_info[1]):
+            if self.classify_autogenerate_both and not (
+                classif_info[0] and classif_info[1]
+            ):
                 # Not fully classified on both stroke and fill
                 was_classified = False
             if not was_classified and autogen:
                 # Despite all efforts we couldn't classify the element, so let's add an op
                 if debug:
-                    debug ("Pass 3, not classified by ops or def ops")
+                    debug("Pass 3, not classified by ops or def ops")
                 stdops = []
                 has_raster = False
                 if node.type == "elem image":
                     stdops.append(ImageOpNode(output=False))
                     if debug:
-                        debug ("add an op image")
+                        debug("add an op image")
                     classif_info[0] = True
                     classif_info[1] = True
                 elif node.type == "elem point":
                     stdops.append(DotsOpNode(output=False))
                     if debug:
-                        debug ("add an op dots")
+                        debug("add an op dots")
                     classif_info[0] = True
                     classif_info[1] = True
                 # That should leave us with fulfilled criteria or stroke / fill stuff
@@ -9260,16 +9280,18 @@ class Elemental(Service):
                     if is_cut:
                         stdops.append(CutOpNode(color=Color("red"), speed=5.0))
                         if debug:
-                            debug ("add an op cut due to stroke")
+                            debug("add an op cut due to stroke")
                     elif is_raster:
                         stdops.append(RasterOpNode(color="black", output=True))
                         if debug:
-                            debug ("add an op raster due to stroke")
+                            debug("add an op raster due to stroke")
                         has_raster = True
                     else:
                         stdops.append(EngraveOpNode(color=node.stroke, speed=35.0))
                         if debug:
-                            debug (f"add an op engrave with color={node.stroke} due to stroke")
+                            debug(
+                                f"add an op engrave with color={node.stroke} due to stroke"
+                            )
                 # Do we need to add a fill operation?
                 if (
                     not classif_info[1]
@@ -9280,11 +9302,11 @@ class Elemental(Service):
                 ):
                     stdops.append(RasterOpNode(color="black", output=True))
                     if debug:
-                        debug ("add an op raster due to fill")
+                        debug("add an op raster due to fill")
                 for op in stdops:
                     # Lets make sure we don't have something like that already
                     if debug:
-                        debug (f"Check for existence of {op.type}")
+                        debug(f"Check for existence of {op.type}")
                     already_found = False
                     for testop in self.ops():
                         if type(op) == type(testop):
@@ -9295,7 +9317,10 @@ class Elemental(Service):
                         if hasattr(op, "color") and hasattr(testop, "color"):
                             # print ("Comparing color %s to %s" % ( op.color, testop.color ))
                             if fuzzy:
-                                if Color.distance(op.color, testop.color) <= fuzzydistance:
+                                if (
+                                    Color.distance(op.color, testop.color)
+                                    <= fuzzydistance
+                                ):
                                     samecolor = True
                             else:
                                 if op.color == testop.color:

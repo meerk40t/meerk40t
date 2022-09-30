@@ -753,7 +753,7 @@ class ShadowTree:
             txt = self.wxtree.GetItemText(pnode)
             # That it s not working as advertised...
             state = self.wxtree.IsExpanded(pnode)
-            state = False    # otherwise every thing gets expanded...
+            state = False  # otherwise every thing gets expanded...
             if state:
                 self.was_already_expanded.append(f"{level}-{txt}")
             self.parse_tree(pnode, level + 1)
@@ -1160,6 +1160,7 @@ class ShadowTree:
         @param node:
         @return:
         """
+
         def my_create_label(node, text=None):
             if text is None:
                 text = "{element_type}:{id}"

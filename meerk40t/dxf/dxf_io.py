@@ -51,6 +51,7 @@ class DxfLoader:
             try:
                 # dxf is low quality. Attempt recovery.
                 from ezdxf import recover
+
                 dxf, auditor = recover.readfile(pathname)
             except ezdxf.DXFStructureError as e:
                 # Recovery failed, return the BadFileError.

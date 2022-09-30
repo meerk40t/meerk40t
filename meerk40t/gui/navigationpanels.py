@@ -1219,13 +1219,15 @@ class SizePanel(wx.Panel):
             self.button_navigate_resize.Enable(False)
 
     def on_button_navigate_resize(self, event):
-        new_width = Length(self.text_width.GetValue(), relative_length=self.object_width)
-        new_height = Length(self.text_height.GetValue(), relative_length=self.object_height)
+        new_width = Length(
+            self.text_width.GetValue(), relative_length=self.object_width
+        )
+        new_height = Length(
+            self.text_height.GetValue(), relative_length=self.object_height
+        )
         if float(new_width) == 0 or float(new_height) == 0:
             return
-        self.context(
-            f"resize {self.object_x} {self.object_y} {new_width} {new_height}"
-        )
+        self.context(f"resize {self.object_x} {self.object_y} {new_width} {new_height}")
 
     def on_textenter_width(self):  # wxGlade: SizePanel.<event_handler>
         try:
@@ -1551,8 +1553,12 @@ class Transform(wx.Panel):
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
             # self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
             # self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
-            l1 = Length(amount=matrix.e, digits=2, preferred_units=self.context.units_name)
-            l2 = Length(amount=matrix.f, digits=2, preferred_units=self.context.units_name)
+            l1 = Length(
+                amount=matrix.e, digits=2, preferred_units=self.context.units_name
+            )
+            l2 = Length(
+                amount=matrix.f, digits=2, preferred_units=self.context.units_name
+            )
             self.text_e.SetValue(l1.preferred_length)
             self.text_f.SetValue(l2.preferred_length)
             m_e = matrix.e
@@ -1765,7 +1771,11 @@ class JogDistancePanel(wx.Panel):
 
     def pane_show(self, *args):
         try:
-            joglen = Length(self.context.jog_amount, digits=2, preferred_units=self.context.units_name)
+            joglen = Length(
+                self.context.jog_amount,
+                digits=2,
+                preferred_units=self.context.units_name,
+            )
         except:
             joglen = Length("10mm", digits=2, preferred_units=self.context.units_name)
 

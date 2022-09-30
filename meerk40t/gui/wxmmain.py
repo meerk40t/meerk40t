@@ -1447,7 +1447,9 @@ class MeerK40t(MWindow):
             all_arguments_required=True,
         )
         def save_pane(command, _, channel, configuration=None, **kwargs):
-            setattr(context, f"perspective_{configuration}", self._mgr.SavePerspective())
+            setattr(
+                context, f"perspective_{configuration}", self._mgr.SavePerspective()
+            )
 
         @context.console_argument("pane", help=_("pane to be shown"))
         @context.console_command(

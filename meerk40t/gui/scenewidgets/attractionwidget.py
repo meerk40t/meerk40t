@@ -66,9 +66,8 @@ class AttractionWidget(Widget):
             self.my_x = space_pos[0]
             self.my_y = space_pos[1]
             self.calculate_display_points()
-            if (
-                event_type in ("leftdown", "move", "hover", "hover_start")
-                and (self.scene.tool_active or self.scene.modif_active)
+            if event_type in ("leftdown", "move", "hover", "hover_start") and (
+                self.scene.tool_active or self.scene.modif_active
             ):
                 self._show_snap_points = True
             else:

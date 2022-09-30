@@ -73,7 +73,9 @@ class WordlistPanel(wx.Panel):
 
         dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
         sizer_index_left.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_index_left.Add(sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_index_left.Add(
+            sizer_edit_wordlist_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
 
         self.btn_edit_wordlist_del = wx.StaticBitmap(
             self, wx.ID_ANY, size=wx.Size(25, 25)
@@ -100,9 +102,7 @@ class WordlistPanel(wx.Panel):
         self.btn_edit_content_edit.SetBitmap(icons8_edit_25.GetBitmap())
         self.btn_edit_content_paste.SetBitmap(icons8_paste_25.GetBitmap())
 
-        self.btn_edit_wordlist_del.SetToolTip(
-            _("Delete the current variable")
-        )
+        self.btn_edit_wordlist_del.SetToolTip(_("Delete the current variable"))
         self.btn_edit_wordlist_edit.SetToolTip(
             _("Edit the name of the active variable")
         )
@@ -146,7 +146,9 @@ class WordlistPanel(wx.Panel):
 
         dummylabel = wx.StaticText(self, wx.ID_ANY, " ")
         sizer_index_right.Add(dummylabel, 1, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_index_right.Add(sizer_edit_content_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_index_right.Add(
+            sizer_edit_content_buttons, 0, wx.ALIGN_CENTER_VERTICAL, 0
+        )
 
         sizer_grid_right.Add(sizer_index_right, 0, wx.EXPAND, 0)
         sizer_grid_right.Add(self.grid_content, 1, wx.EXPAND, 0)
@@ -178,7 +180,9 @@ class WordlistPanel(wx.Panel):
         sizer_exit.Add(self.btn_restore, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.check_autosave = wx.CheckBox(self, wx.ID_ANY, _("Autosave"))
-        self.check_autosave.SetToolTip(_("All changes to the wordlist will be saved immediately"))
+        self.check_autosave.SetToolTip(
+            _("All changes to the wordlist will be saved immediately")
+        )
         sizer_exit.Add(self.check_autosave, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.check_autosave.SetValue(self.context.wordlist_autosave)
 
@@ -206,7 +210,9 @@ class WordlistPanel(wx.Panel):
         self.txt_pattern.Bind(wx.EVT_TEXT, self.on_patterntext_change)
         self.cbo_Index.Bind(wx.EVT_COMBOBOX, self.on_cbo_select)
         self.grid_wordlist.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_wordlist)
-        self.grid_wordlist.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_wordlist)
+        self.grid_wordlist.Bind(
+            wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_wordlist
+        )
         self.grid_wordlist.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit_wordlist)
         self.grid_content.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_content)
         self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_content)
@@ -214,11 +220,15 @@ class WordlistPanel(wx.Panel):
         self.check_autosave.Bind(wx.EVT_CHECKBOX, self.on_checkbox_autosave)
 
         self.btn_edit_wordlist_del.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_del)
-        self.btn_edit_wordlist_edit.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_edit)
+        self.btn_edit_wordlist_edit.Bind(
+            wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_edit
+        )
         self.btn_edit_content_add.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_add)
         self.btn_edit_content_del.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_del)
         self.btn_edit_content_edit.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_edit)
-        self.btn_edit_content_paste.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_content_paste)
+        self.btn_edit_content_paste.Bind(
+            wx.EVT_LEFT_DOWN, self.on_btn_edit_content_paste
+        )
         self.cbo_index_single.Bind(wx.EVT_COMBOBOX, self.on_single_index)
         # Key handler for F2
         self.grid_content.Bind(wx.EVT_CHAR, self.on_key_grid)
@@ -252,7 +262,6 @@ class WordlistPanel(wx.Panel):
                 return
         # Let's make sure the keystroke is processed further
         event.Skip()
-
 
     def on_checkbox_autosave(self, event):
         self.context.wordlist_autosave = self.check_autosave.GetValue()
@@ -496,7 +505,7 @@ class WordlistPanel(wx.Panel):
         enab1 = False
         enab2 = False
         newname = self.txt_pattern.GetValue().lower()
-        if len(newname)>0:
+        if len(newname) > 0:
             enab2 = True
             enab1 = True
             if newname in self.wlist.content:
@@ -572,7 +581,11 @@ class ImportPanel(wx.Panel):
             self,
             wx.ID_ANY,
             _("What does the first row contain:"),
-            choices=(_("Auto-Detect"), _("Contains Data"), _("Contains Variable-Names")),
+            choices=(
+                _("Auto-Detect"),
+                _("Contains Data"),
+                _("Contains Variable-Names"),
+            ),
             majorDimension=3,
             style=wx.RA_SPECIFY_COLS,
         )
@@ -580,7 +593,9 @@ class ImportPanel(wx.Panel):
         sizer_header.Add(self.rbox_header, 1, wx.EXPAND, 0)
         info_box.Add(sizer_header, 0, wx.EXPAND)
 
-        self.text_preview = wx.TextCtrl(self, wx.ID_ANY, style = wx.TE_READONLY|wx.TE_MULTILINE)
+        self.text_preview = wx.TextCtrl(
+            self, wx.ID_ANY, style=wx.TE_READONLY | wx.TE_MULTILINE
+        )
 
         main_sizer.Add(info_box, 0, wx.EXPAND, 0)
         main_sizer.Add(self.text_preview, 1, wx.EXPAND, 0)
@@ -618,7 +633,9 @@ class ImportPanel(wx.Panel):
                 force_header = False
             elif self.rbox_header.GetSelection() == 2:
                 force_header = True
-            ct, colcount, headers = self.wlist.load_csv_file(myfile, force_header=force_header)
+            ct, colcount, headers = self.wlist.load_csv_file(
+                myfile, force_header=force_header
+            )
             msg = _("Imported file, {col} fields, {row} rows").format(
                 col=colcount, row=ct
             )
@@ -636,7 +653,9 @@ class ImportPanel(wx.Panel):
                 force_header = False
             elif self.rbox_header.GetSelection() == 2:
                 force_header = True
-            ct, colcount, headers = self.wlist.load_csv_file(myfile, force_header=force_header)
+            ct, colcount, headers = self.wlist.load_csv_file(
+                myfile, force_header=force_header
+            )
             msg = _("Imported file, {col} fields, {row} rows").format(
                 col=colcount, row=ct
             )
@@ -663,6 +682,7 @@ class ImportPanel(wx.Panel):
                 pass
         self.text_preview.SetValue(buffer)
 
+
 class AboutPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -676,56 +696,58 @@ class AboutPanel(wx.Panel):
         self.parent_panel = None
 
         s = _(
-            "The objective of this functionality is to create burning templates, " +
-            "that can be reused for different data with minimal adjustment effort.")
-        s += "\n" + _(
-            "Let's clarify the term variable first: a variable is a placeholder for " +
-            "some text that can be used as part of the text-definition of a Text-Object."
+            "The objective of this functionality is to create burning templates, "
+            + "that can be reused for different data with minimal adjustment effort."
         )
         s += "\n" + _(
-            "Its reference (i.e. variable name) is used within curly brackets to indicate" +
-            "that it will eventually be replaced by 'real' content.")
+            "Let's clarify the term variable first: a variable is a placeholder for "
+            + "some text that can be used as part of the text-definition of a Text-Object."
+        )
+        s += "\n" + _(
+            "Its reference (i.e. variable name) is used within curly brackets to indicate"
+            + "that it will eventually be replaced by 'real' content."
+        )
 
         s += "\n\n" + _(
-            "Let's come back to our use-case, imagine you want to create a name-tag "+
-            "pattern that can be reused. Lets create a text-object inside a frame "+
-            "and set its text to"
+            "Let's come back to our use-case, imagine you want to create a name-tag "
+            + "pattern that can be reused. Lets create a text-object inside a frame "
+            + "and set its text to"
         )
         s += "\n" + _(r"'This item belongs to {NAME}'")
         s += _(
-            "If you define a variable named 'NAME' and assign a value like " +
-            "'John' to it, then the burned text will finally state:"
+            "If you define a variable named 'NAME' and assign a value like "
+            + "'John' to it, then the burned text will finally state:"
         )
         s += "\n" + _("'This item belongs to John'")
 
         s += "\n\n" + _(
-            "You can define a set of variables (called wordlist) that could be populated" +
-            "by a standard comma-separated CSV file. The you could have not just one" +
-            "entry defined for 'NAME' but dozens of them. Which of the multiple entries" +
-            "is currently active is decided by its index value."
+            "You can define a set of variables (called wordlist) that could be populated"
+            + "by a standard comma-separated CSV file. The you could have not just one"
+            + "entry defined for 'NAME' but dozens of them. Which of the multiple entries"
+            + "is currently active is decided by its index value."
         )
         s += "\n\n" + _(
-            "You are not restricted to a single use of a variable (useful e.g." +
-            "if you want to batch-burn a couple of name-tags). " +
-            "The standard use {NAME} indicates " +
-            r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)" +
-            r"uses the next entry, {NAME#+2} the second entry after the current."
+            "You are not restricted to a single use of a variable (useful e.g."
+            + "if you want to batch-burn a couple of name-tags). "
+            + "The standard use {NAME} indicates "
+            + r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
+            + r"uses the next entry, {NAME#+2} the second entry after the current."
         )
         s += "\n\n" + _(
-            "Note: This usage does not change the index position, you need " +
-            r"to manually advance it. If you want to autoadvance the index after " +
-            "every use, then you can use {NAME++}."
+            "Note: This usage does not change the index position, you need "
+            + r"to manually advance it. If you want to autoadvance the index after "
+            + "every use, then you can use {NAME++}."
         )
         s += "\n\n" + _(
-            "There are couple of predefined variables, that refer to the " +
-            r"current burn operation (like {op_power}, {op_speed} or others)" +
-            r"or contain date/time-information ({date}, {time})."
+            "There are couple of predefined variables, that refer to the "
+            + r"current burn operation (like {op_power}, {op_speed} or others)"
+            + r"or contain date/time-information ({date}, {time})."
         )
         s += "\n\n" + _(
-            "Please note that date and time may be provided in a format that " +
-            r"allows to define their appearance according to local " +
-            r"preferences: e.g. {date@%d.%m.%Y} will provide a date " +
-            r"like 31.12.2022 and {time@%H:%M} a time like 23:59."
+            "Please note that date and time may be provided in a format that "
+            + r"allows to define their appearance according to local "
+            + r"preferences: e.g. {date@%d.%m.%Y} will provide a date "
+            + r"like 31.12.2022 and {time@%H:%M} a time like 23:59."
         )
         s += "\n" + _("For a complete set of format-directives see:")
         s += (
