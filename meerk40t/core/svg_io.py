@@ -40,7 +40,7 @@ from ..svgelements import (
     Shape,
     SVGElement,
     SVGImage,
-    SVGText,
+    SVGText, Use,
 )
 from .elements import LaserOperation
 
@@ -350,6 +350,18 @@ class SVGLoader:
                 except OSError:
                     pass
             elif isinstance(element, SVG):
+                continue
+            elif isinstance(element, Use):
+                new_context = context_node.add(Group(), type="group")
+                SVGLoader.parse(
+                    element,
+                    elements_modifier,
+                    new_context,
+                    pathname,
+                    scale_factor,
+                    reverse,
+                    elements,
+                )
                 continue
             elif isinstance(element, Group):
                 new_context = context_node.add(element, type="group")
