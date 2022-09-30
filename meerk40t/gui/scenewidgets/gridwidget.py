@@ -130,16 +130,10 @@ class GridWidget(Widget):
         ends2 = []
         # Primary grid
         self.zero_x = p.device.unit_width * p.device.show_origin_x
-        if hasattr(p.device, "flip_x"):
-            if p.device.flip_x:
-                self.zero_x = p.device.unit_width - self.zero_x
         self.zero_y = p.device.unit_height * p.device.show_origin_y
-        if hasattr(p.device, "flip_y"):
-            if p.device.flip_y:
-                self.zero_y = p.device.unit_height - self.zero_y
-
-        # print (f"x: step={self.tlenx1:.3f}, min={self.min_x:.3f}, max={self.max_x:.3f}")
-        # print (f"y: step={self.tleny1:.3f}, min={self.min_y:.3f}, max={self.max_y:.3f}")
+        # Just a reminder:
+        # show_origin_x decides the zero for x,
+        # flip_x is inverting the direction of the axis not the origin!
 
         # We could be way too high
         start_x = self.zero_x
