@@ -1318,6 +1318,10 @@ class MoveWidget(Widget):
         if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.last_snap
+        # sweeping it under the rug for now until we have figured out a way
+        # to move a defined reference and not an arbitrary point on the
+        # Widget area.
+        nearest_snap = None
         if nearest_snap is not None:
             # Position is space_pos:
             # 0, 1: current x, y
