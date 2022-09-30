@@ -7,7 +7,7 @@ import time
 import serial
 from serial import SerialException
 
-from meerk40t.kernel import Module, Service
+from meerk40t.kernel import CommandSyntaxError, Module, Service
 
 from ..core.cutcode import (
     CubicCut,
@@ -25,7 +25,7 @@ from ..core.cutcode import (
 )
 from ..core.parameters import Parameters
 from ..core.plotplanner import PlotPlanner
-from ..core.spoolers import Spooler
+from ..core.spoolers import LaserJob, Spooler
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM, ViewPort
 from ..device.basedevice import PLOT_FINISH, PLOT_JOG, PLOT_RAPID, PLOT_SETTING
 
@@ -138,8 +138,8 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "Flip Axis",
-                "signals": "bedsize",
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
             },
             {
                 "attr": "flip_y",
@@ -150,7 +150,39 @@ class GRBLDevice(Service, ViewPort):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
-                "subsection": "Flip Axis",
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
+            },
+            {
+                "attr": "swap_xy",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Swap XY"),
+                "tip": _(
+                    "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+                ),
+                "subsection": "_20_Axis corrections",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_bottom",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Home Bottom"),
+                "tip": _("Indicates the device Home is on the bottom"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_right",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Right"),
+                "tip": _("Indicates the device Home is at the right side"),
+                "subsection": "_30_Home position",
                 "signals": "bedsize",
             },
         ]
@@ -184,8 +216,9 @@ class GRBLDevice(Service, ViewPort):
             native_scale_y=UNITS_PER_MIL,
             flip_x=self.flip_x,
             flip_y=self.flip_y,
-            origin_x=0.0,
-            origin_y=1.0,
+            swap_xy=self.swap_xy,
+            origin_x=1.0 if self.home_right else 0.0,
+            origin_y=1.0 if self.home_bottom else 0.0,
         )
 
         self.settings = dict()
@@ -264,6 +297,7 @@ class GRBLDevice(Service, ViewPort):
         self.driver = GRBLDriver(self)
         self.controller = GrblController(self)
         self.channel("grbl").watch(self.controller.write)
+        self.channel("grbl-realtime").watch(self.controller.realtime)
 
         self.spooler = Spooler(self, driver=self.driver)
         self.add_service_delegate(self.spooler)
@@ -309,12 +343,30 @@ class GRBLDevice(Service, ViewPort):
                 self.channel("grbl")(remainder + "\r")
 
         @self.console_command(
-            ("soft_reset", "estop"),
+            "soft_reset",
             help=_("Send realtime soft reset gcode to the device"),
             input_type=None,
         )
         def soft_reset(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.reset()
+            self.signal("pipe;running", False)
+
+        @self.console_command(
+            "estop",
+            help=_("Send estop to the laser"),
+            input_type=None,
+        )
+        def estop(command, channel, _, data=None, remainder=None, **kwgs):
+            self.driver.reset()
+            self.signal("pipe;running", False)
+
+        @self.console_command(
+            "clear_alarm",
+            help=_("Send clear_alarm to the laser"),
+            input_type=None,
+        )
+        def clear_alarm(command, channel, _, data=None, remainder=None, **kwgs):
+            self.driver.clear_alarm()
             self.signal("pipe;running", False)
 
         @self.console_command(
@@ -335,6 +387,30 @@ class GRBLDevice(Service, ViewPort):
         )
         def resume(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.resume()
+
+        @self.console_command(
+            "viewport_update",
+            hidden=True,
+            help=_("Update moshi codes for movement"),
+        )
+        def codes_update(**kwargs):
+            self.realize()
+
+        @self.console_argument("filename", type=str)
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
+        def gcode_save(channel, _, filename, data=None, **kwargs):
+            if filename is None:
+                raise CommandSyntaxError
+            try:
+                with open(filename, "w") as f:
+                    # f.write(b"(MeerK40t)\n")
+                    driver = GRBLDriver(self)
+                    job = LaserJob(filename, list(data.plan), driver=driver)
+                    driver.grbl = f.write
+                    job.execute()
+
+            except (PermissionError, IOError):
+                channel(_("Could not save: {filename}").format(filename=filename))
 
     @property
     def current(self):
@@ -370,6 +446,8 @@ class GRBLDevice(Service, ViewPort):
     def realize(self):
         self.width = self.bedwidth
         self.height = self.bedheight
+        self.origin_x = 1.0 if self.home_right else 0.0
+        self.origin_y = 1.0 if self.home_bottom else 0.0
         super().realize()
 
 
@@ -413,6 +491,7 @@ class GRBLDriver(Parameters):
         self._g91_absolute()
 
         self.grbl = self.service.channel("grbl", pure=True)
+        self.grbl_realtime = self.service.channel("grbl-realtime", pure=True)
 
         self.move_mode = 0
         self.reply = None
@@ -848,7 +927,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = True
-        self.grbl("!")
+        self.grbl_realtime("!")
 
     def resume(self, *args):
         """
@@ -860,7 +939,7 @@ class GRBLDriver(Parameters):
         @return:
         """
         self.paused = False
-        self.grbl("~")
+        self.grbl_realtime("~")
 
     def reset(self, *args):
         """
@@ -871,7 +950,18 @@ class GRBLDriver(Parameters):
         @param args:
         @return:
         """
-        self.grbl("\x18")
+        self.service.spooler.clear_queue()
+        self.plot_planner.clear()
+        self.grbl_realtime("\x18")
+        self.paused = False
+
+    def clear_alarm(self):
+        """
+        GRBL clear alarm signal.
+
+        @return:
+        """
+        self.grbl_realtime("$X\n")
 
     def status(self):
         """
@@ -879,7 +969,7 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        self.grbl("?")
+        self.grbl_realtime("?")
 
         parts = list()
         parts.append(f"x={self.native_x}")
@@ -1008,6 +1098,9 @@ class GrblController:
         self.lock_sending_queue = threading.RLock()
         self.sending_queue = []
 
+        self.lock_realtime_queue = threading.RLock()
+        self.realtime_queue = []
+
         self.commands_in_device_buffer = []
         self.buffer_mode = 1  # 1:1 okay, send lines.
         self.buffered_characters = 0
@@ -1080,7 +1173,20 @@ class GrblController:
         self.service.signal("serial;write", data)
         with self.lock_sending_queue:
             self.sending_queue.append(data)
-            self.service.signal("serial;buffer", len(self.sending_queue))
+            self.service.signal(
+                "serial;buffer", len(self.sending_queue) + len(self.realtime_queue)
+            )
+
+    def realtime(self, data):
+        self.start()
+        self.service.signal("serial;write", data)
+        with self.lock_realtime_queue:
+            self.realtime_queue.append(data)
+            if "\x18" in data:
+                self.sending_queue.clear()
+            self.service.signal(
+                "serial;buffer", len(self.sending_queue) + len(self.realtime_queue)
+            )
 
     def start(self):
         self.open()
@@ -1099,6 +1205,13 @@ class GrblController:
     def _sending(self):
         while self.connection.connected:
             write = 0
+            while len(self.realtime_queue):
+                line = self.realtime_queue[0]
+                self.connection.write(line)
+                self.send(line)
+                self.realtime_queue.pop(0)
+                write += 1
+
             if len(self.sending_queue):
                 if len(self.commands_in_device_buffer) <= 1:
                     line = self.sending_queue[0]
@@ -1131,6 +1244,8 @@ class GrblController:
                     self.channel(f"Response: {response}")
                 if response.startswith("echo:"):
                     self.service.channel("console")(response[5:])
+                if response.startswith("ALARM"):
+                    self.service.signal("warning", f"GRBL: {response}", response, 4)
                 if response.startswith("error"):
                     self.channel(f"ERROR: {response}")
                 else:
@@ -1138,12 +1253,15 @@ class GrblController:
                 read += 1
             if read == 0 and write == 0:
                 time.sleep(0.05)
+                self.service.signal("pipe;running", False)
+            else:
+                self.service.signal("pipe;running", True)
 
     def __repr__(self):
         return f"GRBLSerial('{self.service.com_port}:{str(self.service.serial_baud_rate)}')"
 
     def __len__(self):
-        return len(self.sending_queue)
+        return len(self.sending_queue) + len(self.realtime_queue)
 
 
 class SerialConnection:
@@ -1223,6 +1341,7 @@ class MockConnection:
             self.just_connected = False
             return "grbl version fake"
         if self.write_lines:
+            time.sleep(0.2)  # takes some time
             self.write_lines -= 1
             return "ok"
         else:
@@ -1276,6 +1395,8 @@ class TCPOutput:
 
     def write(self, data):
         self.service.signal("tcp;write", data)
+        if isinstance(data, str):
+            data = bytes(data, "utf-8")
         with self.lock:
             self.buffer += data
             self.service.signal("tcp;buffer", len(self.buffer))
@@ -1432,46 +1553,47 @@ class GRBLEmulator(Module, Parameters):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        driver = self.device
+        device = self.device
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            if driver.state == 0:
+            if device.state == 0:
                 state = "Idle"
             else:
                 state = "Busy"
-            x = driver.current_x / self.scale
-            y = driver.current_y / self.scale
+            x, y = device.current
+            x /= self.scale
+            y /= self.scale
             z = 0.0
-            parts = list()
-            parts.append(state)
-            parts.append("MPos:%f,%f,%f" % (x, y, z))
-            f = self.feed_invert(driver.speed)
-            s = driver.power
-            parts.append("FS:%f,%d" % (f, s))
-            self.grbl_write("<%s>\r\n" % "|".join(parts))
+            f = self.feed_invert(device.speed)
+            s = device.power
+            self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
         elif bytes_to_write == "~":  # Resume.
-            self.spooler.send("resume")
+            self.spooler.laserjob("resume")
         elif bytes_to_write == "!":  # Pause.
-            self.spooler.send("pause")
+            self.spooler.laserjob("pause")
         elif bytes_to_write == "\x18":  # Soft reset.
-            self.spooler.send("abort")
+            self.spooler.laserjob("abort")
+        elif bytes_to_write == "\x85":
+            pass  # Jog Abort.
 
     def write(self, data):
-        if isinstance(data, bytes):
-            data = data.decode()
-        if "?" in data:
-            data = data.replace("?", "")
+        if b"?" in data:
+            data = data.replace(b"?", b"")
             self.realtime_write("?")
-        if "~" in data:
-            data = data.replace("~", "")
+        if b"~" in data:
+            data = data.replace(b"~", b"")
             self.realtime_write("~")
-        if "!" in data:
-            data = data.replace("!", "")
+        if b"!" in data:
+            data = data.replace(b"!", b"")
             self.realtime_write("!")
-        if "\x18" in data:
-            data = data.replace("\x18", "")
+        if b"\x18" in data:
+            data = data.replace(b"\x18", b"")
             self.realtime_write("\x18")
-        self.buffer += data
+        if b"\x85" in data:
+            data = data.replace(b"\x85", b"")
+            self.realtime_write("\x85")
+
+        self.buffer += data.decode("utf-8")
         while "\b" in self.buffer:
             self.buffer = re.sub(".\b", "", self.buffer, count=1)
             if self.buffer.startswith("\b"):
@@ -1570,10 +1692,10 @@ class GRBLEmulator(Module, Parameters):
                     pass
                 elif v == 8:
                     # Flood coolant On
-                    self.spooler.send("signal", ("coolant", True))
+                    self.spooler.laserjob(["signal", ("coolant", True)])
                 elif v == 9:
                     # Flood coolant Off
-                    self.spooler.send("signal", ("coolant", False))
+                    self.spooler.laserjob(["signal", ("coolant", False)])
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:

@@ -109,7 +109,7 @@ class MeerK40t(MWindow):
             pass
 
         self.context.gui = self
-        self.usb_running = False
+        self._usb_running = dict()
         context = self.context
         self.register_options_and_choices(context)
 
@@ -573,7 +573,27 @@ class MeerK40t(MWindow):
                     "The scene-menu will appear if you right-click on the scene-background"
                 ),
                 "page": "Gui",
+                "hidden": True,
                 "section": "Scene",
+            },
+            {
+                "attr": "process_while_typing",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Process input while typing"),
+                "tip": _(
+                    "Try to immediately use values you enter in dialog-textfields - "
+                )
+                + "\n"
+                + _(
+                    "otherwise they will get applied only after a deliberate confirmation"
+                )
+                + "\n"
+                + _("by enter or stepping out of the field)"),
+                "page": "Gui",
+                "hidden": True,
+                "section": "Misc.",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -1341,52 +1361,39 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(f".{extension}"):
                     pathname += f".{extension}"
-                context.elements.save(pathname, version=version)
-                gui.validate_save()
-                gui.working_file = pathname
-                gui.set_file_as_recently_used(gui.working_file)
+                try:
+                    context.elements.save(pathname, version=version)
+                    gui.validate_save()
+                    gui.working_file = pathname
+                    gui.set_file_as_recently_used(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
             if gui.working_file is None:
                 context(".dialog_save_as\n")
             else:
-                gui.set_file_as_recently_used(gui.working_file)
-                gui.validate_save()
-                context.elements.save(gui.working_file)
-
-        @context.console_command("dialog_import_egv", hidden=True)
-        def egv_in_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui,
-                _("Import EGV"),
-                wildcard=files,
-                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Loading File...")):
-                context(f"egv_import {pathname}\n")
-                return
-
-        @context.console_command("dialog_export_egv", hidden=True)
-        def egv_out_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Saving File...")):
-                context(f"egv_export {pathname}\n")
-                return
+                try:
+                    gui.set_file_as_recently_used(gui.working_file)
+                    gui.validate_save()
+                    context.elements.save(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", False)
@@ -1415,6 +1422,34 @@ class MeerK40t(MWindow):
         )
         def panes(**kwargs):
             return "panes", self
+
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "load",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def load_pane(command, _, channel, configuration=None, **kwargs):
+            perspective = context.setting(str, f"perspective_{configuration}", None)
+            if not perspective:
+                channel(_("Perspective not found"))
+                return
+            self.on_panes_closed()
+            self._mgr.LoadPerspective(perspective, update=True)
+            self.on_config_panes()
+
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "save",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def save_pane(command, _, channel, configuration=None, **kwargs):
+            setattr(
+                context, f"perspective_{configuration}", self._mgr.SavePerspective()
+            )
 
         @context.console_argument("pane", help=_("pane to be shown"))
         @context.console_command(
@@ -1460,7 +1495,7 @@ class MeerK40t(MWindow):
                     self._mgr.Update()
 
         @context.console_option("always", "a", type=bool, action="store_true")
-        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_argument("pane", help=_("pane to be float"))
         @context.console_command(
             "float",
             input_type="panes",
@@ -1480,7 +1515,7 @@ class MeerK40t(MWindow):
                     pane.CaptionVisible(not self.context.pane_lock)
                     self._mgr.Update()
 
-        @context.console_argument("pane", help=_("pane to be shown"))
+        @context.console_argument("pane", help=_("pane to be dock"))
         @context.console_command(
             "dock",
             input_type="panes",
@@ -1746,6 +1781,15 @@ class MeerK40t(MWindow):
 
             return toggle
 
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
+
         self.panes_menu = wx.Menu()
         label = _("Panes")
         index = self.main_menubar.FindMenu(label)
@@ -1754,6 +1798,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.panes_menu, label)
         submenus = {}
+        panedata = []
         for pane, _path, suffix_path in self.context.find("pane/.*"):
             try:
                 suppress = pane.hide_menu
@@ -1761,9 +1806,19 @@ class MeerK40t(MWindow):
                     continue
             except AttributeError:
                 pass
+            try:
+                submenu = pane.submenu
+            except AttributeError:
+                submenu = ""
+            if submenu == "":
+                submenu = "_ZZZZZZZZZZZZZZZZ_"
+            panedata.append([pane, _path, suffix_path, submenu])
+        panedata.sort(key=lambda row: row[3])
+        for pane, _path, suffix_path, dummy in panedata:
             submenu = None
             try:
                 submenu_name = pane.submenu
+                submenu_name = unsorted_label(submenu_name)
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
@@ -1828,6 +1883,15 @@ class MeerK40t(MWindow):
 
             return toggle
 
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
+
         label = _("Tools")
         self.window_menu = wx.Menu()
         index = self.main_menubar.FindMenu(label)
@@ -1837,6 +1901,7 @@ class MeerK40t(MWindow):
             self.main_menubar.Append(self.window_menu, label)
 
         submenus = {}
+        menudata = []
         for window, _path, suffix_path in self.context.find("window/.*"):
             try:
                 name = window.name
@@ -1844,7 +1909,6 @@ class MeerK40t(MWindow):
                 name = suffix_path
             if not window.window_menu(None):
                 continue
-            submenu = None
             win_caption = ""
             try:
                 returnvalue = window.submenu()
@@ -1861,18 +1925,8 @@ class MeerK40t(MWindow):
                     win_caption = ""
             except AttributeError:
                 submenu_name = ""
-            if submenu_name != "":
-                if submenu_name in submenus:
-                    submenu = submenus[submenu_name]
-                elif submenu_name is not None:
-                    submenu = wx.Menu()
-                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
-                    submenus[submenu_name] = submenu
-            menu_context = submenu if submenu is not None else self.window_menu
-            try:
-                name = window.name
-            except AttributeError:
-                name = suffix_path
+            if submenu_name == "":
+                submenu_name = "_ZZZZZZZZZZZZZZZZ_"
             if win_caption != "":
                 caption = win_caption
             else:
@@ -1882,6 +1936,21 @@ class MeerK40t(MWindow):
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
+            menudata.append([submenu_name, caption, name, window, suffix_path])
+        # Now that we have everything lets sort...
+        menudata.sort(key=lambda row: row[0])
+
+        for submenu_name, caption, name, window, suffix_path in menudata:
+            submenu = None
+            submenu_name = unsorted_label(submenu_name)
+            if submenu_name != "":
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = wx.Menu()
+                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
+                    submenus[submenu_name] = submenu
+            menu_context = submenu if submenu is not None else self.window_menu
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
             caption = _(caption)
             menu_label = caption
@@ -1896,7 +1965,9 @@ class MeerK40t(MWindow):
             if hasattr(window, "menu_tip"):
                 menu_tip = window.menu_tip()
 
-            menuitem = menu_context.Append(menu_id, menu_label, menu_tip, wx.ITEM_NORMAL)
+            menuitem = menu_context.Append(
+                menu_id, menu_label, menu_tip, wx.ITEM_NORMAL
+            )
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
@@ -2597,7 +2668,7 @@ class MeerK40t(MWindow):
         self.__set_titlebar()
 
     def window_close_veto(self):
-        if self.usb_running:
+        if self.any_device_running:
             message = _("The device is actively sending data. Really quit?")
             answer = wx.MessageBox(
                 message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
@@ -2691,9 +2762,18 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @property
+    def any_device_running(self):
+        running = self._usb_running
+        for v in running:
+            q = running[v]
+            if q:
+                return True
+        return False
+
     @signal_listener("pipe;running")
     def on_usb_running(self, origin, value):
-        self.usb_running = value
+        self._usb_running[origin] = value
 
     @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
@@ -3132,23 +3212,26 @@ class MeerK40t(MWindow):
         self.status_update()
 
     def on_menu_highlight(self, event):
-        menuid = event.GetId()
-        menu = event.GetMenu()
-        if menuid == wx.ID_SEPARATOR:
-            self.update_statusbar("...")
-            return
-        if not self.top_menu and not menu:
-            self.status_update()
-            return
-        if menu and not self.top_menu:
-            self.top_menu = menu
-        if self.top_menu and not menu:
-            menu = self.top_menu
-        menuitem, submenu = menu.FindItem(menuid)
-        if not menuitem:
-            self.update_statusbar("...")
-            return
-        helptext = menuitem.GetHelp()
-        if not helptext:
-            helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
-        self.update_statusbar(helptext)
+        try:
+            menuid = event.GetId()
+            menu = event.GetMenu()
+            if menuid == wx.ID_SEPARATOR:
+                self.update_statusbar("...")
+                return
+            if not self.top_menu and not menu:
+                self.status_update()
+                return
+            if menu and not self.top_menu:
+                self.top_menu = menu
+            if self.top_menu and not menu:
+                menu = self.top_menu
+            menuitem, submenu = menu.FindItem(menuid)
+            if not menuitem:
+                self.update_statusbar("...")
+                return
+            helptext = menuitem.GetHelp()
+            if not helptext:
+                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+            self.update_statusbar(helptext)
+        except RuntimeError:
+            pass

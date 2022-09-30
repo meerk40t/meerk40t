@@ -58,10 +58,11 @@ class PolygonTool(ToolWidget):
                 x1 = points[idx - 1][0]
                 y1 = points[idx - 1][1]
                 total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
-            s = "Pts: {pts}, Len={a}".format(
-                pts=len(points) - 1,
-                a=Length(amount=total_len, digits=2).length_mm,
-            )
+                units = self.scene.context.units_name
+                s = "Pts: {pts}, Len={a}".format(
+                    pts=len(points) - 1,
+                    a=Length(amount=total_len, digits=2, preferred_units=units),
+                )
             self.scene.context.signal("statusmsg", s)
 
     def event(
@@ -141,13 +142,15 @@ class PolygonTool(ToolWidget):
         return response
 
     def end_tool(self):
-        polyline = Polygon(*self.point_series, stroke="blue", stroke_width=1000)
+        polyline = Polygon(*self.point_series)
         elements = self.scene.context.elements
-        node = elements.elem_branch.add(shape=polyline, type="elem polyline")
-        if self.scene.context.elements.default_stroke is not None:
-            node.stroke = self.scene.context.elements.default_stroke
-        if self.scene.context.elements.default_fill is not None:
-            node.fill = self.scene.context.elements.default_fill
+        node = elements.elem_branch.add(
+            shape=polyline,
+            type="elem polyline",
+            stroke_width=1000.0,
+            stroke=self.scene.context.elements.default_stroke,
+            fill=self.scene.context.elements.default_fill,
+        )
         if elements.classify_new:
             elements.classify([node])
         self.scene.tool_active = False

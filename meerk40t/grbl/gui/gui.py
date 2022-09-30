@@ -1,3 +1,6 @@
+from meerk40t.gui.icons import icons8_info_50
+
+
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
         try:
@@ -60,6 +63,16 @@ def plugin(service, lifecycle):
                 "icon": icons8_emergency_stop_button_50,
                 "tip": _("Emergency stop the laser"),
                 "action": lambda v: service("estop\n"),
+            },
+        )
+
+        service.register(
+            "button/control/ClearAlarm",
+            {
+                "label": _("Clear Alarm"),
+                "icon": icons8_info_50,
+                "tip": _("Send a GRBL Clear Alarm command"),
+                "action": lambda v: service("clear_alarm\n"),
             },
         )
         service.add_service_delegate(GRBLGui(service))

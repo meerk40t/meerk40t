@@ -36,6 +36,15 @@ class ElementLightJob:
         self.time_started = time.time()
         self.runtime = 0
 
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
+
     def is_running(self):
         return not self.stopped and self.started
 
@@ -162,6 +171,15 @@ class LiveSelectionLightJob:
         self.time_submitted = time.time()
         self.time_started = time.time()
         self.runtime = 0
+
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
 
     def is_running(self):
         return not self.stopped
@@ -328,6 +346,15 @@ class LiveFullLightJob:
         self.time_started = time.time()
         self.runtime = 0
 
+    @property
+    def status(self):
+        if self.is_running and self.time_started is not None:
+            return "Running"
+        elif not self.is_running:
+            return "Disabled"
+        else:
+            return "Queued"
+
     def is_running(self):
         return not self.stopped
 
@@ -483,7 +510,10 @@ class LiveFullLightJob:
                 return False
             if self.changed:
                 return True
-            e = node.as_path()
+            try:
+                e = node.as_path()
+            except AttributeError:
+                continue
             if not e:
                 continue
             x, y = e.point(0)
@@ -1936,7 +1966,7 @@ class BalorDevice(Service, ViewPort):
             self.lens_size = lens_size
             self.width = lens_size
             self.height = lens_size
-            self.signal("bed_size", (self.lens_size, self.lens_size))
+            self.signal("bedsize", (self.lens_size, self.lens_size))
             channel(f"Set Bed Size : ({self.lens_size}, {self.lens_size}).")
 
         @self.console_option(
@@ -1995,6 +2025,8 @@ class BalorDevice(Service, ViewPort):
                         (bounds[2], bounds[1]),
                         (bounds[2], bounds[3]),
                     ]
+                elif e.type == "elem text":
+                    continue  # We can't outline text.
                 else:
                     try:
                         path = abs(Path(e.shape))

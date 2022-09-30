@@ -405,6 +405,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         self.context.device.realize()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_text_bedheight(self):
         ctrl = self.text_bedheight
@@ -419,6 +420,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         self.context.device.realize()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_text_x_scale(self):
         try:
@@ -429,6 +431,7 @@ class ConfigurationLaserPanel(wx.Panel):
             )
             self.context.device.realize()
             self.context("viewport_update\n")
+            self.context.signal("bedsize", False)
         except ValueError:
             pass
 
@@ -443,6 +446,7 @@ class ConfigurationLaserPanel(wx.Panel):
             )
             self.context.device.realize()
             self.context("viewport_update\n")
+            self.context.signal("bedsize", False)
         except ValueError:
             pass
 
@@ -625,24 +629,29 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def on_check_swapxy(self, event=None):
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_flip_x(self, event=None):
         self.context.flip_x = self.checkbox_flip_x.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_home_right(self, event=None):
         self.context.home_right = self.checkbox_home_right.GetValue()
         self.context.origin_x = 1.0 if self.context.home_right else 0.0
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_flip_y(self, event=None):
         self.context.flip_y = self.checkbox_flip_y.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_home_bottom(self, event=None):
         self.context.home_bottom = self.checkbox_home_bottom.GetValue()
         self.context.origin_y = 1.0 if self.context.home_bottom else 0.0
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_device_label(self):
         self.context.label = self.text_device_label.GetValue()

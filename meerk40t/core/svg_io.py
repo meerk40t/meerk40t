@@ -1,5 +1,6 @@
 import ast
 import gzip
+import math
 import os
 from base64 import b64encode
 from io import BytesIO
@@ -52,21 +53,25 @@ from ..svgelements import (
     SVG_VALUE_XMLNS,
     SVG_VALUE_XMLNS_EV,
     Circle,
+    Close,
     Color,
     Ellipse,
     Group,
+    Line,
     Matrix,
+    Move,
     Path,
     Point,
     Polygon,
     Polyline,
     Rect,
+    Shape,
     SimpleLine,
     SVGImage,
     SVGText,
     Use,
 )
-from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL
+from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
 
 SVG_ATTR_STROKE_JOIN = "stroke-linejoin"
 SVG_ATTR_STROKE_CAP = "stroke-linecap"
@@ -330,12 +335,13 @@ class SVGWriter:
             for key, value in c.__dict__.items():
                 if (
                     not key.startswith("_")
+                    and key not in ("settings", "attributes")
                     and value is not None
                     and isinstance(value, (str, int, float, complex, list, dict))
                 ):
                     subelement.set(key, str(value))
             ###############
-            # SAVE CAP/JOIN/FILL-RULE
+            # SAVE STROKE
             ###############
             if hasattr(c, "stroke_scaled"):
                 if not c.stroke_scaled:
@@ -360,8 +366,8 @@ class SVGWriter:
             ###############
             # SAVE STROKE
             ###############
-            if hasattr(element, "stroke"):
-                stroke = element.stroke
+            if hasattr(c, "stroke"):
+                stroke = c.stroke
             else:
                 stroke = None
             if stroke is not None:
@@ -375,20 +381,25 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
+                    stroke_scale = math.sqrt(c.matrix.determinant) if c.stroke_scaled else 1.0
+                    # Note this is the reversed scaling in `implied_stroke_width`
                     stroke_width = (
-                        str(element.stroke_width)
-                        if element.stroke_width is not None
+                        Length(
+                            amount=c.stroke_width * stroke_scale, digits=6, preferred_units="px"
+                        ).preferred_length
+                        if c.stroke_width is not None
                         else SVG_VALUE_NONE
                     )
                     subelement.set(SVG_ATTR_STROKE_WIDTH, stroke_width)
-                except AttributeError:
+                except AttributeError as Err:
+                    # print (f"Shit happened when trying to set stroke_width: {Err}")
                     pass
 
             ###############
             # SAVE FILL
             ###############
-            if hasattr(element, "fill"):
-                fill = element.fill
+            if hasattr(c, "fill"):
+                fill = c.fill
             else:
                 fill = None
             if fill is not None:
@@ -446,7 +457,7 @@ class SVGWriter:
                 if not key:
                     # If key is None, do not save.
                     continue
-                if key == "references":
+                if key in ("references", "tag"):
                     # References key is obsolete
                     continue
                 value = settings[key]
@@ -496,6 +507,9 @@ class SVGProcessor:
         self.parse(svg, file_node, self.element_list)
         if self.operations_cleared:
             for op in self.elements.ops():
+                if not hasattr(op, "settings"):
+                    # Some special nodes might lack settings these can't have references.
+                    continue
                 refs = op.settings.get("references")
                 if refs is None:
                     continue
@@ -545,6 +559,32 @@ class SVGProcessor:
                 nlj = Linejoin.JOIN_ROUND
             node.linejoin = nlj
 
+    @staticmethod
+    def is_dot(element):
+        """
+        Check for the degenerate shape dots. This could by a Path that consisting of a Move + Close, Move, or Move any
+        path-segment that has a distance of 0 units. It could be a simple line to the same spot. It could be a polyline
+        which has a single point.
+
+        We avoid doing any calculations without checking the degenerate nature of the would-be dot first.
+
+        @param element:
+        @return:
+        """
+        if isinstance(element, Path):
+            if len(element) > 2 or element.length(error=1, min_depth=1) > 0:
+                return False, None
+            return True, abs(element).first_point
+        elif isinstance(element, SimpleLine):
+            if element.length() == 0:
+                return True, abs(Path(element)).first_point
+        elif isinstance(element, (Polyline, Polygon)):
+            if len(element) > 1:
+                return False, None
+            if element.length() == 0:
+                return True, abs(Path(element)).first_point
+        return False, None
+
     def parse(self, element, context_node, e_list):
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
@@ -572,7 +612,19 @@ class SVGProcessor:
             _lock = bool(element.values.get("lock") == "True")
         except (ValueError, TypeError):
             pass
-        if isinstance(element, SVGText):
+        is_dot, dot_point = SVGProcessor.is_dot(element)
+        if is_dot:
+            node = context_node.add(
+                point=dot_point,
+                type="elem point",
+                matrix=Matrix(),
+                fill=element.fill,
+                stroke=element.stroke,
+                label=_label,
+                lock=_lock,
+            )
+            e_list.append(node)
+        elif isinstance(element, SVGText):
             if element.text is None:
                 return
 
@@ -605,16 +657,28 @@ class SVGProcessor:
                 settings=element.values,
             )
             e_list.append(node)
-        elif isinstance(element, Path):
-            if len(element) >= 0:
-                element.approximate_arcs_with_cubics()
+        elif isinstance(element, (Polygon, Polyline)) or (
+            isinstance(element, Path) and element.values.get("type") == "elem polyline"
+        ):
+            if not element.is_degenerate():
+                if not element.transform.is_identity():
+                    # Shape did not reify, convert to path.
+                    element = Path(element)
+                    element.reify()
+                    element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    path=element, type="elem path", id=ident, label=_label, lock=_lock
+                    shape=element,
+                    type="elem polyline",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
                 )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
                 e_list.append(node)
-        elif isinstance(element, (Polygon, Polyline)):
+        elif isinstance(element, Circle) or (
+            isinstance(element, Path) and element.values.get("type") == "elem circle"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -622,12 +686,16 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem polyline", id=ident, label=_label, lock=_lock
+                    shape=element,
+                    type="elem ellipse",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
                 )
-                self.check_for_line_attributes(node, element)
-                self.check_for_fill_attributes(node, element)
                 e_list.append(node)
-        elif isinstance(element, Circle):
+        elif isinstance(element, Ellipse) or (
+            isinstance(element, Path) and element.values.get("type") == "elem ellipse"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -635,21 +703,16 @@ class SVGProcessor:
                     element.reify()
                     element.approximate_arcs_with_cubics()
                 node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=_label, lock=_lock
+                    shape=element,
+                    type="elem ellipse",
+                    id=ident,
+                    label=_label,
+                    lock=_lock,
                 )
                 e_list.append(node)
-        elif isinstance(element, Ellipse):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem ellipse", id=ident, label=_label, lock=_lock
-                )
-                e_list.append(node)
-        elif isinstance(element, Rect):
+        elif isinstance(element, Rect) or (
+            isinstance(element, Path) and element.values.get("type") == "elem rect"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -661,7 +724,9 @@ class SVGProcessor:
                 )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
-        elif isinstance(element, SimpleLine):
+        elif isinstance(element, SimpleLine) or (
+            isinstance(element, Path) and element.values.get("type") == "elem line"
+        ):
             if not element.is_degenerate():
                 if not element.transform.is_identity():
                     # Shape did not reify, convert to path.
@@ -673,16 +738,28 @@ class SVGProcessor:
                 )
                 self.check_for_line_attributes(node, element)
                 e_list.append(node)
+        elif isinstance(element, Path):
+            if len(element) >= 0:
+                element.approximate_arcs_with_cubics()
+                node = context_node.add(
+                    path=element, type="elem path", id=ident, label=_label, lock=_lock
+                )
+                self.check_for_line_attributes(node, element)
+                self.check_for_fill_attributes(node, element)
+                e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
                 element.load(os.path.dirname(self.pathname))
                 try:
                     operations = ast.literal_eval(element.values["operations"])
-                except (ValueError, SyntaxError):
+                except (ValueError, SyntaxError, KeyError):
                     operations = None
 
                 if element.image is not None:
-                    dpi = element.image.info["dpi"]
+                    try:
+                        dpi = element.image.info["dpi"]
+                    except KeyError:
+                        dpi = None
                     _dpi = 500
                     if (
                         isinstance(dpi, tuple)
@@ -777,22 +854,15 @@ class SVGProcessor:
                     self.parse(child, context_node, e_list)
         else:
             # SVGElement is type. Generic or unknown node type.
-            tag = element.values.get(SVG_ATTR_TAG)
-            # We need to reverse the meerk40t:... replacement that the routine had already applied:
+            # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
+            tag = element.values.get(SVG_ATTR_TAG).lower()
             if tag is not None:
-                tag = tag.lower()
-                torepl = "{" + MEERK40T_NAMESPACE.lower() + "}"
-                if torepl in tag:
-                    oldval = element.values.get(tag)
-                    replacer = MEERK40T_XMLS_ID.lower() + ":"
-                    tag = tag.replace(
-                        torepl,
-                        replacer,
-                    )
-                    element.values[tag] = oldval
-                    element.values[SVG_ATTR_TAG] = tag
+                # We remove the name space.
+                full_ns = f"{{{MEERK40T_NAMESPACE.lower()}}}"
+                if full_ns in tag:
+                    tag = tag.replace(full_ns, "")
             # Check if note-type
-            if tag in (MEERK40T_XMLS_ID + ":note", "note"):
+            if tag == "note":
                 self.elements.note = element.values.get(SVG_TAG_TEXT)
                 self.elements.signal("note", self.pathname)
                 return
@@ -810,42 +880,50 @@ class SVGProcessor:
                 return
 
             node_id = element.values.get("id")
-            if tag in (f"{MEERK40T_XMLS_ID}:operation", "operation"):
+            try:
+                attrs = element.values["attributes"]
+            except KeyError:
+                attrs = element.values
+            try:
+                del attrs["type"]
+            except KeyError:
+                pass
+            if "lock" in attrs:
+                attrs["lock"] = _lock
+            if "transform" in element.values:
+                # Uses chained transforms from primary context.
+                attrs["matrix"] = Matrix(element.values["transform"])
+            if "fill" in attrs:
+                attrs["fill"] = Color(attrs["fill"])
+            if "stroke" in attrs:
+                attrs["stroke"] = Color(attrs["stroke"])
+
+            if tag == "operation":
                 # Check if SVGElement: operation
                 if not self.operations_cleared:
                     self.elements.clear_operations()
                     self.operations_cleared = True
+
                 try:
-                    attrs = element.values["attributes"]
-                except KeyError:
-                    attrs = element.values
-                try:
-                    try:
-                        del attrs["type"]
-                    except KeyError:
-                        pass
                     op = self.elements.op_branch.add(type=node_type, **attrs)
                     op.validate()
                     op.id = node_id
                 except AttributeError:
                     # This operation is invalid.
                     pass
-            elif tag in (f"{MEERK40T_XMLS_ID}:element", "element"):
+            elif tag == "element":
                 # Check if SVGElement: element
-                if "type" in element.values:
-                    del element.values["type"]
-                if "fill" in element.values:
-                    element.values["fill"] = Color(element.values["fill"])
-                if "stroke" in element.values:
-                    element.values["stroke"] = Color(element.values["stroke"])
-                if "transform" in element.values:
-                    element.values["matrix"] = Matrix(element.values["transform"])
-                elem = context_node.add(type=node_type, **element.values)
+                if "settings" in attrs:
+                    del attrs[
+                        "settings"
+                    ]  # If settings was set, delete it or it will mess things up
+                elem = context_node.add(type=node_type, **attrs)
                 try:
                     elem.validate()
                 except AttributeError:
                     pass
                 elem.id = node_id
+                e_list.append(elem)
 
 
 class SVGLoader:

@@ -7,7 +7,7 @@ from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Path
 
-from ..laserrender import LaserRender
+from ..laserrender import LaserRender, swizzlecolor
 
 
 class VectorTool(ToolWidget):
@@ -64,7 +64,12 @@ class VectorTool(ToolWidget):
         if event_type == "leftclick":
             self.scene.tool_active = True
             if self.path is None:
-                self.path = Path(stroke="blue", stroke_width=1000)
+                self.pen = wx.Pen()
+                self.pen.SetColour(
+                    wx.Colour(swizzlecolor(self.scene.context.elements.default_stroke))
+                )
+                self.pen.SetWidth(1000)
+                self.path = Path()
                 if nearest_snap is None:
                     self.path.move((space_pos[0], space_pos[1]))
                 else:
@@ -126,7 +131,13 @@ class VectorTool(ToolWidget):
             t = self.path
             if len(t) != 0:
                 elements = self.scene.context.elements
-                node = elements.elem_branch.add(path=t, type="elem path")
+                node = elements.elem_branch.add(
+                    path=t,
+                    type="elem path",
+                    stroke_width=1000.0,
+                    stroke=self.scene.context.elements.default_stroke,
+                    fill=self.scene.context.elements.default_fill,
+                )
                 if elements.classify_new:
                     elements.classify([node])
                 self.notify_created(node)

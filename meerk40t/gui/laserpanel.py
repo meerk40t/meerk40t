@@ -38,10 +38,11 @@ def register_panel_laser(window, context):
         .MinSize(245, 210)
         .FloatingSize(255, 270)
         .MaxSize(500, 300)
-        .Caption(_("Laser"))
+        .Caption(_("Laser-Control"))
         .CaptionVisible(not context.pane_lock)
         .Name("laser")
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.control = notebook
     pane.dock_proportion = 150
     notebook.AddPage(laser_panel, _("Laser"))
@@ -74,7 +75,7 @@ class LaserPanel(wx.Panel):
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
         sizer_devices = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Device"), wx.HORIZONTAL
+            wx.StaticBox(self, wx.ID_ANY, _("Device")), wx.HORIZONTAL
         )
         sizer_main.Add(sizer_devices, 0, wx.EXPAND, 0)
 
@@ -271,6 +272,7 @@ class LaserPanel(wx.Panel):
         if index == -1:
             disable_window(self)
 
+    @signal_listener("device;modified")
     @lookup_listener("service/device/active")
     @lookup_listener("service/device/available")
     def spooler_lookup(self, *args):

@@ -2035,16 +2035,24 @@ class Kernel(Settings):
         """
         Detach all signals attached against the given cookie
 
+        If a listener is flagged for addition but not yet added, remove it.
+
         @param cookie: cookie used to bind this listener.
         @return:
         """
-        with self._remove_lock:
-            with self._signal_lock:
+        with self._signal_lock:
+            with self._remove_lock:
                 for signal in self.listeners:
                     listens = self.listeners[signal]
                     for listener, lso in listens:
                         if lso is cookie:
                             self._removing_listeners.append((signal, listener, cookie))
+            with self._add_lock:
+                for i in range(len(self._adding_listeners) - 1, -1, -1):
+                    sl, func, lso = self._adding_listeners[i]
+                    if lso is cookie:
+                        del self._adding_listeners[i]
+
         # if len(self._removing_listeners) != len(set(self._removing_listeners)):
         #     print("Warning duplicate listener removing.")
 

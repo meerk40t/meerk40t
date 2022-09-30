@@ -1,4 +1,5 @@
 import time
+from math import isinf
 
 import wx
 
@@ -258,9 +259,12 @@ class BurnProgressPanel(SimpleInfoWidget):
 
     def calculate_infos(self):
         def timestr(t):
-            hours, remainder = divmod(t, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+            if isinf(t):
+                runtime = "∞"
+            else:
+                hours, remainder = divmod(t, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
             return runtime
 
         dtime = time.time()

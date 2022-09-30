@@ -4,6 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_up_left_50
+from meerk40t.gui.wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
@@ -21,7 +22,7 @@ def register_panel_position(window, context):
     )
     pane.dock_proportion = 225
     pane.control = PositionPanel(window, wx.ID_ANY, context=context)
-    pane.submenu = _("Editing")
+    pane.submenu = "_40_" + _("Editing")
     window.on_pane_create(pane)
     context.register("pane/position", pane)
 
@@ -32,10 +33,18 @@ class PositionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.text_x = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_y = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_w = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_h = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_x = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_y = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_w = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_h = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
         self.text_x.SetMinSize((70, 23))
         self.text_y.SetMinSize((70, 23))
         self.text_w.SetMinSize((70, 23))
@@ -45,7 +54,7 @@ class PositionPanel(wx.Panel):
         self.button_execute = wx.BitmapButton(
             self, wx.ID_ANY, icons8_up_left_50.GetBitmap()
         )
-        self.choices = [_("mm"), _("cm"), _("inch"), _("mil"), "%"]
+        self.choices = ["mm", "cm", "inch", "mil", "%"]
         self.combo_box_units = wx.ComboBox(
             self,
             wx.ID_ANY,
@@ -57,14 +66,15 @@ class PositionPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.text_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_enter)
-        self.text_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_focus)
-        self.text_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_enter)
-        self.text_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_focus)
-        self.text_w.Bind(wx.EVT_TEXT_ENTER, self.on_text_w_enter)
-        self.text_w.Bind(wx.EVT_KILL_FOCUS, self.on_text_w_focus)
-        self.text_h.Bind(wx.EVT_TEXT_ENTER, self.on_text_h_enter)
-        self.text_h.Bind(wx.EVT_KILL_FOCUS, self.on_text_h_focus)
+        self.text_x.SetActionRoutine(self.on_text_x_enter)
+        self.text_y.SetActionRoutine(self.on_text_y_enter)
+        self.text_w.SetActionRoutine(self.on_text_w_enter)
+        self.text_h.SetActionRoutine(self.on_text_h_enter)
+        self.text_x.execute_action_on_change = False
+        self.text_y.execute_action_on_change = False
+        self.text_w.execute_action_on_change = False
+        self.text_h.execute_action_on_change = False
+
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
         self.Bind(wx.EVT_BUTTON, self.on_button_execute, self.button_execute)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_lock, self.chk_lock)
@@ -80,8 +90,10 @@ class PositionPanel(wx.Panel):
         self.org_y = None
         self.org_w = None
         self.org_h = None
-        self.context.setting(int, "units_name", "mm")
+        self.context.setting(str, "units_name", "mm")
         self.position_units = self.context.units_name
+        if self.position_units in ("in", "inches"):
+            self.position_units = "inch"
         self._update_position()
 
     def pane_show(self, *args):
@@ -261,37 +273,17 @@ class PositionPanel(wx.Panel):
     def on_chk_lock(self, event):
         self.position_aspect_ratio = self.chk_lock.GetValue()
 
-    def on_text_w_enter(self, event):
-        event.Skip()
+    def on_text_w_enter(self):
         self.on_text_w_action(True)
 
-    def on_text_w_focus(self, event):
-        event.Skip()
-        self.on_text_w_action(False)
-
-    def on_text_h_enter(self, event):
-        event.Skip()
+    def on_text_h_enter(self):
         self.on_text_h_action(True)
 
-    def on_text_h_focus(self, event):
-        event.Skip()
-        self.on_text_h_action(False)
-
-    def on_text_x_enter(self, event):
-        event.Skip()
+    def on_text_x_enter(self):
         self.on_text_x_action(True)
 
-    def on_text_x_focus(self, event):
-        event.Skip()
-        self.on_text_x_action(False)
-
-    def on_text_y_enter(self, event):
-        event.Skip()
+    def on_text_y_enter(self):
         self.on_text_y_action(True)
-
-    def on_text_y_focus(self, event):
-        event.Skip()
-        self.on_text_y_action(False)
 
     def execute_wh_changes(self, refresh_after=True):
         delta = 1.0e-6
@@ -346,9 +338,9 @@ class PositionPanel(wx.Panel):
                 or abs(self.position_h - self.org_h) >= delta
             ):
                 if self.org_w != 0 and self.org_h != 0:
-                    sx = round(self.position_w/self.org_w, 6)
-                    sy = round(self.position_h/self.org_h, 6)
-                    if sx!= 1.0 or sy != 1.0:
+                    sx = round(self.position_w / self.org_w, 6)
+                    sy = round(self.position_h / self.org_h, 6)
+                    if sx != 1.0 or sy != 1.0:
                         cmd2 = f"scale {sx} {sy}\n"
             # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
             # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
@@ -411,9 +403,9 @@ class PositionPanel(wx.Panel):
                 or abs(self.position_h - self.org_h) >= delta
             ):
                 if self.org_w != 0 and self.org_h != 0:
-                    sx = round(self.position_w/self.org_w, 6)
-                    sy = round(self.position_h/self.org_h, 6)
-                    if sx!= 1.0 or sy != 1.0:
+                    sx = round(self.position_w / self.org_w, 6)
+                    sy = round(self.position_h / self.org_h, 6)
+                    if sx != 1.0 or sy != 1.0:
                         cmd2 = f"scale {sx} {sy}\n"
             # cmd = f"resize {round(self.position_x, 6)}{u} {round(self.position_y, 0)}{u}"
             # cmd += f" {round(self.position_w, 6)}{u} {round(self.position_h, 6)}{u}\n"
@@ -441,6 +433,8 @@ class PositionPanel(wx.Panel):
                     )
                 except ValueError:
                     return
+        if isinstance(w, str):
+            return
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
@@ -474,6 +468,8 @@ class PositionPanel(wx.Panel):
                     )
                 except ValueError:
                     return
+        if isinstance(h, str):
+            return
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return

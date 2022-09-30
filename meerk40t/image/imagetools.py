@@ -3,7 +3,7 @@ from copy import copy
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..core.units import UNITS_PER_INCH, UNITS_PER_PIXEL, DEFAULT_PPI
+from ..core.units import DEFAULT_PPI, UNITS_PER_INCH, UNITS_PER_PIXEL
 from ..svgelements import Angle, Color, Matrix, Path
 
 
@@ -220,8 +220,6 @@ def plugin(kernel, lifecycle=None):
                 continue
             image_node = copy(node)
             image_node.image = image_node.image.copy()
-            if image_node.needs_actualization():
-                image_node.make_actual()
             img = image_node.image
             img = img.convert("L")
 
@@ -1739,20 +1737,25 @@ class ImageLoader:
         except IOError:
             return False
         image.copy()  # Throws error for .eps without ghostscript
-        mydpi = DEFAULT_PPI
+        _dpi = DEFAULT_PPI
         matrix = Matrix(f"scale({UNITS_PER_PIXEL})")
         try:
             context.setting(bool, "image_dpi", True)
             if context.image_dpi:
-                dpi = image.info["dpi"]
+                try:
+                    dpi = image.info["dpi"]
+                except KeyError:
+                    dpi = None
                 if (
                     isinstance(dpi, tuple)
                     and len(dpi) >= 2
                     and dpi[0] != 0
                     and dpi[1] != 0
                 ):
-                    matrix.post_scale(DEFAULT_PPI / float(dpi[0]), DEFAULT_PPI / float(dpi[1]))
-                    mydpi = round((float(dpi[0]) + float(dpi[1]))/2, 0)
+                    matrix.post_scale(
+                        DEFAULT_PPI / float(dpi[0]), DEFAULT_PPI / float(dpi[1])
+                    )
+                    _dpi = round((float(dpi[0]) + float(dpi[1])) / 2, 0)
         except (KeyError, IndexError):
             pass
 
@@ -1761,7 +1764,10 @@ class ImageLoader:
         file_node = element_branch.add(type="file", label=os.path.basename(pathname))
         file_node.filepath = pathname
         n = file_node.add(
-            image=image, matrix=matrix, type="elem image", dpi=mydpi,
+            image=image,
+            matrix=matrix,
+            type="elem image",
+            dpi=_dpi,
         )
         file_node.focus()
         elements_service.classify([n])
