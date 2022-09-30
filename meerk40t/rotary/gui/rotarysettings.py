@@ -220,7 +220,7 @@ class RotarySettings(MWindow):
         _icon.CopyFromBitmap(icons8_roll_50.GetBitmap())
         self.SetIcon(_icon)
         # begin wxGlade: RotarySettings.__set_properties
-        self.SetTitle(_("RotarySettings"))
+        self.SetTitle(_("Rotary-Settings"))
 
     def window_open(self):
         self.panel.pane_show()
@@ -230,4 +230,4 @@ class RotarySettings(MWindow):
 
     @staticmethod
     def submenu():
-        return ("Device-Settings", "Rotary Setting")
+        return ("Device-Settings", "Rotary-Settings")

@@ -912,6 +912,8 @@ class MovePanel(wx.Panel):
             self, wx.ID_ANY, icons8_center_of_gravity_50.GetBitmap(resize=32)
         )
         units = self.context.units_name
+        if units in ("inch", "inches"):
+            units = "in"
         default_pos = f"0{units}"
         self.text_position_x = TextCtrl(
             self,
@@ -1096,7 +1098,9 @@ class SizePanel(wx.Panel):
             self, wx.ID_ANY, style=wx.TE_PROCESS_ENTER, value="0", check="length"
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
-
+        # No change of fields during input
+        self.text_height.execute_action_on_change = False
+        self.text_width.execute_action_on_change = False
         self.__set_properties()
         self.__do_layout()
 
@@ -1215,11 +1219,15 @@ class SizePanel(wx.Panel):
             self.button_navigate_resize.Enable(False)
 
     def on_button_navigate_resize(self, event):
-        new_width = Length(self.text_width.Value, relative_length=self.object_width)
-        new_height = Length(self.text_height.Value, relative_length=self.object_height)
-        self.context(
-            f"resize {repr(self.object_x)} {repr(self.object_y)} {new_width} {new_height}"
+        new_width = Length(
+            self.text_width.GetValue(), relative_length=self.object_width
         )
+        new_height = Length(
+            self.text_height.GetValue(), relative_length=self.object_height
+        )
+        if float(new_width) == 0 or float(new_height) == 0:
+            return
+        self.context(f"resize {self.object_x} {self.object_y} {new_width} {new_height}")
 
     def on_textenter_width(self):  # wxGlade: SizePanel.<event_handler>
         try:
@@ -1227,7 +1235,7 @@ class SizePanel(wx.Panel):
                 p = self.context
                 units = p.units_name
                 new_width = Length(
-                    self.text_width.Value,
+                    self.text_width.GetValue(),
                     relative_length=self.object_width,
                     preferred_units=units,
                     digits=3,
@@ -1248,7 +1256,7 @@ class SizePanel(wx.Panel):
                 p = self.context
                 units = p.units_name
                 new_height = Length(
-                    self.text_height.Value,
+                    self.text_height.GetValue(),
                     relative_length=self.object_height,
                     preferred_units=units,
                     digits=3,
@@ -1545,10 +1553,14 @@ class Transform(wx.Panel):
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
             # self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
             # self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
-            l1 = Length(amount=matrix.e, digits=4)
-            l2 = Length(amount=matrix.f, digits=4)
-            self.text_e.SetValue(l1.length_mm)
-            self.text_f.SetValue(l2.length_mm)
+            l1 = Length(
+                amount=matrix.e, digits=2, preferred_units=self.context.units_name
+            )
+            l2 = Length(
+                amount=matrix.f, digits=2, preferred_units=self.context.units_name
+            )
+            self.text_e.SetValue(l1.preferred_length)
+            self.text_f.SetValue(l2.preferred_length)
             m_e = matrix.e
             m_f = matrix.f
             ttip1 = _(
@@ -1758,7 +1770,16 @@ class JogDistancePanel(wx.Panel):
         self.text_jog_amount.SetActionRoutine(self.on_text_jog_amount)
 
     def pane_show(self, *args):
-        self.text_jog_amount.SetValue(str(self.context.jog_amount))
+        try:
+            joglen = Length(
+                self.context.jog_amount,
+                digits=2,
+                preferred_units=self.context.units_name,
+            )
+        except:
+            joglen = Length("10mm", digits=2, preferred_units=self.context.units_name)
+
+        self.text_jog_amount.SetValue(joglen.preferred_length)
         self.Children[0].SetFocus()
 
     def on_text_jog_amount(self):  # wxGlade: Navigation.<event_handler>

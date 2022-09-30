@@ -150,6 +150,9 @@ class HatchOpNode(Node, Parameters):
         if attribute in self.allowed_attributes:
             self.allowed_attributes.remove(attribute)
 
+    def has_attributes(self):
+        return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
+
     def valid_node(self, node):
         def is_valid_closed_path(p):
             valid = False
@@ -159,11 +162,14 @@ class HatchOpNode(Node, Parameters):
                     valid = True
             return valid
 
+        # First check type per se
+        if node.type not in self._allowed_elements_dnd:
+            return False
+        # even then it might not be eligible
         result = False
         if hasattr(node, "path"):
             if is_valid_closed_path(node.path):
                 result = True
-
         elif node.type == "elem polyline":
             # Are they a closed path?
             obj = Path(node.shape)
@@ -192,9 +198,11 @@ class HatchOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
+        feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
-                if len(self.allowed_attributes) > 0:
+                if self.has_attributes():
+                    result = False
                     for attribute in self.allowed_attributes:
                         if (
                             hasattr(node, attribute)
@@ -204,20 +212,27 @@ class HatchOpNode(Node, Parameters):
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
+                                    result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
-                                    return True, self.stopop
+                                    feedback.append(attribute)
+                    if result:
+                        return True, self.stopop, feedback
                 else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
                         # Have classified but more classification might be needed
-                        return True, self.stopop
+                        feedback.append("stroke")
+                        feedback.append("fill")
+                        return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
                     self.add_reference(node)
-                    return True, self.stopop
-        return False, False
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
@@ -360,3 +375,18 @@ class HatchOpNode(Node, Parameters):
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot
+
+    def add_reference(self, node=None, pos=None, **kwargs):
+        """
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
+
+        @param node:
+        @param pos:
+        @return:
+        """
+        if node is not None:
+            if not self.valid_node(node):
+                # We could raise a ValueError but that will break things...
+                return
+        return super().add_reference(node=node, pos=pos, **kwargs)

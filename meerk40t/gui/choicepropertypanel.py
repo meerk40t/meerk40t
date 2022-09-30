@@ -30,6 +30,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         scrolling=True,
         constraint=None,
         entries_per_column=None,
+        injector=None,
         **kwds,
     ):
         # constraints are either
@@ -50,9 +51,18 @@ class ChoicePropertyPanel(ScrolledPanel):
         if choices is None:
             return
         if isinstance(choices, str):
-            choices = self.context.lookup("choices", choices)
+            tempchoices = self.context.lookup("choices", choices)
+            # we need to create an independent copy of the lookup, otherwise
+            # any amendments to choices like injector will affect the original
+            choices = []
+            for c in tempchoices:
+                choices.append(c)
             if choices is None:
                 return
+        if injector is not None:
+            # We have addtional stuff to be added, so be it
+            for c in injector:
+                choices.append(c)
         # Let's see whether we have a section and a page property...
         for c in choices:
             try:
@@ -154,10 +164,11 @@ class ChoicePropertyPanel(ScrolledPanel):
         current_main_sizer = sizer_main
         current_sec_sizer = sizer_main
         current_sizer = sizer_main
-        # Bey default 0 as we are stacking up stuff
+        # By default 0 as we are stacking up stuff
         expansion_flag = 0
         current_col_entry = -1
         for i, c in enumerate(self.choices):
+            wants_listener = True
             current_col_entry += 1
             if self.entries_per_column is not None:
                 if current_col_entry >= self.entries_per_column:
@@ -291,7 +302,36 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             control = None
             control_sizer = None
-            if data_type == bool:
+            if data_type == str and data_style == "info":
+                # This is just an info box.
+                wants_listener = False
+                msgs = label.split("\n")
+                controls = []
+                for lbl in msgs:
+                    control = wx.StaticText(self, label=lbl)
+                    current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type == bool and data_style == "button":
+                # This is just a signal to the outside world.
+                wants_listener = False
+                control = wx.Button(self, label=label)
+
+                def on_button(param, obj, addsig):
+                    def check(event=None):
+                        # We just set it to True to kick it off
+                        setattr(obj, param, True)
+                        # We don't signal ourselves...
+                        self.context.signal(param, True)
+                        for _sig in addsig:
+                            self.context.signal(_sig)
+
+                    return check
+
+                control.Bind(
+                    wx.EVT_BUTTON,
+                    on_button(attr, obj, additional_signal),
+                )
+                current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type == bool:
                 # Bool type objects get a checkbox.
                 control = CheckBox(self, label=label)
                 control.SetValue(data)
@@ -852,6 +892,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             # Now we listen to 'ourselves' as well to learn about changes somewhere else...
             def on_update_listener(param, ctrl, dtype, dstyle, choicelist):
                 def listen_to_myself(origin, value):
+                    update_needed = False
                     # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
                     data = None
                     if value is not None:
@@ -910,10 +951,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                         pass  # not supported...
                     elif dtype in (str, int, float):
                         if hasattr(ctrl, "GetValue"):
-                            if ctrl.GetValue() != str(data):
+                            try:
+                                if dtype(ctrl.GetValue()) != data:
+                                    update_needed = True
+                            except ValueError:
+                                update_needed = True
+                            if update_needed:
                                 ctrl.SetValue(str(data))
                     elif dtype == Length:
-                        if ctrl.GetValue() != str(data):
+                        if float(data) != float(Length(ctrl.GetValue())):
+                            update_needed = True
+                        if update_needed:
                             ctrl.SetValue(str(data))
                     elif dtype == Angle:
                         if ctrl.GetValue() != str(data):
@@ -935,11 +983,12 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 return listen_to_myself
 
-            update_listener = on_update_listener(
-                attr, control, data_type, data_style, choice_list
-            )
-            self.listeners.append((attr, update_listener))
-            context.listen(attr, update_listener)
+            if wants_listener:
+                update_listener = on_update_listener(
+                    attr, control, data_type, data_style, choice_list
+                )
+                self.listeners.append((attr, update_listener))
+                context.listen(attr, update_listener)
             tip = c.get("tip")
             if tip and not context.root.disable_tool_tips:
                 # Set the tool tip if 'tip' is available

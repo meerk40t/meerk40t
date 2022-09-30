@@ -10,6 +10,8 @@ from meerk40t.gui.scene.sceneconst import (
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
+_ = wx.GetTranslation
+
 
 class MeasureTool(ToolWidget):
     """
@@ -131,9 +133,10 @@ class MeasureTool(ToolWidget):
                 base_square = float(Length(f"1{units}"))
                 base_square *= base_square
                 area = area / base_square
-
+                s_area = _("Area")
+                s_perim = _("Perimeter")
                 s_txt = (
-                    f"Area={area:.1f}{units}²\nPerimeter: "
+                    f"{s_area}={area:.1f}{units}²\n{s_perim}: "
                     f"{str(Length(amount=perimeter, digits=1, preferred_units=units))}"
                 )
                 t_width, t_height = gc.GetTextExtent(s_txt)

@@ -91,8 +91,8 @@ class MeerK40tScenePanel(wx.Panel):
         )
         self.widget_scene = self.scene.scene
         context = self.context
-        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(AttractionWidget(self.widget_scene))
+        self.widget_scene.add_scenewidget(SelectionWidget(self.widget_scene))
         self.tool_container = ToolContainer(self.widget_scene)
         self.widget_scene.add_scenewidget(self.tool_container)
         self.widget_scene.add_scenewidget(RectSelectWidget(self.widget_scene))
@@ -804,10 +804,14 @@ class MeerK40tScenePanel(wx.Panel):
             self.request_refresh()
 
     @signal_listener("bedsize")
-    def on_bedsize_simple(self, origin, *args):
+    def on_bedsize_simple(self, origin, nocmd=None, *args):
         # The next two are more or less the same, so we remove the direct invocation...
         # self.context.device.realize()
-        self.context("viewport_update\n")
+        issue_command = True
+        if nocmd is not None and nocmd:
+            issue_command = False
+        if issue_command:
+            self.context("viewport_update\n")
         self.scene.signal("guide")
         self.scene.signal("grid")
         self.request_refresh(origin)

@@ -808,7 +808,10 @@ class LaserRender:
             )
             node.text_cache = image
             node.raw_bbox = image.getbbox()
-            height = node.raw_bbox[3] - node.raw_bbox[1] + 1
+            if node.raw_bbox is None:
+                height = 0
+            else:
+                height = node.raw_bbox[3] - node.raw_bbox[1] + 1
         except MemoryError:
             node.text_cache = None
             node.raw_bbox = None

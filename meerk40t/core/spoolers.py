@@ -707,8 +707,11 @@ class Spooler:
                 time.sleep(0.01)
                 continue
             self._current = program
-
-            fully_executed = program.execute(self.driver)
+            try:
+                fully_executed = program.execute(self.driver)
+            except ConnectionAbortedError:
+                # Driver could no longer connect to where it was told to send the data.
+                return
             if fully_executed:
                 # all work finished
                 self.remove(program, 0)
@@ -812,7 +815,11 @@ class Spooler:
                     )
                 except AttributeError:
                     pass
-                self._queue.remove(element)
+                try:
+                    self._queue.remove(element)
+                except ValueError:
+                    # We might have waited for too long, the job is no longer there...
+                    pass
             else:
                 try:
                     element = self._queue[index]

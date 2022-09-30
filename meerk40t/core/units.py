@@ -33,6 +33,7 @@ PX_PER_CM = DEFAULT_PPI / CM_PER_INCH
 PX_PER_PIXEL = 1
 
 
+UNITS_PER_TAT = 1
 UNITS_PER_INCH = NATIVE_UNIT_PER_INCH
 UNITS_PER_MIL = NATIVE_UNIT_PER_INCH / MIL_PER_INCH
 UNITS_PER_uM = NATIVE_UNIT_PER_INCH / uM_PER_INCH
@@ -613,7 +614,20 @@ class ViewPort:
         return Length(f"{amount}{units}").preferred
 
 
-ACCEPTED_UNITS = ("", "cm", "mm", "in", "inch", "inches", "mil", "pt", "pc", "px", "%")
+ACCEPTED_UNITS = (
+    "",
+    "cm",
+    "mm",
+    "in",
+    "inch",
+    "inches",
+    "mil",
+    "pt",
+    "pc",
+    "px",
+    "%",
+    "tat",
+)
 
 
 class Length(object):
@@ -652,6 +666,8 @@ class Length(object):
             if units == "":
                 if unitless:
                     scale = unitless
+            elif units == "tat":
+                scale = UNITS_PER_TAT
             elif units == "mm":
                 scale = UNITS_PER_MM
             elif units == "cm":

@@ -389,7 +389,9 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        pass
+        if self._freeze:
+            return
+        self.elements.signal("modified")
 
     def node_destroyed(self, node, **kwargs):
         """
@@ -398,7 +400,9 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        pass
+        if self._freeze:
+            return
+        self.elements.signal("modified")
 
     def node_detached(self, node, **kwargs):
         """
@@ -747,7 +751,9 @@ class ShadowTree:
             return
         while pnode.IsOk():
             txt = self.wxtree.GetItemText(pnode)
+            # That it s not working as advertised...
             state = self.wxtree.IsExpanded(pnode)
+            state = False  # otherwise every thing gets expanded...
             if state:
                 self.was_already_expanded.append(f"{level}-{txt}")
             self.parse_tree(pnode, level + 1)
@@ -1154,6 +1160,34 @@ class ShadowTree:
         @param node:
         @return:
         """
+
+        def my_create_label(node, text=None):
+            if text is None:
+                text = "{element_type}:{id}"
+            # Just for the optical impression (who understands what a "Rect: None" means),
+            # lets replace some of the more obvious ones...
+            mymap = node.default_map()
+            for key in mymap:
+                if hasattr(node, key) and mymap[key] == "None":
+                    if getattr(node, key) is None:
+                        mymap[key] = "-"
+            # There are a couple of translatable entries,
+            # to make sure we don't get an unwanted translation we add
+            # a special pattern to it
+            translatable = (
+                "element_type",
+                "enabled",
+            )
+            pattern = "_TREE_"
+            for key in mymap:
+                if key in translatable:
+                    # Original value
+                    std = mymap[key]
+                    value = _(pattern + std)
+                    if not value.startswith(pattern):
+                        mymap[key] = value
+            return text.format_map(mymap)
+
         if force is None:
             force = False
         if node.item is None:
@@ -1166,6 +1200,14 @@ class ShadowTree:
         if hasattr(node, "node") and node.node is not None:
             formatter = self.elements.lookup(f"format/{node.node.type}")
             if node.node.type.startswith("op "):
+                if not self.context.elements.op_show_default:
+                    if hasattr(node.node, "speed"):
+                        node.node.speed = node.node.speed
+                    if hasattr(node.node, "power"):
+                        node.node.power = node.node.power
+                    if hasattr(node.node, "dwell_time"):
+                        node.node.dwell_time = node.node.dwell_time
+
                 checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
@@ -1196,10 +1238,19 @@ class ShadowTree:
                             f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
                 # node.node.is_dangerous(maxspeed, minpower)
-            label = "*" + node.node.create_label(formatter)
+            # label = "*" + node.node.create_label(formatter)
+            label = "*" + my_create_label(node.node, formatter)
         else:
             formatter = self.elements.lookup(f"format/{node.type}")
             if node.type.startswith("op "):
+                # Not too elegant... op nodes should have a property default_speed, default_power
+                if not self.context.elements.op_show_default:
+                    if hasattr(node, "speed"):
+                        node.speed = node.speed
+                    if hasattr(node, "power"):
+                        node.power = node.power
+                    if hasattr(node, "dwell_time"):
+                        node.dwell_time = node.dwell_time
                 checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
@@ -1229,7 +1280,8 @@ class ShadowTree:
                         print(
                             f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
                         )
-            label = node.create_label(formatter)
+            # label = node.create_label(formatter)
+            label = my_create_label(node, formatter)
 
         self.wxtree.SetItemText(node.item, label)
         if node.type == "elem text":

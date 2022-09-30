@@ -814,6 +814,8 @@ class LihuiyuDriver(Parameters):
         def primary_hold():
             if self.out_pipe is None:
                 return True
+            if hasattr(self.out_pipe, "is_shutdown") and self.out_pipe.is_shutdown:
+                raise ConnectionAbortedError("Cannot hold for a shutdown pipe.")
             try:
                 buffer = len(self.out_pipe)
             except TypeError:
@@ -975,8 +977,7 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.program_mode()
-        self.raster_mode()
+        self.rapid_mode()
         self.wait_finish()
         self.laser_on()  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)

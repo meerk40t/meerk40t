@@ -155,8 +155,14 @@ class EngraveOpNode(Node, Parameters):
         if attribute in self.allowed_attributes:
             self.allowed_attributes.remove(attribute)
 
+    def has_attributes(self):
+        return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
+
     def valid_node(self, node):
-        return True
+        if node.type in self._allowed_elements_dnd:
+            return True
+        else:
+            return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
@@ -176,9 +182,11 @@ class EngraveOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
+        feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
-                if len(self.allowed_attributes) > 0:
+                if self.has_attributes():
+                    result = False
                     for attribute in self.allowed_attributes:
                         if (
                             hasattr(node, attribute)
@@ -188,19 +196,26 @@ class EngraveOpNode(Node, Parameters):
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
                                 if self.valid_node(node):
+                                    result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
-                                    return True, self.stopop
+                                    feedback.append(attribute)
+                    if result:
+                        return True, self.stopop, feedback
                 else:  # empty ? Anything goes
                     if self.valid_node(node):
                         self.add_reference(node)
                         # Have classified but more classification might be needed
-                        return True, self.stopop
+                        feedback.append("stroke")
+                        feedback.append("fill")
+                        return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
                 if self.valid_node(node):
-                    return True, self.stopop
-        return False, False
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
@@ -364,3 +379,18 @@ class EngraveOpNode(Node, Parameters):
                         cut_obj.next = group[0]
                     cut_obj.previous = group[i - 1]
                 yield group
+
+    def add_reference(self, node=None, pos=None, **kwargs):
+        """
+        Add a new node bound to the data_object of the type to the current node.
+        If the data_object itself is a node already it is merely attached.
+
+        @param node:
+        @param pos:
+        @return:
+        """
+        if node is not None:
+            if not self.valid_node(node):
+                # We could raise a ValueError but that will break things...
+                return
+        return super().add_reference(node=node, pos=pos, **kwargs)

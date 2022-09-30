@@ -23,18 +23,21 @@ def process_event(
     window_pos=None,
     space_pos=None,
     event_type=None,
+    nearest_snap=None,
     modifiers=None,
     helptext="",
     optimize_drawing=True,
 ):
+
     if widget_identifier is None:
         widget_identifier = "none"
     try:
         inside = widget.contains(space_pos[0], space_pos[1])
     except TypeError:
         # Widget already destroyed ?!
-        # print ("Something went wrong for %s" % widget_identifier)
         return RESPONSE_CHAIN
+    # if event_type in ("move", "leftdown", "leftup"):
+    #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
 
     # Now all Mouse-Hover-Events
     _ = widget.scene.context._
@@ -45,10 +48,11 @@ def process_event(
         return RESPONSE_CHAIN
 
     if event_type == "hover_start":
-        widget.scene.cursor(widget.cursor)
-        widget.hovering = True
-        widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        if inside:
+            widget.scene.cursor(widget.cursor)
+            widget.hovering = True
+            widget.scene.context.signal("statusmsg", _(helptext))
+            return RESPONSE_CONSUME
     elif event_type == "hover_end" or event_type == "lost":
         widget.scene.cursor("arrow")
         widget.hovering = False
@@ -64,7 +68,7 @@ def process_event(
     elements = widget.scene.context.elements
     dx = space_pos[4]
     dy = space_pos[5]
-
+    # print (f"Event={event_type}, tool={widget.scene.tool_active}, modif={widget.scene.modif_active}, snap={nearest_snap}")
     if widget.scene.tool_active:
         # print ("ignore")
         return RESPONSE_CHAIN
@@ -81,7 +85,7 @@ def process_event(
             widget.master.tool_running = optimize_drawing
             widget.master.invalidate_rot_center()
             widget.master.check_rot_center()
-            widget.tool(space_pos, dx, dy, -1, modifiers)
+            widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
             return RESPONSE_CONSUME
     elif event_type == "middledown":
         # Hmm, I think this is never called due to the consumption of this event by scene pane...
@@ -92,11 +96,11 @@ def process_event(
         widget.master.total_delta_x = dx
         widget.master.total_delta_y = dy
         widget.master.tool_running = optimize_drawing
-        widget.tool(space_pos, dx, dy, -1, modifiers)
+        widget.tool(space_pos, nearest_snap, dx, dy, -1, modifiers)
         return RESPONSE_CONSUME
     elif event_type == "leftup":
         if widget.was_lb_raised:
-            widget.tool(space_pos, dx, dy, 1, modifiers)
+            widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
             widget.scene.context.elements.ensure_positive_bounds()
             widget.was_lb_raised = False
             widget.master.show_border = True
@@ -104,7 +108,7 @@ def process_event(
             return RESPONSE_CONSUME
     elif event_type in ("middleup", "lost"):
         if widget.was_lb_raised:
-            widget.tool(space_pos, dx, dy, 1, modifiers)
+            widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
             widget.was_lb_raised = False
             widget.master.show_border = True
             widget.master.tool_running = False
@@ -119,11 +123,11 @@ def process_event(
                 widget.save_height = widget.height
             widget.master.total_delta_x += dx
             widget.master.total_delta_y += dy
-            widget.tool(space_pos, dx, dy, 0, modifiers)
+            widget.tool(space_pos, nearest_snap, dx, dy, 0, modifiers)
             return RESPONSE_CONSUME
     elif event_type == "leftclick":
         if widget.was_lb_raised:
-            widget.tool(space_pos, dx, dy, 1, modifiers)
+            widget.tool(space_pos, nearest_snap, dx, dy, 1, modifiers)
             widget.scene.context.elements.ensure_positive_bounds()
             widget.was_lb_raised = False
             widget.master.tool_running = False
@@ -161,7 +165,14 @@ class BorderWidget(Widget):
     def hit(self):
         return HITCHAIN_DELEGATE
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
+    def event(
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        **kwargs,
+    ):
         return RESPONSE_CHAIN
 
     def process_draw(self, gc):
@@ -346,7 +357,7 @@ class RotationWidget(Widget):
             signx = -1
             signy = +1
 
-        # Well, I would have liked to draw a poper arc via dc.DrawArc but the DeviceContext is not available here(?)
+        # Well, I would have liked to draw a proper arc via dc.DrawArc but the DeviceContext is not available here(?)
         segment = []
         # Start arrow at 0deg, cos = 1, sin = 0
         x = cx + signx * 1 * self.half
@@ -381,10 +392,25 @@ class RotationWidget(Widget):
         gc.SetPen(self.master.handle_pen)
         gc.StrokeLines(segment)
 
-    def tool(self, position, dx, dy, event=0, modifiers=None):
+    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         """
         Change the rotation of the selected elements.
         """
+        # Nearest snap makes not a lot of sense imho, so no dealing with it...
+        nearest_snap = None
+        if nearest_snap is not None:
+            # Position is space_pos:
+            # 0, 1: current x, y
+            # 2, 3: last pos x, y
+            # 4, 5: current - last
+            position = list(position)
+            position[0] = nearest_snap[0]
+            position[1] = nearest_snap[1]
+            position[4] = position[0] - position[2]
+            position[5] = position[1] - position[3]
+            dx = position[4]
+            dy = position[5]
+
         rot_angle = 0
         elements = self.scene.context.elements
         if event == 1:
@@ -393,6 +419,8 @@ class RotationWidget(Widget):
             self.master.last_angle = None
             self.master.start_angle = None
             self.master.rotated_angle = 0
+        elif event == -1:
+            pass
         elif event == 0:
 
             if self.rotate_cx is None:
@@ -521,7 +549,13 @@ class RotationWidget(Widget):
         return value == 2
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "rotation"
         response = process_event(
@@ -530,6 +564,7 @@ class RotationWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            nearest_snap=nearest_snap,
             modifiers=modifiers,
             helptext="Rotate element",
         )
@@ -630,15 +665,34 @@ class CornerWidget(Widget):
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
-    def tool(self, position, dx, dy, event=0, modifiers=None):
+    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         elements = self.scene.context.elements
+        if nearest_snap is None:
+            # print ("Took last snap instead...")
+            nearest_snap = self.scene.last_snap
+        if nearest_snap is not None:
+            # Position is space_pos:
+            # 0, 1: current x, y
+            # 2, 3: last pos x, y
+            # 4, 5: current - last
+            position = list(position)
+            position[0] = nearest_snap[0]
+            position[1] = nearest_snap[1]
+            position[4] = position[0] - position[2]
+            position[5] = position[1] - position[3]
+            dx = position[4]
+            dy = position[5]
+
         if event == 1:
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
-        if event == 0:
+            self.scene.modif_active = False
+        elif event == -1:
+            self.scene.modif_active = True
+        elif event == 0:
             # Establish origin
             if "n" in self.method:
                 orgy = self.master.bottom
@@ -674,8 +728,8 @@ class CornerWidget(Widget):
                     scalex = (position[0] - self.master.left) / self.save_width
                 except ZeroDivisionError:
                     scalex = 1
-
-            if len(self.method) > 1 and self.uniform:  # from corner
+            free = bool("alt" in modifiers)
+            if len(self.method) > 1 and self.uniform and not free:  # from corner
                 scale = (scaley + scalex) / 2.0
                 scalex = scale
                 scaley = scale
@@ -735,7 +789,13 @@ class CornerWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "corner"
         response = process_event(
@@ -744,6 +804,7 @@ class CornerWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            nearest_snap=nearest_snap,
             modifiers=modifiers,
             helptext="Size element (with Alt-Key freely, with Ctrl+shift from center)",
         )
@@ -826,15 +887,43 @@ class SideWidget(Widget):
         gc.SetBrush(brush)
         gc.DrawRectangle(self.left, self.top, self.width, self.height)
 
-    def tool(self, position, dx, dy, event=0, modifiers=None):
+    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         elements = self.scene.context.elements
+        if nearest_snap is None:
+            # print ("Took last snap instead...")
+            nearest_snap = self.scene.last_snap
+        if nearest_snap is not None:
+            # Position is space_pos:
+            # 0, 1: current x, y
+            # 2, 3: last pos x, y
+            # 4, 5: current - last
+            position = list(position)
+            # print(
+            #     f"Side: pos={position[0]:.2f}, {position[1]:.2f}, "
+            #     + f"old={position[2]:.2f}, {position[3]:.2f}, "
+            #     + f"dx={position[4]:.2f}, dy={position[5]:.2f}"
+            # )
+            # print(
+            #     f"snap: pos={nearest_snap[0]:.2f}, {nearest_snap[1]:.2f}, "
+            #     + f"old={nearest_snap[2]:.2f}, {nearest_snap[3]:.2f}"
+            # )
+            position[0] = nearest_snap[0]
+            position[1] = nearest_snap[1]
+            position[4] = position[0] - position[2]
+            position[5] = position[1] - position[3]
+            dx = position[4]
+            dy = position[5]
+
         if event == 1:
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
                     e.modified()
                 except AttributeError:
                     pass
-        if event == 0:
+            self.scene.modif_active = False
+        elif event == -1:
+            self.scene.modif_active = True
+        elif event == 0:
             # print ("Side-Tool #%d called, method=%s - dx=%.1f, dy=%.1f" % (self.index, self.method, dx, dy))
             # Establish origin
             if "n" in self.method:
@@ -934,7 +1023,13 @@ class SideWidget(Widget):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "side"
         s_coord = "Y" if self.index in (0, 2) else "X"
@@ -946,6 +1041,7 @@ class SideWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            nearest_snap=nearest_snap,
             modifiers=modifiers,
             helptext=s_help,
         )
@@ -1004,11 +1100,26 @@ class SkewWidget(Widget):
     def hit(self):
         return HITCHAIN_HIT
 
-    def tool(self, position, dx, dy, event=0, modifiers=None):
+    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         """
         Change the skew of the selected elements.
         """
         elements = self.scene.context.elements
+        # Skew makes not a lot of sense to listen to nearest_snap, so we ignore it...
+        nearest_snap = None
+        if nearest_snap is not None:
+            # Position is space_pos:
+            # 0, 1: current x, y
+            # 2, 3: last pos x, y
+            # 4, 5: current - last
+            position = list(position)
+            position[0] = nearest_snap[0]
+            position[1] = nearest_snap[1]
+            position[4] = position[0] - position[2]
+            position[5] = position[1] - position[3]
+            dx = position[4]
+            dy = position[5]
+
         if event == 1:  # end
             self.last_skew = 0
 
@@ -1018,7 +1129,8 @@ class SkewWidget(Widget):
                     e.modified()
                 except AttributeError:
                     pass
-
+        elif event == -1:
+            pass
         elif event == 0:  # move
             if self.is_x:
                 dd = dx
@@ -1057,7 +1169,13 @@ class SkewWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "skew"
         s_help = f"Skew element in {'X' if self.is_x else 'Y'}-direction"
@@ -1067,6 +1185,7 @@ class SkewWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            nearest_snap=nearest_snap,
             modifiers=modifiers,
             helptext=s_help,
         )
@@ -1096,6 +1215,10 @@ class MoveWidget(Widget):
         self.save_width = 0
         self.save_height = 0
         self.uniform = False
+        self.start_x = None
+        self.start_y = None
+        self.last_x = None
+        self.last_y = None
         Widget.__init__(
             self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
         )
@@ -1172,24 +1295,12 @@ class MoveWidget(Widget):
 
                 elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
-    def tool(self, position, dx, dy, event=0, modifiers=None):
+    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         """
         Change the position of the selected elements.
         """
-        elements = self.scene.context.elements
-        if event == 1:  # end
-            self.check_for_magnets()
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
-        elif event == -1:  # start
-            if "alt" in modifiers:
-                self.create_duplicate()
-        elif event == 0:  # move
 
-            # b = elements.selected_area()  # correct, but slow...
+        def move_to(dx, dy):
             b = elements._emphasized_bounds
             allowlockmove = elements.lock_allows_move
             for e in elements.flat(types=elem_nodes, emphasized=True):
@@ -1201,10 +1312,64 @@ class MoveWidget(Widget):
 
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
+        elements = self.scene.context.elements
+        lastdx = 0
+        lastdy = 0
+        if nearest_snap is None:
+            # print ("Took last snap instead...")
+            nearest_snap = self.scene.last_snap
+        if nearest_snap is not None:
+            # Position is space_pos:
+            # 0, 1: current x, y
+            # 2, 3: last pos x, y
+            # 4, 5: current - last
+            position = list(position)
+            # print(
+            #     f"Move: pos={position[0]:.2f}, {position[1]:.2f}, "
+            #     + f"old={position[2]:.2f}, {position[3]:.2f}, "
+            #     + f"dx={position[4]:.2f}, dy={position[5]:.2f}"
+            # )
+            # print(
+            #     f"snap: pos={nearest_snap[0]:.2f}, {nearest_snap[1]:.2f}, "
+            #     + f"screen={nearest_snap[2]:.2f}, {nearest_snap[3]:.2f}"
+            # )
+            lastdx = nearest_snap[0] - position[0]
+            lastdy = nearest_snap[1] - position[1]
+            position[0] = nearest_snap[0]
+            position[1] = nearest_snap[1]
+            position[4] = position[0] - position[2]
+            position[5] = position[1] - position[3]
+            # print(
+            #     f"New: pos={position[0]:.2f}, {position[1]:.2f}, "
+            #     + f"dx={position[4]:.2f}, dy={position[5]:.2f}"
+            # )
+
+        if event == 1:  # end
+            move_to(lastdx, lastdy)
+            self.check_for_magnets()
+            for e in elements.flat(types=elem_group_nodes, emphasized=True):
+                try:
+                    e.modified()
+                except AttributeError:
+                    pass
+            self.scene.modif_active = False
+        elif event == -1:  # start
+            if "alt" in modifiers:
+                self.create_duplicate()
+            self.scene.modif_active = True
+        elif event == 0:  # move
+            # b = elements.selected_area()  # correct, but slow...
+            move_to(dx, dy)
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "move"
         response = process_event(
@@ -1213,6 +1378,7 @@ class MoveWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            nearest_snap=nearest_snap,
             modifiers=modifiers,
             helptext="Move element",
         )
@@ -1276,31 +1442,72 @@ class MoveRotationOriginWidget(Widget):
         )
         gc.DrawEllipse(self.left, self.top, self.width, self.height)
 
-    def tool(self, position, dx, dy, event=0, modifiers=None):
+    def tool(self, position, nearest_snap, dx, dy, event=0, modifiers=None):
         """
         Change the rotation-center of the selected elements.
         """
-        self.master.rotation_cx += dx
-        self.master.rotation_cy += dy
-        self.master.invalidate_rot_center()
-        self.scene.request_refresh()
+        lastdx = 0
+        lastdy = 0
+        if nearest_snap is None:
+            # print ("Took last snap instead...")
+            nearest_snap = self.scene.last_snap
+        if nearest_snap is not None:
+            # Position is space_pos:
+            # 0, 1: current x, y
+            # 2, 3: last pos x, y
+            # 4, 5: current - last
+            position = list(position)
+            lastdx = nearest_snap[0] - position[0]
+            lastdy = nearest_snap[1] - position[1]
+            position[0] = nearest_snap[0]
+            position[1] = nearest_snap[1]
+            position[4] = position[0] - position[2]
+            position[5] = position[1] - position[3]
+
+        if event == 1:  # end
+            self.master.rotation_cx += lastdx
+            self.master.rotation_cy += lastdy
+            self.master.invalidate_rot_center()
+            self.scene.modif_active = False
+            self.scene.request_refresh()
+        elif event == -1:  # start
+            self.scene.modif_active = True
+        elif event == 0:  # move
+            self.master.rotation_cx += dx
+            self.master.rotation_cy += dy
+            self.master.invalidate_rot_center()
+            self.scene.request_refresh()
 
     def hit(self):
         return HITCHAIN_HIT
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "rotcenter"
-        response = process_event(
-            widget=self,
-            widget_identifier=s_me,
-            window_pos=window_pos,
-            space_pos=space_pos,
-            event_type=event_type,
-            modifiers=modifiers,
-            helptext="Move rotation center",
-        )
+        if event_type == "doubleclick":
+            self.master.rotation_cx = None
+            self.master.rotation_cy = None
+            self.master.invalidate_rot_center()
+            self.scene.request_refresh()
+            response = RESPONSE_CONSUME
+        else:
+            response = process_event(
+                widget=self,
+                widget_identifier=s_me,
+                window_pos=window_pos,
+                space_pos=space_pos,
+                event_type=event_type,
+                nearest_snap=nearest_snap,
+                modifiers=modifiers,
+                helptext="Move rotation center",
+            )
         return response
 
 
@@ -1392,7 +1599,13 @@ class ReferenceWidget(Widget):
         return HITCHAIN_HIT
 
     def tool(
-        self, position=None, dx=None, dy=None, event=0, modifiers=None
+        self,
+        position=None,
+        nearest_snap=None,
+        dx=None,
+        dy=None,
+        event=0,
+        modifiers=None,
     ):  # Don't need all arguments, just for compatibility with pattern
         """
         Toggle the Reference Status of the selected elements
@@ -1416,7 +1629,13 @@ class ReferenceWidget(Widget):
         self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "reference"
         response = process_event(
@@ -1425,6 +1644,7 @@ class ReferenceWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            nearest_snap=nearest_snap,
             modifiers=modifiers,
             helptext="Toggle reference status of element",
             optimize_drawing=False,
@@ -1509,7 +1729,13 @@ class LockWidget(Widget):
         return HITCHAIN_HIT
 
     def tool(
-        self, position=None, dx=None, dy=None, event=0, modifiers=None
+        self,
+        position=None,
+        nearest_snap=None,
+        dx=None,
+        dy=None,
+        event=0,
+        modifiers=None,
     ):  # Don't need all arguments, just for compatibility with pattern
         """
         Toggle the Reference Status of the selected elements
@@ -1526,7 +1752,13 @@ class LockWidget(Widget):
             self.scene.request_refresh()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         s_me = "lock"
         response = process_event(
@@ -1535,6 +1767,7 @@ class LockWidget(Widget):
             window_pos=window_pos,
             space_pos=space_pos,
             event_type=event_type,
+            nearest_snap=None,
             modifiers=modifiers,
             helptext="Remove the 'locked' status of the element",
             optimize_drawing=False,
@@ -1988,29 +2221,56 @@ class SelectionWidget(Widget):
             menu.Destroy()
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
-            self.hovering = True
-            self.scene.context.signal("statusmsg", "")
-            self.tool_running = False
+            if self.contains(space_pos[0], space_pos[1]):
+                self.hovering = True
+                self.scene.context.signal("statusmsg", "")
+                self.tool_running = False
 
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
+            for subwidget in self:
+                if (
+                    hasattr(subwidget, "hovering")
+                    and subwidget.hovering
+                    and not subwidget.contains(space_pos[0], space_pos[1])
+                ):
+                    subwidget.hovering = False
+            self.scene.cursor("arrow")
             self.scene.context.signal("statusmsg", "")
         elif event_type == "hover":
             if self.hovering:
                 self.scene.cursor(self.cursor)
             # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
+
+            for subwidget in self:
+                if (
+                    hasattr(subwidget, "hovering")
+                    and subwidget.hovering
+                    and not subwidget.contains(space_pos[0], space_pos[1])
+                ):
+                    subwidget.hovering = False
+                    self.scene.cursor("arrow")
+                    self.scene.context.signal("statusmsg", "")
+
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
             # self.scene.tool_active = False
             pass
         elif event_type == "rightdown":
             self.scene.tool_active = False
+            self.scene.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
             )
@@ -2030,6 +2290,7 @@ class SelectionWidget(Widget):
             return RESPONSE_CONSUME
         elif event_type == "doubleclick":
             self.scene.tool_active = False
+            self.scene.modif_active = False
             smallest = bool(self.scene.context.select_smallest) != bool(
                 "ctrl" in modifiers
             )

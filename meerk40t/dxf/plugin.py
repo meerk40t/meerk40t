@@ -9,7 +9,9 @@ def plugin(kernel, lifecycle=None):
             # Includes ezdxf and all required imports therein
             from meerk40t.dxf.dxf_io import DxfLoader
         except ImportError:
-            print("DXF plugin could not load because, though ezdxf is installed, the version isn't supported.")
+            print(
+                "DXF plugin could not load because, though ezdxf is installed, the version isn't supported."
+            )
             return True
     elif lifecycle == "register":
         from meerk40t.dxf.dxf_io import DxfLoader
