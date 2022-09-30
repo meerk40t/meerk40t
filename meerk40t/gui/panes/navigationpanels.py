@@ -1403,7 +1403,7 @@ class Transform(wx.Panel):
                 )
             )
             self.context.signal("refresh_scene")
-        except ValueError:
+        except (ValueError, AttributeError):
             pass
 
         self.update_matrix_text()

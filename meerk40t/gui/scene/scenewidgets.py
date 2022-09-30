@@ -1210,7 +1210,7 @@ class SelectionWidget(Widget):
                         y = yy + signy * self.arcsegment[idx][1]
                         segment += [(x, y)]
                     pen = self.handle_pen
-                    pen.SetWidth(0.75 * self.selection_pen.GetWidth())
+                    pen.SetWidth(int(0.75 * self.selection_pen.GetWidth()))
                     gc.SetPen(pen)
                     gc.StrokeLines(segment)
 

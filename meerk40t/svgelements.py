@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.6.17"
+SVGELEMENTS_VERSION = "1.8.4"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -124,10 +124,14 @@ SVG_ATTR_DY = "dy"
 SVG_ATTR_TAG = "tag"
 SVG_ATTR_FONT = "font"
 SVG_ATTR_FONT_FAMILY = "font-family"  # Serif, sans-serif, cursive, fantasy, monospace
-SVG_ATTR_FONT_FACE = "font-face"
-SVG_ATTR_FONT_SIZE = "font-size"
+SVG_ATTR_FONT_STYLE = "font-style"
+SVG_ATTR_FONT_VARIANT = "font-variant"
 SVG_ATTR_FONT_WEIGHT = "font-weight"  # normal, bold, bolder, lighter, 100-900
+SVG_ATTR_FONT_STRETCH = "font-stretch"
+SVG_ATTR_FONT_SIZE = "font-size"
 SVG_ATTR_TEXT_ANCHOR = "text-anchor"
+SVG_ATTR_TEXT_ALIGNMENT_BASELINE = "alignment-baseline"
+SVG_ATTR_TEXT_DOMINANT_BASELINE = "dominant-baseline"
 SVG_ATTR_PATTERN_CONTENT_UNITS = "patternContentUnits"
 SVG_ATTR_PATTERN_TRANSFORM = "patternTransform"
 SVG_ATTR_PATTERN_UNITS = "patternUnits"
@@ -223,7 +227,26 @@ REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
 REGEX_CSS_COMMENT = re.compile(r"\/\*[\s\S]*?\*\/|\/\/.*$", re.MULTILINE)
 REGEX_CSS_STYLE = re.compile(r"([^{]+)\s*\{\s*([^}]+)\s*\}")
 REGEX_CSS_FONT = re.compile(
-    r"(?:(normal|italic|oblique)\s|(normal|small-caps)\s|(normal|bold|bolder|lighter|\d{3})\s|(normal|ultra-condensed|extra-condensed|condensed|semi-condensed|semi-expanded|expanded|extra-expanded|ultra-expanded)\s)*\s*(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%))(?:/(xx-small|x-small|small|medium|large|x-large|xx-large|larger|smaller|\d+(?:em|pt|pc|px|%)))?\s*(.*),?\s+(serif|sans-serif|cursive|fantasy|monospace);?"
+    r"^"
+    r"(?:"
+    r"(?:(normal|italic|oblique)\s)?"
+    r"(?:(normal|small-caps)\s)?"
+    r"(?:(normal|bold|bolder|lighter|[0-9]{3})\s)?"
+    r"(?:(normal|(?:ultra-|extra-|semi-)?condensed|(?:semi-|extra-)?expanded)\s)"
+    r"?){0,4}"
+    r"(?:"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
+    r"(?:/"
+    r"((?:x-|xx-)?small|medium|(?:x-|xx-)?large|larger|smaller|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
+    r"(?:em|pt|pc|px|%)?)"
+    r")?\s"
+    r")?"
+    r"([^;]*);?"
+    r"$"
+)
+REGEX_CSS_FONT_FAMILY = re.compile(
+    r"""(?:([^\s"';,]+|"[^";,]+"|'[^';,]+'|serif|sans-serif|cursive|fantasy|monospace)),?\s*;?"""
 )
 
 svg_parse = [("COMMAND", r"[MmZzLlHhVvCcSsQqTtAa]"), ("SKIP", PATTERN_COMMAWSP)]
@@ -581,7 +604,7 @@ class Length(object):
         if self.amount is None:
             return None
         if self.units == "pt":
-            return self.amount * 1.3333
+            return self.amount * 4.0 / 3.0
         elif self.units == "pc":
             return self.amount * 16.0
         return self.amount
@@ -626,7 +649,7 @@ class Length(object):
             if other.units == "px" or other.units == "":
                 self.amount += other.amount
             elif other.units == "pt":
-                self.amount += other.amount * 1.3333
+                self.amount += other.amount * 4.0 / 3.0
             elif other.units == "pc":
                 self.amount += other.amount * 16.0
             else:
@@ -634,7 +657,7 @@ class Length(object):
             return self
         if self.units == "pt":
             if other.units == "px" or other.units == "":
-                self.amount += other.amount / 1.3333
+                self.amount += other.amount / 4.0 / 3.0
             elif other.units == "pc":
                 self.amount += other.amount * 12.0
             else:
@@ -696,14 +719,14 @@ class Length(object):
             if other.units == "px" or other.units == "":
                 return self.amount / other.amount
             elif other.units == "pt":
-                return self.amount / (other.amount * 1.3333)
+                return self.amount / (other.amount * 4.0 / 3.0)
             elif other.units == "pc":
                 return self.amount / (other.amount * 16.0)
             else:
                 raise ValueError
         if self.units == "pt":
             if other.units == "px" or other.units == "":
-                return self.amount / (other.amount / 1.3333)
+                return self.amount / (other.amount * 3.0 / 4.0)
             elif other.units == "pc":
                 return self.amount / (other.amount * 12.0)
             else:
@@ -841,7 +864,7 @@ class Length(object):
         if self.units == "px" or self.units == "":
             return self.amount
         if self.units == "pt":
-            return self.amount / 1.3333
+            return self.amount * 3.0 / 4.0
         if self.units == "pc":
             return self.amount / 16.0
         return None
@@ -952,7 +975,7 @@ class Length(object):
         if self.units == "px" or self.units == "":
             return self.amount
         if self.units == "pt":
-            return self.amount * 1.3333
+            return self.amount * 4.0 / 3.0
         if self.units == "pc":
             return self.amount * 16.0
         if self.units == "em":
@@ -2442,7 +2465,7 @@ class Angle(float):
 
 
 class Matrix:
-    """ "
+    """
     Provides svg matrix interfacing.
 
     SVG 7.15.3 defines the matrix form as:
@@ -3497,15 +3520,17 @@ class GraphicObject:
             if not self.apply:
                 return self.stroke_width
             if self.stroke_width is not None:
+                transform = self.transform
                 if (
                     hasattr(self, "values")
                     and SVG_ATTR_VECTOR_EFFECT in self.values
                     and SVG_VALUE_NON_SCALING_STROKE
                     in self.values[SVG_ATTR_VECTOR_EFFECT]
                 ):
-                    return self.stroke_width  # we are not to scale the stroke.
+                    # If we do not apply scaling stroke we still apply viewport transform.
+                    transform = Matrix(self.values.get("viewport_transform", ""))
                 width = self.stroke_width
-                det = self.transform.determinant
+                det = transform.determinant
                 return width * sqrt(abs(det))
         except AttributeError:
             return self.stroke_width
@@ -3646,9 +3671,12 @@ class Shape(SVGElement, GraphicObject, Transformable):
             self._calc_lengths(error=error, segments=segments)
         xy = np.empty((len(positions), 2), dtype=float)
         if self._length == 0:
-            i = int(round(positions * (len(segments) - 1)))
-            point = segments[i].point(0.0)
-            xy[:] = point
+            # all segments have 0 length
+            seg_points = np.empty((len(segments), 2), dtype=float)
+            for i, seg in enumerate(segments):
+                seg_points[i] = seg.point(0)
+            indexes = np.round(positions * (len(segments) - 1)).astype(int)
+            xy[:] = seg_points[indexes]
             return xy
 
         # Find which segment the point we search for is located on:
@@ -6917,7 +6945,7 @@ class _RoundShape(Shape):
         if b > a:
             a, b = b, a
         h = ((a - b) * (a - b)) / ((a + b) * (a + b))
-        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
+        return tau / 2 * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
 
 
 class Ellipse(_RoundShape):
@@ -7537,14 +7565,14 @@ class Group(SVGElement, Transformable, list):
         if conditional is None:
             for subitem in self:
                 yield subitem
-                if isinstance(subitem, Group):
+                if isinstance(subitem, (Group, Use)):
                     for s in subitem.select(conditional):
                         yield s
         else:
             for subitem in self:
                 if conditional(subitem):
                     yield subitem
-                if isinstance(subitem, Group):
+                if isinstance(subitem, (Group, Use)):
                     for s in subitem.select(conditional):
                         yield s
 
@@ -7560,33 +7588,18 @@ class Group(SVGElement, Transformable, list):
         :param with_stroke: should the stroke-width be included in the bounds of the elements
         :return: union of all bounding boxes of elements within the iterable.
         """
-        boundary_points = []
+        boxes = []
         for e in elements:
-            if not hasattr(e, "bbox"):
+            if not hasattr(e, "bbox") or isinstance(e, (Group, Use)):
                 continue
-            box = e.bbox(transformed=False, with_stroke=with_stroke)
+            box = e.bbox(transformed=transformed, with_stroke=with_stroke)
             if box is None:
                 continue
-            top_left = (box[0], box[1])
-            top_right = (box[2], box[1])
-            bottom_left = (box[0], box[3])
-            bottom_right = (box[2], box[3])
-            if transformed:
-                top_left = e.transform.point_in_matrix_space(top_left)
-                top_right = e.transform.point_in_matrix_space(top_right)
-                bottom_left = e.transform.point_in_matrix_space(bottom_left)
-                bottom_right = e.transform.point_in_matrix_space(bottom_right)
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
+            boxes.append(box)
+        if len(boxes) == 0:
             return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
+        (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
+        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
 
     def bbox(self, transformed=True, with_stroke=False):
         """
@@ -7602,6 +7615,121 @@ class Group(SVGElement, Transformable, list):
         :return: bounding box of the given element
         """
         return Group.union_bbox(
+            self.select(),
+            transformed=transformed,
+            with_stroke=with_stroke,
+        )
+
+
+class Use(SVGElement, Transformable, list):
+    """
+    Use elements are defined in svg 5.6
+    https://www.w3.org/TR/SVG11/struct.html#UseElement
+
+    Use is a generic container object group-like that use reference objects,
+    """
+
+    def __init__(self, *args, **kwargs):
+        list.__init__(self)
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        Transformable.__init__(self, *args, **kwargs)
+        SVGElement.__init__(
+            self, *args, **kwargs
+        )  # Must go last, triggers, by_object, by_value, by_arg functions.
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+        Transformable.property_by_object(self, s)
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+
+    def property_by_values(self, values):
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, 1)).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, 1)).value()
+        if self.x != 0 or self.y != 0:
+            # If x or y is set, apply this to transform
+            try:
+                values[SVG_ATTR_TRANSFORM] = "%s translate(%s, %s)" % (
+                    values[SVG_ATTR_TRANSFORM],
+                    self.x,
+                    self.y,
+                )
+            except KeyError:
+                values[SVG_ATTR_TRANSFORM] = "translate(%s, %s)" % (
+                    self.x,
+                    self.y,
+                )
+        SVGElement.property_by_values(self, values)
+        Transformable.property_by_values(self, values)
+
+    def render(self, **kwargs):
+        SVGElement.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+
+    def select(self, conditional=None):
+        """
+        Finds all flattened subobjects of this group for which the conditional returns
+        true.
+
+        :param conditional: function taking element and returns True to include or False if exclude
+        """
+        if conditional is None:
+            for subitem in self:
+                yield subitem
+                if isinstance(subitem, (Group, Use)):
+                    for s in subitem.select(conditional):
+                        yield s
+        else:
+            for subitem in self:
+                if conditional(subitem):
+                    yield subitem
+                if isinstance(subitem, (Group, Use)):
+                    for s in subitem.select(conditional):
+                        yield s
+
+    @staticmethod
+    def union_bbox(elements, transformed=True, with_stroke=False):
+        """
+        Returns the union of the bounding boxes for the elements within the iterator.
+
+        :param transformed: Should the children of this object be properly transformed.
+        :param with_stroke: should the stroke-width be included in the bounds of the elements
+        :return: union of all bounding boxes of elements within the iterable.
+        """
+        boxes = []
+        for e in elements:
+            if not hasattr(e, "bbox") or isinstance(e, (Group, Use)):
+                continue
+            box = e.bbox(transformed=transformed, with_stroke=with_stroke)
+            if box is None:
+                continue
+            boxes.append(box)
+        if len(boxes) == 0:
+            return None
+        (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
+        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
+
+    def bbox(self, transformed=True, with_stroke=False):
+        """
+        Returns the bounding box of the given object.
+
+        In the case of groups this is the union of all the bounding boxes of all bound children.
+
+        Setting transformed to false, may yield unexpected results if subitems are transformed in non-uniform
+        ways.
+
+        :param transformed: bounding box of the properly transformed children.
+        :param with_stroke: should the stroke-width be included in the bounds.
+        :return: bounding box of the given element
+        """
+        return Use.union_bbox(
             self.select(),
             transformed=transformed,
             with_stroke=with_stroke,
@@ -7737,12 +7865,15 @@ class Text(SVGElement, GraphicObject, Transformable):
         self.dx = 0
         self.dy = 0
         self.anchor = "start"  # start, middle, end.
-        self.font_family = "san-serif"
-        self.font_size = 16.0  # 16 point font 'normal'
-        self.font_weight = 400.0  # Thin=100, Normal=400, Bold=700
-        self.font_face = ""
-
+        self.font_style = "normal"
+        self.font_variant = "normal"
+        self.font_weight = 400
+        self.font_stretch = "normal"
+        self.font_size = 16.0  # 16px font 'normal' 12pt font
+        self.line_height = 16.0
+        self.font_family = "sans-serif"
         self.path = None
+
         Transformable.__init__(self, *args, **kwargs)
         GraphicObject.__init__(self, *args, **kwargs)
         SVGElement.__init__(self, *args, **kwargs)
@@ -7751,10 +7882,11 @@ class Text(SVGElement, GraphicObject, Transformable):
         values = list()
         values.append("'%s'" % self.text)
         values.append("%s='%s'" % (SVG_ATTR_FONT_FAMILY, self.font_family))
-        if self.font_face:
-            values.append("%s=%s" % (SVG_ATTR_FONT_FACE, self.font_face))
-        values.append("%s=%d" % (SVG_ATTR_FONT_SIZE, self.font_size))
+        values.append("%s='%s'" % (SVG_ATTR_FONT_STYLE, self.font_style))
+        values.append("%s='%s'" % (SVG_ATTR_FONT_VARIANT, self.font_variant))
         values.append("%s='%s'" % (SVG_ATTR_FONT_WEIGHT, str(self.font_weight)))
+        values.append("%s='%s'" % (SVG_ATTR_FONT_STRETCH, self.font_stretch))
+        values.append("%s=%d" % (SVG_ATTR_FONT_SIZE, self.font_size))
         values.append("%s='%s'" % (SVG_ATTR_TEXT_ANCHOR, self.anchor))
         if self.x != 0 or self.y != 0:
             values.append("%s=%s" % (SVG_ATTR_X, self.x))
@@ -7779,10 +7911,14 @@ class Text(SVGElement, GraphicObject, Transformable):
         values = list()
         values.append("'%s'" % self.text)
         values.append("font_family='%s'" % self.font_family)
-        if self.font_face:
-            values.append("font_face=%s" % self.font_face)
-        values.append("font_size=%d" % self.font_size)
+        if self.font_style != "normal":
+            values.append("font_style='%s'" % self.font_style)
+        if self.font_variant != "normal":
+            values.append("font_variant='%s'" % self.font_variant)
         values.append("font_weight='%s'" % str(self.font_weight))
+        if self.font_stretch != "normal":
+            values.append("font_stretch='%s'" % self.font_stretch)
+        values.append("font_size=%d" % self.font_size)
         values.append("text_anchor='%s'" % self.anchor)
         if self.x != 0 or self.y != 0:
             values.append("%s=%s" % (SVG_ATTR_X, self.x))
@@ -7823,13 +7959,23 @@ class Text(SVGElement, GraphicObject, Transformable):
             return False
         if self.anchor != other.anchor:
             return False
+        if self.font_style != other.font_style:
+            return False
+        if self.font_variant != other.font_variant:
+            return False
+        if self.font_weight != other.font_weight:
+            return False
+        if self.font_stretch != other.font_stretch:
+            return False
+        if self.font_size != other.font_size:
+            return False
+        if self.line_height != other.line_height:
+            return False
         if self.font_family != other.font_family:
             return False
         if self.font_size != other.font_size:
             return False
-        if self.font_weight != other.font_weight:
-            return False
-        return self.font_face == other.font_face
+        return True
 
     def __ne__(self, other):
         if not isinstance(other, Text):
@@ -7849,9 +7995,12 @@ class Text(SVGElement, GraphicObject, Transformable):
         self.dy = s.dy
         self.anchor = s.anchor
         self.font_family = s.font_family
-        self.font_size = s.font_size
+        self.font_style = s.font_style
+        self.font_variant = s.font_variant
         self.font_weight = s.font_weight
-        self.font_face = s.font_face
+        self.font_stretch = s.font_stretch
+        self.font_size = s.font_size
+        self.line_height = s.line_height
 
     def parse_font(self, font):
         """
@@ -7868,57 +8017,119 @@ class Text(SVGElement, GraphicObject, Transformable):
         generic-family:  `serif`, `sans-serif`, `cursive`, `fantasy`, and `monospace`
         """
         # https://www.w3.org/TR/css-fonts-3/#font-prop
-        font_elements = list(*re.findall(REGEX_CSS_FONT, font))
+        match = REGEX_CSS_FONT.match(font)
+        if not match:
+            # This is not a qualified shorthand font.
+            return
+        self.font_style = match.group(1)
+        if self.font_style is None:
+            self.font_style = "normal"
 
-        font_style = font_elements[0]
-        font_variant = font_elements[1]
-        font_weight = font_elements[2]
-        font_stretch = font_elements[3]
-        font_size = font_elements[4]
-        line_height = font_elements[5]
-        font_face = font_elements[6]
-        font_family = font_elements[7]
-        if len(font_weight) > 0:
-            self.font_weight = self.parse_font_weight(font_weight)
-        if len(font_size) > 0:
-            self.font_size = Length(font_size).value()
-        if len(font_face) > 0:
-            if font_face.endswith(","):
-                font_face = font_face[:-1]
-            self.font_face = font_face
+        self.font_variant = match.group(2)
+        if self.font_variant is None:
+            self.font_variant = "normal"
 
-        if len(font_family) > 0:
-            self.font_family = font_family
+        self.font_weight = match.group(3)
+        if self.font_weight is None:
+            self.font_weight = "normal"
 
-    def parse_font_weight(self, weight):
-        if weight == "bold":
+        self.font_stretch = match.group(4)
+        if self.font_stretch is None:
+            self.font_stretch = "normal"
+
+        self.font_size = match.group(5)
+        if self.font_size is None:
+            self.font_size = "12pt"
+        if self.font_size:
+            size = self.font_size
+            self.font_size = Length(self.font_size)
+            try:
+                self.font_size = Length(self.font_size).value()
+                if self.font_size == 0:
+                    self.font_size = size
+            except ValueError:
+                self.font_size = size
+
+        self.line_height = match.group(6)
+        if self.line_height is None:
+            self.line_height = "12pt"
+        if self.line_height:
+            height = self.line_height
+            self.line_height = Length(self.line_height)
+            try:
+                self.line_height = Length(
+                    self.line_height, relative_length=self.font_size
+                ).value()
+                if self.line_height == 0:
+                    self.line_height = height
+            except ValueError:
+                self.line_height = height
+
+        self.font_family = match.group(7)
+
+    @property
+    def font_list(self):
+        return [
+            family[1:-1] if family.startswith('"') or family.startswith("'") else family
+            for family in REGEX_CSS_FONT_FAMILY.findall(self.font_family)
+        ]
+
+    @property
+    def weight(self):
+        """
+        This does not correctly parse weights for bolder or lighter. Those are relative to the previous set
+        font-weight and that is generally unknown in this context.
+        """
+        if self.font_weight == "bold":
             return 700
-        if weight == "normal":
+        if self.font_weight == "normal":
             return 400
         try:
-            return int(weight)
+            return int(self.font_weight)
         except ValueError:
             return 400
+
+    @property
+    def font_face(self):
+        """
+        Deprecated Fontface.
+        """
+        return ""
 
     def property_by_values(self, values):
         Transformable.property_by_values(self, values)
         GraphicObject.property_by_values(self, values)
         SVGElement.property_by_values(self, values)
-        self.anchor = values.get(SVG_ATTR_TEXT_ANCHOR, self.anchor)
-        self.font_face = values.get("font_face")
-        self.font_face = values.get(SVG_ATTR_FONT_FACE, self.font_face)
+
         self.font_family = values.get("font_family", self.font_family)
         self.font_family = values.get(SVG_ATTR_FONT_FAMILY, self.font_family)
-        self.font_size = Length(values.get("font_size", self.font_size)).value()
-        self.font_size = Length(values.get(SVG_ATTR_FONT_SIZE, self.font_size)).value()
+
+        self.font_style = values.get("font_style", self.font_style)
+        self.font_style = values.get(SVG_ATTR_FONT_STYLE, self.font_family)
+
+        self.font_variant = values.get("font_variant", self.font_variant)
+        self.font_variant = values.get(SVG_ATTR_FONT_VARIANT, self.font_variant)
+
         self.font_weight = values.get("font_weight", self.font_weight)
         self.font_weight = values.get(SVG_ATTR_FONT_WEIGHT, self.font_weight)
-        self.font_weight = self.parse_font_weight(self.font_weight)
+        try:
+            self.font_weight = int(self.font_weight)
+        except ValueError:
+            pass
+
+        self.font_stretch = values.get("font_stretch", self.font_stretch)
+        self.font_stretch = values.get(SVG_ATTR_FONT_STRETCH, self.font_stretch)
+
+        self.font_size = Length(values.get("font_size", self.font_size)).value()
+        self.font_size = Length(values.get(SVG_ATTR_FONT_SIZE, self.font_size)).value()
+
         self.anchor = values.get("text_anchor", self.anchor)
         self.anchor = values.get(SVG_ATTR_TEXT_ANCHOR, self.anchor)
+
         font = values.get(SVG_ATTR_FONT, None)
         if font is not None:
             self.parse_font(font)
+
         self.text = values.get(SVG_TAG_TEXT, self.text)
         self.x = Length(values.get(SVG_ATTR_X, self.x)).value()
         self.y = Length(values.get(SVG_ATTR_Y, self.y)).value()
@@ -8446,101 +8657,63 @@ class SVG(Group):
         return self.viewbox.transform(self)
 
     @staticmethod
-    def _shadow_iter(tag, elem, children):
-        yield tag, "start", elem
-        try:
-            for t, e, c in children:
-                for shadow_tag, shadow_event, shadow_elem in SVG._shadow_iter(t, e, c):
-                    yield shadow_tag, shadow_event, shadow_elem
-        except ValueError:
-            """
-            Strictly speaking it is possible to reference use from other use objects. If this is an infinite loop
-            we should not block the rendering. Just say we finished. See: W3C, struct-use-12-f
-            """
-            pass
-        yield tag, "end", elem
-
-    @staticmethod
     def _use_structure_parse(source):
         """
         SVG structure pass: parses the svg file such that it creates the structure implied by reused objects in a
         generalized context. Objects ids are read and put into an unparsed shadow tree. <use> objects seamlessly contain
         their definitions.
         """
-        defs = {}
+        event_defs = {}
         parent = None  # Define Root Node.
         children = list()
 
+        # Preprocess iterparse tree. Store all events. Reference all tags.
         for event, elem in iterparse(source, events=("start", "end", "start-ns")):
-            try:
-                tag = elem.tag
-                if tag.startswith("{http://www.w3.org/2000/svg"):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-            except AttributeError:
-                yield None, event, elem
-                continue
-
             if event == "start":
-                attributes = elem.attrib
-                # Create new node.
                 siblings = children  # Parent's children are now my siblings.
                 parent = (parent, children)  # parent is now previous node context
                 children = list()  # new node has no children.
-                node = (tag, elem, children)  # define this node.
+                node = (elem, children)  # define this node.
                 siblings.append(node)  # siblings now includes this node.
+                attributes = elem.attrib
+                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
+                    event_defs[
+                        attributes[SVG_ATTR_ID]
+                    ] = node  # store node value in defs.
+            elif event == "end":
+                parent, children = parent
+            else:
+                children.append((elem, None))
+        nodes = children
+        # End preprocess
 
+        # Semiparse the nodes. All nodes are given in iterparse ordering with start-ns, start, and end.
+        # Use values are inlined.
+        def semiparse(nodes):
+            for elem, children in nodes:
+                if children is None:
+                    yield None, "start-ns", elem
+                    continue
+                tag = elem.tag
+                if tag.startswith("{http://www.w3.org/2000/svg"):
+                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                yield tag, "start", elem
+                yield from semiparse(children)
                 if SVG_TAG_USE == tag:
                     url = None
-                    if XLINK_HREF in attributes:
-                        url = attributes[XLINK_HREF]
-                    if SVG_HREF in attributes:
-                        url = attributes[SVG_HREF]
+                    semiattr = elem.attrib
+                    if XLINK_HREF in semiattr:
+                        url = semiattr[XLINK_HREF]
+                    if SVG_HREF in semiattr:
+                        url = semiattr[SVG_HREF]
                     if url is not None:
-                        transform = False
                         try:
-                            x = attributes[SVG_ATTR_X]
-                            del attributes[SVG_ATTR_X]
-                            transform = True
-                        except KeyError:
-                            x = "0"
-                        try:
-                            y = attributes[SVG_ATTR_Y]
-                            del attributes[SVG_ATTR_Y]
-                            transform = True
-                        except KeyError:
-                            y = "0"
-                        if transform:
-                            try:
-                                attributes[
-                                    SVG_ATTR_TRANSFORM
-                                ] = "%s translate(%s, %s)" % (
-                                    attributes[SVG_ATTR_TRANSFORM],
-                                    x,
-                                    y,
-                                )
-                            except KeyError:
-                                attributes[SVG_ATTR_TRANSFORM] = "translate(%s, %s)" % (
-                                    x,
-                                    y,
-                                )
-                        yield tag, event, elem
-                        try:
-                            shadow_node = defs[url[1:]]
-                            children.append(
-                                shadow_node
-                            )  # Shadow children are children of the use.
-                            for n in SVG._shadow_iter(*shadow_node):
-                                yield n
+                            yield from semiparse([event_defs[url[1:]]])
                         except KeyError:
                             pass  # Failed to find link.
-                else:
-                    yield tag, event, elem
-                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
-                    defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
-            elif event == "end":
-                yield tag, event, elem
-                # event is 'end', pop values.
-                parent, children = parent  # Parent is now node.
+                yield tag, "end", elem
+
+        yield from semiparse(nodes)
 
     @staticmethod
     def parse(
@@ -8569,6 +8742,7 @@ class SVG(Group):
         :param parse_display_none: Parse display_none values anyway.
         :return:
         """
+        use = 0
         clip = 0
         root = context
         styles = {}
@@ -8606,10 +8780,12 @@ class SVG(Group):
                     del values[SVG_ATTR_VIEWBOX]
                 if SVG_ATTR_ID in values:
                     del values[SVG_ATTR_ID]
+                if SVG_ATTR_CLASS in values:
+                    del values[SVG_ATTR_CLASS]
                 if SVG_ATTR_CLIP_PATH in values:
                     del values[SVG_ATTR_CLIP_PATH]
 
-                attributes = elem.attrib  # priority; lowest
+                attributes = dict(elem.attrib)  # priority; lowest
                 attributes[SVG_ATTR_TAG] = tag
 
                 # Split any Style block elements into parts; priority medium
@@ -8683,12 +8859,11 @@ class SVG(Group):
                         attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
 
                 # All class and attribute properties are compiled.
-
                 values.update(attributes)
                 values[SVG_STRUCT_ATTRIB] = attributes
                 if (
-                    not parse_display_none and
-                    SVG_ATTR_DISPLAY in values
+                    not parse_display_none
+                    and SVG_ATTR_DISPLAY in values
                     and values[SVG_ATTR_DISPLAY].lower() == SVG_VALUE_NONE
                 ):
                     continue  # If the attributes flags our values to display=none, stop rendering.
@@ -8723,6 +8898,7 @@ class SVG(Group):
                             values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
                         else:
                             values[SVG_ATTR_TRANSFORM] = viewport_transform
+                        values["viewport_transform"] = values[SVG_ATTR_TRANSFORM]
                         width, height = s.viewbox.width, s.viewbox.height
                     if context is None:
                         stack[-1] = (context, values)
@@ -8745,6 +8921,24 @@ class SVG(Group):
                     context = s  # Non-Rendered
                     s.render(ppi=ppi, width=width, height=height)
                     clip += 1
+                elif SVG_TAG_USE == tag:
+                    s = Use(values)
+                    if SVG_ATTR_TRANSFORM in s.values:
+                        # Update value in case x or y applied.
+                        values[SVG_ATTR_TRANSFORM] = s.values[SVG_ATTR_TRANSFORM]
+                    if SVG_ATTR_X in values:
+                        del values[SVG_ATTR_X]
+                    if SVG_ATTR_Y in values:
+                        del values[SVG_ATTR_Y]
+                    if SVG_ATTR_WIDTH in values:
+                        del values[SVG_ATTR_WIDTH]
+                    if SVG_ATTR_HEIGHT in values:
+                        del values[SVG_ATTR_HEIGHT]
+                    context.append(s)
+                    context = s
+                    use += 1
+                    if SVG_ATTR_ID in attributes and root is not None and use == 1:
+                        root.objects[attributes[SVG_ATTR_ID]] = s
                 elif SVG_TAG_PATTERN == tag:
                     s = Pattern(values)
                     context = s  # Non-rendered
@@ -8812,7 +9006,7 @@ class SVG(Group):
                             s.clip_rule = clip_rule
                     except AttributeError:
                         pass
-                if SVG_ATTR_ID in attributes and root is not None:
+                if SVG_ATTR_ID in attributes and root is not None and use == 0:
                     root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == "end":  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
@@ -8832,7 +9026,7 @@ class SVG(Group):
                     SVG_TAG_STYLE,
                 ):
                     attributes = elem.attrib
-                    if SVG_ATTR_ID in attributes and root is not None:
+                    if SVG_ATTR_ID in attributes and root is not None and use == 0:
                         root.objects[attributes[SVG_ATTR_ID]] = s
                 if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN):
                     s = Text(values, text=elem.text)
@@ -8848,6 +9042,8 @@ class SVG(Group):
                     context.append(s)
                 elif SVG_TAG_STYLE == tag:
                     textstyle = elem.text
+                    if textstyle is None:
+                        textstyle = ""
                     textstyle = re.sub(REGEX_CSS_COMMENT, "", textstyle)
                     assignments = list(re.findall(REGEX_CSS_STYLE, textstyle.strip()))
                     for key, value in assignments:
@@ -8863,6 +9059,8 @@ class SVG(Group):
                                 styles[sel] += value
                 elif SVG_TAG_CLIPPATH == tag:
                     clip -= 1
+                elif SVG_TAG_USE == tag:
+                    use -= 1
                 if s is not None:
                     # Assign optional linked properties.
                     try:

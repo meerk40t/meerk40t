@@ -929,6 +929,10 @@ class PlotCut(CutObject):
         self.settings.constant_move_x = False
         self.settings.constant_move_y = False
         self.settings.raster_step = 0
+        if self.max_dx is None:
+            return False
+        if self.max_dy is None:
+            return False
         if self.settings.speed < 80:
             # Twitchless gets sketchy at 80.
             self.settings.force_twitchless = True

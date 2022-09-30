@@ -494,10 +494,20 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(".svg"):
                     pathname += ".svg"
-                context.save(pathname)
-                gui.validate_save()
-                gui.working_file = pathname
-                gui.set_file_as_recently_used(gui.working_file)
+                try:
+                    context.save(pathname)
+                    gui.validate_save()
+                    gui.working_file = pathname
+                    gui.set_file_as_recently_used(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
@@ -1369,7 +1379,7 @@ class MeerK40t(MWindow):
             _("Show/Hide the Keymap window where you can set keyboard accelerators"),
         )
         self.window_menu.rotary = self.window_menu.Append(
-            ID_MENU_ROTARY, _("Rotar&y"), _("Show/Hide the Rotary Setttings window")
+            ID_MENU_ROTARY, _("Rotar&y"), _("Show/Hide the Rotary Settings window")
         )
         self.window_menu.usb = self.window_menu.Append(
             ID_MENU_USB, _("&USB"), _("Show/Hide the USB log")
