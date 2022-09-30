@@ -14585,3 +14585,12 @@ msgstr "Enthält Daten"
 
 msgid "Contains Variable-Names"
 msgstr "Enthält Variablen-Namen"
+
+msgid "Please provide the grid-size in {units}"
+mgstr "Wert für den Gitterabstand in {units}"
+
+msgid "User-defined grid-size"
+mgstr "Benutzerdefinierte Gittergröße"
+
+msgid "Reset Colors to Default"
+msgstr "Farben auf Standard"

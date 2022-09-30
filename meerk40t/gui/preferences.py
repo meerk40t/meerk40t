@@ -421,6 +421,15 @@ class Preferences(MWindow):
                 "signals": ("refresh_scene", "theme"),
             }
             colorchoices.append(singlechoice)
+        singlechoice = {
+            "attr": "color_reset",
+            "object": self,
+            "type": bool,
+            "style": "button",
+            "label": _("Reset Colors to Default"),
+            "section": "_ZZ_",
+        }
+        colorchoices.append(singlechoice)
 
         self.panel_color = ChoicePropertyPanel(
             self,
@@ -442,6 +451,18 @@ class Preferences(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
+
+    @property
+    def color_reset(self):
+        # Not relevant
+        return False
+
+    @color_reset.setter
+    def color_reset(self, value):
+        if value:
+            # We are resetting all GUI.colors
+            self.context("scene color unset\n")
+            self.context.signal("theme", True)
 
     @property
     def preset_classify_manual(self):
