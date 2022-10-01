@@ -1,5 +1,5 @@
 from meerk40t.svgelements import Matrix, Path, Polygon, Color
-
+from meerk40t.core.node.node import Fillrule
 
 def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
@@ -11,7 +11,6 @@ def plugin(kernel, lifecycle=None):
         try:
             import potrace
             setup_potrace(kernel)
-            print("Good news - potrace found...")
         except ModuleNotFoundError:
             pass
 
@@ -305,17 +304,15 @@ def setup_potrace(kernel):
         if blacklevel is None:
             blacklevel = 0.5
         elements = kernel.root.elements
-        path = Path(fill=color, stroke=color)
         paths = []
         for node in data:
             matrix = node.matrix
-            pilimage = node.image
+            image = node.image
             width, height = node.image.size
-            if pilimage.mode != "L":
-                pilimage = pilimage.convert("L")
+            if image.mode != "L":
+                image = image.convert("L")
             # What is the proper way to convert an image to the
             # potracer equivalent?!
-            image = numpy.array(pilimage)
             bm = potrace.Bitmap(image, blacklevel=blacklevel)
             if invert:
                 bm.invert()
@@ -326,7 +323,11 @@ def setup_potrace(kernel):
                 opticurve=opticurve,
                 opttolerance=opttolerance,
             )
-            path = Path()
+            path = Path(
+                fill=color,
+                stroke=color,
+                fillrule = Fillrule.FILLRULE_NONZERO,
+            )
             parts = []
             for curve in plist:
                 fs = curve.start_point
@@ -343,14 +344,15 @@ def setup_potrace(kernel):
                         c = segment.end_point
                         parts.append(f"C{a.x},{a.y} {b.x},{b.y} {c.x},{c.y}")
                 parts.append("z")
-                path.parse(parts)
+                spath = " ".join(parts)
+                path.parse(spath)
             path.transform *= Matrix(matrix)
-            paths.append(
-                elements.elem_branch.add(
+            node = elements.elem_branch.add(
                     path=abs(path),
                     stroke_width=0,
                     stroke_scaled=False,
                     type="elem path",
-                )
+                    fillrule = Fillrule.FILLRULE_NONZERO,
             )
+            paths.append(node)
         return "elements", paths
