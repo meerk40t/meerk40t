@@ -903,18 +903,6 @@ class RibbonPanel(wx.Panel):
         self.tool_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.tool_extended_panel = MyRibbonPanel(
-            parent=tool,
-            id=wx.ID_ANY,
-            label="" if self.is_dark else _("Measure"),
-            minimised_icon=icons8_opened_folder_50.GetBitmap(),
-            agwStyle=panel_style,
-        )
-        self.ribbon_panels.append(self.tool_extended_panel)
-        button_bar = RibbonButtonBar(self.tool_extended_panel)
-        self.tool_extended_button_bar = button_bar
-        self.ribbon_bars.append(button_bar)
-
         self.group_panel = MyRibbonPanel(
             parent=tool,
             id=wx.ID_ANY,
@@ -925,6 +913,18 @@ class RibbonPanel(wx.Panel):
         self.ribbon_panels.append(self.group_panel)
         button_bar = RibbonButtonBar(self.group_panel)
         self.group_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.tool_extended_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Properties"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.tool_extended_panel)
+        button_bar = RibbonButtonBar(self.tool_extended_panel)
+        self.tool_extended_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.modify_panel = MyRibbonPanel(
