@@ -3,7 +3,7 @@ from wx import aui
 
 from meerk40t.gui.icons import icons8_manager_50
 from meerk40t.gui.mwindow import MWindow
-from meerk40t.kernel import lookup_listener
+from meerk40t.kernel import lookup_listener, signal_listener
 
 _ = wx.GetTranslation
 
@@ -157,6 +157,7 @@ class DevicePanel(wx.Panel):
             else:
                 self.devices_list.SetItemTextColour(idx, stdcol)
 
+    @signal_listener("activate;device")
     @lookup_listener("service/device/available")
     def refresh_device_tree(self, *args):
         self.devices = []

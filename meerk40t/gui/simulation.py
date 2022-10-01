@@ -475,6 +475,22 @@ class SimulationPanel(wx.Panel, Job):
         self.update_fields()
         self.request_refresh()
 
+    @signal_listener("activate;device")
+    def on_activate_device(self, origin, device):
+        self.available_devices = self.context.kernel.services("device")
+        self.selected_device = self.context.device
+        spools = []
+        index = -1
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
+                index = i
+                break
+        spools = [s.label for s in self.available_devices]
+        self.combo_device.Clear()
+        self.combo_device.SetItems(spools)
+        self.combo_device.SetSelection(index)
+        self.on_combo_device(None)
+
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
         if plan_name == self.plan_name:
