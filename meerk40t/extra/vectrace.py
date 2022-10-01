@@ -326,33 +326,24 @@ def setup_potrace(kernel):
             path = Path(
                 fill=color,
                 stroke=color,
-                fillrule = Fillrule.FILLRULE_NONZERO,
+                fillrule=Fillrule.FILLRULE_NONZERO,
             )
-            parts = []
             for curve in plist:
-                fs = curve.start_point
-                parts.append(f"M{fs.x},{fs.y}")
+                path.move(curve.start_point)
                 for segment in curve.segments:
                     if segment.is_corner:
-                        a = segment.c
-                        parts.append(f"L{a.x},{a.y}")
-                        b = segment.end_point
-                        parts.append(f"L{b.x},{b.y}")
+                        path.line(segment.c)
+                        path.line(segment.end_point)
                     else:
-                        a = segment.c1
-                        b = segment.c2
-                        c = segment.end_point
-                        parts.append(f"C{a.x},{a.y} {b.x},{b.y} {c.x},{c.y}")
-                parts.append("z")
-                spath = " ".join(parts)
-                path.parse(spath)
+                        path.cubic(segment.c1, segment.c2, segment.end_point)
+                path.closed()
             path.transform *= Matrix(matrix)
             node = elements.elem_branch.add(
                     path=abs(path),
                     stroke_width=0,
                     stroke_scaled=False,
                     type="elem path",
-                    fillrule = Fillrule.FILLRULE_NONZERO,
+                    fillrule=Fillrule.FILLRULE_NONZERO,
             )
             paths.append(node)
         return "elements", paths
