@@ -205,6 +205,7 @@ def setup_potrace(kernel):
     _ = kernel.translation
     import potrace
     import numpy
+    from PIL import ImageOps
 
     @kernel.console_option(
         "turnpolicy",
@@ -279,16 +280,20 @@ def setup_potrace(kernel):
         blacklevel=None,
         **kwargs,
     ):
-        if turnpolicy not in (
-            "black",
-            "white",
-            "left",
-            "right",
-            "minority",
-            "majority",
-            "random",
-        ):
+        policies ={
+            "black": 0, # POTRACE_TURNPOLICY_BLACK
+            "white": 1, # POTRACE_TURNPOLICY_WHITE
+            "left": 2,  # POTRACE_TURNPOLICY_LEFT
+            "right": 3, # POTRACE_TURNPOLICY_RIGHT
+            "minority": 4, # POTRACE_TURNPOLICY_MINORITY
+            "majority": 5, # POTRACE_TURNPOLICY_MAJORITY
+            "random": 6, #POTRACE_TURNPOLICY_RANDOM
+        }
+
+        if turnpolicy not in policies:
             turnpolicy = "minority"
+        ipolicy = policies[turnpolicy]
+
         if turdsize is None:
             turdsize = 2
         if alphamax is None:
@@ -309,16 +314,25 @@ def setup_potrace(kernel):
             matrix = node.matrix
             image = node.image
             width, height = node.image.size
-            if image.mode != "L":
-                image = image.convert("L")
-            # What is the proper way to convert an image to the
-            # potracer equivalent?!
-            bm = potrace.Bitmap(image, blacklevel=blacklevel)
-            if invert:
-                bm.invert()
+            external_lib = hasattr(potrace, "potracelib_version")
+            if external_lib:
+                if not invert:
+                    image = ImageOps.invert(image)
+                if image.mode != "1":
+                    image = image.convert("1")
+            else:
+                if invert:
+                    image = ImageOps.invert(image)
+                if image.mode != "L":
+                    image = image.convert("L")
+            npimage = numpy.asarray(image)
+            if external_lib:
+                bm = potrace.Bitmap(npimage)
+            else:
+                bm = potrace.Bitmap(npimage, blacklevel=blacklevel)
             plist = bm.trace(
                 turdsize=turdsize,
-                turnpolicy=turnpolicy,
+                turnpolicy=ipolicy,
                 alphamax=alphamax,
                 opticurve=opticurve,
                 opttolerance=opttolerance,
