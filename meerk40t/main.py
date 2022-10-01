@@ -157,6 +157,10 @@ def plugin(kernel, lifecycle):
 
         plugins.append(vectrace.plugin)
 
+        from .extra import potrace
+
+        plugins.append(potrace.plugin)
+
         from .extra import inkscape
 
         plugins.append(inkscape.plugin)
