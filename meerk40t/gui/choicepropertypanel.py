@@ -567,7 +567,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != current:
                             setattr(obj, param, current)
-                            self.context.signal(f"{param}", v, obj)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
