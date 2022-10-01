@@ -1893,12 +1893,13 @@ class Navigation(MWindow):
 
         kernel.register("wxpane/Navigation", register_panel_navigation)
         kernel.register(
-            "button/control/Navigation",
+            "button/preparation/Navigation",
             {
                 "label": _("Navigation"),
                 "icon": icons8_move_50,
                 "tip": _("Opens Navigation Window"),
                 "action": lambda v: kernel.console("window toggle Navigation\n"),
+                "priority": 1,
             },
         )
 

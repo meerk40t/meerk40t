@@ -374,7 +374,7 @@ class DeviceManager(MWindow):
     def sub_register(kernel):
         kernel.register("wxpane/Devices", register_panel)
         kernel.register(
-            "button/config/DeviceManager",
+            "button/device/DeviceManager",
             {
                 "label": _("Devices"),
                 "icon": icons8_manager_50,

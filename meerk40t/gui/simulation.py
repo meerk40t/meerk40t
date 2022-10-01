@@ -841,13 +841,14 @@ class Simulation(MWindow):
                 ),
 
         kernel.register(
-            "button/project/Simulation",
+            "button/jobstart/Simulation",
             {
                 "label": _("Simulate"),
                 "icon": icons8_laser_beam_hazard2_50,
                 "tip": _("Simulate the current laser job"),
                 "action": open_simulator,
                 "size": STD_ICON_SIZE,
+                "priority": 1,
             },
         )
 

@@ -14598,5 +14598,11 @@ msgstr "Farben auf Standard"
 msgid "Design"
 msgstr "Elemente"
 
-msgid "Design + Manipulation"
-msgstr "Elemente erzeugen / ändern"
+msgid "Modify"
+msgstr "Ändern"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Prepare"
+msgstr "Vorbereitung"

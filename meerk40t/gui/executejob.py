@@ -262,13 +262,14 @@ class ExecuteJob(MWindow):
     @staticmethod
     def sub_register(kernel):
         kernel.register(
-            "button/project/ExecuteJob",
+            "button/jobstart/ExecuteJob",
             {
                 "label": _("Execute Job"),
                 "icon": icons8_laser_beam_52,
                 "tip": _("Execute the current laser project"),
                 "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
                 "size": STD_ICON_SIZE,
+                "priority": 2,
             },
         )
 
