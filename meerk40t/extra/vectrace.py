@@ -324,7 +324,8 @@ def setup_potrace(kernel):
                 image = image.point(lambda e: 0 if (e / 255.0) < blacklevel else 255)
             else:
                 image = image.point(lambda e: 255 if (e / 255.0) < blacklevel else 0)
-            image = image.convert("1")
+            if image.mode != "1":
+                image = image.convert("1")
             npimage = numpy.asarray(image)
 
             bm = potrace.Bitmap(npimage)
