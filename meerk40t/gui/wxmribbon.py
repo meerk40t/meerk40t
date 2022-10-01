@@ -819,18 +819,6 @@ class RibbonPanel(wx.Panel):
         self.project_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.preparation_panel = MyRibbonPanel(
-            parent=home,
-            id=wx.ID_ANY,
-            label="" if self.is_dark else _("Prepare"),
-            minimised_icon=icons8_opened_folder_50.GetBitmap(),
-            agwStyle=panel_style,
-        )
-        self.ribbon_panels.append(self.preparation_panel)
-        button_bar = RibbonButtonBar(self.preparation_panel)
-        self.preparation_button_bar = button_bar
-        self.ribbon_bars.append(button_bar)
-
         self.jobstart_panel = MyRibbonPanel(
             parent=home,
             id=wx.ID_ANY,
@@ -841,6 +829,18 @@ class RibbonPanel(wx.Panel):
         self.ribbon_panels.append(self.jobstart_panel)
         button_bar = RibbonButtonBar(self.jobstart_panel)
         self.jobstart_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.preparation_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Prepare"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.preparation_panel)
+        button_bar = RibbonButtonBar(self.preparation_panel)
+        self.preparation_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.control_panel = MyRibbonPanel(
