@@ -117,7 +117,7 @@ class PropertyWindow(MWindow):
     def sub_register(kernel):
         # kernel.register("wxpane/Properties", register_panel_property)
         kernel.register(
-            "button/control/Properties",
+            "button/preparation/Properties",
             {
                 "label": _("Property Window"),
                 "icon": icons8_computer_support_50,

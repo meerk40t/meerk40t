@@ -262,7 +262,7 @@ class ExecuteJob(MWindow):
     @staticmethod
     def sub_register(kernel):
         kernel.register(
-            "button/project/ExecuteJob",
+            "button/jobstart/ExecuteJob",
             {
                 "label": _("Execute Job"),
                 "icon": icons8_laser_beam_52,

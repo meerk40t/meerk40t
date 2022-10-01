@@ -14603,3 +14603,6 @@ msgstr "Ändern"
 
 msgid "Settings"
 msgstr "Einstellungen"
+
+msgid "Prepare"
+msgstr "Vorbereitung"

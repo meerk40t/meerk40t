@@ -392,7 +392,7 @@ class Console(MWindow):
     def sub_register(kernel):
         kernel.register("wxpane/Console", register_panel_console)
         kernel.register(
-            "button/project/Console",
+            "button/preparation/Console",
             {
                 "label": _("Console"),
                 "icon": icons8_console_50,

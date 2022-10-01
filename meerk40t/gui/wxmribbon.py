@@ -685,6 +685,14 @@ class RibbonPanel(wx.Panel):
     def set_geometry_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.geometry_button_bar)
 
+    @lookup_listener("button/preparation")
+    def set_preparation_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.preparation_button_bar)
+
+    @lookup_listener("button/jobstart")
+    def set_jobstart_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.jobstart_button_bar)
+
     @lookup_listener("button/group")
     def set_group_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.group_button_bar)
@@ -809,6 +817,30 @@ class RibbonPanel(wx.Panel):
         self.ribbon_panels.append(self.project_panel)
         button_bar = RibbonButtonBar(self.project_panel)
         self.project_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.preparation_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Prepare"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.preparation_panel)
+        button_bar = RibbonButtonBar(self.preparation_panel)
+        self.preparation_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.jobstart_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Execute"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.jobstart_panel)
+        button_bar = RibbonButtonBar(self.jobstart_panel)
+        self.jobstart_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.control_panel = MyRibbonPanel(

@@ -830,7 +830,7 @@ class CameraInterface(MWindow):
             return specific
 
         kernel.register(
-            "button/control/Camera",
+            "button/preparation/Camera",
             {
                 "label": _("Camera"),
                 "icon": icons8_camera_50,
