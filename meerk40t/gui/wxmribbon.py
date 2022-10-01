@@ -677,6 +677,10 @@ class RibbonPanel(wx.Panel):
     def set_tool_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.tool_button_bar)
 
+    @lookup_listener("button/extended_tools")
+    def set_tool_extended_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.tool_extended_button_bar)
+
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.geometry_button_bar)
@@ -865,6 +869,18 @@ class RibbonPanel(wx.Panel):
         self.ribbon_panels.append(self.tool_panel)
         button_bar = RibbonButtonBar(self.tool_panel)
         self.tool_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.tool_extended_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Measure"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.tool_extended_panel)
+        button_bar = RibbonButtonBar(self.tool_extended_panel)
+        self.tool_extended_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.group_panel = MyRibbonPanel(

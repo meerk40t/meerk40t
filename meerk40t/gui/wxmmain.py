@@ -804,7 +804,7 @@ class MeerK40t(MWindow):
         )
 
         kernel.register(
-            "button/tools/Measure",
+            "button/extended_tools/Measure",
             {
                 "label": _("Measure"),
                 "icon": icons8_measure_50,
