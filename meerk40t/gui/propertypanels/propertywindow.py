@@ -125,6 +125,15 @@ class PropertyWindow(MWindow):
                 "action": lambda v: kernel.console("window toggle Properties\n"),
             },
         )
+        kernel.register(
+            "button/extended_tools/Properties",
+            {
+                "label": _("Property Window"),
+                "icon": icons8_computer_support_50,
+                "tip": _("Opens Properties Window"),
+                "action": lambda v: kernel.console("window toggle Properties\n"),
+            },
+        )
 
     def window_close(self):
         for p in self.panel_instances:
