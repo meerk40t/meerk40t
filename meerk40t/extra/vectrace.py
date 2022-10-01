@@ -313,23 +313,21 @@ def setup_potrace(kernel):
         for node in data:
             matrix = node.matrix
             image = node.image
-            width, height = node.image.size
-            external_lib = hasattr(potrace, "potracelib_version")
-            if external_lib:
-                if not invert:
-                    image = ImageOps.invert(image)
-                if image.mode != "1":
-                    image = image.convert("1")
+            using_pypotrace = hasattr(potrace, "potracelib_version")
+            if using_pypotrace:
+                invert = not invert
+
+            if image.mode not in ("L", "1"):
+                image = image.convert("L")
+
+            if not invert:
+                image = image.point(lambda e: 0 if (e / 255.0) < blacklevel else 255)
             else:
-                if invert:
-                    image = ImageOps.invert(image)
-                if image.mode != "L":
-                    image = image.convert("L")
+                image = image.point(lambda e: 255 if (e / 255.0) < blacklevel else 0)
+            image = image.convert("1")
             npimage = numpy.asarray(image)
-            if external_lib:
-                bm = potrace.Bitmap(npimage)
-            else:
-                bm = potrace.Bitmap(npimage, blacklevel=blacklevel)
+
+            bm = potrace.Bitmap(npimage)
             plist = bm.trace(
                 turdsize=turdsize,
                 turnpolicy=ipolicy,
