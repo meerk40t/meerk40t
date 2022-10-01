@@ -838,7 +838,7 @@ class RibbonPanel(wx.Panel):
         self.device_panel = MyRibbonPanel(
             parent=home,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Device"),
+            label="" if self.is_dark else _("Devices"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=panel_style,
         )
