@@ -399,6 +399,7 @@ class Console(MWindow):
                 "tip": _("Open Console Window"),
                 "action": lambda v: kernel.console("window toggle Console\n"),
                 "size": STD_ICON_SIZE,
+                "priority": 4,
             },
         )
 

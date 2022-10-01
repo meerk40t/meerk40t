@@ -837,6 +837,7 @@ class CameraInterface(MWindow):
                 "tip": _("Opens Camera Window"),
                 "identifier": "camera_id",
                 "action": camera_click(),
+                "priority": 3,
                 "multi": [
                     {
                         "identifier": "cam0",

@@ -848,6 +848,7 @@ class Simulation(MWindow):
                 "tip": _("Simulate the current laser job"),
                 "action": open_simulator,
                 "size": STD_ICON_SIZE,
+                "priority": 1,
             },
         )
 

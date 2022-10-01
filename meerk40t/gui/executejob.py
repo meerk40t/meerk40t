@@ -269,6 +269,7 @@ class ExecuteJob(MWindow):
                 "tip": _("Execute the current laser project"),
                 "action": lambda v: kernel.console("window toggle ExecuteJob 0\n"),
                 "size": STD_ICON_SIZE,
+                "priority": 2,
             },
         )
 

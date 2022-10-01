@@ -1899,6 +1899,7 @@ class Navigation(MWindow):
                 "icon": icons8_move_50,
                 "tip": _("Opens Navigation Window"),
                 "action": lambda v: kernel.console("window toggle Navigation\n"),
+                "priority": 1,
             },
         )
 

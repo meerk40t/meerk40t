@@ -123,6 +123,7 @@ class PropertyWindow(MWindow):
                 "icon": icons8_computer_support_50,
                 "tip": _("Opens Properties Window"),
                 "action": lambda v: kernel.console("window toggle Properties\n"),
+                "priority": 2,
             },
         )
         kernel.register(
