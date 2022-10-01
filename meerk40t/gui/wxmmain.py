@@ -969,7 +969,7 @@ class MeerK40t(MWindow):
                 kernel.signal("element_property_reload", "Scene", group_node)
 
         kernel.register(
-            "button/geometry/Group",
+            "button/group/Group",
             {
                 "label": _("Group"),
                 "icon": icons8_group_objects_50,
@@ -1014,7 +1014,7 @@ class MeerK40t(MWindow):
             return result
 
         kernel.register(
-            "button/geometry/Ungroup",
+            "button/group/Ungroup",
             {
                 "label": _("Ungroup"),
                 "icon": icons8_ungroup_objects_50,

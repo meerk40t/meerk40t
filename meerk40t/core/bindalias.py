@@ -70,6 +70,19 @@ DEFAULT_KEYMAP = {
         "",
         "window open Console",
     ),
+    "ctrl+f6": (
+        "page home",
+    ),
+    "ctrl+f7": (
+        "page design",
+    ),
+    "ctrl+f8": (
+        "page modify",
+        "dialog_flip",
+    ),
+    "ctrl+f9": (
+        "page config",
+    ),
     "delete": (
         "tree selected delete",
         "tree emphasized delete",
@@ -161,10 +174,6 @@ DEFAULT_KEYMAP = {
     "ctrl+f3": (
         "",
         "rotaryview",
-    ),
-    "ctrl+f9": (
-        "",
-        "dialog_flip",
     ),
     "ctrl+alt+d": ("image wizard Gold",),
     "ctrl+alt+e": ("image wizard Simple",),
