@@ -2089,7 +2089,11 @@ msgstr ""
 " verwendet werden: {combinations}"
 
 #: meerk40t/core/elements.py:3881
-msgid "Convert given elements to a raster image"
+
+msgid "Create an image from the assigned elements."
+msgstr "Rendert die zugeordneten Elemente in ein Raster-Bild"
+
+msgid "Create a raster image from the given elements"
 msgstr "Rendert die ausgewählten Elemente in ein Raster-Bild"
 
 #: meerk40t/core/elements.py:3893
@@ -14606,3 +14610,9 @@ msgstr "Einstellungen"
 
 msgid "Prepare"
 msgstr "Vorbereitung"
+
+msgid "Trace bitmap"
+msgstr "Vektorisiere"
+
+msgid "Vectorize the given element"
+msgstr "Erzeuge eine Vektor-Version des Bildes"

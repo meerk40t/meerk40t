@@ -61,6 +61,74 @@ def plugin(kernel, lifecycle=None):
         import potrace
         import numpy
 
+        def make_vector(
+            image,
+            interpolationpolicy=None,
+            invert=False,
+            turdsize=None,
+            alphamax=None,
+            opticurve=None,
+            opttolerance=None,
+            color=None,
+            blacklevel=None
+        ):
+            if interpolationpolicy is None:
+                interpolationpolicy = 4  # POTRACE_TURNPOLICY_MINORITY
+            if turdsize is None:
+                turdsize = 2
+            if alphamax is None:
+                alphamax = 1
+            if opticurve is None:
+                opticurve = True
+            if opttolerance is None:
+                opttolerance = 0.2
+            if color is None:
+                color = Color("black")
+            if invert is None:
+                invert = False
+            if blacklevel is None:
+                blacklevel = 0.5
+            using_pypotrace = hasattr(potrace, "potracelib_version")
+            if using_pypotrace:
+                # print ("Optimised version")
+                invert = not invert
+
+            if image.mode not in ("L", "1"):
+                image = image.convert("L")
+
+            if not invert:
+                image = image.point(lambda e: 0 if (e / 255.0) < blacklevel else 255)
+            else:
+                image = image.point(lambda e: 255 if (e / 255.0) < blacklevel else 0)
+            if image.mode != "1":
+                image = image.convert("1")
+            npimage = numpy.asarray(image)
+            bm = potrace.Bitmap(npimage)
+            plist = bm.trace(
+                turdsize=turdsize,
+                turnpolicy=interpolationpolicy,
+                alphamax=alphamax,
+                opticurve=opticurve,
+                opttolerance=opttolerance,
+            )
+            path = Path(
+                fill=color,
+                stroke=color,
+                fillrule=Fillrule.FILLRULE_NONZERO,
+            )
+            for curve in plist:
+                path.move(curve.start_point)
+                for segment in curve.segments:
+                    if segment.is_corner:
+                        path.line(segment.c)
+                        path.line(segment.end_point)
+                    else:
+                        path.cubic(segment.c1, segment.c2, segment.end_point)
+                path.closed()
+            return path
+
+        kernel.register("render-op/make_vector", make_vector)
+
         @kernel.console_option(
             "turnpolicy",
             "z",
@@ -167,43 +235,17 @@ def plugin(kernel, lifecycle=None):
             for node in data:
                 matrix = node.matrix
                 image = node.image
-                using_pypotrace = hasattr(potrace, "potracelib_version")
-                if using_pypotrace:
-                    invert = not invert
-
-                if image.mode not in ("L", "1"):
-                    image = image.convert("L")
-
-                if not invert:
-                    image = image.point(lambda e: 0 if (e / 255.0) < blacklevel else 255)
-                else:
-                    image = image.point(lambda e: 255 if (e / 255.0) < blacklevel else 0)
-                if image.mode != "1":
-                    image = image.convert("1")
-                npimage = numpy.asarray(image)
-
-                bm = potrace.Bitmap(npimage)
-                plist = bm.trace(
+                path = make_vector(
+                    image=image,
+                    interpolationpolicy=ipolicy,
+                    invert=invert,
                     turdsize=turdsize,
-                    turnpolicy=ipolicy,
                     alphamax=alphamax,
                     opticurve=opticurve,
                     opttolerance=opttolerance,
+                    color=color,
+                    blacklevel=blacklevel
                 )
-                path = Path(
-                    fill=color,
-                    stroke=color,
-                    fillrule=Fillrule.FILLRULE_NONZERO,
-                )
-                for curve in plist:
-                    path.move(curve.start_point)
-                    for segment in curve.segments:
-                        if segment.is_corner:
-                            path.line(segment.c)
-                            path.line(segment.end_point)
-                        else:
-                            path.cubic(segment.c1, segment.c2, segment.end_point)
-                    path.closed()
                 path.transform *= Matrix(matrix)
                 node = elements.elem_branch.add(
                     path=abs(path),
