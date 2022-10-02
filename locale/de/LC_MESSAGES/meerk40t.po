@@ -14638,3 +14638,6 @@ msgstr "Diese Verknüpfung zwischen Element und Arbeitsablauf nennen wir Zuordnu
 
 msgid "Redlight-Offset"
 msgstr "Rotlicht-Versatz"
+
+msgid "Attributes"
+msgstr "Attribute"
