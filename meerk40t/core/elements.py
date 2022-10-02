@@ -609,7 +609,7 @@ class Elemental(Service):
         exclusive=False,
     ):
         # op_assign:    operation to assign to
-        # data:         nodes to assign to as minimum (will be extened is similar=True, see below)
+        # data:         nodes to assign to as minimum (will be extended is similar=True, see below)
         # impose:       - if "to_op" will use attrib-color (see below),
         #                 to impose the first evidence of color in data on the targetop
         #               - if "to_elem" will impose the color of the operation and make it the color of the
@@ -668,7 +668,7 @@ class Elemental(Service):
                 op_assign.remove_color_attribute("stroke")
                 op_assign.remove_color_attribute("fill")
                 op_assign.add_color_attribute(attrib)
-        # If we havent identified a color, then similar makes no sense
+        # If we haven't identified a color, then similar makes no sense
         if not has_a_color:
             similar = False
         # print ("We have now established the following:")
@@ -3912,7 +3912,7 @@ class Elemental(Service):
         @self.console_option("dpi", "d", default=500, type=float)
         @self.console_command(
             "render",
-            help=_("Convert given elements to a raster image"),
+            help=_("Create a raster image from the given elements"),
             input_type=(None, "elements"),
             output_type="image",
         )
@@ -3957,6 +3957,67 @@ class Elemental(Service):
             self.signal("refresh_scene", "Scene")
 
             return "image", [image_node]
+
+        @self.console_option(
+            "dpi", "d", help=_("interim image resolution"), default=500, type=float
+        )
+        @self.console_command(
+            "vectorize",
+            help=_("Convert given elements to a path"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def vectorize_elements(command, channel, _, dpi=500.0, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            reverse = self.classify_reverse
+            if reverse:
+                data = list(reversed(data))
+            make_raster = self.lookup("render-op/make_raster")
+            make_vector = self.lookup("render-op/make_vector")
+            if not make_raster:
+                channel(_("No renderer is registered to perform render."))
+                return
+            if not make_vector:
+                channel(_("No vectorization engine could be found."))
+                return
+
+            bounds = Node.union_bounds(data, attr="paint_bounds")
+            if bounds is None:
+                return
+            xmin, ymin, xmax, ymax = bounds
+            if isinf(xmin):
+                channel(_("No bounds for selected elements."))
+                return
+            width = xmax - xmin
+            height = ymax - ymin
+
+            dots_per_units = dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+            new_height = max(new_height, 1)
+            new_width = max(new_width, 1)
+
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+            path = make_vector(image)
+            matrix = Matrix.scale(width / new_width, height / new_height)
+            matrix.post_translate(bounds[0], bounds[1])
+            path.transform *= Matrix(matrix)
+            node = self.elem_branch.add(
+                path=abs(path),
+                stroke_width=0,
+                stroke_scaled=False,
+                type="elem path",
+                fillrule=Fillrule.FILLRULE_NONZERO,
+            )
+            self.signal("refresh_scene", "Scene")
+
+            return "elements", [node]
 
         # ==========
         # ELEMENT/SHAPE COMMANDS
@@ -5888,7 +5949,7 @@ class Elemental(Service):
                     # ops next
                     entry = 0
                 else:
-                    # Not sure why and when this suposed to happen?
+                    # Not sure why and when this supposed to happen?
                     entry = 2
                 channel(
                     _(
@@ -7475,7 +7536,7 @@ class Elemental(Service):
         @self.tree_operation(
             _("Make raster image"),
             node_type=("op image", "op raster"),
-            help=_("Convert a vector element into a raster element."),
+            help=_("Create an image from the assigned elements."),
         )
         def make_raster_image(node, **kwargs):
             data = list(node.flat(types=elem_ref_nodes))
@@ -7760,6 +7821,25 @@ class Elemental(Service):
                 self.classify(copy_nodes)
 
             self.set_emphasis(None)
+
+        def has_vectorize(node):
+            result = False
+            make_vector = self.lookup("render-op/make_vector")
+            if make_vector:
+                result = True
+            return result
+
+        @self.tree_conditional(lambda node: has_vectorize(node))
+        @self.tree_operation(
+            _("Trace bitmap"),
+            node_type=(
+                "elem text",
+                "elem image",
+            ),
+            help="Vectorize the given element",
+        )
+        def trace_bitmap(node, **kwargs):
+            self("vectorize\n")
 
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_operation(
@@ -9419,7 +9499,7 @@ class Elemental(Service):
     #     Shapes/Text with no fill and non-grey strokes are vector by default - except
     #     for one edge case: Elements with strokes that have other raster elements
     #     overlaying the stroke should in some cases be considered raster elements,
-    #     but there are serveral use cases and counter examples are likely easy to create.
+    #     but there are several use cases and counter examples are likely easy to create.
     #     The algorithm below tries to be conservative in deciding whether to switch a default
     #     vector to a raster due to believing it is part of raster combined with elements on top.
     #     In essence, if there are raster elements on top (later in the list of elements) that

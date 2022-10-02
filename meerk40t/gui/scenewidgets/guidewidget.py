@@ -158,7 +158,7 @@ class GuideWidget(Widget):
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
         """
         Capture and deal with the double click event.
-        Doubleclick in the grid loads a menu to remove the background.
+        Double-click in the grid loads a menu to remove the background.
         """
 
         def add_scale_options(self, menu):

@@ -13,7 +13,7 @@ def plugin(kernel, lifecycle):
         _ = kernel.translation
         kernel.register("window/Rotary", RotarySettings)
         # kernel.register(
-        #     "button/config/Rotary",
+        #     "button/device/Rotary",
         #     {
         #         "label": _("Rotary"),
         #         "icon": icons8_roll_50,

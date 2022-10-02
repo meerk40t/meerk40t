@@ -341,7 +341,7 @@ class Preferences(MWindow):
                     "Classification is the (automatic) process of assigning an element to an operation."
                 )
                 + "\n"
-                + ("That link between element and operation is called an assignment."),
+                + _("That link between element and operation is called an assignment."),
                 "page": "Classification",
                 # "section": "_000_Information",
             },
@@ -475,7 +475,7 @@ class Preferences(MWindow):
             # We are setting presets for a couple of parameters
             for preset in self.presets:
                 setattr(preset[0], preset[1], preset[3])
-                self.context.signal(preset[1], preset[3])
+                self.context.signal(preset[1], preset[3], preset[0])
 
     @property
     def preset_classify_automatic(self):
@@ -488,7 +488,7 @@ class Preferences(MWindow):
             # We are setting presets for a couple of parameters
             for preset in self.presets:
                 setattr(preset[0], preset[1], preset[2])
-                self.context.signal(preset[1], preset[2])
+                self.context.signal(preset[1], preset[2], preset[0])
 
     def delegates(self):
         yield self.panel_main

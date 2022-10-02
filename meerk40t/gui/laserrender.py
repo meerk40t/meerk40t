@@ -429,6 +429,8 @@ class LaserRender:
         color = None
         for cut in cutcode:
             c = cut.line_color
+            if c is None:
+                c = 0
             if c is not color:
                 color = c
                 last_point = None
