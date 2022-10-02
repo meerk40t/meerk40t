@@ -1312,7 +1312,7 @@ msgid "list wordlist values"
 msgstr "liste Wortlist-Einträge auf"
 
 #: meerk40t/core/elements.py:1110
-msgid "Wordlist {name} (Type={type}, Index={index})):"
+msgid "Wordlist {name} (Type={type}, Index={index}):"
 msgstr ""
 
 #: meerk40t/core/elements.py:1117
@@ -7065,8 +7065,21 @@ msgid "Icon size:"
 msgstr "Icon-Größe:"
 
 #: meerk40t/gui/wxmmain.py:352
-msgid "Appearance of all icons in the GUI (requires a restart to take effect))"
+msgid "Appearance of all icons in the GUI (requires a restart to take effect)"
 msgstr "Darstellung der Icons in der Benutzeroberfläche (nach Neustart wirksam)"
+
+msgid "Suppress labels"
+msgstr "Unterdrücke Labels"
+
+msgid ""
+"Suppress the display of labels in the toolbar at the top of the window\n"
+"a) requires a restart to take effect\n"
+"b) will always suppressed if your system is in dark mode"
+msgstr ""
+"Falls aktiv, werden keine Labels unter den Icons in der Toolbar angezeigt\n"
+"a) erst nach Neustart wirksam\n"
+"b) werden immer unterdrückt, wenn die System-Benutzeroberfläche im Dark Mode ist"
+
 
 #: meerk40t/gui/wxmmain.py:384
 msgid "Default zoom margin:"
