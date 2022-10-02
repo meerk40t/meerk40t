@@ -9734,7 +9734,7 @@ msgstr "Startet einen Outline-Job für die Auswahl"
 
 #: meerk40t/balormk/gui/gui.py:70
 msgid "Live Bounds"
-msgstr "Live  (rechteck)"
+msgstr "Live  (Rechteck)"
 
 #: meerk40t/balormk/gui/gui.py:75
 msgid "Live Full"
@@ -9750,7 +9750,7 @@ msgstr "Rechteck Umriss"
 
 #: meerk40t/balormk/gui/gui.py:91
 msgid "Trace Ants"
-msgstr "Ameisen Umriss"
+msgstr "Ameisenpfad"
 
 #: meerk40t/balormk/gui/gui.py:96
 msgid "Trace Full"
