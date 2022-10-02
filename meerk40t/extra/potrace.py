@@ -53,7 +53,7 @@ def plugin(kernel, lifecycle=None):
             import potrace
             import numpy
         except ImportError:
-            print("Potrace plugin could not load because potracer/pypotrace is not installed.")
+            # print("Potrace plugin could not load because potracer/pypotrace is not installed.")
             return True
 
     if lifecycle == "register":
