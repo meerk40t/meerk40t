@@ -904,7 +904,7 @@ class GRBLDriver(Parameters):
         """
         This asks that the console command be executed at the appropriate time within the spooled cycle.
 
-        @param value: console commnad
+        @param value: console command
         @return:
         """
         self.service(value)
@@ -1173,7 +1173,9 @@ class GrblController:
         self.service.signal("serial;write", data)
         with self.lock_sending_queue:
             self.sending_queue.append(data)
-            self.service.signal("serial;buffer", len(self.sending_queue) + len(self.realtime_queue))
+            self.service.signal(
+                "serial;buffer", len(self.sending_queue) + len(self.realtime_queue)
+            )
 
     def realtime(self, data):
         self.start()
@@ -1182,7 +1184,9 @@ class GrblController:
             self.realtime_queue.append(data)
             if "\x18" in data:
                 self.sending_queue.clear()
-            self.service.signal("serial;buffer", len(self.sending_queue) + len(self.realtime_queue))
+            self.service.signal(
+                "serial;buffer", len(self.sending_queue) + len(self.realtime_queue)
+            )
 
     def start(self):
         self.open()
@@ -1570,7 +1574,7 @@ class GRBLEmulator(Module, Parameters):
         elif bytes_to_write == "\x18":  # Soft reset.
             self.spooler.laserjob("abort")
         elif bytes_to_write == "\x85":
-            pass # Jog Abort.
+            pass  # Jog Abort.
 
     def write(self, data):
         if b"?" in data:

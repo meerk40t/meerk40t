@@ -69,8 +69,12 @@ class CircleTool(ToolWidget):
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
                 units = self.scene.context.units_name
                 s = "C=({cx}, {cy}), R={radius}".format(
-                    cx=Length(amount=(bbox[0] + bbox[2]) / 2, digits=2, preferred_units=units),
-                    cy=Length(amount=(bbox[1] + bbox[3]) / 2, digits=2, preferred_units=units),
+                    cx=Length(
+                        amount=(bbox[0] + bbox[2]) / 2, digits=2, preferred_units=units
+                    ),
+                    cy=Length(
+                        amount=(bbox[1] + bbox[3]) / 2, digits=2, preferred_units=units
+                    ),
                     radius=Length(amount=radius, digits=2, preferred_units=units),
                 )
                 self.scene.context.signal("statusmsg", s)

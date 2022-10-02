@@ -1099,8 +1099,9 @@ class SizePanel(wx.Panel):
         )
         self.btn_lock_ratio = wx.ToggleButton(self, wx.ID_ANY, "")
         # No change of fields during input
-        self.text_height.execute_action_on_change = False
-        self.text_width.execute_action_on_change = False
+        # self.text_height.execute_action_on_change = False
+        # self.text_width.execute_action_on_change = False
+        self._updating = False
         self.__set_properties()
         self.__do_layout()
 
@@ -1181,18 +1182,10 @@ class SizePanel(wx.Panel):
             p = self.context
             units = p.units_name
             try:
-                self.object_x = Length(amount=bbox[0], preferred_units=units, digits=3)
-                self.object_y = Length(amount=bbox[1], preferred_units=units, digits=3)
-                self.object_width = Length(
-                    amount=abs(bbox[2] - bbox[0]),
-                    preferred_units=units,
-                    digits=3,
-                )
-                self.object_height = Length(
-                    amount=abs(bbox[3] - bbox[1]),
-                    preferred_units=units,
-                    digits=3,
-                )
+                self.object_x = bbox[0]
+                self.object_y = bbox[1]
+                self.object_width = bbox[2] - bbox[0]
+                self.object_height = bbox[3] - bbox[1]
                 try:
                     self.object_ratio = self.object_width / self.object_height
                 except ZeroDivisionError:
@@ -1201,13 +1194,21 @@ class SizePanel(wx.Panel):
                 pass
 
         if self.object_width is not None:
-            self.text_width.SetValue(self.object_width.preferred_length)
+            self.text_width.SetValue(
+                Length(
+                    self.object_width, preferred_units=units, digits=3
+                ).preferred_length
+            )
             self.text_width.Enable(True)
         else:
             self.text_width.SetValue("---")
             self.text_width.Enable(False)
         if self.object_height is not None:
-            self.text_height.SetValue(self.object_height.preferred_length)
+            self.text_height.SetValue(
+                Length(
+                    self.object_height, preferred_units=units, digits=3
+                ).preferred_length
+            )
             self.text_height.Enable(True)
 
         else:
@@ -1219,55 +1220,80 @@ class SizePanel(wx.Panel):
             self.button_navigate_resize.Enable(False)
 
     def on_button_navigate_resize(self, event):
-        new_width = Length(self.text_width.GetValue(), relative_length=self.object_width)
-        new_height = Length(self.text_height.GetValue(), relative_length=self.object_height)
-        if float(new_width) == 0 or float(new_height) == 0:
-            return
-        self.context(
-            f"resize {self.object_x} {self.object_y} {new_width} {new_height}"
+        new_width = Length(
+            self.text_width.GetValue(), relative_length=self.object_width
         )
-
-    def on_textenter_width(self):  # wxGlade: SizePanel.<event_handler>
-        try:
-            if self.btn_lock_ratio.GetValue():
-                p = self.context
-                units = p.units_name
-                new_width = Length(
-                    self.text_width.GetValue(),
-                    relative_length=self.object_width,
-                    preferred_units=units,
-                    digits=3,
-                )
-                self.text_height.SetValue(
-                    (new_width * (1.0 / self.object_ratio)).preferred_length
-                )
-            self.on_button_navigate_resize(None)
-        except ValueError:
-            # This was not a value, reset this to the last actually used value.
-            if self.object_width is not None:
-                self.text_width.SetValue(self.object_width.preferred_length)
+        new_w = float(new_width)
+        new_height = Length(
+            self.text_height.GetValue(), relative_length=self.object_height
+        )
+        new_h = float(new_height)
+        if (
+            abs(new_h - self.object_height) < 1.0e-6
+            and abs(new_w - self.object_width) < 1.0e-6
+        ):
+            # No change
             return
+        if new_w == 0 or new_h == 0:
+            return
+        self.context(f"resize {self.object_x} {self.object_y} {new_width} {new_height}")
+        self.update_sizes()
+
+    def on_textenter_width(self):
+        if self._updating:
+            return
+        needsupdate = False
+        try:
+            p = self.context
+            units = p.units_name
+            new_width = Length(
+                self.text_width.GetValue(),
+                relative_length=self.object_width,
+                preferred_units=units,
+                digits=3,
+            )
+            new_w = float(new_width)
+            if new_w != self.object_width:
+                needsupdate = True
+        except ValueError:
+            pass
+        if not needsupdate:
+            return
+        self._updating = True
+        if self.btn_lock_ratio.GetValue():
+            new_h = new_w * (1.0 / self.object_ratio)
+            new_height = Length(new_h, preferred_units=units, digits=3)
+            self.text_height.SetValue(new_height.preferred_length)
+        self._updating = False
+        self.on_button_navigate_resize(None)
 
     def on_textenter_height(self):
-        try:
-            if self.btn_lock_ratio.GetValue():
-                p = self.context
-                units = p.units_name
-                new_height = Length(
-                    self.text_height.GetValue(),
-                    relative_length=self.object_height,
-                    preferred_units=units,
-                    digits=3,
-                )
-                self.text_width.SetValue(
-                    (new_height * self.object_ratio).preferred_length
-                )
-            self.on_button_navigate_resize(None)
-        except ValueError:
-            # This was not a value, reset this to the last actually used value.
-            if self.object_height is not None:
-                self.text_height.SetValue(self.object_height.preferred_length)
+        if self._updating:
             return
+        needsupdate = False
+        try:
+            p = self.context
+            units = p.units_name
+            new_height = Length(
+                self.text_height.GetValue(),
+                relative_length=self.object_height,
+                preferred_units=units,
+                digits=3,
+            )
+            new_h = float(new_height)
+            if new_h != self.object_height:
+                needsupdate = True
+        except ValueError:
+            pass
+        if not needsupdate:
+            return
+        self._updating = True
+        if self.btn_lock_ratio.GetValue():
+            new_w = new_h * (1.0 / self.object_ratio)
+            new_width = Length(new_w, preferred_units=units, digits=3)
+            self.text_width.SetValue(new_width.preferred_length)
+        self._updating = False
+        self.on_button_navigate_resize(None)
 
 
 class Transform(wx.Panel):
@@ -1551,8 +1577,12 @@ class Transform(wx.Panel):
             # Translate X & are in mils, so about 0.025 mm, so 1 digit should be more than enough...
             # self.text_e.SetValue(f"{matrix.e:.1f}")  # Translate X
             # self.text_f.SetValue(f"{matrix.f:.1f}")  # Translate Y
-            l1 = Length(amount=matrix.e, digits=2, preferred_units=self.context.units_name)
-            l2 = Length(amount=matrix.f, digits=2, preferred_units=self.context.units_name)
+            l1 = Length(
+                amount=matrix.e, digits=2, preferred_units=self.context.units_name
+            )
+            l2 = Length(
+                amount=matrix.f, digits=2, preferred_units=self.context.units_name
+            )
             self.text_e.SetValue(l1.preferred_length)
             self.text_f.SetValue(l2.preferred_length)
             m_e = matrix.e
@@ -1703,10 +1733,10 @@ class Transform(wx.Panel):
     @staticmethod
     def scaled_value(stxt):
         if stxt.endswith("%"):
-            valu = float(stxt[:-1]) / 100.0
+            value = float(stxt[:-1]) / 100.0
         else:
-            valu = float(stxt)
-        return valu
+            value = float(stxt)
+        return value
 
     def on_text_matrix(self):
         try:
@@ -1765,7 +1795,11 @@ class JogDistancePanel(wx.Panel):
 
     def pane_show(self, *args):
         try:
-            joglen = Length(self.context.jog_amount, digits=2, preferred_units=self.context.units_name)
+            joglen = Length(
+                self.context.jog_amount,
+                digits=2,
+                preferred_units=self.context.units_name,
+            )
         except:
             joglen = Length("10mm", digits=2, preferred_units=self.context.units_name)
 
@@ -1870,12 +1904,13 @@ class Navigation(MWindow):
 
         kernel.register("wxpane/Navigation", register_panel_navigation)
         kernel.register(
-            "button/control/Navigation",
+            "button/preparation/Navigation",
             {
                 "label": _("Navigation"),
                 "icon": icons8_move_50,
                 "tip": _("Opens Navigation Window"),
                 "action": lambda v: kernel.console("window toggle Navigation\n"),
+                "priority": 1,
             },
         )
 

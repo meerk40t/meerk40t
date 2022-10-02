@@ -260,7 +260,7 @@ class InformationPanel(wx.Panel):
             wx.TheClipboard.SetData(wx.TextDataObject(msg))
             wx.TheClipboard.Close()
         else:
-            # print ("COuldnt access clipboard")
+            # print ("couldn't access clipboard")
             wx.Bell()
 
 

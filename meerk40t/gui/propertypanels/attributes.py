@@ -95,6 +95,19 @@ class ColorPanel(wx.Panel):
                 nodecol = wx.Colour(swizzlecolor(cvalue))
             color_data = wx.ColourData()
             color_data.SetColour(wx.Colour(nodecol))
+            # We try to prepopulate user defined colors from
+            # the colors of the existing operations
+            idx = 0
+            for operation in self.context.elements.ops():
+                if hasattr(operation, "color"):
+                    if operation.color is not None and operation.color.argb is not None:
+                        color_data.SetCustomColour(
+                            idx, wx.Colour(swizzlecolor(operation.color))
+                        )
+                        idx += 1
+                        # There are only 16 colors available
+                        if idx > 15:
+                            break
             dlg = wx.ColourDialog(self, color_data)
             if dlg.ShowModal() == wx.ID_OK:
                 color_data = dlg.GetColourData()
@@ -369,7 +382,9 @@ class PositionSizePanel(wx.Panel):
             _("New Y-coordinate of left top corner (enter to apply)")
         )
         self.check_lock.SetToolTip(
-            _("If active then this element is effectly prevented from being modified")
+            _(
+                "If active then this element is effectively prevented from being modified"
+            )
         )
 
     def pane_hide(self):
@@ -424,10 +439,18 @@ class PositionSizePanel(wx.Panel):
         if units in ("inch", "inches"):
             units = "in"
 
-        self.text_x.SetValue(f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}")
-        self.text_y.SetValue(f"{Length(amount=y, preferred_units=units, digits=4).preferred_length}")
-        self.text_w.SetValue(f"{Length(amount=w, preferred_units=units, digits=4).preferred_length}")
-        self.text_h.SetValue(f"{Length(amount=h, preferred_units=units, digits=4).preferred_length}")
+        self.text_x.SetValue(
+            f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_y.SetValue(
+            f"{Length(amount=y, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_w.SetValue(
+            f"{Length(amount=w, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_h.SetValue(
+            f"{Length(amount=h, preferred_units=units, digits=4).preferred_length}"
+        )
         self.text_x.Enable(en_xy)
         self.text_y.Enable(en_xy)
         self.text_w.Enable(en_wh)

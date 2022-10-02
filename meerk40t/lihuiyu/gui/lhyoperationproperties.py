@@ -5,8 +5,6 @@ from meerk40t.gui.wxutils import TextCtrl
 _ = wx.GetTranslation
 
 
-
-
 class LhyAdvancedPanel(wx.Panel):
     name = "Advanced"
 
@@ -90,17 +88,25 @@ class LhyAdvancedPanel(wx.Panel):
             self, wx.ID_ANY, "1", limited=True, check="int", style=wx.TE_PROCESS_ENTER
         )
         OPERATION_DOTLENGTH_TOOLTIP = _(
-            _("For Cut/Engrave operations, when using PPI, Dot Length sets the minimum "
-            + "length for the laser to be on in order to change a continuous lower "
-            + "power burn into a series of dashes.")
-            + "\n" +
-            _("When this is set, the PPI effectively becomes the ratio of " +
-            "dashes to gaps. For example:")
-            + "\n" +
-            _("If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in "+
-            "1/2\" dashes and 1/2\" gaps.")
-            + "\n" +
-            _("If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" dashes and 3/4\" gaps.")
+            _(
+                "For Cut/Engrave operations, when using PPI, Dot Length sets the minimum "
+                + "length for the laser to be on in order to change a continuous lower "
+                + "power burn into a series of dashes."
+            )
+            + "\n"
+            + _(
+                "When this is set, the PPI effectively becomes the ratio of "
+                + "dashes to gaps. For example:"
+            )
+            + "\n"
+            + _(
+                'If you set Dot Length to 500 = 1/2", a PPI of 500 would result in '
+                + '1/2" dashes and 1/2" gaps.'
+            )
+            + "\n"
+            + _(
+                'If you set Dot Length to 250 = 1/4", a PPI of 250 would result in 1/4" dashes and 3/4" gaps.'
+            )
         )
 
         self.text_dot_length.SetToolTip(OPERATION_DOTLENGTH_TOOLTIP)
@@ -118,18 +124,19 @@ class LhyAdvancedPanel(wx.Panel):
         self.check_shift_enabled = wx.CheckBox(self, wx.ID_ANY, _("Pulse Grouping"))
         OPERATION_SHIFT_TOOLTIP = (
             _(
-            "Pulse Grouping is an alternative means of reducing the incidence of "
-            "stuttering, allowing you potentially to burn at higher speeds.")
-            + "\n" +
-            _(
-            "It works by swapping adjacent on or off bits to group on and off together"
-            " and reduce the number of switches."
+                "Pulse Grouping is an alternative means of reducing the incidence of "
+                "stuttering, allowing you potentially to burn at higher speeds."
             )
-            + "\n" +
-            _(
-            "As an example, instead of X_X_ it will burn XX__ - because the laser beam"
-            " is overlapping, and because a bit is only moved at most 1/1000\", the "
-            "difference should not be visible even under magnification."
+            + "\n"
+            + _(
+                "It works by swapping adjacent on or off bits to group on and off together"
+                " and reduce the number of switches."
+            )
+            + "\n"
+            + _(
+                "As an example, instead of X_X_ it will burn XX__ - because the laser beam"
+                ' is overlapping, and because a bit is only moved at most 1/1000", the '
+                "difference should not be visible even under magnification."
             )
         )
 

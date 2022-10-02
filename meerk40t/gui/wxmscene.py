@@ -284,6 +284,24 @@ class MeerK40tScenePanel(wx.Panel):
             except (KeyError, AttributeError):
                 raise CommandSyntaxError
 
+        @context.console_argument("page", help=_("page to use."))
+        @context.console_command(
+            "page", help=_("Switches to a particular page in the ribbonbar")
+        )
+        def page_base(command, channel, _, page=None, **kwgs):
+            # No need to store it beyond
+            context = self.context.root
+            context.setting(str, "_active_page", "")
+            if page is None:
+                channel(_("Active Page: {page}").format(page=context._active_page))
+                return
+            else:
+                page = page.lower()
+                if page == "none":
+                    page = "home"
+                context._active_page = page
+                self.context.signal("page", page)
+
         @context.console_command("laserpath_clear", hidden=True)
         def clear_laser_path(**kwgs):
             self.laserpath_widget.clear_laserpath()
@@ -804,7 +822,7 @@ class MeerK40tScenePanel(wx.Panel):
             self.request_refresh()
 
     @signal_listener("bedsize")
-    def on_bedsize_simple(self, origin, nocmd = None, *args):
+    def on_bedsize_simple(self, origin, nocmd=None, *args):
         # The next two are more or less the same, so we remove the direct invocation...
         # self.context.device.realize()
         issue_command = True

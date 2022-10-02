@@ -317,7 +317,7 @@ class Preferences(MWindow):
                 "tip": _("Set options for a good automatic experience"),
                 "page": "Classification",
                 "section": "_AA_Presets",
-                "subsection": "_0_"
+                "subsection": "_0_",
             },
             {
                 "attr": "preset_classify_manual",
@@ -329,7 +329,21 @@ class Preferences(MWindow):
                 "tip": _("Set options for complete manual control"),
                 "page": "Classification",
                 "section": "_AA_Presets",
-                "subsection": "_0_"
+                "subsection": "_0_",
+            },
+            {
+                "attr": "dummy",
+                "default": "dummy",
+                "object": self,
+                "type": str,
+                "style": "info",
+                "label": _(
+                    "Classification is the (automatic) process of assigning an element to an operation."
+                )
+                + "\n"
+                + _("That link between element and operation is called an assignment."),
+                "page": "Classification",
+                # "section": "_000_Information",
             },
         ]
         self.presets = [
@@ -352,7 +366,7 @@ class Preferences(MWindow):
             context=self.context,
             choices="preferences",
             constraint=("Classification"),
-            injector=inject_choices
+            injector=inject_choices,
         )
         self.panel_classification.SetupScrolling()
 
@@ -407,6 +421,15 @@ class Preferences(MWindow):
                 "signals": ("refresh_scene", "theme"),
             }
             colorchoices.append(singlechoice)
+        singlechoice = {
+            "attr": "color_reset",
+            "object": self,
+            "type": bool,
+            "style": "button",
+            "label": _("Reset Colors to Default"),
+            "section": "_ZZ_",
+        }
+        colorchoices.append(singlechoice)
 
         self.panel_color = ChoicePropertyPanel(
             self,
@@ -430,6 +453,18 @@ class Preferences(MWindow):
         self.SetTitle(_("Preferences"))
 
     @property
+    def color_reset(self):
+        # Not relevant
+        return False
+
+    @color_reset.setter
+    def color_reset(self, value):
+        if value:
+            # We are resetting all GUI.colors
+            self.context("scene color unset\n")
+            self.context.signal("theme", True)
+
+    @property
     def preset_classify_manual(self):
         # Not relevant
         return False
@@ -440,7 +475,7 @@ class Preferences(MWindow):
             # We are setting presets for a couple of parameters
             for preset in self.presets:
                 setattr(preset[0], preset[1], preset[3])
-                self.context.signal(preset[1], preset[3])
+                self.context.signal(preset[1], preset[3], preset[0])
 
     @property
     def preset_classify_automatic(self):
@@ -453,7 +488,7 @@ class Preferences(MWindow):
             # We are setting presets for a couple of parameters
             for preset in self.presets:
                 setattr(preset[0], preset[1], preset[2])
-                self.context.signal(preset[1], preset[2])
+                self.context.signal(preset[1], preset[2], preset[0])
 
     def delegates(self):
         yield self.panel_main

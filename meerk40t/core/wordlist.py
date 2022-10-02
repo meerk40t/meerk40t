@@ -29,7 +29,7 @@ class Wordlist:
             "op_speed": [0, 2, "<speed>"],
             "op_power": [0, 2, "<power>"],
         }
-        self.prohibited =(
+        self.prohibited = (
             "version",
             "date",
             "time",
@@ -296,7 +296,7 @@ class Wordlist:
         for skey in names:
             self.delete(skey)
 
-    def load_csv_file(self, filename, force_header = None):
+    def load_csv_file(self, filename, force_header=None):
         self.empty_csv()
         headers = []
         try:

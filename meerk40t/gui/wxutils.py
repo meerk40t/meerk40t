@@ -352,7 +352,7 @@ class TextCtrl(wx.TextCtrl):
         self.extend_default_units_if_empty = True
         self._check = check
         self._style = style
-        # For the sake of readibility we allow multiple occurences of
+        # For the sake of readability we allow multiple occurrences of
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
         unitstr = "".join(ACCEPTED_UNITS)
@@ -505,8 +505,10 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = newvalue
         status = self.get_warn_status(newvalue)
         self.warn_status = status
-
+        cursor = self.GetInsertionPoint()
         super().SetValue(newvalue)
+        cursor = min(len(newvalue), cursor)
+        self.SetInsertionPoint(cursor)
 
     def set_error_level(self, err_min, err_max):
         self.lower_limit_err = err_min
@@ -539,7 +541,10 @@ class TextCtrl(wx.TextCtrl):
                     purenumber = False
                     break
             if purenumber and hasattr(self.parent, "context"):
-                units = getattr(self.parent.context, "units_name")
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "units_name", "mm")
+                units = root.units_name
                 if units in ("inch", "inches"):
                     units = "in"
                 txt = txt.strip() + units
@@ -667,10 +672,16 @@ class TextCtrl(wx.TextCtrl):
                     purenumber = False
                     break
             if purenumber and hasattr(self.parent, "context"):
-                units = getattr(self.parent.context, "units_name")
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "units_name", "mm")
+                units = root.units_name
                 if units in ("inch", "inches"):
                     units = "in"
-                result = result.strip() + units
+                result = result.strip()
+                if result.endswith("."):
+                    result += "0"
+                result += units
         return result
 
 
@@ -879,7 +890,7 @@ def disable_window(window):
 
 def set_ctrl_value(ctrl, value):
     # Let's try to save the caret position
-    cursor = ctrl.GetLastPosition()
+    cursor = ctrl.GetInsertionPoint()
     if ctrl.GetValue() != value:
         ctrl.SetValue(value)
         ctrl.SetInsertionPoint(min(len(value), cursor))

@@ -468,6 +468,22 @@ class SpoolerPanel(wx.Panel):
         except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
             pass
 
+    @signal_listener("activate;device")
+    def on_activate_device(self, origin, device):
+        self.available_devices = self.context.kernel.services("device")
+        self.selected_device = self.context.device
+        spools = []
+        index = -1
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
+                index = i
+                break
+        spools = [s.label for s in self.available_devices]
+        self.combo_device.Clear()
+        self.combo_device.SetItems(spools)
+        self.combo_device.SetSelection(index)
+        self.on_combo_device(None)
+
     @signal_listener("spooler;completed")
     def on_spooler_completed(self, origin, info, *args):
         # Info is just a tuple with the label and the runtime
@@ -495,7 +511,7 @@ class SpoolerPanel(wx.Panel):
         if spooler is None:
             return
         # Two things (at least) could go wrong:
-        # 1) You are in the wrong queue, ie theres a job running in the background a
+        # 1) You are in the wrong queue, ie there's a job running in the background a
         #    that provides an update but the user has changed the device so a different
         #    queue is selected
         # 2) As this is a signal it may come later, ie the job has already finished

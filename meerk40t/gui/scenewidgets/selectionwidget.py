@@ -76,10 +76,18 @@ def process_event(
     if event_type == "leftdown":
         # We want to establish that we don't have a singular Shift key or a singular ctrl-key
         if not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)):
+            cx = (widget.left + widget.right) / 2
+            cy = (widget.top + widget.bottom) / 2
+            # print(f"Start: x={space_pos[0]}, y={space_pos[1]}, dx={space_pos[4]}, dy={space_pos[5]}")
+            # print(f"Widget: cx={cx}, cy={cy}")
+            # Set them to the center of the widget
+            widget.master.offset_x = cx - space_pos[0]
+            widget.master.offset_y = cy - space_pos[1]
             widget.was_lb_raised = True
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
             widget.uniform = not widget.master.key_alt_pressed
+            widget.master.total_delta_y = dy
             widget.master.total_delta_x = dx
             widget.master.total_delta_y = dy
             widget.master.tool_running = optimize_drawing
@@ -1299,6 +1307,7 @@ class MoveWidget(Widget):
         """
         Change the position of the selected elements.
         """
+
         def move_to(dx, dy):
             b = elements._emphasized_bounds
             allowlockmove = elements.lock_allows_move
@@ -1310,13 +1319,18 @@ class MoveWidget(Widget):
             self.translate(dx, dy)
 
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
+
         elements = self.scene.context.elements
         lastdx = 0
         lastdy = 0
         if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.last_snap
-        if nearest_snap is not None:
+        # sweeping it under the rug for now until we have figured out a way
+        # to move a defined reference and not an arbitrary point on the
+        # Widget area.
+        # nearest_snap = None
+        if nearest_snap is not None and event != -1:
             # Position is space_pos:
             # 0, 1: current x, y
             # 2, 3: last pos x, y
@@ -1343,7 +1357,7 @@ class MoveWidget(Widget):
             # )
 
         if event == 1:  # end
-            move_to(lastdx, lastdy)
+            move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
             self.check_for_magnets()
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
@@ -1463,8 +1477,8 @@ class MoveRotationOriginWidget(Widget):
             position[5] = position[1] - position[3]
 
         if event == 1:  # end
-            self.master.rotation_cx += lastdx
-            self.master.rotation_cy += lastdy
+            self.master.rotation_cx += lastdx - self.master.offset_x
+            self.master.rotation_cy += lastdy - self.master.offset_y
             self.master.invalidate_rot_center()
             self.scene.modif_active = False
             self.scene.request_refresh()
@@ -1489,7 +1503,7 @@ class MoveRotationOriginWidget(Widget):
         **kwargs,
     ):
         s_me = "rotcenter"
-        if event_type=="doubleclick":
+        if event_type == "doubleclick":
             self.master.rotation_cx = None
             self.master.rotation_cy = None
             self.master.invalidate_rot_center()
@@ -1999,6 +2013,9 @@ class SelectionWidget(Widget):
         self.rotated_angle = 0
         self.total_delta_x = 0
         self.total_delta_y = 0
+        self.offset_x = 0
+        self.offset_y = 0
+
         self.was_lb_raised = False
         self.hovering = False
         self.use_handle_rotate = True
@@ -2239,7 +2256,11 @@ class SelectionWidget(Widget):
             self.scene.cursor(self.cursor)
             self.hovering = False
             for subwidget in self:
-                if hasattr(subwidget, "hovering") and subwidget.hovering and not subwidget.contains(space_pos[0], space_pos[1]):
+                if (
+                    hasattr(subwidget, "hovering")
+                    and subwidget.hovering
+                    and not subwidget.contains(space_pos[0], space_pos[1])
+                ):
                     subwidget.hovering = False
             self.scene.cursor("arrow")
             self.scene.context.signal("statusmsg", "")
@@ -2250,7 +2271,11 @@ class SelectionWidget(Widget):
             self.scene.context.signal("statusmsg", "")
 
             for subwidget in self:
-                if hasattr(subwidget, "hovering") and subwidget.hovering and not subwidget.contains(space_pos[0], space_pos[1]):
+                if (
+                    hasattr(subwidget, "hovering")
+                    and subwidget.hovering
+                    and not subwidget.contains(space_pos[0], space_pos[1])
+                ):
                     subwidget.hovering = False
                     self.scene.cursor("arrow")
                     self.scene.context.signal("statusmsg", "")

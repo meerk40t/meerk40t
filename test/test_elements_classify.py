@@ -1,8 +1,8 @@
 import unittest
 from random import Random
+from test import bootstrap
 
 from meerk40t.core.element_types import elem_nodes, op_nodes
-from test import bootstrap
 
 
 class TestElementClassification(unittest.TestCase):
@@ -33,7 +33,7 @@ class TestElementClassification(unittest.TestCase):
             raise ValueError()
 
         def random_color():
-            r = random.randint(0,4)
+            r = random.randint(0, 4)
             if r == 0:
                 return f"#{random.randint(0,255):02X}{random.randint(0,255):02X}{random.randint(0,255):02X}"
             elif r == 1:
@@ -52,15 +52,19 @@ class TestElementClassification(unittest.TestCase):
         random_radius = random_x
 
         def add_random_element():
-            r = random.randint(0,1)
+            r = random.randint(0, 1)
 
             if r == 0:
-                root(f"circle {random_x()} {random_y()} {random_radius()} stroke {random_color()} fill {random_color()}\n")
+                root(
+                    f"circle {random_x()} {random_y()} {random_radius()} stroke {random_color()} fill {random_color()}\n"
+                )
             if r == 1:
-                root(f"line {random_x()} {random_y()} {random_x()} {random_y()} stroke {random_color()} fill {random_color()}\n")
+                root(
+                    f"line {random_x()} {random_y()} {random_x()} {random_y()} stroke {random_color()} fill {random_color()}\n"
+                )
 
         def add_random_operation():
-            r = random.randint(0,6)
+            r = random.randint(0, 6)
             if r == 0:
                 root(f"cut -c {random_color()}\n")
             if r == 1:

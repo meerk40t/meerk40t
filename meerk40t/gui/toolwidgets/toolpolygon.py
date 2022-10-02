@@ -60,9 +60,9 @@ class PolygonTool(ToolWidget):
                 total_len += sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0))
                 units = self.scene.context.units_name
                 s = "Pts: {pts}, Len={a}".format(
-                pts=len(points) - 1,
-                a=Length(amount=total_len, digits=2, preferred_units=units),
-            )
+                    pts=len(points) - 1,
+                    a=Length(amount=total_len, digits=2, preferred_units=units),
+                )
             self.scene.context.signal("statusmsg", s)
 
     def event(

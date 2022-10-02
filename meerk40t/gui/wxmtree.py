@@ -559,7 +559,7 @@ class ShadowTree:
         self.set_expanded(item, 1)
 
     def collapse_within(self, node):
-        # Tries to collaps children first, if there were any open,
+        # Tries to collapse children first, if there were any open,
         # return TRUE, if all were already collapsed, return FALSE
         result = False
         startnode = node.item
@@ -754,7 +754,7 @@ class ShadowTree:
             txt = self.wxtree.GetItemText(pnode)
             # That it s not working as advertised...
             state = self.wxtree.IsExpanded(pnode)
-            state = False    # otherwise every thing gets expanded...
+            state = False  # otherwise every thing gets expanded...
             if state:
                 self.was_already_expanded.append(f"{level}-{txt}")
             self.parse_tree(pnode, level + 1)
@@ -1084,7 +1084,7 @@ class ShadowTree:
         Node icon to be created and applied
 
         @param node: Node to have the icon set.
-        @param icon: overriding icon to be forcably set, rather than a default.
+        @param icon: overriding icon to be forcibly set, rather than a default.
         @return: item_id if newly created / update
         """
         root = self
@@ -1161,6 +1161,7 @@ class ShadowTree:
         @param node:
         @return:
         """
+
         def my_create_label(node, text=None):
             if text is None:
                 text = "{element_type}:{id}"

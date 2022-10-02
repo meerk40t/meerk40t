@@ -391,7 +391,7 @@ class TestViewport(unittest.TestCase):
         :return:
         """
         lens_size_x = "110mm"
-        lens_size_y = "100mm" # 10mm less
+        lens_size_y = "100mm"  # 10mm less
         unit_size_x = float(Length(lens_size_x))
         unit_size_y = float(Length(lens_size_y))
         galvo_range = 0xFFFF

@@ -12,6 +12,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 
 _ = wx.GetTranslation
 
+
 class MeasureTool(ToolWidget):
     """
     Measuring Tool.
