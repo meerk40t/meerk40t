@@ -14622,3 +14622,6 @@ msgstr "Klassifizierung ist der automatische Prozess, Elemente Arbeitsabläufen 
 
 msgid "That link between element and operation is called an assignment."
 msgstr "Diese Verknüpfung zwischen Element und Arbeitsablauf nennen wir Zuordnung."
+
+msgid "Redlight-Offset"
+msgstr "Rotlicht-Versatz"
