@@ -142,7 +142,7 @@ class RectSelectWidget(Widget):
                 # that dimension.
                 if not ((sx > xmax) or (xmin > ex) or (sy > ymax) or (ymin > ey)):
                     cover = self.SELECTION_TOUCH
-                    # If selection rect is fullly inside an object then ignore
+                    # If selection rect is fully inside an object then ignore
                     if sx > xmin and ex < xmax and sy > ymin and ey < ymax:
                         cover = 0
 

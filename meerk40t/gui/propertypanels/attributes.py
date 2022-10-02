@@ -382,7 +382,7 @@ class PositionSizePanel(wx.Panel):
             _("New Y-coordinate of left top corner (enter to apply)")
         )
         self.check_lock.SetToolTip(
-            _("If active then this element is effectly prevented from being modified")
+            _("If active then this element is effectively prevented from being modified")
         )
 
     def pane_hide(self):

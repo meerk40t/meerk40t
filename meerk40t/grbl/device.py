@@ -904,7 +904,7 @@ class GRBLDriver(Parameters):
         """
         This asks that the console command be executed at the appropriate time within the spooled cycle.
 
-        @param value: console commnad
+        @param value: console command
         @return:
         """
         self.service(value)
