@@ -478,7 +478,9 @@ class RenderSplit(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        buttonsize = int(STD_ICON_SIZE / 2)
+        bsize_normal = STD_ICON_SIZE
+        bsize_small = int(STD_ICON_SIZE / 2)
+
         kernel.register(
             "button/align/SplitImage",
             {
@@ -486,7 +488,7 @@ class RenderSplit(MWindow):
                 "icon": icons8_split_table_50,
                 "tip": _("Open create split image dialog"),
                 "action": lambda v: kernel.console("window toggle SplitImage\n"),
-                "size": buttonsize,
+                "size": bsize_normal,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )

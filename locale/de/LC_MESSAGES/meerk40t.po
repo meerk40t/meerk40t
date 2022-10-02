@@ -14594,3 +14594,15 @@ msgstr "Benutzerdefinierte Gittergröße"
 
 msgid "Reset Colors to Default"
 msgstr "Farben auf Standard"
+
+msgid "Design"
+msgstr "Elemente"
+
+msgid "Modify"
+msgstr "Ändern"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Prepare"
+msgstr "Vorbereitung"

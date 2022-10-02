@@ -468,6 +468,22 @@ class SpoolerPanel(wx.Panel):
         except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
             pass
 
+    @signal_listener("activate;device")
+    def on_activate_device(self, origin, device):
+        self.available_devices = self.context.kernel.services("device")
+        self.selected_device = self.context.device
+        spools = []
+        index = -1
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
+                index = i
+                break
+        spools = [s.label for s in self.available_devices]
+        self.combo_device.Clear()
+        self.combo_device.SetItems(spools)
+        self.combo_device.SetSelection(index)
+        self.on_combo_device(None)
+
     @signal_listener("spooler;completed")
     def on_spooler_completed(self, origin, info, *args):
         # Info is just a tuple with the label and the runtime

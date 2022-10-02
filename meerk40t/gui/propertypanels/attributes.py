@@ -95,6 +95,19 @@ class ColorPanel(wx.Panel):
                 nodecol = wx.Colour(swizzlecolor(cvalue))
             color_data = wx.ColourData()
             color_data.SetColour(wx.Colour(nodecol))
+            # We try to prepopulate user defined colors from
+            # the colors of the existing operations
+            idx = 0
+            for operation in self.context.elements.ops():
+                if hasattr(operation, "color"):
+                    if operation.color is not None and operation.color.argb is not None:
+                        color_data.SetCustomColour(
+                            idx, wx.Colour(swizzlecolor(operation.color))
+                        )
+                        idx += 1
+                        # There are only 16 colors available
+                        if idx > 15:
+                            break
             dlg = wx.ColourDialog(self, color_data)
             if dlg.ShowModal() == wx.ID_OK:
                 color_data = dlg.GetColourData()

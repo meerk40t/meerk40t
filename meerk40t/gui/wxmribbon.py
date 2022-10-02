@@ -14,8 +14,10 @@ from .icons import get_default_icon_size, icons8_opened_folder_50
 _ = wx.GetTranslation
 
 ID_PAGE_MAIN = 10
-ID_PAGE_TOOL = 20
-ID_PAGE_TOGGLE = 30
+ID_PAGE_DESIGN = 20
+ID_PAGE_MODIFY = 30
+ID_PAGE_CONFIG = 40
+ID_PAGE_TOGGLE = 99
 
 
 class RibbonButtonBar(RB.RibbonButtonBar):
@@ -675,9 +677,30 @@ class RibbonPanel(wx.Panel):
     def set_tool_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.tool_button_bar)
 
+    @lookup_listener("button/extended_tools")
+    def set_tool_extended_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.tool_extended_button_bar)
+
     @lookup_listener("button/geometry")
     def set_geometry_buttons(self, new_values, old_values):
         self.set_buttons(new_values, self.geometry_button_bar)
+
+    @lookup_listener("button/preparation")
+    def set_preparation_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.preparation_button_bar)
+
+    @lookup_listener("button/jobstart")
+    def set_jobstart_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.jobstart_button_bar)
+
+    @lookup_listener("button/group")
+    def set_group_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.group_button_bar)
+
+    @lookup_listener("button/device")
+    def set_device_buttons(self, new_values, old_values):
+        self.set_buttons(new_values, self.device_button_bar)
+        self.set_buttons(new_values, self.device_copy_button_bar)
 
     @lookup_listener("button/align")
     def set_align_buttons(self, new_values, old_values):
@@ -750,10 +773,35 @@ class RibbonPanel(wx.Panel):
         home = RB.RibbonPage(
             self._ribbon,
             ID_PAGE_MAIN,
-            _("Home"),
+            _("Project"),
             icons8_opened_folder_50.GetBitmap(resize=16),
         )
-        self.ribbon_pages.append(home)
+        self.ribbon_pages.append((home, "home"))
+
+        tool = RB.RibbonPage(
+            self._ribbon,
+            ID_PAGE_DESIGN,
+            _("Design"),
+            icons8_opened_folder_50.GetBitmap(resize=16),
+        )
+        self.ribbon_pages.append((tool, "design"))
+
+        modify = RB.RibbonPage(
+            self._ribbon,
+            ID_PAGE_MODIFY,
+            _("Modify"),
+            icons8_opened_folder_50.GetBitmap(resize=16),
+        )
+        self.ribbon_pages.append((modify, "modify"))
+
+        config = RB.RibbonPage(
+            self._ribbon,
+            ID_PAGE_CONFIG,
+            _("Settings"),
+            icons8_opened_folder_50.GetBitmap(resize=16),
+        )
+        self.ribbon_pages.append((config, "config"))
+
         # self.Bind(
         #    RB.EVT_RIBBONBAR_HELP_CLICK,
         #    lambda e: self.context("webhelp help\n"),
@@ -767,9 +815,32 @@ class RibbonPanel(wx.Panel):
             agwStyle=panel_style,
         )
         self.ribbon_panels.append(self.project_panel)
-
         button_bar = RibbonButtonBar(self.project_panel)
         self.project_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.jobstart_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Execute"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.jobstart_panel)
+        button_bar = RibbonButtonBar(self.jobstart_panel)
+        self.jobstart_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.preparation_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Prepare"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.preparation_panel)
+        button_bar = RibbonButtonBar(self.preparation_panel)
+        self.preparation_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.control_panel = MyRibbonPanel(
@@ -780,60 +851,96 @@ class RibbonPanel(wx.Panel):
             agwStyle=panel_style,
         )
         self.ribbon_panels.append(self.control_panel)
-
         button_bar = RibbonButtonBar(self.control_panel)
         self.control_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.config_panel = MyRibbonPanel(
-            parent=home,
+            parent=config,
             id=wx.ID_ANY,
             label="" if self.is_dark else _("Configuration"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=panel_style,
         )
         self.ribbon_panels.append(self.config_panel)
-
         button_bar = RibbonButtonBar(self.config_panel)
         self.config_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        tool = RB.RibbonPage(
-            self._ribbon,
-            ID_PAGE_TOOL,
-            _("Tools"),
-            icons8_opened_folder_50.GetBitmap(resize=16),
+        self.device_panel = MyRibbonPanel(
+            parent=home,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Devices"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
         )
-        self.ribbon_pages.append(tool)
+        self.ribbon_panels.append(self.device_panel)
+        button_bar = RibbonButtonBar(self.device_panel)
+        self.device_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.device_panel_copy = MyRibbonPanel(
+            parent=config,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Device"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.device_panel_copy)
+        button_bar = RibbonButtonBar(self.device_panel_copy)
+        self.device_copy_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
 
         self.tool_panel = MyRibbonPanel(
             parent=tool,
             id=wx.ID_ANY,
-            label="" if self.is_dark else _("Tools"),
+            label="" if self.is_dark else _("Design"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=panel_style,
         )
         self.ribbon_panels.append(self.tool_panel)
-
         button_bar = RibbonButtonBar(self.tool_panel)
         self.tool_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        self.modify_panel = MyRibbonPanel(
+        self.group_panel = MyRibbonPanel(
             parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Group"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.group_panel)
+        button_bar = RibbonButtonBar(self.group_panel)
+        self.group_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.tool_extended_panel = MyRibbonPanel(
+            parent=tool,
+            id=wx.ID_ANY,
+            label="" if self.is_dark else _("Properties"),
+            minimised_icon=icons8_opened_folder_50.GetBitmap(),
+            agwStyle=panel_style,
+        )
+        self.ribbon_panels.append(self.tool_extended_panel)
+        button_bar = RibbonButtonBar(self.tool_extended_panel)
+        self.tool_extended_button_bar = button_bar
+        self.ribbon_bars.append(button_bar)
+
+        self.modify_panel = MyRibbonPanel(
+            parent=modify,
             id=wx.ID_ANY,
             label="" if self.is_dark else _("Modification"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
             agwStyle=panel_style,
         )
         self.ribbon_panels.append(self.modify_panel)
-
         button_bar = RibbonButtonBar(self.modify_panel)
         self.modify_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
         self.geometry_panel = MyRibbonPanel(
-            parent=tool,
+            parent=modify,
             id=wx.ID_ANY,
             label="" if self.is_dark else _("Geometry"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
@@ -845,7 +952,7 @@ class RibbonPanel(wx.Panel):
         self.ribbon_bars.append(button_bar)
 
         self.align_panel = MyRibbonPanel(
-            parent=tool,
+            parent=modify,
             id=wx.ID_ANY,
             label="" if self.is_dark else _("Alignment"),
             minimised_icon=icons8_opened_folder_50.GetBitmap(),
@@ -856,9 +963,6 @@ class RibbonPanel(wx.Panel):
         self.align_button_bar = button_bar
         self.ribbon_bars.append(button_bar)
 
-        # self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGING, self.on_page_changing)
-        # minmaxpage = RB.RibbonPage(self._ribbon, ID_PAGE_TOGGLE, "Click me")
-        # self.ribbon_pages.append(minmaxpage)
         self._ribbon.Bind(RB.EVT_RIBBONBAR_PAGE_CHANGED, self.on_page_changed)
 
         self.ensure_realize()
@@ -884,9 +988,29 @@ class RibbonPanel(wx.Panel):
     def on_page_changed(self, event):
         page = event.GetPage()
         p_id = page.GetId()
-        if p_id != ID_PAGE_TOOL:
+        if p_id != ID_PAGE_DESIGN:
             self.context("tool none\n")
+        pagename = ""
+        for p in self.ribbon_pages:
+            if p[0] is page:
+                pagename = p[1]
+                break
+        setattr(self.context.root, "_active_page", pagename)
         event.Skip()
+
+    @signal_listener("page")
+    def on_page_signal(self, origin, pagename=None, *args):
+        if pagename is None:
+            return
+        pagename = pagename.lower()
+        if pagename == "":
+            pagename = "home"
+        for p in self.ribbon_pages:
+            if p[1] == pagename:
+                self._ribbon.SetActivePage(p[0])
+                if getattr(self.context.root, "_active_page", "") != pagename:
+                    setattr(self.context.root, "_active_page", pagename)
+
 
 
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16

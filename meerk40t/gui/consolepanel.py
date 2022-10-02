@@ -392,13 +392,14 @@ class Console(MWindow):
     def sub_register(kernel):
         kernel.register("wxpane/Console", register_panel_console)
         kernel.register(
-            "button/project/Console",
+            "button/preparation/Console",
             {
                 "label": _("Console"),
                 "icon": icons8_console_50,
                 "tip": _("Open Console Window"),
                 "action": lambda v: kernel.console("window toggle Console\n"),
                 "size": STD_ICON_SIZE,
+                "priority": 4,
             },
         )
 

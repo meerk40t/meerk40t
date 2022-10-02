@@ -505,8 +505,10 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = newvalue
         status = self.get_warn_status(newvalue)
         self.warn_status = status
-
+        cursor = self.GetInsertionPoint()
         super().SetValue(newvalue)
+        cursor = min(len(newvalue), cursor)
+        self.SetInsertionPoint(cursor)
 
     def set_error_level(self, err_min, err_max):
         self.lower_limit_err = err_min
@@ -888,7 +890,7 @@ def disable_window(window):
 
 def set_ctrl_value(ctrl, value):
     # Let's try to save the caret position
-    cursor = ctrl.GetLastPosition()
+    cursor = ctrl.GetInsertionPoint()
     if ctrl.GetValue() != value:
         ctrl.SetValue(value)
         ctrl.SetInsertionPoint(min(len(value), cursor))
