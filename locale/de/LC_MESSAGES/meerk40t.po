@@ -14616,3 +14616,9 @@ msgstr "Vektorisiere"
 
 msgid "Vectorize the given element"
 msgstr "Erzeuge eine Vektor-Version des Bildes"
+
+msgid "Classification is the (automatic) process of assigning an element to an operation."
+msgstr "Klassifizierung ist der automatische Prozess, Elemente Arbeitsabläufen zuzuordnen."
+
+msgid "That link between element and operation is called an assignment."
+msgstr "Diese Verknüpfung zwischen Element und Arbeitsablauf nennen wir Zuordnung."
