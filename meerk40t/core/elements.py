@@ -3958,7 +3958,9 @@ class Elemental(Service):
 
             return "image", [image_node]
 
-        @self.console_option("dpi", "d", help=_("interim image resolution"), default=500, type=float)
+        @self.console_option(
+            "dpi", "d", help=_("interim image resolution"), default=500, type=float
+        )
         @self.console_command(
             "vectorize",
             help=_("Convert given elements to a path"),

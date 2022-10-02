@@ -285,7 +285,9 @@ class MeerK40tScenePanel(wx.Panel):
                 raise CommandSyntaxError
 
         @context.console_argument("page", help=_("page to use."))
-        @context.console_command("page", help=_("Switches to a particular page in the ribbonbar"))
+        @context.console_command(
+            "page", help=_("Switches to a particular page in the ribbonbar")
+        )
         def page_base(command, channel, _, page=None, **kwgs):
             # No need to store it beyond
             context = self.context.root

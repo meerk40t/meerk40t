@@ -334,7 +334,7 @@ class AttractionWidget(Widget):
             for pts in self.attraction_points:
                 doit = True  # Not sure why not :-)
                 if self.scene.modif_active:
-                    doit = not pts[3] # not emphasized
+                    doit = not pts[3]  # not emphasized
                 if doit:
                     if (
                         abs(pts[0] - self.my_x) <= pixel

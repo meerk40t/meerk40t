@@ -1,6 +1,5 @@
-from meerk40t.svgelements import Matrix, Path,  Color
 from meerk40t.core.node.node import Fillrule
-
+from meerk40t.svgelements import Color, Matrix, Path
 
 """
 Potracer routines, please be aware that potrace is not part of the standard
@@ -50,16 +49,16 @@ potracer:   https://github.com/tatarize/potrace
 def plugin(kernel, lifecycle=None):
     if lifecycle == "invalidate":
         try:
-            import potrace
             import numpy
+            import potrace
         except ImportError:
             # print("Potrace plugin could not load because potracer/pypotrace is not installed.")
             return True
 
     if lifecycle == "register":
         _ = kernel.translation
-        import potrace
         import numpy
+        import potrace
 
         def make_vector(
             image,
@@ -70,7 +69,7 @@ def plugin(kernel, lifecycle=None):
             opticurve=None,
             opttolerance=None,
             color=None,
-            blacklevel=None
+            blacklevel=None,
         ):
             if interpolationpolicy is None:
                 interpolationpolicy = 4  # POTRACE_TURNPOLICY_MINORITY
@@ -144,11 +143,7 @@ def plugin(kernel, lifecycle=None):
             help=_("suppress speckles of up to this size (default 2)"),
         )
         @kernel.console_option(
-            "alphamax",
-            "a",
-            type=float,
-            default=1,
-            help=_("corner threshold parameter")
+            "alphamax", "a", type=float, default=1, help=_("corner threshold parameter")
         )
         @kernel.console_option(
             "opticurve",
@@ -191,16 +186,16 @@ def plugin(kernel, lifecycle=None):
             output_type="elements",
         )
         def do_potrace(
-                data,
-                turnpolicy=None,
-                turdsize=None,
-                alphamax=None,
-                opticurve=None,
-                opttolerance=None,
-                color=None,
-                invert=None,
-                blacklevel=None,
-                **kwargs,
+            data,
+            turnpolicy=None,
+            turdsize=None,
+            alphamax=None,
+            opticurve=None,
+            opttolerance=None,
+            color=None,
+            invert=None,
+            blacklevel=None,
+            **kwargs,
         ):
             policies = {
                 "black": 0,  # POTRACE_TURNPOLICY_BLACK
@@ -244,7 +239,7 @@ def plugin(kernel, lifecycle=None):
                     opticurve=opticurve,
                     opttolerance=opttolerance,
                     color=color,
-                    blacklevel=blacklevel
+                    blacklevel=blacklevel,
                 )
                 path.transform *= Matrix(matrix)
                 node = elements.elem_branch.add(
