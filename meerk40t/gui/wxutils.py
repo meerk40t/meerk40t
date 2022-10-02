@@ -352,7 +352,7 @@ class TextCtrl(wx.TextCtrl):
         self.extend_default_units_if_empty = True
         self._check = check
         self._style = style
-        # For the sake of readibility we allow multiple occurences of
+        # For the sake of readability we allow multiple occurrences of
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
         unitstr = "".join(ACCEPTED_UNITS)

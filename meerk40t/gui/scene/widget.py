@@ -481,7 +481,7 @@ class Widget(list):
 
     def show(self, flag=None):
         """
-        This does not automically display the widget (yet)
+        This does not automatically display the widget (yet)
         """
         if flag is None:
             flag = True
@@ -489,7 +489,7 @@ class Widget(list):
 
     def hide(self, flag=None):
         """
-        This does not automically display the widget (yet)
+        This does not automatically display the widget (yet)
         """
         if flag is None:
             flag = True

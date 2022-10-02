@@ -60,7 +60,7 @@ class ChoicePropertyPanel(ScrolledPanel):
             if choices is None:
                 return
         if injector is not None:
-            # We have addtional stuff to be added, so be it
+            # We have additional stuff to be added, so be it
             for c in injector:
                 choices.append(c)
         # Let's see whether we have a section and a page property...

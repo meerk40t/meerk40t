@@ -1733,10 +1733,10 @@ class Transform(wx.Panel):
     @staticmethod
     def scaled_value(stxt):
         if stxt.endswith("%"):
-            valu = float(stxt[:-1]) / 100.0
+            value = float(stxt[:-1]) / 100.0
         else:
-            valu = float(stxt)
-        return valu
+            value = float(stxt)
+        return value
 
     def on_text_matrix(self):
         try:

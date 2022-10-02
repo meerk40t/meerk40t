@@ -609,7 +609,7 @@ class Elemental(Service):
         exclusive=False,
     ):
         # op_assign:    operation to assign to
-        # data:         nodes to assign to as minimum (will be extened is similar=True, see below)
+        # data:         nodes to assign to as minimum (will be extended is similar=True, see below)
         # impose:       - if "to_op" will use attrib-color (see below),
         #                 to impose the first evidence of color in data on the targetop
         #               - if "to_elem" will impose the color of the operation and make it the color of the
@@ -668,7 +668,7 @@ class Elemental(Service):
                 op_assign.remove_color_attribute("stroke")
                 op_assign.remove_color_attribute("fill")
                 op_assign.add_color_attribute(attrib)
-        # If we havent identified a color, then similar makes no sense
+        # If we haven't identified a color, then similar makes no sense
         if not has_a_color:
             similar = False
         # print ("We have now established the following:")
@@ -5949,7 +5949,7 @@ class Elemental(Service):
                     # ops next
                     entry = 0
                 else:
-                    # Not sure why and when this suposed to happen?
+                    # Not sure why and when this supposed to happen?
                     entry = 2
                 channel(
                     _(
@@ -9499,7 +9499,7 @@ class Elemental(Service):
     #     Shapes/Text with no fill and non-grey strokes are vector by default - except
     #     for one edge case: Elements with strokes that have other raster elements
     #     overlaying the stroke should in some cases be considered raster elements,
-    #     but there are serveral use cases and counter examples are likely easy to create.
+    #     but there are several use cases and counter examples are likely easy to create.
     #     The algorithm below tries to be conservative in deciding whether to switch a default
     #     vector to a raster due to believing it is part of raster combined with elements on top.
     #     In essence, if there are raster elements on top (later in the list of elements) that

@@ -511,7 +511,7 @@ class SpoolerPanel(wx.Panel):
         if spooler is None:
             return
         # Two things (at least) could go wrong:
-        # 1) You are in the wrong queue, ie theres a job running in the background a
+        # 1) You are in the wrong queue, ie there's a job running in the background a
         #    that provides an update but the user has changed the device so a different
         #    queue is selected
         # 2) As this is a signal it may come later, ie the job has already finished
