@@ -113,4 +113,4 @@ class GotoOperation(Node):
         yield cut
 
     def generate(self):
-        yield "home", self.x, self.y
+        yield "move_ori", self.x, self.y

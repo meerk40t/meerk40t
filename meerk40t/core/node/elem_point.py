@@ -6,7 +6,7 @@ from meerk40t.svgelements import Matrix, Point
 
 class PointNode(Node):
     """
-    PointNode is the bootstrapped node type for the 'elem path' type.
+    PointNode is the bootstrapped node type for the 'elem point' type.
     """
 
     def __init__(
@@ -17,12 +17,15 @@ class PointNode(Node):
         stroke=None,
         stroke_width=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(PointNode, self).__init__(type="elem point", **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.point = point
@@ -32,7 +35,7 @@ class PointNode(Node):
         self.stroke = stroke
         self.stroke_width = stroke_width
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __copy__(self):
         return PointNode(
@@ -41,6 +44,8 @@ class PointNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 
@@ -58,8 +63,8 @@ class PointNode(Node):
         self.set_dirty_bounds()
 
     def bbox(self, transformed=True, with_stroke=False):
-        p = self.matrix.transform_point(self.point)
-        return (p[0], p[1], p[0], p[1])
+        p = self.matrix.point_in_matrix_space(self.point)
+        return p[0], p[1], p[0], p[1]
 
     def default_map(self, default_map=None):
         default_map = super(PointNode, self).default_map(default_map=default_map)

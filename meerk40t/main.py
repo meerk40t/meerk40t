@@ -12,7 +12,7 @@ import sys
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.0022 Beta14"
+APPLICATION_VERSION = "0.8.0031 Beta23"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -72,20 +72,7 @@ parser.add_argument(
     help="set a device variable",
 )
 parser.add_argument(
-    "-O", "--origin", action="store_true", help="return back to 0,0 on finish"
-)
-parser.add_argument("-S", "--speed", type=float, help="set the speed of all operations")
-parser.add_argument(
     "-P", "--profile", type=int, default=None, help="Specify a settings profile index"
-)
-choices = ["Lhystudios", "Moshi"]
-parser.add_argument(
-    "-d",
-    "--device",
-    type=str,
-    choices=choices,
-    default="Lhystudios",
-    help="Specify a default boot device type",
 )
 parser.add_argument(
     "-p",

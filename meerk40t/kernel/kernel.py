@@ -26,7 +26,7 @@ from .service import Service
 from .settings import Settings
 from .states import *
 
-KERNEL_VERSION = "0.0.2"
+KERNEL_VERSION = "0.0.10"
 
 RE_ACTIVE = re.compile("service/(.*)/active")
 RE_AVAILABLE = re.compile("service/(.*)/available")
@@ -429,7 +429,16 @@ class Kernel(Settings):
         @param lifecycle_object:
         @return:
         """
-        self.delegates.append((delegate, lifecycle_object))
+        add_delegate = (delegate, lifecycle_object)
+        if add_delegate in self.delegates:
+            raise ValueError(
+                f"Attempted to add an already added delegate. {delegate} is a delegate of {lifecycle_object}."
+            )
+        if delegate is lifecycle_object:
+            raise ValueError(
+                f"Attempting to delegate self. {delegate} already linked with self."
+            )
+        self.delegates.append(add_delegate)
         self.update_linked_lifecycles(lifecycle_object)
 
     def remove_delegate(
@@ -1143,6 +1152,10 @@ class Kernel(Settings):
             for service in list(services):
                 self.set_service_lifecycle(service, LIFECYCLE_KERNEL_SHUTDOWN)
 
+    @property
+    def is_shutdown(self):
+        return self._shutdown
+
     def shutdown(self):
         """
         Starts shutdown procedure.
@@ -1622,25 +1635,38 @@ class Kernel(Settings):
             # No current thread
             pass
         thread = Thread(name=thread_name)
-        channel(_("Thread: {name}, Initialized").format(name=thread_name))
+        if channel:
+            channel(_("Thread: {name}, Initialized").format(name=thread_name))
 
         def run():
             func_result = None
-            channel(_("Thread: {name}, Set").format(name=thread_name))
+            if channel:
+                channel(_("Thread: {name}, Set").format(name=thread_name))
             try:
-                channel(_("Thread: {name}, Start").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, Start").format(name=thread_name))
                 func_result = func(*args)
-                channel(_("Thread: {name}, End ").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, End ").format(name=thread_name))
             except Exception:
-                channel(_("Thread: {name}, Exception-End").format(name=thread_name))
+                if channel:
+                    channel(_("Thread: {name}, Exception-End").format(name=thread_name))
                 import sys
 
-                channel(str(sys.exc_info()))
+                if channel:
+                    channel(str(sys.exc_info()))
                 sys.excepthook(*sys.exc_info())
-            channel(_("Thread: {name}, Unset").format(name=thread_name))
+            if channel:
+                channel(_("Thread: {name}, Unset").format(name=thread_name))
             del self.threads[thread_name]
             if result is not None:
+                if channel:
+                    channel(
+                        _("Thread: {name}, Result Function").format(name=thread_name)
+                    )
                 result(func_result)
+            if channel:
+                channel(_("Thread: {name}, Finished").format(name=thread_name))
 
         thread.run = run
         self.threads[thread_name] = thread
@@ -1870,9 +1896,7 @@ class Kernel(Settings):
                 if signal in self.listeners:
                     listeners = self.listeners[signal]
                     removed = False
-                    ct = 0
                     for i, listen in enumerate(listeners):
-                        ct += 1
                         listen_funct, listen_lso = listen
                         if (listen_funct == remove_funct or remove_funct is None) and (
                             listen_lso is remove_lso or remove_lso is None
@@ -2011,16 +2035,24 @@ class Kernel(Settings):
         """
         Detach all signals attached against the given cookie
 
+        If a listener is flagged for addition but not yet added, remove it.
+
         @param cookie: cookie used to bind this listener.
         @return:
         """
-        with self._remove_lock:
-            with self._signal_lock:
+        with self._signal_lock:
+            with self._remove_lock:
                 for signal in self.listeners:
                     listens = self.listeners[signal]
                     for listener, lso in listens:
                         if lso is cookie:
                             self._removing_listeners.append((signal, listener, cookie))
+            with self._add_lock:
+                for i in range(len(self._adding_listeners) - 1, -1, -1):
+                    sl, func, lso = self._adding_listeners[i]
+                    if lso is cookie:
+                        del self._adding_listeners[i]
+
         # if len(self._removing_listeners) != len(set(self._removing_listeners)):
         #     print("Warning duplicate listener removing.")
 
@@ -2575,6 +2607,37 @@ class Kernel(Settings):
             """
             time.sleep(sleeptime)
 
+        @self.console_argument(
+            "message", help=_("Message to display, optional"), default=""
+        )
+        @self.console_command("interrupt", hidden=True)
+        def interrupt(message="", **kwargs):
+            """
+            Interrupt interrupts but does so in the gui thread.
+
+            @param message:
+            @param kwargs:
+            @return:
+            """
+            if not message:
+                message = _("Spooling Interrupted.")
+
+            import threading
+
+            lock = threading.Lock()
+            lock.acquire(True)
+
+            def message_interrupt(*args):
+                input(f"{message}\n")
+                print("... continuing")
+                lock.release()
+
+            if threading.current_thread() is threading.main_thread():
+                message_interrupt()
+            else:
+                self.add_job(message_interrupt, times=1, run_main=True)
+            lock.acquire(True)
+
         @self.console_command("register", _("register"))
         def register(channel, _, args=tuple(), **kwargs):
             channel(_("----------"))
@@ -2649,12 +2712,24 @@ class Kernel(Settings):
                         )
                     )
                     for j, jname in enumerate(context.opened):
-                        module = context.opened[jname]
+                        module_object = context.opened[jname]
                         channel(
                             _("{index}: {object} type of {type}").format(
-                                index=j + 1, object=jname, type=type(module)
+                                index=j + 1, object=jname, type=type(module_object)
                             )
                         )
+                        links = self.get_linked_objects(module_object)
+                        for link_index, link in enumerate(links):
+                            channel(
+                                _(
+                                    "    {index}.{subindex}: linked {name}:{hash:X}"
+                                ).format(
+                                    index=j + 1,
+                                    subindex=link_index,
+                                    hash=id(link),
+                                    name=link.__class__.__name__,
+                                )
+                            )
                     channel(_("----------"))
                     return
             if path is None:

@@ -1,8 +1,10 @@
-from math import sqrt
+from math import atan, sqrt, tau
 
 import numpy as np
 import wx
 
+from meerk40t.core.element_types import elem_nodes
+from meerk40t.core.node.node import Node
 from meerk40t.svgelements import (
     Arc,
     Close,
@@ -67,11 +69,18 @@ class InfoPanel(wx.Panel):
         self.Layout
 
     def show_stuff(self, has_emph):
+        def mklabel(label):
+            result = ""
+            if label is not None:
+                result = label
+            return result
+
         def create_image_from_node(node, iconsize):
             image = wx.NullBitmap
             c = None
             # Do we have a standard representation?
             defaultcolor = Color("black")
+            data = None
             if node.type.startswith("elem "):
                 if (
                     hasattr(node, "stroke")
@@ -80,9 +89,15 @@ class InfoPanel(wx.Panel):
                 ):
                     c = node.stroke
             if node.type.startswith("elem ") and node.type != "elem point":
+                data = node
+                bounds = node.paint_bounds
+            elif node.type in ("group", "file"):
+                data = list(node.flat(types=elem_nodes))
+                bounds = Node.union_bounds(data, attr="paint_bounds")
+            if data is not None:
                 image = self.make_raster(
-                    node,
-                    node.paint_bounds,
+                    data,
+                    bounds,
                     width=iconsize,
                     height=iconsize,
                     bitmap=True,
@@ -101,7 +116,11 @@ class InfoPanel(wx.Panel):
         last_node = None
         msg = ""
         if has_emph:
-            data = list(self.context.elements.flat(emphasized=True))
+            xdata = list(self.context.elements.elems_nodes(emphasized=True))
+            data = []
+            for n in xdata:
+                if n.type.startswith("elem"):  # n.type == "group":
+                    data.append(n)
             count = len(data)
             self.lbl_info_main.SetLabel(
                 _("Selected elements: {count}").format(count=count)
@@ -112,7 +131,8 @@ class InfoPanel(wx.Panel):
                 self.image_default.SetBitmap(image)
                 self.lbl_info_default.SetLabel(
                     _("As in Selection: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
+                        type=node.type,
+                        lbl=mklabel(node.label),
                     )
                 )
 
@@ -123,7 +143,8 @@ class InfoPanel(wx.Panel):
                 self.image_first.SetBitmap(image)
                 self.lbl_info_first.SetLabel(
                     _("First selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
+                        type=node.type,
+                        lbl=mklabel(node.label),
                     )
                 )
 
@@ -133,7 +154,8 @@ class InfoPanel(wx.Panel):
                 self.image_last.SetBitmap(image)
                 self.lbl_info_last.SetLabel(
                     _("Last selected: {type} {lbl}").format(
-                        type=node.type, lbl=node.label
+                        type=node.type,
+                        lbl=mklabel(node.label),
                     )
                 )
         else:
@@ -180,9 +202,9 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_align_x.SetSelection(0)
         self.rbox_align_x.SetToolTip(
-            _("Align object at the left side, centered or to")
-            + "\n"
-            + _("the right side in relation to the target point")
+            _(
+                "Align object at the left side, centered or to the right side in relation to the target point"
+            )
         )
 
         self.rbox_align_y = wx.RadioBox(
@@ -195,9 +217,9 @@ class AlignmentPanel(wx.Panel):
         )
         self.rbox_align_y.SetSelection(0)
         self.rbox_align_y.SetToolTip(
-            _("Align object to the top, centered or to")
-            + "\n"
-            + _("the bottom in relation to the target point")
+            _(
+                "Align object to the top, centered or to the bottom in relation to the target point"
+            )
         )
 
         self.rbox_relation = wx.RadioBox(
@@ -393,9 +415,9 @@ class DistributionPanel(wx.Panel):
         )
         self.rbox_dist_x.SetSelection(0)
         self.rbox_dist_x.SetToolTip(
-            _("Align object at the left side, centered or to")
-            + "\n"
-            + _("the right side in relation to the target point")
+            _(
+                "Align object at the left side, centered or to the right side in relation to the target point"
+            )
         )
 
         self.rbox_dist_y = wx.RadioBox(
@@ -408,9 +430,9 @@ class DistributionPanel(wx.Panel):
         )
         self.rbox_dist_y.SetSelection(0)
         self.rbox_dist_y.SetToolTip(
-            _("Align object to the top, centered or to")
-            + "\n"
-            + _("the bottom in relation to the target point")
+            _(
+                "Align object to the top, centered or to the bottom in relation to the target point"
+            )
         )
 
         self.check_inside_xy = wx.CheckBox(
@@ -418,9 +440,9 @@ class DistributionPanel(wx.Panel):
         )
         self.check_inside_xy.SetValue(True)
         self.check_inside_xy.SetToolTip(
-            _("Keep the first and last element inside the target area,")
-            + "\n"
-            + _("effectively ignoring the X- and Y-settings")
+            _(
+                "Keep the first and last element inside the target area, effectively ignoring the X- and Y-settings"
+            )
         )
 
         self.check_rotate = wx.CheckBox(self, id=wx.ID_ANY, label=_("Rotate"))
@@ -516,14 +538,6 @@ class DistributionPanel(wx.Panel):
         has_emph = self.context.elements.has_emphasis()
         self.show_stuff(has_emph)
 
-    def disable_wip(self):
-        # Certain functionalities are not ready yet, so let's disable them
-        self.rbox_dist_x.EnableItem(4, False)  # Space
-        self.rbox_dist_y.EnableItem(4, False)  # Space
-        self.check_rotate.Enable(False)
-        # self.rbox_treatment.EnableItem(1, False)  # Shape
-        # self.rbox_treatment.EnableItem(2, False)    # Points
-
     def validate_data(self, event=None):
         obj = None
         if event is not None:
@@ -539,6 +553,7 @@ class DistributionPanel(wx.Panel):
             ymode = self.xy_param[idx]
             idx = max(0, self.rbox_sort.GetSelection())
             esort = self.sort_param[idx]
+            rotate_elem = self.check_rotate.GetValue()
 
             # Have we just selected the treatment? Then set something useful
             if obj == self.rbox_treatment and xmode == "none" and ymode == "none":
@@ -550,6 +565,13 @@ class DistributionPanel(wx.Panel):
                 active = False
             elif treat in ("shape", "points") and self.count < 3:
                 active = False
+
+            if treat in ("shape", "points") and xmode == "space":
+                self.rbox_dist_x.SetSelection(2)
+                xmode = "center"
+            if treat in ("shape", "points") and ymode == "space":
+                self.rbox_dist_y.SetSelection(2)
+                ymode = "center"
             if xmode == "none" and ymode == "none":
                 active = False
             if self.first_node is None and esort == "first":
@@ -562,59 +584,143 @@ class DistributionPanel(wx.Panel):
         if treat in ("points", "shape"):
             self.check_inside_xy.Enable(False)
             self.check_inside_xy.SetValue(False)
-            self.check_rotate.Enable(True)
+        elif xmode == "space" or ymode == "space":
+            self.check_inside_xy.Enable(False)
+            self.check_inside_xy.SetValue(False)
         else:
             self.check_inside_xy.Enable(True)
             self.check_rotate.Enable(False)
+        if treat == "shape":
+            self.check_rotate.Enable(True)
+        else:
+            self.check_rotate.Enable(False)
+            self.check_rotate.SetValue(False)
 
-        self.disable_wip()
         self.btn_dist.Enable(active)
 
-    def calculate_basis(self, data, target, treatment):
+    def calculate_basis(self, data, target, treatment, equidist_x, equidist_y, rotate):
         def calc_basic():
-            # equidistant points in rectangle
+            # equidist_x<:
+            #   if True create equidistant points across line
+            #   if False create equal distances between edges of elements
             target.clear()
             x = left_edge
             y = top_edge
             dlen = len(data)
-            target.append((x, y))
-            if dlen <= 1:
-                return
-            dx = (right_edge - left_edge) / (dlen - 1)
-            dy = (bottom_edge - top_edge) / (dlen - 1)
-            # target.extend([(x + dx * i, y + dy * i) for i in range(1, dlen)])?
-            while dlen > 1:
-                x += dx
-                y += dy
-                target.append((x, y))
-                dlen -= 1
+            x_values = [x]
+            y_values = [y]
+            if dlen > 1:
+                if equidist_x:
+                    dx = (right_edge - left_edge) / (dlen - 1)
+                    dl = dlen
+                    while dl > 1:
+                        x += dx
+                        x_values.append(x)
+                        dl -= 1
+                else:
+                    total_wd = right_edge - left_edge
+                    data_wd = 0
+                    firstwd = None
+                    lastwd = None
+                    for node in data:
+                        bb = node.bounds
+                        wd = bb[2] - bb[0]
+                        if firstwd is None:
+                            firstwd = wd
+                        lastwd = wd
+                        data_wd += wd
+                    # Reduce by first and last half width
+                    # data_wd -= (firstwd + lastwd) / 2
+                    dx = (total_wd - data_wd) / (dlen - 1)
+                    # print(
+                    #     "Totalwidth={w1:.3f}, Element={w2:.3f}, Gap={w3:.3f}".format(
+                    #         w1=Length(amount=total_wd, unitless=1).mm,
+                    #         w2=Length(amount=data_wd, unitless=1).mm,
+                    #         w3=Length(amount=dx, unitless=1).mm,
+                    #     )
+                    # )
+                    for i, node in enumerate(data):
+                        bb = node.bounds
+                        wd = bb[2] - bb[0]
+                        if i == 0:
+                            lastx = left_edge + wd
+                            x_values[0] = left_edge + wd / 2
+                        else:
+                            x = lastx + wd / 2 + dx
+                            lastx = lastx + wd + dx
+                            x_values.append(x)
+
+                if equidist_y:
+                    dy = (bottom_edge - top_edge) / (dlen - 1)
+                    dl = dlen
+                    while dl > 1:
+                        y += dy
+                        y_values.append(y)
+                        dl -= 1
+                else:
+                    total_ht = bottom_edge - top_edge
+                    data_ht = 0
+                    firstht = None
+                    lastht = None
+                    for node in data:
+                        bb = node.bounds
+                        ht = bb[3] - bb[1]
+                        if firstht is None:
+                            firstht = ht
+                        lastht = ht
+                        data_ht += ht
+                    # Reduce by first and last half height
+                    # data_ht -= (firstht + lastht) / 2
+                    dy = (total_ht - data_ht) / (dlen - 1)
+                    # print(
+                    #     "Totalheight={w1:.3f}, Element={w2:.3f}, Gap={w3:.3f}".format(
+                    #         w1=Length(amount=total_ht, unitless=1).mm,
+                    #         w2=Length(amount=data_ht, unitless=1).mm,
+                    #         w3=Length(amount=dy, unitless=1).mm,
+                    #     )
+                    # )
+                    for i, node in enumerate(data):
+                        bb = node.bounds
+                        ht = bb[3] - bb[1]
+                        if i == 0:
+                            lasty = top_edge + ht
+                            y_values[0] = top_edge + ht / 2
+                        else:
+                            y = lasty + ht / 2 + dy
+                            lasty = lasty + ht + dy
+                            y_values.append(y)
+
+            for i in range(dlen):
+                x = x_values[i]
+                y = y_values[i]
+                target.append((x, y, 0))
 
         def calc_points():
             first_point = path.first_point
             if first_point is not None:
-                pt = (first_point[0], first_point[1])
+                pt = (first_point[0], first_point[1], 0)
                 target.append(pt)
             for e in path:
                 if isinstance(e, Move):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, Line):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, Close):
                     pass
                 elif isinstance(e, QuadraticBezier):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, CubicBezier):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
                 elif isinstance(e, Arc):
-                    pt = (e.end[0], e.end[1])
+                    pt = (e.end[0], e.end[1], 0)
                     if pt not in target:
                         target.append(pt)
 
@@ -664,13 +770,63 @@ class DistributionPanel(wx.Panel):
                         last_y = pt.y
                 return this_length
 
+            def calc_slope(index):
+                try:
+                    this_point = polypoints[index]
+                except IndexError:
+                    this_point = (0, 0, 0)
+                try:
+                    last_point = polypoints[index - 1]
+                except IndexError:
+                    last_point = (0, 0, 0)
+                dx = this_point[0] - last_point[0]
+                dy = this_point[1] - last_point[1]
+                # TODO: Replace remaining code with atan2
+                # if dx < 1.0E-07:
+                #     dx = 0
+                # if dy < 1.0E-07:
+                #     dy = 0
+                # calc_atan(dx, dy):
+                if dx == 0:
+                    if dy < 0:
+                        c_angle = -1 / 4 * tau
+                        quadrant = 4
+                    elif dy == 0:
+                        c_angle = 0
+                        quadrant = 0
+                    else:
+                        c_angle = +1 / 4 * tau
+                        quadrant = 1
+                elif dx > 0 and dy >= 0:
+                    # Quadrant 1: angle between 0 und 90 (0 - tau / 4)
+                    c_angle = atan(dy / dx)
+                    quadrant = 1
+                elif dx < 0 and dy >= 0:
+                    # Quadrant 2: angle between 90 und 180 (1/4 tau - 2/4 tau)
+                    c_angle = atan(dy / dx) + tau / 2
+                    quadrant = 2
+                elif dx < 0 and dy < 0:
+                    # Quadrant 3: angle between 180 und 270 (2/4 tau - 3/4 tau)
+                    c_angle = atan(dy / dx) + tau / 2
+                    quadrant = 3
+                elif dx > 0 and dy < 0:
+                    # Quadrant 4: angle between 270 und 360 (2/4 tau - 3/4 tau)
+                    c_angle = atan(dy / dx)
+                    quadrant = 4
+                # print(
+                #     f"dx, dy={dx:.2f}, {dy:.2f}, Quadrant={quadrant}, "
+                #     + f"angle={c_angle:.2f} ({c_angle / tau * 360.0:.2f})"
+                # )
+                return c_angle
+
             polypoints = []
             poly_length = generate_polygon()
             if len(polypoints) == 0:
                 # Degenerate !!
                 return
             # Closed path? -> Different intermediary points
-            if closed_path():
+            is_closed_path = closed_path()
+            if is_closed_path:
                 segcount = len(data)
             else:
                 segcount = len(data) - 1
@@ -685,10 +841,16 @@ class DistributionPanel(wx.Panel):
             # print(f"Expected segcount= {segcount}")
             # Now iterate over all points and establish the positions
             idx = -1
-            for pt in polypoints:
+            for idxpt, pt in enumerate(polypoints):
                 x = pt[0]
                 y = pt[1]
-                ptangle = 0
+                if len(polypoints) > 1:
+                    if idxpt == 0:
+                        ptangle = calc_slope(idxpt + 1)
+                    else:
+                        ptangle = calc_slope(idxpt)
+                else:
+                    ptangle = 0
                 plen = pt[2]
                 if abs(x) > 1.0e8 or abs(y) > 1.0e8:
                     # this does not seem to be a valid coord...
@@ -702,8 +864,8 @@ class DistributionPanel(wx.Panel):
                             fract = (mylen - lastlen) / (plen - lastlen)
                             x = lastx + fract * (x - lastx)
                             y = lasty + fract * (y - lasty)
-                    newpt = (x, y)
-                    # print ("I would add another point...")
+                    newpt = (x, y, ptangle)
+                    # print (f"I add: ({x:.1f}, {y:.1f}, {ptangle:.3f}) {ptangle/tau*360.0:.3f} ")
                     if newpt not in target:
                         # print ("..and added")
                         target.append(newpt)
@@ -713,12 +875,13 @@ class DistributionPanel(wx.Panel):
                 lastx = pt[0]
                 lasty = pt[1]
                 lastlen = pt[2]
+                last_angle = ptangle
             # We may have slightly overshot, so in doubt add the last point
             if segadded < segcount:
                 # print ("I would add to it the last point...")
-                newpt = (lastx, lasty)
+                newpt = (lastx, lasty, last_angle)
                 if newpt not in target:
-                    # print ("..and added")
+                    # print (f"Finally: ({last_x:.1f}, {last_y:.1f}, {last_angle:.3f})")
                     segadded += 1
                     target.append(newpt)
             # print (f"Target points: {len(target)}")
@@ -795,7 +958,8 @@ class DistributionPanel(wx.Panel):
         xdata = list(self.context.elements.elems(emphasized=True))
         data.clear()
         for n in xdata:
-            data.append(n)
+            if n.type.startswith("elem"):
+                data.append(n)
         if esort == "first":
             data.sort(key=lambda n: n.emphasized_time)
         elif esort == "last":
@@ -811,8 +975,11 @@ class DistributionPanel(wx.Panel):
                 break
             dx = target[idx][0] - node.bounds[0]
             dy = target[idx][1] - node.bounds[1]
+            ptangle = target[idx][2]
             if xmode == "none":
                 dx = 0
+                # Makes no sense if not both xmode and ymode are set...
+                ptangle = 0
             elif remain_inside and idx == idxmin:
                 # That's already fine
                 pass
@@ -825,8 +992,11 @@ class DistributionPanel(wx.Panel):
                 dx -= (node.bounds[2] - node.bounds[0]) / 2
             elif xmode == "max":
                 dx -= node.bounds[2] - node.bounds[0]
+
             if ymode == "none":
                 dy = 0
+                # Makes no sense if not both xmode and ymode are set...
+                ptangle = 0
             elif remain_inside and idx == idxmin:
                 # That's already fine
                 pass
@@ -840,7 +1010,7 @@ class DistributionPanel(wx.Panel):
             elif ymode == "max":
                 dy -= node.bounds[3] - node.bounds[1]
 
-            if dx == 0 and dy == 0:
+            if dx == 0 and dy == 0 and ptangle == 0:
                 continue
             if (
                 hasattr(node, "lock")
@@ -850,8 +1020,13 @@ class DistributionPanel(wx.Panel):
                 continue
             else:
                 try:
-                    # q.matrix *= matrix
-                    node.matrix.post_translate(dx, dy)
+                    cx = (node.bounds[2] + node.bounds[0]) / 2 + dx
+                    cy = (node.bounds[3] + node.bounds[1]) / 2 + dy
+                    if dx != 0 or dy != 0:
+                        node.matrix.post_translate(dx, dy)
+                    # Do we have a rotation to take into account?
+                    if ptangle != 0:
+                        node.matrix.post_rotate(ptangle, cx, cy)
                     node.modified()
                     modified += 1
                 except AttributeError:
@@ -870,13 +1045,29 @@ class DistributionPanel(wx.Panel):
         remain_inside = bool(self.check_inside_xy.GetValue())
         if treat in ("points", "shape"):
             remain_inside = False
+        rotate_elem = self.check_rotate.GetValue()
+        if treat not in ("points", "shape"):
+            rotate_elem = False
         # print(f"Params: x={xmode}, y={ymode}, sort={esort}, treat={treat}")
         # The elements...
         data = []
         target = []
         self.prepare_data(data, esort)
-        self.calculate_basis(data, target, treat)
+        if xmode == "space":
+            # Space
+            equidist_x = False
+            xmode = "center"
+        else:
+            equidist_x = True
+        if ymode == "space":
+            # Space
+            equidist_y = False
+            ymode = "center"
+        else:
+            equidist_y = True
+        self.calculate_basis(data, target, treat, equidist_x, equidist_y, rotate_elem)
         self.apply_results(data, target, xmode, ymode, remain_inside)
+        self.context.signal("refresh_scene", "Scene")
         self.save_setting()
 
     def save_setting(self):
@@ -932,7 +1123,7 @@ class ArrangementPanel(wx.Panel):
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         self.relchoices = (
-            _("Selection Bounds"),
+            _("Adjacent"),
             _("Set distances"),
         )
         self.relparam = ("selection", "distance")
@@ -977,7 +1168,7 @@ class ArrangementPanel(wx.Panel):
         self.rbox_relation = wx.RadioBox(
             self,
             wx.ID_ANY,
-            _("Alignment relative to:"),
+            _("Arrangement inside grid:"),
             choices=self.relchoices,
             majorDimension=2,
             style=wx.RA_SPECIFY_ROWS,
@@ -1001,8 +1192,8 @@ class ArrangementPanel(wx.Panel):
             self, id=wx.ID_ANY, value="5mm", limited=True, check="length"
         )
 
-        self.btn_align = wx.Button(self, wx.ID_ANY, _("Arrange"))
-        self.btn_align.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
+        self.btn_arrange = wx.Button(self, wx.ID_ANY, _("Arrange"))
+        self.btn_arrange.SetBitmap(icons8_arrange_50.GetBitmap(resize=25))
 
         sizer_dimensions = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dim_x = wx.StaticBoxSizer(
@@ -1051,7 +1242,7 @@ class ArrangementPanel(wx.Panel):
 
         sizer_main.Add(self.rbox_selection, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_gaps, 0, wx.EXPAND, 0)
-        sizer_main.Add(self.btn_align, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.btn_arrange, 0, wx.EXPAND, 0)
 
         self.info_panel = InfoPanel(self, wx.ID_ANY, context=self.context)
         sizer_main.Add(self.info_panel, 1, wx.EXPAND, 0)
@@ -1060,8 +1251,27 @@ class ArrangementPanel(wx.Panel):
         sizer_main.Fit(self)
 
         self.Layout()
+        self.btn_arrange.SetToolTip(_("Rearrange all selected elements"))
+        self.rbox_align_x.SetToolTip(_(""))
+        self.rbox_align_y.SetToolTip(_(""))
+        self.check_same_x.SetToolTip(
+            _(
+                "Set if all columns need to have the same size (ie maximum width over all columns)"
+            )
+        )
+        self.check_same_y.SetToolTip(
+            _(
+                "Set if all rows need to have the same size (ie maximum height over all row)"
+            )
+        )
+        self.rbox_relation.SetToolTip(_(""))
+        self.rbox_selection.SetToolTip(_(""))
+        self.arrange_x.SetToolTip(_(""))
+        self.arrange_y.SetToolTip(_(""))
+        self.txt_gap_x.SetToolTip(_("Set the distance between columns"))
+        self.txt_gap_y.SetToolTip(_("Set the distance between rows"))
 
-        self.Bind(wx.EVT_BUTTON, self.on_button_align, self.btn_align)
+        self.Bind(wx.EVT_BUTTON, self.on_button_align, self.btn_arrange)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_x)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_align_y)
         self.Bind(wx.EVT_RADIOBOX, self.validate_data, self.rbox_selection)
@@ -1094,7 +1304,7 @@ class ArrangementPanel(wx.Panel):
             num_cols = self.arrange_x.GetValue()
             num_rows = self.arrange_y.GetValue()
             if self.count < 2 or self.count > num_cols * num_rows:
-                print(f"Too small: {self.count} vs. {num_cols}x{num_rows}")
+                # print(f"Too small: {self.count} vs. {num_cols}x{num_rows}")
                 active = False
             idx = self.rbox_selection.GetSelection()
             if idx < 0:
@@ -1124,46 +1334,133 @@ class ArrangementPanel(wx.Panel):
                 gapy = -1
             # Invalid gaps?
             if relat == "distance" and (gapx < 0 or gapy < 0):
-                print("Invalid gaps")
+                # print("Invalid gaps")
                 active = False
         else:
             active = False
         # active = True
-        self.btn_align.Enable(active)
+        self.btn_arrange.Enable(active)
 
     def on_button_align(self, event):
         def prepare_data():
             xdata = list(self.context.elements.elems(emphasized=True))
             data.clear()
             for n in xdata:
-                data.append(n)
+                if n.type.startswith("elem"):
+                    data.append(n)
             if esort == "first":
                 data.sort(key=lambda n: n.emphasized_time)
             elif esort == "last":
                 data.sort(reverse=True, key=lambda n: n.emphasized_time)
 
         def calculate_arrays():
-            max_colwid = []
-            max_rowht = []
-            bound_array = []
-            colarray = []
             row = 0
             col = 0
+            max_colwid = [0] * num_cols
+            max_rowht = [0]
+            total_max_wid = 0
+            total_max_ht = 0
             for node in data:
                 bb = node.bounds
-                colarray.append(bb)
+                wd = bb[2] - bb[0]
+                ht = bb[3] - bb[1]
+                total_max_ht = max(total_max_ht, ht)
+                max_rowht[row] = max(max_rowht[row], ht)
+                total_max_wid = max(total_max_wid, wd)
+                max_colwid[col] = max(max_colwid[col], wd)
+
                 col += 1
                 if col >= num_cols:
-                    bound_array.append(colarray)
-                    colarray = []
                     col = 0
                     row += 1
-            if col > 0:
-                # Extend the array
-                while col < num_cols:
-                    colarray.append(None)
-                bound_array.append(colarray)
-            rows = row
+                    max_rowht.append(0)
+            max_xx = 0
+            max_yy = 0
+            xx = 0
+            yy = 0
+            # target contains the bound of the grid segment
+            target.clear()
+            for idx2 in range(len(max_rowht)):
+                if same_y:
+                    dy = total_max_ht
+                else:
+                    dy = max_rowht[idx2]
+                for idx1 in range(num_cols):
+                    if same_x:
+                        dx = total_max_wid
+                    else:
+                        dx = max_colwid[idx1]
+                    bb = (xx, yy, xx + dx, yy + dy)
+                    max_xx = max(max_xx, xx + dy)
+                    max_yy = max(max_yy, yy + dy)
+                    target.append(bb)
+                    xx = xx + dx + gapx
+                xx = 0
+                yy = yy + dy + gapy
+            # Now that we have established the global boundaries,
+            # we are going to center it on the scene...
+            # By definition the origin was set to 0 0
+            dx = float(Length(self.context.device.width)) / 2 - (0 + max_xx) / 2
+            dy = float(Length(self.context.device.height)) / 2 - (0 + max_yy) / 2
+            for idx, bb in enumerate(target):
+                newbb = (bb[0] + dx, bb[1] + dy, bb[2] + dx, bb[3] + dy)
+                target[idx] = newbb
+
+        def arrange_elements():
+            for idx, node in enumerate(data):
+                bb = node.bounds
+                if idx >= len(target):
+                    # no more information available
+                    break
+                # target contains the bound of the grid segment
+                left_edge = target[idx][0]
+                right_edge = target[idx][2]
+                top_edge = target[idx][1]
+                bottom_edge = target[idx][3]
+
+                if xpos == "min":
+                    dx = left_edge - bb[0]
+                elif xpos == "center":
+                    dx = (right_edge + left_edge) / 2 - (bb[2] + bb[0]) / 2
+                elif xpos == "max":
+                    dx = right_edge - bb[2]
+                else:
+                    dx = 0
+                if ypos == "min":
+                    dy = top_edge - bb[1]
+                elif ypos == "center":
+                    dy = (bottom_edge + top_edge) / 2 - (bb[3] + bb[1]) / 2
+                elif ypos == "max":
+                    dy = bottom_edge - bb[3]
+                else:
+                    dy = 0
+
+                # s = f"{node.type} pos: {Length(amount=bb[0], unitless=1, digits=1).length_mm}, "
+                # s += f"{Length(amount=bb[0], unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=bb[2], unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=bb[3], unitless=1, digits=1).length_mm}"
+                # print (s)
+                # s = f"Set to: {Length(amount=left_edge, unitless=1, digits=1).length_mm}, "
+                # s += f"{Length(amount=top_edge, unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=right_edge, unitless=1, digits=1).length_mm} - "
+                # s += f"{Length(amount=bottom_edge, unitless=1, digits=1).length_mm}"
+                # print (s)
+                # s = f"dx={Length(amount=dx, unitless=1, digits=1).length_mm}, "
+                # s += f"dx={Length(amount=dy, unitless=1, digits=1).length_mm}"
+                # print (s)
+                if dx != 0 or dy != 0:
+                    if (
+                        hasattr(node, "lock")
+                        and node.lock
+                        and not self.context.elements.lock_allows_move
+                    ):
+                        continue
+                    else:
+                        try:
+                            node.matrix.post_translate(dx, dy)
+                            node.modified()
+                        except AttributeError:
+                            pass
 
         num_cols = self.arrange_x.GetValue()
         num_rows = self.arrange_y.GetValue()
@@ -1177,6 +1474,17 @@ class ArrangementPanel(wx.Panel):
         if idx < 0:
             idx = 0
         relat = self.relparam[idx]
+        gapx = 0
+        gapy = 0
+        if relat == "distance":
+            try:
+                gapx = float(Length(self.txt_gap_x.GetValue()))
+            except ValueError:
+                gapx = 0
+            try:
+                gapy = float(Length(self.txt_gap_y.GetValue()))
+            except ValueError:
+                gapy = 0
         idx = self.rbox_align_x.GetSelection()
         if idx < 0:
             idx = 0
@@ -1185,24 +1493,18 @@ class ArrangementPanel(wx.Panel):
         if idx < 0:
             idx = 0
         ypos = self.xyparam[idx]
-        try:
-            gapx = float(Length(self.txt_gap_x.GetValue()))
-        except ValueError:
-            gapx = -1
-        try:
-            gapy = float(Length(self.txt_gap_y.GetValue()))
-        except ValueError:
-            gapy = -1
-        print(f"cols={num_cols}, rows={num_rows}")
-        print(f"samex={same_x}, samey={same_y}")
-        print(f"Relat={relat}, esort={esort}")
-        print(f"xpos={xpos}, ypos={ypos}")
-        print(f"Gapx={gapx:.1f}, Gapy={gapy:.1f}")
+        # print(f"cols={num_cols}, rows={num_rows}")
+        # print(f"samex={same_x}, samey={same_y}")
+        # print(f"Relat={relat}, esort={esort}")
+        # print(f"xpos={xpos}, ypos={ypos}")
+        # print(f"Gapx={gapx:.1f}, Gapy={gapy:.1f}")
         data = []
         target = []
         prepare_data()
         calculate_arrays()
+        arrange_elements()
         # self.apply_results(data, target, xmode, ymode, remain_inside)
+        self.context.signal("refresh_scene", "Scene")
         self.save_setting()
 
     def save_setting(self):
@@ -1240,6 +1542,12 @@ class ArrangementPanel(wx.Panel):
         self.rbox_align_y.Enable(has_emph)
         self.rbox_relation.Enable(has_emph)
         self.rbox_selection.Enable(has_emph)
+        self.arrange_x.Enable(has_emph)
+        self.arrange_y.Enable(has_emph)
+        self.check_same_x.Enable(has_emph)
+        self.check_same_y.Enable(has_emph)
+        self.txt_gap_x.Enable(has_emph)
+        self.txt_gap_y.Enable(has_emph)
         self.validate_data()
 
 
@@ -1265,23 +1573,18 @@ class Alignment(MWindow):
             | wx.aui.AUI_NB_TAB_MOVE,
         )
         self.scene = getattr(self.context.root, "mainscene", None)
-        # Hide Arrangement until ready...
-        self.showpanels = [True, True, False]
-        if self.showpanels[0]:
-            self.panel_align = AlignmentPanel(
-                self, wx.ID_ANY, context=self.context, scene=self.scene
-            )
-            self.notebook_main.AddPage(self.panel_align, _("Alignment"))
-        if self.showpanels[1]:
-            self.panel_distribution = DistributionPanel(
-                self, wx.ID_ANY, context=self.context, scene=self.scene
-            )
-            self.notebook_main.AddPage(self.panel_distribution, _("Distribution"))
-        if self.showpanels[2]:
-            self.panel_arrange = ArrangementPanel(
-                self, wx.ID_ANY, context=self.context, scene=self.scene
-            )
-            self.notebook_main.AddPage(self.panel_arrange, _("Arranging"))
+        self.panel_align = AlignmentPanel(
+            self, wx.ID_ANY, context=self.context, scene=self.scene
+        )
+        self.notebook_main.AddPage(self.panel_align, _("Align"))
+        self.panel_distribution = DistributionPanel(
+            self, wx.ID_ANY, context=self.context, scene=self.scene
+        )
+        self.notebook_main.AddPage(self.panel_distribution, _("Distribute"))
+        self.panel_arrange = ArrangementPanel(
+            self, wx.ID_ANY, context=self.context, scene=self.scene
+        )
+        self.notebook_main.AddPage(self.panel_arrange, _("Arrange"))
 
         self.Layout()
 
@@ -1291,23 +1594,17 @@ class Alignment(MWindow):
         self.SetTitle(_("Alignment"))
 
     def delegates(self):
-        if self.showpanels[0]:
-            yield self.panel_align
-        if self.showpanels[1]:
-            yield self.panel_distribution
-        if self.showpanels[2]:
-            yield self.panel_arrange
+        yield self.panel_align
+        yield self.panel_distribution
+        yield self.panel_arrange
 
     @signal_listener("reference")
     @signal_listener("emphasized")
     def on_emphasize_signal(self, origin, *args):
         has_emph = self.context.elements.has_emphasis()
-        if self.showpanels[0]:
-            self.panel_align.show_stuff(has_emph)
-        if self.showpanels[1]:
-            self.panel_distribution.show_stuff(has_emph)
-        if self.showpanels[2]:
-            self.panel_arrange.show_stuff(has_emph)
+        self.panel_align.show_stuff(has_emph)
+        self.panel_distribution.show_stuff(has_emph)
+        self.panel_arrange.show_stuff(has_emph)
 
     @staticmethod
     def sub_register(kernel):

@@ -59,15 +59,19 @@ class ElementsWidget(Widget):
     def event(
         self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
     ):
+
         if event_type == "rightdown" and not modifiers:
             if not self.scene.tool_active:
                 if self.scene.active_tool != "none":
                     self.scene.context("tool none")
                     return RESPONSE_CONSUME
                 else:
-                    if self.scene.context.use_toolmenu:
-                        self.scene.context("tool_menu")
-                        return RESPONSE_CONSUME
+                    self.scene.context.signal("scene_right_click")
+                    return RESPONSE_CONSUME
+        elif event_type == "rightdown":  # any modifier
+            if self.scene.context.use_toolmenu:
+                self.scene.context("tool_menu")
+                return RESPONSE_CONSUME
             return RESPONSE_CHAIN
         elif event_type == "leftclick":
             elements = self.scene.context.elements

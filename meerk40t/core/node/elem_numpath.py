@@ -22,12 +22,15 @@ class NumpathNode(Node, Parameters):
         linejoin=Linejoin.JOIN_MITER,
         fillrule=Fillrule.FILLRULE_EVENODD,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super().__init__(*args, **settings)
         self._formatter = "{element_type} {id} {stroke}"
         self.path = path
@@ -41,7 +44,7 @@ class NumpathNode(Node, Parameters):
         self.linejoin = linejoin
         self.fillrule = fillrule
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __copy__(self):
         return NumpathNode(
@@ -53,6 +56,8 @@ class NumpathNode(Node, Parameters):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 

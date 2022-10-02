@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.7.5"
+SVGELEMENTS_VERSION = "1.8.4"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -130,6 +130,8 @@ SVG_ATTR_FONT_WEIGHT = "font-weight"  # normal, bold, bolder, lighter, 100-900
 SVG_ATTR_FONT_STRETCH = "font-stretch"
 SVG_ATTR_FONT_SIZE = "font-size"
 SVG_ATTR_TEXT_ANCHOR = "text-anchor"
+SVG_ATTR_TEXT_ALIGNMENT_BASELINE = "alignment-baseline"
+SVG_ATTR_TEXT_DOMINANT_BASELINE = "dominant-baseline"
 SVG_ATTR_PATTERN_CONTENT_UNITS = "patternContentUnits"
 SVG_ATTR_PATTERN_TRANSFORM = "patternTransform"
 SVG_ATTR_PATTERN_UNITS = "patternUnits"
@@ -2463,7 +2465,7 @@ class Angle(float):
 
 
 class Matrix:
-    """ "
+    """
     Provides svg matrix interfacing.
 
     SVG 7.15.3 defines the matrix form as:
@@ -3518,15 +3520,17 @@ class GraphicObject:
             if not self.apply:
                 return self.stroke_width
             if self.stroke_width is not None:
+                transform = self.transform
                 if (
                     hasattr(self, "values")
                     and SVG_ATTR_VECTOR_EFFECT in self.values
                     and SVG_VALUE_NON_SCALING_STROKE
                     in self.values[SVG_ATTR_VECTOR_EFFECT]
                 ):
-                    return self.stroke_width  # we are not to scale the stroke.
+                    # If we do not apply scaling stroke we still apply viewport transform.
+                    transform = Matrix(self.values.get("viewport_transform", ""))
                 width = self.stroke_width
-                det = self.transform.determinant
+                det = transform.determinant
                 return width * sqrt(abs(det))
         except AttributeError:
             return self.stroke_width
@@ -6941,7 +6945,7 @@ class _RoundShape(Shape):
         if b > a:
             a, b = b, a
         h = ((a - b) * (a - b)) / ((a + b) * (a + b))
-        return pi * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
+        return tau / 2 * (a + b) * (1 + (3 * h / (10 + sqrt(4 - 3 * h))))
 
 
 class Ellipse(_RoundShape):
@@ -7561,14 +7565,14 @@ class Group(SVGElement, Transformable, list):
         if conditional is None:
             for subitem in self:
                 yield subitem
-                if isinstance(subitem, Group):
+                if isinstance(subitem, (Group, Use)):
                     for s in subitem.select(conditional):
                         yield s
         else:
             for subitem in self:
                 if conditional(subitem):
                     yield subitem
-                if isinstance(subitem, Group):
+                if isinstance(subitem, (Group, Use)):
                     for s in subitem.select(conditional):
                         yield s
 
@@ -7584,33 +7588,18 @@ class Group(SVGElement, Transformable, list):
         :param with_stroke: should the stroke-width be included in the bounds of the elements
         :return: union of all bounding boxes of elements within the iterable.
         """
-        boundary_points = []
+        boxes = []
         for e in elements:
-            if not hasattr(e, "bbox"):
+            if not hasattr(e, "bbox") or isinstance(e, (Group, Use)):
                 continue
-            box = e.bbox(transformed=False, with_stroke=with_stroke)
+            box = e.bbox(transformed=transformed, with_stroke=with_stroke)
             if box is None:
                 continue
-            top_left = (box[0], box[1])
-            top_right = (box[2], box[1])
-            bottom_left = (box[0], box[3])
-            bottom_right = (box[2], box[3])
-            if transformed:
-                top_left = e.transform.point_in_matrix_space(top_left)
-                top_right = e.transform.point_in_matrix_space(top_right)
-                bottom_left = e.transform.point_in_matrix_space(bottom_left)
-                bottom_right = e.transform.point_in_matrix_space(bottom_right)
-            boundary_points.append(top_left)
-            boundary_points.append(top_right)
-            boundary_points.append(bottom_left)
-            boundary_points.append(bottom_right)
-        if len(boundary_points) == 0:
+            boxes.append(box)
+        if len(boxes) == 0:
             return None
-        xmin = min([e[0] for e in boundary_points])
-        ymin = min([e[1] for e in boundary_points])
-        xmax = max([e[0] for e in boundary_points])
-        ymax = max([e[1] for e in boundary_points])
-        return xmin, ymin, xmax, ymax
+        (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
+        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
 
     def bbox(self, transformed=True, with_stroke=False):
         """
@@ -7626,6 +7615,121 @@ class Group(SVGElement, Transformable, list):
         :return: bounding box of the given element
         """
         return Group.union_bbox(
+            self.select(),
+            transformed=transformed,
+            with_stroke=with_stroke,
+        )
+
+
+class Use(SVGElement, Transformable, list):
+    """
+    Use elements are defined in svg 5.6
+    https://www.w3.org/TR/SVG11/struct.html#UseElement
+
+    Use is a generic container object group-like that use reference objects,
+    """
+
+    def __init__(self, *args, **kwargs):
+        list.__init__(self)
+        self.x = None
+        self.y = None
+        self.width = None
+        self.height = None
+        Transformable.__init__(self, *args, **kwargs)
+        SVGElement.__init__(
+            self, *args, **kwargs
+        )  # Must go last, triggers, by_object, by_value, by_arg functions.
+
+    def property_by_object(self, s):
+        SVGElement.property_by_object(self, s)
+        Transformable.property_by_object(self, s)
+        self.x = s.x
+        self.y = s.y
+        self.width = s.width
+        self.height = s.height
+
+    def property_by_values(self, values):
+        self.x = Length(values.get(SVG_ATTR_X, 0)).value()
+        self.y = Length(values.get(SVG_ATTR_Y, 0)).value()
+        self.width = Length(values.get(SVG_ATTR_WIDTH, 1)).value()
+        self.height = Length(values.get(SVG_ATTR_HEIGHT, 1)).value()
+        if self.x != 0 or self.y != 0:
+            # If x or y is set, apply this to transform
+            try:
+                values[SVG_ATTR_TRANSFORM] = "%s translate(%s, %s)" % (
+                    values[SVG_ATTR_TRANSFORM],
+                    self.x,
+                    self.y,
+                )
+            except KeyError:
+                values[SVG_ATTR_TRANSFORM] = "translate(%s, %s)" % (
+                    self.x,
+                    self.y,
+                )
+        SVGElement.property_by_values(self, values)
+        Transformable.property_by_values(self, values)
+
+    def render(self, **kwargs):
+        SVGElement.render(self, **kwargs)
+        Transformable.render(self, **kwargs)
+
+    def select(self, conditional=None):
+        """
+        Finds all flattened subobjects of this group for which the conditional returns
+        true.
+
+        :param conditional: function taking element and returns True to include or False if exclude
+        """
+        if conditional is None:
+            for subitem in self:
+                yield subitem
+                if isinstance(subitem, (Group, Use)):
+                    for s in subitem.select(conditional):
+                        yield s
+        else:
+            for subitem in self:
+                if conditional(subitem):
+                    yield subitem
+                if isinstance(subitem, (Group, Use)):
+                    for s in subitem.select(conditional):
+                        yield s
+
+    @staticmethod
+    def union_bbox(elements, transformed=True, with_stroke=False):
+        """
+        Returns the union of the bounding boxes for the elements within the iterator.
+
+        :param transformed: Should the children of this object be properly transformed.
+        :param with_stroke: should the stroke-width be included in the bounds of the elements
+        :return: union of all bounding boxes of elements within the iterable.
+        """
+        boxes = []
+        for e in elements:
+            if not hasattr(e, "bbox") or isinstance(e, (Group, Use)):
+                continue
+            box = e.bbox(transformed=transformed, with_stroke=with_stroke)
+            if box is None:
+                continue
+            boxes.append(box)
+        if len(boxes) == 0:
+            return None
+        (xmins, ymins, xmaxs, ymaxs) = zip(*boxes)
+        return (min(xmins), min(ymins), max(xmaxs), max(ymaxs))
+
+    def bbox(self, transformed=True, with_stroke=False):
+        """
+        Returns the bounding box of the given object.
+
+        In the case of groups this is the union of all the bounding boxes of all bound children.
+
+        Setting transformed to false, may yield unexpected results if subitems are transformed in non-uniform
+        ways.
+
+        :param transformed: bounding box of the properly transformed children.
+        :param with_stroke: should the stroke-width be included in the bounds.
+        :return: bounding box of the given element
+        """
+        return Use.union_bbox(
             self.select(),
             transformed=transformed,
             with_stroke=with_stroke,
@@ -8553,101 +8657,63 @@ class SVG(Group):
         return self.viewbox.transform(self)
 
     @staticmethod
-    def _shadow_iter(tag, elem, children):
-        yield tag, "start", elem
-        try:
-            for t, e, c in children:
-                for shadow_tag, shadow_event, shadow_elem in SVG._shadow_iter(t, e, c):
-                    yield shadow_tag, shadow_event, shadow_elem
-        except ValueError:
-            """
-            Strictly speaking it is possible to reference use from other use objects. If this is an infinite loop
-            we should not block the rendering. Just say we finished. See: W3C, struct-use-12-f
-            """
-            pass
-        yield tag, "end", elem
-
-    @staticmethod
     def _use_structure_parse(source):
         """
         SVG structure pass: parses the svg file such that it creates the structure implied by reused objects in a
         generalized context. Objects ids are read and put into an unparsed shadow tree. <use> objects seamlessly contain
         their definitions.
         """
-        defs = {}
+        event_defs = {}
         parent = None  # Define Root Node.
         children = list()
 
+        # Preprocess iterparse tree. Store all events. Reference all tags.
         for event, elem in iterparse(source, events=("start", "end", "start-ns")):
-            try:
-                tag = elem.tag
-                if tag.startswith("{http://www.w3.org/2000/svg"):
-                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
-            except AttributeError:
-                yield None, event, elem
-                continue
-
             if event == "start":
-                attributes = elem.attrib
-                # Create new node.
                 siblings = children  # Parent's children are now my siblings.
                 parent = (parent, children)  # parent is now previous node context
                 children = list()  # new node has no children.
-                node = (tag, elem, children)  # define this node.
+                node = (elem, children)  # define this node.
                 siblings.append(node)  # siblings now includes this node.
+                attributes = elem.attrib
+                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
+                    event_defs[
+                        attributes[SVG_ATTR_ID]
+                    ] = node  # store node value in defs.
+            elif event == "end":
+                parent, children = parent
+            else:
+                children.append((elem, None))
+        nodes = children
+        # End preprocess
 
+        # Semiparse the nodes. All nodes are given in iterparse ordering with start-ns, start, and end.
+        # Use values are inlined.
+        def semiparse(nodes):
+            for elem, children in nodes:
+                if children is None:
+                    yield None, "start-ns", elem
+                    continue
+                tag = elem.tag
+                if tag.startswith("{http://www.w3.org/2000/svg"):
+                    tag = tag[28:]  # Removing namespace. http://www.w3.org/2000/svg:
+                yield tag, "start", elem
+                yield from semiparse(children)
                 if SVG_TAG_USE == tag:
                     url = None
-                    if XLINK_HREF in attributes:
-                        url = attributes[XLINK_HREF]
-                    if SVG_HREF in attributes:
-                        url = attributes[SVG_HREF]
+                    semiattr = elem.attrib
+                    if XLINK_HREF in semiattr:
+                        url = semiattr[XLINK_HREF]
+                    if SVG_HREF in semiattr:
+                        url = semiattr[SVG_HREF]
                     if url is not None:
-                        transform = False
                         try:
-                            x = attributes[SVG_ATTR_X]
-                            del attributes[SVG_ATTR_X]
-                            transform = True
-                        except KeyError:
-                            x = "0"
-                        try:
-                            y = attributes[SVG_ATTR_Y]
-                            del attributes[SVG_ATTR_Y]
-                            transform = True
-                        except KeyError:
-                            y = "0"
-                        if transform:
-                            try:
-                                attributes[
-                                    SVG_ATTR_TRANSFORM
-                                ] = "%s translate(%s, %s)" % (
-                                    attributes[SVG_ATTR_TRANSFORM],
-                                    x,
-                                    y,
-                                )
-                            except KeyError:
-                                attributes[SVG_ATTR_TRANSFORM] = "translate(%s, %s)" % (
-                                    x,
-                                    y,
-                                )
-                        yield tag, event, elem
-                        try:
-                            shadow_node = defs[url[1:]]
-                            children.append(
-                                shadow_node
-                            )  # Shadow children are children of the use.
-                            for n in SVG._shadow_iter(*shadow_node):
-                                yield n
+                            yield from semiparse([event_defs[url[1:]]])
                         except KeyError:
                             pass  # Failed to find link.
-                else:
-                    yield tag, event, elem
-                if SVG_ATTR_ID in attributes:  # If we have an ID, we save the node.
-                    defs[attributes[SVG_ATTR_ID]] = node  # store node value in defs.
-            elif event == "end":
-                yield tag, event, elem
-                # event is 'end', pop values.
-                parent, children = parent  # Parent is now node.
+                yield tag, "end", elem
+
+        yield from semiparse(nodes)
 
     @staticmethod
     def parse(
@@ -8676,6 +8742,7 @@ class SVG(Group):
         :param parse_display_none: Parse display_none values anyway.
         :return:
         """
+        use = 0
         clip = 0
         root = context
         styles = {}
@@ -8713,10 +8780,12 @@ class SVG(Group):
                     del values[SVG_ATTR_VIEWBOX]
                 if SVG_ATTR_ID in values:
                     del values[SVG_ATTR_ID]
+                if SVG_ATTR_CLASS in values:
+                    del values[SVG_ATTR_CLASS]
                 if SVG_ATTR_CLIP_PATH in values:
                     del values[SVG_ATTR_CLIP_PATH]
 
-                attributes = elem.attrib  # priority; lowest
+                attributes = dict(elem.attrib)  # priority; lowest
                 attributes[SVG_ATTR_TAG] = tag
 
                 # Split any Style block elements into parts; priority medium
@@ -8790,7 +8859,6 @@ class SVG(Group):
                         attributes[SVG_ATTR_TRANSFORM] = attributes[SVG_ATTR_TRANSFORM]
 
                 # All class and attribute properties are compiled.
-
                 values.update(attributes)
                 values[SVG_STRUCT_ATTRIB] = attributes
                 if (
@@ -8830,6 +8898,7 @@ class SVG(Group):
                             values[SVG_ATTR_TRANSFORM] += " " + viewport_transform
                         else:
                             values[SVG_ATTR_TRANSFORM] = viewport_transform
+                        values["viewport_transform"] = values[SVG_ATTR_TRANSFORM]
                         width, height = s.viewbox.width, s.viewbox.height
                     if context is None:
                         stack[-1] = (context, values)
@@ -8852,6 +8921,24 @@ class SVG(Group):
                     context = s  # Non-Rendered
                     s.render(ppi=ppi, width=width, height=height)
                     clip += 1
+                elif SVG_TAG_USE == tag:
+                    s = Use(values)
+                    if SVG_ATTR_TRANSFORM in s.values:
+                        # Update value in case x or y applied.
+                        values[SVG_ATTR_TRANSFORM] = s.values[SVG_ATTR_TRANSFORM]
+                    if SVG_ATTR_X in values:
+                        del values[SVG_ATTR_X]
+                    if SVG_ATTR_Y in values:
+                        del values[SVG_ATTR_Y]
+                    if SVG_ATTR_WIDTH in values:
+                        del values[SVG_ATTR_WIDTH]
+                    if SVG_ATTR_HEIGHT in values:
+                        del values[SVG_ATTR_HEIGHT]
+                    context.append(s)
+                    context = s
+                    use += 1
+                    if SVG_ATTR_ID in attributes and root is not None and use == 1:
+                        root.objects[attributes[SVG_ATTR_ID]] = s
                 elif SVG_TAG_PATTERN == tag:
                     s = Pattern(values)
                     context = s  # Non-rendered
@@ -8919,7 +9006,7 @@ class SVG(Group):
                             s.clip_rule = clip_rule
                     except AttributeError:
                         pass
-                if SVG_ATTR_ID in attributes and root is not None:
+                if SVG_ATTR_ID in attributes and root is not None and use == 0:
                     root.objects[attributes[SVG_ATTR_ID]] = s
             elif event == "end":  # End event.
                 # The iterparse spec makes it clear that internal text data is undefined except at the end.
@@ -8939,7 +9026,7 @@ class SVG(Group):
                     SVG_TAG_STYLE,
                 ):
                     attributes = elem.attrib
-                    if SVG_ATTR_ID in attributes and root is not None:
+                    if SVG_ATTR_ID in attributes and root is not None and use == 0:
                         root.objects[attributes[SVG_ATTR_ID]] = s
                 if tag in (SVG_TAG_TEXT, SVG_TAG_TSPAN):
                     s = Text(values, text=elem.text)
@@ -8972,6 +9059,8 @@ class SVG(Group):
                                 styles[sel] += value
                 elif SVG_TAG_CLIPPATH == tag:
                     clip -= 1
+                elif SVG_TAG_USE == tag:
+                    use -= 1
                 if s is not None:
                     # Assign optional linked properties.
                     try:

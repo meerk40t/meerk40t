@@ -5232,7 +5232,7 @@ msgid "Devices"
 msgstr "Dispositivos"
 
 #: meerk40t/gui/wxmribbon.py:326
-msgid "Opens DeviceManager Window"
+msgid "Opens Devices Window
 msgstr "Abre Janela DeviceManager"
 
 #: meerk40t/gui/panes/toolbarpreferences.py:39 meerk40t/gui/wxmribbon.py:336

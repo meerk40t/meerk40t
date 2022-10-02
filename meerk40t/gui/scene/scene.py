@@ -206,7 +206,8 @@ class Scene(Module, Job):
 
         self.screen_refresh_is_requested = True
         self.background_brush = wx.Brush(self.colors.color_background)
-
+        # If set this color will be used for the scene background (used during burn)
+        self.overrule_background = None
         # Stuff for magnet-lines
         self.magnet_x = []
         self.magnet_y = []
@@ -223,6 +224,11 @@ class Scene(Module, Job):
         self.reset_grids()
 
         self.tool_active = False
+        self.modif_active = False
+
+        self._last_snap_position = None
+        self._last_snap_ts = 0
+
         self.active_tool = "none"
         self.grid_points = None  # Points representing the grid - total of primary + secondary + circular
 
@@ -236,6 +242,22 @@ class Scene(Module, Job):
             interval=1.0 / 60.0,
         )
         self._toast = None
+
+    @property
+    def last_snap(self):
+        result = self._last_snap_position
+        # Too old? Discard
+        if (time.time() - self._last_snap_ts) > 0.5:
+            result = None
+        return result
+
+    @last_snap.setter
+    def last_snap(self, value):
+        self._last_snap_position = value
+        if value is None:
+            self._last_snap_ts = 0
+        else:
+            self._last_snap_ts = time.time()
 
     def reset_grids(self):
         self.draw_grid_primary = True
@@ -480,11 +502,11 @@ class Scene(Module, Job):
         if self.screen_refresh_is_requested:
             if self.screen_refresh_lock.acquire(timeout=0.2):
                 try:
-                    self.update_buffer_ui_thread()
+                    self.update_buffer_ui_thread()  # May hit runtime error.
+                    self.gui.Refresh()
+                    self.gui.Update()
                 except RuntimeError:
-                    return
-                self.gui.Refresh()
-                self.gui.Update()
+                    pass
                 self.screen_refresh_is_requested = False
                 self.screen_refresh_lock.release()
             else:
@@ -499,7 +521,10 @@ class Scene(Module, Job):
             buf = self.gui._Buffer
         dc = wx.MemoryDC()
         dc.SelectObject(buf)
-        self.background_brush.SetColour(self.colors.color_background)
+        if self.overrule_background is None:
+            self.background_brush.SetColour(self.colors.color_background)
+        else:
+            self.background_brush.SetColour(self.overrule_background)
         dc.SetBackground(self.background_brush)
         dc.Clear()
         w, h = dc.Size
@@ -507,6 +532,7 @@ class Scene(Module, Job):
             dc.SetUserScale(-1, -1)
             dc.SetLogicalOrigin(w, h)
         gc = wx.GraphicsContext.Create(dc)
+        gc.dc = dc
         gc.Size = dc.Size
 
         font = wx.Font(14, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
@@ -516,6 +542,7 @@ class Scene(Module, Job):
             dc.Blit(0, 0, w, h, dc, 0, 0, wx.SRC_INVERT)
         gc.Destroy()
         dc.SelectObject(wx.NullBitmap)
+        del gc.dc
         del dc
 
     def toast(self, message, token=-1):
@@ -729,10 +756,17 @@ class Scene(Module, Job):
             dy,
         )
         self.last_position = window_pos
+        previous_top_element = None
         try:
-            previous_top_element = self.hit_chain[0][0]
+            idx = 0
+            while idx < len(self.hit_chain):
+                if not self.hit_chain[idx][0].transparent:
+                    previous_top_element = self.hit_chain[idx][0]
+                    break
+                idx += 1
+
         except (IndexError, TypeError):
-            previous_top_element = None
+            pass
 
         if event_type in (
             "key_down",
@@ -881,6 +915,7 @@ class Scene(Module, Job):
             # PROCESS RESPONSE
             ##################
             if type(response) is tuple:
+                # print (f"Nearest snap provided")
                 # We get two additional parameters which are the screen location of the nearest snap point
                 params = response[1:]
                 response = response[0]
@@ -917,7 +952,7 @@ class Scene(Module, Job):
                             snap_x,
                             snap_y,
                         )
-                        # print ("Snap provided", nearest_snap)
+                        self.last_snap = nearest_snap
             else:
                 params = None
 
@@ -1015,4 +1050,12 @@ class Scene(Module, Job):
 
     @reference_object.setter
     def reference_object(self, ref_object):
+        prev = self._reference
         self._reference = ref_object
+        dlist = []
+        if prev is not None:
+            dlist.append(prev)
+        if self._reference is not None:
+            dlist.append(self._reference)
+        if len(dlist) > 0:
+            self.context.signal("element_property_update", dlist)

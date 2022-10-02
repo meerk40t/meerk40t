@@ -25,10 +25,22 @@ class Wordlist:
             "version": [0, 2, versionstr],
             "date": [0, 2, self.wordlist_datestr()],
             "time": [0, 2, self.wordlist_timestr()],
+            "op_device": [0, 2, "<device>"],
+            "op_speed": [0, 2, "<speed>"],
+            "op_power": [0, 2, "<power>"],
         }
+        self.prohibited = (
+            "version",
+            "date",
+            "time",
+            "op_device",
+            "op_speed",
+            "op_power",
+        )
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.json")
+        self.load_data(self.default_filename)
 
     def add(self, key, value, wtype=None):
         self.add_value(key, value, wtype)
@@ -64,6 +76,19 @@ class Wordlist:
                 2,
             ]  # incomplete, as it will be appended right after this
         self.content[skey].append(value)
+
+    def delete_value(self, skey, idx):
+        skey = skey.lower()
+        if not skey in self.content:
+            return
+        if idx is None or idx < 0:
+            return
+
+        # Zerobased outside + 2 inside
+        idx += 2
+        if idx >= len(self.content[skey]):
+            return
+        self.content[skey].pop(idx)
 
     def set_value(self, skey, value, idx=None, wtype=None):
         # Special treatment:
@@ -246,6 +271,22 @@ class Wordlist:
         except KeyError:
             pass
 
+    def rename_key(self, oldkey, newkey):
+        oldkey = oldkey.lower()
+        newkey = newkey.lower()
+        if oldkey in self.prohibited:
+            return False
+        if oldkey == newkey:
+            return True
+        if newkey in self.content:
+            return False
+        try:
+            self.content[newkey] = self.content[oldkey]
+            self.delete(oldkey)
+        except:
+            return False
+        return True
+
     def empty_csv(self):
         # remove all traces of the previous csv file
         names = []
@@ -255,13 +296,17 @@ class Wordlist:
         for skey in names:
             self.delete(skey)
 
-    def load_csv_file(self, filename):
+    def load_csv_file(self, filename, force_header=None):
         self.empty_csv()
         headers = []
         try:
             with open(filename, newline="", mode="r") as csvfile:
                 buffer = csvfile.read(1024)
-                has_header = csv.Sniffer().has_header(buffer)
+                if force_header is None:
+                    has_header = csv.Sniffer().has_header(buffer)
+                else:
+                    has_header = force_header
+                # print (f"Header={has_header}, Force={force_header}")
                 dialect = csv.Sniffer().sniff(buffer)
                 csvfile.seek(0)
                 reader = csv.reader(csvfile, dialect)
@@ -271,13 +316,13 @@ class Wordlist:
                     for idx, entry in enumerate(headers):
                         skey = f"Column_{idx + 1}"
                         self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
-                        headers[idx] = skey
+                        headers[idx] = skey.lower()
                     ct = 1
                 else:
                     ct = 0
                 for row in reader:
                     for idx, entry in enumerate(row):
-                        skey = headers[idx]
+                        skey = headers[idx].lower()
                         # Append...
                         self.set_value(skey=skey, value=entry, idx=-1, wtype=1)
                     ct += 1

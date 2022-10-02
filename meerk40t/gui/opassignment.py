@@ -31,8 +31,8 @@ def register_panel_operation_assign(window, context):
     )
     pane.dock_proportion = 80
     pane.control = OperationAssignPanel(window, wx.ID_ANY, context=context)
-    pane.submenu = _("Tools")
-    window.on_pane_add(pane)
+    pane.submenu = "_50_" + _("Tools")
+    window.on_pane_create(pane)
     context.register("pane/opassign", pane)
 
 

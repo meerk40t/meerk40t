@@ -4,7 +4,15 @@ from math import sqrt
 
 from meerk40t.core.node.node import Node
 from meerk40t.core.units import UNITS_PER_POINT, Length
-from meerk40t.svgelements import Matrix
+from meerk40t.svgelements import (
+    SVG_ATTR_FONT_FAMILY,
+    SVG_ATTR_FONT_SIZE,
+    SVG_ATTR_FONT_STRETCH,
+    SVG_ATTR_FONT_STYLE,
+    SVG_ATTR_FONT_VARIANT,
+    SVG_ATTR_FONT_WEIGHT,
+    Matrix,
+)
 
 REGEX_CSS_FONT = re.compile(
     r"^"
@@ -42,6 +50,7 @@ class TextNode(Node):
         y=0,
         font=None,
         anchor=None,
+        baseline=None,
         matrix=None,
         fill=None,
         stroke=None,
@@ -55,14 +64,19 @@ class TextNode(Node):
         height=None,
         descent=None,
         leading=None,
+        raw_bbox=None,
         path=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
+
         super(TextNode, self).__init__(type="elem text", **settings)
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
@@ -73,7 +87,7 @@ class TextNode(Node):
         self.stroke_width = stroke_width
         self._stroke_scaled = stroke_scale
         if x != 0 or y != 0:
-            matrix.pre_translate(x, y)
+            self.matrix.pre_translate(x, y)
 
         self.font_style = "normal"
         self.font_variant = "normal"
@@ -89,6 +103,14 @@ class TextNode(Node):
 
         if font is not None:
             self.parse_font(font)
+        else:
+            self.font_size = self.settings.get(SVG_ATTR_FONT_SIZE)
+            self.font_style = self.settings.get(SVG_ATTR_FONT_STYLE)
+            self.font_variant = self.settings.get(SVG_ATTR_FONT_VARIANT)
+            self.font_weight = self.settings.get(SVG_ATTR_FONT_WEIGHT)
+            self.font_stretch = self.settings.get(SVG_ATTR_FONT_STRETCH)
+            self.font_family = self.settings.get(SVG_ATTR_FONT_FAMILY)
+            self.validate_font()
 
         self.underline = False if underline is None else underline
         self.strikethrough = False if strikethrough is None else strikethrough
@@ -98,14 +120,18 @@ class TextNode(Node):
         self.texttransform = "" if texttransform is None else texttransform
 
         self.anchor = "start" if anchor is None else anchor  # start, middle, end.
+        self.baseline = (
+            "hanging" if baseline is None else baseline
+        )  # Hanging or baseline (usually).
 
         self.width = width
         self.height = height
         self.descent = descent
         self.leading = leading
+        self.raw_bbox = raw_bbox
         self.path = path
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __copy__(self):
         return TextNode(
@@ -117,6 +143,7 @@ class TextNode(Node):
             stroke_scale=self._stroke_scaled,
             font=self.font,
             anchor=self.anchor,
+            baseline=self.baseline,
             underline=self.underline,
             strikethrough=self.strikethrough,
             overline=self.overline,
@@ -125,7 +152,10 @@ class TextNode(Node):
             height=self.height,
             descent=self.descent,
             leading=self.leading,
+            raw_bbox=self.raw_bbox,
             path=self.path,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 
@@ -172,7 +202,7 @@ class TextNode(Node):
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
             return
-        self.text = context.elements.mywordlist.translate(self.text)
+        self.text = context.elements.wordlist_translate(self.text, self)
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
@@ -332,27 +362,20 @@ class TextNode(Node):
                 transformed=True,
                 with_stroke=with_stroke,
             )
-
-        width = self.width if self.width else len(self.text) * self.font_size
-        height = (
-            self.height
-            if self.height
-            else self.line_height * len(list(self.text.split("\n"))) - self.font_size
-        )
-        descent = self.descent if self.descent else height * 0.5
-        leading = self.leading if self.leading else 0
-        ymin = -height + descent + leading
-        ymax = descent
+        if self.raw_bbox is None:
+            self.raw_bbox = [0, 0, 0, 0]
+        left, upper, right, lower = self.raw_bbox
+        xmin = left - 2
+        ymin = upper - 2
+        xmax = right + 2
+        ymax = lower + 2
+        width = xmax - xmin
         if self.anchor == "middle":
-            xmin = -width / 2
-            xmax = width / 2
+            xmin -= width / 2
+            xmax -= width / 2
         elif self.anchor == "end":
-            xmin = -width
-            xmax = 0
-        else:  # "start"
-            xmax = width
-            xmin = 0
-
+            xmin -= width
+            xmax -= width
         if transformed:
             p0 = self.matrix.transform_point([xmin, ymin])
             p1 = self.matrix.transform_point([xmin, ymax])

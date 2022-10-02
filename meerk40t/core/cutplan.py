@@ -30,7 +30,20 @@ class CutPlanningFailedError(Exception):
 
 class CutPlan:
     """
-    Cut Plan is a centralized class to modify plans with specific methods.
+    CutPlan is a centralized class to modify plans during cutplanning. It is typically is used to progress from
+    copied operations through the stages to being properly optimized cutcode.
+
+    The stages are:
+    1. Copy: This can be `copy-selected` or `copy` to decide which operations are moved initially into the plan.
+        a. Copied operations are copied to real. All the reference nodes are replaced with copies of the actual elements
+    2. Preprocess: Convert from scene space to device space and add validation operations.
+    3. Validate: Run all the validation operations, this could be anything the nodes added during preprocess.
+        a. Calls `execute` operation.
+    4. Blob: We convert all the operations/elements into proper cutcode. Some operations do not necessarily need to
+        convert to cutcode. They merely need to convert to some type of spoolable operation.
+    5. Preopt: Preoptimize adds in the relevant optimization operations into the cutcode.
+    6. Optimize: This calls the added functions set during the preopt process.
+        a. Calls `execute` operation.
     """
 
     def __init__(self, name, planner):
@@ -57,6 +70,12 @@ class CutPlan:
         return " ".join(parts)
 
     def execute(self):
+        """
+        Execute runs all the commands built during `preprocess` and `preopt` (preoptimize) stages.
+
+        If a command's execution adds a command to commands, this command is also executed.
+        @return:
+        """
         # Using copy of commands, so commands can add ops.
         while self.commands:
             # Executing command can add a command, complete them all.
@@ -66,51 +85,22 @@ class CutPlan:
                 command()
 
     def preprocess(self):
-        """ "
-        Preprocess stage, all small functions from the settings to the job.
+        """
+        Preprocess stage.
+
+        All operation nodes are called with the current context, the matrix converting from scene to device, and
+        commands.
+
+        Nodes are expected to convert relevant properties and shapes from scene coordinates to device coordinate systems
+        if they need operations. They are also expected to add any relevant commands to the commands list. The commands
+        list sequentially in the next stage.
         """
         context = self.context
-        _ = context._
-        rotary = context.rotary
-        # ==========
-        # before
-        # ==========
-        if context.prephysicalhome:
-            if not rotary.rotary_enabled:
-                self.plan.insert(0, context.lookup("plan/physicalhome"))
-            else:
-                self.plan.insert(0, _("Physical Home Before: Disabled (Rotary On)"))
-        if context.prehome:
-            if not rotary.rotary_enabled:
-                self.plan.insert(0, context.lookup("plan/home"))
-            else:
-                self.plan.insert(0, _("Home Before: Disabled (Rotary On)"))
-        # ==========
-        # After
-        # ==========
-        if context.autohome:
-            if not rotary.rotary_enabled:
-                self.plan.append(context.lookup("plan/home"))
-            else:
-                self.plan.append(_("Home After: Disabled (Rotary On)"))
-        if context.autophysicalhome:
-            if not rotary.rotary_enabled:
-                self.plan.append(context.lookup("plan/physicalhome"))
-            else:
-                self.plan.append(_("Physical Home After: Disabled (Rotary On)"))
-        if context.autoorigin:
-            self.plan.append(context.lookup("plan/origin"))
-        if context.postunlock:
-            self.plan.append(context.lookup("plan/unlock"))
-        if context.autobeep:
-            self.plan.append(context.lookup("plan/beep"))
-        if context.autointerrupt:
-            self.plan.append(context.lookup("plan/interrupt"))
 
         # ==========
         # Preprocess Operations
         # ==========
-        matrix = Matrix(self.context.device.scene_to_device_matrix())
+        matrix = self.context.device.scene_to_device_matrix()
 
         # TODO: Correct rotary.
         # rotary = self.context.rotary
@@ -131,11 +121,11 @@ class CutPlan:
 
     def blob(self):
         """
-        blob converts User operations to CutCode objects.
+        Blob converts User operations to CutCode objects.
 
         In order to have CutCode objects in the correct sequence for merging we need to:
-        1. Break operations into grouped sequences of LaserOperations and special operations.
-           We can only merge within groups of Laser operations.
+        1. Break operations into grouped sequences of Operations and utility operations.
+           We can only merge between contiguous groups of operations (with option set)
         2. The sequence of CutObjects needs to reflect merge settings
            Normal sequence is to iterate operations and then passes for each operation.
            With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
@@ -223,42 +213,11 @@ class CutPlan:
                 blob.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
-            # We can only merge and check for other criteria if we have the right objects
-            merge = (
-                len(self.plan)
-                and isinstance(self.plan[-1], CutCode)
-                and isinstance(blob, CutObject)
-            )
-            # Override merge if opt_merge_passes is off, and pass_index do not match
-            if (
-                merge
-                and not context.opt_merge_passes
-                and self.plan[-1].pass_index != blob.pass_index
-            ):
-                merge = False
-            # Override merge if opt_merge_ops is off, and operations original ops do not match
-            # Same settings object implies same original operation
-            if (
-                merge
-                and not context.opt_merge_ops
-                and self.plan[-1].settings is not blob.settings
-            ):
-                merge = False
-            # Override merge if opt_inner_first is off, and operation was originally a cut.
-            if (
-                merge
-                and not context.opt_inner_first
-                and self.plan[-1].original_op == "op cut"
-            ):
-                merge = False
 
-            if merge:
+            if self._should_merge(context, blob):
                 if blob.constrained:
-                    self.plan[
-                        -1
-                    ].constrained = (
-                        True  # if merge is constrained new blob is constrained.
-                    )
+                    # if any merged object is constrained combined blob is also constrained.
+                    self.plan[-1].constrained = True
                 self.plan[-1].extend(blob)
             else:
                 if isinstance(blob, CutObject) and not isinstance(blob, CutCode):
@@ -269,9 +228,54 @@ class CutPlan:
                 else:
                     self.plan.append(blob)
 
+    def _should_merge(self, context, current_item):
+        """
+        Checks whether we should merge the blob with the current plan.
+
+        We can only merge things if we have the right objects and settings.
+        """
+        if not self.plan:
+            # The plan is empty we can't merge with nothing.
+            return False
+        last_item = self.plan[-1]
+        if not isinstance(last_item, CutCode):
+            # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
+            return False
+        if not isinstance(current_item, CutObject):
+            # The object to be merged is not a cutObject and cannot be added to Cutcode.
+            return False
+        last_op = last_item.original_op
+        if last_op is None:
+            last_op = ""
+        current_op = current_item.original_op
+        if current_op is None:
+            current_op = ""
+        if last_op.startswith("util") or current_op.startswith("util"):
+            return False
+
+        if (
+            not context.opt_merge_passes
+            and last_item.pass_index != current_item.pass_index
+        ):
+            # Do not merge if opt_merge_passes is off, and pass_index do not match
+            return False
+        if (
+            not context.opt_merge_ops
+            and last_item.settings is not current_item.settings
+        ):
+            # Do not merge if opt_merge_ops is off, and the original ops do not match
+            # Same settings object implies same original operation
+            return False
+        if not context.opt_inner_first and last_item.original_op == "op cut":
+            # Do not merge if opt_inner_first is off, and operation was originally a cut.
+            return False
+        return True  # No reason these should not be merged.
+
     def preopt(self):
         """
-        Add commands for optimize stage.
+        Add commands for optimize stage. This stage tends to do very little but checks the settings and adds the
+        relevant operations.
+
         @return:
         """
         context = self.context
@@ -342,7 +346,10 @@ class CutPlan:
         Optimize travel at optimize stage on cutcode.
         @return:
         """
-        last = None
+        try:
+            last = self.context.device.native
+        except AttributeError:
+            last = None
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
@@ -351,8 +358,7 @@ class CutPlan:
                     self.plan[i] = inner_first_ident(c, channel=channel)
                     c = self.plan[i]
                 if last is not None:
-                    cur = self.plan[i]
-                    cur._start_x, cur._start_y = last
+                    c._start_x, c._start_y = last
                 self.plan[i] = short_travel_cutcode(
                     c,
                     channel=channel,

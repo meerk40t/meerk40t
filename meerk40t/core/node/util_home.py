@@ -10,16 +10,16 @@ class HomeOperation(Node):
     Node type "util home"
     """
 
-    def __init__(self, x=0.0, y=0.0, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(type="util home", **kwargs)
-        self.settings = {"x": x, "y": y, "output": True}
-        self._formatter = "{enabled}{element_type} {x} {y}"
+        self.settings = {"output": True}
+        self._formatter = "{enabled}{element_type}"
 
     def __repr__(self):
-        return f"HomeOperation('{self.x}, {self.y}')"
+        return "HomeOperation()"
 
     def __copy__(self):
-        return HomeOperation(self.x, self.y)
+        return HomeOperation()
 
     def __len__(self):
         return 1
@@ -27,8 +27,6 @@ class HomeOperation(Node):
     def validate(self):
         parameters = [
             ("output", lambda v: str(v).lower() == "true"),
-            ("x", float),
-            ("y", float),
         ]
         settings = self.settings
         for param, cast in parameters:
@@ -39,22 +37,6 @@ class HomeOperation(Node):
                     )
             except (KeyError, ValueError):
                 pass
-
-    @property
-    def x(self):
-        return self.settings.get("x")
-
-    @x.setter
-    def x(self, v):
-        self.settings["x"] = v
-
-    @property
-    def y(self):
-        return self.settings.get("y")
-
-    @y.setter
-    def y(self, v):
-        self.settings["y"] = v
 
     @property
     def output(self):
@@ -72,11 +54,6 @@ class HomeOperation(Node):
         default_map = super(HomeOperation, self).default_map(default_map=default_map)
         default_map["element_type"] = "Home"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["adjust"] = (
-            f" ({self.x}, {self.y})" if self.x != 0 or self.y != 0 else ""
-        )
-        default_map["x"] = self.x
-        default_map["y"] = self.y
         default_map.update(self.settings)
         return default_map
 
@@ -109,9 +86,9 @@ class HomeOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        cut = HomeCut((self.x, self.y))
+        cut = HomeCut()
         cut.original_op = self.type
         yield cut
 
     def generate(self):
-        yield "home", self.x, self.y
+        yield "home"

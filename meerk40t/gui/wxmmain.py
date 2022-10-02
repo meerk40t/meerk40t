@@ -109,7 +109,7 @@ class MeerK40t(MWindow):
             pass
 
         self.context.gui = self
-        self.usb_running = False
+        self._usb_running = dict()
         context = self.context
         self.register_options_and_choices(context)
 
@@ -497,7 +497,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Display-Distance"),
                 "tip": _(
                     "Defines until which distance snap points will be highlighted"
                 ),
@@ -524,7 +524,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Point-Snap-Threshold"),
                 "tip": _(
                     "Set the distance inside which the cursor will snap to the next element point"
                 ),
@@ -552,7 +552,7 @@ class MeerK40t(MWindow):
                 "style": "slider",
                 "min": 1,
                 "max": 75,
-                "label": _("Distance"),
+                "label": _("Point-Snap-Threshold"),
                 "tip": _(
                     "Set the distance inside which the cursor will snap to the next grid intersection"
                 ),
@@ -573,7 +573,27 @@ class MeerK40t(MWindow):
                     "The scene-menu will appear if you right-click on the scene-background"
                 ),
                 "page": "Gui",
+                "hidden": True,
                 "section": "Scene",
+            },
+            {
+                "attr": "process_while_typing",
+                "object": context.root,
+                "default": False,
+                "type": bool,
+                "label": _("Process input while typing"),
+                "tip": _(
+                    "Try to immediately use values you enter in dialog-textfields - "
+                )
+                + "\n"
+                + _(
+                    "otherwise they will get applied only after a deliberate confirmation"
+                )
+                + "\n"
+                + _("by enter or stepping out of the field)"),
+                "page": "Gui",
+                "hidden": True,
+                "section": "Misc.",
             },
         ]
         context.kernel.register_choices("preferences", choices)
@@ -1204,7 +1224,7 @@ class MeerK40t(MWindow):
             dlg = wx.TextEntryDialog(
                 gui,
                 _(
-                    "Material must be jigged at 0,0 either home or home offset.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
+                    "Material must be jigged at 0,0.\nHow wide is your material (give units: in, mm, cm, px, etc)?"
                 ),
                 _("Double Side Flip"),
                 "",
@@ -1289,58 +1309,6 @@ class MeerK40t(MWindow):
                     context._stepping_force = None
             dlg.Destroy()
 
-        @context.console_argument("message")
-        @context.console_command("notify", hidden=True)
-        def notification_message(message=None, **kwargs):
-            if message is None:
-                message = _("Something requires your attention")
-            from wx.adv import NotificationMessage
-
-            msg = NotificationMessage(title="MeerK40t", message=message)
-            msg.Show()
-
-        @context.console_argument(
-            "message", help=_("Message to display, optional"), default=""
-        )
-        @context.console_command("interrupt", hidden=True)
-        def interrupt(message="", **kwargs):
-            """
-            Interrupt interrupts but does so in the gui thread. This is so that some
-            OSes like linux can be properly stopped in the gui. The gui-thread will
-            often be required. But, this will typically be called in the spooler thread.
-
-            If called in the main thread, we call the dialog ourselves to avoid livelock.
-
-            @param message:
-            @param kwargs:
-            @return:
-            """
-            if not message:
-                message = _("Spooling Interrupted.")
-
-            import threading
-
-            lock = threading.Lock()
-            lock.acquire(True)
-
-            def message_dialog(*args):
-                dlg = wx.MessageDialog(
-                    None,
-                    message + "\n\n" + _("Press OK to Continue."),
-                    _("Interrupt"),
-                    wx.OK,
-                )
-                dlg.ShowModal()
-                dlg.Destroy()
-                lock.release()
-
-            if wx.IsMainThread():
-                # If we're in main thread we much call here or livelock.
-                message_dialog()
-            else:
-                wx.CallAfter(message_dialog, None)
-            lock.acquire(True)
-
         @context.console_command("dialog_load", hidden=True)
         def load_dialog(**kwargs):
             # This code should load just specific project files rather than all importable formats.
@@ -1393,52 +1361,39 @@ class MeerK40t(MWindow):
                 pathname = fileDialog.GetPath()
                 if not pathname.lower().endswith(f".{extension}"):
                     pathname += f".{extension}"
-                context.elements.save(pathname, version=version)
-                gui.validate_save()
-                gui.working_file = pathname
-                gui.set_file_as_recently_used(gui.working_file)
+                try:
+                    context.elements.save(pathname, version=version)
+                    gui.validate_save()
+                    gui.working_file = pathname
+                    gui.set_file_as_recently_used(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
         @context.console_command("dialog_save", hidden=True)
         def save_or_save_as(**kwargs):
             if gui.working_file is None:
                 context(".dialog_save_as\n")
             else:
-                gui.set_file_as_recently_used(gui.working_file)
-                gui.validate_save()
-                context.elements.save(gui.working_file)
-
-        @context.console_command("dialog_import_egv", hidden=True)
-        def egv_in_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui,
-                _("Import EGV"),
-                wildcard=files,
-                style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Loading File...")):
-                context(f"egv_import {pathname}\n")
-                return
-
-        @context.console_command("dialog_export_egv", hidden=True)
-        def egv_out_dialog(**kwargs):
-            files = "*.egv"
-            with wx.FileDialog(
-                gui, _("Export EGV"), wildcard=files, style=wx.FD_SAVE
-            ) as fileDialog:
-                if fileDialog.ShowModal() == wx.ID_CANCEL:
-                    return  # the user changed their mind
-                pathname = fileDialog.GetPath()
-            if pathname is None:
-                return
-            with wx.BusyInfo(_("Saving File...")):
-                context(f"egv_export {pathname}\n")
-                return
+                try:
+                    gui.set_file_as_recently_used(gui.working_file)
+                    gui.validate_save()
+                    context.elements.save(gui.working_file)
+                except OSError as e:
+                    dlg = wx.MessageDialog(
+                        None,
+                        str(e),
+                        _("Saving Failed"),
+                        wx.OK | wx.ICON_WARNING,
+                    )
+                    dlg.ShowModal()
+                    dlg.Destroy()
 
     def __set_panes(self):
         self.context.setting(bool, "pane_lock", False)
@@ -1468,6 +1423,34 @@ class MeerK40t(MWindow):
         def panes(**kwargs):
             return "panes", self
 
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "load",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def load_pane(command, _, channel, configuration=None, **kwargs):
+            perspective = context.setting(str, f"perspective_{configuration}", None)
+            if not perspective:
+                channel(_("Perspective not found"))
+                return
+            self.on_panes_closed()
+            self._mgr.LoadPerspective(perspective, update=True)
+            self.on_config_panes()
+
+        @context.console_argument("configuration", help=_("configuration to load"))
+        @context.console_command(
+            "save",
+            input_type="panes",
+            help=_("load pane configuration"),
+            all_arguments_required=True,
+        )
+        def save_pane(command, _, channel, configuration=None, **kwargs):
+            setattr(
+                context, f"perspective_{configuration}", self._mgr.SavePerspective()
+            )
+
         @context.console_argument("pane", help=_("pane to be shown"))
         @context.console_command(
             "show",
@@ -1480,13 +1463,82 @@ class MeerK40t(MWindow):
             if _pane is None:
                 channel(_("Pane not found."))
                 return
-            _pane.Show()
-            self._mgr.Update()
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if not pane.IsShown():
+                    pane.Show()
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    if hasattr(pane.window, "pane_show"):
+                        pane.window.pane_show()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be hidden"))
+        @context.console_command(
+            "hide",
+            input_type="panes",
+            help=_("show the pane"),
+            all_arguments_required=True,
+        )
+        def hide_pane(command, _, channel, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Hide()
+                    if hasattr(pane.window, "pane_hide"):
+                        pane.window.pane_hide()
+                        wx.CallAfter(self.on_pane_changed, None)
+                    self._mgr.Update()
+
+        @context.console_option("always", "a", type=bool, action="store_true")
+        @context.console_argument("pane", help=_("pane to be float"))
+        @context.console_command(
+            "float",
+            input_type="panes",
+            help=_("Float the pane"),
+            all_arguments_required=True,
+        )
+        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Float()
+                    pane.Dockable(not always)
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
+
+        @context.console_argument("pane", help=_("pane to be dock"))
+        @context.console_command(
+            "dock",
+            input_type="panes",
+            help=_("Dock the pane"),
+            all_arguments_required=True,
+        )
+        def dock_pane(command, _, channel, pane=None, **kwargs):
+            _pane = context.lookup("pane", pane)
+            if _pane is None:
+                channel(_("Pane not found."))
+                return
+            pane = self._mgr.GetPane(_pane.name)
+            if len(pane.name):
+                if pane.IsShown():
+                    pane.Dockable(True)
+                    pane.Dock()
+                    pane.CaptionVisible(not self.context.pane_lock)
+                    self._mgr.Update()
 
         @context.console_command(
             "toggleui",
             input_type="panes",
-            help=_("Hides/Restores all the visible panes (except scen)"),
+            help=_("Hides/Restores all the visible panes (except scene)"),
         )
         def toggle_ui(command, _, channel, pane=None, **kwargs):
             # Toggle visibility of all UI-elements
@@ -1510,39 +1562,6 @@ class MeerK40t(MWindow):
                             pane.Hide()
                 self._mgr.Update()
                 channel(_("Panes hidden."))
-
-        @context.console_argument("pane", help=_("pane to be hidden"))
-        @context.console_command(
-            "hide",
-            input_type="panes",
-            help=_("show the pane"),
-            all_arguments_required=True,
-        )
-        def hide_pane(command, _, channel, pane=None, **kwargs):
-            _pane = context.lookup("pane", pane)
-            if _pane is None:
-                channel(_("Pane not found."))
-                return
-            _pane.Hide()
-            self._mgr.Update()
-
-        @context.console_option("always", "a", type=bool, action="store_true")
-        @context.console_argument("pane", help=_("pane to be shown"))
-        @context.console_command(
-            "float",
-            input_type="panes",
-            help=_("show the pane"),
-            all_arguments_required=True,
-        )
-        def float_pane(command, _, channel, always=False, pane=None, **kwargs):
-            _pane = context.lookup("pane", pane)
-            if _pane is None:
-                channel(_("Pane not found."))
-                return
-            _pane.Float()
-            _pane.Show()
-            _pane.Dockable(not always)
-            self._mgr.Update()
 
         @context.console_command(
             "reset",
@@ -1601,7 +1620,7 @@ class MeerK40t(MWindow):
                 .CaptionVisible(True)
             )
             _pane.control = panel
-            self.on_pane_add(_pane)
+            self.on_pane_create(_pane)
             if hasattr(panel, "pane_show"):
                 panel.pane_show()
             self.context.register("pane/about", _pane)
@@ -1661,8 +1680,7 @@ class MeerK40t(MWindow):
                     pane.window.lock()
         self._mgr.Update()
 
-    def on_pane_add(self, paneinfo: aui.AuiPaneInfo):
-        pane = self._mgr.GetPane(paneinfo.name)
+    def on_pane_create(self, paneinfo: aui.AuiPaneInfo):
         control = paneinfo.control
         if isinstance(control, wx.aui.AuiNotebook):
             for i in range(control.GetPageCount()):
@@ -1670,6 +1688,10 @@ class MeerK40t(MWindow):
                 self.add_module_delegate(page)
         else:
             self.add_module_delegate(control)
+        self.on_pane_show(paneinfo)
+
+    def on_pane_show(self, paneinfo: aui.AuiPaneInfo):
+        pane = self._mgr.GetPane(paneinfo.name)
         if len(pane.name):
             if not pane.IsShown():
                 pane.Show()
@@ -1679,6 +1701,7 @@ class MeerK40t(MWindow):
                     wx.CallAfter(self.on_pane_changed, None)
                 self._mgr.Update()
             return
+        control = paneinfo.control
         self._mgr.AddPane(
             control,
             paneinfo,
@@ -1754,9 +1777,18 @@ class MeerK40t(MWindow):
                     self._mgr.Update()
                     return
                 pane_init = self.context.lookup("pane", pane_toggle)
-                self.on_pane_add(pane_init)
+                self.on_pane_show(pane_init)
 
             return toggle
+
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
 
         self.panes_menu = wx.Menu()
         label = _("Panes")
@@ -1766,6 +1798,7 @@ class MeerK40t(MWindow):
         else:
             self.main_menubar.Append(self.panes_menu, label)
         submenus = {}
+        panedata = []
         for pane, _path, suffix_path in self.context.find("pane/.*"):
             try:
                 suppress = pane.hide_menu
@@ -1773,9 +1806,19 @@ class MeerK40t(MWindow):
                     continue
             except AttributeError:
                 pass
+            try:
+                submenu = pane.submenu
+            except AttributeError:
+                submenu = ""
+            if submenu == "":
+                submenu = "_ZZZZZZZZZZZZZZZZ_"
+            panedata.append([pane, _path, suffix_path, submenu])
+        panedata.sort(key=lambda row: row[3])
+        for pane, _path, suffix_path, dummy in panedata:
             submenu = None
             try:
                 submenu_name = pane.submenu
+                submenu_name = unsorted_label(submenu_name)
                 if submenu_name in submenus:
                     submenu = submenus[submenu_name]
                 elif submenu_name is not None:
@@ -1840,6 +1883,15 @@ class MeerK40t(MWindow):
 
             return toggle
 
+        def unsorted_label(original):
+            # Special sort key just to sort stuff - we fix the preceeding "_sortcriteria_Correct label"
+            result = original
+            if result.startswith("_"):
+                idx = result.find("_", 1)
+                if idx >= 0:
+                    result = result[idx + 1 :]
+            return result
+
         label = _("Tools")
         self.window_menu = wx.Menu()
         index = self.main_menubar.FindMenu(label)
@@ -1849,6 +1901,7 @@ class MeerK40t(MWindow):
             self.main_menubar.Append(self.window_menu, label)
 
         submenus = {}
+        menudata = []
         for window, _path, suffix_path in self.context.find("window/.*"):
             try:
                 name = window.name
@@ -1856,7 +1909,6 @@ class MeerK40t(MWindow):
                 name = suffix_path
             if not window.window_menu(None):
                 continue
-            submenu = None
             win_caption = ""
             try:
                 returnvalue = window.submenu()
@@ -1873,18 +1925,8 @@ class MeerK40t(MWindow):
                     win_caption = ""
             except AttributeError:
                 submenu_name = ""
-            if submenu_name != "":
-                if submenu_name in submenus:
-                    submenu = submenus[submenu_name]
-                elif submenu_name is not None:
-                    submenu = wx.Menu()
-                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
-                    submenus[submenu_name] = submenu
-            menu_context = submenu if submenu is not None else self.window_menu
-            try:
-                name = window.name
-            except AttributeError:
-                name = suffix_path
+            if submenu_name == "":
+                submenu_name = "_ZZZZZZZZZZZZZZZZ_"
             if win_caption != "":
                 caption = win_caption
             else:
@@ -1894,8 +1936,38 @@ class MeerK40t(MWindow):
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
                 continue
+            menudata.append([submenu_name, caption, name, window, suffix_path])
+        # Now that we have everything lets sort...
+        menudata.sort(key=lambda row: row[0])
+
+        for submenu_name, caption, name, window, suffix_path in menudata:
+            submenu = None
+            submenu_name = unsorted_label(submenu_name)
+            if submenu_name != "":
+                if submenu_name in submenus:
+                    submenu = submenus[submenu_name]
+                elif submenu_name is not None:
+                    submenu = wx.Menu()
+                    self.window_menu.AppendSubMenu(submenu, _(submenu_name))
+                    submenus[submenu_name] = submenu
+            menu_context = submenu if submenu is not None else self.window_menu
             # print ("Menu - Name: %s, Caption=%s" % (name, caption))
-            menuitem = menu_context.Append(wx.ID_ANY, _(caption), "", wx.ITEM_NORMAL)
+            caption = _(caption)
+            menu_label = caption
+            if hasattr(window, "menu_label"):
+                menu_label = window.menu_label()
+
+            menu_id = wx.ID_ANY
+            if hasattr(window, "menu_id"):
+                menu_id = window.menu_id()
+
+            menu_tip = ""
+            if hasattr(window, "menu_tip"):
+                menu_tip = window.menu_tip()
+
+            menuitem = menu_context.Append(
+                menu_id, menu_label, menu_tip, wx.ITEM_NORMAL
+            )
             self.Bind(
                 wx.EVT_MENU,
                 toggle_window(suffix_path),
@@ -1977,132 +2049,424 @@ class MeerK40t(MWindow):
         self.main_menubar.Append(self.file_menu, _("File"))
 
     def __set_view_menu(self):
-        def create_draw_mode_item(label, tooltip, FLAG):
-            menu_item = self.view_menu.Append(
-                wx.ID_ANY,
-                label,
-                tooltip,
-                wx.ITEM_CHECK,
-            )
-            self.Bind(wx.EVT_MENU, self.toggle_draw_mode(FLAG), id=menu_item.GetId())
-            menu_item.Check(self.context.draw_mode & FLAG != 0)
+        def toggle_draw_mode(bits):
+            """
+            Toggle the draw mode.
+            @param bits: Bit to toggle.
+            """
+            self.context.draw_mode ^= bits
+            self.context.signal("draw_mode", self.context.draw_mode)
+            self.context.elements.modified()
+            self.context.signal("refresh_scene", "Scene")
+            self.context.signal("theme")
 
         # ==========
         # VIEW MENU
         # ==========
         self.context.setting(int, "draw_mode", 0)
+        choices = [
+            {
+                "label": _("Zoom &Out\tCtrl--"),
+                "help": _("Make the scene smaller"),
+                "action": self.on_click_zoom_out,
+                "id": wx.ID_ZOOM_OUT,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Zoom &In\tCtrl-+"),
+                "help": _("Make the scene larger"),
+                "action": self.on_click_zoom_in,
+                "id": wx.ID_ZOOM_IN,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Zoom to &Selected\tCtrl-Shift-B"),
+                "help": _("Fill the scene area with the selected elements"),
+                "action": self.on_click_zoom_selected,
+                "id": wx.ID_ZOOM_100,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("Zoom to &Bed\tCtrl-B"),
+                "help": _("View the whole laser bed"),
+                "action": self.on_click_zoom_bed,
+                "id": wx.ID_ZOOM_FIT,
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": "",
+                "level": 1,
+                "segment": "",
+            },
+            {
+                "label": _("GUI-Elements"),
+                "level": 2,
+                "segment": "GUI Appearance",
+            },
+            {
+                "label": _("Show/Hide UI-Panels\tCtrl-U"),
+                "help": _("Show/Hide all panels/ribbon bar"),
+                "action": self.on_click_toggle_ui,
+                "level": 2,
+                "segment": "GUI Appearance",
+                "subsegment": "GUI",
+            },
+            {
+                "label": _("Hide Icons"),
+                "help": _("Don't use icons in the tree"),
+                "criteria": self.context.draw_mode & DRAW_MODE_ICONS != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_ICONS,
+                "level": 2,
+                "segment": "GUI Appearance",
+                "subsegment": "Tree",
+            },
+            ### Scene-Appearance
+            {
+                "label": _("Hide Grid"),
+                "help": _("Don't show the sizing grid"),
+                "criteria": self.context.draw_mode & DRAW_MODE_GRID != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_GRID,
+                "level": 2,
+                "segment": "Scene Appearance",
+                "subsegment": "Scene",
+            },
+            {
+                "label": _("Hide Background"),
+                "help": _("Don't show any background image"),
+                "criteria": self.context.draw_mode & DRAW_MODE_BACKGROUND != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_BACKGROUND,
+                "level": 2,
+                "segment": "Scene Appearance",
+                "subsegment": "Scene",
+            },
+            {
+                "label": _("Hide Guides"),
+                "help": _("Don't show the measurement guides"),
+                "criteria": self.context.draw_mode & DRAW_MODE_GUIDES != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_GUIDES,
+                "level": 2,
+                "segment": "Scene Appearance",
+                "subsegment": "Scene",
+            },
+            {
+                "label": _("Hide Regmarks"),
+                "help": _("Don't show elements under the regmark branch"),
+                "criteria": self.context.draw_mode & DRAW_MODE_REGMARKS != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_REGMARKS,
+                "level": 2,
+                "segment": "Scene Appearance",
+            },
+            {
+                "label": _("Hide Laserpath"),
+                "help": _(
+                    "Don't show the path that the laserhead has followed (blue line)"
+                ),
+                "criteria": self.context.draw_mode & DRAW_MODE_LASERPATH != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_LASERPATH,
+                "level": 2,
+                "segment": "Scene Appearance",
+            },
+            {
+                "label": _("Hide Reticle"),
+                "help": _(
+                    "Don't show the small read circle showing the current laserhead position"
+                ),
+                "criteria": self.context.draw_mode & DRAW_MODE_RETICLE != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_RETICLE,
+                "level": 2,
+                "segment": "Scene Appearance",
+            },
+            {
+                "label": _("Do Not Alpha/Black Images"),
+                "help": _("Don't preprocess images for display, i.e. keep color"),
+                "criteria": self.context.draw_mode & DRAW_MODE_ALPHABLACK != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_ALPHABLACK,
+                "level": 3,
+                "segment": "Scene Appearance",
+                "subsegment": "Display Options",
+            },
+            {
+                "label": _("Do Not Cache Image"),
+                "help": _("Forces a recalculation of nodes when drawing"),
+                "criteria": self.context.draw_mode & DRAW_MODE_CACHE != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_CACHE,
+                "level": 3,
+                "segment": "Scene Appearance",
+                "subsegment": "Display Options",
+            },
+            {
+                "label": _("Do Not Animate"),
+                "help": _("Don't use animations when zooming"),
+                "criteria": self.context.draw_mode & DRAW_MODE_ANIMATE != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_ANIMATE,
+                "level": 3,
+                "segment": "Scene Appearance",
+                "subsegment": "Display Options",
+            },
+            {
+                "label": _("Invert"),
+                "help": _("Show a negative image of the scene by inverting colours"),
+                "criteria": self.context.draw_mode & DRAW_MODE_INVERT != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_INVERT,
+                "level": 3,
+                "segment": "Scene Appearance",
+                "subsegment": "Display Options",
+            },
+            {
+                "label": _("Flip XY"),
+                "help": _("Effectively rotate the scene display by 180 degrees"),
+                "criteria": self.context.draw_mode & DRAW_MODE_FLIPXY != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_FLIPXY,
+                "level": 3,
+                "segment": "Scene Appearance",
+                "subsegment": "Display Options",
+            },
+            ## This will confuse the hell out of people, so omitted...
+            # {
+            #     "label": _("Do Not Refresh"),
+            #     "help": _("Don't refresh the scene when requested"),
+            #     "criteria": self.context.draw_mode & DRAW_MODE_REFRESH != 0,
+            #     "action": toggle_draw_mode,
+            #     "parameter": DRAW_MODE_REFRESH,
+            #     "level": 3,
+            #     "segment": "Scene Appearance",
+            #     "subsegment": "Display Options",
+            # },
+            ### Render-Options
+            ###    Element Display
+            {
+                "label": _("Affect treatment of elements during render"),
+                "help": _(
+                    "Advanced options! Tampering with these might break your burn!"
+                ),
+                "segment": "Render-Options",
+                "level": 2,
+            },
+            {
+                "label": _("(both on screen and at the burn-phase)"),
+                "help": _(
+                    "Advanced options! Tampering with these might break your burn!"
+                ),
+                "segment": "Render-Options",
+                "level": 2,
+            },
+            {
+                "label": _("Hide Shapes"),
+                "help": _("Don't show shapes (i.e. Rectangles, Paths etc.)"),
+                "criteria": self.context.draw_mode & DRAW_MODE_PATH != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_PATH,
+                "segment": "Render-Options",
+                "level": 2,
+            },
+            {
+                "label": _("Hide Text"),
+                "help": _("Don't show text elements"),
+                "criteria": self.context.draw_mode & DRAW_MODE_TEXT != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_TEXT,
+                "segment": "Render-Options",
+                "level": 2,
+            },
+            {
+                "label": _("Hide Images"),
+                "help": _("Don't show images"),
+                "criteria": self.context.draw_mode & DRAW_MODE_IMAGE != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_IMAGE,
+                "segment": "Render-Options",
+                "level": 2,
+            },
+            ### Render-Options
+            ###    Shape attributes
+            {
+                "label": _("Hide Strokes"),
+                "help": _("Don't show the strokes (i.e. the edges of SVG shapes)"),
+                "criteria": self.context.draw_mode & DRAW_MODE_STROKES != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_STROKES,
+                "level": 3,
+                "segment": "Render-Options",
+                "subsegment": "Shape-Attributes",
+            },
+            {
+                "label": _("Hide Fills"),
+                "help": _("Don't show fills (i.e. the fill inside strokes)"),
+                "criteria": self.context.draw_mode & DRAW_MODE_FILLS != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_FILLS,
+                "level": 3,
+                "segment": "Render-Options",
+                "subsegment": "Shape-Attributes",
+            },
+            {
+                "level": 3,
+                "segment": "Render-Options",
+                "subsegment": "Shape-Attributes",
+            },
+            {
+                "label": _("No Stroke-Width Render"),
+                "help": _("Ignore the stroke width when drawing the stroke"),
+                "criteria": self.context.draw_mode & DRAW_MODE_LINEWIDTH != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_LINEWIDTH,
+                "level": 3,
+                "segment": "Render-Options",
+                "subsegment": "Shape-Attributes",
+            },
+            {
+                "label": _("Show Variables"),
+                "help": _("Replace variables in textboxes by their 'real' content"),
+                "criteria": self.context.draw_mode & DRAW_MODE_VARIABLES != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_VARIABLES,
+                "level": 1,
+            },
+        ]
+
         self.view_menu = wx.Menu()
 
-        menu_item = self.view_menu.Append(
-            wx.ID_ANY, _("Zoom &Out\tCtrl--"), _("Make the scene smaller")
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_out, id=menu_item.GetId())
+        current_menu = self.view_menu
+        prev_menu = self.view_menu
+        current_segment = ""
+        current_subsegment = ""
+        current_level = 1
+        for choice in choices:
+            try:
+                c_level = choice["level"]
+                if c_level < 1:
+                    c_level = 1
+            except KeyError:
+                c_level = 1
 
-        menu_item = self.view_menu.Append(
-            wx.ID_ANY, _("Zoom &In\tCtrl-+"), _("Make the scene larger")
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_in, id=menu_item.GetId())
-        menu_item = self.view_menu.Append(
-            wx.ID_ANY,
-            _("Zoom to &Selected\tCtrl-Shift-B"),
-            _("Fill the scene area with the selected elements"),
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_selected, id=menu_item.GetId())
-        menu_item = self.view_menu.Append(
-            wx.ID_ANY, _("Zoom to &Bed\tCtrl-B"), _("View the whole laser bed")
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_zoom_bed, id=menu_item.GetId())
-        menu_item = self.view_menu.Append(
-            wx.ID_ANY,
-            _("Show/Hide UI-Panels\tCtrl-U"),
-            _("Show/Hide all panels/ribbon bar"),
-        )
-        self.Bind(wx.EVT_MENU, self.on_click_toggle_ui, id=menu_item.GetId())
+            try:
+                c_segment = choice["segment"]
+            except KeyError:
+                c_segment = ""
 
-        self.view_menu.AppendSeparator()
+            try:
+                c_subsegment = choice["subsegment"]
+            except KeyError:
+                c_subsegment = ""
 
-        create_draw_mode_item(
-            _("Hide Grid"), _("Don't show the sizing grid"), DRAW_MODE_GRID
-        )
-        create_draw_mode_item(
-            _("Hide Background"),
-            _("Don't show any background image"),
-            DRAW_MODE_BACKGROUND,
-        )
-        create_draw_mode_item(
-            _("Hide Guides"), _("Don't show the measurement guides"), DRAW_MODE_GUIDES
-        )
-        create_draw_mode_item(
-            _("Hide Shapes"),
-            _("Don't show shapes (i.e. Rectangles, Paths etc.)"),
-            DRAW_MODE_PATH,
-        )
-        create_draw_mode_item(
-            _("Hide Strokes"),
-            _("Don't show the strokes (i.e. the edges of SVG shapes)"),
-            DRAW_MODE_STROKES,
-        )
-        # TODO - this function doesn't work.
-        create_draw_mode_item(
-            _("No Stroke-Width Render"),
-            _("Ignore the stroke width when drawing the stroke"),
-            DRAW_MODE_LINEWIDTH,
-        )
-        create_draw_mode_item(
-            _("Hide Fills"),
-            _("Don't show fills (i.e. the fill inside strokes)"),
-            DRAW_MODE_FILLS,
-        )
-        create_draw_mode_item(_("Hide Images"), _("Don't show images"), DRAW_MODE_IMAGE)
-        create_draw_mode_item(
-            _("Hide Text"), _("Don't show text elements"), DRAW_MODE_TEXT
-        )
-        create_draw_mode_item(
-            _("Hide Laserpath"),
-            _("Don't show the path that the laserhead has followed (blue line)"),
-            DRAW_MODE_LASERPATH,
-        )
-        create_draw_mode_item(
-            _("Hide Reticle"),
-            _(
-                "Don't show the small read circle showing the current laserhead position"
-            ),
-            DRAW_MODE_RETICLE,
-        )
-        create_draw_mode_item(
-            _("Hide Selection"),
-            _("Don't show the selection boundaries and dimensions"),
-            DRAW_MODE_SELECTION,
-        )
-        create_draw_mode_item(
-            _("Hide Regmarks"),
-            _("Don't show elements under the regmark branch"),
-            DRAW_MODE_REGMARKS,
-        )
+            try:
+                c_label = choice["label"]
+            except KeyError:
+                c_label = ""
 
-        # TODO This menu does not clear existing icons or create icons when it is changed
-        create_draw_mode_item(_("Hide Icons"), "", DRAW_MODE_ICONS)
-        create_draw_mode_item(_("Do Not Cache Image"), "", DRAW_MODE_CACHE)
-        create_draw_mode_item(_("Do Not Alpha/Black Images"), "", DRAW_MODE_ALPHABLACK)
-        create_draw_mode_item(_("Do Not Refresh"), _(""), DRAW_MODE_REFRESH)
-        create_draw_mode_item(_("Do Not Animate"), _(""), DRAW_MODE_ANIMATE)
-        create_draw_mode_item(
-            _("Invert"),
-            _("Show a negative image of the scene by inverting colours"),
-            DRAW_MODE_INVERT,
-        )
-        create_draw_mode_item(
-            _("Flip XY"),
-            _("Effectively rotate the scene display by 180 degrees"),
-            DRAW_MODE_FLIPXY,
-        )
+            try:
+                c_help = choice["help"]
+            except KeyError:
+                c_help = ""
 
-        self.view_menu.AppendSeparator()
-        create_draw_mode_item(
-            _("Show Variables"),
-            _("Replace variables in textboxes by their 'real' content"),
-            DRAW_MODE_VARIABLES,
-        )
+            try:
+                c_action = choice["action"]
+            except KeyError:
+                c_action = None
+
+            try:
+                c_criteria = choice["criteria"]
+            except KeyError:
+                c_criteria = None
+
+            try:
+                c_segment = choice["segment"]
+            except KeyError:
+                c_segment = ""
+
+            try:
+                c_param = choice["parameter"]
+            except KeyError:
+                c_param = None
+
+            try:
+                c_id = choice["id"]
+            except KeyError:
+                c_id = wx.ID_ANY
+            # print(f"{c_segment}{c_subsegment},{c_level}: {c_label}")
+            if c_segment != current_segment:
+                current_segment = c_segment
+                current_subsegment = ""
+                # Go back to start
+                if c_level != current_level and current_level > 1:
+                    current_level = 1
+                    current_menu = self.view_menu
+                    prev_menu = self.view_menu
+
+                if c_level > current_level:
+                    prev_menu = current_menu
+                    current_menu = wx.Menu()
+                    prev_menu.AppendSubMenu(current_menu, _(c_segment))
+                else:
+                    current_menu.AppendSeparator()
+
+            if c_subsegment != current_subsegment:
+                current_subsegment = c_subsegment
+                if current_level != c_level:
+                    # New submenu
+                    if c_subsegment == "":
+                        current_menu.AppendSeparator()
+                        c_level = current_level
+                    else:
+                        prev_menu = current_menu
+                        current_menu = wx.Menu()
+                        prev_menu.AppendSubMenu(current_menu, _(c_subsegment))
+                else:
+                    if c_subsegment == "":
+                        current_menu.AppendSeparator()
+
+            current_level = c_level
+            if c_label == "":
+                current_menu.AppendSeparator()
+            else:
+                if c_criteria is None:
+                    menu_item = current_menu.Append(
+                        c_id,
+                        c_label,
+                        c_help,
+                        wx.ITEM_NORMAL,
+                    )
+                else:
+                    menu_item = current_menu.Append(
+                        c_id,
+                        c_label,
+                        c_help,
+                        wx.ITEM_CHECK,
+                    )
+                    menu_item.Check(c_criteria)
+
+                def deal_with(routine, parameter=None):
+                    def done(event):
+                        if parameter is None:
+                            routine()
+                        else:
+                            routine(parameter)
+                        return
+
+                    return done
+
+                if c_action is None:
+                    menu_item.Enable(False)
+                else:
+                    self.Bind(
+                        wx.EVT_MENU, deal_with(c_action, c_param), id=menu_item.GetId()
+                    )
 
         self.main_menubar.Append(self.view_menu, _("View"))
 
@@ -2198,7 +2562,7 @@ class MeerK40t(MWindow):
             id=menuitem.GetId(),
         )
         menuitem = self.help_menu.Append(
-            wx.ID_ANY, _("&Github"), _("Visit Meerk40t's Github home page")
+            wx.ID_ANY, _("&Github"), _("Visit Meerk40t's Github homepage")
         )
         self.Bind(
             wx.EVT_MENU,
@@ -2243,6 +2607,17 @@ class MeerK40t(MWindow):
         self.Bind(
             wx.EVT_MENU,
             lambda e: self.context("webhelp makers\n"),
+            id=menuitem.GetId(),
+        )
+        self.help_menu.AppendSeparator()
+        menuitem = self.help_menu.Append(
+            wx.ID_ANY,
+            _("Feature request/feedback"),
+            _("You feel something is missing or could be improved? Let us know..."),
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda e: self.context("webhelp featurerequest\n"),
             id=menuitem.GetId(),
         )
         self.help_menu.AppendSeparator()
@@ -2293,7 +2668,7 @@ class MeerK40t(MWindow):
         self.__set_titlebar()
 
     def window_close_veto(self):
-        if self.usb_running:
+        if self.any_device_running:
             message = _("The device is actively sending data. Really quit?")
             answer = wx.MessageBox(
                 message, _("Currently Sending Data..."), wx.YES_NO | wx.CANCEL, None
@@ -2387,9 +2762,18 @@ class MeerK40t(MWindow):
         dlg.ShowModal()
         dlg.Destroy()
 
+    @property
+    def any_device_running(self):
+        running = self._usb_running
+        for v in running:
+            q = running[v]
+            if q:
+                return True
+        return False
+
     @signal_listener("pipe;running")
     def on_usb_running(self, origin, value):
-        self.usb_running = value
+        self._usb_running[origin] = value
 
     @signal_listener("pipe;usb_status")
     def on_usb_state_text(self, origin, value):
@@ -2788,21 +3172,6 @@ class MeerK40t(MWindow):
         zoom = self.context.zoom_margin
         self.context(f"scene focus -a {-zoom}% {-zoom}% {zoom+100}% {zoom+100}%\n")
 
-    def toggle_draw_mode(self, bits):
-        """
-        Toggle the draw mode.
-        @param bits: Bit to toggle.
-        @return: Toggle function.
-        """
-
-        def toggle(event=None):
-            self.context.draw_mode ^= bits
-            self.context.signal("draw_mode", self.context.draw_mode)
-            self.context.elements.modified()
-            self.context.signal("refresh_scene", "Scene")
-
-        return toggle
-
     def update_statusbar(self, text):
         self.main_statusbar.SetStatusText(text, 0)
 
@@ -2843,23 +3212,26 @@ class MeerK40t(MWindow):
         self.status_update()
 
     def on_menu_highlight(self, event):
-        menuid = event.GetId()
-        menu = event.GetMenu()
-        if menuid == wx.ID_SEPARATOR:
-            self.update_statusbar("...")
-            return
-        if not self.top_menu and not menu:
-            self.status_update()
-            return
-        if menu and not self.top_menu:
-            self.top_menu = menu
-        if self.top_menu and not menu:
-            menu = self.top_menu
-        menuitem, submenu = menu.FindItem(menuid)
-        if not menuitem:
-            self.update_statusbar("...")
-            return
-        helptext = menuitem.GetHelp()
-        if not helptext:
-            helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
-        self.update_statusbar(helptext)
+        try:
+            menuid = event.GetId()
+            menu = event.GetMenu()
+            if menuid == wx.ID_SEPARATOR:
+                self.update_statusbar("...")
+                return
+            if not self.top_menu and not menu:
+                self.status_update()
+                return
+            if menu and not self.top_menu:
+                self.top_menu = menu
+            if self.top_menu and not menu:
+                menu = self.top_menu
+            menuitem, submenu = menu.FindItem(menuid)
+            if not menuitem:
+                self.update_statusbar("...")
+                return
+            helptext = menuitem.GetHelp()
+            if not helptext:
+                helptext = f'{menuitem.GetItemLabelText()} ({_("No help text")})'
+            self.update_statusbar(helptext)
+        except RuntimeError:
+            pass

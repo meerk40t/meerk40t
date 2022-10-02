@@ -1,6 +1,7 @@
 import ezdxf
 from ezdxf import units
 
+from ..core.exceptions import BadFileError
 from ..core.units import UNITS_PER_INCH, UNITS_PER_MM
 
 try:
@@ -44,7 +45,18 @@ class DxfLoader:
 
         Dxf data has an origin point located in the lower left corner. +y -> top
         """
-        dxf = ezdxf.readfile(pathname)
+        try:
+            dxf = ezdxf.readfile(pathname)
+        except ezdxf.DXFError:
+            try:
+                # dxf is low quality. Attempt recovery.
+                from ezdxf import recover
+
+                dxf, auditor = recover.readfile(pathname)
+            except ezdxf.DXFStructureError as e:
+                # Recovery failed, return the BadFileError.
+                raise BadFileError(str(e)) from e
+
         unit = dxf.header.get("$INSUNITS")
 
         if unit is not None and unit != 0:

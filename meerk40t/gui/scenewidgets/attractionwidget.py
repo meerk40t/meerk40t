@@ -21,6 +21,8 @@ class AttractionWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         # Respond to Snap is not necessary, but for the sake of completeness...
+        # We want to be unrecognized
+        self.transparent = True
         self.context = self.scene.context
         self.attraction_points = None  # Clear all
         self.my_x = None
@@ -64,9 +66,8 @@ class AttractionWidget(Widget):
             self.my_x = space_pos[0]
             self.my_y = space_pos[1]
             self.calculate_display_points()
-            if (
-                event_type in ("leftdown", "move", "hover", "hover_start")
-                and self.scene.tool_active
+            if event_type in ("leftdown", "move", "hover", "hover_start") and (
+                self.scene.tool_active or self.scene.modif_active
             ):
                 self._show_snap_points = True
             else:
@@ -76,7 +77,7 @@ class AttractionWidget(Widget):
             "leftup",
             "leftclick",
             "move",
-            "hover",
+            # "hover",
         ):
             # Check whether shift key is pressed...
             if "shift" not in modifiers:
@@ -101,15 +102,15 @@ class AttractionWidget(Widget):
                     # print("Check complete: old x,y = %.1f, %.1f, new = %s,%s, delta=%.1f, threshold=%.1f"
                     #   % ( self.my_x, self.my_y, new_x, new_y, delta, self.context.action_attract_len, ))
                     # fmt:on
+                    matrix = self.parent.matrix
+                    pixel = self.context.action_attract_len / matrix.value_scale_x()
                     if new_x is not None:
                         if (
-                            abs(new_x - self.my_x) <= self.context.action_attract_len
-                            and abs(new_y - self.my_y)
-                            <= self.context.action_attract_len
+                            abs(new_x - self.my_x) <= pixel
+                            and abs(new_y - self.my_y) <= pixel
                         ):
                             # Is the distance small enough?
                             response = (RESPONSE_CHAIN, new_x, new_y)
-
         return response
 
     def draw_caret(self, gc, x, y, closeup):
@@ -216,13 +217,13 @@ class AttractionWidget(Widget):
                 matrix.reset()
                 return
             # Anything within a 15 Pixel Radius will be attracted, anything within a 45 Pixel Radius will be displayed
-            pixel1 = self.context.show_attract_len
-            pixel2 = self.context.action_attract_len
-            pixel3 = self.context.grid_attract_len
-            # print ("Current values are: show=%d, points=%d, grid=%d" % ( pixel1, pixel2, pixel3))
-            self.context.show_attract_len = pixel1 / matrix.value_scale_x()
-            self.context.action_attract_len = pixel2 / matrix.value_scale_x()
-            self.context.grid_attract_len = pixel3 / matrix.value_scale_x()
+            local_attract_len = self.context.show_attract_len / matrix.value_scale_x()
+            local_action_attract_len = (
+                self.context.action_attract_len / matrix.value_scale_x()
+            )
+            local_grid_attract_len = (
+                self.context.grid_attract_len / matrix.value_scale_x()
+            )
 
             min_delta = float("inf")
             min_x = None
@@ -230,8 +231,8 @@ class AttractionWidget(Widget):
             min_type = None
             for pts in self.display_points:
                 if (
-                    abs(pts[0] - self.my_x) <= self.context.show_attract_len
-                    and abs(pts[1] - self.my_y) <= self.context.show_attract_len
+                    abs(pts[0] - self.my_x) <= local_attract_len
+                    and abs(pts[1] - self.my_y) <= local_attract_len
                 ):
                     closeup = 0
                     delta = sqrt(
@@ -242,9 +243,9 @@ class AttractionWidget(Widget):
                     dy = abs(pts[1] - self.my_y)
 
                     if pts[2] == TYPE_GRID:
-                        distance = self.context.grid_attract_len
+                        distance = local_grid_attract_len
                     else:
-                        distance = self.context.action_attract_len
+                        distance = local_action_attract_len
                     if dx <= distance and dy <= distance:
                         closeup = 1
                         if delta < min_delta:
@@ -321,18 +322,23 @@ class AttractionWidget(Widget):
         if self.attraction_points is None:
             self.calculate_attraction_points()
 
+        matrix = self.parent.matrix
+        pixel = self.context.show_attract_len / matrix.value_scale_x()
+
         if (
             self.context.snap_points
             and len(self.attraction_points) > 0
             and not self.my_x is None
         ):
+            dummy = 0
             for pts in self.attraction_points:
-                # doit = not pts[3] # not emphasized
                 doit = True  # Not sure why not :-)
+                if self.scene.modif_active:
+                    doit = not pts[3] # not emphasized
                 if doit:
                     if (
-                        abs(pts[0] - self.my_x) <= self.context.show_attract_len
-                        and abs(pts[1] - self.my_y) <= self.context.show_attract_len
+                        abs(pts[0] - self.my_x) <= pixel
+                        and abs(pts[1] - self.my_y) <= pixel
                     ):
                         self.display_points.append([pts[0], pts[1], pts[2]])
 
@@ -344,8 +350,8 @@ class AttractionWidget(Widget):
         ):
             for pts in self.scene.grid_points:
                 if (
-                    abs(pts[0] - self.my_x) <= self.context.show_attract_len
-                    and abs(pts[1] - self.my_y) <= self.context.show_attract_len
+                    abs(pts[0] - self.my_x) <= pixel
+                    and abs(pts[1] - self.my_y) <= pixel
                 ):
                     self.display_points.append([pts[0], pts[1], TYPE_GRID])
 

@@ -1,5 +1,8 @@
+from math import sqrt
+
 import wx
 
+from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.scene.sceneconst import (
     RESPONSE_ABORT,
@@ -22,9 +25,16 @@ class CircleTool(ToolWidget):
         self.start_position = None
         self.p1 = None
         self.p2 = None
+        # 0 -> old mode, 1 define center
+        self.creation_mode = 1
 
     def process_draw(self, gc: wx.GraphicsContext):
         if self.p1 is not None and self.p2 is not None:
+            cx = self.p1.real
+            cy = self.p1.imag
+            dx = self.p1.real - self.p2.real
+            dy = self.p1.imag - self.p2.imag
+            radius = sqrt(dx * dx + dy * dy)
             x0 = min(self.p1.real, self.p2.real)
             y0 = min(self.p1.imag, self.p2.imag)
             x1 = max(self.p1.real, self.p2.real)
@@ -47,13 +57,27 @@ class CircleTool(ToolWidget):
                         wx.BRUSHSTYLE_SOLID,
                     )
                 )
-            ellipse = Circle(
-                (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
-            )
+            if self.creation_mode == 1:
+                ellipse = Circle(cx, cy, radius)
+            else:
+                ellipse = Circle(
+                    (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
+                )
             t = Path(ellipse)
             bbox = t.bbox()
             if bbox is not None:
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
+                units = self.scene.context.units_name
+                s = "C=({cx}, {cy}), R={radius}".format(
+                    cx=Length(
+                        amount=(bbox[0] + bbox[2]) / 2, digits=2, preferred_units=units
+                    ),
+                    cy=Length(
+                        amount=(bbox[1] + bbox[3]) / 2, digits=2, preferred_units=units
+                    ),
+                    radius=Length(amount=radius, digits=2, preferred_units=units),
+                )
+                self.scene.context.signal("statusmsg", s)
 
     def event(
         self,
@@ -96,25 +120,37 @@ class CircleTool(ToolWidget):
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
                     self.p2 = complex(nearest_snap[0], nearest_snap[1])
+                cx = self.p1.real
+                cy = self.p1.imag
+                dx = self.p1.real - self.p2.real
+                dy = self.p1.imag - self.p2.imag
+                radius = sqrt(dx * dx + dy * dy)
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
-                ellipse = Circle(
-                    (x1 + x0) / 2.0,
-                    (y1 + y0) / 2.0,
-                    abs(self.p1 - self.p2) / 2,
-                    stroke="blue",
-                    stroke_width=1000,
-                )
+                if self.creation_mode == 1:
+                    ellipse = Circle(
+                        cx,
+                        cy,
+                        radius,
+                    )
+                else:
+                    ellipse = Circle(
+                        (x1 + x0) / 2.0,
+                        (y1 + y0) / 2.0,
+                        abs(self.p1 - self.p2) / 2,
+                    )
 
                 if not ellipse.is_degenerate():
                     elements = self.scene.context.elements
-                    node = elements.elem_branch.add(shape=ellipse, type="elem ellipse")
-                    if self.scene.context.elements.default_stroke is not None:
-                        node.stroke = self.scene.context.elements.default_stroke
-                    if self.scene.context.elements.default_fill is not None:
-                        node.fill = self.scene.context.elements.default_fill
+                    node = elements.elem_branch.add(
+                        shape=ellipse,
+                        type="elem ellipse",
+                        stroke_width=1000.0,
+                        stroke=self.scene.context.elements.default_stroke,
+                        fill=self.scene.context.elements.default_fill,
+                    )
                     if elements.classify_new:
                         elements.classify([node])
                     self.notify_created(node)
@@ -123,10 +159,12 @@ class CircleTool(ToolWidget):
             except IndexError:
                 pass
             self.scene.request_refresh()
+            self.scene.context.signal("statusmsg", "")
             response = RESPONSE_ABORT
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             self.p1 = None
             self.p2 = None
+            self.scene.context.signal("statusmsg", "")
             if self.scene.tool_active:
                 self.scene.tool_active = False
                 self.scene.request_refresh()

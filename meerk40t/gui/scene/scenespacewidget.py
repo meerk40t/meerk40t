@@ -93,7 +93,13 @@ class SceneSpaceWidget(Widget):
         return 1.0 / zf
 
     def event(
-        self, window_pos=None, space_pos=None, event_type=None, modifiers=None, **kwargs
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        modifiers=None,
+        **kwargs,
     ):
         """
         Process the zooming and panning of otherwise unhit-widget events.
@@ -106,21 +112,7 @@ class SceneSpaceWidget(Widget):
         if self.aspect:
             return RESPONSE_CONSUME
 
-        if event_type == "wheelup" and self.scene.context.mouse_wheel_pan:
-            self.scene_widget.matrix.post_translate(0, -self.pan_factor)
-        elif event_type == "wheeldown" and self.scene.context.mouse_wheel_pan:
-            self.scene_widget.matrix.post_translate(0, self.pan_factor)
-        elif event_type == "wheelup":
-            if (
-                self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff
-                and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff
-            ):
-                self.scene_widget.matrix.post_scale(
-                    self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
-                )
-                self.scene.request_refresh()
-            return RESPONSE_CONSUME
-        elif (event_type == "rightdown" and "alt" in modifiers) or (
+        if (event_type == "rightdown" and "alt" in modifiers) or (
             event_type == "middledown" and "ctrl" in modifiers
         ):
             self._previous_zoom = 1.0
@@ -136,10 +128,28 @@ class SceneSpaceWidget(Widget):
             self._previous_zoom = None
             self._placement_event = None
             self._placement_event_type = None
+        elif event_type == "wheelup":
+            if bool(self.scene.context.mouse_wheel_pan) == bool(
+                "ctrl" not in modifiers
+            ):
+                self.scene_widget.matrix.post_translate(0, -self.pan_factor)
+            else:
+                if (
+                    self.scene_widget.matrix.value_scale_x() <= self.zoom_cutoff
+                    and self.scene_widget.matrix.value_scale_y() <= self.zoom_cutoff
+                ):
+                    self.scene_widget.matrix.post_scale(
+                        self.zoom_forward, self.zoom_forward, space_pos[0], space_pos[1]
+                    )
+            self.scene.request_refresh()
+            return RESPONSE_CONSUME
         elif event_type == "wheeldown":
-            self.scene_widget.matrix.post_scale(
-                self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
-            )
+            if bool(self.scene.context.mouse_wheel_pan) == ("ctrl" not in modifiers):
+                self.scene_widget.matrix.post_translate(0, self.pan_factor)
+            else:
+                self.scene_widget.matrix.post_scale(
+                    self.zoom_backwards, self.zoom_backwards, space_pos[0], space_pos[1]
+                )
             self.scene.request_refresh()
             return RESPONSE_CONSUME
         elif event_type == "wheelleft":

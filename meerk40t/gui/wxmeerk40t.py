@@ -42,6 +42,7 @@ from .icons import (
 from .imagesplitter import RenderSplit
 from .keymap import Keymap
 from .lasertoolpanel import LaserTool
+from .materialtest import TemplateTool
 from .notes import Notes
 from .operation_info import OperationInformation
 from .preferences import Preferences
@@ -50,6 +51,7 @@ from .propertypanels.groupproperties import GroupPropertiesPanel
 from .propertypanels.imageproperty import ImagePropertyPanel
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
+from .propertypanels.pointproperty import PointPropertyPanel
 from .propertypanels.propertywindow import PropertyWindow
 from .propertypanels.rasterwizardpanels import (
     AutoContrastPanel,
@@ -108,10 +110,11 @@ def register_panel_go(window, context):
         .CaptionVisible(not context.pane_lock)
         .Hide()
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = go
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/go", pane)
 
 
@@ -138,10 +141,11 @@ def register_panel_stop(window, context):
         .Hide()
         .CaptionVisible(not context.pane_lock)
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = stop
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/stop", pane)
 
 
@@ -160,9 +164,10 @@ def register_panel_home(window, context):
         .Hide()
         .CaptionVisible(not context.pane_lock)
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = home
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/home", pane)
 
 
@@ -200,10 +205,11 @@ def register_panel_pause(window, context):
         .Hide()
         .CaptionVisible(not context.pane_lock)
     )
+    pane.submenu = "_10_" + _("Laser")
     pane.dock_proportion = 98
     pane.control = pause
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/pause", pane)
 
 
@@ -325,99 +331,6 @@ class wxMeerK40t(wx.App, Module):
 
     @staticmethod
     def sub_register(kernel):
-        kernel.register("window/MeerK40t", MeerK40t)
-
-        kernel.register("window/Properties", PropertyWindow)
-        kernel.register("property/RasterOpNode/OpMain", ParameterPanel)
-        kernel.register("property/CutOpNode/OpMain", ParameterPanel)
-        kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
-        kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
-        kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
-        kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
-
-        kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
-        kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
-        kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
-        kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
-        kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
-        kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
-        kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
-        kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
-        kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
-        kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
-        kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
-        kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
-
-        kernel.register("property/ImageNode/SharpenProperty", SharpenPanel)
-        kernel.register("property/ImageNode/ContrastProperty", ContrastPanel)
-        kernel.register("property/ImageNode/ToneCurveProperty", ToneCurvePanel)
-        kernel.register("property/ImageNode/HalftoneProperty", HalftonePanel)
-        kernel.register("property/ImageNode/GammaProperty", GammaPanel)
-        kernel.register("property/ImageNode/EdgeProperty", EdgePanel)
-        kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
-
-        kernel.register("window/Console", Console)
-        kernel.register("window/Preferences", Preferences)
-        kernel.register("window/About", About)
-        kernel.register("window/Keymap", Keymap)
-        kernel.register("window/Wordlist", WordlistEditor)
-        kernel.register("window/Navigation", Navigation)
-        kernel.register("window/Notes", Notes)
-        kernel.register("window/JobSpooler", JobSpooler)
-        kernel.register("window/ExecuteJob", ExecuteJob)
-        kernel.register("window/BufferView", BufferView)
-        kernel.register("window/Simulation", Simulation)
-        kernel.register("window/Scene", SceneWindow)
-        kernel.register("window/DeviceManager", DeviceManager)
-        kernel.register("window/Alignment", Alignment)
-        kernel.register("window/SplitImage", RenderSplit)
-        kernel.register("window/OperationInfo", OperationInformation)
-        kernel.register("window/Lasertool", LaserTool)
-
-        from meerk40t.gui.wxmribbon import register_panel_ribbon
-
-        kernel.register("wxpane/Ribbon", register_panel_ribbon)
-
-        from meerk40t.gui.wxmscene import register_panel_scene
-
-        kernel.register("wxpane/ScenePane", register_panel_scene)
-
-        from meerk40t.gui.wxmtree import register_panel_tree
-
-        kernel.register("wxpane/Tree", register_panel_tree)
-
-        from meerk40t.gui.laserpanel import register_panel_laser
-
-        kernel.register("wxpane/LaserPanel", register_panel_laser)
-
-        from meerk40t.gui.position import register_panel_position
-
-        kernel.register("wxpane/Position", register_panel_position)
-
-        from meerk40t.gui.opassignment import register_panel_operation_assign
-
-        kernel.register("wxpane/opassign", register_panel_operation_assign)
-
-        from meerk40t.gui.snapoptions import register_panel_snapoptions
-
-        kernel.register("wxpane/Snap", register_panel_snapoptions)
-
-        # from meerk40t.gui.auitoolbars import register_toolbars
-
-        # kernel.register("wxpane/Toolbars", register_toolbars)
-
-        kernel.register("wxpane/Go", register_panel_go)
-        kernel.register("wxpane/Stop", register_panel_stop)
-        kernel.register("wxpane/Home", register_panel_home)
-        kernel.register("wxpane/Pause", register_panel_pause)
-
-        context = kernel.root
-
-        context.setting(bool, "developer_mode", False)
-        if context.developer_mode:
-            from meerk40t.gui.mkdebug import register_panel_debugger
-
-            kernel.register("wxpane/debug_tree", register_panel_debugger)
 
         #################
         # WINDOW COMMANDS
@@ -531,6 +444,7 @@ class wxMeerK40t(wx.App, Module):
         def window_open(
             command, channel, _, data, multi=None, window=None, args=(), **kwargs
         ):
+            context = kernel.root
             path = data
             try:
                 parent = context.gui
@@ -595,6 +509,7 @@ class wxMeerK40t(wx.App, Module):
         )
         def window_close(channel, _, data, window=None, args=(), **kwargs):
             path = data
+            context = kernel.root
             try:
                 parent = context.gui if hasattr(context, "gui") else None
                 if wx.IsMainThread():
@@ -625,18 +540,21 @@ class wxMeerK40t(wx.App, Module):
 
         @kernel.console_command("refresh", help=_("Refresh the main wxMeerK40 window"))
         def scene_refresh(command, channel, _, **kwargs):
+            context = kernel.root
             context.signal("refresh_scene", "Scene")
             context.signal("rebuild_tree")
             channel(_("Refreshed."))
 
         @kernel.console_command("tooltips_enable", hidden=True)
         def tooltip_enable(command, channel, _, **kwargs):
+            context = kernel.root
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = False
             wx.ToolTip.Enable(not context.disable_tool_tips)
 
         @kernel.console_command("tooltips_disable", hidden=True)
         def tooltip_disable(command, channel, _, **kwargs):
+            context = kernel.root
             context.setting(bool, "disable_tool_tips", False)
             context.disable_tool_tips = True
             wx.ToolTip.Enable(not context.disable_tool_tips)
@@ -673,6 +591,102 @@ class wxMeerK40t(wx.App, Module):
         language = context.language
         if language is not None and language != 0:
             self.update_language(language)
+
+        kernel.register("window/MeerK40t", MeerK40t)
+
+        kernel.register("window/Properties", PropertyWindow)
+        kernel.register("property/RasterOpNode/OpMain", ParameterPanel)
+        kernel.register("property/CutOpNode/OpMain", ParameterPanel)
+        kernel.register("property/EngraveOpNode/OpMain", ParameterPanel)
+        kernel.register("property/ImageOpNode/OpMain", ParameterPanel)
+        kernel.register("property/DotsOpNode/OpMain", ParameterPanel)
+        kernel.register("property/HatchOpNode/OpMain", ParameterPanel)
+
+        kernel.register("property/ConsoleOperation/Property", ConsolePropertiesPanel)
+        kernel.register("property/GroupNode/Property", GroupPropertiesPanel)
+        kernel.register("property/EllipseNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PathNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PolylineNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/RectNode/PathProperty", PathPropertyPanel)
+        kernel.register("property/PointNode/PointProperty", PointPropertyPanel)
+        kernel.register("property/TextNode/TextProperty", TextPropertyPanel)
+        kernel.register("property/WaitOperation/WaitProperty", WaitPropertyPanel)
+        kernel.register("property/InputOperation/InputProperty", InputPropertyPanel)
+        kernel.register("property/BranchOperationsNode/LoopProperty", OpBranchPanel)
+        kernel.register("property/OutputOperation/OutputProperty", OutputPropertyPanel)
+        kernel.register("property/ImageNode/ImageProperty", ImagePropertyPanel)
+
+        kernel.register("property/ImageNode/SharpenProperty", SharpenPanel)
+        kernel.register("property/ImageNode/ContrastProperty", ContrastPanel)
+        kernel.register("property/ImageNode/ToneCurveProperty", ToneCurvePanel)
+        kernel.register("property/ImageNode/HalftoneProperty", HalftonePanel)
+        kernel.register("property/ImageNode/GammaProperty", GammaPanel)
+        kernel.register("property/ImageNode/EdgeProperty", EdgePanel)
+        kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
+
+        kernel.register("window/Console", Console)
+        kernel.register("window/Preferences", Preferences)
+        kernel.register("window/About", About)
+        kernel.register("window/Keymap", Keymap)
+        kernel.register("window/Wordlist", WordlistEditor)
+        kernel.register("window/Navigation", Navigation)
+        kernel.register("window/Notes", Notes)
+        kernel.register("window/JobSpooler", JobSpooler)
+        kernel.register("window/ExecuteJob", ExecuteJob)
+        kernel.register("window/BufferView", BufferView)
+        kernel.register("window/Simulation", Simulation)
+        kernel.register("window/Scene", SceneWindow)
+        kernel.register("window/DeviceManager", DeviceManager)
+        kernel.register("window/Alignment", Alignment)
+        kernel.register("window/SplitImage", RenderSplit)
+        kernel.register("window/OperationInfo", OperationInformation)
+        kernel.register("window/Lasertool", LaserTool)
+        kernel.register("window/Templatetool", TemplateTool)
+
+        from meerk40t.gui.wxmribbon import register_panel_ribbon
+
+        kernel.register("wxpane/Ribbon", register_panel_ribbon)
+
+        from meerk40t.gui.wxmscene import register_panel_scene
+
+        kernel.register("wxpane/ScenePane", register_panel_scene)
+
+        from meerk40t.gui.wxmtree import register_panel_tree
+
+        kernel.register("wxpane/Tree", register_panel_tree)
+
+        from meerk40t.gui.laserpanel import register_panel_laser
+
+        kernel.register("wxpane/LaserPanel", register_panel_laser)
+
+        from meerk40t.gui.position import register_panel_position
+
+        kernel.register("wxpane/Position", register_panel_position)
+
+        from meerk40t.gui.opassignment import register_panel_operation_assign
+
+        kernel.register("wxpane/opassign", register_panel_operation_assign)
+
+        from meerk40t.gui.snapoptions import register_panel_snapoptions
+
+        kernel.register("wxpane/Snap", register_panel_snapoptions)
+
+        # from meerk40t.gui.auitoolbars import register_toolbars
+
+        # kernel.register("wxpane/Toolbars", register_toolbars)
+
+        kernel.register("wxpane/Go", register_panel_go)
+        kernel.register("wxpane/Stop", register_panel_stop)
+        kernel.register("wxpane/Home", register_panel_home)
+        kernel.register("wxpane/Pause", register_panel_pause)
+
+        context = kernel.root
+
+        context.setting(bool, "developer_mode", False)
+        if context.developer_mode:
+            from meerk40t.gui.mkdebug import register_panel_debugger
+
+            kernel.register("wxpane/debug_tree", register_panel_debugger)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)

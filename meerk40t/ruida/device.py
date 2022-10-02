@@ -22,8 +22,8 @@ from ..core.cutcode import CutCode, PlotCut
 from ..core.node.cutnode import CutNode
 from ..core.parameters import Parameters
 from ..core.spoolers import Spooler
-from ..core.units import Length, UNITS_PER_uM, ViewPort
-from ..svgelements import Color
+from ..core.units import UNITS_PER_MM, Length, UNITS_PER_uM, ViewPort
+from ..svgelements import Color, Matrix
 
 STATE_ABORT = -1
 STATE_DEFAULT = 0
@@ -73,6 +73,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             ("ruidacontrol", "ruidadesign", "ruidaemulator"),
             help=_("activate the ruidaserver."),
+            hidden=True,
         )
         def ruidaserver(
             command, channel, _, laser=None, verbose=False, quit=False, **kwargs
@@ -93,6 +94,12 @@ def plugin(kernel, lifecycle=None):
             ruidabounce sends data to the ruidaemulator but sends data to the set bounce server.
             """
             root = kernel.root
+            root.setting(bool, "developer_mode", False)
+            if not root.developer_mode:
+                channel(
+                    "Use the 0.7.x series version of ruidacontrol. This still had some bugs in it and was disabled for now."
+                )
+                return
             try:
                 r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
                 r2mj = root.open_as("module/UDPServer", "rd2mk-jog", port=50207)
@@ -285,13 +292,31 @@ class RuidaDevice(Service, ViewPort):
 
         _ = self.kernel.translation
 
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        super().realize()
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return 0, 0
+
 
 class RuidaParser:
     def __init__(self):
         pass
 
     def parse(self, data, elements):
-        pass
+        emulator = elements.open_as("emulator/ruida", "ruidaparser")
+        emulator.spooler = elements.device.spooler
+        emulator.device = elements.device
+        emulator.elements = elements
+        emulator.design = True
+        emulator.write(BytesIO(emulator.unswizzle(data)))
+        elements.close("ruidaparser")
 
 
 class RuidaEmulator(Module, Parameters):
@@ -346,10 +371,12 @@ class RuidaEmulator(Module, Parameters):
         self.state = 22
 
     def __repr__(self):
-        return f"Ruida({self.name}, {len(self.cutcode)} cuts)"
+        return f"Ruida({self.name}, {len(self.cutcode)} cuts @{hex(id(self))})"
 
     @signal_listener("pipe;thread")
     def on_pipe_state(self, origin, state):
+        if self.device is not None and self.device.path != origin:
+            return  # This pipe thread change is from the wrong device.
         if not self.control:
             return  # We are not using ruidacontrol mode. Do not update the state.
         if state == STATE_INITIALIZE:
@@ -611,9 +638,9 @@ class RuidaEmulator(Module, Parameters):
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
             self.plotcut.plot_append(
-                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
-
+            desc = f"Move Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
         elif array[0] == 0x89:  # 0b10001001 5 characters
             if len(array) > 1:
                 if self.speed < 40:
@@ -623,25 +650,25 @@ class RuidaEmulator(Module, Parameters):
                 self.x += dx
                 self.y += dy
                 self.plotcut.plot_append(
-                    int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+                    int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
                 )
-                desc = f"Move Relative ({dx / UNITS_PER_uM} nm, {dy / UNITS_PER_uM} nm)"
+                desc = f"Move Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
             else:
                 desc = "Move Relative (no coords)"
         elif array[0] == 0x8A:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
             self.plotcut.plot_append(
-                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
-            desc = f"Move Horizontal Relative ({dx / UNITS_PER_uM} nm)"
+            desc = f"Move Horizontal Relative ({dx * UNITS_PER_uM} units)"
         elif array[0] == 0x8B:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
             self.plotcut.plot_append(
-                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 0
+                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 0
             )
-            desc = f"Move Vertical Relative ({dy / UNITS_PER_uM} nm)"
+            desc = f"Move Vertical Relative ({dy * UNITS_PER_uM} units)"
         elif array[0] == 0x97:
             desc = "Lightburn Swizzle Modulation 97"
         elif array[0] == 0x9B:
@@ -731,34 +758,34 @@ class RuidaEmulator(Module, Parameters):
             self.x = self.abscoord(array[1:6])
             self.y = self.abscoord(array[6:11])
             self.plotcut.plot_append(
-                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
-            desc = (
-                f"Cut Absolute ({self.x / UNITS_PER_uM} nm, {self.y / UNITS_PER_uM} nm)"
-            )
+            desc = f"Cut Absolute ({self.x * UNITS_PER_uM} units, {self.y * UNITS_PER_uM} units)"
         elif array[0] == 0xA9:  # 0b10101001 5 characters
             dx = self.relcoord(array[1:3])
             dy = self.relcoord(array[3:5])
             self.x += dx
             self.y += dy
             self.plotcut.plot_append(
-                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
-            desc = f"Cut Relative ({dx / UNITS_PER_uM} nm, {dy / UNITS_PER_uM} nm)"
+            desc = (
+                f"Cut Relative ({dx * UNITS_PER_uM} units, {dy * UNITS_PER_uM} units)"
+            )
         elif array[0] == 0xAA:  # 0b10101010 3 characters
             dx = self.relcoord(array[1:3])
             self.x += dx
             self.plotcut.plot_append(
-                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
-            desc = f"Cut Horizontal Relative ({dx / UNITS_PER_uM} mil)"
+            desc = f"Cut Horizontal Relative ({dx * UNITS_PER_uM} units)"
         elif array[0] == 0xAB:  # 0b10101011 3 characters
             dy = self.relcoord(array[1:3])
             self.y += dy
             self.plotcut.plot_append(
-                int(self.x / UNITS_PER_uM), int(self.y / UNITS_PER_uM), 1
+                int(self.x * UNITS_PER_uM), int(self.y * UNITS_PER_uM), 1
             )
-            desc = f"Cut Vertical Relative ({dy / UNITS_PER_uM} mil)"
+            desc = f"Cut Vertical Relative ({dy * UNITS_PER_uM} units)"
         elif array[0] == 0xC7:
             v0 = self.parse_power(array[1:3])  # TODO: Check command fewer values.
             desc = f"Imd Power 1 ({v0})"
@@ -995,6 +1022,12 @@ class RuidaEmulator(Module, Parameters):
             # If not saving send to spooler in control or elements if `design` is set.
             if not self.saving and len(self.cutcode):
                 if self.control:
+                    matrix = self.device.scene_to_device_matrix()
+                    for plot in self.cutcode:
+                        for i in range(len(plot.plot)):
+                            x, y, laser = plot.plot[i]
+                            x, y = matrix.transform_point([x, y])
+                            plot.plot[i] = int(x), int(y), laser
                     self.spooler.laserjob([self.cutcode])
                 if self.design and self.elements is not None:
                     node = CutNode(cutcode=self.cutcode)
@@ -1155,7 +1188,7 @@ class RuidaEmulator(Module, Parameters):
                     desc = f"Move {param} X: {coord} ({self.x},{self.y})"
                     if self.control:
                         self.context(
-                            f"move -f {self.x / UNITS_PER_uM} {self.y / UNITS_PER_uM}\n"
+                            f"move -f {self.x * UNITS_PER_uM / UNITS_PER_MM}mm {self.y * UNITS_PER_uM / UNITS_PER_MM}mm\n"
                         )
                 elif array[1] == 0x01 or array[1] == 0x51:
                     coord = self.abscoord(array[3:8])
@@ -1163,7 +1196,7 @@ class RuidaEmulator(Module, Parameters):
                     desc = f"Move {param} Y: {coord} ({self.x},{self.y})"
                     if self.control:
                         self.context(
-                            f"move -f {self.x / UNITS_PER_uM} {self.y / UNITS_PER_uM}\n"
+                            f"move -f {self.x * UNITS_PER_uM / UNITS_PER_MM}mm {self.y * UNITS_PER_uM / UNITS_PER_MM}mm\n"
                         )
                 elif array[1] == 0x02 or array[1] == 0x52:
                     coord = self.abscoord(array[3:8])
@@ -1178,13 +1211,13 @@ class RuidaEmulator(Module, Parameters):
                 elif array[1] == 0x10 or array[1] == 0x60:
                     self.x = self.abscoord(array[3:8])
                     self.y = self.abscoord(array[8:13])
-                    desc = f"Move {param} XY ({self.x / UNITS_PER_uM}, {self.y / UNITS_PER_uM})"
+                    desc = f"Move {param} XY ({self.x * UNITS_PER_uM}, {self.y * UNITS_PER_uM})"
                     # self.x = 0
                     # self.y = 0
                     if self.control:
                         if "Origin" in param:
                             self.context(
-                                f"move -f {self.x / UNITS_PER_uM} {self.y / UNITS_PER_uM}\n"
+                                f"move_origin -f {self.x * UNITS_PER_uM / UNITS_PER_MM}mm {self.y * UNITS_PER_uM / UNITS_PER_MM}mm\n"
                             )
                         else:
                             self.context("home\n")
@@ -1192,7 +1225,7 @@ class RuidaEmulator(Module, Parameters):
                     self.x = self.abscoord(array[3:8])
                     self.y = self.abscoord(array[8:13])
                     self.u = self.abscoord(array[13 : 13 + 5])
-                    desc = f"Move {param} XYU: {self.x / UNITS_PER_uM} ({self.y / UNITS_PER_uM},{self.u / UNITS_PER_uM})"
+                    desc = f"Move {param} XYU: {self.x * UNITS_PER_uM} ({self.y * UNITS_PER_uM},{self.u * UNITS_PER_uM})"
         elif array[0] == 0xDA:
             mem = self.parse_mem(array[2:4])
             name, v = self.mem_lookup(mem)
@@ -1271,8 +1304,8 @@ class RuidaEmulator(Module, Parameters):
                 if self.saving:
                     self.filestream = open(get_safe_path(f"{self.filename}.rd"), "wb")
             elif array[1] == 0x03:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Process TopLeft ({c_x}, {c_y})"
             elif array[1] == 0x04:
                 v0 = self.decode14(array[2:4])
@@ -1291,8 +1324,8 @@ class RuidaEmulator(Module, Parameters):
                 v2 = self.decodeu35(array[7:12])
                 desc = f"Feed Repeat ({v1}, {v2})"
             elif array[1] == 0x07:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Process BottomRight({c_x}, {c_y})"
             elif array[1] == 0x08:  # Same value given to F2 05
                 v0 = self.decode14(array[2:4])
@@ -1310,16 +1343,16 @@ class RuidaEmulator(Module, Parameters):
                 v1 = array[2]
                 desc = f"Unknown 1 {v1}"
             elif array[1] == 0x13:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Array Min Point ({c_x},{c_y})"
             elif array[1] == 0x17:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Array Max Point ({c_x},{c_y})"
             elif array[1] == 0x23:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Array Add ({c_x},{c_y})"
             elif array[1] == 0x24:
                 v1 = array[2]
@@ -1337,42 +1370,42 @@ class RuidaEmulator(Module, Parameters):
             elif array[1] == 0x46:
                 desc = "BY Test 0x11227766"
             elif array[1] == 0x50:
-                c_x = self.abscoord(array[1:6]) / UNITS_PER_uM
-                c_y = self.abscoord(array[6:11]) / UNITS_PER_uM
+                c_x = self.abscoord(array[1:6]) * UNITS_PER_uM
+                c_y = self.abscoord(array[6:11]) * UNITS_PER_uM
                 desc = f"Document Min Point({c_x}, {c_y})"
             elif array[1] == 0x51:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Document Max Point({c_x}, {c_y})"
             elif array[1] == 0x52:
                 part = array[2]
-                c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
+                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
+                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
                 desc = f"{part}, Min Point({c_x}, {c_y})"
             elif array[1] == 0x53:
                 part = array[2]
-                c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
+                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
+                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
                 desc = f"{part}, MaxPoint({c_x}, {c_y})"
             elif array[1] == 0x54:
                 axis = array[2]
-                c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
+                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
                 desc = f"Pen Offset {axis}: {c_x}"
             elif array[1] == 0x55:
                 axis = array[2]
-                c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
+                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
                 desc = f"Layer Offset {axis}: {c_x}"
             elif array[1] == 0x60:
                 desc = f"Set Current Element Index ({array[2]})"
             elif array[1] == 0x61:
                 part = array[2]
-                c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
+                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
+                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
                 desc = f"{part}, MinPointEx({c_x}, {c_y})"
             elif array[1] == 0x62:
                 part = array[2]
-                c_x = self.abscoord(array[3:8]) / UNITS_PER_uM
-                c_y = self.abscoord(array[8:13]) / UNITS_PER_uM
+                c_x = self.abscoord(array[3:8]) * UNITS_PER_uM
+                c_y = self.abscoord(array[8:13]) * UNITS_PER_uM
                 desc = f"{part}, MaxPointEx({c_x}, {c_y})"
         elif array[0] == 0xE8:
             if array[1] == 0x00:
@@ -1449,8 +1482,8 @@ class RuidaEmulator(Module, Parameters):
                 enable = array[2]
                 desc = f"Enable Block Cutting ({enable})"
             elif array[1] == 0x03:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Display Offset ({c_x},{c_y})"
             elif array[1] == 0x04:
                 enable = array[2]
@@ -1468,12 +1501,12 @@ class RuidaEmulator(Module, Parameters):
                 name = bytes(array[2:12])
                 desc = f"Element Name ({str(name)})"
             if array[1] == 0x03:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Element Array Min Point ({c_x},{c_y})"
             if array[1] == 0x04:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Element Array Max Point ({c_x},{c_y})"
             if array[1] == 0x05:
                 v0 = self.decode14(array[2:4])
@@ -1485,8 +1518,8 @@ class RuidaEmulator(Module, Parameters):
                 v6 = self.decode14(array[14:16])
                 desc = f"Element Array ({v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v6})"
             if array[1] == 0x06:
-                c_x = self.abscoord(array[2:7]) / UNITS_PER_uM
-                c_y = self.abscoord(array[7:12]) / UNITS_PER_uM
+                c_x = self.abscoord(array[2:7]) * UNITS_PER_uM
+                c_y = self.abscoord(array[7:12]) * UNITS_PER_uM
                 desc = f"Element Array Add ({c_x},{c_y})"
             if array[1] == 0x07:
                 index = array[2]
@@ -2090,7 +2123,7 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x0221:
             if self.device is not None:
                 dev_x, dev_y = self.device.current
-                self.x = int(dev_x * UNITS_PER_uM)
+                self.x = int(dev_x / UNITS_PER_uM)
             x = int(self.x)
             return "Axis Preferred Position 1, Pos X", x
         if mem == 0x0223:
@@ -2100,7 +2133,7 @@ class RuidaEmulator(Module, Parameters):
         if mem == 0x0231:
             if self.device is not None:
                 dev_x, dev_y = self.device.current
-                self.y = int(dev_y * UNITS_PER_uM)
+                self.y = int(dev_y / UNITS_PER_uM)
             y = int(self.y)
             return "Axis Preferred Position 2, Pos Y", y
         if mem == 0x0233:
@@ -2230,7 +2263,7 @@ class RDLoader:
         with open(pathname, "rb") as f:
             op_branch = service.get(type="branch ops")
             op_branch.add(
-                data=bytearray(f.read()), data_type="ruida", type="blob", name=basename
+                data=bytearray(f.read()), data_type="ruida", type="blob", label=basename
             )
             kernel.root.close(basename)
             return True

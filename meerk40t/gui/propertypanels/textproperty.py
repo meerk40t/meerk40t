@@ -261,12 +261,15 @@ class TextPropertyPanel(ScrolledPanel):
             self, id=wx.ID_ANY, label="s", size=wx.Size(mysize, mysize)
         )
 
+        self.check_variable = wx.CheckBox(self, wx.ID_ANY, _(" Translate Variables"))
+        self.check_variable.SetToolTip(_("If active, preview will translate variables"))
+        self.check_variable.SetValue(True)
         self.__set_properties()
         self.__do_layout()
 
         self.Bind(wx.EVT_TEXT, self.on_text_change, self.text_text)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.text_text)
-
+        self.Bind(wx.EVT_BUTTON, self.on_button_choose_font, self.button_choose_font)
         self.Bind(wx.EVT_COMBOBOX, self.on_font_choice, self.combo_font)
         self.Bind(wx.EVT_TEXT_ENTER, self.on_font_choice, self.combo_font)
         self.combo_font.Bind(wx.EVT_KILL_FOCUS, self.on_font_choice)
@@ -284,6 +287,7 @@ class TextPropertyPanel(ScrolledPanel):
             self.button_attrib_strikethrough,
         )
         self.rb_align.Bind(wx.EVT_RADIOBOX, self.on_radio_box)
+        self.check_variable.Bind(wx.EVT_CHECKBOX, self.on_text_change)
 
     @staticmethod
     def accepts(node):
@@ -308,7 +312,12 @@ class TextPropertyPanel(ScrolledPanel):
         try:
             if self.node.text is not None:
                 self.text_text.SetValue(self.node.text)
-                self.label_fonttest.SetLabelText(self.node.text)
+                display_string = self.node.text
+                if self.check_variable.GetValue():
+                    display_string = self.context.elements.wordlist_translate(
+                        display_string, self.node
+                    )
+                self.label_fonttest.SetLabelText(display_string)
                 try:
                     self.label_fonttest.SetFont(self.node.wxfont)
                 except AttributeError:
@@ -348,6 +357,7 @@ class TextPropertyPanel(ScrolledPanel):
         special_font2.SetStrikethrough(True)
         self.button_attrib_strikethrough.SetFont(special_font2)
 
+        self.button_choose_font.SetToolTip(_("Choose System-font"))
         self.combo_font.SetToolTip(_("Choose System-font"))
         self.button_attrib_smaller.SetToolTip(_("Decrease fontsize"))
         self.button_attrib_larger.SetToolTip(_("Increase fontsize"))
@@ -394,7 +404,10 @@ class TextPropertyPanel(ScrolledPanel):
         )
 
         sizer_anchor = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_anchor.Add(self.rb_align, 0, 0, 0)
+        sizer_anchor.Add(self.rb_align, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_anchor.AddSpacer(25)
+        sizer_anchor.Add(self.check_variable, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
         sizer_main.Add(self.text_text, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_attrib, 0, wx.EXPAND, 0)
         sizer_main.Add(sizer_anchor, 0, wx.EXPAND, 0)
@@ -500,7 +513,12 @@ class TextPropertyPanel(ScrolledPanel):
         self.label_fonttest.SetWindowStyle(mystyle)
 
         self.rb_align.SetSelection(new_anchor)
-        self.label_fonttest.SetLabelText(self.node.text)
+        display_string = self.node.text
+        if self.check_variable.GetValue():
+            display_string = self.context.elements.wordlist_translate(
+                display_string, self.node
+            )
+        self.label_fonttest.SetLabelText(display_string)
         self.label_fonttest.SetForegroundColour(wx.Colour(swizzlecolor(self.node.fill)))
         self.label_fonttest.Refresh()
 
@@ -630,6 +648,10 @@ class TextPropertyPanel(ScrolledPanel):
         except AttributeError:
             pass
         event.Skip()
+
+    def on_check_variable(self, event):  # wxGlade: TextProperty.<event_handler>
+        self.update_label()
+        self.refresh()
 
     def on_text_enter(self, event):  # wxGlade: TextProperty.<event_handler>
         self.panel_history.store_font_history(self.node.wxfont)

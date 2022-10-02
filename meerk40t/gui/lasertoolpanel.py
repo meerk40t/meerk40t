@@ -10,6 +10,7 @@ from meerk40t.gui.icons import (
     instruction_rectangle,
 )
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -257,7 +258,7 @@ class LaserToolPanel(wx.Panel):
         size_width.Add(label_wd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.txt_width = wx.TextCtrl(self.nb_square, wx.ID_ANY, DEFAULT_LEN)
-        self.txt_width.SetToolTip(_("Extension of the square to create "))
+        self.txt_width.SetToolTip(_("Extension of the square to create"))
         self.txt_width.SetMinSize((60, -1))
         size_width.Add(self.txt_width, 0, wx.EXPAND, 0)
 
@@ -297,7 +298,7 @@ class LaserToolPanel(wx.Panel):
         sizer_main.Fit(self)
 
         self.Layout()
-
+        self.check_input()
         self.btn_set_circle_1.Bind(wx.EVT_BUTTON, self.on_click_get1)
         self.btn_set_circle_2.Bind(wx.EVT_BUTTON, self.on_click_get2)
         self.btn_set_circle_3.Bind(wx.EVT_BUTTON, self.on_click_get3)
@@ -395,7 +396,6 @@ class LaserToolPanel(wx.Panel):
     def on_click_get1(self, event):
         # Current Laserposition
         self.set_coord(idx=0, position=self.laserposition)
-        event.Skip()
 
     def on_click_get2(self, event):
         # Current Laserposition
@@ -593,42 +593,85 @@ class LaserToolPanel(wx.Panel):
         if result:
             p = self.context
             units = p.units_name
+            cx = float(Length(amount=center[0], digits=5, preferred_units=units))
+            cy = float(Length(amount=center[1], digits=5, preferred_units=units))
+            if self.context.elements.classify_new:
+                option = " classify"
+                postsignal = "tree_changed"
+            else:
+                option = ""
+                postsignal = ""
             if self.check_circle.GetValue():
                 self.context(
                     f"circle "
                     f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                     f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
-                    f"1mm stroke black\n"
+                    f"1mm stroke blue{option}\n"
                 )
-
+            if postsignal != "":
+                self.context.signal(postsignal)
+            if (
+                cx < 0
+                or cy < 0
+                or cx > self.context.device.unit_width
+                or cy > self.context.device.unit_height
+            ):
+                message = (
+                    _("The circles center seems to lie outside the bed-dimensions!")
+                    + "\n"
+                )
+                message += (
+                    _("If you continue to move to the center, then the laserhead might")
+                    + "\n"
+                )
+                message += _(
+                    "slam into the walls and get damaged! Do you really want to proeed?"
+                )
+                caption = _("Dangerous coordinates")
+                dlg = wx.MessageDialog(
+                    self,
+                    message,
+                    caption,
+                    wx.YES_NO | wx.ICON_WARNING,
+                )
+                dlgresult = dlg.ShowModal()
+                dlg.Destroy()
+                if dlgresult != wx.ID_YES:
+                    return
             self.context(
                 f"move_absolute "
                 f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=center[1], digits=5, preferred_units=units))}\n"
             )
-        event.Skip()
 
     def on_btn_create_circle(self, event):  # wxGlade: clsLasertools.<event_handler>
         result, center, radius = self.calculate_center()
         if result:
             p = self.context
             units = p.units_name
+            if self.context.elements.classify_new:
+                option = " classify"
+                postsignal = "tree_changed"
+            else:
+                option = ""
+                postsignal = ""
             if self.check_circle.GetValue():
                 self.context(
                     f"circle "
                     f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                     f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
-                    f"1mm stroke black\n"
+                    f"1mm stroke blue{option}\n"
                 )
-            # TODO: Should this be else?
             self.context(
                 f"circle "
                 f"{str(Length(amount=center[0], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=center[1], digits=5, preferred_units=units))} "
-                f"{str(Length(amount=radius, digits=5, preferred_units=units))}\n"
+                f"{str(Length(amount=radius, digits=5, preferred_units=units))}{option}\n"
             )
             if self.check_ref_circle.GetValue():
                 self.context("reference\n")
+            if postsignal != "":
+                self.context.signal(postsignal)
         event.Skip()
 
     def on_btn_create_frame(self, event):  # wxGlade: clsLasertools.<event_handler>
@@ -637,16 +680,25 @@ class LaserToolPanel(wx.Panel):
         if result:
             p = self.context
             units = p.units_name
+            if self.context.elements.classify_new:
+                option = " classify"
+                postsignal = "tree_changed"
+            else:
+                option = ""
+                postsignal = ""
 
             self.context(
                 f"rect "
                 f"{str(Length(amount=left_top[0], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=left_top[1], digits=5, preferred_units=units))} "
                 f"{str(Length(amount=width, digits=5, preferred_units=units))} "
-                f"{str(Length(amount=height, digits=5, preferred_units=units))}\n"
+                f"{str(Length(amount=height, digits=5, preferred_units=units))}"
+                f"{option}\n"
             )
             if self.check_ref_frame.GetValue():
                 self.context("reference\n")
+            if postsignal != "":
+                self.context.signal(postsignal)
         event.Skip()
 
     def on_btn_create_square(self, event):  # wxGlade: clsLasertools.<event_handler>
@@ -689,14 +741,8 @@ class LaserToolPanel(wx.Panel):
                 self.context("reference\n")
         event.Skip()
 
-    def pane_show(self, *args):
-        self.context.listen("driver;position", self.on_update_laser)
-        self.context.listen("emulator;position", self.on_update_laser)
-
-    def pane_hide(self, *args):
-        self.context.unlisten("driver;position", self.on_update_laser)
-        self.context.unlisten("emulator;position", self.on_update_laser)
-
+    @signal_listener("driver;position")
+    @signal_listener("emulator;position")
     def on_update_laser(self, origin, pos):
         self.laserposition = (pos[2], pos[3])
 
@@ -705,17 +751,19 @@ class LaserTool(MWindow):
     def __init__(self, *args, **kwds):
         super().__init__(551, 234, submenu="Operations", *args, **kwds)
         self.panel = LaserToolPanel(self, wx.ID_ANY, context=self.context)
-        self.add_module_delegate(self.panel)
         _icon = wx.NullIcon
         # _icon.CopyFromBitmap(icons8_computer_support_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Laser-Tools"))
 
     def window_open(self):
-        self.panel.pane_show()
+        pass
 
     def window_close(self):
-        self.panel.pane_hide()
+        pass
+
+    def delegates(self):
+        yield self.panel
 
     @staticmethod
     def submenu():

@@ -418,11 +418,10 @@ class BalorDriver:
             (old_current[0], old_current[1], new_current[0], new_current[1]),
         )
 
-    def home(self, x=None, y=None):
+    def home(self):
         """
-        This is called with x, and y, to set an adjusted home or use whatever home we have.
-        @param x:
-        @param y:
+        This is called home, returns to center.
+
         @return:
         """
         self.move_abs("50%", "50%")

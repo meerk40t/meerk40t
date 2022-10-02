@@ -27,12 +27,6 @@ def plugin(kernel, lifecycle=None):
             "flip_y", "Y", type=bool, action="store_true", help=_("grbl y-flip")
         )
         @kernel.console_option(
-            "adjust_x", "x", type=int, help=_("adjust grbl home_x position")
-        )
-        @kernel.console_option(
-            "adjust_y", "y", type=int, help=_("adjust grbl home_y position")
-        )
-        @kernel.console_option(
             "port", "p", type=int, default=23, help=_("port to listen on.")
         )
         @kernel.console_option(
@@ -52,6 +46,7 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command(
             ("grblcontrol", "grbldesign", "grblemulator"),
             help=_("activate the grblserver."),
+            hidden=True,
         )
         def grblserver(
             command,
@@ -60,14 +55,17 @@ def plugin(kernel, lifecycle=None):
             port=23,
             flip_x=False,
             flip_y=False,
-            adjust_x=0,
-            adjust_y=0,
             verbose=False,
-            watch=False,
             quit=False,
             **kwargs,
         ):
-
+            root = kernel.root
+            root.setting(bool, "developer_mode", False)
+            if not root.developer_mode:
+                channel(
+                    "This was not fully tested prior to feature freeze for the 0.8.x version of MeerK40t. So it was disabled. Look for it in a future version."
+                )
+                return
             root = kernel.root
             try:
                 server = root.open_as("module/TCPServer", "grbl", port=port)
@@ -85,11 +83,10 @@ def plugin(kernel, lifecycle=None):
 
                 emulator.scale_x = -1.0 if flip_x else 1.0
                 emulator.scale_y = -1.0 if flip_y else 1.0
-                emulator.home_adjust = (adjust_x, adjust_y)
 
                 # Link emulator and server.
                 root.channel("grbl/recv").watch(emulator.write)
-                emulator.recv = root.channel("grbl/send")
+                emulator.reply = root.channel("grbl/send")
 
                 channel(
                     _("TCP Server for GRBL Emulator on port: {port}").format(port=port)

@@ -82,7 +82,7 @@ def register_panel_console(window, context):
     pane.dock_proportion = 600
     pane.control = panel
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/console", pane)
 
     @context.console_command(

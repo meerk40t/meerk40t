@@ -113,8 +113,6 @@ class MoshiDevice(Service, ViewPort):
 
         self.setting(bool, "home_right", False)
         self.setting(bool, "home_bottom", False)
-        self.setting(str, "home_x", "0mm")
-        self.setting(str, "home_y", "0mm")
         self.setting(bool, "enable_raster", True)
 
         self.setting(int, "packet_count", 0)
@@ -130,6 +128,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Label"),
                 "tip": _("What is this device called."),
+                "section": "_00_General",
             },
             {
                 "attr": "bedwidth",
@@ -138,6 +137,9 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
+                "section": "_10_Dimensions",
+                "subsection": "Bed",
+                "signals": "bedsize",
             },
             {
                 "attr": "bedheight",
@@ -146,26 +148,87 @@ class MoshiDevice(Service, ViewPort):
                 "type": str,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
+                "section": "_10_Dimensions",
+                "subsection": "Bed",
+                "signals": "bedsize",
             },
             {
                 "attr": "scale_x",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("X Scale Factor"),
+                "label": _("X-Axis"),
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
             },
             {
                 "attr": "scale_y",
                 "object": self,
                 "default": 1.000,
                 "type": float,
-                "label": _("Y Scale Factor"),
+                "label": _("Y-Axis"),
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
+                "subsection": "Scale",
+            },
+            {
+                "attr": "flip_x",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Flip X"),
+                "tip": _(
+                    "+X is standard for grbl but sometimes settings can flip that."
+                ),
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
+            },
+            {
+                "attr": "flip_y",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Flip Y"),
+                "tip": _(
+                    "-Y is standard for grbl but sometimes settings can flip that."
+                ),
+                "subsection": "_10_Flip Axis",
+                "signals": ("bedsize"),
+            },
+            {
+                "attr": "swap_xy",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Swap XY"),
+                "tip": _(
+                    "Swaps the X and Y axis. This happens before the FlipX and FlipY."
+                ),
+                "subsection": "_20_Axis corrections",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_bottom",
+                "object": self,
+                "default": True,
+                "type": bool,
+                "label": _("Home Bottom"),
+                "tip": _("Indicates the device Home is on the bottom"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
+            },
+            {
+                "attr": "home_right",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "label": _("Home Right"),
+                "tip": _("Indicates the device Home is at the right side"),
+                "subsection": "_30_Home position",
+                "signals": "bedsize",
             },
             {
                 "attr": "interpolate",
@@ -174,6 +237,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": int,
                 "label": _("Curve Interpolation"),
                 "tip": _("Distance of the curve interpolation in mils"),
+                "section": "_20_Behaviour",
             },
             {
                 "attr": "mock",
@@ -184,6 +248,7 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "This starts connects to fake software laser rather than real one for debugging."
                 ),
+                "section": "_30_Interface",
             },
         ]
         self.register_choices("bed_dim", choices)
@@ -214,9 +279,9 @@ class MoshiDevice(Service, ViewPort):
             user_scale_y=self.scale_y,
             native_scale_x=UNITS_PER_MIL,
             native_scale_y=UNITS_PER_MIL,
-            # flip_x=self.flip_x,
-            # flip_y=self.flip_y,
-            # swap_xy=self.swap_xy,
+            flip_x=self.flip_x,
+            flip_y=self.flip_y,
+            swap_xy=self.swap_xy,
             origin_x=1.0 if self.home_right else 0.0,
             origin_y=1.0 if self.home_bottom else 0.0,
         )
@@ -289,6 +354,7 @@ class MoshiDevice(Service, ViewPort):
             """
             self.controller.estop()
             channel(_("Moshi Channel Aborted."))
+            self.signal("pipe;running", False)
 
         @self.console_command(
             "status",
@@ -325,6 +391,20 @@ class MoshiDevice(Service, ViewPort):
         @return: the location in units for the current known position.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
+
+    def realize(self):
+        self.width = self.bedwidth
+        self.height = self.bedheight
+        self.origin_x = 1.0 if self.home_right else 0.0
+        self.origin_y = 1.0 if self.home_bottom else 0.0
+        super().realize()
 
 
 class MoshiDriver(Parameters):
@@ -476,11 +556,13 @@ class MoshiDriver(Parameters):
                 self._goto_absolute(last_x, last_y, 1)
             elif isinstance(q, HomeCut):
                 self.current_steps += 1
-                self.home(*q.start)
+                self.home()
             elif isinstance(q, GotoCut):
                 self.current_steps += 1
                 start = q.start
-                self._goto_absolute(self.origin_x + start[0], self.origin_y + start[1])
+                self._goto_absolute(
+                    self.origin_x + start[0], self.origin_y + start[1], 0
+                )
             elif isinstance(q, SetOriginCut):
                 self.current_steps += 1
                 if q.set_current:
@@ -554,6 +636,18 @@ class MoshiDriver(Parameters):
         self.current_steps = 0
         self.total_steps = 0
 
+    def move_ori(self, x, y):
+        """
+        Requests laser move to origin offset position x,y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
+        x, y = self.service.physical_to_device_position(x, y)
+        self.rapid_mode()
+        self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
+
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -582,28 +676,17 @@ class MoshiDriver(Parameters):
         self._move_absolute(int(x), int(y))
         self.rapid_mode()
 
-    def home(self, *values):
+    def home(self):
         """
         Send a home command to the device. In the case of Moshiboards this is merely a move to
         0,0 in absolute position.
         """
-        adjust_x = self.service.home_x
-        adjust_y = self.service.home_y
-        try:
-            adjust_x = values[0]
-            adjust_y = values[1]
-        except IndexError:
-            pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y
-        )
-
         self.rapid_mode()
         self.speed = 40
-        self.program_mode(adjust_x, adjust_y, adjust_x, adjust_y)
+        self.program_mode(0, 0, 0, 0)
         self.rapid_mode()
-        self.native_x = adjust_x
-        self.native_y = adjust_y
+        self.native_x = 0
+        self.native_y = 0
 
     def unlock_rail(self):
         """
@@ -1492,6 +1575,8 @@ class MoshiController:
 
         while True:
             if self.state != STATE_WAIT:
+                if self.state == STATE_TERMINATE:
+                    return  # Abort all the processes was requested. This state change would be after clearing.
                 self.update_state(STATE_WAIT)
             self.update_status()
             status = self._status[1]

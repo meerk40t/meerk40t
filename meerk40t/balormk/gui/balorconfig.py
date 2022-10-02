@@ -1,5 +1,6 @@
 import wx
 
+from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
@@ -48,6 +49,10 @@ class BalorConfiguration(MWindow):
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Warning"))
 
+        newpanel = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Default Actions"))
+
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
@@ -66,6 +71,7 @@ class BalorConfiguration(MWindow):
 
     def on_viewport_update(self, origin, *args):
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def window_preserve(self):
         return False

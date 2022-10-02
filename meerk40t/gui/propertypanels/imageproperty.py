@@ -237,16 +237,19 @@ class ImagePropertyPanel(ScrolledPanel):
     ):  # wxGlade: RasterWizard.<event_handler>
         self.node.dither = self.check_enable_dither.GetValue()
         self.node.update(self.context)
+        self.context.signal("element_property_reload", self.node)
 
     def on_combo_dither_type(self, event=None):  # wxGlade: RasterWizard.<event_handler>
         self.node.dither_type = self.choices[self.combo_dither.GetSelection()]
         self.node.update(self.context)
+        self.context.signal("element_property_reload", self.node)
 
     def on_check_invert_grayscale(
         self, event=None
     ):  # wxGlade: RasterWizard.<event_handler>
         self.node.invert = self.check_invert_grayscale.GetValue()
         self.node.update(self.context)
+        self.context.signal("element_property_reload", self.node)
 
     def on_slider_grayscale_component(
         self, event=None
@@ -265,6 +268,7 @@ class ImagePropertyPanel(ScrolledPanel):
         )
         self.text_grayscale_lightness.SetValue(str(self.node.lightness))
         self.node.update(self.context)
+        self.context.signal("element_property_reload", self.node)
 
 
 class ImageProperty(MWindow):

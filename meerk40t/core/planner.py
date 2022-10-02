@@ -1,6 +1,6 @@
 from copy import copy
 
-from meerk40t.kernel import CommandSyntaxError, Service
+from meerk40t.kernel import Service
 
 from ..core.cutcode import CutCode
 from .cutplan import CutPlan, CutPlanningFailedError
@@ -10,6 +10,12 @@ from .node.op_engrave import EngraveOpNode
 from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
+from .node.util_console import ConsoleOperation
+from .node.util_goto import GotoOperation
+from .node.util_home import HomeOperation
+from .node.util_origin import SetOriginOperation
+from .node.util_output import OutputOperation
+from .node.util_wait import WaitOperation
 from .units import Length
 
 
@@ -30,78 +36,6 @@ def plugin(kernel, lifecycle=None):
                 "tip": _(
                     "Open the Spooler window automatically when you Execute a Job"
                 ),
-            },
-            {
-                "attr": "prehome",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("Before"),
-                "label": _("Home"),
-                "tip": _("Automatically add a home command before all jobs"),
-            },
-            {
-                "attr": "prephysicalhome",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("Before"),
-                "label": _("Physical Home"),
-                "tip": _("Automatically add a physical home command before all jobs"),
-            },
-            {
-                "attr": "autohome",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("After"),
-                "label": _("Home"),
-                "tip": _("Automatically add a home command after all jobs"),
-            },
-            {
-                "attr": "autophysicalhome",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("After"),
-                "label": _("Physical Home"),
-                "tip": _("Automatically add a physical home command before all jobs"),
-            },
-            {
-                "attr": "autoorigin",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("After"),
-                "label": _("Return to Origin"),
-                "tip": _("Automatically return to origin after a job"),
-            },
-            {
-                "attr": "postunlock",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("After"),
-                "label": _("Unlock"),
-                "tip": _("Automatically unlock the rail after all jobs"),
-            },
-            {
-                "attr": "autobeep",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("After"),
-                "label": _("Beep"),
-                "tip": _("Automatically add a beep after all jobs"),
-            },
-            {
-                "attr": "autointerrupt",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "submenu": _("After"),
-                "label": _("Interrupt"),
-                "tip": _("Automatically add an interrupt after all jobs"),
             },
         ]
         kernel.register_choices("planner", choices)
@@ -290,10 +224,8 @@ def plugin(kernel, lifecycle=None):
         auto = hasattr(kernel.args, "auto") and kernel.args.auto
         if auto:
             planner("plan copy preprocess validate blob preopt optimize\n")
-            if hasattr(kernel.args, "origin") and kernel.args.origin:
-                planner("plan append origin\n")
             if hasattr(kernel.args, "quit") and kernel.args.quit:
-                planner("plan append shutdown\n")
+                planner("plan console quit\n")
             planner("plan spool\n")
 
 
@@ -332,57 +264,7 @@ class Planner(Service):
         return self.get_or_make_plan(self._default_plan)
 
     def service_attach(self, *args, **kwargs):
-        self.register("plan/physicalhome", physicalhome)
-        self.register("plan/home", home)
-        self.register("plan/origin", origin)
-        self.register("plan/unlock", unlock)
-        self.register("plan/beep", beep)
-        self.register("function/interrupt", interrupt_text)
-        self.register("plan/interrupt", interrupt)
-
-        def shutdown():
-            yield "wait_finish"
-
-            def shutdown_program():
-                self("quit\n")
-
-            yield "function", shutdown_program
-
-        self.register("plan/shutdown", shutdown)
-
         _ = self.kernel.translation
-
-        @self.console_argument("alias", type=str, help=_("plan command name to alias"))
-        @self.console_command(
-            "plan-alias",
-            help=_("Define a spoolable console command"),
-            input_type=None,
-            output_type=None,
-        )
-        def plan_alias(command, channel, _, alias=None, remainder=None, **kwgs):
-            """
-            Plan alias allows the user to define a spoolable console command.
-            e.g. plan-alias export egv_export myfile.egv
-
-            This creates a plan command called "export" that executes "egv_export myfile.egv".
-            This can then be placed into the spooler during the planning stages.
-            When the spooler reaches the command it will execute the console command.
-            This would then run: "egv_export myfile.egv" which would save the current buffer.
-            """
-            if alias is None:
-                raise CommandSyntaxError
-            plan_command = f"plan/{alias}"
-            if self.lookup(plan_command) is not None:
-                raise CommandSyntaxError(
-                    _("You may not overwrite an already used alias.")
-                )
-
-            def user_defined_alias():
-                for s in remainder.split(";"):
-                    self(s + "\n")
-
-            user_defined_alias.__name__ = remainder
-            self.register(plan_command, user_defined_alias)
 
         @self.console_command(
             "plan",
@@ -432,27 +314,6 @@ class Planner(Service):
             return "plan", cutplan
 
         @self.console_command(
-            "list",
-            help=_("plan<?> list"),
-            input_type="plan",
-            output_type="plan",
-        )
-        def plan_list(command, channel, _, data_type=None, data=None, **kwgs):
-            channel(_("----------"))
-            channel(_("Plan:"))
-            for i, plan_name in enumerate(self._plan):
-                channel(f"{i}: {plan_name}")
-            channel(_("----------"))
-            channel(_("Plan {plan}:").format(plan=data.name))
-            for i, op_name in enumerate(data.plan):
-                channel(f"{i}: {op_name}")
-            channel(_("Commands {plan}:").format(plan=data.name))
-            for i, cmd_name in enumerate(data.commands):
-                channel(f"{i}: {cmd_name}")
-            channel(_("----------"))
-            return data_type, data
-
-        @self.console_command(
             "copy-selected",
             help=_("plan<?> copy-selected"),
             input_type="plan",
@@ -489,7 +350,129 @@ class Planner(Service):
             output_type="plan",
         )
         def plan_copy(command, channel, _, data_type=None, data=None, **kwgs):
+            def init_settings():
+                for prefix in ("prepend", "append"):
+                    str_count = f"{prefix}_op_count"
+                    self.device.setting(int, str_count, 0)
+                    value = getattr(self.device, str_count, 0)
+                    if value > 0:
+                        for idx in range(value):
+                            attr1 = f"{prefix}_op_{idx:02d}"
+                            attr2 = f"{prefix}_op_param_{idx:02d}"
+                            self.device.setting(str, attr1, "")
+                            self.device.setting(str, attr2, "")
+
+            def add_ops(is_prepend):
+                # Do we have have any default actions to include first?
+                if is_prepend:
+                    prefix = "prepend"
+                else:
+                    prefix = "append"
+                try:
+                    if is_prepend:
+                        count = self.device.prepend_op_count
+                    else:
+                        count = self.device.append_op_count
+                except AttributeError:
+                    count = 0
+                idx = 0
+                while idx <= count - 1:
+                    addop = None
+                    attr1 = f"{prefix}_op_{idx:02d}"
+                    attr2 = f"{prefix}_op_param_{idx:02d}"
+                    if hasattr(self.device, attr1):
+                        optype = getattr(self.device, attr1, None)
+                        opparam = getattr(self.device, attr2, None)
+                        if optype is not None:
+                            if optype == "util console":
+                                addop = ConsoleOperation(command=opparam)
+                            elif optype == "util home":
+                                addop = HomeOperation()
+                            elif optype == "util output":
+                                if opparam is not None:
+                                    params = opparam.split(",")
+                                    mask = 0
+                                    setvalue = 0
+                                    if len(params) > 0:
+                                        try:
+                                            mask = int(params[0])
+                                        except ValueError:
+                                            mask = 0
+                                    if len(params) > 1:
+                                        try:
+                                            setvalue = int(params[1])
+                                        except ValueError:
+                                            setvalue = 0
+                                    if mask != 0 or setvalue != 0:
+                                        addop = OutputOperation(mask, setvalue)
+                            elif optype == "util goto":
+                                if opparam is not None:
+                                    params = opparam.split(",")
+                                    x = 0
+                                    y = 0
+                                    if len(params) > 0:
+                                        try:
+                                            x = float(Length(params[0]))
+                                        except ValueError:
+                                            x = 0
+                                    if len(params) > 1:
+                                        try:
+                                            y = float(Length(params[1]))
+                                        except ValueError:
+                                            y = 0
+                                    addop = GotoOperation(x=x, y=y)
+                            elif optype == "util origin":
+                                if opparam is not None:
+                                    params = opparam.split(",")
+                                    x = 0
+                                    y = 0
+                                    if len(params) > 0:
+                                        try:
+                                            x = float(Length(params[0]))
+                                        except ValueError:
+                                            x = 0
+                                    if len(params) > 1:
+                                        try:
+                                            y = float(Length(params[1]))
+                                        except ValueError:
+                                            y = 0
+                                    addop = SetOriginOperation(x=x, y=y)
+                            elif optype == "util wait":
+                                if opparam is not None:
+                                    try:
+                                        opparam = float(opparam)
+                                    except ValueError:
+                                        opparam = None
+                                if opparam is not None:
+                                    addop = WaitOperation(wait=opparam)
+                    if addop is not None:
+                        try:
+                            if not addop.output:
+                                continue
+                        except AttributeError:
+                            pass
+                        try:
+                            if len(addop) == 0:
+                                continue
+                        except TypeError:
+                            pass
+                        if addop.type == "cutcode":
+                            # CutNodes are denuded into normal objects.
+                            addop = addop.cutcode
+                        copy_c = copy(addop)
+                        try:
+                            copy_c.copy_children_as_real(addop)
+                        except AttributeError:
+                            pass
+                        data.plan.append(copy_c)
+
+                    idx += 1
+
+            init_settings()
             operations = self.elements.get(type="branch ops")
+
+            # Add default start ops
+            add_ops(True)
             for c in operations.flat(
                 types=(
                     "op cut",
@@ -517,7 +500,7 @@ class Planner(Service):
                 except AttributeError:
                     pass
                 try:
-                    if len(c) == 0:
+                    if c.type.startswith("op") and len(c.children) == 0:
                         continue
                 except TypeError:
                     pass
@@ -530,6 +513,8 @@ class Planner(Service):
                 except AttributeError:
                     pass
                 data.plan.append(copy_c)
+            # Add default trailing ops
+            add_ops(False)
             channel(_("Copied Operations."))
             self.signal("plan", data.name, 1)
             return data_type, data
@@ -537,75 +522,40 @@ class Planner(Service):
         @self.console_option(
             "index", "i", type=int, help=_("index of location to insert command")
         )
-        @self.console_option("op", "o", type=str, help=_("unlock, origin, home, etc."))
+        @self.console_argument("console", type=str, help=_("console command to append"))
         @self.console_command(
-            "command",
+            "console",
             help=_("plan<?> command"),
             input_type="plan",
             output_type="plan",
+            all_arguments_required=True,
         )
         def plan_command(
-            command, channel, _, data_type=None, op=None, index=None, data=None, **kwgs
+            command,
+            channel,
+            _,
+            data_type=None,
+            data=None,
+            console=None,
+            index=None,
+            **kwgs,
         ):
-            if op is None:
-                channel(_("Plan Commands:"))
-                for command_name in self.match("plan/.*", suffix=True):
-                    channel(command_name)
-                return
-            try:
-                for cmd, command_name, suffix in self.find("plan", op):
-                    if index is None:
-                        data.plan.append(cmd)
-                    else:
-                        try:
-                            data.plan.insert(index, cmd)
-                        except ValueError:
-                            channel(_("Invalid index for command insert."))
-                    break
+            if not console:
+                channel(
+                    _(
+                        "plan console... requires a console command to inject into the current plan"
+                    )
+                )
+            else:
+                cmd = ConsoleOperation(command=console)
+                if index is None:
+                    data.plan.append(cmd)
+                else:
+                    try:
+                        data.plan.insert(index, cmd)
+                    except ValueError:
+                        channel(_("Invalid index for command insert."))
                 self.signal("plan", data.name, None)
-            except (KeyError, IndexError):
-                channel(_("No plan command found."))
-            return data_type, data
-
-        @self.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
-        @self.console_command(
-            "append",
-            help=_("plan<?> append <op>"),
-            input_type="plan",
-            output_type="plan",
-        )
-        def plan_append(
-            command, channel, _, data_type=None, op=None, data=None, **kwgs
-        ):
-            if op is None:
-                raise CommandSyntaxError
-            try:
-                for plan_command, command_name, sname in self.find("plan", op):
-                    data.plan.append(plan_command)
-                    self.signal("plan", data.name, None)
-                    return data_type, data
-            except (KeyError, IndexError):
-                pass
-            channel(_("No plan command found."))
-            return data_type, data
-
-        @self.console_argument("op", type=str, help=_("unlock, origin, home, etc"))
-        @self.console_command(
-            "prepend",
-            help=_("plan<?> prepend <op>"),
-            input_type="plan",
-            output_type="plan",
-        )
-        def plan_prepend(
-            command, channel, _, data_type=None, op=None, data=None, **kwgs
-        ):
-            if op is None:
-                raise CommandSyntaxError
-            for plan_command, command_name, sname in self.find("plan", op):
-                data.plan.insert(0, plan_command)
-                self.signal("plan", data.name, None)
-                return data_type, data
-            channel(_("No plan command found."))
             return data_type, data
 
         @self.console_command(
@@ -678,104 +628,6 @@ class Planner(Service):
             data.clear()
             self.signal("plan", data.name, 0)
             return data_type, data
-
-        # @self.console_argument("cols", type=int, help=_("columns for the grid"))
-        # @self.console_argument("rows", type=int, help=_("rows for the grid"))
-        # @self.console_argument(
-        #     "x_distance", type=self.length_x, help=_("x_distance each column step")
-        # )
-        # @self.console_argument(
-        #     "y_distance", type=self.length_y, help=_("y_distance each row step")
-        # )
-        # @self.console_command(
-        #     "step_repeat",
-        #     help=_("plan<?> step_repeat"),
-        #     input_type="plan",
-        #     output_type="plan",
-        # )
-        # def plan_step_repeat(
-        #     command,
-        #     channel,
-        #     _,
-        #     cols=0,
-        #     rows=0,
-        #     x_distance=None,
-        #     y_distance=None,
-        #     data_type=None,
-        #     data=None,
-        #     **kwgs,
-        # ):
-        #     # pylint: disable=no-member
-        #     # No member calls are for dynamically attributed values.
-        #     if y_distance is None:
-        #         raise CommandSyntaxError
-        #     # Following must be in same order as added in preprocess()
-        #     pre_plan_items = (
-        #         (self.prephysicalhome, physicalhome),
-        #         (self.prehome, home),
-        #     )
-        #     # Following must be in reverse order as added in preprocess()
-        #     post_plan_items = (
-        #         (self.autointerrupt, interrupt),
-        #         (self.autobeep, beep),
-        #         (self.postunlock, unlock),
-        #         (self.autoorigin, origin),
-        #         (self.autophysicalhome, physicalhome),
-        #         (self.autohome, home),
-        #     )
-        #     post_plan = []
-        #
-        #     c_plan = list(data.plan)
-        #     data.plan.clear()
-        #     data.commands.clear()
-        #     for cmd, func in pre_plan_items:
-        #         if cmd and c_plan[0] is func:
-        #             data.plan.append(c_plan.pop(0))
-        #         elif type(c_plan[0]) == str:  # Rotary disabled
-        #             data.plan.append(c_plan.pop(0))
-        #
-        #     for cmd, func in post_plan_items:
-        #         if cmd and c_plan[-1] is func:
-        #             post_plan.insert(0, c_plan.pop())
-        #         elif type(c_plan[-1]) == str:  # Rotary disabled
-        #             post_plan.insert(0, c_plan.pop())
-        #
-        #         # Sophist: Following try/except commented out as
-        #         # exceptions need to be narrow not global in scope.
-        #         # try:
-        #         if x_distance is None:
-        #             x_distance = f"{100.0 / (cols + 1)}%"
-        #         if y_distance is None:
-        #             y_distance = f"{100.0 / (rows + 1)}%"
-        #     # except Exception:
-        #     # pass
-        #     x_last = 0
-        #     y_last = 0
-        #     y_pos = 0
-        #     x_pos = 0
-        #
-        #     for j in range(rows):
-        #         x_pos = 0
-        #         for k in range(cols):
-        #             x_offset = x_pos - x_last
-        #             y_offset = y_pos - y_last
-        #             data.plan.append(origin)
-        #             if x_offset != 0 or y_offset != 0:
-        #                 data.plan.append(offset(x_offset, y_offset))
-        #
-        #             data.plan.extend(c_plan)
-        #             x_last = x_pos
-        #             y_last = y_pos
-        #             x_pos += x_distance
-        #         y_pos += y_distance
-        #     y_pos -= y_distance
-        #     x_pos -= x_distance
-        #     if x_pos != 0 or y_pos != 0:
-        #         data.plan.append(origin)
-        #         data.plan.append(offset(-x_pos, -y_pos))
-        #     data.plan.extend(post_plan)
-        #     self.signal("plan", data.name, None)
-        #     return data_type, data
 
         @self.console_command(
             "return",
@@ -873,53 +725,3 @@ class Planner(Service):
     def plan(self, **kwargs):
         for item in self._plan:
             yield item
-
-
-def origin():
-    yield "rapid_mode"
-    yield "move_abs", 0, 0
-
-
-def unlock():
-    yield "rapid_mode"
-    yield "unlock_rail"
-
-
-def home():
-    yield "home"
-
-
-def physicalhome():
-    yield "wait_finish"
-    yield "home", 0, 0
-
-
-# class offset:
-#     def __init__(self, x, y):
-#         self.x = x
-#         self.y = y
-#
-#     def __str__(self):
-#         return f"offset_value ({self.x:.1f}, {self.y:.1f})"
-#
-#     def __call__(self, *args):
-#         if len(args) > 1:
-#             self.x = args[0]
-#             self.y = args[1]
-#         yield "wait_finish"
-#         yield "set_position", -int(self.x), -int(self.y)
-
-
-def beep():
-    yield "wait_finish"
-    yield "beep"
-
-
-def interrupt_text():
-    input("Interrupted: press enter to continue...\n")
-    print("... continuing")
-
-
-def interrupt():
-    yield "wait_finish"
-    yield "function", interrupt_text

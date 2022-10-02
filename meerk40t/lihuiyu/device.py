@@ -4,7 +4,7 @@ import threading
 import time
 from hashlib import md5
 
-from meerk40t.core.spoolers import Spooler, LaserJob
+from meerk40t.core.spoolers import LaserJob, Spooler
 from meerk40t.kernel import (
     STATE_ACTIVE,
     STATE_BUSY,
@@ -191,8 +191,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(bool, "plot_shift", False)
 
         self.setting(bool, "strict", False)
-        self.setting(str, "home_x", "0mm")
-        self.setting(str, "home_y", "0mm")
         self.setting(int, "buffer_max", 900)
         self.setting(bool, "buffer_limit", True)
 
@@ -228,8 +226,6 @@ class LihuiyuDevice(Service, ViewPort):
         self.setting(float, "max_speed_vector", 100.0)
         self.setting(bool, "max_speed_raster_enabled", False)
         self.setting(float, "max_speed_raster", 750.0)
-
-        self.state = 0
 
         self.driver = LihuiyuDriver(self)
         self.spooler = Spooler(self, driver=self.driver)
@@ -457,6 +453,7 @@ class LihuiyuDevice(Service, ViewPort):
         def pipe_abort(channel, _, **kwargs):
             self.driver.reset()
             channel(_("Lihuiyu Channel Aborted."))
+            self.signal("pipe;running", False)
 
         @self.console_argument(
             "rapid_x", type=float, help=_("limit x speed for rapid.")
@@ -486,11 +483,7 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Rapid Limit Off"))
 
         @self.console_argument("filename", type=str)
-        @self.console_command(
-            "save_job",
-            help=_("save job export"),
-            input_type="plan"
-        )
+        @self.console_command("save_job", help=_("save job export"), input_type="plan")
         def egv_save(channel, _, filename, data=None, **kwargs):
             if filename is None:
                 raise CommandSyntaxError
@@ -500,7 +493,10 @@ class LihuiyuDevice(Service, ViewPort):
                     f.write(b"File version: 1.0.01\n")
                     f.write(b"Copyright: Unknown\n")
                     f.write(
-                        bytes(f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n", "utf-8")
+                        bytes(
+                            f"Creator-Software: {self.kernel.name} v{self.kernel.version}\n",
+                            "utf-8",
+                        )
                     )
                     f.write(b"\n")
                     f.write(b"%0%0%0%0%\n")
@@ -721,9 +717,28 @@ class LihuiyuDevice(Service, ViewPort):
     @property
     def current(self):
         """
-        @return: the location in scene units for the current known postion.
+        @return: the location in scene units for the current known position.
         """
         return self.device_to_scene_position(self.driver.native_x, self.driver.native_y)
+
+    @property
+    def speed(self):
+        return self.driver.speed
+
+    @property
+    def power(self):
+        return self.driver.power
+
+    @property
+    def state(self):
+        return self.driver.state
+
+    @property
+    def native(self):
+        """
+        @return: the location in device native units for the current known position.
+        """
+        return self.driver.native_x, self.driver.native_y
 
     @property
     def output(self):
@@ -799,6 +814,8 @@ class LihuiyuDriver(Parameters):
         def primary_hold():
             if self.out_pipe is None:
                 return True
+            if hasattr(self.out_pipe, "is_shutdown") and self.out_pipe.is_shutdown:
+                raise ConnectionAbortedError("Cannot hold for a shutdown pipe.")
             try:
                 buffer = len(self.out_pipe)
             except TypeError:
@@ -915,6 +932,18 @@ class LihuiyuDriver(Parameters):
         if blob_type == "egv":
             self(data)
 
+    def move_ori(self, x, y):
+        """
+        Requests laser move to origin offset position x,y in physical units
+
+        @param x:
+        @param y:
+        @return:
+        """
+        x, y = self.service.physical_to_device_position(x, y)
+        self.rapid_mode()
+        self._move_absolute(self.origin_x + int(x), self.origin_y + int(y))
+
     def move_abs(self, x, y):
         """
         Requests laser move to absolute position x, y in physical units
@@ -948,8 +977,7 @@ class LihuiyuDriver(Parameters):
         @param time_in_ms:
         @return:
         """
-        self.program_mode()
-        self.raster_mode()
+        self.rapid_mode()
         self.wait_finish()
         self.laser_on()  # This can't be sent early since these are timed operations.
         self.wait(time_in_ms)
@@ -1143,23 +1171,6 @@ class LihuiyuDriver(Parameters):
         self.native_y = 0
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
-        adjust_x = self.service.home_x
-        adjust_y = self.service.home_y
-        try:
-            adjust_x = values[0]
-            adjust_y = values[1]
-        except IndexError:
-            pass
-        adjust_x, adjust_y = self.service.physical_to_device_position(
-            adjust_x, adjust_y
-        )
-        if adjust_x != 0 or adjust_y != 0:
-            # Perform post home adjustment.
-            self._move_relative(adjust_x, adjust_y)
-            # Erase adjustment
-            self.native_x = 0
-            self.native_y = 0
-
         self.service.signal("driver;mode", self.state)
 
         new_current = self.service.current
@@ -1221,7 +1232,7 @@ class LihuiyuDriver(Parameters):
         elif isinstance(plot, HomeCut):
             self.plot_start()
             self.wait_finish()
-            self.home(plot.start[0], plot.start[1])
+            self.home()
         elif isinstance(plot, GotoCut):
             self.plot_start()
             start = plot.start
@@ -1319,11 +1330,13 @@ class LihuiyuDriver(Parameters):
         @param values:
         @return:
         """
+
         def temp_hold():
             try:
                 return len(self.out_pipe) != 0
             except TypeError:
                 return False
+
         self.temp_holds.append(temp_hold)
 
     def status(self):
@@ -2619,6 +2632,8 @@ class LihuiyuController:
 
         while True:
             if self.state != STATE_WAIT:
+                if self.state == STATE_TERMINATE:
+                    return  # Abort all the processes was requested. This state change would be after clearing.
                 self.update_state(STATE_WAIT)
             self.update_status()
             status = self._status[1]

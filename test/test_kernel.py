@@ -14,11 +14,13 @@ class TestKernel(unittest.TestCase):
                     continue
                 if "ruida" in command:
                     continue
+                if "grbl" in command:
+                    continue
                 if "quit" in command:
                     continue
                 if "shutdown" in command:
                     continue
-                if "loop" in command:
+                if "interrupt" in command:
                     continue
                 if not cmd.regex:
                     print("Testing command: %s" % command)

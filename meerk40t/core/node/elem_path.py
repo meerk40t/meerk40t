@@ -22,12 +22,15 @@ class PathNode(Node):
         linejoin=None,
         fillrule=None,
         label=None,
+        lock=False,
         settings=None,
         **kwargs,
     ):
         if settings is None:
             settings = dict()
         settings.update(kwargs)
+        if "type" in settings:
+            del settings["type"]
         super(PathNode, self).__init__(type="elem path")
         self._formatter = "{element_type} {id} {stroke}"
         self.path = path
@@ -45,7 +48,7 @@ class PathNode(Node):
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.label = label
-        self.lock = False
+        self.lock = lock
 
     def __copy__(self):
         return PathNode(
@@ -58,6 +61,8 @@ class PathNode(Node):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
+            label=self.label,
+            lock=self.lock,
             settings=self.settings,
         )
 

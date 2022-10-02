@@ -31,6 +31,7 @@ class PropertyWindow(MWindow):
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
+        self.Freeze()
         for p in self.panel_instances:
             try:
                 p.pane_hide()
@@ -92,7 +93,7 @@ class PropertyWindow(MWindow):
             except AttributeError:
                 name = instance.__class__.__name__
 
-            self.notebook_main.AddPage(page_panel, name)
+            self.notebook_main.AddPage(page_panel, _(name))
             try:
                 page_panel.set_widgets(instance)
             except AttributeError:
@@ -110,6 +111,7 @@ class PropertyWindow(MWindow):
                 pass
 
         self.Layout()
+        self.Thaw()
 
     @staticmethod
     def sub_register(kernel):

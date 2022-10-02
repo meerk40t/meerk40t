@@ -318,6 +318,7 @@ class OperationAssignWidget(StatusBarWidget):
                 process_button(lastfree)
 
     def set_buttons(self):
+        self.parent.Freeze()
         self.assign_clear_old()
         idx = 0
         for node in list(self.context.elements.flat(types=op_nodes)):
@@ -332,6 +333,7 @@ class OperationAssignWidget(StatusBarWidget):
                     break
         if self.visible:
             self.ShowItems(True)
+        self.parent.Thaw()
         # We need to call reposition for the updates to be seen
         self.parent.Reposition(self.panelidx)
 

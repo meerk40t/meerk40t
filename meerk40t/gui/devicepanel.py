@@ -24,7 +24,7 @@ def register_panel(window, context):
     pane.dock_proportion = 600
     pane.control = panel
 
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/devices", pane)
 
 
@@ -36,7 +36,7 @@ class DevicePanel(wx.Panel):
         self.context = context
 
         sizer_1 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Your Devices"), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Your Devices")), wx.VERTICAL
         )
 
         self.devices_list = wx.ListCtrl(
@@ -282,6 +282,7 @@ class DevicePanel(wx.Panel):
                 return
             try:
                 service.destroy()
+                self.context.signal("device;modified")
             except AttributeError:
                 pass
             self.refresh_device_tree()
@@ -325,6 +326,7 @@ class DevicePanel(wx.Panel):
                 return
             try:
                 service.destroy()
+                self.context.signal("device;modified")
             except AttributeError:
                 pass
             self.refresh_device_tree()

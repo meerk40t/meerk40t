@@ -185,7 +185,7 @@ class TestActualize(unittest.TestCase):
                 node.step_x = step
                 node.step_y = step
                 node.process_image(crop=False)
-                self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
+                self.assertEqual(node._processed_image.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_white(self):
         """
@@ -203,7 +203,7 @@ class TestActualize(unittest.TestCase):
             node.step_x = step
             node.step_y = step
             node.process_image(crop=False)
-            self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
+            self.assertEqual(node._processed_image.getpixel((-1, -1)), 255)
 
     def test_actualize_circle_step3_direct_black(self):
         """
@@ -222,14 +222,14 @@ class TestActualize(unittest.TestCase):
             node.step_y = step
             node.invert = True
             node.process_image(crop=False)
-            self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
+            self.assertEqual(node._processed_image.getpixel((-1, -1)), 255)
 
         # Note: inverted flag not set. White edge pixel is correct.
         node = ImageNode(image=image, matrix=transform)
         node.step_x = 3
         node.step_y = 3
         node.process_image(crop=False)
-        self.assertEqual(node.processed_image.getpixel((-1, -1)), 255)
+        self.assertEqual(node._processed_image.getpixel((-1, -1)), 255)
 
     # def test_actualize_largecircle(self):
     #     """

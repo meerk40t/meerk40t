@@ -19,6 +19,7 @@ from .icons import (
     icons8_laser_beam_20,
     icons8_lock_50,
     icons8_output_20,
+    icons8_r_white,
     icons8_return_20,
     icons8_scatter_plot_20,
     icons8_small_beam_20,
@@ -27,7 +28,6 @@ from .icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_vector_20,
-    icons8_vga_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -53,7 +53,7 @@ def register_panel_tree(window, context):
     )
     pane.dock_proportion = minwd
     pane.control = wxtree
-    window.on_pane_add(pane)
+    window.on_pane_create(pane)
     context.register("pane/tree", pane)
 
 
@@ -64,7 +64,12 @@ class TreePanel(wx.Panel):
         self.context = context
         # Define Tree
         self.wxtree = wx.TreeCtrl(
-            self, wx.ID_ANY, style=wx.TR_MULTIPLE | wx.TR_HAS_BUTTONS | wx.TR_HIDE_ROOT
+            self,
+            wx.ID_ANY,
+            style=wx.TR_MULTIPLE
+            | wx.TR_HAS_BUTTONS
+            | wx.TR_HIDE_ROOT
+            | wx.TR_LINES_AT_ROOT,
         )
         if wx.SystemSettings().GetColour(wx.SYS_COLOUR_WINDOW)[0] < 127:
             self.wxtree.SetBackgroundColour(wx.Colour(50, 50, 50))
@@ -371,6 +376,10 @@ class ShadowTree:
         )
         self.state_images.Create(width=self.iconsize, height=self.iconsize)
         image_id = self.state_images.Add(bitmap=image)
+        image = icons8_r_white.GetBitmap(
+            resize=(self.iconsize, self.iconsize), noadjustment=True
+        )
+        image_id = self.state_images.Add(bitmap=image)
         self.wxtree.SetStateImageList(self.state_images)
 
     def node_created(self, node, **kwargs):
@@ -380,7 +389,9 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        pass
+        if self._freeze:
+            return
+        self.elements.signal("modified")
 
     def node_destroyed(self, node, **kwargs):
         """
@@ -389,7 +400,9 @@ class ShadowTree:
         @param kwargs:
         @return:
         """
-        pass
+        if self._freeze:
+            return
+        self.elements.signal("modified")
 
     def node_detached(self, node, **kwargs):
         """
@@ -420,7 +433,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
 
     def selected(self, node):
         """
@@ -493,7 +510,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
         try:
             c = node.color
             self.set_color(node, c)
@@ -511,7 +532,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
-        self.update_decorations(node, force=True)
+        try:
+            self.update_decorations(node, force=True)
+        except RuntimeError:
+            # A timer can update after the tree closes.
+            return
         try:
             c = node.color
             self.set_color(node, c)
@@ -532,6 +557,27 @@ class ShadowTree:
         self.wxtree.ExpandAllChildren(item)
         self.set_expanded(item, 1)
 
+    def collapse_within(self, node):
+        # Tries to collaps children first, if there were any open,
+        # return TRUE, if all were already collapsed, return FALSE
+        result = False
+        startnode = node.item
+        try:
+            pnode, cookie = self.wxtree.GetFirstChild(startnode)
+        except:
+            return
+        were_expanded = []
+        while pnode.IsOk():
+            state = self.wxtree.IsExpanded(pnode)
+            if state:
+                result = True
+                were_expanded.append(pnode)
+            pnode, cookie = self.wxtree.GetNextChild(startnode, cookie)
+        for pnode in were_expanded:
+            cnode = self.wxtree.GetItemData(pnode)
+            cnode.notify_collapse()
+        return result
+
     def collapse(self, node):
         """
         Notified that this node was collapsed.
@@ -542,6 +588,11 @@ class ShadowTree:
         item = node.item
         if not item.IsOk():
             raise ValueError("Bad Item")
+        # Special treatment for branches, they only collapse fully,
+        # if all their childrens were collapsed already
+        if node.type.startswith("branch"):
+            if self.collapse_within(node):
+                return
         self.wxtree.CollapseAllChildren(item)
         if (
             item is self.wxtree.GetRootItem()
@@ -601,11 +652,18 @@ class ShadowTree:
         if isinstance(element, (tuple, list)):
             for node in element:
                 if hasattr(node, "node"):
-                    self.update_decorations(node.node, force=True)
-                else:
+                    node = node.node
+                try:
                     self.update_decorations(node, force=True)
+                except RuntimeError:
+                    # A timer can update after the tree closes.
+                    return
         else:
-            self.update_decorations(element, force=True)
+            try:
+                self.update_decorations(element, force=True)
+            except RuntimeError:
+                # A timer can update after the tree closes.
+                return
 
     def on_element_update(self, *args):
         """
@@ -617,11 +675,18 @@ class ShadowTree:
         if isinstance(element, (tuple, list)):
             for node in element:
                 if hasattr(node, "node"):
-                    self.update_decorations(node.node, force=True)
-                else:
+                    node = node.node
+                try:
                     self.update_decorations(node, force=True)
+                except RuntimeError:
+                    # A timer can update after the tree closes.
+                    return
         else:
-            self.update_decorations(element, force=True)
+            try:
+                self.update_decorations(element, force=True)
+            except RuntimeError:
+                # A timer can update after the tree closes.
+                return
 
     def refresh_tree(self, node=None, level=0, source=""):
         """Any tree elements currently displaying wrong data as per elements should be updated to display
@@ -686,7 +751,9 @@ class ShadowTree:
             return
         while pnode.IsOk():
             txt = self.wxtree.GetItemText(pnode)
+            # That it s not working as advertised...
             state = self.wxtree.IsExpanded(pnode)
+            state = False  # otherwise every thing gets expanded...
             if state:
                 self.was_already_expanded.append(f"{level}-{txt}")
             self.parse_tree(pnode, level + 1)
@@ -949,7 +1016,7 @@ class ShadowTree:
         defaultcolor = Color("black")
         if node.type == "elem image":
             image = self.renderer.make_thumbnail(
-                node.image, width=self.iconsize, height=self.iconsize
+                node.active_image, width=self.iconsize, height=self.iconsize
             )
         else:
             # Establish colors (and some images)
@@ -1052,6 +1119,16 @@ class ShadowTree:
                 else:
                     self.tree_images.Replace(index=image_id, bitmap=image)
                 tree.SetItemImage(item, image=image_id)
+                # Lets have a look at all references....
+                for subnode in node._references:
+                    try:
+                        subitem = subnode.item
+                    except AttributeError:
+                        subitem = None
+                    if subitem is None:
+                        continue
+                    tree.SetItemImage(subitem, image=image_id)
+
             if c is not None:
                 self.set_color(node, c)
 
@@ -1083,6 +1160,34 @@ class ShadowTree:
         @param node:
         @return:
         """
+
+        def my_create_label(node, text=None):
+            if text is None:
+                text = "{element_type}:{id}"
+            # Just for the optical impression (who understands what a "Rect: None" means),
+            # lets replace some of the more obvious ones...
+            mymap = node.default_map()
+            for key in mymap:
+                if hasattr(node, key) and mymap[key] == "None":
+                    if getattr(node, key) is None:
+                        mymap[key] = "-"
+            # There are a couple of translatable entries,
+            # to make sure we don't get an unwanted translation we add
+            # a special pattern to it
+            translatable = (
+                "element_type",
+                "enabled",
+            )
+            pattern = "_TREE_"
+            for key in mymap:
+                if key in translatable:
+                    # Original value
+                    std = mymap[key]
+                    value = _(pattern + std)
+                    if not value.startswith(pattern):
+                        mymap[key] = value
+            return text.format_map(mymap)
+
         if force is None:
             force = False
         if node.item is None:
@@ -1095,54 +1200,88 @@ class ShadowTree:
         if hasattr(node, "node") and node.node is not None:
             formatter = self.elements.lookup(f"format/{node.node.type}")
             if node.node.type.startswith("op "):
-                checker = "dangerlevel " + node.node.type
-                checker = checker.replace(" ", "_")
+                if not self.context.elements.op_show_default:
+                    if hasattr(node.node, "speed"):
+                        node.node.speed = node.node.speed
+                    if hasattr(node.node, "power"):
+                        node.node.power = node.node.power
+                    if hasattr(node.node, "dwell_time"):
+                        node.node.dwell_time = node.node.dwell_time
+
+                checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
-                    # minpower, maxposer, minspeed, maxspeed
-                    # print ("Yes: ", checker, maxspeed_minpower)
-                    danger = False
-                    if hasattr(node.node, "power"):
-                        value = node.node.power
-                        if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
-                            danger = True
-                        if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
-                            danger = True
-                    if hasattr(node.node, "speed"):
-                        value = node.node.speed
-                        if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
-                            danger = True
-                        if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
-                            danger = True
-                    if hasattr(node.node, "dangerous"):
-                        node.node.dangerous = danger
+                    if (
+                        isinstance(maxspeed_minpower, (tuple, list))
+                        and len(maxspeed_minpower) == 8
+                    ):
+                        # minpower, maxposer, minspeed, maxspeed
+                        # print ("Yes: ", checker, maxspeed_minpower)
+                        danger = False
+                        if hasattr(node.node, "power"):
+                            value = node.node.power
+                            if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
+                                danger = True
+                            if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
+                                danger = True
+                        if hasattr(node.node, "speed"):
+                            value = node.node.speed
+                            if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
+                                danger = True
+                            if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
+                                danger = True
+                        if hasattr(node.node, "dangerous"):
+                            node.node.dangerous = danger
+                    else:
+                        setattr(self.context.device, checker, [False, 0] * 4)
+                        print(
+                            f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
+                        )
                 # node.node.is_dangerous(maxspeed, minpower)
-            label = "*" + node.node.create_label(formatter)
+            # label = "*" + node.node.create_label(formatter)
+            label = "*" + my_create_label(node.node, formatter)
         else:
             formatter = self.elements.lookup(f"format/{node.type}")
             if node.type.startswith("op "):
-                checker = "dangerlevel " + node.type
-                checker = checker.replace(" ", "_")
+                # Not too elegant... op nodes should have a property default_speed, default_power
+                if not self.context.elements.op_show_default:
+                    if hasattr(node, "speed"):
+                        node.speed = node.speed
+                    if hasattr(node, "power"):
+                        node.power = node.power
+                    if hasattr(node, "dwell_time"):
+                        node.dwell_time = node.dwell_time
+                checker = f"dangerlevel_{node.type.replace(' ', '_')}"
                 if hasattr(self.context.device, checker):
                     maxspeed_minpower = getattr(self.context.device, checker)
-                    # minpower, maxposer, minspeed, maxspeed
-                    # print ("Yes: ", checker, maxspeed_minpower)
-                    danger = False
-                    if hasattr(node, "power"):
-                        value = float(node.power)
-                        if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
-                            danger = True
-                        if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
-                            danger = True
-                    if hasattr(node, "speed"):
-                        value = float(node.speed)
-                        if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
-                            danger = True
-                        if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
-                            danger = True
-                    if hasattr(node, "dangerous"):
-                        node.dangerous = danger
-            label = node.create_label(formatter)
+                    if (
+                        isinstance(maxspeed_minpower, (tuple, list))
+                        and len(maxspeed_minpower) == 8
+                    ):
+                        # minpower, maxposer, minspeed, maxspeed
+                        # print ("Yes: ", checker, maxspeed_minpower)
+                        danger = False
+                        if hasattr(node, "power"):
+                            value = float(node.power)
+                            if maxspeed_minpower[0] and value < maxspeed_minpower[1]:
+                                danger = True
+                            if maxspeed_minpower[2] and value > maxspeed_minpower[3]:
+                                danger = True
+                        if hasattr(node, "speed"):
+                            value = float(node.speed)
+                            if maxspeed_minpower[4] and value < maxspeed_minpower[5]:
+                                danger = True
+                            if maxspeed_minpower[6] and value > maxspeed_minpower[7]:
+                                danger = True
+                        if hasattr(node, "dangerous"):
+                            node.dangerous = danger
+                    else:
+                        setattr(self.context.device, checker, [False, 0] * 4)
+                        print(
+                            f"That's strange {checker}: {type(maxspeed_minpower).__name__}"
+                        )
+            # label = node.create_label(formatter)
+            label = my_create_label(node, formatter)
 
         self.wxtree.SetItemText(node.item, label)
         if node.type == "elem text":
@@ -1171,13 +1310,21 @@ class ShadowTree:
         except (AttributeError, KeyError, TypeError):
             pass
 
+        state_num = -1
         # Has the node a lock attribute?
         if hasattr(node, "lock"):
             lockit = node.lock
         else:
             lockit = False
         if lockit:
-            self.wxtree.SetItemState(node.item, 0)
+            state_num = 0
+
+        scene = getattr(self.context.root, "mainscene", None)
+        if scene is not None:
+            if node == scene.reference_object:
+                state_num = 1
+        if state_num >= 0:
+            self.wxtree.SetItemState(node.item, state_num)
         else:
             self.wxtree.SetItemState(node.item, wx.TREE_ITEMSTATE_NONE)
 

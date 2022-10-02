@@ -40,7 +40,6 @@ class Camera(Service):
         self.max_tries_frame = 10
         self.setting(int, "width", 640)
         self.setting(int, "height", 480)
-        self.setting(int, "fps", 40)
         self.setting(bool, "correction_fisheye", False)
         self.setting(bool, "correction_perspective", False)
         self.setting(list, "fisheye", None)
@@ -253,75 +252,87 @@ class Camera(Service):
             return False
         return True
 
+    def _thread_looper(self, uri):
+        channel = self.channel("camera")
+        frame = None
+        while True:
+            if self.quit_thread:
+                return  # Abort.
+            if self.connection_attempts > self.max_tries_connect:
+                return  # Too many connection attempts.
+            if self.capture is None:
+                return  # No capture the thread dies.
+            try:
+                channel(f"Grabbing Frame: {str(uri)}")
+                ret = self.capture.grab()
+            except AttributeError:
+                time.sleep(0.2)
+                channel(f"Grab Failed, trying Reconnect: {str(uri)}")
+                if self._attempt_recovery():
+                    continue
+                else:
+                    return
+
+            for i in range(self.max_tries_frame):
+                if self.quit_thread:
+                    return  # Abort.
+                channel(f"Retrieving Frame: {str(uri)}")
+                try:
+                    ret, frame = self.capture.retrieve()
+                except cv2.error:
+                    ret, frame = False, None
+                if not ret or frame is None:
+                    channel(f"Failed Retry: {str(uri)}")
+                    time.sleep(0.1)
+                else:
+                    break
+            if not ret:  # Try auto-reconnect.
+                time.sleep(0.2)
+                channel(f"Frame Failed, trying Reconnect: {str(uri)}")
+                if self._attempt_recovery():
+                    continue  # Recovery was successful.
+                else:
+                    return
+            channel(f"Frame Success: {str(uri)}")
+            self.connection_attempts = 0
+
+            self._last_raw = self._current_raw
+            self._current_raw = frame
+            self.frame_index += 1
+            self.process_frame()
+            channel(f"Processing Frame: {str(uri)}")
+
     def threaded_image_fetcher(self):
         channel = self.channel("camera")
+        uri = self.uri
+        channel(f"URI: {str(uri)}")
+        if uri is None:
+            channel("No camera uri.")
+            return
         self.quit_thread = (
             True  # If another thread exists this will let it die gracefully.
         )
+
         with self.camera_lock:
             self.quit_thread = False
             self.connection_attempts = 0
             self.frame_attempts = 0
             uri = self.uri
-            channel(f"URI: {str(uri)}")
-            if uri is None:
-                return
             channel(f"Connecting {str(uri)}")
             self.signal("camera_state", 1)
             self.capture = cv2.VideoCapture(uri)
             channel(f"Capture: {str(self.capture)}")
 
-            while not self.quit_thread:
-                if self.connection_attempts > self.max_tries_connect:
-                    return  # Too many connection attempts.
-                if self.capture is None:
-                    return  # No capture the thread dies.
-                try:
-                    channel(f"Grabbing Frame: {str(uri)}")
-                    ret = self.capture.grab()
-                except AttributeError:
-                    time.sleep(0.2)
-                    channel(f"Grab Failed, trying Reconnect: {str(uri)}")
-                    if self._attempt_recovery():
-                        continue
-                    else:
-                        return
-
-                for i in range(self.max_tries_frame):
-                    channel(f"Retrieving Frame: {str(uri)}")
-                    try:
-                        ret, frame = self.capture.retrieve()
-                    except cv2.error:
-                        ret, frame = False, None
-                    if not ret or frame is None:
-                        channel(f"Failed Retry: {str(uri)}")
-                        time.sleep(0.1)
-                    else:
-                        break
-                if not ret:  # Try auto-reconnect.
-                    time.sleep(0.2)
-                    channel(f"Frame Failed, trying Reconnect: {str(uri)}")
-                    if self._attempt_recovery():
-                        continue
-                    else:
-                        return
-                channel(f"Frame Success: {str(uri)}")
-                self.connection_attempts = 0
-
-                self._last_raw = self._current_raw
-                self._current_raw = frame
-                self.frame_index += 1
-                self.process_frame()
-                channel(f"Processing Frame: {str(uri)}")
+            self._thread_looper(uri)
 
             if self.capture is not None:
                 channel(f"Releasing Capture: {str(uri)}")
                 self.capture.release()
                 self.capture = None
                 channel(f"Released: {str(uri)}")
-        if self is not None:
-            self.signal("camera_state", 0)
-        channel(f"Camera Thread Exiting: {str(uri)}")
+            if self is not None:
+                self.signal("camera_state", 0)
+            channel(f"Camera Thread Exiting: {str(uri)}")
 
     def reset_perspective(self):
         """
