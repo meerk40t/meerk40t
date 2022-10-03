@@ -6398,6 +6398,9 @@ msgstr "S&etup\tCtrl-,"
 msgid "Show/Hide the Preferences window"
 msgstr "Zeigt/verbirgt das Einstellungsfenster"
 
+msgid "Show/Hide optimization options for this job."
+msgstr "Optionen zur Optimierung dieses Jobs ein-/ausblenden"
+
 #: meerk40t/gui/simulation.py:72
 msgid "Recalculate"
 msgstr "Neuberechnen"
