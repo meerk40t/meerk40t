@@ -228,7 +228,7 @@ def dynamic_plugins(kernel, lifecycle):
         plugins = list()
         import pkg_resources
 
-        for entry_point in pkg_resources.iter_entry_points("meerk40t.plugins"):
+        for entry_point in pkg_resources.iter_entry_points("meerk40t.extensions"):
             try:
                 plugin = entry_point.load()
             except pkg_resources.DistributionNotFound:
