@@ -308,10 +308,10 @@ class SpoolerPanel(wx.Panel):
 
         return clear
 
-    def on_tree_popup_delete(self, element, index=None):
+    def on_tree_popup_delete(self, element):
         def delete(event=None):
             spooler = self.selected_device.spooler
-            spooler.remove(element, index)
+            spooler.remove(element)
             self.refresh_spooler_list()
 
         return delete
