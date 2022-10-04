@@ -291,9 +291,11 @@ class ConsolePanel(wx.ScrolledWindow):
         ansi = False
         ansi_text = ""
         text = ""
+        endstyle = False
         if not self.text_main.IsEmpty():
             self.text_main.Newline()
             self.text_main.BeginStyle(self.style)
+            endstyle = False
 
         for c in lines:
             b = ord(c)
@@ -303,6 +305,7 @@ class ConsolePanel(wx.ScrolledWindow):
                     text = ""
                 self.text_main.Newline()
                 self.text_main.BeginStyle(self.style)
+                endstyle = False
                 continue  # New Line is already processed.
             if b == 27:
                 ansi = True
@@ -316,15 +319,19 @@ class ConsolePanel(wx.ScrolledWindow):
                     if style_function is not None:
                         new_style = style_function(self.text_main.GetDefaultStyleEx())
                         self.text_main.EndStyle()
+                        endstyle = True
                         if new_style is not None:
                             self.text_main.BeginStyle(new_style)
+                            endstyle = False
                     ansi = False
                     ansi_text = ""
                 continue
             text += c
         if text:
             self.text_main.WriteText(text)
-        self.text_main.EndStyle()
+        if not endstyle:
+            self.text_main.EndStyle()
+
         self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
         self.text_main.Update()
 
