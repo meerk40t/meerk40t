@@ -173,6 +173,7 @@ class ConsolePanel(wx.ScrolledWindow):
         # end wxGlade
         self.command_log = []
         self.command_position = 0
+        self.load_log()
 
         self.ansi_styles = {
             "\033[30m": foreground_color("black"),  # "black"
@@ -370,12 +371,30 @@ class ConsolePanel(wx.ScrolledWindow):
 
     def on_enter(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
+        self.command_log.append(command)
+        self.save_log()
+        self.command_position = 0
         self.context(command + "\n")
         self.text_entry.SetValue("")
-        self.command_log.append(command)
-        self.command_position = 0
         event.Skip(False)
 
+    def save_log(self):
+        # Saves the last 10 commands to disk
+        for idx in range(min(10, len(self.command_log))):
+            self.context.setting(str, f"command_history_{idx}", "")
+            setattr(self.context, f"command_history_{idx}", self.command_log[-1 - idx])
+
+
+    def load_log(self):
+        # Restores the last 10 commands from disk
+        self.command_log = []
+        for idx in range(10):
+            self.context.setting(str, f"command_history_{idx}", "")
+            s = getattr(self.context, f"command_history_{idx}", "")
+            if s != "":
+                self.command_log.insert(0, s)
+            else:
+                break
 
 class Console(MWindow):
     def __init__(self, *args, **kwds):
