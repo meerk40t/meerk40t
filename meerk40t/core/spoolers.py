@@ -812,7 +812,7 @@ class Spooler:
             except AttributeError:
                 pass
             element.stop()
-            for i in range(-1, len(self._queue) - 1, -1):
+            for i in range(len(self._queue) - 1, -1, -1):
                 e = self._queue[i]
                 if e is element:
                     del self._queue[i]
