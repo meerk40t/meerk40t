@@ -691,14 +691,15 @@ class Spooler:
         while not self._shutdown:
             if self.context.kernel.is_shutdown:
                 return  # Kernel shutdown spooler threads should die off.
-            if not len(self._queue):
+            self._lock.acquire()
+            try:
+                program = self._queue[0]
+            except IndexError:
+                self._lock.release()
                 # There is no work to do.
                 time.sleep(0.1)
                 continue
-
-            with self._lock:
-                # threadsafe
-                program = self._queue[0]
+            self._lock.release()
 
             priority = program.priority
 
