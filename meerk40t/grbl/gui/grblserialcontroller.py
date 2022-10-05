@@ -89,7 +89,7 @@ class SerialControllerPanel(wx.Panel):
         self.service.signal("grbl_controller_update", True)
 
     @signal_listener("grbl_controller_update")
-    def update_text_gui(self):
+    def update_text_gui(self, origin, *args):
         with self._buffer_lock:
             buffer = self._buffer
             self._buffer = ""
