@@ -881,6 +881,17 @@ class GalvoController:
             self.write_blank_correct_file()
             return
 
+    @staticmethod
+    def get_scale_from_correction_file(filename):
+        with open(filename, "rb") as f:
+            label = f.read(0x16)
+            if label.decode("utf-16") == "LMC1COR_1.0":
+                unk = f.read(2)
+                return struct.unpack("63d", f.read(0x1F8))[43]
+            else:
+                unk = f.read(6)
+                return struct.unpack("d", f.read(8))[0]
+
     def write_blank_correct_file(self):
         self.write_cor_table(False)
 
