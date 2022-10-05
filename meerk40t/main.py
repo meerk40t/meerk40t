@@ -12,7 +12,7 @@ import sys
 from meerk40t.kernel import Kernel
 
 APPLICATION_NAME = "MeerK40t"
-APPLICATION_VERSION = "0.8.0031 Beta23"
+APPLICATION_VERSION = "0.8.0032 Beta24"
 
 if not getattr(sys, "frozen", False):
     # If .git directory does not exist we are running from a package like pypi
@@ -89,7 +89,7 @@ parser.add_argument(
 )
 
 
-def plugin(kernel, lifecycle):
+def static_plugins(kernel, lifecycle):
     if lifecycle == "plugins":
         plugins = list()
 
@@ -215,6 +215,38 @@ def plugin(kernel, lifecycle):
         return True
 
 
+def dynamic_plugins(kernel, lifecycle):
+    """
+    These are dynamic plugins. They are dynamically found by entry points.
+    """
+    if lifecycle == "plugins":
+        if getattr(sys, "frozen", False):
+            return
+        if kernel.args.no_plugins:
+            return
+
+        plugins = list()
+        import pkg_resources
+
+        for entry_point in pkg_resources.iter_entry_points("meerk40t.extension"):
+            try:
+                plugin = entry_point.load()
+            except pkg_resources.DistributionNotFound:
+                pass
+            except pkg_resources.VersionConflict as e:
+                print(
+                    "Cannot install plugin - '{entrypoint}' due to version conflict.".format(
+                        entrypoint=str(entry_point)
+                    )
+                )
+                print(e)
+            else:
+                plugins.append(plugin)
+        return plugins
+    if lifecycle == "invalidate":
+        return True
+
+
 def run():
     argv = sys.argv[1:]
     args = parser.parse_args(argv)
@@ -242,5 +274,6 @@ def run():
         ansi=not args.disable_ansi,
     )
     kernel.args = args
-    kernel.add_plugin(plugin)
+    kernel.add_plugin(static_plugins)
+    kernel.add_plugin(dynamic_plugins)
     kernel()

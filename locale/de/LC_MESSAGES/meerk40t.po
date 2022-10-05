@@ -2089,7 +2089,11 @@ msgstr ""
 " verwendet werden: {combinations}"
 
 #: meerk40t/core/elements.py:3881
-msgid "Convert given elements to a raster image"
+
+msgid "Create an image from the assigned elements."
+msgstr "Rendert die zugeordneten Elemente in ein Raster-Bild"
+
+msgid "Create a raster image from the given elements"
 msgstr "Rendert die ausgewählten Elemente in ein Raster-Bild"
 
 #: meerk40t/core/elements.py:3893
@@ -5246,7 +5250,7 @@ msgid ""
 "circle on the bed and confirm the position by clicking on the buttons "
 "below.\n"
 "MK will find the center for you and place the laser above it or will "
-"recreate the circle for futher processing."
+"recreate the circle for further processing."
 msgstr ""
 "Anleitung: Positioniere den Laser auf drei Punkte auf dem Umfang des Kreises "
 "auf dem Laserbett und bestätige diese mit den Knöpfen nebenan.\n"
@@ -5287,7 +5291,7 @@ msgid ""
 "Instruction: place the laser on one corner of the encompassing rectangle "
 "and confirm the position by clicking on the buttons below. Then choose "
 "the opposing corner.\n"
-"MK will create a rectangle for you for futher processing."
+"MK will create a rectangle for you for further processing."
 msgstr ""
 "Anleitung: positioniere den Laser auf einer Ecke des Rechtecks "
 "auf dem Laserbett und bestätige diesen mit den Knöpfen nebenan.\n"
@@ -5327,7 +5331,7 @@ msgid ""
 "Instruction: place the laser on two points of one side of a square on the"
 " bed and confirm the position by clicking on the buttons below. Then "
 "choose one point on the other side of the corner.\n"
-"MK will create a square for you for futher processing."
+"MK will create a square for you for further processing."
 msgstr ""
 "Anleitung: positioniere den Laser auf zwei Punkten einer Seite des Quadrats "
 "auf dem Laserbett und bestätige diesen mit den Knöpfen nebenan.\n"
@@ -14606,3 +14610,18 @@ msgstr "Einstellungen"
 
 msgid "Prepare"
 msgstr "Vorbereitung"
+
+msgid "Trace bitmap"
+msgstr "Vektorisiere"
+
+msgid "Vectorize the given element"
+msgstr "Erzeuge eine Vektor-Version des Bildes"
+
+msgid "Classification is the (automatic) process of assigning an element to an operation."
+msgstr "Klassifizierung ist der automatische Prozess, Elemente Arbeitsabläufen zuzuordnen."
+
+msgid "That link between element and operation is called an assignment."
+msgstr "Diese Verknüpfung zwischen Element und Arbeitsablauf nennen wir Zuordnung."
+
+msgid "Redlight-Offset"
+msgstr "Rotlicht-Versatz"

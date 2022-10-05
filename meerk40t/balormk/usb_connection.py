@@ -265,7 +265,7 @@ class USBConnection:
                         self.open(index)
                     except ConnectionError:
                         time.sleep(1)
-                    self.write(index, packet, attempt+1)
+                    self.write(index, packet, attempt + 1)
                     return
                 self.backend_error_code = e.backend_error_code
 

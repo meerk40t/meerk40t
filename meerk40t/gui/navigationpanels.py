@@ -1194,13 +1194,21 @@ class SizePanel(wx.Panel):
                 pass
 
         if self.object_width is not None:
-            self.text_width.SetValue(Length(self.object_width, preferred_units=units, digits=3).preferred_length)
+            self.text_width.SetValue(
+                Length(
+                    self.object_width, preferred_units=units, digits=3
+                ).preferred_length
+            )
             self.text_width.Enable(True)
         else:
             self.text_width.SetValue("---")
             self.text_width.Enable(False)
         if self.object_height is not None:
-            self.text_height.SetValue(Length(self.object_height, preferred_units=units, digits=3).preferred_length)
+            self.text_height.SetValue(
+                Length(
+                    self.object_height, preferred_units=units, digits=3
+                ).preferred_length
+            )
             self.text_height.Enable(True)
 
         else:
@@ -1220,7 +1228,10 @@ class SizePanel(wx.Panel):
             self.text_height.GetValue(), relative_length=self.object_height
         )
         new_h = float(new_height)
-        if abs(new_h - self.object_height) < 1.0E-6 and abs(new_w - self.object_width) < 1.0E-6:
+        if (
+            abs(new_h - self.object_height) < 1.0e-6
+            and abs(new_w - self.object_width) < 1.0e-6
+        ):
             # No change
             return
         if new_w == 0 or new_h == 0:
@@ -1722,10 +1733,10 @@ class Transform(wx.Panel):
     @staticmethod
     def scaled_value(stxt):
         if stxt.endswith("%"):
-            valu = float(stxt[:-1]) / 100.0
+            value = float(stxt[:-1]) / 100.0
         else:
-            valu = float(stxt)
-        return valu
+            value = float(stxt)
+        return value
 
     def on_text_matrix(self):
         try:

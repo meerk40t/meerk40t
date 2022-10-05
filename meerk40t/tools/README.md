@@ -17,7 +17,7 @@ The Eulerian Fill performs creates a graph made out of edges and a series of hor
 
 ## Point Finder
 
-Point Finder is intended as an accelleration structure for solving the nearest point algorithm.
+Point Finder is intended as an acceleration structure for solving the nearest point algorithm.
 
 ## RasterPlotter
 

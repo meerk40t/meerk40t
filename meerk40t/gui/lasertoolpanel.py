@@ -96,7 +96,7 @@ class LaserToolPanel(wx.Panel):
             self.nb_circle, wx.ID_ANY, instruction_circle.GetBitmap()
         )
         instructions = _(
-            "Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\nMK will find the center for you and place the laser above it or will recreate the circle for futher processing."
+            "Instruction: place the laser on three points on the circumference of the circle on the bed and confirm the position by clicking on the buttons below.\nMK will find the center for you and place the laser above it or will recreate the circle for further processing."
         )
         img_instruction_1.SetToolTip(instructions)
         sizer_9.Add(img_instruction_1, 1, 0, 0)
@@ -170,7 +170,7 @@ class LaserToolPanel(wx.Panel):
             self.nb_rectangle, wx.ID_ANY, instruction_frame.GetBitmap()
         )
         instructions = _(
-            "Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\nMK will create a rectangle for you for futher processing."
+            "Instruction: place the laser on one corner of the encompassing rectangle and confirm the position by clicking on the buttons below. Then choose the opposing corner.\nMK will create a rectangle for you for further processing."
         )
         self.img_instruction_2.SetToolTip(instructions)
         sizer_rect_hor.Add(self.img_instruction_2, 1, 0, 0)
@@ -266,7 +266,7 @@ class LaserToolPanel(wx.Panel):
             self.nb_square, wx.ID_ANY, instruction_rectangle.GetBitmap()
         )
         instructions = _(
-            "Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a square for you for futher processing."
+            "Instruction: place the laser on two points of one side of a square on the bed and confirm the position by clicking on the buttons below. Then choose one point on the other side of the corner.\nMK will create a square for you for further processing."
         )
         self.img_instruction_3.SetToolTip(instructions)
         sizer_sqare_hor.Add(self.img_instruction_3, 1, 0, 0)

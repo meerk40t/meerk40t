@@ -144,6 +144,10 @@ class SimulationPanel(wx.Panel, Job):
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
 
+        ##############
+        # BUILD SCENE
+        ##############
+
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
         self.widget_scene.add_scenewidget(self.sim_travel)

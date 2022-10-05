@@ -1012,7 +1012,6 @@ class RibbonPanel(wx.Panel):
                     setattr(self.context.root, "_active_page", pagename)
 
 
-
 # RIBBON_ART_BUTTON_BAR_LABEL_COLOUR = 16
 # RIBBON_ART_BUTTON_BAR_HOVER_BORDER_COLOUR = 17
 # RIBBON_ART_BUTTON_BAR_ACTIVE_BORDER_COLOUR = 22

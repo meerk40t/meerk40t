@@ -70,19 +70,13 @@ DEFAULT_KEYMAP = {
         "",
         "window open Console",
     ),
-    "ctrl+f6": (
-        "page home",
-    ),
-    "ctrl+f7": (
-        "page design",
-    ),
+    "ctrl+f6": ("page home",),
+    "ctrl+f7": ("page design",),
     "ctrl+f8": (
         "page modify",
         "dialog_flip",
     ),
-    "ctrl+f9": (
-        "page config",
-    ),
+    "ctrl+f9": ("page config",),
     "delete": (
         "tree selected delete",
         "tree emphasized delete",

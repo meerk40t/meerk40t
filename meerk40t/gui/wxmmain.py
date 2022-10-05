@@ -818,7 +818,6 @@ class MeerK40t(MWindow):
             },
         )
 
-
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
 

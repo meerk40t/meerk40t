@@ -341,7 +341,7 @@ class Preferences(MWindow):
                     "Classification is the (automatic) process of assigning an element to an operation."
                 )
                 + "\n"
-                + ("That link between element and operation is called an assignment."),
+                + _("That link between element and operation is called an assignment."),
                 "page": "Classification",
                 # "section": "_000_Information",
             },

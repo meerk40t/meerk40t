@@ -35,6 +35,7 @@ def plugin(kernel, lifecycle=None):
                 )
             return "elements", paths
 
+
 _NORTH = 3
 _EAST = 0
 _SOUTH = 1
