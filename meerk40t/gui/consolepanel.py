@@ -1,5 +1,9 @@
+import threading
+
 import wx
 from wx import aui
+
+from meerk40t.kernel import signal_listener
 
 try:
     from wx import richtext
@@ -201,6 +205,8 @@ class ConsolePanel(wx.ScrolledWindow):
             "\033[27m": None,  # "positive"
             "\033[0m": self.style_normal,  # "normal"
         }
+        self._buffer = ""
+        self._buffer_lock = threading.Lock()
 
     def style_normal(self, style):
         return self.style
@@ -237,15 +243,26 @@ class ConsolePanel(wx.ScrolledWindow):
         self.text_main.Clear()
 
     def update_text(self, text):
-        if not wx.IsMainThread():
-            wx.CallAfter(self._update_text, text)
-        else:
-            self._update_text(text)
+        with self._buffer_lock:
+            self._buffer += f"{text}\n"
+            if len(self._buffer) > 50000:
+                self._buffer = self._buffer[-50000:]
+        self.context.signal("console_update")
+
+    @signal_listener("console_update")
+    def update_console_main(self, origin, *args):
+        with self._buffer_lock:
+            buffer = self._buffer
+            self._buffer = ""
+        # Update text depends on rich/normal text_field
+        self._update_text(buffer)
 
     def update_text_text(self, text):
+        # If normal called by self._update_text
         self.process_text_text_line(str(text))
 
     def update_text_rich(self, text):
+        # If rich called by self._update_text
         self.process_text_rich_line(str(text))
 
     def process_text_text_line(self, lines):
@@ -274,7 +291,6 @@ class ConsolePanel(wx.ScrolledWindow):
             text += c
         if text:
             self.text_main.AppendText(text)
-        # self.text_main.AppendText(lines)
 
     def process_text_rich_line(self, lines):
         """
@@ -292,11 +308,6 @@ class ConsolePanel(wx.ScrolledWindow):
         ansi_text = ""
         text = ""
         endstyle = False
-        if not self.text_main.IsEmpty():
-            self.text_main.Newline()
-            self.text_main.BeginStyle(self.style)
-            endstyle = False
-
         for c in lines:
             b = ord(c)
             if c == "\n":
