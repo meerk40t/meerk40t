@@ -1141,7 +1141,7 @@ class Elemental(Service):
                 if key in self.mywordlist.content:
                     wordlist = self.mywordlist.content[key]
                     channel(
-                        _("Wordlist {name} (Type={type}, Index={index})):").format(
+                        _("Wordlist {name} (Type={type}, Index={index}):").format(
                             name=key, type=wordlist[0], index=wordlist[1] - 2
                         )
                     )

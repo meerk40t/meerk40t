@@ -56,26 +56,35 @@ class SpoolerPanel(wx.Panel):
                 break
         spools = [s.label for s in self.available_devices]
 
+        self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style = wx.SP_LIVE_UPDATE)
+        sty = wx.BORDER_SUNKEN
+
+        self.win_top = wx.Window(self.splitter, style=sty)
+        self.win_bottom = wx.Window(self.splitter, style=sty)
+        self.splitter.SetMinimumPaneSize(50)
+        self.splitter.SplitHorizontally(self.win_top, self.win_bottom, -100)
+        self.context.setting(int, "spooler_sash_position", 0)
+        self.splitter.SetSashPosition(self.context.spooler_sash_position)
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
+            self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
         self.combo_device.SetSelection(index)
-        self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
+        self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25))
-        self.button_stop = wx.Button(self, wx.ID_ANY, _("Abort"))
+        self.button_stop = wx.Button(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
 
         self.list_job_spool = wx.ListCtrl(
-            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+            self.win_top, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
 
-        self.info_label = wx.StaticText(self, wx.ID_ANY, _("Completed jobs:"))
-        self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear History"))
+        self.info_label = wx.StaticText(self.win_bottom, wx.ID_ANY, _("Completed jobs:"))
+        self.btn_clear = wx.Button(self.win_bottom, wx.ID_ANY, _("Clear History"))
         self.list_job_history = wx.ListCtrl(
-            self,
+            self.win_bottom,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
@@ -88,6 +97,10 @@ class SpoolerPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
+
+        self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.on_sash_changed)
+        self.splitter.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.on_sash_double)
+
         self.list_job_spool.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
         self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
         self.Bind(
@@ -164,24 +177,41 @@ class SpoolerPanel(wx.Panel):
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: SpoolerPanel.__do_layout
-        sizer_frame = wx.BoxSizer(wx.VERTICAL)
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+
+        sizer_top = wx.BoxSizer(wx.VERTICAL)
+        sizer_bottom = wx.BoxSizer(wx.VERTICAL)
         sizer_combo_cmds = wx.BoxSizer(wx.HORIZONTAL)
         sizer_combo_cmds.Add(self.combo_device, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_combo_cmds.Add(self.button_pause, 0, wx.EXPAND, 0)
         sizer_combo_cmds.Add(self.button_stop, 0, wx.EXPAND, 0)
 
-        sizer_frame.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
-        sizer_frame.Add(self.list_job_spool, 4, wx.EXPAND, 0)
+        sizer_top.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
+        sizer_top.Add(self.list_job_spool, 4, wx.EXPAND, 0)
+        self.win_top.SetSizer(sizer_top)
+        sizer_top.Fit(self.win_top)
+
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(self.info_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hsizer.Add(self.btn_clear, 0, wx.EXPAND, 0)
-        sizer_frame.Add(hsizer, 0, wx.EXPAND, 0)
-        sizer_frame.Add(self.list_job_history, 2, wx.EXPAND, 0)
-        self.SetSizer(sizer_frame)
-        sizer_frame.Fit(self)
+        sizer_bottom.Add(hsizer, 0, wx.EXPAND, 0)
+        sizer_bottom.Add(self.list_job_history, 2, wx.EXPAND, 0)
+        self.win_bottom.SetSizer(sizer_bottom)
+        sizer_bottom.Fit(self.win_bottom)
+
+        sizer_main.Add(self.splitter, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_sash_changed(self, event):
+        position = self.splitter.GetSashPosition()
+        self.context.spooler_sash_position = position
+
+    def on_sash_double(self, event):
+        self.splitter.SetSashPosition(0, True)
+        self.context.spooler_sash_position = 0
 
     def on_item_selected(self, event):
         self.current_item = event.Index
@@ -278,10 +308,10 @@ class SpoolerPanel(wx.Panel):
 
         return clear
 
-    def on_tree_popup_delete(self, element, index=None):
+    def on_tree_popup_delete(self, element):
         def delete(event=None):
             spooler = self.selected_device.spooler
-            spooler.remove(element, index)
+            spooler.remove(element)
             self.refresh_spooler_list()
 
         return delete

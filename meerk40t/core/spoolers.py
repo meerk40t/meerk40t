@@ -691,14 +691,15 @@ class Spooler:
         while not self._shutdown:
             if self.context.kernel.is_shutdown:
                 return  # Kernel shutdown spooler threads should die off.
-            if not len(self._queue):
+            self._lock.acquire()
+            try:
+                program = self._queue[0]
+            except IndexError:
+                self._lock.release()
                 # There is no work to do.
                 time.sleep(0.1)
                 continue
-
-            with self._lock:
-                # threadsafe
-                program = self._queue[0]
+            self._lock.release()
 
             priority = program.priority
 
@@ -714,7 +715,7 @@ class Spooler:
                 return
             if fully_executed:
                 # all work finished
-                self.remove(program, 0)
+                self.remove(program)
 
     @property
     def is_idle(self):
@@ -795,52 +796,24 @@ class Spooler:
             self._queue.clear()
             self.context.signal("spooler;queue", len(self._queue))
 
-    def remove(self, element, index=None):
-        info = None
+    def remove(self, element):
         with self._lock:
-            if index is None:
-                try:
-                    loop = element.loops_executed
-                    total = element.loops
-                    if isinf(total):
-                        total = "∞"
-                    passinfo = f"{loop}/{total}"
-                    element.stop()
-                    info = (
-                        element.label,
-                        element.time_started,
-                        element.runtime,
-                        self.context.label,
-                        passinfo,
-                    )
-                except AttributeError:
-                    pass
-                try:
-                    self._queue.remove(element)
-                except ValueError:
-                    # We might have waited for too long, the job is no longer there...
-                    pass
-            else:
-                try:
-                    element = self._queue[index]
-                except IndexError:
-                    return
-                try:
-                    loop = element.loops_executed
-                    total = element.loops
-                    if isinf(total):
-                        total = "∞"
-                    passinfo = f"{loop}/{total}"
-                    element.stop()
-                    info = (
-                        element.label,
-                        element.time_started,
-                        element.runtime,
-                        self.context.label,
-                        passinfo,
-                    )
-                except AttributeError:
-                    pass
-                del self._queue[index]
-        self.context.signal("spooler;completed", info)
+            try:
+                loop = element.loops_executed
+                total = "∞" if isinf(element.loops) else element.loops
+                info = (
+                    element.label,
+                    element.time_started,
+                    element.runtime,
+                    self.context.label,
+                    f"{loop}/{total}",
+                )
+                self.context.signal("spooler;completed", info)
+            except AttributeError:
+                pass
+            element.stop()
+            for i in range(len(self._queue) - 1, -1, -1):
+                e = self._queue[i]
+                if e is element:
+                    del self._queue[i]
         self.context.signal("spooler;queue", len(self._queue))
