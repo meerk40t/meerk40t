@@ -884,6 +884,33 @@ class GalvoController:
     def write_blank_correct_file(self):
         self.write_cor_table(False)
 
+    def _read_float_correction_file(self, f):
+        """
+        Read table for cor files marked: LMC1COR_1.0
+        @param f:
+        @return:
+        """
+        table = []
+        for j in range(65):
+            for k in range(65):
+                dx = int(round(struct.unpack('d', f.read(8))[0]))
+                dx = dx if dx >= 0 else -dx + 0x8000
+                dy = int(round(struct.unpack('d', f.read(8))[0]))
+                dy = dy if dy >= 0 else -dy + 0x8000
+                table.append([dx & 0xFFFF, dy & 0xFFFF])
+        return table
+
+    def _read_int_correction_file(self, f):
+        table = []
+        for j in range(65):
+            for k in range(65):
+                dx = int.from_bytes(f.read(4), "little", signed=True)
+                dx = dx if dx >= 0 else -dx + 0x8000
+                dy = int.from_bytes(f.read(4), "little", signed=True)
+                dy = dy if dy >= 0 else -dy + 0x8000
+                table.append([dx & 0xFFFF, dy & 0xFFFF])
+        return table
+
     def _read_correction_file(self, filename):
         """
         Reads a standard .cor file and builds a table from that.
@@ -891,17 +918,14 @@ class GalvoController:
         @param filename:
         @return:
         """
-        table = []
         with open(filename, "rb") as f:
-            f.seek(0x24)
-            for j in range(65):
-                for k in range(65):
-                    dx = int.from_bytes(f.read(4), "little", signed=True)
-                    dx = dx if dx >= 0 else -dx + 0x8000
-                    dy = int.from_bytes(f.read(4), "little", signed=True)
-                    dy = dy if dy >= 0 else -dy + 0x8000
-                    table.append([dx & 0xFFFF, dy & 0xFFFF])
-        return table
+            label = f.read(0x16)
+            if label.decode("utf-16") == "LMC1COR_1.0":
+                header = f.read(0x1FA)
+                return self._read_float_correction_file(f)
+            else:
+                header = f.read(0xE)
+                return self._read_int_correction_file(f)
 
     def _write_correction_table(self, table):
         assert len(table) == 65 * 65
