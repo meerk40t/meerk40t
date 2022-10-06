@@ -1,9 +1,10 @@
+import os
 import threading
 
 import wx
 from wx import aui
 
-from meerk40t.kernel import signal_listener
+from meerk40t.kernel import get_safe_path, signal_listener
 
 try:
     from wx import richtext
@@ -390,29 +391,64 @@ class ConsolePanel(wx.ScrolledWindow):
     def on_enter(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
         self.command_log.append(command)
-        self.save_log()
+        self.save_log(command)
         self.command_position = 0
         self.context(command + "\n")
         self.text_entry.SetValue("")
         event.Skip(False)
 
-    def save_log(self):
-        # Saves the last 10 commands to disk
-        for idx in range(min(10, len(self.command_log))):
-            self.context.setting(str, f"command_history_{idx}", "")
-            setattr(self.context, f"command_history_{idx}", self.command_log[-1 - idx])
+    def history_filename(self):
+        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        fname = os.path.join(safe_dir, "cmdhistory.log")
+        is_there = os.path.exists(fname)
+        return fname, is_there
 
+    def save_log(self, last_command):
+        fname, fexists = self.history_filename()
+        try:
+            history_file = open(fname, "a")  # Append mode
+            history_file.write(last_command + "\n")
+            history_file.close()
+        except (PermissionError, IOError):
+            # Could not save
+            pass
 
     def load_log(self):
-        # Restores the last 10 commands from disk
+        def tail(f, window=1):
+            """
+            Returns the last `window` lines of file `f` as a list of bytes.
+            """
+            if window == 0:
+                return b""
+            BUFSIZE = 1024
+            f.seek(0, 2)
+            end = f.tell()
+            nlines = window + 1
+            data = []
+            while nlines > 0 and end > 0:
+                i = max(0, end - BUFSIZE)
+                nread = min(end, BUFSIZE)
+
+                f.seek(i)
+                chunk = f.read(nread)
+                data.append(chunk)
+                nlines -= chunk.count(b"\n")
+                end -= nread
+            return b'\n'.join(b''.join(reversed(data)).splitlines()[-window:])
+
+        # Restores the last 50 commands from disk
         self.command_log = []
-        for idx in range(10):
-            self.context.setting(str, f"command_history_{idx}", "")
-            s = getattr(self.context, f"command_history_{idx}", "")
-            if s != "":
-                self.command_log.insert(0, s)
-            else:
-                break
+        fname, fexists = self.history_filename()
+        if fexists:
+            result = []
+            try:
+                with open(fname, "rb") as f:
+                    result = tail(f, 50).decode("utf-8").splitlines()
+            except (PermissionError, IOError):
+                # Could not load
+                pass
+            for entry in result:
+                self.command_log.append(entry)
 
 class Console(MWindow):
     def __init__(self, *args, **kwds):
