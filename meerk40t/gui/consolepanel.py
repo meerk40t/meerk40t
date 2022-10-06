@@ -437,13 +437,17 @@ class ConsolePanel(wx.ScrolledWindow):
             return b'\n'.join(b''.join(reversed(data)).splitlines()[-window:])
 
         # Restores the last 50 commands from disk
+
+        self.context.setting(int, "history_limit", 50)
+        limit = int(self.context.history_limit)
+        # print (f"Limit = {limit}")
         self.command_log = []
         fname, fexists = self.history_filename()
         if fexists:
             result = []
             try:
                 with open(fname, "rb") as f:
-                    result = tail(f, 50).decode("utf-8").splitlines()
+                    result = tail(f, limit).decode("utf-8").splitlines()
             except (PermissionError, IOError):
                 # Could not load
                 pass
