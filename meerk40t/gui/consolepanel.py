@@ -386,7 +386,8 @@ class ConsolePanel(wx.ScrolledWindow):
             else:
                 event.Skip()
         except IndexError:
-            pass
+            self.command_position = 0
+            self.text_entry.SetValue("")
 
     def on_enter(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
@@ -441,7 +442,7 @@ class ConsolePanel(wx.ScrolledWindow):
         self.context.setting(int, "history_limit", 50)
         limit = int(self.context.history_limit)
         # print (f"Limit = {limit}")
-        self.command_log = []
+        self.command_log = [""]
         fname, fexists = self.history_filename()
         if fexists:
             result = []
