@@ -573,6 +573,11 @@ class SpoolerPanel(wx.Panel):
                 break
         spools = [s.label for s in self.available_devices]
         spools.insert(0, _("-- All available devices --"))
+        # This might not be relevant if you have a stable device set, but there might always be
+        # changes to add / rename devices etc.
+        if self.combo_device.GetSelection() == 0:
+            # all devices is a superset of any device, so we can leave it...
+            index = 0
         self.combo_device.Clear()
         self.combo_device.SetItems(spools)
         self.combo_device.SetSelection(index)
