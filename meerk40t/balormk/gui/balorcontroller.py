@@ -1,3 +1,5 @@
+import threading
+
 import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
@@ -21,7 +23,8 @@ class BalorControllerPanel(wx.ScrolledWindow):
         )
         self.button_device_connect = wx.Button(self, wx.ID_ANY, _("Connection"))
         self.service = self.context.device
-        self.log_append = ""
+        self._buffer = ""
+        self._buffer_lock = threading.Lock()
         self.text_usb_log = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_MULTILINE | wx.TE_READONLY
         )
@@ -71,16 +74,16 @@ class BalorControllerPanel(wx.ScrolledWindow):
         self.Layout()
 
     def update_text(self, text):
-        self.log_append += text + "\n"
-        self.context.signal("usb_log_update")
+        with self._buffer_lock:
+            self._buffer += f"{text}\n"
+        self.context.signal("balor_controller_update")
 
-    @signal_listener("usb_log_update")
+    @signal_listener("balor_controller_update")
     def update_text_gui(self, origin):
-        try:
-            self.text_usb_log.AppendText(self.log_append)
-            self.log_append = ""
-        except RuntimeError:
-            pass
+        with self._buffer_lock:
+            buffer = self._buffer
+            self._buffer = ""
+        self.text_usb_log.AppendText(buffer)
 
     def set_button_connected(self):
         self.button_device_connect.SetBackgroundColour("#00ff00")
