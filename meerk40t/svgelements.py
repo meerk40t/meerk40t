@@ -43,7 +43,7 @@ Though not required the Image class acquires new functionality if provided with 
 and the Arc can do exact arc calculations if scipy is installed.
 """
 
-SVGELEMENTS_VERSION = "1.8.4"
+SVGELEMENTS_VERSION = "1.8.5"
 
 MIN_DEPTH = 5
 ERROR = 1e-12
@@ -4986,9 +4986,7 @@ class Arc(Curve):
                 self.prx *= other
             if self.pry is not None:
                 self.pry *= other
-            if other.value_scale_x() < 0:
-                self.sweep = -self.sweep
-            if other.value_scale_y() < 0:
+            if other.determinant < 0:
                 self.sweep = -self.sweep
         return self
 
