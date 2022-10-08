@@ -62,6 +62,7 @@ class ElementLightJob:
         connection.abort()
         self.stopped = True
         self.runtime += time.time() - self.time_started
+        self.service.signal("stop_tracing", True)
         return True
 
     def stop(self):
