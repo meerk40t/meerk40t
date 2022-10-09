@@ -190,12 +190,18 @@ class CutPlan:
                         copies = 1
                         passes = 1
                     for p in range(copies):
+                        # If passes isn't equal to implicit passes then we need a different settings to permit change
+                        settings = (
+                            op.settings
+                            if op.implicit_passes == passes
+                            else dict(op.settings)
+                        )
                         cutcode = CutCode(
                             op.as_cutobjects(
                                 closed_distance=context.opt_closed_distance,
                                 passes=passes,
                             ),
-                            settings=op.settings,
+                            settings=settings,
                         )
                         if len(cutcode) == 0:
                             break

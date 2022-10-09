@@ -435,7 +435,7 @@ class ConsolePanel(wx.ScrolledWindow):
                 data.append(chunk)
                 nlines -= chunk.count(b"\n")
                 end -= nread
-            return b'\n'.join(b''.join(reversed(data)).splitlines()[-window:])
+            return b"\n".join(b"".join(reversed(data)).splitlines()[-window:])
 
         # Restores the last 50 commands from disk
 
@@ -454,6 +454,7 @@ class ConsolePanel(wx.ScrolledWindow):
                 pass
             for entry in result:
                 self.command_log.append(entry)
+
 
 class Console(MWindow):
     def __init__(self, *args, **kwds):

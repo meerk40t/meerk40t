@@ -391,7 +391,7 @@ class GRBLDevice(Service, ViewPort):
         @self.console_command(
             "viewport_update",
             hidden=True,
-            help=_("Update moshi codes for movement"),
+            help=_("Update grbl codes for movement"),
         )
         def codes_update(**kwargs):
             self.realize()
@@ -1105,6 +1105,8 @@ class GrblController:
         self.buffer_mode = 1  # 1:1 okay, send lines.
         self.buffered_characters = 0
         self.device_buffer_size = self.service.planning_buffer_size
+        self.old_x = 0
+        self.old_y = 0
         self.grbl_settings = {
             0: 10,  # step pulse microseconds
             1: 25,  # step idle delay
@@ -1220,6 +1222,36 @@ class GrblController:
                         self.device_buffer_size - self.buffered_characters
                     )
                     if buffer_remaining > line_length:
+                        if line.startswith("G0 ") or line.startswith("G1 "):
+                            cline = line.split()
+                            try:
+                                xx = float(cline[1][1:])
+                            except (ValueError, IndexError):
+                                xx = 0
+                            try:
+                                yy = float(cline[2][1:])
+                            except (ValueError, IndexError):
+                                yy = 0
+                            new_x, new_y = self.service.device_to_scene_position(
+                                xx * self.driver.unit_scale, yy * self.driver.unit_scale
+                            )
+                            # print(f"{cline} -> {xx}, {yy} -> {new_x}, {new_y}")
+                            self.service.signal(
+                                "driver;position",
+                                (self.old_x, self.old_y, new_x, new_y),
+                            )
+                            self.old_x = new_x
+                            self.old_y = new_y
+                        elif line.startswith("G28"):
+                            # home
+                            new_x = self.driver.origin_x
+                            new_y = self.driver.origin_y
+                            self.service.signal(
+                                "driver;position",
+                                (self.old_x, self.old_y, new_x, new_y),
+                            )
+                            self.old_x = new_x
+                            self.old_y = new_y
                         self.connection.write(line)
                         self.send(line)
                         self.commands_in_device_buffer.append(line)
@@ -1626,7 +1658,7 @@ class GRBLEmulator(Module, Parameters):
                 return 0
             if GRBL_SET_RE.match(data):
                 settings = list(GRBL_SET_RE.findall(data))[0]
-                print(settings)
+                # print(settings)
                 try:
                     c = self.grbl_settings[int(settings[0])]
                 except KeyError:
