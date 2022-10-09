@@ -298,6 +298,7 @@ class IdPanel(wx.Panel):
         else:
             self.Hide()
 
+
 class LinePropPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -308,9 +309,15 @@ class LinePropPanel(wx.Panel):
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
         fillchoices = (_("Non-Zero"), _("Even-Odd"))
-        self.combo_cap = wx.ComboBox(self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.combo_join = wx.ComboBox(self, wx.ID_ANY, choices=joinchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.combo_fill = wx.ComboBox(self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_cap = wx.ComboBox(
+            self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_join = wx.ComboBox(
+            self, wx.ID_ANY, choices=joinchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_fill = wx.ComboBox(
+            self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -398,6 +405,7 @@ class LinePropPanel(wx.Panel):
             self.Show()
         else:
             self.Hide()
+
 
 class PositionSizePanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
