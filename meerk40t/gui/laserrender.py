@@ -431,6 +431,11 @@ class LaserRender:
             c = cut.line_color
             if c is None:
                 c = 0
+            try:
+                if c.value is None:
+                    c = 0
+            except AttributeError:
+                pass
             if c is not color:
                 color = c
                 last_point = None
