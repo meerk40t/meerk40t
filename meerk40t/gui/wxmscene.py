@@ -13,8 +13,10 @@ from meerk40t.gui.icons import (
     icons8_menu_50,
     icons8_r_black,
     icons8_r_white,
+    icons8_text_50,
     icons8_reference,
     icons8_ungroup_objects_50,
+    icons8_cursor_50,
 )
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -41,6 +43,7 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
@@ -152,8 +155,22 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/vector", VectorTool)
         context.register("tool/measure", MeasureTool)
         context.register("tool/ribbon", RibbonTool)
+        context.register("tool/linetext", LineTextTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
+        context.kernel.register(
+            "button/tools/Linetext",
+            {
+                "label": _("Vector Text"),
+                "icon": icons8_text_50,
+                "tip": _("Add a vector text element"),
+                "action": lambda v: context.kernel.elements("tool linetext\n"),
+                "group": "tool",
+                "size": 50,
+                "identifier": "linetext",
+            },
+        )
+
         context.kernel.register(
             "button/align/refob",
             {
