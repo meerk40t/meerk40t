@@ -918,6 +918,14 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.signal("modified")
         self.widget_scene.request_refresh(*args)
 
+    @signal_listener("linetext")
+    def on_signal_linetext(self, origin, *args):
+        if len(args) == 1:
+            self.scene.signal("linetext", args[0])
+        elif len(args) > 1:
+            self.scene.signal("linetext", args[0], args[1])
+
+
     @signal_listener("element_added")
     @signal_listener("tree_changed")
     def on_elements_added(self, origin, nodes=None, *args):

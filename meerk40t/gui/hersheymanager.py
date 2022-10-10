@@ -132,22 +132,16 @@ class PanelFontSelect(wx.Panel):
         # lookfor = getattr(self.context, "sxh_preferred", "")
 
     def on_btn_bigger(self, event):
-        scene = getattr(self.context.root, "mainscene", None)
-        if scene is not None:
-            scene.signal("linetext;bigger")
+        self.context.signal("linetext", "bigger")
 
     def on_btn_smaller(self, event):
-        scene = getattr(self.context.root, "mainscene", None)
-        if scene is not None:
-            scene.signal("linetext;smaller")
+        self.context.signal("linetext", "smaller")
 
     def on_list_font_dclick(self, event):
         index = self.list_fonts.GetSelection()
         if index >= 0:
             fontname = self.fonts[index]
-            scene = getattr(self.context.root, "mainscene", None)
-            if scene is not None:
-                scene.signal("linetext;font", fontname)
+            self.context.signal("linetext", "font", fontname)
 
     def on_list_font(self, event):
         if self.list_fonts.GetSelection() >= 0:

@@ -9,7 +9,6 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.kernel import signal_listener
 from meerk40t.svgelements import Color
 
 
@@ -159,24 +158,22 @@ class LineTextTool(ToolWidget):
                 response = RESPONSE_CHAIN
         return response
 
-
     def signal(self, signal, *args, **kwargs):
-        print(f"Received signal: {signal}")
         if self.node is None:
             return
-        if signal == "linetext;bigger":
+        if signal == "linetext" and args[0] == "bigger":
             self.node.fontsize *= 1.2
             update_linetext(self.scene.context, self.node, self.node.text)
             self.node.emphasized = False
             self.scene.request_refresh()
-        elif signal == "linetext;smaller":
+        elif signal == "linetext" and args[0] == "smaller":
             self.node.fontsize /= 1.2
             update_linetext(self.scene.context, self.node, self.node.text)
             self.node.emphasized = False
             self.scene.request_refresh()
-        elif signal == "linetext;font":
-            if len(args)>0:
-                font = args[0]
+        elif signal == "linetext" and args[0] == "font":
+            if len(args)>1:
+                font = args[1]
                 self.node.font = font
                 update_linetext(self.scene.context, self.node, self.node.text)
                 self.node.emphasized = False
