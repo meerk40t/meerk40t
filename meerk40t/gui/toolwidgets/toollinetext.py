@@ -35,7 +35,14 @@ class LineTextTool(ToolWidget):
             cursorheight = float(Length("8mm"))
             offsetx = 0
             offsety = 0
+
             if self.node is None or self.node.bounds is None:
+                if self.node is not None:
+                    if hasattr(self.node, "font"):
+                        fname = self.node.font
+                        if fname.lower().endswith(".jhf"):
+                            offsety = 0.5 * cursorheight
+
                 if self.scene.context.elements.default_stroke is None:
                     self.color = Color("black")
                 else:
@@ -109,7 +116,14 @@ class LineTextTool(ToolWidget):
                 self.scene.context.elements.elem_branch.add_node(self.node)
                 self.scene.context.signal("element_added", self.node)
                 self.node.emphasized = False
+                try:
+                    curr_win = wx.GetActiveWindow()
+                except:
+                    curr_win = None
                 self.scene.context("window open HersheyFontSelector\n")
+                if curr_win is not None:
+                    curr_win.SetFocus()
+
             response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
             done()
