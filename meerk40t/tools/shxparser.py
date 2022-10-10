@@ -66,9 +66,17 @@ def read_string(stream):
     while True:
         b = stream.read(1)
         if b == b"":
-            return bb.decode("utf-8")
+            try:
+                result = bb.decode("utf-8")
+            except UnicodeDecodeError:
+                result = ""
+            return result
         if b == b"\r" or b == b"\n" or b == b"\x00":
-            return bb.decode("utf-8")
+            try:
+                result = bb.decode("utf-8")
+            except UnicodeDecodeError:
+                result = ""
+            return result
         bb += b
 
 
@@ -223,8 +231,35 @@ class ShxFont:
         y = 0
         last_x = 0
         last_y = 0
+        if self.above == 0:
+            # Invalid font!
+            return
         scale = font_size / self.above
         stack = []
+        replacer = []
+        for tchar in text:
+            to_replace = None
+            # Yes, I am German :-)
+            if ord(tchar) not in self.glyphs:
+                if tchar == "ä":
+                    to_replace = (tchar, "ae")
+                elif tchar == "ö":
+                    to_replace = (tchar, "ue")
+                elif tchar == "ü":
+                    to_replace = (tchar, "ue")
+                elif tchar == "Ä":
+                    to_replace = (tchar, "Ae")
+                elif tchar == "Ö":
+                    to_replace = (tchar, "Oe")
+                elif tchar == "Ü":
+                    to_replace = (tchar, "Ue")
+                elif tchar == "ß":
+                    to_replace = (tchar, "ss")
+            if to_replace is not None and to_replace not in replacer:
+                replacer.append(to_replace)
+        for to_replace in replacer:
+            # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
+            text = text.replace(to_replace[0], to_replace[1])
         for letter in text:
             try:
                 code = bytearray(reversed(self.glyphs[ord(letter)]))
