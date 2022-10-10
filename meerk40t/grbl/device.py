@@ -1157,6 +1157,7 @@ class GrblController:
             if response is None:
                 continue
             self.channel(response)
+            self.recv(response)
             if not response:
                 time.sleep(0.1)
             if "grbl" in response.lower():
