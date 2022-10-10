@@ -230,8 +230,8 @@ class JhfFont:
                 struct = self.glyphs[tchar]
                 nverts = struct["nverts"]
                 vertices = struct["vertices"]
-                # offsetx += abs(struct["left"])
-                offsetx += abs(struct["realleft"] - 1)
+                offsetx += abs(struct["left"])
+                # offsetx += abs(struct["realleft"] - 1)
                 idx = 0
                 penup = True
                 lastx = 0
@@ -254,8 +254,8 @@ class JhfFont:
                         lasty = rightval
                     idx += 1
                 cidx += 1
-                # offsetx += struct["right"]
-                offsetx += struct["realright"] + 1
+                offsetx += struct["right"]
+                # offsetx += struct["realright"] + 1
             else:
                 # print(f"Char '{tchar}' (ord={ord(tchar)}) not in font...")
                 pass
