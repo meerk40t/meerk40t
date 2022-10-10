@@ -65,7 +65,9 @@ class SimulationPanel(wx.Panel, Job):
         # poor mans slide out
         self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
         self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
-        self.btn_slide_options.SetToolTip(_("Show/Hide optimization options for this job."))
+        self.btn_slide_options.SetToolTip(
+            _("Show/Hide optimization options for this job.")
+        )
         choices = self.context.lookup("choices/optimize")[:7]
         self.panel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False

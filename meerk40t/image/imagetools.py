@@ -213,7 +213,9 @@ def plugin(kernel, lifecycle=None):
     ):
         if threshold_min is None:
             raise CommandSyntaxError
-        threshold_min, threshold_max = min(threshold_min, threshold_max), max(threshold_max, threshold_min)
+        threshold_min, threshold_max = min(threshold_min, threshold_max), max(
+            threshold_max, threshold_min
+        )
         divide = (threshold_max - threshold_min) / 255.0
         for node in data:
             if node.lock:
@@ -235,7 +237,9 @@ def plugin(kernel, lifecycle=None):
             img = img.point(lut)
 
             elements = context.elements
-            node = elements.elem_branch.add(image=img, type="elem image", matrix=copy(node.matrix))
+            node = elements.elem_branch.add(
+                image=img, type="elem image", matrix=copy(node.matrix)
+            )
             elements.classify([node])
         return "image", data
 
