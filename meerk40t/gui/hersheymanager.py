@@ -6,7 +6,7 @@ from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.icons import icons8_choose_font_50, STD_ICON_SIZE
 from meerk40t.kernel import get_safe_path
-from meerk40t.extra.hershey import create_linetext_node
+from meerk40t.extra.hershey import create_linetext_node, update_linetext, fonts_registered
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -64,6 +64,150 @@ def load_create_preview_file(context, fontfile):
         bitmap.LoadFile(bmpfile, wx.BITMAP_TYPE_PNG)
     return bitmap
 
+def fontdirectory(context):
+    fontdir = ""
+    safe_dir = os.path.realpath(get_safe_path(context.kernel.name))
+    context.setting(str, "font_directory", safe_dir)
+    fontdir = context.font_directory
+    return fontdir
+
+class LineTextPropertPanel(wx.Panel):
+    def __init__(
+        self,
+        *args,
+        context=None,
+        node=None,
+        **kwds,
+    ):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+        self.fonts = []
+
+        self.header = wx.StaticBox(self, wx.ID_ANY, _("Vector-Text"))
+        main_sizer = wx.StaticBoxSizer(self.header, wx.VERTICAL)
+
+        sizer_text = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Content")), wx.HORIZONTAL)
+        self.text_text = wx.TextCtrl(self, wx.ID_ANY, "")
+        sizer_text.Add(self.text_text, 1, wx.EXPAND, 0)
+
+        self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        self.btn_bigger.SetToolTip(_("Increase the font-size"))
+        sizer_text.Add(self.btn_bigger, 0, wx.EXPAND, 0)
+
+        self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller.SetToolTip(_("Decrease the font-size"))
+        sizer_text.Add(self.btn_smaller, 0, wx.EXPAND, 0)
+
+        sizer_fonts = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _("Fonts (double-click to use)")), wx.VERTICAL)
+
+        self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts.SetMinSize((-1, 140))
+        self.list_fonts.SetToolTip(_("Select to preview the font, double-click to apply it"))
+        sizer_fonts.Add(self.list_fonts, 0, wx.EXPAND, 0)
+
+        self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
+        self.bmp_preview.SetMinSize((-1, 70))
+        sizer_fonts.Add(self.bmp_preview, 0, wx.EXPAND, 0)
+
+        main_sizer.Add(sizer_text, 0, wx.EXPAND, 0)
+        main_sizer.Add(sizer_fonts, 0, wx.EXPAND, 0)
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.btn_bigger.Bind(wx.EVT_BUTTON, self.on_button_bigger)
+        self.btn_smaller.Bind(wx.EVT_BUTTON, self.on_button_smaller)
+        self.text_text.Bind(wx.EVT_TEXT, self.on_text_change)
+        self.list_fonts.Bind(wx.EVT_LISTBOX, self.on_list_font)
+        self.list_fonts.Bind(wx.EVT_LISTBOX_DCLICK, self.on_list_font_dclick)
+        self.set_widgets(self.node)
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def accepts(self, node):
+        return hasattr(node, "font") and hasattr(node, "fontsize") and hasattr(node, "text")
+
+    def set_widgets(self, node):
+        self.node = node
+        # print(f"set_widget for {self.attribute} to {str(node)}")
+        if self.node is None or not self.accepts(node):
+            self.Hide()
+            return
+        fontdir = fontdirectory(self.context)
+        self.load_directory(fontdir)
+        self.text_text.SetValue(node.text)
+        self.Show()
+
+    def load_directory(self, fontdir):
+        self.fonts = []
+        self.list_fonts.Clear()
+        if os.path.exists(fontdir):
+            self.context.font_directory = fontdir
+            fontinfo = fonts_registered()
+            for extension in fontinfo:
+                ext = "*." + extension
+                for p in glob(os.path.join(fontdir, ext.lower())):
+                    fn = os.path.basename(p)
+                    if fn not in self.fonts:
+                        self.fonts.append(fn)
+                for p in glob(os.path.join(fontdir, ext.upper())):
+                    fn = os.path.basename(p)
+                    if fn not in self.fonts:
+                        self.fonts.append(fn)
+        self.list_fonts.SetItems(self.fonts)
+        # index = -1
+        # lookfor = getattr(self.context, "sxh_preferred", "")
+
+    def update_node(self):
+        vtext = self.text_text.GetValue()
+        update_linetext(self.context, self.node, vtext)
+        self.context.signal("element_property_reload", self.node)
+        self.context.signal("refresh_scene", "Scene")
+
+    def on_button_bigger(self, event):
+        if self.node is None:
+            return
+        self.node.fontsize *= 1.2
+        self.update_node()
+
+    def on_button_smaller(self, event):
+        if self.node is None:
+            return
+        self.node.fontsize /= 1.2
+        self.update_node()
+
+    def on_text_change(self, event):
+        self.update_node()
+
+    def on_list_font_dclick(self, event):
+        if self.node is None:
+            return
+        index = self.list_fonts.GetSelection()
+        if index >= 0:
+            fontname = self.fonts[index]
+            self.node.font = fontname
+            self.update_node()
+
+    def on_list_font(self, event):
+        if self.list_fonts.GetSelection() >= 0:
+            fontdir = fontdirectory(self.context)
+            font_file = self.fonts[self.list_fonts.GetSelection()]
+            full_font_file = os.path.join(fontdir, font_file)
+            bmp = load_create_preview_file(self.context, full_font_file)
+            # if bmp is not None:
+            #     bmap_bundle = wx.BitmapBundle().FromBitmap(bmp)
+            # else:
+            #     bmap_bundle = wx.BitmapBundle()
+            # self.bmp_preview.SetBitmap(bmap_bundle)
+            if bmp is None:
+                bmp = wx.NullBitmap
+            self.bmp_preview.SetBitmap(bmp)
+
 class PanelFontSelect(wx.Panel):
 
     def __init__(self, *args, context=None, **kwds):
@@ -80,6 +224,7 @@ class PanelFontSelect(wx.Panel):
         mainsizer.Add(sizer_fonts, 1, wx.EXPAND, 0)
 
         self.list_fonts = wx.ListBox(self, wx.ID_ANY)
+        self.list_fonts.SetToolTip(_("Select to preview the font, double-click to apply it"))
         sizer_fonts.Add(self.list_fonts, 1, wx.EXPAND, 0)
 
         self.bmp_preview = wx.StaticBitmap(self, wx.ID_ANY)
@@ -90,9 +235,11 @@ class PanelFontSelect(wx.Panel):
         sizer_fonts.Add(sizer_buttons, 0, wx.EXPAND, 0)
 
         self.btn_bigger = wx.Button(self, wx.ID_ANY, "++")
+        self.btn_bigger.SetToolTip(_("Increase the font-size"))
         sizer_buttons.Add(self.btn_bigger, 0, wx.EXPAND, 0)
 
         self.btn_smaller = wx.Button(self, wx.ID_ANY, "--")
+        self.btn_smaller.SetToolTip(_("Decrease the font-size"))
         sizer_buttons.Add(self.btn_smaller, 0, wx.EXPAND, 0)
 
         lbl_spacer = wx.StaticText(self, wx.ID_ANY, "")
@@ -108,9 +255,7 @@ class PanelFontSelect(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_smaller, self.btn_smaller)
 
         # end wxGlade
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
-        self.context.setting(str, "font_directory", safe_dir)
-        fontdir = self.context.font_directory
+        fontdir = fontdirectory(self.context)
         self.load_directory(fontdir)
 
     def load_directory(self, fontdir):
@@ -118,7 +263,9 @@ class PanelFontSelect(wx.Panel):
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.font_directory = fontdir
-            for ext in ("*.shx", "*.jhf"):
+            fontinfo = fonts_registered()
+            for extension in fontinfo:
+                ext = "*." + extension
                 for p in glob(os.path.join(fontdir, ext.lower())):
                     fn = os.path.basename(p)
                     if fn not in self.fonts:
@@ -259,9 +406,8 @@ class PanelFontManager(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_delete, self.btn_delete)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_webget, self.combo_webget)
         # end wxGlade
-        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
-        self.context.setting(str, "font_directory", safe_dir)
-        self.text_fontdir.SetValue(self.context.font_directory)
+        fontdir = fontdirectory(self.context)
+        self.text_fontdir.SetValue(fontdir)
 
     def on_text_directory(self, event):
         fontdir = self.text_fontdir.GetValue()
@@ -269,7 +415,9 @@ class PanelFontManager(wx.Panel):
         self.list_fonts.Clear()
         if os.path.exists(fontdir):
             self.context.font_directory = fontdir
-            for ext in ("*.shx", "*.jhf"):
+            fontinfo = fonts_registered()
+            for extension in fontinfo:
+                ext = "*." + extension
                 for p in glob(os.path.join(fontdir, ext.lower())):
                     fn = os.path.basename(p)
                     if fn not in self.fonts:
@@ -315,7 +463,22 @@ class PanelFontManager(wx.Panel):
             self.bmp_preview.SetBitmap(bmp)
 
     def on_btn_import(self, event):
-        wildcard = "Vector-Fonts|*.shx;*.SHX;*.jhf;*.JHF|Hershey-Fonts|*.jhf;*.JHF|Autocad-Fonts|*.shx;*.SHX"
+        fontinfo = fonts_registered()
+        wildcard = "Vector-Fonts|"
+        idx = 0
+        for extension in fontinfo:
+            ext = "*." + extension
+            if idx==0:
+                wildcard += "|"
+            else:
+                wildcard += ";"
+            wildcard += ext.lower() + ";" + ext.upper()
+            idx += 1
+        for extension in fontinfo:
+            ext = "*." + extension
+            info = fontinfo[extension]
+            wildcard += f"|{info[0]}-Fonts|{ext.lower()};{ext.upper()}"
+
         dlg = wx.FileDialog(
             self,
             message=_("Select a font-file to be imported into the the font-directory {fontdir}").format(fontdir=self.context.font_directory),
@@ -386,7 +549,6 @@ class PanelFontManager(wx.Panel):
 
                 webbrowser.open(url, new=0, autoraise=True)
 
-
 # end of class FontManager
 
 class HersheyFontManager(MWindow):
@@ -412,16 +574,16 @@ class HersheyFontManager(MWindow):
     def submenu():
         return ("", "Font-Manager")
 
-    @staticmethod
-    def sub_register(kernel):
-        buttonsize = int(STD_ICON_SIZE)
-        kernel.register(
-            "button/config/HersheyFontManager",
-            {
-                "label": _("Font-Manager"),
-                "icon": icons8_choose_font_50,
-                "tip": _("Open alignment dialog with advanced options"),
-                "action": lambda v: kernel.console("window toggle HersheyFontManager\n"),
-                "size": buttonsize,
-            },
-        )
+def register_hershey_stuff(kernel):
+    kernel.root.register("path_attributes/linetext", LineTextPropertPanel)
+    buttonsize = int(STD_ICON_SIZE)
+    kernel.register(
+        "button/config/HersheyFontManager",
+        {
+            "label": _("Font-Manager"),
+            "icon": icons8_choose_font_50,
+            "tip": _("Open the vector-font management window."),
+            "action": lambda v: kernel.console("window toggle HersheyFontManager\n"),
+            "size": buttonsize,
+        },
+    )
