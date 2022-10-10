@@ -67,9 +67,7 @@ def update_linetext(context, node, newtext):
     horizontal = True
     cfont.render(path, newtext, horizontal, float(fontsize))
     node.path = path.path
-    # node.stroke = old_color
-    # node.stroke_width = old_strokewidth
-    # node._stroke_scaled = old_strokescaled
+    node.text = newtext
     node.altered()
 
 def create_linetext_node(context, x, y, text, font=None, font_size=None):
