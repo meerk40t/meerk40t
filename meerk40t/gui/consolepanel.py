@@ -1,5 +1,10 @@
+import os
+import threading
+
 import wx
 from wx import aui
+
+from meerk40t.kernel import get_safe_path, signal_listener
 
 try:
     from wx import richtext
@@ -173,6 +178,7 @@ class ConsolePanel(wx.ScrolledWindow):
         # end wxGlade
         self.command_log = []
         self.command_position = 0
+        self.load_log()
 
         self.ansi_styles = {
             "\033[30m": foreground_color("black"),  # "black"
@@ -201,6 +207,8 @@ class ConsolePanel(wx.ScrolledWindow):
             "\033[27m": None,  # "positive"
             "\033[0m": self.style_normal,  # "normal"
         }
+        self._buffer = ""
+        self._buffer_lock = threading.Lock()
 
     def style_normal(self, style):
         return self.style
@@ -237,15 +245,26 @@ class ConsolePanel(wx.ScrolledWindow):
         self.text_main.Clear()
 
     def update_text(self, text):
-        if not wx.IsMainThread():
-            wx.CallAfter(self._update_text, text)
-        else:
-            self._update_text(text)
+        with self._buffer_lock:
+            self._buffer += f"{text}\n"
+            if len(self._buffer) > 50000:
+                self._buffer = self._buffer[-50000:]
+        self.context.signal("console_update")
+
+    @signal_listener("console_update")
+    def update_console_main(self, origin, *args):
+        with self._buffer_lock:
+            buffer = self._buffer
+            self._buffer = ""
+        # Update text depends on rich/normal text_field
+        self._update_text(buffer)
 
     def update_text_text(self, text):
+        # If normal called by self._update_text
         self.process_text_text_line(str(text))
 
     def update_text_rich(self, text):
+        # If rich called by self._update_text
         self.process_text_rich_line(str(text))
 
     def process_text_text_line(self, lines):
@@ -274,7 +293,6 @@ class ConsolePanel(wx.ScrolledWindow):
             text += c
         if text:
             self.text_main.AppendText(text)
-        # self.text_main.AppendText(lines)
 
     def process_text_rich_line(self, lines):
         """
@@ -291,10 +309,7 @@ class ConsolePanel(wx.ScrolledWindow):
         ansi = False
         ansi_text = ""
         text = ""
-        if not self.text_main.IsEmpty():
-            self.text_main.Newline()
-            self.text_main.BeginStyle(self.style)
-
+        open_style = False
         for c in lines:
             b = ord(c)
             if c == "\n":
@@ -303,6 +318,7 @@ class ConsolePanel(wx.ScrolledWindow):
                     text = ""
                 self.text_main.Newline()
                 self.text_main.BeginStyle(self.style)
+                open_style = True
                 continue  # New Line is already processed.
             if b == 27:
                 ansi = True
@@ -315,16 +331,21 @@ class ConsolePanel(wx.ScrolledWindow):
                     style_function = self.ansi_styles.get(ansi_text)
                     if style_function is not None:
                         new_style = style_function(self.text_main.GetDefaultStyleEx())
-                        self.text_main.EndStyle()
+                        if open_style:
+                            self.text_main.EndStyle()
+                            open_style = False
                         if new_style is not None:
                             self.text_main.BeginStyle(new_style)
+                            open_style = True
                     ansi = False
                     ansi_text = ""
                 continue
             text += c
         if text:
             self.text_main.WriteText(text)
-        self.text_main.EndStyle()
+        if open_style:
+            self.text_main.EndStyle()
+
         self.text_main.ScrollIntoView(self.text_main.GetLastPosition(), wx.WXK_END)
         self.text_main.Update()
 
@@ -366,15 +387,74 @@ class ConsolePanel(wx.ScrolledWindow):
             else:
                 event.Skip()
         except IndexError:
-            pass
+            self.command_position = 0
+            self.text_entry.SetValue("")
 
     def on_enter(self, event):  # wxGlade: Terminal.<event_handler>
         command = self.text_entry.GetValue()
+        self.command_log.append(command)
+        self.save_log(command)
+        self.command_position = 0
         self.context(command + "\n")
         self.text_entry.SetValue("")
-        self.command_log.append(command)
-        self.command_position = 0
         event.Skip(False)
+
+    def history_filename(self):
+        safe_dir = os.path.realpath(get_safe_path(self.context.kernel.name))
+        fname = os.path.join(safe_dir, "cmdhistory.log")
+        is_there = os.path.exists(fname)
+        return fname, is_there
+
+    def save_log(self, last_command):
+        fname, fexists = self.history_filename()
+        try:
+            history_file = open(fname, "a")  # Append mode
+            history_file.write(last_command + "\n")
+            history_file.close()
+        except (PermissionError, IOError):
+            # Could not save
+            pass
+
+    def load_log(self):
+        def tail(f, window=1):
+            """
+            Returns the last `window` lines of file `f` as a list of bytes.
+            """
+            if window == 0:
+                return b""
+            BUFSIZE = 1024
+            f.seek(0, 2)
+            end = f.tell()
+            nlines = window + 1
+            data = []
+            while nlines > 0 and end > 0:
+                i = max(0, end - BUFSIZE)
+                nread = min(end, BUFSIZE)
+
+                f.seek(i)
+                chunk = f.read(nread)
+                data.append(chunk)
+                nlines -= chunk.count(b"\n")
+                end -= nread
+            return b"\n".join(b"".join(reversed(data)).splitlines()[-window:])
+
+        # Restores the last 50 commands from disk
+
+        self.context.setting(int, "history_limit", 50)
+        limit = int(self.context.history_limit)
+        # print (f"Limit = {limit}")
+        self.command_log = [""]
+        fname, fexists = self.history_filename()
+        if fexists:
+            result = []
+            try:
+                with open(fname, "rb") as f:
+                    result = tail(f, limit).decode("utf-8").splitlines()
+            except (PermissionError, IOError):
+                # Could not load
+                pass
+            for entry in result:
+                self.command_log.append(entry)
 
 
 class Console(MWindow):

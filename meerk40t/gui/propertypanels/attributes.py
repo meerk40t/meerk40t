@@ -299,6 +299,114 @@ class IdPanel(wx.Panel):
             self.Hide()
 
 
+class LinePropPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+        capchoices = (_("Butt"), _("Round"), _("Square"))
+        joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
+        fillchoices = (_("Non-Zero"), _("Even-Odd"))
+        self.combo_cap = wx.ComboBox(
+            self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_join = wx.ComboBox(
+            self, wx.ID_ANY, choices=joinchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_fill = wx.ComboBox(
+            self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
+        self.box_cap = wx.StaticBox(self, wx.ID_ANY, _("Line-End"))
+        self.sizer_cap = wx.StaticBoxSizer(self.box_cap, wx.VERTICAL)
+        self.sizer_cap.Add(self.combo_cap, 1, wx.EXPAND, 0)
+
+        self.box_join = wx.StaticBox(self, wx.ID_ANY, _("Line-Join"))
+        self.sizer_join = wx.StaticBoxSizer(self.box_join, wx.VERTICAL)
+        self.sizer_join.Add(self.combo_join, 1, wx.EXPAND, 0)
+        self.box_fill = wx.StaticBox(self, wx.ID_ANY, _("Fillrule"))
+        self.sizer_fill = wx.StaticBoxSizer(self.box_fill, wx.VERTICAL)
+        self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
+
+        sizer_attributes.Add(self.sizer_cap, 1, wx.EXPAND, 0)
+        sizer_attributes.Add(self.sizer_join, 1, wx.EXPAND, 0)
+        sizer_attributes.Add(self.sizer_fill, 1, wx.EXPAND, 0)
+
+        main_sizer.Add(sizer_attributes, 0, wx.EXPAND, 0)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.combo_cap.Bind(wx.EVT_COMBOBOX, self.on_cap)
+        self.combo_join.Bind(wx.EVT_COMBOBOX, self.on_join)
+        self.combo_fill.Bind(wx.EVT_COMBOBOX, self.on_fill)
+        self.set_widgets(self.node)
+
+    def on_cap(self, event):
+        id = self.combo_cap.GetSelection()
+        try:
+            self.node.linecap = id
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def on_join(self, event):
+        id = self.combo_join.GetSelection()
+        try:
+            self.node.linejoin = id
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def on_fill(self, event):
+        id = self.combo_fill.GetSelection()
+        try:
+            self.node.fillrule = id
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        self.node = node
+        # print(f"set_widget for {self.attribute} to {str(node)}")
+        vis1 = False
+        vis2 = False
+        vis3 = False
+        if hasattr(self.node, "linecap"):
+            vis1 = True
+            self.combo_cap.SetSelection(int(node.linecap))
+        if hasattr(self.node, "linejoin"):
+            vis2 = True
+            self.combo_join.SetSelection(int(node.linejoin))
+        if hasattr(self.node, "fillrule"):
+            vis3 = True
+            self.combo_fill.SetSelection(int(node.fillrule))
+
+        self.combo_cap.Show(vis1)
+        self.box_cap.Show(vis1)
+        self.combo_join.Show(vis2)
+        self.box_join.Show(vis2)
+        self.combo_fill.Show(vis3)
+        self.box_fill.Show(vis3)
+
+        if vis1 or vis2 or vis3:
+            self.Show()
+        else:
+            self.Hide()
+
+
 class PositionSizePanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__

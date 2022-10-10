@@ -1312,7 +1312,7 @@ msgid "list wordlist values"
 msgstr "liste Wortlist-Einträge auf"
 
 #: meerk40t/core/elements.py:1110
-msgid "Wordlist {name} (Type={type}, Index={index})):"
+msgid "Wordlist {name} (Type={type}, Index={index}):"
 msgstr ""
 
 #: meerk40t/core/elements.py:1117
@@ -6398,6 +6398,9 @@ msgstr "S&etup\tCtrl-,"
 msgid "Show/Hide the Preferences window"
 msgstr "Zeigt/verbirgt das Einstellungsfenster"
 
+msgid "Show/Hide optimization options for this job."
+msgstr "Optionen zur Optimierung dieses Jobs ein-/ausblenden"
+
 #: meerk40t/gui/simulation.py:72
 msgid "Recalculate"
 msgstr "Neuberechnen"
@@ -7065,8 +7068,21 @@ msgid "Icon size:"
 msgstr "Icon-Größe:"
 
 #: meerk40t/gui/wxmmain.py:352
-msgid "Appearance of all icons in the GUI (requires a restart to take effect))"
+msgid "Appearance of all icons in the GUI (requires a restart to take effect)"
 msgstr "Darstellung der Icons in der Benutzeroberfläche (nach Neustart wirksam)"
+
+msgid "Suppress labels"
+msgstr "Unterdrücke Labels"
+
+msgid ""
+"Suppress the display of labels in the toolbar at the top of the window\n"
+"a) requires a restart to take effect\n"
+"b) will always suppressed if your system is in dark mode"
+msgstr ""
+"Falls aktiv, werden keine Labels unter den Icons in der Toolbar angezeigt\n"
+"a) erst nach Neustart wirksam\n"
+"b) werden immer unterdrückt, wenn die System-Benutzeroberfläche im Dark Mode ist"
+
 
 #: meerk40t/gui/wxmmain.py:384
 msgid "Default zoom margin:"
@@ -9734,7 +9750,7 @@ msgstr "Startet einen Outline-Job für die Auswahl"
 
 #: meerk40t/balormk/gui/gui.py:70
 msgid "Live Bounds"
-msgstr "Live  (rechteck)"
+msgstr "Live  (Rechteck)"
 
 #: meerk40t/balormk/gui/gui.py:75
 msgid "Live Full"
@@ -9750,7 +9766,7 @@ msgstr "Rechteck Umriss"
 
 #: meerk40t/balormk/gui/gui.py:91
 msgid "Trace Ants"
-msgstr "Ameisen Umriss"
+msgstr "Ameisenpfad"
 
 #: meerk40t/balormk/gui/gui.py:96
 msgid "Trace Full"
@@ -14634,3 +14650,133 @@ msgstr "Diese Verknüpfung zwischen Element und Arbeitsablauf nennen wir Zuordnu
 
 msgid "Redlight-Offset"
 msgstr "Rotlicht-Versatz"
+
+msgid "Attributes"
+msgstr "Attribute"
+
+# Barcode-Plugin
+msgid "error correction, one of L (7%), M (15%), Q (25%), H (30%)"
+msgstr "Fehler-Korrektur: L (7%), M (15%), Q (25%), H (30%)"
+
+msgid "Boxsize (default 10)"
+msgstr "Box-Größe (Standard 10)"
+
+msgid "Border around qr-code (default 4)"
+msgstr "Rahmen um QR-Code (Standard 4)"
+
+msgid "size (1..40)"
+msgstr "Größe (1..40)"
+
+msgid "X-position of qr-code"
+msgstr "X-Position des QR-Codes (linke obere Ecke)"
+
+msgid "Y-position of qr-code"
+msgstr "Y-Position des QR-Codes (linke obere Ecke)"
+
+msgid "Width/length of qr-code"
+msgstr "Breite/Länge des zu erzeugenden QR-Codes"
+
+msgid "Text to create qr-code from"
+msgstr "Text aus dem der QR-Code erzeugt werden soll"
+
+msgid "suppress text display"
+msgstr "Textanzeige unterdrücken"
+
+msgid "create a group of rects instead of a path"
+msgstr "Erzeuge statt eines einzelnen Objektes Einzel-Rechtecke"
+
+msgid "X-Position of barcode"
+msgstr "X-Position des Barcodes"
+
+msgid "Y-Position of barcode"
+msgstr "Y-Position des Barcodes"
+
+msgid "Width of barcode, may be 'auto' to keep native width"
+msgstr "Breite des zu erzeugenden Barcodes, mit 'auto' erfolgt keine Anpassung"
+
+msgid "Height of barcode, may be 'auto' to keep native height"
+msgstr "Höhe des zu erzeugenden Barcodes, mit 'auto' erfolgt keine Anpassung"
+
+msgid "Barcode type"
+msgstr "Barcode-Typ"
+
+msgid "The code to process"
+msgstr "Der Text, aus dem der Barcode erzeugt werden soll"
+
+msgid "Barcode"
+msgstr "Barcode"
+
+msgid "Create an ean-barcode or a qr-code"
+msgstr "Erzeuge einen EAN-Barcode oder einen QR-Code"
+
+msgid "Create a barcode"
+msgstr "Erzeuge einen Barcode"
+
+msgid "Text to use:"
+msgstr "Zu verwendender Text:"
+
+msgid "The barcode/qrcode will be based on this content."
+msgstr ""
+
+msgid "Code:"
+msgstr "Code:"
+
+msgid "Coordinates:"
+msgstr "Koordinaten:"
+
+msgid "Where will the barcode will be located (top left corner)."
+msgstr "Wo soll der Barcode platziert werden (linke obere Ecke)"
+
+msgid "QR-Code"
+msgstr "QR-Code"
+
+msgid "Options:"
+msgstr "Optionen:"
+
+msgid "How wide/high will the resulting qr-code be?"
+msgstr "Welceh Größe soll der QR-Code haben?"
+
+msgid "Resolution:"
+msgstr "Auflösung:"
+
+msgid "How big will the qr-code become (1..40, default 1)?"
+msgstr "Wir groß soll der QR-Code werden (1..40, Standard 1)?"
+
+msgid "Boxsize:"
+msgstr "Box-Größe:"
+
+msgid "How big is the boxsize of the pixels (default 10)?"
+msgstr "Wie groß sollen die einzelnen Pixel des Codes werden (Standard 10)?"
+
+msgid "Establish the error correction used for the QR Code"
+msgstr "Fehlertoleranz des QR-Codes"
+
+msgid "Barcode:"
+msgstr "Barcode:"
+
+msgid "What kind of barcode do you want to create?"
+msgstr "Welcher Typ von Barcode soll verwendet werden?"
+
+msgid "How wide will the resulting barcode be?"
+msgstr "Wie breit soll der Bardcode werden (mit 'auto' erfolgt keine Anpassung)?"
+
+msgid "How high will the resulting barcode be?"
+msgstr "Wie breit soll der Bardcode werden (mit 'auto' erfolgt keine Anpassung)"
+
+msgid "No text:"
+msgstr "Kein Text:"
+
+msgid "Suppress the text under the barcode?"
+msgstr "Unterdrücke die Tex-Anzeige unterhalb des Barcodes?"
+
+msgid "Rectangles:"
+msgstr "Rechtecke:"
+
+msgid "Do you want to have the barcode as individual rectangles?"
+msgstr "Soll der Barcode aus einzelnen Rechtecken erzeugt werden?"
+
+msgid "Create a barcode/qrcode"
+msgstr "Erzeuge einen Barcode bzw. QR-Code"
+
+msgid "Close without creating anything"
+msgstr "Schließen, ohne etwas zu erzeugen"

@@ -213,15 +213,15 @@ def plugin(kernel, lifecycle=None):
     ):
         if threshold_min is None:
             raise CommandSyntaxError
+        threshold_min, threshold_max = min(threshold_min, threshold_max), max(
+            threshold_max, threshold_min
+        )
         divide = (threshold_max - threshold_min) / 255.0
         for node in data:
             if node.lock:
                 channel(_("Can't modify a locked image: {name}").format(name=str(node)))
                 continue
-            image_node = copy(node)
-            image_node.image = image_node.image.copy()
-            img = image_node.image
-            img = img.convert("L")
+            img = node.image.convert("L")
 
             def thresh(g):
                 if threshold_min >= g:
@@ -235,10 +235,11 @@ def plugin(kernel, lifecycle=None):
 
             lut = [thresh(g) for g in range(256)]
             img = img.point(lut)
-            image_node.image = img
 
             elements = context.elements
-            node = elements.elem_branch.add(image=image_node, type="elem image")
+            node = elements.elem_branch.add(
+                image=img, type="elem image", matrix=copy(node.matrix)
+            )
             elements.classify([node])
         return "image", data
 

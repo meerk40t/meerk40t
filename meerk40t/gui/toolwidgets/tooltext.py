@@ -20,9 +20,17 @@ class TextTool(ToolWidget):
     def __init__(self, scene):
         ToolWidget.__init__(self, scene)
         self.start_position = None
+        self.last_node_created = None
 
     def process_draw(self, gc: wx.GraphicsContext):
         pass
+
+    def refocus_text(self):
+        node = self.last_node_created
+        if node is None:
+            return
+        self.scene.context.elements.set_emphasis([node])
+        node.focus()
 
     def event(
         self,
@@ -54,15 +62,19 @@ class TextTool(ToolWidget):
             if self.scene.context.elements.classify_new:
                 self.scene.context.elements.classify([node])
             self.notify_created(node)
-            self.scene.context.elements.set_selected([node])
+            node.focus()
             activate = self.scene.context.kernel.lookup(
                 "function/open_property_window_for_node"
             )
             if activate is not None:
                 activate(node)
+            node.focus()
             self.scene.context.signal("selected")
             self.scene.context.signal("textselect", node)
-
+            # The ugliest hack ever, somewhere the node gets defocussed,
+            # so we are trying to bring it back after all the ruckus happened...
+            self.last_node_created = node
+            wx.CallLater(750, self.refocus_text)
             response = RESPONSE_CONSUME
         elif event_type == "lost" or (event_type == "key_up" and modifiers == "escape"):
             if self.scene.tool_active:

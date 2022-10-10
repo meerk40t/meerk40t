@@ -45,37 +45,42 @@ class SpoolerPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.available_devices = context.kernel.services("device")
-        if selected_device is not None:
-            self.selected_device = self.available_devices[selected_device]
-        else:
-            self.selected_device = self.context.device
-        index = -1
-        for i, s in enumerate(self.available_devices):
-            if s is self.selected_device:
-                index = i
-                break
+        self.filter_device = None
         spools = [s.label for s in self.available_devices]
+        spools.insert(0, _("-- All available devices --"))
+        self.queue_entries = []
 
+        self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
+        sty = wx.BORDER_SUNKEN
+
+        self.win_top = wx.Window(self.splitter, style=sty)
+        self.win_bottom = wx.Window(self.splitter, style=sty)
+        self.splitter.SetMinimumPaneSize(50)
+        self.splitter.SplitHorizontally(self.win_top, self.win_bottom, -100)
+        self.context.setting(int, "spooler_sash_position", 0)
+        self.splitter.SetSashPosition(self.context.spooler_sash_position)
         self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
+            self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
         )
-        self.combo_device.SetSelection(index)
-        self.button_pause = wx.Button(self, wx.ID_ANY, _("Pause"))
+        self.combo_device.SetSelection(0)  # All by default...
+        self.button_pause = wx.Button(self.win_top, wx.ID_ANY, _("Pause"))
         self.button_pause.SetToolTip(_("Pause/Resume the laser"))
         self.button_pause.SetBitmap(icons8_pause_50.GetBitmap(resize=25))
-        self.button_stop = wx.Button(self, wx.ID_ANY, _("Abort"))
+        self.button_stop = wx.Button(self.win_top, wx.ID_ANY, _("Abort"))
         self.button_stop.SetToolTip(_("Stop the laser"))
         self.button_stop.SetBitmap(icons8_emergency_stop_button_50.GetBitmap(resize=25))
         self.button_stop.SetBackgroundColour(wx.Colour(127, 0, 0))
 
         self.list_job_spool = wx.ListCtrl(
-            self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
+            self.win_top, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES
         )
 
-        self.info_label = wx.StaticText(self, wx.ID_ANY, _("Completed jobs:"))
-        self.btn_clear = wx.Button(self, wx.ID_ANY, _("Clear History"))
+        self.info_label = wx.StaticText(
+            self.win_bottom, wx.ID_ANY, _("Completed jobs:")
+        )
+        self.btn_clear = wx.Button(self.win_bottom, wx.ID_ANY, _("Clear History"))
         self.list_job_history = wx.ListCtrl(
-            self,
+            self.win_bottom,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
         )
@@ -88,6 +93,10 @@ class SpoolerPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.on_list_drag, self.list_job_spool)
+
+        self.splitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.on_sash_changed)
+        self.splitter.Bind(wx.EVT_SPLITTER_DOUBLECLICKED, self.on_sash_double)
+
         self.list_job_spool.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_item_selected)
         self.list_job_spool.Bind(wx.EVT_LEFT_DCLICK, self.on_item_doubleclick)
         self.Bind(
@@ -104,11 +113,35 @@ class SpoolerPanel(wx.Panel):
         self.elements_progress_total = 0
         self.command_index = 0
         self.history = []
-        self.reload_history()
         self.listener_list = None
         self.list_lookup = {}
-        if index == -1:
-            disable_window(self)
+        self.column_job = {
+            "idx": 0,
+            "device": 1,
+            "jobname": 2,
+            "entries": 3,
+            "status": 4,
+            "type": 5,
+            "passes": 6,
+            "priority": 7,
+            "runtime": 8,
+            "estimate": 9,
+        }
+
+        self.column_history = {
+            "idx": 0,
+            "device": 1,
+            "jobname": 2,
+            "start": 3,
+            "end": 4,
+            "runtime": 5,
+            "passes": 6,
+        }
+
+        self.reload_history()
+
+        # if index == -1:
+        #     disable_window(self)
 
     def __set_properties(self):
         # begin wxGlade: SpoolerPanel.__set_properties
@@ -116,7 +149,12 @@ class SpoolerPanel(wx.Panel):
         self.list_job_spool.SetToolTip(_("List and modify the queued operations"))
         self.list_job_spool.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
         self.list_job_spool.AppendColumn(
-            _("Name"), format=wx.LIST_FORMAT_LEFT, width=143
+            _("Device"),
+            format=wx.LIST_FORMAT_LEFT,
+            width=95,
+        )
+        self.list_job_spool.AppendColumn(
+            _("Name"), format=wx.LIST_FORMAT_LEFT, width=95
         )
         self.list_job_spool.AppendColumn(
             _("Items"), format=wx.LIST_FORMAT_LEFT, width=45
@@ -143,7 +181,10 @@ class SpoolerPanel(wx.Panel):
         self.list_job_history.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
 
         self.list_job_history.AppendColumn(
-            _("Name"), format=wx.LIST_FORMAT_LEFT, width=143
+            _("Device"), format=wx.LIST_FORMAT_LEFT, width=95
+        )
+        self.list_job_history.AppendColumn(
+            _("Name"), format=wx.LIST_FORMAT_LEFT, width=95
         )
         self.list_job_history.AppendColumn(
             _("Start"), format=wx.LIST_FORMAT_LEFT, width=73
@@ -157,39 +198,61 @@ class SpoolerPanel(wx.Panel):
         self.list_job_history.AppendColumn(
             _("Passes"), format=wx.LIST_FORMAT_LEFT, width=73
         )
-        self.list_job_history.AppendColumn(
-            _("Device"), format=wx.LIST_FORMAT_LEFT, width=143
-        )
 
         # end wxGlade
 
     def __do_layout(self):
-        # begin wxGlade: SpoolerPanel.__do_layout
-        sizer_frame = wx.BoxSizer(wx.VERTICAL)
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+
+        sizer_top = wx.BoxSizer(wx.VERTICAL)
+        sizer_bottom = wx.BoxSizer(wx.VERTICAL)
         sizer_combo_cmds = wx.BoxSizer(wx.HORIZONTAL)
         sizer_combo_cmds.Add(self.combo_device, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_combo_cmds.Add(self.button_pause, 0, wx.EXPAND, 0)
         sizer_combo_cmds.Add(self.button_stop, 0, wx.EXPAND, 0)
 
-        sizer_frame.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
-        sizer_frame.Add(self.list_job_spool, 4, wx.EXPAND, 0)
+        sizer_top.Add(sizer_combo_cmds, 0, wx.EXPAND, 0)
+        sizer_top.Add(self.list_job_spool, 4, wx.EXPAND, 0)
+        self.win_top.SetSizer(sizer_top)
+        sizer_top.Fit(self.win_top)
+
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(self.info_label, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         hsizer.Add(self.btn_clear, 0, wx.EXPAND, 0)
-        sizer_frame.Add(hsizer, 0, wx.EXPAND, 0)
-        sizer_frame.Add(self.list_job_history, 2, wx.EXPAND, 0)
-        self.SetSizer(sizer_frame)
-        sizer_frame.Fit(self)
+        sizer_bottom.Add(hsizer, 0, wx.EXPAND, 0)
+        sizer_bottom.Add(self.list_job_history, 2, wx.EXPAND, 0)
+        self.win_bottom.SetSizer(sizer_bottom)
+        sizer_bottom.Fit(self.win_bottom)
+
+        sizer_main.Add(self.splitter, 1, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
         self.Layout()
         # end wxGlade
+
+    def on_sash_changed(self, event):
+        position = self.splitter.GetSashPosition()
+        self.context.spooler_sash_position = position
+
+    def on_sash_double(self, event):
+        self.splitter.SetSashPosition(0, True)
+        self.context.spooler_sash_position = 0
 
     def on_item_selected(self, event):
         self.current_item = event.Index
 
     def on_btn_clear(self, event):
-        self.history = []
-        self.list_job_history.DeleteAllItems()
+        if self.filter_device is None:
+            self.history = []
+        else:
+            idx = 0
+            while idx < len(self.history):
+                if self.history[idx][3] == self.filter_device:
+                    self.history.pop(idx)
+                else:
+                    idx += 1
         self.save_history()
+        self.refresh_history()
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -199,9 +262,13 @@ class SpoolerPanel(wx.Panel):
 
     def on_combo_device(self, event=None):  # wxGlade: Spooler.<event_handler>
         index = self.combo_device.GetSelection()
-        self.selected_device = self.available_devices[index]
+        if index == 0:
+            self.filter_device = None
+        else:
+            self.filter_device = self.available_devices[index - 1].label
         self.update_spooler = True
         self.refresh_spooler_list()
+        self.refresh_history()
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         # Todo: Drag to reprioritise jobs
@@ -244,10 +311,12 @@ class SpoolerPanel(wx.Panel):
         print(msgstr)
 
     def on_item_rightclick(self, event):  # wxGlade: JobSpooler.<event_handler>
-        index = event.Index
-        spooler = self.selected_device.spooler
+        listindex = event.Index
+        index = self.list_job_spool.GetItemData(listindex)
         try:
-            element = spooler.queue[index]
+            spooler = self.queue_entries[index][0]
+            qindex = self.queue_entries[index][1]
+            element = spooler.queue[qindex]
         except IndexError:
             return
 
@@ -258,11 +327,14 @@ class SpoolerPanel(wx.Panel):
             action = _("Remove")
         item = menu.Append(
             wx.ID_ANY,
-            _("{action} {name}").format(action=action, name=str(element)[:30]),
+            "{action} {name} [{label}]".format(
+                action=action, name=str(element)[:30], label=spooler.context.label
+            ),
             "",
             wx.ITEM_NORMAL,
         )
-        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(element), item)
+        info_tuple = [spooler, element]
+        self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(info_tuple), item)
 
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
         self.Bind(wx.EVT_MENU, self.on_tree_popup_clear(element), item)
@@ -272,16 +344,26 @@ class SpoolerPanel(wx.Panel):
 
     def on_tree_popup_clear(self, element=None):
         def clear(event=None):
-            spooler = self.selected_device.spooler
-            spooler.clear_queue()
+            spoolers = []
+            for device in self.available_devices:
+                addit = True
+                if (
+                    self.filter_device is not None
+                    and device.label != self.filter_device
+                ):
+                    addit = False
+                if addit:
+                    spoolers.append(device.spooler)
+            for spooler in spoolers:
+                spooler.clear_queue()
             self.refresh_spooler_list()
 
         return clear
 
-    def on_tree_popup_delete(self, element, index=None):
+    def on_tree_popup_delete(self, element):
         def delete(event=None):
-            spooler = self.selected_device.spooler
-            spooler.remove(element, index)
+            spooler = element[0]
+            spooler.remove(element[1])
             self.refresh_spooler_list()
 
         return delete
@@ -306,108 +388,144 @@ class SpoolerPanel(wx.Panel):
             self.list_job_spool.DeleteAllItems()
         except RuntimeError:
             return
+        self.queue_entries = []
+        queue_idx = -1
+        for device in self.available_devices:
+            spooler = device.spooler
+            if spooler is None:
+                continue
+            if self.filter_device is not None and self.filter_device != device.label:
+                continue
+            for idx, e in enumerate(spooler.queue):
+                self.queue_entries.append([spooler, idx])
+                queue_idx += 1
+                # Idx, Status, Type, Passes, Priority, Runtime, Estimate
+                m = self.list_job_spool.InsertItem(idx, f"#{idx}")
+                list_id = m
+                spool_obj = e
 
-        spooler = self.selected_device.spooler
-        if spooler is None:
-            return
-
-        for idx, e in enumerate(spooler.queue):
-            # Idx, Status, Type, Passes, Priority, Runtime, Estimate
-            m = self.list_job_spool.InsertItem(idx, f"#{idx}")
-            list_id = m
-            spool_obj = e
-
-            if list_id != -1:
-                # IDX
-                to_display = ""
-                if hasattr(spool_obj, "label"):
-                    to_display = spool_obj.label
-                    if to_display is None:
-                        to_display = ""
-                if to_display == "":
-                    to_display = SpoolerPanel._name_str(spool_obj)
-                if to_display.endswith(" items"):
-                    # Look for last ':' and remove everything from there
-                    cpos = -1
-                    lpos = -1
-                    while True:
-                        lpos = to_display.find(":", lpos + 1)
-                        if lpos == -1:
-                            break
-                        cpos = lpos
-                    if cpos > 0:
-                        to_display = to_display[:cpos]
-
-                self.list_job_spool.SetItem(list_id, 1, to_display)
-                # Entries
-                joblen = 1
-                try:
-                    if hasattr(spool_obj, "items"):
-                        joblen = len(spool_obj.items)
-                    elif hasattr(spool_obj, "elements"):
-                        joblen = len(spool_obj.elements)
-                except AttributeError:
-                    joblen = 1
-                self.list_job_spool.SetItem(list_id, 2, str(joblen))
-                # STATUS
-                # try:
-                status = spool_obj.status
-                # except AttributeError:
-                # status = _("Queued")
-                self.list_job_spool.SetItem(list_id, 3, status)
-
-                # TYPE
-                try:
+                if list_id != -1:
+                    self.list_job_spool.SetItemData(list_id, queue_idx)
+                    # DEVICE
                     self.list_job_spool.SetItem(
-                        list_id, 4, str(spool_obj.__class__.__name__)
+                        list_id, self.column_job["device"], device.label
                     )
-                except AttributeError:
-                    pass
+                    # Jobname
+                    to_display = ""
+                    if hasattr(spool_obj, "label"):
+                        to_display = spool_obj.label
+                        if to_display is None:
+                            to_display = ""
+                    if to_display == "":
+                        to_display = SpoolerPanel._name_str(spool_obj)
+                    if to_display.endswith(" items"):
+                        # Look for last ':' and remove everything from there
+                        cpos = -1
+                        lpos = -1
+                        while True:
+                            lpos = to_display.find(":", lpos + 1)
+                            if lpos == -1:
+                                break
+                            cpos = lpos
+                        if cpos > 0:
+                            to_display = to_display[:cpos]
 
-                # PASSES
-                try:
-                    loop = spool_obj.loops_executed
-                    total = spool_obj.loops
+                    self.list_job_spool.SetItem(
+                        list_id, self.column_job["jobname"], to_display
+                    )
+                    # Entries
+                    joblen = 1
+                    try:
+                        if hasattr(spool_obj, "items"):
+                            joblen = len(spool_obj.items)
+                        elif hasattr(spool_obj, "elements"):
+                            joblen = len(spool_obj.elements)
+                    except AttributeError:
+                        joblen = 1
+                    self.list_job_spool.SetItem(
+                        list_id, self.column_job["entries"], str(joblen)
+                    )
+                    # STATUS
+                    # try:
+                    status = spool_obj.status
+                    # except AttributeError:
+                    # status = _("Queued")
+                    self.list_job_spool.SetItem(
+                        list_id, self.column_job["status"], status
+                    )
 
-                    if isinf(total):
-                        total = "∞"
-                    pass_str = f"{loop}/{total}"
-                    pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
-                    self.list_job_spool.SetItem(list_id, 5, pass_str)
-                except AttributeError:
-                    self.list_job_spool.SetItem(list_id, 5, "-")
+                    # TYPE
+                    try:
+                        self.list_job_spool.SetItem(
+                            list_id,
+                            self.column_job["type"],
+                            str(spool_obj.__class__.__name__),
+                        )
+                    except AttributeError:
+                        pass
 
-                # Priority
-                try:
-                    self.list_job_spool.SetItem(list_id, 6, f"{spool_obj.priority}")
-                except AttributeError:
-                    self.list_job_spool.SetItem(list_id, 6, "-")
+                    # PASSES
+                    try:
+                        loop = spool_obj.loops_executed
+                        total = spool_obj.loops
 
-                # Runtime
-                try:
-                    t = spool_obj.elapsed_time()
-                    hours, remainder = divmod(t, 3600)
-                    minutes, seconds = divmod(remainder, 60)
-                    runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-                    self.list_job_spool.SetItem(list_id, 7, runtime)
-                except AttributeError:
-                    self.list_job_spool.SetItem(list_id, 7, "-")
+                        if isinf(total):
+                            total = "∞"
+                        pass_str = f"{loop}/{total}"
+                        pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["passes"], pass_str
+                        )
+                    except AttributeError:
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["passes"], "-"
+                        )
 
-                # Estimate Time
-                try:
-                    t = spool_obj.estimate_time()
-                    if isinf(t):
-                        runtime = "∞"
-                    else:
+                    # Priority
+                    try:
+                        self.list_job_spool.SetItem(
+                            list_id,
+                            self.column_job["priority"],
+                            f"{spool_obj.priority}",
+                        )
+                    except AttributeError:
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["priority"], "-"
+                        )
+
+                    # Runtime
+                    try:
+                        t = spool_obj.elapsed_time()
                         hours, remainder = divmod(t, 3600)
                         minutes, seconds = divmod(remainder, 60)
                         runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-                    self.list_job_spool.SetItem(list_id, 8, runtime)
-                except AttributeError:
-                    self.list_job_spool.SetItem(list_id, 8, "-")
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["runtime"], runtime
+                        )
+                    except AttributeError:
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["runtime"], "-"
+                        )
+
+                    # Estimate Time
+                    try:
+                        t = spool_obj.estimate_time()
+                        if isinf(t):
+                            runtime = "∞"
+                        else:
+                            hours, remainder = divmod(t, 3600)
+                            minutes, seconds = divmod(remainder, 60)
+                            runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["estimate"], runtime
+                        )
+                    except AttributeError:
+                        self.list_job_spool.SetItem(
+                            list_id, self.column_job["estimate"], "-"
+                        )
         self._last_invokation = time.time()
 
-    def refresh_history(self, newestinfo):
+    def refresh_history(self, newestinfo=None):
         def timestr(t, oneday):
             if oneday:
                 localt = time.localtime(t)
@@ -423,25 +541,47 @@ class SpoolerPanel(wx.Panel):
         if newestinfo is not None:
             self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
-        for idx, info in enumerate(self.history):
+        idx = 0
+        for info in self.history:
+            addit = True
+            if self.filter_device is not None:
+                if info[3] != self.filter_device:
+                    addit = False
+            if not addit:
+                continue
+            idx += 1
             list_id = self.list_job_history.InsertItem(
                 self.list_job_history.GetItemCount(), f"#{idx}"
             )
             if info[1] is None:
                 continue
-            self.list_job_history.SetItem(list_id, 1, info[0])
+            self.list_job_history.SetItem(
+                list_id, self.column_history["jobname"], info[0]
+            )
             starttime = timestr(info[1], True)
-            self.list_job_history.SetItem(list_id, 2, starttime)
+            self.list_job_history.SetItem(
+                list_id, self.column_history["start"], starttime
+            )
             starttime = timestr(info[1] + info[2], True)
-            self.list_job_history.SetItem(list_id, 3, starttime)
+            self.list_job_history.SetItem(
+                list_id, self.column_history["end"], starttime
+            )
             runtime = timestr(info[2], False)
-            self.list_job_history.SetItem(list_id, 4, runtime)
+            self.list_job_history.SetItem(
+                list_id, self.column_history["runtime"], runtime
+            )
             # First passes then device
             if len(info) >= 5:
-                self.list_job_history.SetItem(list_id, 5, info[4])
+                self.list_job_history.SetItem(
+                    list_id, self.column_history["passes"], info[4]
+                )
             else:
-                self.list_job_history.SetItem(list_id, 5, "???")
-            self.list_job_history.SetItem(list_id, 6, info[3])
+                self.list_job_history.SetItem(
+                    list_id, self.column_history["passes"], "???"
+                )
+            self.list_job_history.SetItem(
+                list_id, self.column_history["device"], info[3]
+            )
 
     def reload_history(self):
         self.history = []
@@ -457,7 +597,7 @@ class SpoolerPanel(wx.Panel):
             if len(self.history[0]) < 5:
                 # Incompatible
                 self.history = []
-        self.refresh_history(None)
+        self.refresh_history()
 
     def save_history(self):
         directory = os.path.dirname(self.context.elements.op_data._config_file)
@@ -476,9 +616,15 @@ class SpoolerPanel(wx.Panel):
         index = -1
         for i, s in enumerate(self.available_devices):
             if s is self.selected_device:
-                index = i
+                index = i + 1
                 break
         spools = [s.label for s in self.available_devices]
+        spools.insert(0, _("-- All available devices --"))
+        # This might not be relevant if you have a stable device set, but there might always be
+        # changes to add / rename devices etc.
+        if self.combo_device.GetSelection() == 0:
+            # all devices is a superset of any device, so we can leave it...
+            index = 0
         self.combo_device.Clear()
         self.combo_device.SetItems(spools)
         self.combo_device.SetSelection(index)
@@ -490,7 +636,7 @@ class SpoolerPanel(wx.Panel):
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
         if info is None:
             return
-        self.refresh_history(info)
+        self.refresh_history(newestinfo=info)
         self.save_history()
 
     @signal_listener("spooler;queue")
@@ -507,9 +653,6 @@ class SpoolerPanel(wx.Panel):
         dtime = time.time()
         if dtime - self._last_invokation < 2:
             return
-        spooler = self.selected_device.spooler
-        if spooler is None:
-            return
         # Two things (at least) could go wrong:
         # 1) You are in the wrong queue, ie there's a job running in the background a
         #    that provides an update but the user has changed the device so a different
@@ -517,31 +660,36 @@ class SpoolerPanel(wx.Panel):
         # 2) As this is a signal it may come later, ie the job has already finished
         #
         # The checks here are rather basic and need to be revisited
-        # !!! TODO !!!
+        refresh_needed = False
         try:
-            if len(spooler.queue) != self.list_job_spool.GetItemCount():
-                # Mismatch
-                return
+            listctrl = self.list_job_spool
         except RuntimeError:
-            # happens when a routine for a previous instance is called
-            #    RuntimeError: wrapped C/C++ object of type ListCtrl has been deleted
-            # This is a *very * crude workaround and needs to be revisited as well
             return
-
         self._last_invokation = dtime
-        for idx, spool_obj in enumerate(spooler.queue):
-            list_id = idx
-            # Runtime
+        for list_id, entry in enumerate(self.queue_entries):
+            spooler = entry[0]
+            qindex = entry[1]
+            if qindex >= len(spooler.queue):
+                # This item is nowhere to be found
+                refresh_needed = True
+                continue
+            spool_obj = spooler.queue[qindex]
             try:
                 t = spool_obj.elapsed_time()
                 hours, remainder = divmod(t, 3600)
                 minutes, seconds = divmod(remainder, 60)
                 runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
                 if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, 7, runtime)
+                    self.list_job_spool.SetItem(
+                        list_id, self.column_job["runtime"], runtime
+                    )
             except (AttributeError, AssertionError):
                 if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, 7, "-")
+                    self.list_job_spool.SetItem(
+                        list_id, self.column_job["runtime"], "-"
+                    )
+                else:
+                    refresh_needed = True
 
             try:
                 loop = spool_obj.loops_executed
@@ -549,9 +697,17 @@ class SpoolerPanel(wx.Panel):
 
                 if isinf(total):
                     total = "∞"
-                self.list_job_spool.SetItem(list_id, 5, f"{loop}/{total}")
+                pass_str = f"{loop}/{total}"
+                pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
+
+                self.list_job_spool.SetItem(
+                    list_id, self.column_job["passes"], pass_str
+                )
             except AttributeError:
-                self.list_job_spool.SetItem(list_id, 5, "-")
+                if list_id < self.list_job_spool.GetItemCount():
+                    self.list_job_spool.SetItem(list_id, self.column_job["passes"], "-")
+                else:
+                    refresh_needed = True
 
             # Estimate Time
             try:
@@ -564,10 +720,19 @@ class SpoolerPanel(wx.Panel):
                     runtime = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
                 if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, 8, runtime)
+                    self.list_job_spool.SetItem(
+                        list_id, self.column_job["estimate"], runtime
+                    )
             except (AttributeError, AssertionError):
                 if list_id < self.list_job_spool.GetItemCount():
-                    self.list_job_spool.SetItem(list_id, 8, "-")
+                    self.list_job_spool.SetItem(
+                        list_id, self.column_job["estimate"], "-"
+                    )
+                else:
+                    refresh_needed = True
+        if refresh_needed:
+            self.refresh_spooler_list()
+            self.reload_history()
 
 
 class JobSpooler(MWindow):
@@ -596,6 +761,7 @@ class JobSpooler(MWindow):
                 "icon": icons8_route_50,
                 "tip": _("Opens Spooler Window"),
                 "action": lambda v: kernel.console("window toggle JobSpooler\n"),
+                "priority": -1,
             },
         )
 
