@@ -1,3 +1,5 @@
+from time import time
+from time import time
 import wx
 
 from meerk40t.core.units import Length
@@ -11,6 +13,7 @@ from meerk40t.gui.scene.sceneconst import (
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Color
 
+_ = wx.GetTranslation
 
 class LineTextTool(ToolWidget):
     """
@@ -27,6 +30,8 @@ class LineTextTool(ToolWidget):
         self.color = None
         self.tsize = 0
         self.vtext = ""
+        self.anim_count = 0
+        self.last_anim = 0
 
     def process_draw(self, gc: wx.GraphicsContext):
         # We just draw a cursor rectangle...
@@ -67,11 +72,15 @@ class LineTextTool(ToolWidget):
 
             x0 = self.p1.real + offsetx
             y0 = self.p1.imag - cursorheight + offsety
-
             mycol = wx.Colour(swizzlecolor(self.color))
             self.pen.SetColour(mycol)
             gc.SetPen(self.pen)
-            gc.SetBrush(wx.Brush(mycol, wx.BRUSHSTYLE_SOLID))
+            if self.anim_count == 0:
+                self.anim_count = 1
+                gc.SetBrush(wx.Brush(mycol, wx.BRUSHSTYLE_SOLID))
+            else:
+                self.anim_count = 0
+                gc.SetBrush(wx.Brush(mycol, wx.BRUSHSTYLE_TRANSPARENT))
             gc.DrawRectangle(x0, y0, cursorwidth, cursorheight)
 
     def event(
@@ -95,11 +104,13 @@ class LineTextTool(ToolWidget):
             self.node = None
             self.scene.context("tool none\n")
             self.scene.context("window close HersheyFontSelector\n")
+            self.scene.context.signal("statusmsg", "")
 
         response = RESPONSE_CHAIN
         if event_type == "leftdown":
             if self.p1 is None:
                 self.scene.tool_active = True
+                self.scene.animate(self)
                 if self.scene.context.elements.default_stroke is None:
                     self.color = Color("black")
                 else:
@@ -115,14 +126,12 @@ class LineTextTool(ToolWidget):
                 self.node.stroke = self.color
                 self.scene.context.elements.elem_branch.add_node(self.node)
                 self.scene.context.signal("element_added", self.node)
+                self.scene.context.signal("statusmsg", _("Complete text-entry by pressing either Enter or Escape"))
                 self.node.emphasized = False
-                try:
-                    curr_win = wx.GetActiveWindow()
-                except:
-                    curr_win = None
+
                 self.scene.context("window open HersheyFontSelector\n")
-                if curr_win is not None:
-                    curr_win.SetFocus()
+                # Refocus, to allow typing...
+                self.scene.gui.scene_panel.SetFocus()
 
             response = RESPONSE_CONSUME
         elif event_type == "doubleclick":
@@ -171,6 +180,17 @@ class LineTextTool(ToolWidget):
             else:
                 response = RESPONSE_CHAIN
         return response
+
+    # Animation logic
+    def tick(self):
+        if self.p1 is None:
+            return False
+        t = time()
+        if t - self.last_anim > 0.5:
+            self.last_anim = t
+            self.scene.request_refresh_for_animation()
+
+        return True
 
     def signal(self, signal, *args, **kwargs):
         if self.node is None:
