@@ -54,6 +54,7 @@ class JhfFont:
         self.glyphs = dict()  # Glyph dictionary
         tempstr = os.path.basename(filename)
         fname, fext = os.path.splitext(tempstr)
+        self.valid = False
         self.font_name = fname
         self._parse(filename)
 
@@ -135,10 +136,14 @@ class JhfFont:
 
     def _parse(self, filename):
         self.lines = []
-        with open(filename) as f:
-            glyphindex = 32
-            while self._read_hershey_glyph(f, glyphindex):
-                glyphindex += 1
+        try:
+            with open(filename) as f:
+                glyphindex = 32
+                while self._read_hershey_glyph(f, glyphindex):
+                    glyphindex += 1
+                self.valid = True
+        except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+            self.valid = False
 
     def render(self, path, text, horizontal=True, font_size=12.0):
         """
