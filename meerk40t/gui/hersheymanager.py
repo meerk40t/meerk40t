@@ -464,7 +464,7 @@ class PanelFontManager(wx.Panel):
 
     def on_btn_import(self, event):
         fontinfo = fonts_registered()
-        wildcard = "Vector-Fonts|"
+        wildcard = "Vector-Fonts"
         idx = 0
         for extension in fontinfo:
             ext = "*." + extension
@@ -478,7 +478,6 @@ class PanelFontManager(wx.Panel):
             ext = "*." + extension
             info = fontinfo[extension]
             wildcard += f"|{info[0]}-Fonts|{ext.lower()};{ext.upper()}"
-
         dlg = wx.FileDialog(
             self,
             message=_("Select a font-file to be imported into the the font-directory {fontdir}").format(fontdir=self.context.font_directory),
