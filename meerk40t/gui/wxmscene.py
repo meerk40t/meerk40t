@@ -974,26 +974,34 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
+        ignore = self.widget_scene.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_down: {keyvalue}.")
-        if self.context.bind.trigger(keyvalue):
+        if not ignore and self.context.bind.trigger(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_down: {keyvalue} executed.")
         else:
             if self._keybind_channel:
-                self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
+                if ignore:
+                    self._keybind_channel(f"Scene key_down: {keyvalue} was ignored as tool active.")
+                else:
+                    self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
         event.Skip()
 
     def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
+        ignore = self.widget_scene.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_up: {keyvalue}.")
-        if self.context.bind.untrigger(keyvalue):
+        if not ignore and self.context.bind.untrigger(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_up: {keyvalue} executed.")
         else:
             if self._keybind_channel:
-                self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
+                if ignore:
+                    self._keybind_channel(f"Scene key_up: {keyvalue} was ignored as tool active.")
+                else:
+                    self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
 
 
