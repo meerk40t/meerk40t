@@ -515,50 +515,53 @@ class SpoolerPanel(wx.Panel):
                         )
         self._last_invokation = time.time()
 
-    def refresh_history(self, newestinfo=None):
-        def timestr(t, oneday):
-            if oneday:
-                localt = time.localtime(t)
-                hours = localt[3]
-                minutes = localt[4]
-                seconds = localt[5]
-            else:
-                hours, remainder = divmod(t, 3600)
-                minutes, seconds = divmod(remainder, 60)
-            result = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
-            return result
-
-        def datestr(t):
+    @staticmethod
+    def timestr(t, oneday):
+        if oneday:
             localt = time.localtime(t)
-            lyear = localt[0]
-            lmonth = int(localt[1])
-            lday = localt[2]
-            lhour = localt[3]
-            lminute = localt[4]
-            lsecond = localt[5]
-            # wx.DateTime has a bug: it does always provide the dateformat
-            # string with a month representation one number too high, so
-            # wx.DateTime(31,01,1999)
-            # Arbitrary but with different figures
-            # Alas this is the only simple method to get locale relevant dateformat...
-            wxdt = wx.DateTime(31, 7, 2022)
-            pattern = wxdt.FormatDate()
-            pattern = pattern.replace("2022", "{yy}")
-            pattern = pattern.replace("22", "{yy}")
-            pattern = pattern.replace("31", "{dd}")
-            # That would be the right thing, so if the bug is ever fixed, that will work
-            pattern = pattern.replace("07", "{mm}")
-            pattern = pattern.replace("7", "{mm}")
-            # And this the bug...
-            pattern = pattern.replace("08", "{mm}")
-            pattern = pattern.replace("8", "{mm}")
-            result = pattern.format(dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), yy=str(lyear).zfill(2))
-            # Just to show the bug...
-            # result1 = f"{int(lday)}.{str(int(lmonth)).zfill(2)}.{str(int(lyear)).zfill(2)}"
-            # wxdt = wx.DateTime(lday, lmonth, lyear, lhour, lminute, lsecond)
-            # result2 = wxdt.FormatDate()
-            # print(f"res={result}, wxd={result2}, manual={result1}, pattern={pattern}")
-            return result
+            hours = localt[3]
+            minutes = localt[4]
+            seconds = localt[5]
+        else:
+            hours, remainder = divmod(t, 3600)
+            minutes, seconds = divmod(remainder, 60)
+        result = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+        return result
+
+    @staticmethod
+    def datestr(t):
+        localt = time.localtime(t)
+        lyear = localt[0]
+        lmonth = int(localt[1])
+        lday = localt[2]
+        lhour = localt[3]
+        lminute = localt[4]
+        lsecond = localt[5]
+        # wx.DateTime has a bug: it does always provide the dateformat
+        # string with a month representation one number too high, so
+        # wx.DateTime(31,01,1999)
+        # Arbitrary but with different figures
+        # Alas this is the only simple method to get locale relevant dateformat...
+        wxdt = wx.DateTime(31, 7, 2022)
+        pattern = wxdt.FormatDate()
+        pattern = pattern.replace("2022", "{yy}")
+        pattern = pattern.replace("22", "{yy}")
+        pattern = pattern.replace("31", "{dd}")
+        # That would be the right thing, so if the bug is ever fixed, that will work
+        pattern = pattern.replace("07", "{mm}")
+        pattern = pattern.replace("7", "{mm}")
+        # And this the bug...
+        pattern = pattern.replace("08", "{mm}")
+        pattern = pattern.replace("8", "{mm}")
+        result = pattern.format(dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), yy=str(lyear).zfill(2))
+        # Just to show the bug...
+        # result1 = f"{int(lday)}.{str(int(lmonth)).zfill(2)}.{str(int(lyear)).zfill(2)}"
+        # wxdt = wx.DateTime(lday, lmonth, lyear, lhour, lminute, lsecond)
+        # result2 = wxdt.FormatDate()
+        # print(f"res={result}, wxd={result2}, manual={result1}, pattern={pattern}")
+        return result
+
+    def refresh_history(self, newestinfo=None):
 
         if newestinfo is not None:
             self.history.insert(0, newestinfo)
@@ -582,15 +585,15 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(
                 list_id, self.column_history["jobname"], info[0]
             )
-            starttime = datestr(info[1]) + " " + timestr(info[1], True)
+            starttime = self.datestr(info[1]) + " " + self.timestr(info[1], True)
             self.list_job_history.SetItem(
                 list_id, self.column_history["start"], starttime
             )
-            starttime = timestr(info[1] + info[2], True)
+            starttime = self.timestr(info[1] + info[2], True)
             self.list_job_history.SetItem(
                 list_id, self.column_history["end"], starttime
             )
-            runtime = timestr(info[2], False)
+            runtime = self.timestr(info[2], False)
             self.list_job_history.SetItem(
                 list_id, self.column_history["runtime"], runtime
             )
@@ -628,12 +631,40 @@ class SpoolerPanel(wx.Panel):
         self.refresh_history()
 
     def save_history(self):
+        def escaped(s):
+            return s.replace('"', "'")
+
         directory = os.path.dirname(self.context.elements.op_data._config_file)
         filename = os.path.join(directory, "history.json")
         try:
             with open(filename, "w") as f:
                 json.dump(self.history, f)
         except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
+            pass
+        filename = os.path.join(directory, "history.csv")
+        try:
+            with open(filename, "w") as f:
+                simpleline = "device;jobname;start;end;duration;passes"
+                f.write(simpleline + "\n")
+                for info in self.history:
+                    if info[1] is None:
+                        continue
+                    simpleline = escaped(info[3])
+                    simpleline += ";" + escaped(info[0])
+                    starttime = self.datestr(info[1]) + " " + self.timestr(info[1], True)
+                    simpleline += ";" + starttime
+                    starttime = self.timestr(info[1] + info[2], True)
+                    simpleline += ";" + starttime
+                    runtime = self.timestr(info[2], False)
+                    simpleline += ";" + runtime
+                    # First passes then device
+                    if len(info) >= 5:
+                        simpleline += ";" + escaped(info[4])
+                    else:
+                        simpleline += ";''"
+                    f.write(simpleline + "\n")
+
+        except (PermissionError, OSError, FileNotFoundError):
             pass
 
     @signal_listener("activate;device")
