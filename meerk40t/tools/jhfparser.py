@@ -97,6 +97,8 @@ class JhfFont:
             idx = 0
             realleft = leftpos
             realright = rightpos
+            realtop = 0
+            realbottom = 0
             cidx = 0
             while idx < nverts:
                 leftchar = vertchars[2 * idx]
@@ -110,11 +112,17 @@ class JhfFont:
                     if cidx==0:
                         realleft = leftval
                         realright = leftval
+                        realtop = rightval
+                        realbottom = rightval
                     else:
                         if leftval < realleft:
                             realleft = leftval
                         if leftval > realright:
                             realright = leftval
+                        if rightval < realtop:
+                            realtop = rightval
+                        if rightval > realbottom:
+                            realbottom = rightval
                     cidx += 1
                 idx += 1
 
@@ -124,10 +132,13 @@ class JhfFont:
                 "num": glyphnum,
                 "left": leftpos,            # what the glyph claims
                 "right": rightpos,          # what the glyph claims
+                "top": realtop,             # extension to the top
+                "bottom": realbottom,       # extension to the bottom
                 "realleft": realleft,       # the real extension
                 "realright": realright,     # the real extension
                 "nverts": nverts,
                 "vertices": vertchars,
+
             }
             self.glyphs[glyphchar] = struct
             # if realleft != leftpos or realright != rightpos:
@@ -136,6 +147,8 @@ class JhfFont:
 
     def _parse(self, filename):
         self.lines = []
+        self.top = 0
+        self.bottom = 0
         try:
             with open(filename) as f:
                 glyphindex = 32
@@ -144,6 +157,19 @@ class JhfFont:
                 self.valid = True
         except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
             self.valid = False
+        # Establish font extension in X
+        cidx = 0
+        for g in self.glyphs:
+            struct = self.glyphs[g]
+            if cidx == 0:
+                self.top = struct["top"]
+                self.bottom = struct["bottom"]
+            else:
+                if self.top > struct["top"]:
+                    self.top = struct["top"]
+                if self.bottom < struct["bottom"]:
+                    self.bottom = struct["bottom"]
+            cidx += 1
 
     def render(self, path, text, horizontal=True, font_size=12.0):
         """
@@ -225,9 +251,9 @@ class JhfFont:
         for to_replace in replacer:
             # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
             text = text.replace(to_replace[0], to_replace[1])
-
+        # print (f"Top: {self.top}, bottom={self.bottom}")
+        offsety = -1 * self.top # Negative !
         for tchar in text:
-            tchar = tchar
             if tchar in self.glyphs:
                 # print(f"Char '{tchar}' (ord={ord(tchar)}), offsetx={offsetx}")
                 # if cidx > 0:
