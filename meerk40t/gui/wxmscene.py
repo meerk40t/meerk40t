@@ -158,6 +158,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/linetext", LineTextTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
+        from meerk40t.extra.hershey import have_hershey_fonts
         context.kernel.register(
             "button/tools/Linetext",
             {
@@ -167,6 +168,7 @@ class MeerK40tScenePanel(wx.Panel):
                 "action": lambda v: context.kernel.elements("tool linetext\n"),
                 "group": "tool",
                 "size": 50,
+                "rule_enabled": lambda cond: have_hershey_fonts(context),
                 "identifier": "linetext",
             },
         )

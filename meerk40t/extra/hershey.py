@@ -1,6 +1,6 @@
 import os.path
 from glob import glob
-from os.path import join, realpath
+from os.path import join, realpath, exists, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import Length
@@ -33,6 +33,18 @@ def fonts_registered():
     }
     return registered_fonts
 
+def have_hershey_fonts(context):
+    safe_dir = realpath(get_safe_path(context.kernel.name))
+    context.setting(str, "font_directory", safe_dir)
+    font_dir = context.font_directory
+    registered_fonts = fonts_registered()
+    for extension in registered_fonts:
+        for p in glob(join(font_dir, "*." + extension.lower())):
+            return True
+        for p in glob(join(font_dir, "*." + extension.upper())):
+            return True
+    return False
+
 
 def update_linetext(context, node, newtext):
     if node is None:
@@ -49,10 +61,10 @@ def update_linetext(context, node, newtext):
     # old_strokescaled = node._stroke_scaled
     font_dir = getattr(context, "font_directory", "")
     font_path = join(font_dir, fontname)
-    if not os.path.exists(font_path):
+    if not exists(font_path):
         return
     try:
-        filename, file_extension = os.path.splitext(font_path)
+        filename, file_extension = splitext(font_path)
         if len(file_extension)>0:
             # Remove dot...
             file_extension = file_extension[1:].lower()
@@ -72,18 +84,43 @@ def update_linetext(context, node, newtext):
 
 def create_linetext_node(context, x, y, text, font=None, font_size=None):
     registered_fonts = fonts_registered()
-    context.setting(str, "shx_preferred", None)
-    if font is not None:
-        context.shx_preferred = font
-    font = context.shx_preferred
+
     if font_size is None:
         font_size = Length("20px")
+
+    context.setting(str, "shx_preferred", None)
     safe_dir = realpath(get_safe_path(context.kernel.name))
     context.setting(str, "font_directory", safe_dir)
     font_dir = context.font_directory
+    if font is not None:
+        context.shx_preferred = font
+    font = context.shx_preferred
+    if font is not None and font != "":
+        font_path = join(font_dir, font)
+        if not exists(font_path):
+            # print (f"Font {font} could'nt be found, fallback to candidates")
+            font = None
+
+    if font is None or font == "":
+        # No preferred font set, let's try a couple of candidates...
+        candidates = (
+            "timesr.jhf",
+            "romant.shx",
+            "rowmans.jhf",
+            "FUTURA.SHX",
+        )
+        for fname in candidates:
+            fullfname = join(font_dir, fname)
+            if exists(fullfname):
+                # print (f"Taking font {fname} instead")
+                font = fname
+                context.shx_preferred = font
+                break
+    if font is None or font == "":
+        return None
     font_path = join(font_dir, font)
     try:
-        filename, file_extension = os.path.splitext(font_path)
+        filename, file_extension = splitext(font_path)
         if len(file_extension)>0:
             # Remove dot...
             file_extension = file_extension[1:].lower()
@@ -92,11 +129,25 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     except (KeyError, IndexError):
         # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
         return None
-    cfont = fontclass(font_path)
+    try:
+        cfont = fontclass(font_path)
+    except:
+        # Something went fundamentally wrong...
+        # print (f"Couldnt parse: {font_path}")
+        return None
     path = FontPath()
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
     horizontal = True
-    cfont.render(path, text, horizontal, float(font_size))
+    try:
+        cfont.render(path, text, horizontal, float(font_size))
+    except:
+        # Something went fundamentally wrong...
+        # print (f"Couldnt render: {font_path}")
+        return None
+    #  print (f"Pathlen={len(path.path)}")
+    # if len(path.path) == 0:
+    #     print("Empty path...")
+    #     return None
 
     path_node = PathNode(
         path=path.path,
