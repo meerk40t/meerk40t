@@ -40,13 +40,15 @@ class LineTextTool(ToolWidget):
             cursorheight = float(Length("8mm"))
             offsetx = 0
             offsety = 0
+            x0 = self.p1.real + offsetx
+            y0 = self.p1.imag - cursorheight
 
             if self.node is None or self.node.bounds is None:
-                if self.node is not None:
-                    if hasattr(self.node, "mkfont"):
-                        fname = self.node.mkfont
-                        if fname.lower().endswith(".jhf"):
-                            offsety = 0.5 * cursorheight
+                # if self.node is not None:
+                #     if hasattr(self.node, "mkfont"):
+                #         fname = self.node.mkfont
+                #         if fname.lower().endswith(".jhf"):
+                #             offsety = 0.5 * cursorheight
 
                 if self.scene.context.elements.default_stroke is None:
                     self.color = Color("black")
@@ -64,14 +66,14 @@ class LineTextTool(ToolWidget):
                 self.color = self.node.stroke
                 offsetx = self.node.bounds[2] - self.node.bounds[0]
                 cursorheight = self.node.bounds[3] - self.node.bounds[1]
-                if hasattr(self.node, "mkfont"):
-                    fname = self.node.mkfont
-                    if fname.lower().endswith(".jhf"):
-                        offsety = 0.5 * cursorheight
+                # if hasattr(self.node, "mkfont"):
+                #     fname = self.node.mkfont
+                #     if fname.lower().endswith(".jhf"):
+                #         offsety = 0.5 * cursorheight
                 self.pen.SetColour(wx.Colour(swizzlecolor(self.node.stroke)))
+                x0 = self.node.bounds[2]
+                y0 = self.node.bounds[1]
 
-            x0 = self.p1.real + offsetx
-            y0 = self.p1.imag - cursorheight + offsety
             mycol = wx.Colour(swizzlecolor(self.color))
             self.pen.SetColour(mycol)
             gc.SetPen(self.pen)
@@ -123,11 +125,12 @@ class LineTextTool(ToolWidget):
                 y = self.p1.imag
                 self.vtext = "Text"
                 self.node = create_linetext_node(self.scene.context, x, y, self.vtext)
-                self.node.stroke = self.color
-                self.scene.context.elements.elem_branch.add_node(self.node)
-                self.scene.context.signal("element_added", self.node)
-                self.scene.context.signal("statusmsg", _("Complete text-entry by pressing either Enter or Escape"))
-                self.node.emphasized = False
+                if self.node is not None:
+                    self.node.stroke = self.color
+                    self.scene.context.elements.elem_branch.add_node(self.node)
+                    self.scene.context.signal("element_added", self.node)
+                    self.scene.context.signal("statusmsg", _("Complete text-entry by pressing either Enter or Escape"))
+                    self.node.emphasized = False
 
                 self.scene.context("window open HersheyFontSelector\n")
                 # Refocus, to allow typing...
@@ -171,10 +174,16 @@ class LineTextTool(ToolWidget):
                 if len(to_add) > 0:
                     self.vtext += to_add
                 # print(self.vtext)
-                update_linetext(self.scene.context, self.node, self.vtext)
+                if self.node is None:
+                    x = self.p1.real
+                    y = self.p1.imag
+                    self.node = create_linetext_node(self.scene.context, x, y, self.vtext)
+                else:
+                    update_linetext(self.scene.context, self.node, self.vtext)
                 # self.node.stroke = self.color
                 # self.node.modified()
-                self.node.emphasized = False
+                if self.node is not None:
+                    self.node.emphasized = False
 
                 self.scene.request_refresh()
             else:
