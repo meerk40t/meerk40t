@@ -21,18 +21,22 @@ def create_preview_image(context, fontfile):
     base, ext = os.path.splitext(fontfile)
     bmpfile = base + ".png"
     pattern = "The quick brown fox..."
-    node = create_linetext_node(context, 0, 0, pattern, font=simplefont, font_size=Length("12pt"))
+    try:
+        node = create_linetext_node(context, 0, 0, pattern, font=simplefont, font_size=Length("12pt"))
+    except:
+        # Couldnt create the node...
+        node = None
     if node is None:
-        return
+        return False
     if node.bounds is None:
-        return
+        return False
     make_raster = context.elements.lookup("render-op/make_raster")
     if make_raster is None:
-        return
+        return False
     xmin, ymin, xmax, ymax = node.bounds
     if isinf(xmin):
         # No bounds for selected elements
-        return
+        return False
     width = xmax - xmin
     height = ymax - ymin
     dpi = 150
@@ -41,24 +45,29 @@ def create_preview_image(context, fontfile):
     new_height = height * dots_per_units
     new_height = max(new_height, 1)
     new_width = max(new_width, 1)
-    bitmap = make_raster(
-        [node],
-        bounds=node.bounds,
-        width=new_width,
-        height=new_height,
-        bitmap = True,
-    )
+    try:
+        bitmap = make_raster(
+            [node],
+            bounds=node.bounds,
+            width=new_width,
+            height=new_height,
+            bitmap = True,
+        )
+    except:
+        # Invalid path or whatever...
+        return False
     try:
         bitmap.SaveFile(bmpfile, wx.BITMAP_TYPE_PNG)
     except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
-        pass
+        return False
+    return True
 
 def load_create_preview_file(context, fontfile):
     bitmap = None
     base, ext = os.path.splitext(fontfile)
     bmpfile = base + ".png"
     if not os.path.exists(bmpfile):
-        create_preview_image(context, fontfile)
+        __ = create_preview_image(context, fontfile)
     if os.path.exists(bmpfile):
         bitmap = wx.Bitmap()
         bitmap.LoadFile(bmpfile, wx.BITMAP_TYPE_PNG)
@@ -70,6 +79,18 @@ def fontdirectory(context):
     context.setting(str, "font_directory", safe_dir)
     fontdir = context.font_directory
     return fontdir
+
+def remove_fontfile(fontfile):
+    if os.path.exists(fontfile):
+        try:
+            os.remove(fontfile)
+            base, ext = os.path.splitext(fontfile)
+            bmpfile = base + ".png"
+            if os.path.exists(bmpfile):
+                os.remove(bmpfile)
+        except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
+            pass
+
 
 class LineTextPropertPanel(wx.Panel):
     def __init__(
@@ -494,7 +515,18 @@ class PanelFontManager(wx.Panel):
         stats =  [0, 0]  # Successful, errors
         if font_files is None:
             return
-        for sourcefile in font_files:
+
+        maxidx = len(font_files)
+        progress_string = _("Fonts imported: {count}")
+        progress = wx.ProgressDialog(
+            _("Importing fonts..."),
+            progress_string.format(count=0),
+            maximum=maxidx,
+            parent=None,
+            style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT,
+        )
+
+        for idx, sourcefile in enumerate(font_files):
             basename = os.path.basename(sourcefile)
             destfile = os.path.join(self.context.font_directory, basename)
             # print (f"Source File: {sourcefile}\nTarget: {destfile}")
@@ -505,10 +537,22 @@ class PanelFontManager(wx.Panel):
                         if not block:  # end of file
                             break
                         g.write(block)
-                stats[0] += 1
-                create_preview_image(self.context, destfile)
+                isokay = create_preview_image(self.context, destfile)
+                if isokay:
+                    stats[0] += 1
+                else:
+                    # We delete this file again...
+                    remove_fontfile(destfile)
+                    stats[1] += 1
+
+                keepgoing = progress.Update(
+                        idx + 1, progress_string.format(count=idx + 1)
+                    )
+                if not keepgoing:
+                    break
             except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
                 stats[1] += 1
+        progress.Destroy()
         wx.MessageBox(
             _("Font-Import completed.\nImported: {ok}\nFailed: {fail}\nTotal: {total}").format(ok=stats[0], fail=stats[1], total=stats[0] + stats[1]),
             _("Import completed"),
@@ -526,12 +570,9 @@ class PanelFontManager(wx.Panel):
                 _("Confirm"),
                 wx.YES_NO | wx.CANCEL | wx.ICON_WARNING,
             ) == wx.YES:
-                try:
-                    os.remove(full_font_file)
-                    # Reload dir...
-                    self.on_text_directory(None)
-                except (OSError, IOError, RuntimeError, PermissionError, FileNotFoundError):
-                    pass
+                remove_fontfile(full_font_file)
+                # Reload dir...
+                self.on_text_directory(None)
 
     def on_combo_webget(self, event):
         idx = self.combo_webget.GetSelection() - 1
