@@ -1,4 +1,3 @@
-import os.path
 from glob import glob
 from os.path import join, realpath, exists, splitext
 
@@ -49,13 +48,13 @@ def have_hershey_fonts(context):
 def update_linetext(context, node, newtext):
     if node is None:
         return
-    if not hasattr(node, "font"):
+    if not hasattr(node, "mkfont"):
         return
-    if not hasattr(node, "fontsize"):
+    if not hasattr(node, "mkfontsize"):
         return
     registered_fonts = fonts_registered()
-    fontname = node.font
-    fontsize = node.fontsize
+    fontname = node.mkfont
+    fontsize = node.mkfontsize
     # old_color = node.stroke
     # old_strokewidth = node.stroke_width
     # old_strokescaled = node._stroke_scaled
@@ -79,7 +78,7 @@ def update_linetext(context, node, newtext):
     horizontal = True
     cfont.render(path, newtext, horizontal, float(fontsize))
     node.path = path.path
-    node.text = newtext
+    node.mktext = newtext
     node.altered()
 
 def create_linetext_node(context, x, y, text, font=None, font_size=None):
@@ -154,9 +153,9 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         matrix=Matrix.translate(x, y),
         stroke=Color("black"),
     )
-    path_node.font = font
-    path_node.fontsize = float(font_size)
-    path_node.text = text
+    path_node.mkfont = font
+    path_node.mkfontsize = float(font_size)
+    path_node.mktext = text
 
     return path_node
 
@@ -200,7 +199,7 @@ def plugin(kernel, lifecycle):
                 display_fonts()
                 return
             font_path = join(font_dir, font)
-            if not os.path.exists(font_path):
+            if not exists(font_path):
                 channel(_("Font was not found at {path}").format(path=font_path))
                 display_fonts()
                 return

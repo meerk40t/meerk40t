@@ -43,8 +43,8 @@ class LineTextTool(ToolWidget):
 
             if self.node is None or self.node.bounds is None:
                 if self.node is not None:
-                    if hasattr(self.node, "font"):
-                        fname = self.node.font
+                    if hasattr(self.node, "mkfont"):
+                        fname = self.node.mkfont
                         if fname.lower().endswith(".jhf"):
                             offsety = 0.5 * cursorheight
 
@@ -64,8 +64,8 @@ class LineTextTool(ToolWidget):
                 self.color = self.node.stroke
                 offsetx = self.node.bounds[2] - self.node.bounds[0]
                 cursorheight = self.node.bounds[3] - self.node.bounds[1]
-                if hasattr(self.node, "font"):
-                    fname = self.node.font
+                if hasattr(self.node, "mkfont"):
+                    fname = self.node.mkfont
                     if fname.lower().endswith(".jhf"):
                         offsety = 0.5 * cursorheight
                 self.pen.SetColour(wx.Colour(swizzlecolor(self.node.stroke)))
@@ -196,19 +196,19 @@ class LineTextTool(ToolWidget):
         if self.node is None:
             return
         if signal == "linetext" and args[0] == "bigger":
-            self.node.fontsize *= 1.2
-            update_linetext(self.scene.context, self.node, self.node.text)
+            self.node.mkfontsize *= 1.2
+            update_linetext(self.scene.context, self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
         elif signal == "linetext" and args[0] == "smaller":
-            self.node.fontsize /= 1.2
-            update_linetext(self.scene.context, self.node, self.node.text)
+            self.node.mkfontsize /= 1.2
+            update_linetext(self.scene.context, self.node, self.node.mktext)
             self.node.emphasized = False
             self.scene.request_refresh()
         elif signal == "linetext" and args[0] == "font":
             if len(args)>1:
                 font = args[1]
-                self.node.font = font
-                update_linetext(self.scene.context, self.node, self.node.text)
+                self.node.mkfont = font
+                update_linetext(self.scene.context, self.node, self.node.mktext)
                 self.node.emphasized = False
                 self.scene.request_refresh()

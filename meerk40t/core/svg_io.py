@@ -526,6 +526,14 @@ class SVGProcessor:
         if self.requires_classification:
             self.elements.classify(self.element_list)
 
+    def check_for_mk_path_attributes(self, node, element):
+        for prop in element.values:
+            lc = element.values.get(prop)
+            # print (f"Property: {prop} = {lc}")
+            if prop.startswith("mk"):
+                if lc is not None:
+                    setattr(node, prop, lc)
+
     def check_for_fill_attributes(self, node, element):
         lc = element.values.get(SVG_ATTR_FILL_RULE)
         if lc is not None:
@@ -750,6 +758,7 @@ class SVGProcessor:
                 )
                 self.check_for_line_attributes(node, element)
                 self.check_for_fill_attributes(node, element)
+                self.check_for_mk_path_attributes(node, element)
                 e_list.append(node)
         elif isinstance(element, SVGImage):
             try:

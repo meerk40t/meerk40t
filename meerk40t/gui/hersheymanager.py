@@ -151,7 +151,7 @@ class LineTextPropertPanel(wx.Panel):
         pass
 
     def accepts(self, node):
-        return hasattr(node, "font") and hasattr(node, "fontsize") and hasattr(node, "text")
+        return hasattr(node, "mkfont") and hasattr(node, "mkfontsize") and hasattr(node, "mktext")
 
     def set_widgets(self, node):
         self.node = node
@@ -161,7 +161,7 @@ class LineTextPropertPanel(wx.Panel):
             return
         fontdir = fontdirectory(self.context)
         self.load_directory(fontdir)
-        self.text_text.SetValue(node.text)
+        self.text_text.SetValue(node.mktext)
         self.Show()
 
     def load_directory(self, fontdir):
@@ -193,13 +193,13 @@ class LineTextPropertPanel(wx.Panel):
     def on_button_bigger(self, event):
         if self.node is None:
             return
-        self.node.fontsize *= 1.2
+        self.node.mkfontsize *= 1.2
         self.update_node()
 
     def on_button_smaller(self, event):
         if self.node is None:
             return
-        self.node.fontsize /= 1.2
+        self.node.mkfontsize /= 1.2
         self.update_node()
 
     def on_text_change(self, event):
@@ -211,7 +211,7 @@ class LineTextPropertPanel(wx.Panel):
         index = self.list_fonts.GetSelection()
         if index >= 0:
             fontname = self.fonts[index]
-            self.node.font = fontname
+            self.node.mkfont = fontname
             self.update_node()
 
     def on_list_font(self, event):
