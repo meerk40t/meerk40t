@@ -6,7 +6,7 @@ from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Arc, Color, Matrix, Path
-from meerk40t.tools.shxparser import ShxFont
+from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 
 
 class ShxPath:
@@ -66,9 +66,13 @@ def plugin(kernel, lifecycle):
             if remainder is None:
                 channel(_("No text to make a path with."))
                 return
-            font = ShxFont(font_path)
-            path = ShxPath()
-            font.render(path, remainder, True, float(font_size))
+            try:
+                font = ShxFont(font_path)
+                path = ShxPath()
+                font.render(path, remainder, True, float(font_size))
+            except ShxFontParseError as e:
+                channel(f"{e.args}")
+                return
             path_node = PathNode(
                 path=path.path,
                 matrix=Matrix.translate(0, float(font_size)),
