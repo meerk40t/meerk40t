@@ -5,7 +5,7 @@ from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Arc, Color, Matrix, Path
-from meerk40t.tools.shxparser import ShxFont
+from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.jhfparser import JhfFont
 
 class FontPath:
@@ -128,21 +128,15 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     except (KeyError, IndexError):
         # channel(_("Unknown fonttype {ext}").format(ext=file_extension))
         return None
-    try:
-        cfont = fontclass(font_path)
-    except:
-        # Something went fundamentally wrong...
-        # print (f"Couldnt parse: {font_path}")
-        return None
-    path = FontPath()
-    # print (f"Path={path}, text={remainder}, font-size={font_size}")
     horizontal = True
     try:
+        cfont = fontclass(font_path)
+        path = FontPath()
+        # print (f"Path={path}, text={remainder}, font-size={font_size}")
         cfont.render(path, text, horizontal, float(font_size))
-    except:
-        # Something went fundamentally wrong...
-        # print (f"Couldnt render: {font_path}")
-        return None
+    except ShxFontParseError as e:
+        # channel(f"{e.args}")
+        return
     #  print (f"Pathlen={len(path.path)}")
     # if len(path.path) == 0:
     #     print("Empty path...")
