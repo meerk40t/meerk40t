@@ -695,6 +695,8 @@ class SpoolerPanel(wx.Panel):
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
         if info is None:
             return
+        if len(info)>1 and info[1] is None:
+            return
         self.refresh_history(newestinfo=info)
         self.save_history()
 
