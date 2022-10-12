@@ -2749,6 +2749,11 @@ class Elemental(Service):
             elements_nodes = []
             elements = []
             for node in data:
+                oldstuff = []
+                for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                    if hasattr(node, attrib):
+                        oldval = getattr(node, attrib, None)
+                        oldstuff.append([attrib, oldval])
                 group_node = node.replace_node(type="group", label=node.label)
                 try:
                     p = node.as_path()
@@ -2756,8 +2761,10 @@ class Elemental(Service):
                     continue
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
-                    elements.append(subelement)
-                    group_node.add(path=subelement, type="elem path")
+                    subnode = group_node.add(path=subelement, type="elem path")
+                    for item in oldstuff:
+                        setattr(subnode, item[0], item[1])
+                    elements.append(subnode)
                 elements_nodes.append(group_node)
                 if self.classify_new:
                     self.classify(elements)
