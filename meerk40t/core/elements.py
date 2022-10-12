@@ -7854,11 +7854,19 @@ class Elemental(Service):
             help="",
         )
         def convert_to_path(node, **kwargs):
+            oldstuff = []
+            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                if hasattr(node, attrib):
+                    oldval = getattr(node, attrib, None)
+                    oldstuff.append([attrib, oldval])
             try:
                 path = node.as_path()
             except AttributeError:
                 return
-            node.replace_node(path=path, type="elem path")
+            newnode = node.replace_node(path=path, type="elem path")
+            for item in oldstuff:
+                setattr(newnode, item[0], item[1])
+            newnode.altered()
 
         @self.tree_submenu(_("Flip"))
         @self.tree_separator_before()
