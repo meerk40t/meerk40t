@@ -153,8 +153,6 @@ class CutPlan:
         @param grouped_plan:
         @return:
         """
-        context = self.context
-
         for plan in grouped_plan:
             burning = True
             pass_idx = -1
@@ -174,21 +172,10 @@ class CutPlan:
                         continue
                     if pass_idx > op.implicit_passes - 1:
                         continue
-                    copies = 1
                     burning = True
-                    # Providing we do some sort of post-processing of blobs,
-                    # then merge passes is handled by the greedy or inner_first algorithms
-                    passes = 1
-                    if context.opt_merge_passes and (
-                        context.opt_nearest_neighbor or context.opt_inner_first
-                    ):
-                        passes = copies
-                        copies = 1
-                    if op.type == "op hatch":
-                        # hatch duplicates sub-objects.
-                        copies = 1
-                        passes = 1
-                    yield from self._blob_convert(op, copies, passes, force_idx=pass_idx)
+                    yield from self._blob_convert(
+                        op, 1, 1, force_idx=pass_idx
+                    )
 
     def _to_blob_plan(self, grouped_plan):
         """
@@ -242,9 +229,7 @@ class CutPlan:
         for pass_idx in range(copies):
             # If passes isn't equal to implicit passes then we need a different settings to permit change
             settings = (
-                op.settings
-                if op.implicit_passes == passes
-                else dict(op.settings)
+                op.settings if op.implicit_passes == passes else dict(op.settings)
             )
             cutcode = CutCode(
                 op.as_cutobjects(
@@ -255,9 +240,7 @@ class CutPlan:
             )
             if len(cutcode) == 0:
                 break
-            cutcode.constrained = (
-                op.type == "op cut" and context.opt_inner_first
-            )
+            cutcode.constrained = op.type == "op cut" and context.opt_inner_first
             cutcode.pass_index = pass_idx if force_idx is None else force_idx
             cutcode.original_op = op.type
             yield cutcode
