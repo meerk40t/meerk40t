@@ -269,6 +269,7 @@ class CutPlan:
         @param blob_plan:
         @return:
         """
+        last_item = None
         context = self.context
         for blob in blob_plan:
             try:
@@ -276,19 +277,22 @@ class CutPlan:
                 blob.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
-            if self.plan and self._should_merge(context, self.plan[-1], blob):
+            if last_item and self._should_merge(context, last_item, blob):
                 # Do not check empty plan.
                 if blob.constrained:
                     # if any merged object is constrained combined blob is also constrained.
-                    self.plan[-1].constrained = True
-                self.plan[-1].extend(blob)
+                    last_item.constrained = True
+                last_item.extend(blob)
+
             else:
                 if isinstance(blob, CutObject) and not isinstance(blob, CutCode):
                     cc = CutCode([blob])
                     cc.original_op = blob.original_op
                     cc.pass_index = blob.pass_index
+                    last_item = cc
                     self.plan.append(cc)
                 else:
+                    last_item = blob
                     self.plan.append(blob)
 
     def _should_merge(self, context, last_item, current_item):
