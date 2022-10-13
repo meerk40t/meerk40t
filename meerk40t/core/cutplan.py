@@ -154,7 +154,7 @@ class CutPlan:
         @return:
         """
         for plan in grouped_plan:
-            pass_idx = -1
+            pass_idx = 0
             while True:
                 more_passes_possible = False
                 for op in plan:
@@ -178,6 +178,7 @@ class CutPlan:
                 if not more_passes_possible:
                     # No operation needs additional passes.
                     break
+                pass_idx += 1
 
     def _to_blob_plan(self, grouped_plan):
         """
