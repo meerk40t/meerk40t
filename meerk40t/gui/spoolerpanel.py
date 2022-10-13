@@ -89,6 +89,9 @@ class SpoolerPanel(wx.Panel):
         self.__do_layout()
         self.current_item = None
         self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
+        self.btn_clear.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
+        self.list_job_history.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
+
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
@@ -231,18 +234,68 @@ class SpoolerPanel(wx.Panel):
     def on_item_selected(self, event):
         self.current_item = event.Index
 
-    def on_btn_clear(self, event):
-        if self.filter_device is None:
-            self.history = []
-        else:
-            idx = 0
-            while idx < len(self.history):
-                if self.history[idx][3] == self.filter_device:
-                    self.history.pop(idx)
-                else:
-                    idx += 1
+    def clear_history(self, older_than = None):
+        # print (f"Delete history: {self.filter_device} - {older_than}")
+        # if older_than is not None:
+        #     print (f"{self.datestr(older_than)}")
+        idx = 0
+        while idx < len(self.history):
+            toremove = False
+            if self.filter_device is None or self.history[idx][3] == self.filter_device:
+                if older_than is None:
+                    toremove = True
+                elif self.history[idx][1] < older_than:
+                    toremove = True
+
+            if toremove:
+                self.history.pop(idx)
+            else:
+                idx += 1
         self.save_history()
         self.refresh_history()
+
+
+    def on_btn_clear(self, event):
+        self.clear_history(None)
+
+    def on_btn_clear_right(self, event):
+
+        def on_menu_index(idx_to_delete):
+            def check(event):
+                self.history.pop(idx_to_delete)
+                self.save_history()
+                self.refresh_history()
+
+            return check
+
+        def on_menu_time(cutoff):
+            def check(event):
+                self.clear_history(cutoff)
+
+            return check
+
+        now = time.time()
+        week_seconds = 60 * 60 * 24 * 7
+        options = [ (_("All entries"), None) ]
+        for week in range(1, 5):
+            cutoff_time = now - week * week_seconds
+            options.append( (_("Older than {week} week").format(week=week), cutoff_time) )
+        menu = wx.Menu()
+        idx = -1
+        listid = self.list_job_history.GetFirstSelected()
+        if listid>=0:
+            idx = self.list_job_history.GetItemData(listid)
+        if idx>=0:
+            menuitem = menu.Append(wx.ID_ANY, _("Delete this entry"), "")
+            self.Bind(wx.EVT_MENU, on_menu_index(idx), id=menuitem.GetId(),)
+            menu.AppendSeparator()
+
+        for item in options:
+            menuitem = menu.Append(wx.ID_ANY, item[0], "")
+            self.Bind(wx.EVT_MENU, on_menu_time(item[1]), id=menuitem.GetId(),)
+        if menu.MenuItemCount != 0:
+            self.PopupMenu(menu)
+            menu.Destroy()
 
     def on_button_pause(self, event):  # wxGlade: LaserPanel.<event_handler>
         self.context("pause\n")
@@ -613,6 +666,8 @@ class SpoolerPanel(wx.Panel):
                 self.list_job_history.SetItem(
                     list_id, self.column_history["status"], info[5]
             )
+            self.list_job_history.SetItemData(list_id, idx - 1)
+
 
     def reload_history(self):
         self.history = []
