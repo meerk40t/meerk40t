@@ -188,28 +188,7 @@ class CutPlan:
                         # hatch duplicates sub-objects.
                         copies = 1
                         passes = 1
-                    for p in range(copies):
-                        # If passes isn't equal to implicit passes then we need a different settings to permit change
-                        settings = (
-                            op.settings
-                            if op.implicit_passes == passes
-                            else dict(op.settings)
-                        )
-                        cutcode = CutCode(
-                            op.as_cutobjects(
-                                closed_distance=context.opt_closed_distance,
-                                passes=passes,
-                            ),
-                            settings=settings,
-                        )
-                        if len(cutcode) == 0:
-                            break
-                        cutcode.constrained = (
-                            op.type == "op cut" and context.opt_inner_first
-                        )
-                        cutcode.pass_index = pass_idx
-                        cutcode.original_op = op.type
-                        yield cutcode
+                    yield from self._blob_convert(op, copies, passes, force_idx=pass_idx)
 
     def _to_blob_plan(self, grouped_plan):
         """
@@ -233,10 +212,10 @@ class CutPlan:
                 ):
                     yield op
                     continue
+                passes = 1
                 copies = op.implicit_passes
                 # Providing we do some sort of post-processing of blobs,
                 # then merge passes is handled by the greedy or inner_first algorithms
-                passes = 1
                 if context.opt_merge_passes and (
                     context.opt_nearest_neighbor or context.opt_inner_first
                 ):
@@ -246,28 +225,42 @@ class CutPlan:
                     # hatch duplicates sub-objects.
                     copies = 1
                     passes = 1
-                for pass_idx in range(copies):
-                    # If passes isn't equal to implicit passes then we need a different settings to permit change
-                    settings = (
-                        op.settings
-                        if op.implicit_passes == passes
-                        else dict(op.settings)
-                    )
-                    cutcode = CutCode(
-                        op.as_cutobjects(
-                            closed_distance=context.opt_closed_distance,
-                            passes=passes,
-                        ),
-                        settings=settings,
-                    )
-                    if len(cutcode) == 0:
-                        break
-                    cutcode.constrained = (
-                        op.type == "op cut" and context.opt_inner_first
-                    )
-                    cutcode.pass_index = pass_idx
-                    cutcode.original_op = op.type
-                    yield cutcode
+                yield from self._blob_convert(op, copies, passes)
+
+    def _blob_convert(self, op, copies, passes, force_idx=None):
+        """
+        Converts the given op into cutcode. Provides `copies` copies of that cutcode, sets
+        the passes to passes for each cutcode object.
+
+        @param op:
+        @param copies:
+        @param passes:
+        @param force_idx:
+        @return:
+        """
+        context = self.context
+        for pass_idx in range(copies):
+            # If passes isn't equal to implicit passes then we need a different settings to permit change
+            settings = (
+                op.settings
+                if op.implicit_passes == passes
+                else dict(op.settings)
+            )
+            cutcode = CutCode(
+                op.as_cutobjects(
+                    closed_distance=context.opt_closed_distance,
+                    passes=passes,
+                ),
+                settings=settings,
+            )
+            if len(cutcode) == 0:
+                break
+            cutcode.constrained = (
+                op.type == "op cut" and context.opt_inner_first
+            )
+            cutcode.pass_index = pass_idx if force_idx is None else force_idx
+            cutcode.original_op = op.type
+            yield cutcode
 
     def _to_merged_plan(self, blob_plan):
         """
