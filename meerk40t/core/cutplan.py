@@ -166,9 +166,9 @@ class CutPlan:
                         yield op
                         continue
                     if (
-                            not op.type.startswith("op")
-                            and not op.type.startswith("util")
-                            or op.type == "util console"
+                        not op.type.startswith("op")
+                        and not op.type.startswith("util")
+                        or op.type == "util console"
                     ):
                         yield op
                         continue
@@ -180,7 +180,7 @@ class CutPlan:
                     # then merge passes is handled by the greedy or inner_first algorithms
                     passes = 1
                     if context.opt_merge_passes and (
-                            context.opt_nearest_neighbor or context.opt_inner_first
+                        context.opt_nearest_neighbor or context.opt_inner_first
                     ):
                         passes = copies
                         copies = 1
@@ -205,7 +205,7 @@ class CutPlan:
                         if len(cutcode) == 0:
                             break
                         cutcode.constrained = (
-                                op.type == "op cut" and context.opt_inner_first
+                            op.type == "op cut" and context.opt_inner_first
                         )
                         cutcode.pass_index = pass_idx
                         cutcode.original_op = op.type
@@ -227,9 +227,9 @@ class CutPlan:
                     yield op
                     continue
                 if (
-                        not op.type.startswith("op")
-                        and not op.type.startswith("util")
-                        or op.type == "util console"
+                    not op.type.startswith("op")
+                    and not op.type.startswith("util")
+                    or op.type == "util console"
                 ):
                     yield op
                     continue
@@ -238,7 +238,7 @@ class CutPlan:
                 # then merge passes is handled by the greedy or inner_first algorithms
                 passes = 1
                 if context.opt_merge_passes and (
-                        context.opt_nearest_neighbor or context.opt_inner_first
+                    context.opt_nearest_neighbor or context.opt_inner_first
                 ):
                     passes = copies
                     copies = 1
@@ -263,7 +263,7 @@ class CutPlan:
                     if len(cutcode) == 0:
                         break
                     cutcode.constrained = (
-                            op.type == "op cut" and context.opt_inner_first
+                        op.type == "op cut" and context.opt_inner_first
                     )
                     cutcode.pass_index = pass_idx
                     cutcode.original_op = op.type
