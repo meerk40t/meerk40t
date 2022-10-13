@@ -3075,11 +3075,17 @@ msgstr "Füge Home hinzu"
 
 #: meerk40t/core/elements.py:7221
 msgid "Append Return to Origin"
-msgstr "Füge 'Zurück zum Ursprung' hinzu"
+msgstr "Füge 'Zurück zum Start' hinzu"
 
 #: meerk40t/core/elements.py:7233
 msgid "Append Set Origin"
-msgstr "Füge 'Setze Ursprung' hinzu"
+msgstr "Füge 'Setze Startpunkt' hinzu"
+
+msgid "Set Origin"
+msgstr "Setze Startpunkt"
+
+msgid "Goto Origin"
+msgstr "Zurück zum Start"
 
 #: meerk40t/core/elements.py:7246
 msgid "Append Beep"
@@ -10124,6 +10130,9 @@ msgstr "Verändere den Standard-Parameter des hinzuzufügenden Arbeitsgangs"
 msgid "Modify the parameter of the selected operation"
 msgstr "Verändere die Parameter des gewählten Arbeitsgangs"
 
+msgid "Beep"
+msgstr "Signalton"
+
 #: meerk40t/device/gui/warningpanel.py:69
 msgid "op"
 msgstr ""
@@ -10367,33 +10376,36 @@ msgstr ""
 msgid "Input bits for given value"
 msgstr ""
 
+msgid "Loop Properties"
+msgstr "Globale Wiederholungen"
+
 #: meerk40t/gui/propertypanels/opbranchproperties.py:24
 msgid "Loop Continuously"
-msgstr ""
+msgstr "Dauerschleife"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:25
 msgid "Operation job will run forever in a loop"
-msgstr ""
+msgstr "Der Laser-Job läuft für immer in einer Dauerschleife"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:32
 msgid "Loop Parameter"
-msgstr ""
+msgstr "Durchgänge"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:33
 msgid "Operation job should run set number of times"
-msgstr ""
+msgstr "Wie oft soll der Laser-Job wiederholt werden"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:41
 msgid "Loop"
-msgstr ""
+msgstr "Wiederholungen"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:42
 msgid "times"
-msgstr ""
+msgstr "mal"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:43
 msgid "How many times should the operation job loop"
-msgstr ""
+msgstr "Wie oft soll der Job wiederholt werden?"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:14
 msgid "Change/View color of this layer. When Meerk40t classifies elements to operations,"

@@ -41,7 +41,7 @@ class DefaultActionPanel(wx.Panel):
             ("Beep", "util console", "beep"),
             ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
             ("Console", "util console", ""),
-            ("Set Origin", "util origin", "0,0"),
+            ("Set Origin", "util origin", ""),
         )
         self.default_images = [
             ["console home -f", icons8_home_20],
