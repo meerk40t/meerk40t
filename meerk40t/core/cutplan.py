@@ -173,9 +173,7 @@ class CutPlan:
                     if pass_idx > op.implicit_passes - 1:
                         continue
                     burning = True
-                    yield from self._blob_convert(
-                        op, 1, 1, force_idx=pass_idx
-                    )
+                    yield from self._blob_convert(op, 1, 1, force_idx=pass_idx)
 
     def _to_blob_plan(self, grouped_plan):
         """
@@ -199,19 +197,21 @@ class CutPlan:
                 ):
                     yield op
                     continue
-                passes = 1
-                copies = op.implicit_passes
-                # Providing we do some sort of post-processing of blobs,
-                # then merge passes is handled by the greedy or inner_first algorithms
                 if context.opt_merge_passes and (
                     context.opt_nearest_neighbor or context.opt_inner_first
                 ):
-                    passes = copies
+                    # Providing we do some sort of post-processing of blobs,
+                    # then merge passes is handled by the greedy or inner_first algorithms
+                    # So, we only need 1 copy and to set the passes.
+                    passes = op.implicit_passes
                     copies = 1
-                if op.type == "op hatch":
-                    # hatch duplicates sub-objects.
-                    copies = 1
+                else:
                     passes = 1
+                    copies = op.implicit_passes
+                if op.type == "op hatch":
+                    # hatch duplicates sub-objects, within convert to blob.
+                    passes = 1
+                    copies = 1
                 yield from self._blob_convert(op, copies, passes)
 
     def _blob_convert(self, op, copies, passes, force_idx=None):
