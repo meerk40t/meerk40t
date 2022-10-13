@@ -119,7 +119,7 @@ class CutPlan:
                     if hasattr(node, "preprocess"):
                         node.preprocess(self.context, matrix, self.commands)
 
-    def _plan_to_grouped_plan(self, plan):
+    def _to_grouped_plan(self, plan):
         """
         Break plan operations into merge groups.
         @return:
@@ -138,7 +138,7 @@ class CutPlan:
         if group:
             yield group
 
-    def _group_plan_to_blob_plan_passes_first(self, grouped_plan):
+    def _to_blob_plan_passes_first(self, grouped_plan):
         """
         If Merge operations and not merge passes we need to iterate passes first and operations second.
 
@@ -206,7 +206,7 @@ class CutPlan:
                         cutcode.original_op = op.type
                         yield cutcode
 
-    def _group_plan_to_blob_plan(self, grouped_plan):
+    def _to_blob_plan(self, grouped_plan):
         """
         Iterate operations first and passes second. Non-passes first mode.
         @param grouped_plan:
@@ -263,7 +263,7 @@ class CutPlan:
                     cutcode.original_op = op.type
                     yield cutcode
 
-    def _blob_plan_to_plan(self, blob_plan):
+    def _to_merged_plan(self, blob_plan):
         """
         Convert the blob_plan back to plan code with correctly merged elements.
         @param blob_plan:
@@ -349,13 +349,13 @@ class CutPlan:
         if not self.plan:
             return
         context = self.context
-        grouped_plan = list(self._plan_to_grouped_plan(self.plan))
+        grouped_plan = list(self._to_grouped_plan(self.plan))
         if context.opt_merge_ops and not context.opt_merge_passes:
-            blob_plan = list(self._group_plan_to_blob_plan_passes_first(grouped_plan))
+            blob_plan = list(self._to_blob_plan_passes_first(grouped_plan))
         else:
-            blob_plan = list(self._group_plan_to_blob_plan(grouped_plan))
+            blob_plan = list(self._to_blob_plan(grouped_plan))
         self.plan.clear()
-        self.plan.extend(self._blob_plan_to_plan(blob_plan))
+        self.plan.extend(self._to_merged_plan(blob_plan))
 
     def preopt(self):
         """
