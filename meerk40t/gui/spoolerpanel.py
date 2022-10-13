@@ -290,6 +290,9 @@ class SpoolerPanel(wx.Panel):
             self.Bind(wx.EVT_MENU, on_menu_index(idx), id=menuitem.GetId(),)
             menu.AppendSeparator()
 
+        menuitem = menu.Append(wx.ID_ANY, _("Delete..."))
+        menu.Enable(menuitem.GetId(), False)
+
         for item in options:
             menuitem = menu.Append(wx.ID_ANY, item[0], "")
             self.Bind(wx.EVT_MENU, on_menu_time(item[1]), id=menuitem.GetId(),)
