@@ -290,10 +290,10 @@ class CutPlan:
                     cc.original_op = blob.original_op
                     cc.pass_index = blob.pass_index
                     last_item = cc
-                    self.plan.append(cc)
+                    yield last_item
                 else:
                     last_item = blob
-                    self.plan.append(blob)
+                    yield last_item
 
     def _should_merge(self, context, last_item, current_item):
         """
@@ -355,7 +355,7 @@ class CutPlan:
         else:
             blob_plan = list(self._group_plan_to_blob_plan(grouped_plan))
         self.plan.clear()
-        self._blob_plan_to_plan(blob_plan)
+        self.plan.extend(self._blob_plan_to_plan(blob_plan))
 
     def preopt(self):
         """
