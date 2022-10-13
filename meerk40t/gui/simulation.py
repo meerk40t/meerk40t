@@ -517,7 +517,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_distance_laser_step.SetValue(f"{cuts_mm:.2f}mm")
         self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
         try:
-            time_travel = self.cutcode.duration_travel(step) / mm
+            time_travel = self.cutcode.duration_travel(step)
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
@@ -527,7 +527,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_travel = 0
         try:
-            time_cuts = self.cutcode.duration_cut(stop_at=step) / mm
+            time_cuts = self.cutcode.duration_cut(stop_at=step)
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
@@ -559,7 +559,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
 
         try:
-            time_travel = self.cutcode.duration_travel() / mm
+            time_travel = self.cutcode.duration_travel()
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
@@ -567,7 +567,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_travel = 0
         try:
-            time_cuts = self.cutcode.duration_cut() / mm
+            time_cuts = self.cutcode.duration_cut()
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
