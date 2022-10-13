@@ -136,7 +136,7 @@ class SpoolerPanel(wx.Panel):
             "end": 4,
             "runtime": 5,
             "passes": 6,
-            "filename": 7,
+            "status": 7,
         }
 
         self.reload_history()
@@ -187,7 +187,7 @@ class SpoolerPanel(wx.Panel):
         self.list_job_history.AppendColumn(_("End"), format=wx.LIST_FORMAT_LEFT, width=73)
         self.list_job_history.AppendColumn(_("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73)
         self.list_job_history.AppendColumn(_("Passes"), format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_history.AppendColumn(_("File"), format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE_USEHEADER)
+        self.list_job_history.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=73)
 
         # end wxGlade
 
@@ -609,10 +609,10 @@ class SpoolerPanel(wx.Panel):
             self.list_job_history.SetItem(
                 list_id, self.column_history["device"], info[3]
             )
-            # if len(info) >= 6:
-            #     self.list_job_history.SetItem(
-            #         list_id, self.column_history["filename"], info[5]
-            #     )
+            if len(info) >= 6:
+                self.list_job_history.SetItem(
+                    list_id, self.column_history["status"], info[5]
+            )
 
     def reload_history(self):
         self.history = []
@@ -694,6 +694,8 @@ class SpoolerPanel(wx.Panel):
         # Info is just a tuple with the label and the runtime
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
         if info is None:
+            return
+        if len(info)>1 and info[1] is None:
             return
         self.refresh_history(newestinfo=info)
         self.save_history()
