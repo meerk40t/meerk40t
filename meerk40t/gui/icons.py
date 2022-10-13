@@ -7,6 +7,20 @@ extended from the wx.lib utility of the same name. We allow several additional m
 example we allow resizing and inverting this allows us to easily reuse the icons and to use the icons for dark themed
 guis. We permit rotation of the icons, so as to permit reusing these icons and coloring the icons to match a particular
 colored object, for example the icons in the tree for operations using color specific matching.
+
+----
+The icons are from Icon8 and typically IOS Glyph, IOS or Windows Metro in style.
+
+https://icons8.com/icons
+
+Find the desired icon and download in 50x50. We use the free license.
+
+Put the icon file in the Pycharm working directory.
+Using Local Terminal, with wxPython installed.
+
+img2py -a icons8-icon-name-50.png icons.py
+
+Paste the icon8_icon_name PyEmbeddedImage() block into icons.py
 """
 
 DARKMODE = False
