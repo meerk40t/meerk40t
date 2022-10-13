@@ -159,11 +159,10 @@ class CutPlan:
                         blob_plan.append(op)
                         continue
                     copies = op.implicit_passes
-                    if True:
-                        if pass_idx > copies - 1:
-                            continue
-                        copies = 1
-                        burning = True
+                    if pass_idx > copies - 1:
+                        continue
+                    copies = 1
+                    burning = True
                     # Providing we do some sort of post-processing of blobs,
                     # then merge passes is handled by the greedy or inner_first algorithms
                     passes = 1
@@ -195,7 +194,7 @@ class CutPlan:
                         cutcode.constrained = (
                                 op.type == "op cut" and context.opt_inner_first
                         )
-                        cutcode.pass_index = pass_idx if True else p
+                        cutcode.pass_index = pass_idx
                         cutcode.original_op = op.type
                         blob_plan.append(cutcode)
         return blob_plan
@@ -203,65 +202,56 @@ class CutPlan:
     def _group_plan_to_blob_plan(self, grouped_plan):
         context = self.context
         # If Merge operations and not merge passes we need to iterate passes first and operations second
-        passes_first = context.opt_merge_ops and not context.opt_merge_passes
         blob_plan = list()
         for plan in grouped_plan:
-            burning = True
             pass_idx = -1
-            while burning:
-                burning = False
-                pass_idx += 1
-                for op in plan:
-                    if not hasattr(op, "type"):
-                        blob_plan.append(op)
-                        continue
-                    if (
-                            not op.type.startswith("op")
-                            and not op.type.startswith("util")
-                            or op.type == "util console"
-                    ):
-                        blob_plan.append(op)
-                        continue
-                    copies = op.implicit_passes
-                    if passes_first:
-                        if pass_idx > copies - 1:
-                            continue
-                        copies = 1
-                        burning = True
-                    # Providing we do some sort of post-processing of blobs,
-                    # then merge passes is handled by the greedy or inner_first algorithms
+            pass_idx += 1
+            for op in plan:
+                if not hasattr(op, "type"):
+                    blob_plan.append(op)
+                    continue
+                if (
+                        not op.type.startswith("op")
+                        and not op.type.startswith("util")
+                        or op.type == "util console"
+                ):
+                    blob_plan.append(op)
+                    continue
+                copies = op.implicit_passes
+                # Providing we do some sort of post-processing of blobs,
+                # then merge passes is handled by the greedy or inner_first algorithms
+                passes = 1
+                if context.opt_merge_passes and (
+                        context.opt_nearest_neighbor or context.opt_inner_first
+                ):
+                    passes = copies
+                    copies = 1
+                if op.type == "op hatch":
+                    # hatch duplicates sub-objects.
+                    copies = 1
                     passes = 1
-                    if context.opt_merge_passes and (
-                            context.opt_nearest_neighbor or context.opt_inner_first
-                    ):
-                        passes = copies
-                        copies = 1
-                    if op.type == "op hatch":
-                        # hatch duplicates sub-objects.
-                        copies = 1
-                        passes = 1
-                    for p in range(copies):
-                        # If passes isn't equal to implicit passes then we need a different settings to permit change
-                        settings = (
-                            op.settings
-                            if op.implicit_passes == passes
-                            else dict(op.settings)
-                        )
-                        cutcode = CutCode(
-                            op.as_cutobjects(
-                                closed_distance=context.opt_closed_distance,
-                                passes=passes,
-                            ),
-                            settings=settings,
-                        )
-                        if len(cutcode) == 0:
-                            break
-                        cutcode.constrained = (
-                                op.type == "op cut" and context.opt_inner_first
-                        )
-                        cutcode.pass_index = pass_idx if passes_first else p
-                        cutcode.original_op = op.type
-                        blob_plan.append(cutcode)
+                for p in range(copies):
+                    # If passes isn't equal to implicit passes then we need a different settings to permit change
+                    settings = (
+                        op.settings
+                        if op.implicit_passes == passes
+                        else dict(op.settings)
+                    )
+                    cutcode = CutCode(
+                        op.as_cutobjects(
+                            closed_distance=context.opt_closed_distance,
+                            passes=passes,
+                        ),
+                        settings=settings,
+                    )
+                    if len(cutcode) == 0:
+                        break
+                    cutcode.constrained = (
+                            op.type == "op cut" and context.opt_inner_first
+                    )
+                    cutcode.pass_index = p
+                    cutcode.original_op = op.type
+                    blob_plan.append(cutcode)
         return blob_plan
 
     def _blob_plan_to_plan(self, blob_plan):
