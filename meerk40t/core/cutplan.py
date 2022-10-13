@@ -276,8 +276,8 @@ class CutPlan:
                 blob.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
-
-            if self._should_merge(context, blob):
+            if self.plan and self._should_merge(context, self.plan[-1], blob):
+                # Do not check empty plan.
                 if blob.constrained:
                     # if any merged object is constrained combined blob is also constrained.
                     self.plan[-1].constrained = True
@@ -291,16 +291,12 @@ class CutPlan:
                 else:
                     self.plan.append(blob)
 
-    def _should_merge(self, context, current_item):
+    def _should_merge(self, context, last_item, current_item):
         """
         Checks whether we should merge the blob with the current plan.
 
         We can only merge things if we have the right objects and settings.
         """
-        if not self.plan:
-            # The plan is empty we can't merge with nothing.
-            return False
-        last_item = self.plan[-1]
         if not isinstance(last_item, CutCode):
             # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
             return False
