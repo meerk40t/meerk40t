@@ -214,8 +214,6 @@ class CutPlan:
         """
         context = self.context
         for plan in grouped_plan:
-            pass_idx = -1
-            pass_idx += 1
             for op in plan:
                 if not hasattr(op, "type"):
                     yield op
