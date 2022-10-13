@@ -154,26 +154,29 @@ class CutPlan:
         @return:
         """
         for plan in grouped_plan:
-            burning = True
             pass_idx = -1
-            while burning:
-                burning = False
+            while True:
+                more_passes_possible = False
                 pass_idx += 1
                 for op in plan:
-                    if not hasattr(op, "type"):
-                        yield op
-                        continue
                     if (
-                        not op.type.startswith("op")
-                        and not op.type.startswith("util")
+                        not hasattr(op, "type")
                         or op.type == "util console"
+                        or (
+                            not op.type.startswith("op")
+                            and not op.type.startswith("util")
+                        )
                     ):
+                        # This is a weird object and can't become cutcode.
                         yield op
                         continue
                     if pass_idx > op.implicit_passes - 1:
                         continue
-                    burning = True
+                    more_passes_possible = True
                     yield from self._blob_convert(op, 1, 1, force_idx=pass_idx)
+                if not more_passes_possible:
+                    # No operation needs additional passes.
+                    break
 
     def _to_blob_plan(self, grouped_plan):
         """
