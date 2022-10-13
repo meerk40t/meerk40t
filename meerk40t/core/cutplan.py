@@ -119,14 +119,14 @@ class CutPlan:
                     if hasattr(node, "preprocess"):
                         node.preprocess(self.context, matrix, self.commands)
 
-    def _plan_to_grouped_plan(self):
+    def _plan_to_grouped_plan(self, plan):
         """
         Break plan operations into merge groups.
         @return:
         """
         last_type = None
         group = list()
-        for c in self.plan:
+        for c in plan:
             c_type = c.type if hasattr(c, "type") else type(c).__name__
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
@@ -349,7 +349,7 @@ class CutPlan:
         if not self.plan:
             return
         context = self.context
-        grouped_plan = list(self._plan_to_grouped_plan())
+        grouped_plan = list(self._plan_to_grouped_plan(self.plan))
         if context.opt_merge_ops and not context.opt_merge_passes:
             blob_plan = list(self._group_plan_to_blob_plan_passes_first(grouped_plan))
         else:
