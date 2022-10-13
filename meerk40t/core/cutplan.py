@@ -157,7 +157,6 @@ class CutPlan:
             pass_idx = -1
             while True:
                 more_passes_possible = False
-                pass_idx += 1
                 for op in plan:
                     if (
                         not hasattr(op, "type")
@@ -167,8 +166,10 @@ class CutPlan:
                             and not op.type.startswith("util")
                         )
                     ):
-                        # This is a weird object and can't become cutcode.
-                        yield op
+                        # This is an irregular object and can't become cutcode.
+                        if pass_idx == 0:
+                            # irregular objects have an implicit single pass.
+                            yield op
                         continue
                     if pass_idx > op.implicit_passes - 1:
                         continue
