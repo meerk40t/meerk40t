@@ -291,29 +291,6 @@ class CutPlan:
                 else:
                     self.plan.append(blob)
 
-    def blob(self):
-        """
-        Blob converts User operations to CutCode objects.
-
-        In order to have CutCode objects in the correct sequence for merging we need to:
-        1. Break operations into grouped sequences of Operations and utility operations.
-           We can only merge between contiguous groups of operations (with option set)
-        2. The sequence of CutObjects needs to reflect merge settings
-           Normal sequence is to iterate operations and then passes for each operation.
-           With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
-        """
-
-        if not self.plan:
-            return
-        context = self.context
-        grouped_plan = list(self._plan_to_grouped_plan())
-        if context.opt_merge_ops and not context.opt_merge_passes:
-            blob_plan = list(self._group_plan_to_blob_plan_passes_first(grouped_plan))
-        else:
-            blob_plan = list(self._group_plan_to_blob_plan(grouped_plan))
-        self.plan.clear()
-        self._blob_plan_to_plan(blob_plan)
-
     def _should_merge(self, context, current_item):
         """
         Checks whether we should merge the blob with the current plan.
@@ -356,6 +333,29 @@ class CutPlan:
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
             return False
         return True  # No reason these should not be merged.
+
+    def blob(self):
+        """
+        Blob converts User operations to CutCode objects.
+
+        In order to have CutCode objects in the correct sequence for merging we need to:
+        1. Break operations into grouped sequences of Operations and utility operations.
+           We can only merge between contiguous groups of operations (with option set)
+        2. The sequence of CutObjects needs to reflect merge settings
+           Normal sequence is to iterate operations and then passes for each operation.
+           With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
+        """
+
+        if not self.plan:
+            return
+        context = self.context
+        grouped_plan = list(self._plan_to_grouped_plan())
+        if context.opt_merge_ops and not context.opt_merge_passes:
+            blob_plan = list(self._group_plan_to_blob_plan_passes_first(grouped_plan))
+        else:
+            blob_plan = list(self._group_plan_to_blob_plan(grouped_plan))
+        self.plan.clear()
+        self._blob_plan_to_plan(blob_plan)
 
     def preopt(self):
         """
