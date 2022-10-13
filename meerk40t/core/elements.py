@@ -8671,6 +8671,11 @@ class Elemental(Service):
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children()
+        if hasattr(operations, "loop_continuous"):
+            operations.loop_continuous = False
+            operations.loop_enabled = False
+            operations.loop_n = 1
+            self.signal("element_property_update", operations)
         self.signal("operation_removed")
 
     def clear_elements(self):
