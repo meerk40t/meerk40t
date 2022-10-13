@@ -15,6 +15,7 @@ from meerk40t.gui.icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_up_50,
+    icons8_visit_20,
 )
 from meerk40t.gui.wxutils import TextCtrl
 
@@ -51,7 +52,7 @@ class DefaultActionPanel(wx.Panel):
             ["util wait", icons8_timer_20],
             ["util home", icons8_home_20],
             ["util goto", icons8_return_20],
-            ["util origin", icons8_return_20],
+            ["util origin", icons8_visit_20],
             ["util output", icons8_output_20],
             ["util input", icons8_input_20],
             ["util console", icons8_system_task_20],
