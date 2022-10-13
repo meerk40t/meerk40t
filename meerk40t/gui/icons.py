@@ -3190,3 +3190,15 @@ icons8_remove_25 = PyEmbeddedImage(
     b"Hg601+CTLF17ZUCaoJiSAMTT1Xy4FrEVaaATNPYlm9iR1eFDAuASrsl+bFEV9Z4JzIu3+Lwa"
     b"eINZJ0jhuQp1DEu0WE60jG9UAAAAAElFTkSuQmCC"
 )
+#----------------------------------------------------------------------
+icons8_visit_20 = PyEmbeddedImage(
+    b'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAB'
+    b'iUlEQVQ4ja3UsUvVURQH8M/LtDIQyfJRDS0ZDoKQW2QQtgQVDfontNRiVGMIDjXlEG2Cow29'
+    b'h4pNDWFGa7RUg7a4JErBWyOw4Xce7/bj/d57Zl84cO6553zv93fu79yS1jiNmxiO9VesYruo'
+    b'4FBB/DCeooqjWA7rxRKeRE5H6IqiBygViHgUhxUJ+gsPMZOQ35N95iruJiSzuN+OrBuf0BPq'
+    b'qngs6+WZOKgSuUcitzsl6MoRXsZxvMYtDGIOL/Abz3El6r5gBDVs1QnyjT2Hb+FfwgqmMYlR'
+    b'jQu6Fi3YiJr3dYJ8U3dQDv8nBqIIhvALJ/EjYmXsaoFBrCcEH2S/ykRYb8TOR846TqUEzRTW'
+    b'cCGUzWEN42Hv8AybkVNrpxCuYz5ZD+BG2IkkPh+5HeGtxrg1w1Co7RjjWGyx/xJX90MIb2S/'
+    b'Sh6jsbdvjMkuJJ3nUsTGioryk5LiOy7iLD5G7A72sPAvCqEPn2WzXA6/v1VBs+cpjyncDn9J'
+    b'43E4ECp49T+I6jgW1hZ/AFlFRTnCbQ/nAAAAAElFTkSuQmCC')
+
