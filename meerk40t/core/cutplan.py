@@ -124,7 +124,6 @@ class CutPlan:
         Break plan operations into merge groups.
         @return:
         """
-        grouped_plan = list()
         last_type = None
         group = list()
         for c in self.plan:
@@ -132,13 +131,12 @@ class CutPlan:
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This is not able to be merged
-                    grouped_plan.append(group)
+                    yield group
                     group = list()
             group.append(c)
             last_type = c_type
         if group:
-            grouped_plan.append(group)
-        return grouped_plan
+            yield group
 
     def _group_plan_to_blob_plan_passes_first(self, grouped_plan):
         """
@@ -152,7 +150,6 @@ class CutPlan:
         """
         context = self.context
 
-        blob_plan = list()
         for plan in grouped_plan:
             burning = True
             pass_idx = -1
@@ -161,14 +158,14 @@ class CutPlan:
                 pass_idx += 1
                 for op in plan:
                     if not hasattr(op, "type"):
-                        blob_plan.append(op)
+                        yield op
                         continue
                     if (
                             not op.type.startswith("op")
                             and not op.type.startswith("util")
                             or op.type == "util console"
                     ):
-                        blob_plan.append(op)
+                        yield op
                         continue
                     if pass_idx > op.implicit_passes - 1:
                         continue
@@ -207,8 +204,7 @@ class CutPlan:
                         )
                         cutcode.pass_index = pass_idx
                         cutcode.original_op = op.type
-                        blob_plan.append(cutcode)
-        return blob_plan
+                        yield cutcode
 
     def _group_plan_to_blob_plan(self, grouped_plan):
         """
@@ -217,20 +213,19 @@ class CutPlan:
         @return:
         """
         context = self.context
-        blob_plan = list()
         for plan in grouped_plan:
             pass_idx = -1
             pass_idx += 1
             for op in plan:
                 if not hasattr(op, "type"):
-                    blob_plan.append(op)
+                    yield op
                     continue
                 if (
                         not op.type.startswith("op")
                         and not op.type.startswith("util")
                         or op.type == "util console"
                 ):
-                    blob_plan.append(op)
+                    yield op
                     continue
                 copies = op.implicit_passes
                 # Providing we do some sort of post-processing of blobs,
@@ -266,8 +261,7 @@ class CutPlan:
                     )
                     cutcode.pass_index = p
                     cutcode.original_op = op.type
-                    blob_plan.append(cutcode)
-        return blob_plan
+                    yield cutcode
 
     def _blob_plan_to_plan(self, blob_plan):
         """
@@ -312,11 +306,11 @@ class CutPlan:
         if not self.plan:
             return
         context = self.context
-        grouped_plan = self._plan_to_grouped_plan()
+        grouped_plan = list(self._plan_to_grouped_plan())
         if context.opt_merge_ops and not context.opt_merge_passes:
-            blob_plan = self._group_plan_to_blob_plan_passes_first(grouped_plan)
+            blob_plan = list(self._group_plan_to_blob_plan_passes_first(grouped_plan))
         else:
-            blob_plan = self._group_plan_to_blob_plan(grouped_plan)
+            blob_plan = list(self._group_plan_to_blob_plan(grouped_plan))
         self.plan.clear()
         self._blob_plan_to_plan(blob_plan)
 
