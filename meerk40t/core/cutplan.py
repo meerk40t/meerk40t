@@ -120,7 +120,10 @@ class CutPlan:
                         node.preprocess(self.context, matrix, self.commands)
 
     def _plan_to_grouped_plan(self):
-        # Break plan operations into merge groups.
+        """
+        Break plan operations into merge groups.
+        @return:
+        """
         grouped_plan = list()
         last_type = None
         group = list()
@@ -138,8 +141,17 @@ class CutPlan:
         return grouped_plan
 
     def _group_plan_to_blob_plan_passes_first(self, grouped_plan):
+        """
+        If Merge operations and not merge passes we need to iterate passes first and operations second.
+
+        This function is specific to that case, when passes first operations second.
+
+        The logic here could be simplified, this was made a standalone function.
+        @param grouped_plan:
+        @return:
+        """
         context = self.context
-        # If Merge operations and not merge passes we need to iterate passes first and operations second
+
         blob_plan = list()
         for plan in grouped_plan:
             burning = True
@@ -158,8 +170,7 @@ class CutPlan:
                     ):
                         blob_plan.append(op)
                         continue
-                    copies = op.implicit_passes
-                    if pass_idx > copies - 1:
+                    if pass_idx > op.implicit_passes - 1:
                         continue
                     copies = 1
                     burning = True
@@ -200,8 +211,12 @@ class CutPlan:
         return blob_plan
 
     def _group_plan_to_blob_plan(self, grouped_plan):
+        """
+        Iterate operations first and passes second. Non-passes first mode.
+        @param grouped_plan:
+        @return:
+        """
         context = self.context
-        # If Merge operations and not merge passes we need to iterate passes first and operations second
         blob_plan = list()
         for plan in grouped_plan:
             pass_idx = -1
@@ -255,6 +270,11 @@ class CutPlan:
         return blob_plan
 
     def _blob_plan_to_plan(self, blob_plan):
+        """
+        Convert the blob_plan back to plan code with correctly merged elements.
+        @param blob_plan:
+        @return:
+        """
         context = self.context
         for blob in blob_plan:
             try:
