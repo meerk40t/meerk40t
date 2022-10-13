@@ -363,7 +363,7 @@ class Planner(Service):
                             self.device.setting(str, attr2, "")
 
             def add_ops(is_prepend):
-                # Do we have have any default actions to include first?
+                # Do we have any default actions to include first?
                 if is_prepend:
                     prefix = "prepend"
                 else:

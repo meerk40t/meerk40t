@@ -119,22 +119,7 @@ class CutPlan:
                     if hasattr(node, "preprocess"):
                         node.preprocess(self.context, matrix, self.commands)
 
-    def blob(self):
-        """
-        Blob converts User operations to CutCode objects.
-
-        In order to have CutCode objects in the correct sequence for merging we need to:
-        1. Break operations into grouped sequences of Operations and utility operations.
-           We can only merge between contiguous groups of operations (with option set)
-        2. The sequence of CutObjects needs to reflect merge settings
-           Normal sequence is to iterate operations and then passes for each operation.
-           With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
-        """
-
-        if not self.plan:
-            return
-        context = self.context
-
+    def _plan_to_grouped_plan(self):
         # Break plan operations into merge groups.
         grouped_plan = list()
         last_type = None
@@ -150,7 +135,10 @@ class CutPlan:
             last_type = c_type
         if group:
             grouped_plan.append(group)
+        return grouped_plan
 
+    def _group_plan_to_blob_plan(self, grouped_plan):
+        context = self.context
         # If Merge operations and not merge passes we need to iterate passes first and operations second
         passes_first = context.opt_merge_ops and not context.opt_merge_passes
         blob_plan = list()
@@ -165,9 +153,9 @@ class CutPlan:
                         blob_plan.append(op)
                         continue
                     if (
-                        not op.type.startswith("op")
-                        and not op.type.startswith("util")
-                        or op.type == "util console"
+                            not op.type.startswith("op")
+                            and not op.type.startswith("util")
+                            or op.type == "util console"
                     ):
                         blob_plan.append(op)
                         continue
@@ -181,7 +169,7 @@ class CutPlan:
                     # then merge passes is handled by the greedy or inner_first algorithms
                     passes = 1
                     if context.opt_merge_passes and (
-                        context.opt_nearest_neighbor or context.opt_inner_first
+                            context.opt_nearest_neighbor or context.opt_inner_first
                     ):
                         passes = copies
                         copies = 1
@@ -206,13 +194,15 @@ class CutPlan:
                         if len(cutcode) == 0:
                             break
                         cutcode.constrained = (
-                            op.type == "op cut" and context.opt_inner_first
+                                op.type == "op cut" and context.opt_inner_first
                         )
                         cutcode.pass_index = pass_idx if passes_first else p
                         cutcode.original_op = op.type
                         blob_plan.append(cutcode)
+        return blob_plan
 
-        self.plan.clear()
+    def _blob_plan_to_plan(self, blob_plan):
+        context = self.context
         for blob in blob_plan:
             try:
                 blob.jog_distance = context.opt_jog_minimum
@@ -233,6 +223,25 @@ class CutPlan:
                     self.plan.append(cc)
                 else:
                     self.plan.append(blob)
+
+    def blob(self):
+        """
+        Blob converts User operations to CutCode objects.
+
+        In order to have CutCode objects in the correct sequence for merging we need to:
+        1. Break operations into grouped sequences of Operations and utility operations.
+           We can only merge between contiguous groups of operations (with option set)
+        2. The sequence of CutObjects needs to reflect merge settings
+           Normal sequence is to iterate operations and then passes for each operation.
+           With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
+        """
+
+        if not self.plan:
+            return
+        grouped_plan = self._plan_to_grouped_plan()
+        blob_plan = self._group_plan_to_blob_plan(grouped_plan)
+        self.plan.clear()
+        self._blob_plan_to_plan(blob_plan)
 
     def _should_merge(self, context, current_item):
         """
