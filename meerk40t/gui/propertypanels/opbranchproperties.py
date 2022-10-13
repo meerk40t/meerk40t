@@ -64,6 +64,8 @@ class OpBranchPanel(wx.Panel):
         self.context.elements.signal("element_property_update", self.operation)
 
     def pane_show(self):
+        if self.operation is not None:
+            self.set_widgets(self.operation)
         self.panel.pane_show()
 
     def set_widgets(self, node):
@@ -75,4 +77,4 @@ class OpBranchPanel(wx.Panel):
                 continue
             if hasattr(node, item_att):
                 item_value = getattr(node, item_att)
-                self.context.signal(item_att, item_value)
+                self.context.signal(item_att, item_value, self.operation)

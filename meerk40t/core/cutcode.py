@@ -340,8 +340,11 @@ class CutCode(CutGroup):
 
     def __str__(self):
         parts = list()
-        parts.append(f"{len(self)} items")
-        return f"CutCode({' '.join(parts)})"
+        if len(self) <= 3:
+            parts.extend([type(p).__name__ for p in self])
+        else:
+            parts.append(f"{len(self)} items")
+        return f"CutCode({', '.join(parts)})"
 
     def __copy__(self):
         return CutCode(self)
