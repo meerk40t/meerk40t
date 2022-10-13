@@ -121,7 +121,12 @@ class CutPlan:
 
     def _to_grouped_plan(self, plan):
         """
-        Break plan operations into merge groups.
+        Break operations into grouped sequences of Operations and utility operations.
+
+        We can only merge between contiguous groups of operations. We cannot merge util node types with op node types.
+
+        Anything that does not have a type is likely able to spool, but cannot merge and are not grouped. Only grouped
+        operations are candidates for cutcode merging.
         @return:
         """
         last_type = None
@@ -208,7 +213,8 @@ class CutPlan:
 
     def _to_blob_plan(self, grouped_plan):
         """
-        Iterate operations first and passes second. Non-passes first mode.
+        Iterate operations first and passes second. Operation first mode. Passes are done within cutcode pass value.
+
         @param grouped_plan:
         @return:
         """
@@ -263,7 +269,11 @@ class CutPlan:
 
     def _to_merged_plan(self, blob_plan):
         """
-        Convert the blob_plan back to plan code with correctly merged elements.
+        Convert the blobbed plan of cutcode (rather than operations) into a merged plan for those cutcode operations
+        which are permitted to merge into the same cutcode object. All items within the same cutcode object are
+        candidates for optimizations. For example, if a HomeCut was merged LineCut in the cutcode, that entire group
+        would merge together, finding the most optimized time to home the machine (if optimization was enabled).
+
         @param blob_plan:
         @return:
         """
@@ -278,7 +288,7 @@ class CutPlan:
             if last_item and self._should_merge(context, last_item, blob):
                 # Do not check empty plan.
                 if blob.constrained:
-                    # if any merged object is constrained combined blob is also constrained.
+                    # if any merged object is constrained, then combined blob is also constrained.
                     last_item.constrained = True
                 last_item.extend(blob)
 
