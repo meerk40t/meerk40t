@@ -6594,6 +6594,21 @@ msgstr "Abgearbeitete Jobs:"
 msgid "Clear History"
 msgstr "Historie löschen"
 
+msgid "-- All available devices --"
+msgstr "-- Alle Geräte --"
+
+msgid "Delete..."
+msgstr "Lösche..."
+
+msgid "All entries"
+msgstr "alle Einträge"
+
+msgid "Older than {week} week"
+msgstr "älter als {week} Woche(n)"
+
+msgid "Delete this entry"
+msgstr "Diesen Eintrag löschen"
+
 #: meerk40t/gui/spoolerpanel.py:116
 msgid "List and modify the queued operations"
 msgstr "Zeigt die Arbeitsgänge in der Warteschlange und lässt Änderungen zu"
