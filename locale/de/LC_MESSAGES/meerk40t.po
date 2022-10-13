@@ -10376,33 +10376,36 @@ msgstr ""
 msgid "Input bits for given value"
 msgstr ""
 
+msgid "Loop Properties"
+msgstr "Globale Wiederholungen"
+
 #: meerk40t/gui/propertypanels/opbranchproperties.py:24
 msgid "Loop Continuously"
-msgstr ""
+msgstr "Dauerschleife"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:25
 msgid "Operation job will run forever in a loop"
-msgstr ""
+msgstr "Der Laser-Job läuft für immer in einer Dauerschleife"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:32
 msgid "Loop Parameter"
-msgstr ""
+msgstr "Durchgänge"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:33
 msgid "Operation job should run set number of times"
-msgstr ""
+msgstr "Wie oft soll der Laser-Job wiederholt werden"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:41
 msgid "Loop"
-msgstr ""
+msgstr "Wiederholungen"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:42
 msgid "times"
-msgstr ""
+msgstr "mal"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:43
 msgid "How many times should the operation job loop"
-msgstr ""
+msgstr "Wie oft soll der Job wiederholt werden?"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:14
 msgid "Change/View color of this layer. When Meerk40t classifies elements to operations,"
