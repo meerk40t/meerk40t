@@ -149,7 +149,7 @@ class CutPlan:
 
         This function is specific to that case, when passes first operations second.
 
-        The logic here could be simplified, this was made a standalone function.
+        Converts the operations to cutcode.
         @param grouped_plan:
         @return:
         """
@@ -215,6 +215,8 @@ class CutPlan:
         """
         Iterate operations first and passes second. Operation first mode. Passes are done within cutcode pass value.
 
+        Converts the operations to cutcode.
+
         @param grouped_plan:
         @return:
         """
@@ -244,7 +246,7 @@ class CutPlan:
                     # hatch duplicates sub-objects.
                     copies = 1
                     passes = 1
-                for p in range(copies):
+                for pass_idx in range(copies):
                     # If passes isn't equal to implicit passes then we need a different settings to permit change
                     settings = (
                         op.settings
@@ -263,7 +265,7 @@ class CutPlan:
                     cutcode.constrained = (
                             op.type == "op cut" and context.opt_inner_first
                     )
-                    cutcode.pass_index = p
+                    cutcode.pass_index = pass_idx
                     cutcode.original_op = op.type
                     yield cutcode
 
