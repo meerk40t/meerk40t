@@ -3075,11 +3075,17 @@ msgstr "Füge Home hinzu"
 
 #: meerk40t/core/elements.py:7221
 msgid "Append Return to Origin"
-msgstr "Füge 'Zurück zum Ursprung' hinzu"
+msgstr "Füge 'Zurück zum Start' hinzu"
 
 #: meerk40t/core/elements.py:7233
 msgid "Append Set Origin"
-msgstr "Füge 'Setze Ursprung' hinzu"
+msgstr "Füge 'Setze Startpunkt' hinzu"
+
+msgid "Set Origin"
+msgstr "Setze Startpunkt"
+
+msgid "Goto Origin"
+msgstr "Zurück zum Start"
 
 #: meerk40t/core/elements.py:7246
 msgid "Append Beep"
@@ -10123,6 +10129,9 @@ msgstr "Verändere den Standard-Parameter des hinzuzufügenden Arbeitsgangs"
 #: meerk40t/device/gui/defaultactions.py:170
 msgid "Modify the parameter of the selected operation"
 msgstr "Verändere die Parameter des gewählten Arbeitsgangs"
+
+msgid "Beep"
+msgstr "Signalton"
 
 #: meerk40t/device/gui/warningpanel.py:69
 msgid "op"
