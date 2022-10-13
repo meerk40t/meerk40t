@@ -422,7 +422,7 @@ class Planner(Service):
                                             y = 0
                                     addop = GotoOperation(x=x, y=y)
                             elif optype == "util origin":
-                                if opparam is not None:
+                                if opparam is not None and opparam != "":
                                     params = opparam.split(",")
                                     x = 0
                                     y = 0
@@ -437,6 +437,8 @@ class Planner(Service):
                                         except ValueError:
                                             y = 0
                                     addop = SetOriginOperation(x=x, y=y)
+                                else:
+                                    addop = SetOriginOperation(x=None, y=None)
                             elif optype == "util wait":
                                 if opparam is not None:
                                     try:
