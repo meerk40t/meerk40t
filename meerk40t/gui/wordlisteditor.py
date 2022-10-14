@@ -704,16 +704,16 @@ class AboutPanel(wx.Panel):
             + "some text that can be used as part of the text-definition of a Text-Object."
         )
         s += "\n" + _(
-            "Its reference (i.e. variable name) is used within curly brackets to indicate"
+            "Its reference (i.e. variable name) is used within curly brackets to indicate "
             + "that it will eventually be replaced by 'real' content."
         )
 
         s += "\n\n" + _(
             "Let's come back to our use-case, imagine you want to create a name-tag "
-            + "pattern that can be reused. Lets create a text-object inside a frame "
+            + "pattern that can be reused. Let's create a text-object inside a frame "
             + "and set its text to"
         )
-        s += "\n" + _(r"'This item belongs to {NAME}'")
+        s += "\n" + _(r"'This item belongs to {NAME}' ")
         s += _(
             "If you define a variable named 'NAME' and assign a value like "
             + "'John' to it, then the burned text will finally state:"
@@ -721,16 +721,16 @@ class AboutPanel(wx.Panel):
         s += "\n" + _("'This item belongs to John'")
 
         s += "\n\n" + _(
-            "You can define a set of variables (called wordlist) that could be populated"
-            + "by a standard comma-separated CSV file. The you could have not just one"
-            + "entry defined for 'NAME' but dozens of them. Which of the multiple entries"
+            "You can define a set of variables (called wordlist) that could be populated "
+            + "by a standard comma-separated CSV file. The you could have not just one "
+            + "entry defined for 'NAME' but dozens of them. Which of the multiple entries "
             + "is currently active is decided by its index value."
         )
         s += "\n\n" + _(
-            "You are not restricted to a single use of a variable (useful e.g."
+            "You are not restricted to a single use of a variable (useful e.g. "
             + "if you want to batch-burn a couple of name-tags). "
             + "The standard use {NAME} indicates "
-            + r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
+            + r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign) "
             + r"uses the next entry, {NAME#+2} the second entry after the current."
         )
         s += "\n\n" + _(
@@ -740,8 +740,8 @@ class AboutPanel(wx.Panel):
         )
         s += "\n\n" + _(
             "There are couple of predefined variables, that refer to the "
-            + r"current burn operation (like {op_power}, {op_speed} or others)"
-            + r"or contain date/time-information ({date}, {time})."
+            + r"current burn operation (like {op_power}, {op_speed} or others) "
+            + r"or contain date/time-information ({date}, {time}). "
         )
         s += "\n\n" + _(
             "Please note that date and time may be provided in a format that "
