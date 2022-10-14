@@ -694,131 +694,17 @@ class AboutPanel(wx.Panel):
             wx.VERTICAL,
         )
         self.parent_panel = None
-
-        s = _(
-            "WordLists allow you to create text elements in your design which contain "
-            + "placeholder text that is replaced at burn time from this WordList. "
-            + "You can then burn several items with different text without having to "
-            + "change your design each time. "
-        )
-
-        s += "\n\n" + _(
-            r"A placeholder consists of a name inside curly brackets e.g. '{FIRSTNAME}'. "
-            + "You use the name in the WordList Editor to associate it with the placeholder "
-            + "and the placeholder will be replaced by the text you enter "
-            + "into the associated WordList Contents."
-        )
-
-        s += "\n\n" + _(
-            "As an example of how this functionality would be used, "
-            + "imagine you want to create a set of dinner party seat reservation tags "
-            + "each with a different person's name. "
-            + "Having created the cut path for the name-tag outline e.g. a rectangle, "
-            + "use the Text drawing tool to create a Text element containing the following:"
-        )
-        s += "\n" + _(r"'This seat is reserved for {FIRSTNAME}'")
-
-        s += "\n\n" + _(
-            "Then you use this WordList editor to create one or more entries as follows:"
-        )
-        s += "\n\t" + _(
-            "|-----------|------|-------|"
-            + "\n\t"
-            + "|    Name   | Type | Index |"
-            + "\n\t"
-            + "|-----------|------|-------|"
-            + "\n\t"
-            + "| firstname | Text |   0   |"
-            + "\n\t"
-            + "|-----------|------|-------|"
-        )
-        s += "\n" + _(
-            "Then click on the 'firstname' row and add several items to the Contents pane e.g.:"
-        )
-        s += "\n\t" + _("Paul" + "\n\t" + "David" + "\n\t" + "Andy")
-        s += "\n" + _(
-            "Now when you execute the burn, you will get individual place tags which have "
-            + "different names on them e.g. "
-            + "'This seat is reserved for Andy'."
-        )
-
-        s += "\n\n" + _(
-            "You can use as many different placeholder names as you like in "
-            + "text fields in your design."
-        )
-
-        s += "\n\n" + _(
-            "The 'Index' value in the WordList table indicates which entry in the "
-            + "Contents list will be used next, zero meaning the first entry. "
-            + "The index is automatically increased by one at the end of each burn."
-        )
-
-        s += "\n\n" + _(
-            "But suppose for efficiency you now want to burn two seat reservation tags "
-            + "at the same time each having a different name from the same list. "
-            + r"In this case, if the first tag use '{NAME#+0}' and in the second '{NAME#+1}' "
-            + "(note the plus sign). "
-            + r"'{NAME#+0}' uses the current entry (pointed to by the Index value), "
-            + r"'{NAME#+1}' uses the next entry after the current one etc. "
-        )
-
-        s += "\n\n" + _(
-            r"With the above usage, you can use e.g. '{NAME#+0}' "
-            + "as many times as you wish in your design. "
-            + "However, if you are only using the placeholder once in your design, "
-            + r"then an alternative is to use '{NAME++}' which "
-            + "advances the Index each time the placeholder is used."
-        )
-
-        s += "\n\n" + _(
-            "As an alternative to manually entering the wordlist values "
-            + "using this WordList Editor, "
-            + "you can use a standard comma-separated CSV file. "
-            + "The placeholder names are defined in standard CSV header line "
-            + "(the first line in the CSV file), "
-            + "and the contents are then taken from all the following lines. "
-            + "The easiest way to create a CSV file is using a spreadsheet e.g. Excel, "
-            + "however e.g. for ecommerce sites your website might automatically"
-            + "create the CSV file from the orders placed online by customers. "
-        )
-        s += "\n\n" + _(
-            "Entries loaded from a CSV file are shown as Type CSV, "
-            + "and you can set the Index values for all CSV entries at the same time."
-        )
-
-        s += "\n\n" + _(
-            "Note: If your CSV doesn't have a header line, columns will be named "
-            + "'column_1', 'column_2' etc."
-        )
-
-        s += "\n\n" + _(
-            "The Wordlist also contains some special entries "
-            + "(which might be especially useful for calibration designs):"
-            + "\n\t* 'version'   - Meerk40t version"
-            + "\n\t* 'date'      - Date burn started"
-            + "\n\t* 'time'      - Time burn started"
-            + "\n\t* 'op_device' - Device you are burning on"
-            + "\n\t* 'op_speed'  - Speed of the current operation"
-            + "\n\t* 'op_power'  - PPI of the current operation"
-            + "\n\t* 'op_dpi'    - DPI of the current (raster) operation"
-            + "\n\t* 'op_passes' - Operation passes of the current operation"
-        )
-
-        s += "\n\n" + _(
-            "The placeholders for 'date' and 'time' can also contain formatting directives "
-            + "that allow you to format them according to your local conventions e.g."
-        )
-        s += "\n\t" + _(
-            r"{date@%d.%m.%Y} - 31.12.2022" + "\n\t" + r"{time@%H:%M} - 23:59"
-        )
-        s += "\n" + _(
-            "For a complete set of format-directives see: "
-            + r"https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior"
-        )
-
+        s = self.context.asset("wordlist_howto")
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
+        font = wx.Font(
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
+        info_label.SetFont(font)
         info_label.SetBackgroundColour(self.GetBackgroundColour())
         info_box.Add(info_label, 1, wx.EXPAND, 0)
         main_sizer.Add(info_box, 1, wx.EXPAND, 0)

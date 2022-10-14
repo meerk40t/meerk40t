@@ -348,7 +348,7 @@ def plugin(kernel, lifecycle):
                 yield "home"
                 yield "wait_finish"
 
-            spooler.laserjob(list(home_dot_test()), label=f"Dot and Home Test")
+            spooler.laserjob(list(home_dot_test()), label=f"Dot and Home Test", helper=True)
             return "spooler", spooler
 
 
@@ -367,6 +367,7 @@ class LaserJob:
         self.loops = loops
         self.loops_executed = 0
         self._driver = driver
+        self.helper = False
         self.item_index = 0
 
         self._stopped = True
@@ -729,24 +730,26 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def laserjob(self, job, priority=0, loops=1, label=None):
+    def laserjob(self, job, priority=0, loops=1, label=None, helper=False):
         """
         send a wrapped laser job to the spooler.
         """
         if label is None:
             label = f"{self.__class__.__name__}:{len(job)} items"
         # label = str(job)
-        laserjob = LaserJob(
+        ljob = LaserJob(
             label, list(job), driver=self.driver, priority=priority, loops=loops
         )
+        ljob.helper = helper
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
-            self._queue.append(laserjob)
+            self._queue.append(ljob)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
         self.context.signal("spooler;queue", len(self._queue))
 
-    def command(self, *job, priority=0):
+    def command(self, *job, priority=0, helper=True):
         laserjob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+        laserjob.helper = helper
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(laserjob)
@@ -794,6 +797,7 @@ class Spooler:
                             self.context.label,
                             passinfo,
                             status,
+                            e.helper,
                         )
                         self.context.signal("spooler;completed", info)
                 except AttributeError:
@@ -819,6 +823,7 @@ class Spooler:
                     self.context.label,
                     f"{loop}/{total}",
                     status,
+                    element.helper,
                 )
                 self.context.signal("spooler;completed", info)
             except AttributeError:

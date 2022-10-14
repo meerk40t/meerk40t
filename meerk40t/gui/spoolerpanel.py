@@ -52,6 +52,7 @@ class SpoolerPanel(wx.Panel):
         self.context.setting(int, "spooler_sash_position", 0)
         self.context.setting(bool, "spool_history_clear_on_start", False)
         self.clear_data = self.context.spool_history_clear_on_start
+        self.context.setting(bool, "spool_ignore_helper_jobs", True)
 
         self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
         sty = wx.BORDER_SUNKEN
@@ -288,10 +289,11 @@ class SpoolerPanel(wx.Panel):
 
             return check
 
-        def toggle_flag(event):
-            self.context.spool_history_clear_on_start = (
-                not self.context.spool_history_clear_on_start
-            )
+        def toggle_1(event):
+            self.context.spool_history_clear_on_start = not self.context.spool_history_clear_on_start
+
+        def toggle_2(event):
+            self.context.spool_ignore_helper_jobs = not self.context.spool_ignore_helper_jobs
 
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
@@ -329,12 +331,12 @@ class SpoolerPanel(wx.Panel):
             wx.ID_ANY, _("Clear history on startup"), "", wx.ITEM_CHECK
         )
         menuitem.Check(self.context.spool_history_clear_on_start)
-        self.Bind(
-            wx.EVT_MENU,
-            toggle_flag,
-            id=menuitem.GetId(),
+        self.Bind(wx.EVT_MENU, toggle_1, id=menuitem.GetId(),)
+        menuitem = menu.Append(
+            wx.ID_ANY, _("Ignore helper jobs"), "", wx.ITEM_CHECK
         )
-
+        menuitem.Check(self.context.spool_ignore_helper_jobs)
+        self.Bind(wx.EVT_MENU, toggle_2, id=menuitem.GetId(),)
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
             menu.Destroy()
@@ -663,7 +665,12 @@ class SpoolerPanel(wx.Panel):
     def refresh_history(self, newestinfo=None):
 
         if newestinfo is not None:
-            self.history.insert(0, newestinfo)
+            addit = True
+            # No helper jobs....
+            if len(newestinfo)>=7 and newestinfo[6] and self.context.spool_ignore_helper_jobs:
+                addit = False
+            if addit:
+                self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         idx = 0
         hlen = len(self.history)

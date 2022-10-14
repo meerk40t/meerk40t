@@ -6433,7 +6433,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}")
+                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}", helper=True)
 
             run_shape(spooler, hull)
 
