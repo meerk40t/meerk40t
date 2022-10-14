@@ -698,6 +698,13 @@ class AboutPanel(wx.Panel):
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
+        font = wx.Font(
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
+        info_label.SetFont(font)
         info_label.SetBackgroundColour(self.GetBackgroundColour())
         info_box.Add(info_label, 1, wx.EXPAND, 0)
         main_sizer.Add(info_box, 1, wx.EXPAND, 0)
