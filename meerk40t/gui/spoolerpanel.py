@@ -49,6 +49,9 @@ class SpoolerPanel(wx.Panel):
         spools = [s.label for s in self.available_devices]
         spools.insert(0, _("-- All available devices --"))
         self.queue_entries = []
+        self.context.setting(int, "spooler_sash_position", 0)
+        self.context.setting(bool, "spool_history_clear_on_start", False)
+        self.clear_data = self.context.spool_history_clear_on_start
 
         self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
         sty = wx.BORDER_SUNKEN
@@ -57,7 +60,6 @@ class SpoolerPanel(wx.Panel):
         self.win_bottom = wx.Window(self.splitter, style=sty)
         self.splitter.SetMinimumPaneSize(50)
         self.splitter.SplitHorizontally(self.win_top, self.win_bottom, -100)
-        self.context.setting(int, "spooler_sash_position", 0)
         self.splitter.SetSashPosition(self.context.spooler_sash_position)
         self.combo_device = wx.ComboBox(
             self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
@@ -141,8 +143,8 @@ class SpoolerPanel(wx.Panel):
             "passes": 6,
             "status": 7,
         }
-
-        self.reload_history()
+        if not self.clear_data:
+            self.reload_history()
 
         # if index == -1:
         #     disable_window(self)
@@ -274,6 +276,9 @@ class SpoolerPanel(wx.Panel):
 
             return check
 
+        def toggle_flag(event):
+            self.context.spool_history_clear_on_start = not self.context.spool_history_clear_on_start
+
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
         options = [ (_("All entries"), None) ]
@@ -296,6 +301,12 @@ class SpoolerPanel(wx.Panel):
         for item in options:
             menuitem = menu.Append(wx.ID_ANY, item[0], "")
             self.Bind(wx.EVT_MENU, on_menu_time(item[1]), id=menuitem.GetId(),)
+
+        menu.AppendSeparator()
+        menuitem = menu.Append(wx.ID_ANY, _("Clear history on startup"), "", wx.ITEM_CHECK)
+        menuitem.Check(self.context.spool_history_clear_on_start)
+        self.Bind(wx.EVT_MENU, toggle_flag, id=menuitem.GetId(),)
+
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
             menu.Destroy()
