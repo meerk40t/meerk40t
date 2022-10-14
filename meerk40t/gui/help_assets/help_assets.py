@@ -79,10 +79,14 @@ def asset(context, asset):
         lang = "japanese"
     if language == 9:  # ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
         lang = "dutch"
+    text = ""
     try:
-        return globals()[f"{lang}_{asset}"]
+        text = globals()[f"{lang}_{asset}"]
     except KeyError:
         try:
-            return globals()["english" + asset]
+            text = globals()["english" + asset]
         except KeyError as e:
-            return ""
+            pass
+    if text and text[0] == "\n":
+        return text[1:]
+    return text
