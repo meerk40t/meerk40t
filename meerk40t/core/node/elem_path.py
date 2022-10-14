@@ -161,6 +161,11 @@ class PathNode(Node):
         )
         self.path.transform = self.matrix
         self.path.stroke_width = self.stroke_width
+        try:
+            del self.path.values["viewport_transform"]
+            # If we had transforming viewport that is no longer relevant
+        except KeyError:
+            pass
 
     def as_path(self):
         self._sync_svg()
