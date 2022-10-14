@@ -696,16 +696,17 @@ class AboutPanel(wx.Panel):
         self.parent_panel = None
 
         s = _(
-            "WordLists allow you to create text elements in your design with placeholder "
-            + "text that is replaced from a separate list at burn time. "
+            "WordLists allow you to create text elements in your design which contain "
+            + "placeholder text that is replaced at burn time from this WordList. "
             + "You can then burn several items with different text without having to "
             + "change your design each time. "
         )
 
         s += "\n\n" + _(
-            "A placeholder consists of a name inside curly brackets e.g. '{firstname}'. "
-            + "You use the name in the WordList Editor to associate it with the text "
-            + "that will replace the placeholder and that you actually want to burn."
+            r"A placeholder consists of a name inside curly brackets e.g. '{FIRSTNAME}'. "
+            + "You use the name in the WordList Editor to associate it with the placeholder "
+            + "and the placeholder will be replaced by the text you enter "
+            + "into the associated WordList Contents."
         )
 
         s += "\n\n" + _(
@@ -715,19 +716,19 @@ class AboutPanel(wx.Panel):
             + "Having created the cut path for the name-tag outline e.g. a rectangle, "
             + "use the Text drawing tool to create a Text element containing the following:"
         )
-        s += "\n" + _(r"'This item belongs to {OWNER}'")
+        s += "\n" + _(r"'This item belongs to {FIRSTNAME}'")
         
         s += "\n\n\" + _(
             "Then you use this WordList editor to create one or more entries as follows:"
         )
-        s +=  "\n\t" + "|-------|------|-------|"
-            + "\n\t" + "| Name  | Type | Index |"
-            + "\n\t" + "|-------|------|-------|"
-            + "\n\t" + "| owner | Text |   0   |"
-            + "\n\t" + "|-------|------|-------|"
+        s +=  "\n\t" + "|-----------|------|-------|"
+            + "\n\t" + "|    Name   | Type | Index |"
+            + "\n\t" + "|-----------|------|-------|"
+            + "\n\t" + "| firstname | Text |   0   |"
+            + "\n\t" + "|-----------|------|-------|"
         )
         s += "\n" + _(
-            "Then click on th owner row and add several items to the Contents pane e.g.:"
+            "Then click on the 'firstname' row and add several items to the Contents pane e.g.:"
         )
         s += "\n\t" + "Paul"
             + "\n\t" + "David"
