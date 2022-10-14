@@ -8007,6 +8007,10 @@ class Elemental(Service):
         )
         def merge_elements(node, **kwargs):
             self("element merge\n")
+            # Is the group now empty? --> delete
+            if len(node.children) == 0:
+                node.remove_node()
+
 
         @self.tree_conditional(lambda node: node.lock)
         @self.tree_separator_before()
