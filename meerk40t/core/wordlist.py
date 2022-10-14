@@ -203,6 +203,10 @@ class Wordlist:
                 if wordlist[0] == 2:  # Counter-type
                     # Counter index is the value.
                     value = wordlist[2] if not reset else 0
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        value = 0
                     value += relative
                     if autoincrement:
                         # autoincrement of counter means value + 1
