@@ -266,8 +266,14 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
-        wx.ToolTip.SetAutoPop(10000)
-        wx.ToolTip.SetDelay(100)
+        # Set the delay after which the tooltip disappears or how long a tooltip remains visible.
+        self.context.setting(int, "tooltip_autopop", 10000)
+        # Set the delay after which the tooltip appears.
+        self.context.setting(int, "tooltip_delay", 100)
+        autopop_ms = self.context.tooltip_autopop
+        delay_ms = self.context.tooltip_delay
+        wx.ToolTip.SetAutoPop(autopop_ms)
+        wx.ToolTip.SetDelay(delay_ms)
         wx.ToolTip.SetReshow(0)
 
     def on_app_close(self, event=None):
@@ -589,6 +595,12 @@ class wxMeerK40t(wx.App, Module):
 
         context.setting(int, "language", None)
         language = context.language
+        from meerk40t.gui.help_assets.help_assets import asset
+
+        def get_asset(asset_name):
+            return asset(context, asset_name)
+
+        context.asset = get_asset
         if language is not None and language != 0:
             self.update_language(language)
 
