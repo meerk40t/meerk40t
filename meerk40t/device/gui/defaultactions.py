@@ -87,7 +87,9 @@ class DefaultActionPanel(wx.Panel):
         self.text_param_append = wx.TextCtrl(self, wx.ID_ANY)
         self.button_del_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
         self.button_up_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 30))
-        self.button_down_prepend = wx.StaticBitmap(self, wx.ID_ANY, size=wx.Size(30, 20))
+        self.button_down_prepend = wx.StaticBitmap(
+            self, wx.ID_ANY, size=wx.Size(30, 20)
+        )
         self.button_del_prepend.SetBitmap(icons8_remove_25.GetBitmap(resize=25))
         self.button_up_prepend.SetBitmap(icons8_up_50.GetBitmap(resize=25))
         self.button_down_prepend.SetBitmap(icons8_down_50.GetBitmap(resize=25))

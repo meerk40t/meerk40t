@@ -782,7 +782,7 @@ class Spooler:
                     if isinf(total):
                         status = "stopped"
                         total = "∞"
-                    elif loop<total:
+                    elif loop < total:
                         status = "stopped"
                     passinfo = f"{loop}/{total}"
                     e.stop()
@@ -810,7 +810,7 @@ class Spooler:
                 if isinf(element.loops):
                     status = "stopped"
                     total = "∞"
-                elif loop<total:
+                elif loop < total:
                     status = "stopped"
                 info = (
                     element.label,
