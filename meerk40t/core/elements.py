@@ -958,6 +958,9 @@ class Elemental(Service):
             else:
                 value = f"<{opatt}>"
                 self.mywordlist.set_value(skey, value)
+        skey = "op_device"
+        value = self.device.label
+        self.mywordlist.set_value(skey, value)
 
         result = self.mywordlist.translate(pattern)
         return result
