@@ -28,6 +28,7 @@ class Wordlist:
             "op_device": [0, 2, "<device>"],
             "op_speed": [0, 2, "<speed>"],
             "op_power": [0, 2, "<power>"],
+            "op_passes": [0, 2, "<passes>"],
         }
         self.prohibited = (
             "version",
@@ -36,6 +37,7 @@ class Wordlist:
             "op_device",
             "op_speed",
             "op_power",
+            "op_passes",
         )
         if directory is None:
             directory = os.getcwd()

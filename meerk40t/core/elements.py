@@ -941,6 +941,9 @@ class Elemental(Service):
                 if hasattr(node, opatt):
                     value = getattr(node, opatt, None)
                     found = True
+                    if opatt == "passes": # We need to look at one more info
+                        if not node.passes_custom or value < 1:
+                            value = 1
                 else:  # Try setting
                     if hasattr(node, "settings"):
                         try:
