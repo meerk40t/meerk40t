@@ -289,7 +289,9 @@ class SpoolerPanel(wx.Panel):
             return check
 
         def toggle_flag(event):
-            self.context.spool_history_clear_on_start = not self.context.spool_history_clear_on_start
+            self.context.spool_history_clear_on_start = (
+                not self.context.spool_history_clear_on_start
+            )
 
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
@@ -316,12 +318,22 @@ class SpoolerPanel(wx.Panel):
 
         for item in options:
             menuitem = menu.Append(wx.ID_ANY, item[0], "")
-            self.Bind(wx.EVT_MENU, on_menu_time(item[1]), id=menuitem.GetId(),)
+            self.Bind(
+                wx.EVT_MENU,
+                on_menu_time(item[1]),
+                id=menuitem.GetId(),
+            )
 
         menu.AppendSeparator()
-        menuitem = menu.Append(wx.ID_ANY, _("Clear history on startup"), "", wx.ITEM_CHECK)
+        menuitem = menu.Append(
+            wx.ID_ANY, _("Clear history on startup"), "", wx.ITEM_CHECK
+        )
         menuitem.Check(self.context.spool_history_clear_on_start)
-        self.Bind(wx.EVT_MENU, toggle_flag, id=menuitem.GetId(),)
+        self.Bind(
+            wx.EVT_MENU,
+            toggle_flag,
+            id=menuitem.GetId(),
+        )
 
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
