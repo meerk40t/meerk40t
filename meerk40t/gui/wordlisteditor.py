@@ -798,6 +798,8 @@ class AboutPanel(wx.Panel):
             + "\n\t* 'op_device' - Device you are burning on"
             + "\n\t* 'op_speed'  - Speed of the current operation"
             + "\n\t* 'op_power'  - PPI of the current operation"
+            + "\n\t* 'op_dpi'    - DPI of the current (raster) operation"
+            + "\n\t* 'op_passes' - Operation passes of the current operation"
         )
 
         s += "\n\n" + _(
