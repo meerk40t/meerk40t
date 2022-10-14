@@ -721,19 +721,21 @@ class AboutPanel(wx.Panel):
         s += "\n\n" + _(
             "Then you use this WordList editor to create one or more entries as follows:"
         )
-        s +=  "\n\t" + "|-----------|------|-------|"
-            + "\n\t" + "|    Name   | Type | Index |"
-            + "\n\t" + "|-----------|------|-------|"
-            + "\n\t" + "| firstname | Text |   0   |"
-            + "\n\t" + "|-----------|------|-------|"
+        s += "\n\t" + _(
+            "|-----------|------|-------|"
+            + "\n\t"
+            + "|    Name   | Type | Index |"
+            + "\n\t"
+            + "|-----------|------|-------|"
+            + "\n\t"
+            + "| firstname | Text |   0   |"
+            + "\n\t"
+            + "|-----------|------|-------|"
         )
         s += "\n" + _(
             "Then click on the 'firstname' row and add several items to the Contents pane e.g.:"
         )
-        s += "\n\t" + "Paul"
-            + "\n\t" + "David"
-            + "\n\t" + "Andy"
-        )
+        s += "\n\t" + _("Paul" + "\n\t" + "David" + "\n\t" + "Andy")
         s += "\n" + _(
             "Now when you execute the burn, you will get individual place tags which have "
             + "different names on them e.g. "
@@ -806,8 +808,8 @@ class AboutPanel(wx.Panel):
             "The placeholders for 'date' and 'time' can also contain formatting directives "
             + "that allow you to format them according to your local conventions e.g."
         )
-        s += "\n\t" + r"{date@%d.%m.%Y} - 31.12.2022"
-            + "\n\t" + r"{time@%H:%M} - 23:59"
+        s += "\n\t" + _(
+            r"{date@%d.%m.%Y} - 31.12.2022" + "\n\t" + r"{time@%H:%M} - 23:59"
         )
         s += "\n" + _(
             "For a complete set of format-directives see: "
