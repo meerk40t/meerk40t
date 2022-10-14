@@ -5,7 +5,7 @@ from math import tau
 from meerk40t.svgelements import Matrix
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
-REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
+REGEX_LENGTH = re.compile(r"(%s)\.?([A-Za-z%%]*)" % PATTERN_FLOAT)
 ERROR = 1e-11
 DEFAULT_PPI = 96.0
 NATIVE_UNIT_PER_INCH = 65535
