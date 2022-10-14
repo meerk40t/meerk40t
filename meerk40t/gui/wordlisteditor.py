@@ -717,40 +717,42 @@ class AboutPanel(wx.Panel):
             + "use the Text drawing tool to create a Text element containing the following:"
         )
         s += "\n" + _(r"'This seat is reserved for {FIRSTNAME}'")
-        
-        s += "\n\n\" + _(
+
+        s += "\n\n" + _(
             "Then you use this WordList editor to create one or more entries as follows:"
         )
-        s +=  "\n\t" + "|-----------|------|-------|"
-            + "\n\t" + "|    Name   | Type | Index |"
-            + "\n\t" + "|-----------|------|-------|"
-            + "\n\t" + "| firstname | Text |   0   |"
-            + "\n\t" + "|-----------|------|-------|"
+        s += "\n\t" + _(
+            "|-----------|------|-------|"
+            + "\n\t"
+            + "|    Name   | Type | Index |"
+            + "\n\t"
+            + "|-----------|------|-------|"
+            + "\n\t"
+            + "| firstname | Text |   0   |"
+            + "\n\t"
+            + "|-----------|------|-------|"
         )
         s += "\n" + _(
             "Then click on the 'firstname' row and add several items to the Contents pane e.g.:"
         )
-        s += "\n\t" + "Paul"
-            + "\n\t" + "David"
-            + "\n\t" + "Andy"
-        )
+        s += "\n\t" + _("Paul" + "\n\t" + "David" + "\n\t" + "Andy")
         s += "\n" + _(
             "Now when you execute the burn, you will get individual place tags which have "
             + "different names on them e.g. "
             + "'This seat is reserved for Andy'."
         )
-        
+
         s += "\n\n" + _(
             "You can use as many different placeholder names as you like in "
             + "text fields in your design."
         )
-        
+
         s += "\n\n" + _(
             "The 'Index' value in the WordList table indicates which entry in the "
             + "Contents list will be used next, zero meaning the first entry. "
             + "The index is automatically increased by one at the end of each burn."
         )
-        
+
         s += "\n\n" + _(
             "But suppose for efficiency you now want to burn two seat reservation tags "
             + "at the same time each having a different name from the same list. "
@@ -770,7 +772,7 @@ class AboutPanel(wx.Panel):
 
         s += "\n\n" + _(
             "As an alternative to manually entering the wordlist values "
-            + "using this WordList Editor, " 
+            + "using this WordList Editor, "
             + "you can use a standard comma-separated CSV file. "
             + "The placeholder names are defined in standard CSV header line "
             + "(the first line in the CSV file), "
@@ -788,7 +790,7 @@ class AboutPanel(wx.Panel):
             "Note: If your CSV doesn't have a header line, columns will be named "
             + "'column_1', 'column_2' etc."
         )
-        
+
         s += "\n\n" + _(
             "The Wordlist also contains some special entries "
             + "(which might be especially useful for calibration designs):"
@@ -806,14 +808,14 @@ class AboutPanel(wx.Panel):
             "The placeholders for 'date' and 'time' can also contain formatting directives "
             + "that allow you to format them according to your local conventions e.g."
         )
-        s += "\n\t" + r"{date@%d.%m.%Y} - 31.12.2022"
-            + "\n\t" + r"{time@%H:%M} - 23:59"
+        s += "\n\t" + _(
+            r"{date@%d.%m.%Y} - 31.12.2022" + "\n\t" + r"{time@%H:%M} - 23:59"
         )
         s += "\n" + _(
             "For a complete set of format-directives see: "
             + r"https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior"
         )
-        
+
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )

@@ -736,6 +736,7 @@ class Elemental(Service):
 
         subject_polygons = []
         if path is not None:
+            this_length = path.length()
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
 
@@ -754,6 +755,7 @@ class Elemental(Service):
                 Point(bb[2], bb[3]),
                 Point(bb[1], bb[3]),
             ]
+            this_length = 2 * (bb[3] - bb[1]) + 2 * (bb[2] - bb[0])
             subject_polygons.append(s)
 
         if len(subject_polygons) > 0:
@@ -786,7 +788,6 @@ class Elemental(Service):
                 if idx > 0:
                     dx = pt.x - last_x
                     dy = pt.y - last_y
-                    this_length += sqrt(dx * dx + dy * dy)
                     area_x_y += last_x * pt.y
                     area_y_x += last_y * pt.x
                 last_x = pt.x
@@ -2749,6 +2750,11 @@ class Elemental(Service):
             elements_nodes = []
             elements = []
             for node in data:
+                oldstuff = []
+                for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                    if hasattr(node, attrib):
+                        oldval = getattr(node, attrib, None)
+                        oldstuff.append([attrib, oldval])
                 group_node = node.replace_node(type="group", label=node.label)
                 try:
                     p = node.as_path()
@@ -2756,8 +2762,10 @@ class Elemental(Service):
                     continue
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
-                    elements.append(subelement)
-                    group_node.add(path=subelement, type="elem path")
+                    subnode = group_node.add(path=subelement, type="elem path")
+                    for item in oldstuff:
+                        setattr(subnode, item[0], item[1])
+                    elements.append(subnode)
                 elements_nodes.append(group_node)
                 if self.classify_new:
                     self.classify(elements)
@@ -7854,11 +7862,19 @@ class Elemental(Service):
             help="",
         )
         def convert_to_path(node, **kwargs):
+            oldstuff = []
+            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                if hasattr(node, attrib):
+                    oldval = getattr(node, attrib, None)
+                    oldstuff.append([attrib, oldval])
             try:
                 path = node.as_path()
             except AttributeError:
                 return
-            node.replace_node(path=path, type="elem path")
+            newnode = node.replace_node(path=path, type="elem path")
+            for item in oldstuff:
+                setattr(newnode, item[0], item[1])
+            newnode.altered()
 
         @self.tree_submenu(_("Flip"))
         @self.tree_separator_before()
@@ -7991,6 +8007,9 @@ class Elemental(Service):
         )
         def merge_elements(node, **kwargs):
             self("element merge\n")
+            # Is the group now empty? --> delete
+            if len(node.children) == 0:
+                node.remove_node()
 
         @self.tree_conditional(lambda node: node.lock)
         @self.tree_separator_before()
@@ -8656,6 +8675,11 @@ class Elemental(Service):
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children()
+        if hasattr(operations, "loop_continuous"):
+            operations.loop_continuous = False
+            operations.loop_enabled = False
+            operations.loop_n = 1
+            self.signal("element_property_update", operations)
         self.signal("operation_removed")
 
     def clear_elements(self):
@@ -10161,6 +10185,16 @@ class Elemental(Service):
                     return True
         return False
 
+    def remove_empty_groups(self):
+        something_was_deleted = True
+        while something_was_deleted:
+            something_was_deleted = False
+            for node in self.elems_nodes():
+                if node.type in ("file", "group"):
+                    if len(node.children) == 0:
+                        node.remove_node()
+                        something_was_deleted = True
+
     @staticmethod
     def element_classify_color(element: SVGElement):
         element_color = element.stroke
@@ -10177,6 +10211,7 @@ class Elemental(Service):
                     try:
                         self.signal("freeze_tree", True)
                         results = loader.load(self, self, pathname, **kwargs)
+                        self.remove_empty_groups()
                         self.signal("freeze_tree", False)
                     except FileNotFoundError:
                         return False

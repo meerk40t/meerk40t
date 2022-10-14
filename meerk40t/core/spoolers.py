@@ -775,11 +775,15 @@ class Spooler:
         with self._lock:
             for e in self._queue:
                 try:
+                    status = "completed"
                     needs_signal = e.is_running() and e.time_started is not None
                     loop = e.loops_executed
                     total = e.loops
                     if isinf(total):
+                        status = "stopped"
                         total = "∞"
+                    elif loop < total:
+                        status = "stopped"
                     passinfo = f"{loop}/{total}"
                     e.stop()
                     if needs_signal:
@@ -789,6 +793,7 @@ class Spooler:
                             e.runtime,
                             self.context.label,
                             passinfo,
+                            status,
                         )
                         self.context.signal("spooler;completed", info)
                 except AttributeError:
@@ -799,14 +804,21 @@ class Spooler:
     def remove(self, element):
         with self._lock:
             try:
+                status = "completed"
                 loop = element.loops_executed
-                total = "∞" if isinf(element.loops) else element.loops
+                total = element.loops
+                if isinf(element.loops):
+                    status = "stopped"
+                    total = "∞"
+                elif loop < total:
+                    status = "stopped"
                 info = (
                     element.label,
                     element.time_started,
                     element.runtime,
                     self.context.label,
                     f"{loop}/{total}",
+                    status,
                 )
                 self.context.signal("spooler;completed", info)
             except AttributeError:

@@ -847,12 +847,20 @@ class SVGProcessor:
             else:
                 for child in element:
                     self.parse(child, context_node, e_list)
-        elif isinstance(element, (Group, Use)):
+        elif isinstance(element, Group):
             if _label == "regmarks":
                 context_node = self.regmark
                 e_list = self.regmark_list
             context_node = context_node.add(type="group", id=ident, label=_label)
             # recurse to children
+            if self.reverse:
+                for child in reversed(element):
+                    self.parse(child, context_node, e_list)
+            else:
+                for child in element:
+                    self.parse(child, context_node, e_list)
+        elif isinstance(element, Use):
+            # recurse to children, but do not subgroup elements.
             if self.reverse:
                 for child in reversed(element):
                     self.parse(child, context_node, e_list)

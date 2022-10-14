@@ -162,6 +162,11 @@ class RectNode(Node):
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
+        try:
+            del self.shape.values["viewport_transform"]
+            # If we had transforming viewport that is no longer relevant
+        except KeyError:
+            pass
 
     def as_path(self):
         self._sync_svg()

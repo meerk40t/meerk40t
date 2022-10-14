@@ -340,8 +340,11 @@ class CutCode(CutGroup):
 
     def __str__(self):
         parts = list()
-        parts.append(f"{len(self)} items")
-        return f"CutCode({' '.join(parts)})"
+        if len(self) <= 3:
+            parts.extend([type(p).__name__ for p in self])
+        else:
+            parts.append(f"{len(self)} items")
+        return f"CutCode({', '.join(parts)})"
 
     def __copy__(self):
         return CutCode(self)
@@ -490,6 +493,21 @@ class CutCode(CutGroup):
                 duration += current.length() / native_speed
         return duration
 
+    def _native_speed(self, cutcode):
+        if cutcode:
+            for current in cutcode:
+                native_speed = current.settings.get(
+                    "native_rapid_speed",
+                    current.settings.get("native_speed", None),
+                )
+                if native_speed is not None:
+                    return native_speed
+        # No element had a rapid speed value.
+        native_speed = self.settings.get(
+            "native_rapid_speed", self.settings.get("native_speed", None)
+        )
+        return native_speed
+
     def duration_travel(self, stop_at=None):
         """
         Duration of travel time taken within the cutcode.
@@ -499,16 +517,9 @@ class CutCode(CutGroup):
         """
         travel = self.length_travel()
         cutcode = list(self.flat())
-        if cutcode:
-            current = cutcode[0]
-            rapid_speed = current.settings.get(
-                "native_rapid_speed",
-                current.settings.get("native_speed", current.speed),
-            )
-        else:
-            rapid_speed = self.settings.get(
-                "native_rapid_speed", self.settings.get("native_speed", self.speed)
-            )
+        rapid_speed = self._native_speed(cutcode)
+        if rapid_speed is None:
+            return 0
         return travel / rapid_speed
 
     @classmethod

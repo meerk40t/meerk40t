@@ -28,6 +28,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_vector_20,
+    icons8_visit_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
@@ -348,7 +349,7 @@ class ShadowTree:
             "util wait": icons8_timer_20,
             "util home": icons8_home_20,
             "util goto": icons8_return_20,
-            "util origin": icons8_return_20,
+            "util origin": icons8_visit_20,
             "util output": icons8_output_20,
             "util input": icons8_input_20,
             "util console": icons8_system_task_20,
