@@ -53,38 +53,36 @@ german_wordlist_howto = """
 Ick Sprechen Kinen Duetch
 """
 
-"""
-    ("en", "English", wx.LANGUAGE_ENGLISH),
-    ("it", "italiano", wx.LANGUAGE_ITALIAN),
-    ("fr", "français", wx.LANGUAGE_FRENCH),
-    ("de", "Deutsch", wx.LANGUAGE_GERMAN),
-    ("es", "español", wx.LANGUAGE_SPANISH),
-    ("zh", "中文", wx.LANGUAGE_CHINESE),
-    ("hu", "Magyar", wx.LANGUAGE_HUNGARIAN),
-    ("pt_PT", "português", wx.LANGUAGE_PORTUGUESE),
-    ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
-    ("ja", "日本", wx.LANGUAGE_JAPANESE),
-    ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
-"""
-
 
 def asset(context, asset):
     language = context.language
-    if asset == "wordlist_howto":
-        if language == 0:  # english
-            return english_wordlist_howto
-        if language == 1:  # Italian
-            pass
-        if language == 2:  # French
-            pass
-        if language == 3:  # German
-            return german_wordlist_howto
-        if language == 4:  # Spanish
-            pass
-        if language == 5:  # Chinese
-            pass
-        if language == 6: # Portuguese
-            pass
-        if language == 7:  # Portuguese_brazilian
-            pass
-        return english_wordlist_howto
+    lang = "english"
+    if language == 0:  # ("en", "English", wx.LANGUAGE_ENGLISH)
+        lang = "english"
+    if language == 1:  # ("it", "italiano", wx.LANGUAGE_ITALIAN),
+        lang = "italian"
+    if language == 2:  # ("fr", "français", wx.LANGUAGE_FRENCH),
+        lang = "french"
+    if language == 3:  # ("de", "Deutsch", wx.LANGUAGE_GERMAN),
+        lang = "german"
+    if language == 4:  # ("es", "español", wx.LANGUAGE_SPANISH),
+        lang = "spanish"
+    if language == 5:  # ("zh", "中文", wx.LANGUAGE_CHINESE),
+        lang = "chinese"
+    if language == 6:  # ("hu", "Magyar", wx.LANGUAGE_HUNGARIAN),
+        lang = "hungarian"
+    if language == 7:  # ("pt_PT", "português", wx.LANGUAGE_PORTUGUESE),
+        lang = "portuguese"
+    if language == 8:  # ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+        lang = "portuguese_brazilian"
+    if language == 9:  # ("ja", "日本", wx.LANGUAGE_JAPANESE),
+        lang = "japanese"
+    if language == 9:  # ("nl", "Nederlands", wx.LANGUAGE_DUTCH),
+        lang = "dutch"
+    try:
+        return globals()[f"{lang}_{asset}"]
+    except KeyError:
+        try:
+            return globals()["english" + asset]
+        except KeyError as e:
+            return ""
