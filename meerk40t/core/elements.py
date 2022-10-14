@@ -736,6 +736,7 @@ class Elemental(Service):
 
         subject_polygons = []
         if path is not None:
+            this_length = path.length()
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
 
@@ -754,6 +755,7 @@ class Elemental(Service):
                 Point(bb[2], bb[3]),
                 Point(bb[1], bb[3]),
             ]
+            this_length = 2 * (bb[3] - bb[1]) + 2 * (bb[2] - bb[0])
             subject_polygons.append(s)
 
         if len(subject_polygons) > 0:
@@ -786,7 +788,6 @@ class Elemental(Service):
                 if idx > 0:
                     dx = pt.x - last_x
                     dy = pt.y - last_y
-                    this_length += sqrt(dx * dx + dy * dy)
                     area_x_y += last_x * pt.y
                     area_y_x += last_y * pt.x
                 last_x = pt.x
@@ -8006,6 +8007,10 @@ class Elemental(Service):
         )
         def merge_elements(node, **kwargs):
             self("element merge\n")
+            # Is the group now empty? --> delete
+            if len(node.children) == 0:
+                node.remove_node()
+
 
         @self.tree_conditional(lambda node: node.lock)
         @self.tree_separator_before()
