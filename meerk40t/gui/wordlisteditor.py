@@ -694,9 +694,7 @@ class AboutPanel(wx.Panel):
             wx.VERTICAL,
         )
         self.parent_panel = None
-
-        from meerk40t.gui.help_assets.help_assets import asset
-        s = asset(self.context, "wordlist_howto")
+        s = self.context.asset("wordlist_howto")
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
