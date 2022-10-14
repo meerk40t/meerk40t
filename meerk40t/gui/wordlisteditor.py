@@ -696,64 +696,124 @@ class AboutPanel(wx.Panel):
         self.parent_panel = None
 
         s = _(
-            "The objective of this functionality is to create burning templates, "
-            + "that can be reused for different data with minimal adjustment effort."
-        )
-        s += "\n" + _(
-            "Let's clarify the term variable first: a variable is a placeholder for "
-            + "some text that can be used as part of the text-definition of a Text-Object."
-        )
-        s += "\n" + _(
-            "Its reference (i.e. variable name) is used within curly brackets to indicate "
-            + "that it will eventually be replaced by 'real' content."
+            "WordLists allow you to create text elements in your design which contain "
+            + "placeholder text that is replaced at burn time from this WordList. "
+            + "You can then burn several items with different text without having to "
+            + "change your design each time. "
         )
 
         s += "\n\n" + _(
-            "Let's come back to our use-case, imagine you want to create a name-tag "
-            + "pattern that can be reused. Let's create a text-object inside a frame "
-            + "and set its text to"
+            r"A placeholder consists of a name inside curly brackets e.g. '{FIRSTNAME}'. "
+            + "You use the name in the WordList Editor to associate it with the placeholder "
+            + "and the placeholder will be replaced by the text you enter "
+            + "into the associated WordList Contents."
         )
-        s += "\n" + _(r"'This item belongs to {NAME}' ")
-        s += _(
-            "If you define a variable named 'NAME' and assign a value like "
-            + "'John' to it, then the burned text will finally state:"
-        )
-        s += "\n" + _("'This item belongs to John'")
 
         s += "\n\n" + _(
-            "You can define a set of variables (called wordlist) that could be populated "
-            + "by a standard comma-separated CSV file. The you could have not just one "
-            + "entry defined for 'NAME' but dozens of them. Which of the multiple entries "
-            + "is currently active is decided by its index value."
+            "As an example of how this functionality would be used, "
+            + "imagine you want to create a set of dinner party seat reservation tags "
+            + "each with a different person's name. "
+            + "Having created the cut path for the name-tag outline e.g. a rectangle, "
+            + "use the Text drawing tool to create a Text element containing the following:"
+        )
+        s += "\n" + _(r"'This seat is reserved for {FIRSTNAME}'")
+
+        s += "\n\n" + _(
+            "Then you use this WordList editor to create one or more entries as follows:"
+        )
+        s +=  "\n\t" + "|-----------|------|-------|"
+            + "\n\t" + "|    Name   | Type | Index |"
+            + "\n\t" + "|-----------|------|-------|"
+            + "\n\t" + "| firstname | Text |   0   |"
+            + "\n\t" + "|-----------|------|-------|"
+        )
+        s += "\n" + _(
+            "Then click on the 'firstname' row and add several items to the Contents pane e.g.:"
+        )
+        s += "\n\t" + "Paul"
+            + "\n\t" + "David"
+            + "\n\t" + "Andy"
+        )
+        s += "\n" + _(
+            "Now when you execute the burn, you will get individual place tags which have "
+            + "different names on them e.g. "
+            + "'This seat is reserved for Andy'."
+        )
+
+        s += "\n\n" + _(
+            "You can use as many different placeholder names as you like in "
+            + "text fields in your design."
+        )
+
+        s += "\n\n" + _(
+            "The 'Index' value in the WordList table indicates which entry in the "
+            + "Contents list will be used next, zero meaning the first entry. "
+            + "The index is automatically increased by one at the end of each burn."
+        )
+
+        s += "\n\n" + _(
+            "But suppose for efficiency you now want to burn two seat reservation tags "
+            + "at the same time each having a different name from the same list. "
+            + r"In this case, if the first tag use '{NAME#+0}' and in the second '{NAME#+1}' "
+            + "(note the plus sign). "
+            + r"'{NAME#+0}' uses the current entry (pointed to by the Index value), "
+            + r"'{NAME#+1}' uses the next entry after the current one etc. "
+        )
+
+        s += "\n\n" + _(
+            r"With the above usage, you can use e.g. '{NAME#+0}' "
+            + "as many times as you wish in your design. "
+            + "However, if you are only using the placeholder once in your design, "
+            + r"then an alternative is to use '{NAME++}' which "
+            + "advances the Index each time the placeholder is used."
+        )
+
+        s += "\n\n" + _(
+            "As an alternative to manually entering the wordlist values "
+            + "using this WordList Editor, "
+            + "you can use a standard comma-separated CSV file. "
+            + "The placeholder names are defined in standard CSV header line "
+            + "(the first line in the CSV file), "
+            + "and the contents are then taken from all the following lines. "
+            + "The easiest way to create a CSV file is using a spreadsheet e.g. Excel, "
+            + "however e.g. for ecommerce sites your website might automatically"
+            + "create the CSV file from the orders placed online by customers. "
         )
         s += "\n\n" + _(
-            "You are not restricted to a single use of a variable (useful e.g. "
-            + "if you want to batch-burn a couple of name-tags). "
-            + "The standard use {NAME} indicates "
-            + r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign) "
-            + r"uses the next entry, {NAME#+2} the second entry after the current."
+            "Entries loaded from a CSV file are shown as Type CSV, "
+            + "and you can set the Index values for all CSV entries at the same time."
         )
+
         s += "\n\n" + _(
-            "Note: This usage does not change the index position, you need "
-            + r"to manually advance it. If you want to autoadvance the index after "
-            + "every use, then you can use {NAME++}."
+            "Note: If your CSV doesn't have a header line, columns will be named "
+            + "'column_1', 'column_2' etc."
         )
+
         s += "\n\n" + _(
-            "There are couple of predefined variables, that refer to the "
-            + r"current burn operation (like {op_power}, {op_speed} or others) "
-            + r"or contain date/time-information ({date}, {time}). "
+            "The Wordlist also contains some special entries "
+            + "(which might be especially useful for calibration designs):"
+            + "\n\t* 'version'   - Meerk40t version"
+            + "\n\t* 'date'      - Date burn started"
+            + "\n\t* 'time'      - Time burn started"
+            + "\n\t* 'op_device' - Device you are burning on"
+            + "\n\t* 'op_speed'  - Speed of the current operation"
+            + "\n\t* 'op_power'  - PPI of the current operation"
+            + "\n\t* 'op_dpi'    - DPI of the current (raster) operation"
+            + "\n\t* 'op_passes' - Operation passes of the current operation"
         )
+
         s += "\n\n" + _(
-            "Please note that date and time may be provided in a format that "
-            + r"allows to define their appearance according to local "
-            + r"preferences: e.g. {date@%d.%m.%Y} will provide a date "
-            + r"like 31.12.2022 and {time@%H:%M} a time like 23:59."
+            "The placeholders for 'date' and 'time' can also contain formatting directives "
+            + "that allow you to format them according to your local conventions e.g."
         )
-        s += "\n" + _("For a complete set of format-directives see:")
-        s += (
-            "\n"
+        s += "\n\t" + r"{date@%d.%m.%Y} - 31.12.2022"
+            + "\n\t" + r"{time@%H:%M} - 23:59"
+        )
+        s += "\n" + _(
+            "For a complete set of format-directives see: "
             + r"https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior"
         )
+
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
