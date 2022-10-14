@@ -710,13 +710,13 @@ class AboutPanel(wx.Panel):
         )
 
         s += "\n\n" + _(
-            "As an example of how this functionality would be used, "#
-            + "imagine you want to create a set of name-tags based on "
-            + "a single fixed pattern that you can reuse without changing it. "
+            "As an example of how this functionality would be used, "
+            + "imagine you want to create a set of dinner party seat reservation tags "
+            + "each with a different person's name. "
             + "Having created the cut path for the name-tag outline e.g. a rectangle, "
             + "use the Text drawing tool to create a Text element containing the following:"
         )
-        s += "\n" + _(r"'This item belongs to {FIRSTNAME}'")
+        s += "\n" + _(r"'This seat is reserved for {FIRSTNAME}'")
         
         s += "\n\n\" + _(
             "Then you use this WordList editor to create one or more entries as follows:"
@@ -735,9 +735,9 @@ class AboutPanel(wx.Panel):
             + "\n\t" + "Andy"
         )
         s += "\n" + _(
-            "Now when you execute the burn, you will get individual tags which have "
+            "Now when you execute the burn, you will get individual place tags which have "
             + "different names on them e.g. "
-            + "'This item belongs to Andy'."
+            + "'This seat is reserved for Andy'."
         )
         
         s += "\n\n" + _(
@@ -752,8 +752,8 @@ class AboutPanel(wx.Panel):
         )
         
         s += "\n\n" + _(
-            "But suppose for efficiency you now want to burn two name tags at the same time "
-            + "each having a different name from the same list. "
+            "But suppose for efficiency you now want to burn two seat reservation tags "
+            + "at the same time each having a different name from the same list. "
             + r"In this case, if the first tag use '{NAME#+0}' and in the second '{NAME#+1}' "
             + "(note the plus sign). "
             + r"'{NAME#+0}' uses the current entry (pointed to by the Index value), "
@@ -763,7 +763,7 @@ class AboutPanel(wx.Panel):
         s += "\n\n" + _(
             r"With the above usage, you can use e.g. '{NAME#+0}' "
             + "as many times as you wish in your design. "
-            + "If you are only using the placeholder once in your design, "
+            + "However, if you are only using the placeholder once in your design, "
             + r"then an alternative is to use '{NAME++}' which "
             + "advances the Index each time the placeholder is used."
         )
