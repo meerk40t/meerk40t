@@ -694,69 +694,17 @@ class AboutPanel(wx.Panel):
             wx.VERTICAL,
         )
         self.parent_panel = None
-
-        s = _(
-            "The objective of this functionality is to create burning templates, "
-            + "that can be reused for different data with minimal adjustment effort."
-        )
-        s += "\n" + _(
-            "Let's clarify the term variable first: a variable is a placeholder for "
-            + "some text that can be used as part of the text-definition of a Text-Object."
-        )
-        s += "\n" + _(
-            "Its reference (i.e. variable name) is used within curly brackets to indicate"
-            + "that it will eventually be replaced by 'real' content."
-        )
-
-        s += "\n\n" + _(
-            "Let's come back to our use-case, imagine you want to create a name-tag "
-            + "pattern that can be reused. Lets create a text-object inside a frame "
-            + "and set its text to"
-        )
-        s += "\n" + _(r"'This item belongs to {NAME}'")
-        s += _(
-            "If you define a variable named 'NAME' and assign a value like "
-            + "'John' to it, then the burned text will finally state:"
-        )
-        s += "\n" + _("'This item belongs to John'")
-
-        s += "\n\n" + _(
-            "You can define a set of variables (called wordlist) that could be populated"
-            + "by a standard comma-separated CSV file. The you could have not just one"
-            + "entry defined for 'NAME' but dozens of them. Which of the multiple entries"
-            + "is currently active is decided by its index value."
-        )
-        s += "\n\n" + _(
-            "You are not restricted to a single use of a variable (useful e.g."
-            + "if you want to batch-burn a couple of name-tags). "
-            + "The standard use {NAME} indicates "
-            + r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
-            + r"uses the next entry, {NAME#+2} the second entry after the current."
-        )
-        s += "\n\n" + _(
-            "Note: This usage does not change the index position, you need "
-            + r"to manually advance it. If you want to autoadvance the index after "
-            + "every use, then you can use {NAME++}."
-        )
-        s += "\n\n" + _(
-            "There are couple of predefined variables, that refer to the "
-            + r"current burn operation (like {op_power}, {op_speed} or others)"
-            + r"or contain date/time-information ({date}, {time})."
-        )
-        s += "\n\n" + _(
-            "Please note that date and time may be provided in a format that "
-            + r"allows to define their appearance according to local "
-            + r"preferences: e.g. {date@%d.%m.%Y} will provide a date "
-            + r"like 31.12.2022 and {time@%H:%M} a time like 23:59."
-        )
-        s += "\n" + _("For a complete set of format-directives see:")
-        s += (
-            "\n"
-            + r"https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior"
-        )
+        s = self.context.asset("wordlist_howto")
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
+        font = wx.Font(
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
+        info_label.SetFont(font)
         info_label.SetBackgroundColour(self.GetBackgroundColour())
         info_box.Add(info_label, 1, wx.EXPAND, 0)
         main_sizer.Add(info_box, 1, wx.EXPAND, 0)

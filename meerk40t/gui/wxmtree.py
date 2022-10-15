@@ -14,7 +14,6 @@ from .icons import (
     icons8_file_20,
     icons8_group_objects_20,
     icons8_home_20,
-    icons8_visit_20,
     icons8_image_20,
     icons8_input_20,
     icons8_laser_beam_20,
@@ -29,6 +28,7 @@ from .icons import (
     icons8_system_task_20,
     icons8_timer_20,
     icons8_vector_20,
+    icons8_visit_20,
 )
 from .laserrender import DRAW_MODE_ICONS, LaserRender, swizzlecolor
 from .mwindow import MWindow
