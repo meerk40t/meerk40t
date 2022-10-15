@@ -596,6 +596,12 @@ class wxMeerK40t(wx.App, Module):
 
         context.setting(int, "language", None)
         language = context.language
+        from meerk40t.gui.help_assets.help_assets import asset
+
+        def get_asset(asset_name):
+            return asset(context, asset_name)
+
+        context.asset = get_asset
         if language is not None and language != 0:
             self.update_language(language)
 

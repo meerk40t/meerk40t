@@ -1,4 +1,4 @@
-from math import tau, cos, sin, atan2, isinf
+from math import atan2, cos, isinf, sin, tau
 
 SHXPARSER_VERSION = "0.0.2"
 
@@ -270,12 +270,17 @@ class ShxFont:
                         name = data[:find]
 
                         for c in name:
-                            if ord("A") <= c <= ord("Z") or ord("0") <= c <= ord("9") or c == ord(" ") or c == ord("&"):
+                            if (
+                                ord("A") <= c <= ord("Z")
+                                or ord("0") <= c <= ord("9")
+                                or c == ord(" ")
+                                or c == ord("&")
+                            ):
                                 continue
                             name = None
                             break
                         if name is not None:
-                            data = data[find+1:]
+                            data = data[find + 1 :]
                             name = name.decode()
                             self.glyphs[name] = data
                         else:
@@ -289,7 +294,9 @@ class ShxFont:
         changes = list()
         change_count = read_int_16le(f)
         if self._debug:
-            print(f"Parsing bigfont: count={count}, length={length}, change_count={change_count}")
+            print(
+                f"Parsing bigfont: count={count}, length={length}, change_count={change_count}"
+            )
         for i in range(change_count):
             start = read_int_16le(f)
             end = read_int_16le(f)
@@ -326,7 +333,9 @@ class ShxFont:
         self.embedded = read_int_8(f)
         ignore = read_int_8(f)
         if self._debug:
-            print(f"Parsing unifont: name={self.font_name}, count={count}, length={length}")
+            print(
+                f"Parsing unifont: name={self.font_name}, count={count}, length={length}"
+            )
         for i in range(count - 1):
             index = read_int_16le(f)
             length = read_int_16le(f)
@@ -405,7 +414,9 @@ class ShxFont:
         :return:
         """
         if self._debug:
-            print(f"MOVE DIRECTION {direction} for {length}  {'(Skipped)' if self._skip else ''}")
+            print(
+                f"MOVE DIRECTION {direction} for {length}  {'(Skipped)' if self._skip else ''}"
+            )
         if self._skip:
             self._skip = False
             return
@@ -520,7 +531,9 @@ class ShxFont:
         """
         factor = self.pop()
         if self._debug:
-            print(f"DIVIDE_VECTOR {self._scale}/{factor} {'(Skipped)' if self._skip else ''}")
+            print(
+                f"DIVIDE_VECTOR {self._scale}/{factor} {'(Skipped)' if self._skip else ''}"
+            )
         if factor == 0:
             raise ShxFontParseError("Divide Vector is not permitted to be 0.")
         if self._skip:
@@ -536,7 +549,9 @@ class ShxFont:
         """
         factor = self.pop()
         if self._debug:
-            print(f"MULTIPLY_VECTOR {self._scale}*{factor} {'(Skipped)' if self._skip else ''}")
+            print(
+                f"MULTIPLY_VECTOR {self._scale}*{factor} {'(Skipped)' if self._skip else ''}"
+            )
         if factor == 0:
             raise ShxFontParseError("Multiply Vector is not permitted to be 0.")
         if self._skip:
@@ -552,15 +567,15 @@ class ShxFont:
         :return:
         """
         if self._debug:
-            print(f"PUSH_STACK {self._x}, {self._y} {'(Skipped)' if self._skip else ''}")
+            print(
+                f"PUSH_STACK {self._x}, {self._y} {'(Skipped)' if self._skip else ''}"
+            )
         if self._skip:
             self._skip = False
             return
         self._stack.append((self._x, self._y))
         if len(self._stack) == 4:
-            raise IndexError(
-                f"Position stack overflow in shape {self._letter}"
-            )
+            raise IndexError(f"Position stack overflow in shape {self._letter}")
 
     def _pop_stack(self):
         """
@@ -569,7 +584,9 @@ class ShxFont:
         :return:
         """
         if self._debug:
-            print(f"POP_STACK {self._x}, {self._y}  {'(Skipped)' if self._skip else ''}")
+            print(
+                f"POP_STACK {self._x}, {self._y}  {'(Skipped)' if self._skip else ''}"
+            )
 
         if self._skip:
             self._skip = False
@@ -577,16 +594,16 @@ class ShxFont:
         try:
             self._x, self._y = self._stack.pop()
         except IndexError:
-            raise IndexError(
-                f"Position stack underflow in shape {self._letter}"
-            )
+            raise IndexError(f"Position stack underflow in shape {self._letter}")
         self._path.move(self._x, self._y)
         self._last_x, self._last_y = self._x, self._y
 
     def _draw_subshape_shapes(self):
         subshape = self.pop()
         if self._debug:
-            print(f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}")
+            print(
+                f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}"
+            )
         if self._skip:
             self._skip = False
             return
@@ -599,7 +616,9 @@ class ShxFont:
     def _draw_subshape_bigfont(self):
         subshape = self.pop()
         if self._debug:
-            print(f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}")
+            print(
+                f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}"
+            )
         if subshape == 0:
             subshape = int_16le([self.pop(), self.pop()])
             origin_x = self.pop() * self._scale
@@ -607,7 +626,9 @@ class ShxFont:
             width = self.pop() * self._scale
             height = self.pop() * self._scale
             if self._debug:
-                print(f"Extended Bigfont Glyph: {subshape}, origin_x = {origin_x}, origin_y = {origin_y}. {width}x{height}")
+                print(
+                    f"Extended Bigfont Glyph: {subshape}, origin_x = {origin_x}, origin_y = {origin_y}. {width}x{height}"
+                )
         if self._skip:
             self._skip = False
             return
@@ -620,7 +641,9 @@ class ShxFont:
     def _draw_subshape_unifont(self):
         subshape = int_16le([self.pop(), self.pop()])
         if self._debug:
-            print(f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}")
+            print(
+                f"Appending glyph {subshape} (Type={self.type}). {'(Skipped)' if self._skip else ''}"
+            )
         if self._skip:
             self._skip = False
             return
@@ -676,7 +699,9 @@ class ShxFont:
             dx = signed8(self.pop()) * self._scale
             dy = signed8(self.pop()) * self._scale
             if self._debug:
-                print(f"POLY_XY_DISPLACEMENT {dx} {dy} {'(Skipped)' if self._skip else ''}")
+                print(
+                    f"POLY_XY_DISPLACEMENT {dx} {dy} {'(Skipped)' if self._skip else ''}"
+                )
             if dx == 0 and dy == 0:
                 if self._debug:
                     print("POLY_XY_DISPLACEMENT (Terminated)")
@@ -758,7 +783,9 @@ class ShxFont:
         c = sc & 0x7
 
         if self._debug:
-            print(f"FRACTION_ARC {start_offset}, {end_offset}, {radius}, {s}, {c} {'(Skipped)' if self._skip else ''}")
+            print(
+                f"FRACTION_ARC {start_offset}, {end_offset}, {radius}, {s}, {c} {'(Skipped)' if self._skip else ''}"
+            )
         if self._skip:
             self._skip = False
             return
@@ -830,7 +857,9 @@ class ShxFont:
             dx = signed8(self.pop()) * self._scale
             dy = signed8(self.pop()) * self._scale
             if self._debug:
-                print(f"POLY_BULGE_ARC {dx}, {dy}, {h} {'(Skipped)' if self._skip else ''}")
+                print(
+                    f"POLY_BULGE_ARC {dx}, {dy}, {h} {'(Skipped)' if self._skip else ''}"
+                )
             if dx == 0 and dy == 0:
                 if self._debug:
                     print(f"POLY_BULGE_ARC (TERMINATED)")

@@ -49,6 +49,10 @@ class SpoolerPanel(wx.Panel):
         spools = [s.label for s in self.available_devices]
         spools.insert(0, _("-- All available devices --"))
         self.queue_entries = []
+        self.context.setting(int, "spooler_sash_position", 0)
+        self.context.setting(bool, "spool_history_clear_on_start", False)
+        self.clear_data = self.context.spool_history_clear_on_start
+        self.context.setting(bool, "spool_ignore_helper_jobs", True)
 
         self.splitter = wx.SplitterWindow(self, id=wx.ID_ANY, style=wx.SP_LIVE_UPDATE)
         sty = wx.BORDER_SUNKEN
@@ -57,7 +61,6 @@ class SpoolerPanel(wx.Panel):
         self.win_bottom = wx.Window(self.splitter, style=sty)
         self.splitter.SetMinimumPaneSize(50)
         self.splitter.SplitHorizontally(self.win_top, self.win_bottom, -100)
-        self.context.setting(int, "spooler_sash_position", 0)
         self.splitter.SetSashPosition(self.context.spooler_sash_position)
         self.combo_device = wx.ComboBox(
             self.win_top, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
@@ -141,8 +144,8 @@ class SpoolerPanel(wx.Panel):
             "passes": 6,
             "status": 7,
         }
-
-        self.reload_history()
+        if not self.clear_data:
+            self.reload_history()
 
         # if index == -1:
         #     disable_window(self)
@@ -184,13 +187,27 @@ class SpoolerPanel(wx.Panel):
 
         self.list_job_history.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=48)
 
-        self.list_job_history.AppendColumn(_("Device"), format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_history.AppendColumn(_("Name"), format=wx.LIST_FORMAT_LEFT, width=95)
-        self.list_job_history.AppendColumn(_("Start"), format=wx.LIST_FORMAT_LEFT, width=113)
-        self.list_job_history.AppendColumn(_("End"), format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_history.AppendColumn(_("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_history.AppendColumn(_("Passes"), format=wx.LIST_FORMAT_LEFT, width=73)
-        self.list_job_history.AppendColumn(_("Status"), format=wx.LIST_FORMAT_LEFT, width=73)
+        self.list_job_history.AppendColumn(
+            _("Device"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Name"), format=wx.LIST_FORMAT_LEFT, width=95
+        )
+        self.list_job_history.AppendColumn(
+            _("Start"), format=wx.LIST_FORMAT_LEFT, width=113
+        )
+        self.list_job_history.AppendColumn(
+            _("End"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Runtime"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Passes"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Status"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
 
         # end wxGlade
 
@@ -234,7 +251,7 @@ class SpoolerPanel(wx.Panel):
     def on_item_selected(self, event):
         self.current_item = event.Index
 
-    def clear_history(self, older_than = None):
+    def clear_history(self, older_than=None):
         # print (f"Delete history: {self.filter_device} - {older_than}")
         # if older_than is not None:
         #     print (f"{self.datestr(older_than)}")
@@ -254,12 +271,10 @@ class SpoolerPanel(wx.Panel):
         self.save_history()
         self.refresh_history()
 
-
     def on_btn_clear(self, event):
         self.clear_history(None)
 
     def on_btn_clear_right(self, event):
-
         def on_menu_index(idx_to_delete):
             def check(event):
                 self.history.pop(idx_to_delete)
@@ -274,20 +289,30 @@ class SpoolerPanel(wx.Panel):
 
             return check
 
+        def toggle_1(event):
+            self.context.spool_history_clear_on_start = not self.context.spool_history_clear_on_start
+
+        def toggle_2(event):
+            self.context.spool_ignore_helper_jobs = not self.context.spool_ignore_helper_jobs
+
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
-        options = [ (_("All entries"), None) ]
+        options = [(_("All entries"), None)]
         for week in range(1, 5):
             cutoff_time = now - week * week_seconds
-            options.append( (_("Older than {week} week").format(week=week), cutoff_time) )
+            options.append((_("Older than {week} week").format(week=week), cutoff_time))
         menu = wx.Menu()
         idx = -1
         listid = self.list_job_history.GetFirstSelected()
-        if listid>=0:
+        if listid >= 0:
             idx = self.list_job_history.GetItemData(listid)
-        if idx>=0:
+        if idx >= 0:
             menuitem = menu.Append(wx.ID_ANY, _("Delete this entry"), "")
-            self.Bind(wx.EVT_MENU, on_menu_index(idx), id=menuitem.GetId(),)
+            self.Bind(
+                wx.EVT_MENU,
+                on_menu_index(idx),
+                id=menuitem.GetId(),
+            )
             menu.AppendSeparator()
 
         menuitem = menu.Append(wx.ID_ANY, _("Delete..."))
@@ -295,7 +320,23 @@ class SpoolerPanel(wx.Panel):
 
         for item in options:
             menuitem = menu.Append(wx.ID_ANY, item[0], "")
-            self.Bind(wx.EVT_MENU, on_menu_time(item[1]), id=menuitem.GetId(),)
+            self.Bind(
+                wx.EVT_MENU,
+                on_menu_time(item[1]),
+                id=menuitem.GetId(),
+            )
+
+        menu.AppendSeparator()
+        menuitem = menu.Append(
+            wx.ID_ANY, _("Clear history on startup"), "", wx.ITEM_CHECK
+        )
+        menuitem.Check(self.context.spool_history_clear_on_start)
+        self.Bind(wx.EVT_MENU, toggle_1, id=menuitem.GetId(),)
+        menuitem = menu.Append(
+            wx.ID_ANY, _("Ignore helper jobs"), "", wx.ITEM_CHECK
+        )
+        menuitem.Check(self.context.spool_ignore_helper_jobs)
+        self.Bind(wx.EVT_MENU, toggle_2, id=menuitem.GetId(),)
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
             menu.Destroy()
@@ -581,7 +622,9 @@ class SpoolerPanel(wx.Panel):
         else:
             hours, remainder = divmod(t, 3600)
             minutes, seconds = divmod(remainder, 60)
-        result = f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+        result = (
+            f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
+        )
         return result
 
     @staticmethod
@@ -609,7 +652,9 @@ class SpoolerPanel(wx.Panel):
         # And this the bug...
         pattern = pattern.replace("08", "{mm}")
         pattern = pattern.replace("8", "{mm}")
-        result = pattern.format(dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), yy=str(lyear).zfill(2))
+        result = pattern.format(
+            dd=str(lday).zfill(2), mm=str(lmonth).zfill(2), yy=str(lyear).zfill(2)
+        )
         # Just to show the bug...
         # result1 = f"{int(lday)}.{str(int(lmonth)).zfill(2)}.{str(int(lyear)).zfill(2)}"
         # wxdt = wx.DateTime(lday, lmonth, lyear, lhour, lminute, lsecond)
@@ -620,7 +665,12 @@ class SpoolerPanel(wx.Panel):
     def refresh_history(self, newestinfo=None):
 
         if newestinfo is not None:
-            self.history.insert(0, newestinfo)
+            addit = True
+            # No helper jobs....
+            if len(newestinfo)>=7 and newestinfo[6] and self.context.spool_ignore_helper_jobs:
+                addit = False
+            if addit:
+                self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         idx = 0
         hlen = len(self.history)
@@ -668,9 +718,8 @@ class SpoolerPanel(wx.Panel):
             if len(info) >= 6:
                 self.list_job_history.SetItem(
                     list_id, self.column_history["status"], info[5]
-            )
+                )
             self.list_job_history.SetItemData(list_id, idx - 1)
-
 
     def reload_history(self):
         self.history = []
@@ -709,7 +758,9 @@ class SpoolerPanel(wx.Panel):
                         continue
                     simpleline = escaped(info[3])
                     simpleline += ";" + escaped(info[0])
-                    starttime = self.datestr(info[1]) + " " + self.timestr(info[1], True)
+                    starttime = (
+                        self.datestr(info[1]) + " " + self.timestr(info[1], True)
+                    )
                     simpleline += ";" + starttime
                     starttime = self.timestr(info[1] + info[2], True)
                     simpleline += ";" + starttime
@@ -753,7 +804,7 @@ class SpoolerPanel(wx.Panel):
         # print ("Signalled...", type(origin).__name__, type(info).__name__)
         if info is None:
             return
-        if len(info)>1 and info[1] is None:
+        if len(info) > 1 and info[1] is None:
             return
         self.refresh_history(newestinfo=info)
         self.save_history()

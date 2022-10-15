@@ -276,7 +276,7 @@ class LihuiyuDevice(Service, ViewPort):
 
             if self.spooler.is_idle:
                 label = _("Pulse laser for {time}ms").format(time=time)
-                self.spooler.laserjob(list(timed_fire()), label=label)
+                self.spooler.laserjob(list(timed_fire()), label=label, helper=True)
                 channel(label)
             else:
                 channel(_("Pulse laser failed: Busy"))
@@ -299,7 +299,7 @@ class LihuiyuDevice(Service, ViewPort):
 
             if self.spooler.is_idle:
                 self.spooler.laserjob(
-                    list(move_at_speed()), label=f"move {dx} {dy} at {speed}"
+                    list(move_at_speed()), label=f"move {dx} {dy} at {speed}", helper=True
                 )
             else:
                 channel(_("Busy"))
