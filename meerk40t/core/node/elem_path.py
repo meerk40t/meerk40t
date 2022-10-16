@@ -98,7 +98,7 @@ class PathNode(Node):
         self._sync_svg()
         return self.path.bbox(transformed=transformed, with_stroke=with_stroke)
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False

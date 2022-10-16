@@ -145,7 +145,7 @@ class ImageNode(Node):
             return self.matrix
         return self._processed_matrix * self.matrix
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Preprocess step during the cut planning stages.
 

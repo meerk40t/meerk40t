@@ -198,7 +198,8 @@ class TextNode(Node):
             sw = limit
         return sw
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
+        commands = plan.commands
         if self.parent.type != "op raster":
             commands.append(self.remove_text)
             return

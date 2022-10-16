@@ -129,12 +129,12 @@ class CutPlan:
                 continue
             if op.type.startswith("op"):
                 if hasattr(op, "preprocess"):
-                    op.preprocess(self.context, matrix, self.commands)
+                    op.preprocess(self.context, matrix, self)
                 for node in op.flat():
                     if node is op:
                         continue
                     if hasattr(node, "preprocess"):
-                        node.preprocess(self.context, matrix, self.commands)
+                        node.preprocess(self.context, matrix, self)
 
     def _to_grouped_plan(self, plan):
         """
