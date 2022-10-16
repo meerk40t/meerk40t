@@ -157,11 +157,11 @@ class Wordlist:
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(result):
 #            print(f"Key found: {bracketed_key}")
-            key = bracketed_key[1:-1].lower()
+            key = bracketed_key[1:-1].lower().strip()
             # Let's check whether we have a modifier at the end: #<num>
             if key.endswith("++"):
                 autoincrement = True
-                key = key[:-2]
+                key = key[:-2].strip()
             else:
                 autoincrement = False
 
@@ -171,7 +171,7 @@ class Wordlist:
             if pos > 0:  # Needs to be after first character
                 # Process offset modification.
                 index_string = key[pos + 1 :]
-                key = key[:pos]
+                key = key[:pos].strip()
 
                 if not index_string.startswith("+") and not index_string.startswith(
                     "-"
