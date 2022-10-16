@@ -39,6 +39,8 @@ class Wordlist:
             "op_power",
             "op_passes",
         )
+        self.transaction_open = False
+        self.content_backup = []
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.json")
@@ -152,7 +154,7 @@ class Wordlist:
         else:
             self.content[skey][1] = 2
 
-    def translate(self, pattern):
+    def translate(self, pattern, increment=True):
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(result):
@@ -228,7 +230,7 @@ class Wordlist:
                     except ValueError:
                         value = 0
                     value += relative
-                    if autoincrement:
+                    if autoincrement and increment:
                         # autoincrement of counter means value + 1
                         wordlist[2] = value + 1
                 else:
@@ -236,7 +238,7 @@ class Wordlist:
                     current_index = wordlist[1] if not reset else 0
                     current_index += relative
                     value = self.fetch_value(key, current_index)
-                    if autoincrement:
+                    if autoincrement and increment:
                         # Index set to current index + 1
                         wordlist[1] = current_index + 1
 
@@ -274,6 +276,23 @@ class Wordlist:
             choices.append(f"{skey} ({value})")
         return choices
 
+    def begin_transaction(self):
+        # We want to store all our values
+        if not self.transaction_open:
+            self.content_backup  = self.content
+            self.transaction_open = True
+
+    def rollback_transaction(self):
+        if self.transaction_open:
+            self.content = self.content_backup
+            self.transaction_open = False
+            self.content_backup = []
+
+    def commit_transaction(self):
+        if self.transaction_open:
+            self.transaction_open = False
+            self.content_backup = []
+
     def load_data(self, filename):
         if filename is None:
             filename = self.default_filename
@@ -282,12 +301,14 @@ class Wordlist:
                 self.content = json.load(f)
         except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
             pass
+        self.transaction_open = False
 
     def save_data(self, filename):
         if filename is None:
             filename = self.default_filename
         with open(filename, "w") as f:
             json.dump(self.content, f)
+        self.transaction_open = False
 
     def delete(self, skey):
         try:
