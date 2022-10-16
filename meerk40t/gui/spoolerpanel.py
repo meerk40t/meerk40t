@@ -820,7 +820,7 @@ class SpoolerPanel(wx.Panel):
             self.history[idx][6] = new_data
             self.save_history()
             # Set the new data in the listctrl
-            self.list_job_history.SetStringItem(list_id, col_id, new_data)
+            self.list_job_history.SetItem(list_id, col_id, new_data)
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
