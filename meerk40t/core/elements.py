@@ -914,7 +914,7 @@ class Elemental(Service):
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
 
-    def wordlist_translate(self, pattern, elemnode=None):
+    def wordlist_translate(self, pattern, elemnode=None, increment=True):
         # This allows to add / set values for a given wordlist
         node = None
         if elemnode is not None:
@@ -962,7 +962,7 @@ class Elemental(Service):
         value = self.device.label
         self.mywordlist.set_value(skey, value)
 
-        result = self.mywordlist.translate(pattern)
+        result = self.mywordlist.translate(pattern, increment=increment)
         return result
 
     def _init_commands(self, kernel):
