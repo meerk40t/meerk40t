@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+from copy import copy
 from datetime import datetime
 
 
@@ -13,7 +14,6 @@ class Wordlist:
     """
 
     def __init__(self, versionstr, directory=None):
-        self.content = []
         # The content-dictionary contains an array per entry
         # index 0 indicates the type:
         #   0 (static) text entry
@@ -29,6 +29,7 @@ class Wordlist:
             "op_speed": [0, 2, "<speed>"],
             "op_power": [0, 2, "<power>"],
             "op_passes": [0, 2, "<passes>"],
+            "op_dpi": [0, 2, "<dpi>"],
         }
         self.prohibited = (
             "version",
@@ -38,9 +39,10 @@ class Wordlist:
             "op_speed",
             "op_power",
             "op_passes",
+            "op_dpi",
         )
         self.transaction_open = False
-        self.content_backup = []
+        self.content_backup = {}
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.json")
@@ -95,6 +97,28 @@ class Wordlist:
             return
         self.content[skey].pop(idx)
 
+    def move_all_indices(self, delta):
+        for wkey in self.content:
+            wordlist = self.content[wkey]
+            if wkey in self.prohibited:
+                continue
+            if wordlist[0] in (0, 1):  # Text or csv
+                last_index = len(wordlist) - 1
+                # Zero-based outside, +2 inside
+                newidx = min(wordlist[1] + delta, last_index)
+                if newidx < 2:
+                    newidx = 2
+                wordlist[1] = newidx
+            elif wordlist[0] == 2:  # Counter-type
+                value = wordlist[2]
+                try:
+                    value = int(value) + delta
+                except ValueError:
+                    value = 0
+                if value<0:
+                    value = 0
+                wordlist[2] = value
+
     def set_value(self, skey, value, idx=None, wtype=None):
         # Special treatment:
         # Index = None - use current
@@ -109,6 +133,10 @@ class Wordlist:
             if idx is None:
                 # use current position
                 idx = self.content[skey][1]
+                try:
+                    idx = int(idx)
+                except ValueError:
+                    idx = 0
             elif idx < 0:
                 # append
                 self.content[skey].append(value)
@@ -161,11 +189,12 @@ class Wordlist:
 #            print(f"Key found: {bracketed_key}")
             key = bracketed_key[1:-1].lower().strip()
             # Let's check whether we have a modifier at the end: #<num>
-            if key.endswith("++"):
-                autoincrement = True
-                key = key[:-2].strip()
-            else:
-                autoincrement = False
+            # if key.endswith("++"):
+            #     autoincrement = True
+            #     key = key[:-2].strip()
+            # else:
+            #     autoincrement = False
+            autoincrement = False
 
             reset = False
             relative = 0
@@ -279,19 +308,25 @@ class Wordlist:
     def begin_transaction(self):
         # We want to store all our values
         if not self.transaction_open:
-            self.content_backup  = self.content
+            self.content_backup = {}
+            for key in self.content:
+                item = copy(self.content[key])
+                self.content_backup[key] = item
             self.transaction_open = True
 
     def rollback_transaction(self):
         if self.transaction_open:
-            self.content = self.content_backup
+            self.content = {}
+            for key in self.content_backup:
+                item = copy(self.content_backup[key])
+                self.content[key] = item
             self.transaction_open = False
-            self.content_backup = []
+            self.content_backup = {}
 
     def commit_transaction(self):
         if self.transaction_open:
             self.transaction_open = False
-            self.content_backup = []
+            self.content_backup = {}
 
     def load_data(self, filename):
         if filename is None:

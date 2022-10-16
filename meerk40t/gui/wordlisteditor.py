@@ -10,6 +10,7 @@ from .icons import (
     icons8_remove_25,
 )
 from .mwindow import MWindow
+from ..kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -547,6 +548,10 @@ class WordlistPanel(wx.Panel):
             self.populate_gui()
         event.Skip()
 
+    @signal_listener("wordlist")
+    def signal_wordlist(self, origin, *args):
+        self.autosave()
+        self.refresh_grid_wordlist()
 
 class ImportPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

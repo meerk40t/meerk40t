@@ -64,6 +64,9 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    icons8_curly_brackets_50,
+    icons8_circled_left_50,
+    icons8_circled_right_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -1047,6 +1050,43 @@ class MeerK40t(MWindow):
                     list(kernel.elements.elems(emphasized=True))
                 )
                 > 0,
+            },
+        )
+
+        kernel.register(
+            "button/preparation/Wordlist",
+            {
+                "label": _("Wordlist"),
+                "icon": icons8_curly_brackets_50,
+                "tip": _("Manages Wordlist-Entries"),
+                "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                "identifier": "prep_wordlist",
+                "priority": 99,
+                "default": "prep_wordlist_edit",
+                "multi": [
+                    {
+                        "identifier": "prep_wordlist_edit",
+                        "icon": icons8_curly_brackets_50,
+                        "tip": _("Manages Wordlist-Entries"),
+                        "label": _("Wordlist"),
+                        "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                    },
+                    {
+                        "identifier": "prep_wordlist_plus_1",
+                        "icon": icons8_circled_right_50,
+                        "tip": _("Wordlist: go to next entry"),
+                        "label": _("Next"),
+                        "action": lambda v: kernel.elements.wordlist_advance(1),
+                    },
+                    {
+                        "identifier": "prep_wordlist_minus_1",
+                        "label": _("Prev"),
+                        "icon": icons8_circled_left_50,
+                        "tip": _("Wordlist: go to prev entry"),
+                        "action": lambda v: kernel.elements.wordlist_advance(-1),
+                    },
+                ],
+
             },
         )
 
