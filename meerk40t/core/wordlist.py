@@ -58,6 +58,7 @@ class Wordlist:
             wordlist = self.content[skey]
         except KeyError:
             return None
+        # print (f"Retrieve {wordlist} for {skey}")
         if idx is None:  # Default
             idx = wordlist[1]
 
@@ -155,6 +156,7 @@ class Wordlist:
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(result):
+#            print(f"Key found: {bracketed_key}")
             key = bracketed_key[1:-1].lower()
             # Let's check whether we have a modifier at the end: #<num>
             if key.endswith("++"):
@@ -184,9 +186,25 @@ class Wordlist:
 
             # And now date and time...
             if key == "date":
-                value = self.wordlist_datestr(None)
+                # Do we have a format str?
+                sformat = None
+                if key in self.content:
+                    value = self.fetch_value(key, 2)
+                    if value is not None and isinstance(value, str) and len(value)>0:
+                        if "%" in value:
+                            # Seems to be a format string, so let's try it...
+                            sformat = value
+                value = self.wordlist_datestr(sformat)
             elif key == "time":
-                value = self.wordlist_timestr(None)
+                # Do we have a format str?
+                sformat = None
+                if key in self.content:
+                    value = self.fetch_value(key, 2)
+                    if value is not None and isinstance(value, str) and len(value)>0:
+                        if "%" in value:
+                            # Seems to be a format string, so let's try it...
+                            sformat = value
+                value = self.wordlist_timestr(sformat)
             elif key.startswith("date@"):
                 # Original cASEs, vkey is already lowered...
                 sformat = bracketed_key[6:-1]
