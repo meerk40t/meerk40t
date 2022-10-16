@@ -7434,6 +7434,15 @@ class Elemental(Service):
             append_operation_interrupt(node, **kwargs)
 
         @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(
+            _("Append Origin/Beep/Interrupt"), node_type="branch ops", help=""
+        )
+        def append_operation_origin_beep_interrupt(node, **kwargs):
+            append_operation_goto(node, **kwargs)
+            append_operation_beep(node, **kwargs)
+            append_operation_interrupt(node, **kwargs)
+
+        @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
@@ -7674,6 +7683,18 @@ class Elemental(Service):
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(node)
             append_operation_home(node, pos=pos, **kwargs)
+            if pos:
+                pos += 1
+            append_operation_beep(node, pos=pos, **kwargs)
+            if pos:
+                pos += 1
+            append_operation_interrupt(node, pos=pos, **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Origin/Beep/Interrupt"), node_type=op_nodes, help="")
+        def add_operation_origin_beep_interrupt(node, **kwargs):
+            pos = add_after_index(node)
+            append_operation_goto(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
             append_operation_beep(node, pos=pos, **kwargs)

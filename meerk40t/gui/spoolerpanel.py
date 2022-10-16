@@ -5,6 +5,7 @@ from math import isinf
 
 import wx
 from wx import aui
+import wx.lib.mixins.listctrl as listmix
 
 from meerk40t.gui.icons import (
     icons8_emergency_stop_button_50,
@@ -37,6 +38,15 @@ def register_panel_spooler(window, context):
     window.on_pane_create(pane)
     context.register("pane/spooler", pane)
 
+class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+    ''' TextEditMixin allows any column to be edited. '''
+
+    #----------------------------------------------------------------------
+    def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize, style=0):
+        """Constructor"""
+        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        listmix.TextEditMixin.__init__(self)
 
 class SpoolerPanel(wx.Panel):
     def __init__(self, *args, context=None, selected_device=None, **kwds):
@@ -82,7 +92,7 @@ class SpoolerPanel(wx.Panel):
             self.win_bottom, wx.ID_ANY, _("Completed jobs:")
         )
         self.btn_clear = wx.Button(self.win_bottom, wx.ID_ANY, _("Clear History"))
-        self.list_job_history = wx.ListCtrl(
+        self.list_job_history = EditableListCtrl(
             self.win_bottom,
             wx.ID_ANY,
             style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
@@ -94,7 +104,8 @@ class SpoolerPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
         self.btn_clear.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
         self.list_job_history.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
-
+        self.list_job_history.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.before_history_update)
+        self.list_job_history.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_history_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
@@ -143,6 +154,7 @@ class SpoolerPanel(wx.Panel):
             "runtime": 5,
             "passes": 6,
             "status": 7,
+            "jobinfo": 8,
         }
         if not self.clear_data:
             self.reload_history()
@@ -207,6 +219,9 @@ class SpoolerPanel(wx.Panel):
         )
         self.list_job_history.AppendColumn(
             _("Status"), format=wx.LIST_FORMAT_LEFT, width=73
+        )
+        self.list_job_history.AppendColumn(
+            _("Jobinfo"), format=wx.LIST_FORMAT_LEFT, width=wx.LIST_AUTOSIZE_USEHEADER
         )
 
         # end wxGlade
@@ -670,6 +685,9 @@ class SpoolerPanel(wx.Panel):
             if len(newestinfo)>=7 and newestinfo[6] and self.context.spool_ignore_helper_jobs:
                 addit = False
             if addit:
+                # We dont need the helper-flag, we use this for a jobinfo column
+                if len(newestinfo) >= 7:
+                    newestinfo[6] = ""
                 self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()
         idx = 0
@@ -718,6 +736,15 @@ class SpoolerPanel(wx.Panel):
             if len(info) >= 6:
                 self.list_job_history.SetItem(
                     list_id, self.column_history["status"], info[5]
+                )
+            if len(info) >= 7:
+                if isinstance(info[6], bool):
+                    # Old data, where helper flag was saved
+                    info[6] = ""
+                if info[6] is None:
+                    info[6] = ""
+                self.list_job_history.SetItem(
+                    list_id, self.column_history["jobinfo"], info[6]
                 )
             self.list_job_history.SetItemData(list_id, idx - 1)
 
@@ -775,6 +802,25 @@ class SpoolerPanel(wx.Panel):
 
         except (PermissionError, OSError, FileNotFoundError):
             pass
+
+    def before_history_update(self, event):
+        list_id = event.GetIndex() #Get the current row
+        col_id = event.GetColumn () #Get the current column
+        if col_id == self.column_history["jobinfo"]:
+            event.Allow()
+        else:
+            event.Veto()
+
+    def on_history_update(self, event):
+        list_id = event.GetIndex() # Get the current row
+        col_id = event.GetColumn () # Get the current column
+        new_data = event.GetLabel() # Get the changed data
+        if list_id >= 0 and col_id == self.column_history["jobinfo"]:
+            idx = self.list_job_history.GetItemData(list_id)
+            self.history[idx][6] = new_data
+            self.save_history()
+            # Set the new data in the listctrl
+            self.list_job_history.SetItem(list_id, col_id, new_data)
 
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
