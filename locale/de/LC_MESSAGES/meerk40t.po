@@ -14692,3 +14692,15 @@ msgstr "Erzeuge einen Barcode bzw. QR-Code"
 
 msgid "Close without creating anything"
 msgstr "Schließen, ohne etwas zu erzeugen"
+
+msgid "Prev"
+msgstr "Zurück"
+
+msgid "Next"
+msgstr "VOr"
+
+msgid "Wordlist: go to next entry"
+msgstr "Gehe zum nächsten Wortlisten-Eintrag"
+
+msgid "Wordlist: go to prev entry"
+msgstr "Gehe zum vorherigen Wortlisten-Eintrag"
