@@ -50,7 +50,7 @@ class CutPlan:
         self.name = name
         self.context = planner
         self.plan = list()
-        self.original = list()
+        self.spool_commands = list()
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
         # self.setting(bool, "opt_rasters_split", True)
@@ -81,6 +81,23 @@ class CutPlan:
             # Executing command can add a command, complete them all.
             commands = self.commands[:]
             self.commands.clear()
+            for command in commands:
+                command()
+
+    def final(self):
+        """
+        Executes all the spool_commands built during the other stages.
+
+        If a command's execution added a spool_command we run it during final.
+
+        Final is called during at the time of spool. Just before the laserjob is created.
+        @return:
+        """
+        # Using copy of commands, so commands can add ops.
+        while self.spool_commands:
+            # Executing command can add a command, complete them all.
+            commands = self.spool_commands[:]
+            self.spool_commands.clear()
             for command in commands:
                 command()
 
