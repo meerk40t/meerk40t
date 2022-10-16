@@ -114,9 +114,9 @@ class TestFill(unittest.TestCase):
             hatch.add_node(copy(rect1))
             commands = list()
             # kernel.console("tree list\n")
-            hatch.preprocess(kernel.root, Matrix(), commands)
-            for command in commands:
-                command()
+            c = CutPlan("q", kernel.planner)
+            hatch.preprocess(kernel.root, Matrix(), c)
+            c.execute()
             # kernel.console("tree list\n")
             polyline_node0 = hatch.children[0]
             shape0 = polyline_node0.shape
