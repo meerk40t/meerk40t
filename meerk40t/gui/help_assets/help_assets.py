@@ -22,9 +22,9 @@ You can use as many different placeholder names as you like in text fields in yo
 
 The 'Index' value in the WordList table indicates which entry in the Contents list will be used next, zero meaning the first entry. The index is automatically increased by one at the end of each burn.
 
-But suppose for efficiency you now want to burn two seat reservation tags at the same time each having a different name from the same list. In this case, if the first tag use '{NAME#+0}' and in the second '{NAME#+1}' (note the plus sign). '{NAME#+0}' uses the current entry (pointed to by the Index value), '{NAME#+1}' uses the next entry after the current one etc.
+But suppose for efficiency you now want to burn two seat reservation tags at the same time each having a different name from the same list. In this case, if the first tag use '{NAME#+0}' and in the second '{NAME#+1}' (note the plus sign). '{NAME}' or '{NAME#+0}' uses the current entry (pointed to by the Index value), '{NAME#+1}' uses the next entry after the current one etc.
 
-With the above usage, you can use e.g. '{NAME#+0}' as many times as you wish in your design. However, if you are only using the placeholder once in your design, then an alternative is to use '{NAME++}' which advances the Index each time the placeholder is used.
+With the above usage, you can use these values as many times as you wish in your design. To advance the index you need to click on the Prev / Next buttons in the toolbar.
 
 As an alternative to manually entering the wordlist values using this WordList Editor, you can use a standard comma-separated CSV file. The placeholder names are defined in standard CSV header line (the first line in the CSV file), and the contents are then taken from all the following lines. The easiest way to create a CSV file is using a spreadsheet e.g. Excel, however e.g. for ecommerce sites your website might automaticallycreate the CSV file from the orders placed online by customers.
 
@@ -71,13 +71,13 @@ Wir klicken auf diesen Eintrag in der linken Liste und fügen auf der rechten Se
 
 Wenn wir nun den Brennvorgang starten, erhalten wir individualisierte Platzkarten mit den einzelnen Namen aus der Wortliste, also etwa: 'Hier sitzt Antje'.
 
-Wir können beliebig viele soclher Platzhalter definieren und verwenden.
+Wir können beliebig viele solcher Platzhalter definieren und verwenden.
 
 Der 'Index' Wert in der Wortlist-Tabelle legt fest, welche der auf der rechten Seite angezeigten Einträge das nächste mal verwendet werden soll (wobei der Wert 0 den ersten Eintrag in der Liste meint).
 
 Wir sind nicht beschränkt auf eine einmalige Verwendung eines Platzhalters (nützlich beispielsweise wenn man nicht nur ein Schild sondern gleich mehrere in einem Rutsch brennen will). Die Standardverwendung {VORNAME} nimmt den Wert an der Position #index der geladenen Liste, {VORNAME#+1} (beachte das #+1 am Ende) verwendet den nächsten Eintrag, {VORNAME#+2} den übernächsten usw.
 
-Auf diese Weise kann z.B. der Wert {VORNAME#+0} beliebig häufig verwendet werden, der Index wird dadurch nicht weitergeschaltet. Der Einfachheit halber kann die Syntax {VORNAME++} verwendet werden, diese schaltet pro Vorkommen den Indexeintrag um eins weiter. Empfohlen wird aber die explizite Verwendung von #+1 #+2 etc., da dies wie beschrieben Mehrfachverwendungen ermöglicht.
+Auf diese Weise können diese Werte beliebig häufig verwendet werden, der Index wird dadurch nicht weitergeschaltet. Mit den Knöpfen 'Vor' und 'Zurück' kann der Index weitergeschaltet werden.
 
 Wir können einen ganzen Satz von Variablen (Wortliste genannt) definieren, der z.B. aus einer Standard Komma-separierten CSV-Datei eingelesen werden kann. Dann hätten wir nicht nur wenige Einträge für 'VORNAME', sondern vielleicht Hunderte davon. Welcher der Mehrfach-Einträge gerade aktiv ist entscheidet der sogenannte Index.
 

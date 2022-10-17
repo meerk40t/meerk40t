@@ -67,7 +67,7 @@ class NumpathNode(Node, Parameters):
     def bbox(self, transformed=True, with_stroke=False):
         return self.path.bbox(self.matrix)
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         self.path.transform(self.matrix)
         self.path.transform(matrix)
         self.set_dirty_bounds()

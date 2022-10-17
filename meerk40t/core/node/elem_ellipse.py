@@ -94,7 +94,7 @@ class EllipseNode(Node):
             sw = limit
         return sw
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False

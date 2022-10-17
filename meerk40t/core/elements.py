@@ -914,7 +914,12 @@ class Elemental(Service):
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
 
-    def wordlist_translate(self, pattern, elemnode=None):
+    def wordlist_advance(self, delta):
+        self.mywordlist.move_all_indices(delta)
+        self.signal("refresh_scene", "Scene")
+        self.signal("wordlist")
+
+    def wordlist_translate(self, pattern, elemnode=None, increment=True):
         # This allows to add / set values for a given wordlist
         node = None
         if elemnode is not None:
@@ -941,6 +946,9 @@ class Elemental(Service):
                 if hasattr(node, opatt):
                     value = getattr(node, opatt, None)
                     found = True
+                    if opatt == "passes": # We need to look at one more info
+                        if not node.passes_custom or value < 1:
+                            value = 1
                 else:  # Try setting
                     if hasattr(node, "settings"):
                         try:
@@ -955,8 +963,11 @@ class Elemental(Service):
             else:
                 value = f"<{opatt}>"
                 self.mywordlist.set_value(skey, value)
+        skey = "op_device"
+        value = self.device.label
+        self.mywordlist.set_value(skey, value)
 
-        result = self.mywordlist.translate(pattern)
+        result = self.mywordlist.translate(pattern, increment=increment)
         return result
 
     def _init_commands(self, kernel):
@@ -7423,6 +7434,15 @@ class Elemental(Service):
             append_operation_interrupt(node, **kwargs)
 
         @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(
+            _("Append Origin/Beep/Interrupt"), node_type="branch ops", help=""
+        )
+        def append_operation_origin_beep_interrupt(node, **kwargs):
+            append_operation_goto(node, **kwargs)
+            append_operation_beep(node, **kwargs)
+            append_operation_interrupt(node, **kwargs)
+
+        @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
@@ -7663,6 +7683,18 @@ class Elemental(Service):
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(node)
             append_operation_home(node, pos=pos, **kwargs)
+            if pos:
+                pos += 1
+            append_operation_beep(node, pos=pos, **kwargs)
+            if pos:
+                pos += 1
+            append_operation_interrupt(node, pos=pos, **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Origin/Beep/Interrupt"), node_type=op_nodes, help="")
+        def add_operation_origin_beep_interrupt(node, **kwargs):
+            pos = add_after_index(node)
+            append_operation_goto(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
             append_operation_beep(node, pos=pos, **kwargs)

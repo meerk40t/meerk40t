@@ -58,7 +58,7 @@ class PointNode(Node):
             self.matrix.pre_translate(x, y)
             self.point = Point(0, 0)
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         self.matrix *= matrix
         self.set_dirty_bounds()
 
