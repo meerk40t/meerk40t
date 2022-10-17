@@ -687,6 +687,7 @@ class SpoolerPanel(wx.Panel):
             if addit:
                 # We dont need the helper-flag, we use this for a jobinfo column
                 if len(newestinfo) >= 7:
+                    newestinfo = list(newestinfo)
                     newestinfo[6] = ""
                 self.history.insert(0, newestinfo)
         self.list_job_history.DeleteAllItems()

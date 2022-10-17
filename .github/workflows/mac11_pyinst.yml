@@ -65,6 +65,8 @@ jobs:
         python3.8 -m pip install wheel six numpy ezdxf
         ## python3.8 -m pip install wheel six ezdxf
         
+        python3.8 -m pip install potracer
+        
         ## python3.8 -m pip install wheel six numpy
         ## python3.8 -m pip install pyinstaller py2app wheel six numpy
         python3.8 -m pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-18.04 wxPython==4.1.1

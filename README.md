@@ -1,5 +1,5 @@
 # MeerK40t
-MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software. It's a replacement for LaserDrw, Corel Laser, and K40 Whisperer.
+MeerK40t (pronounced MeerKat) is a built-from-the-ground-up MIT licensed open-source laser cutting software.
 
 For the M2-Nano, Meerk40t supports two sets of drivers which come with the software supplied with the K40 and which are used by Whisperer and the default USB drivers,
 and so MeerK40t can usually run alongside these other pieces of software but without requiring them as a pre-requisite.
