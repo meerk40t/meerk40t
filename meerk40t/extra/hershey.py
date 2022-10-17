@@ -44,6 +44,32 @@ def have_hershey_fonts(context):
             return True
     return False
 
+def validate_node(node):
+    # After a svg load the attributes are still a string...
+    if not hasattr(node, "mkfontsize"):
+        return
+    if isinstance(node.mkfontsize, str):
+        try:
+            value = float(node.mkfontsize)
+        except ValueError:
+            value = Length("20px")
+        node.mkfontsize = value
+    # if not hasattr(node, "mkcoordx"):
+    #     node.mkcoordx = 0
+    # if not hasattr(node, "mkcoordy"):
+    #     node.mkcoordy = 0
+    # if isinstance(node.mkcoordx, str):
+    #     try:
+    #         value = float(node.mkcoordx)
+    #     except ValueError:
+    #         value = 0
+    #     node.mkcoordx = value
+    # if isinstance(node.mkcoordy, str):
+    #     try:
+    #         value = float(node.mkcoordy)
+    #     except ValueError:
+    #         value = 0
+    #     node.mkcoordy = value
 
 def update_linetext(context, node, newtext):
     if node is None:
@@ -78,6 +104,9 @@ def update_linetext(context, node, newtext):
     horizontal = True
     cfont.render(path, newtext, horizontal, float(fontsize))
     node.path = path.path
+    # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
+    # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
+
     node.mktext = newtext
     node.altered()
 
@@ -150,6 +179,8 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     path_node.mkfont = font
     path_node.mkfontsize = float(font_size)
     path_node.mktext = text
+    path_node.mkcoordx = x
+    path_node.mkcoordy = y
 
     return path_node
 

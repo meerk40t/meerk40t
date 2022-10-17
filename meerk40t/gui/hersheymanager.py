@@ -6,7 +6,7 @@ from meerk40t.core.units import UNITS_PER_INCH, Length
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.icons import icons8_choose_font_50, STD_ICON_SIZE
 from meerk40t.kernel import get_safe_path
-from meerk40t.extra.hershey import create_linetext_node, update_linetext, fonts_registered
+from meerk40t.extra.hershey import create_linetext_node, update_linetext, fonts_registered, validate_node
 
 # begin wxGlade: dependencies
 # end wxGlade
@@ -151,7 +151,12 @@ class LineTextPropertPanel(wx.Panel):
         pass
 
     def accepts(self, node):
-        return hasattr(node, "mkfont") and hasattr(node, "mkfontsize") and hasattr(node, "mktext")
+        if hasattr(node, "mkfont") and hasattr(node, "mkfontsize") and hasattr(node, "mktext"):
+            # Let's us the opportunity to check for incorrept types and fix them...
+            validate_node(node)
+            return True
+        else:
+            return False
 
     def set_widgets(self, node):
         self.node = node
