@@ -2704,7 +2704,14 @@ class MeerK40t(MWindow):
                     m.Check(True)
 
                 def language_update(q):
-                    return lambda e: self.context.app.update_language(q)
+                    def check(event):
+                        self.context.app.update_language(q)
+                        # Intentionally no translation...
+                        wx.MessageBox(
+                            message="This requires a program restart before the language change will kick in!",
+                            caption="Language changed",
+                        )
+                    return check
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
                 if language_code not in trans and i != 0:
