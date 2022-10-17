@@ -1,6 +1,7 @@
 import os
 
 import wx
+from wx import aui
 
 from .icons import (
     icons8_add_new_25,
@@ -8,11 +9,68 @@ from .icons import (
     icons8_edit_25,
     icons8_paste_25,
     icons8_remove_25,
+    icons8_circled_right_50,
+    icons8_circled_left_50,
 )
 from .mwindow import MWindow
 from ..kernel import signal_listener
 
 _ = wx.GetTranslation
+
+def register_panel_wordlist(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Left()
+        .MinSize(150, 25)
+        .FloatingSize(150, 35)
+        .Caption(_("Wordlist"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("wordlist")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = WordlistMiniPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_50_" + _("Tools")
+    window.on_pane_create(pane)
+    context.register("pane/wordlist", pane)
+
+class WordlistMiniPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.button_edit = wx.Button(self, wx.ID_ANY, _("Edit"))
+        self.button_edit.SetBitmap(icons8_curly_brackets_50.GetBitmap(resize=25))
+        self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
+
+        self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
+        self.button_next.SetBitmap(icons8_circled_right_50.GetBitmap(resize=25))
+        self.button_next.SetToolTip(_("Wordlist: go to next entry"))
+
+        self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
+        self.button_prev.SetBitmap(icons8_circled_left_50.GetBitmap(resize=25))
+        self.button_prev.SetToolTip(_("Wordlist: go to previous entry"))
+
+        main_sizer.Add(self.button_prev, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.button_edit, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.button_next, 1, wx.EXPAND, 0)
+
+        self.button_next.Bind(wx.EVT_BUTTON, self.on_button_next)
+        self.button_prev.Bind(wx.EVT_BUTTON, self.on_button_prev)
+        self.button_edit.Bind(wx.EVT_BUTTON, self.on_button_edit)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+    def on_button_edit(self, event):
+        self.context("window toggle Wordlist\n")
+
+    def on_button_prev(self, event):
+        self.context.elements.wordlist_advance(-1)
+
+    def on_button_next(self, event):
+        self.context.elements.wordlist_advance(+1)
 
 
 class WordlistPanel(wx.Panel):

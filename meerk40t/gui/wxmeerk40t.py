@@ -683,6 +683,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
 
+        from meerk40t.gui.wordlisteditor import register_panel_wordlist
+
+        kernel.register("wxpane/wordlist", register_panel_wordlist)
+
         # from meerk40t.gui.auitoolbars import register_toolbars
 
         # kernel.register("wxpane/Toolbars", register_toolbars)
@@ -695,10 +699,10 @@ class wxMeerK40t(wx.App, Module):
         context = kernel.root
 
         context.setting(bool, "developer_mode", False)
-        if context.developer_mode:
-            from meerk40t.gui.mkdebug import register_panel_debugger
+        # if context.developer_mode:
+        #     from meerk40t.gui.mkdebug import register_panel_debugger
 
-            kernel.register("wxpane/debug_tree", register_panel_debugger)
+        #     kernel.register("wxpane/debug_tree", register_panel_debugger)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)
