@@ -817,6 +817,8 @@ class SpoolerPanel(wx.Panel):
         new_data = event.GetLabel() # Get the changed data
         if list_id >= 0 and col_id == self.column_history["jobinfo"]:
             idx = self.list_job_history.GetItemData(list_id)
+            while len(self.history[idx])<7:
+                self.history[idx].append(None)
             self.history[idx][6] = new_data
             self.save_history()
             # Set the new data in the listctrl
