@@ -1,4 +1,5 @@
 import os
+import re
 
 import wx
 from wx import aui
@@ -46,22 +47,60 @@ class WordlistMiniPanel(wx.Panel):
 
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
         self.button_next.SetBitmap(icons8_circled_right_50.GetBitmap(resize=25))
-        self.button_next.SetToolTip(_("Wordlist: go to next entry"))
+        self.button_next.SetToolTip(_("Wordlist: go to next page (right-click to next entry)"))
 
         self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
         self.button_prev.SetBitmap(icons8_circled_left_50.GetBitmap(resize=25))
-        self.button_prev.SetToolTip(_("Wordlist: go to previous entry"))
+        self.button_prev.SetToolTip(_("Wordlist: go to previous page (right-click to previous entry)"))
 
         main_sizer.Add(self.button_prev, 1, wx.EXPAND, 0)
         main_sizer.Add(self.button_edit, 1, wx.EXPAND, 0)
         main_sizer.Add(self.button_next, 1, wx.EXPAND, 0)
 
-        self.button_next.Bind(wx.EVT_BUTTON, self.on_button_next)
-        self.button_prev.Bind(wx.EVT_BUTTON, self.on_button_prev)
+        self.button_next.Bind(wx.EVT_BUTTON, self.on_button_next_page)
+        self.button_prev.Bind(wx.EVT_BUTTON, self.on_button_prev_page)
+        self.button_next.Bind(wx.EVT_RIGHT_DOWN, self.on_button_next)
+        self.button_prev.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
         self.button_edit.Bind(wx.EVT_BUTTON, self.on_button_edit)
 
         self.SetSizer(main_sizer)
         self.Layout()
+
+    def establish_max_delta(self):
+        # try to establish the needed delta to satisfy all variables...
+        deltamin = 0
+        deltamax = 0
+        for node in self.context.elements.elems():
+            sample = ""
+            if node.type == "elem text":
+                if node.text is not None:
+                    sample  = node.text
+            elif node.type == "elem path" and hasattr(node, "mktext"):
+                if node.mktext is not None:
+                    sample  = node.mktext
+            if sample == "":
+                continue
+            # we can be rather agnostic on the individual variable, we are interested in the highest {variable#+offset} pattern
+            brackets = re.compile(r"\{[^}]+\}")
+            for bracketed_key in brackets.findall(sample):
+    #            print(f"Key found: {bracketed_key}")
+                key = bracketed_key[1:-1].lower().strip()
+                relative = 0
+                pos = key.find("#")
+                if pos > 0:  # Needs to be after first character
+                    # Process offset modification.
+                    index_string = key[pos + 1 :]
+                    key = key[:pos].strip()
+                    if index_string.startswith("+") or index_string.startswith("-"):
+                        try:
+                            # This covers +x, -x, x
+                            relative = int(index_string)
+                        except ValueError:
+                            relative = 0
+                deltamin = min(relative, deltamin)
+                deltamax = max(relative, deltamax)
+
+        return deltamax
 
     def on_button_edit(self, event):
         self.context("window toggle Wordlist\n")
@@ -69,8 +108,16 @@ class WordlistMiniPanel(wx.Panel):
     def on_button_prev(self, event):
         self.context.elements.wordlist_advance(-1)
 
+    def on_button_prev_page(self, event):
+        delta = self.establish_max_delta()
+        self.context.elements.wordlist_advance(-1 - delta)
+
     def on_button_next(self, event):
         self.context.elements.wordlist_advance(+1)
+
+    def on_button_next_page(self, event):
+        delta = self.establish_max_delta()
+        self.context.elements.wordlist_advance(+1 + delta)
 
 
 class WordlistPanel(wx.Panel):
