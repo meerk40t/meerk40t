@@ -589,28 +589,31 @@ class SVGProcessor:
                 return True, abs(Path(element)).first_point
         return False, None
 
-    def parse(self, element, context_node, e_list):
+    def parse(self, element, context_node, e_list, uselabel=None):
         if element.values.get("visibility") == "hidden":
             context_node = self.regmark
             e_list = self.regmark_list
         ident = element.id
         # Let's see whether we can get the label from an inkscape save
         _label = None
-        ink_tag = "inkscape:label"
-        try:
-            inkscape = element.values.get("inkscape")
-            if inkscape is not None and inkscape != "":
-                ink_tag = "{" + inkscape + "}label"
-        except (AttributeError, KeyError):
-            pass
-        try:
-            _label = element.values.get(ink_tag)
-            if _label == "":
-                _label = None
-            # print ("Found label: %s" % my_label)
-        except (AttributeError, KeyError):
-            # Label might simply be "label"
-            _label = element.values.get("label")
+        if uselabel is not None and uselabel != "":
+            _label = uselabel
+        if _label is None:
+            ink_tag = "inkscape:label"
+            try:
+                inkscape = element.values.get("inkscape")
+                if inkscape is not None and inkscape != "":
+                    ink_tag = "{" + inkscape + "}label"
+            except (AttributeError, KeyError):
+                pass
+            try:
+                _label = element.values.get(ink_tag)
+                if _label == "":
+                    _label = None
+                # print ("Found label: %s" % my_label)
+            except (AttributeError, KeyError):
+                # Label might simply be "label"
+                _label = element.values.get("label")
         _lock = None
         try:
             _lock = bool(element.values.get("lock") == "True")
@@ -861,12 +864,14 @@ class SVGProcessor:
                     self.parse(child, context_node, e_list)
         elif isinstance(element, Use):
             # recurse to children, but do not subgroup elements.
+            # We still use the original label
+
             if self.reverse:
                 for child in reversed(element):
-                    self.parse(child, context_node, e_list)
+                    self.parse(child, context_node, e_list, uselabel=_label)
             else:
                 for child in element:
-                    self.parse(child, context_node, e_list)
+                    self.parse(child, context_node, e_list, uselabel=_label)
         else:
             # SVGElement is type. Generic or unknown node type.
             # Fix: we have mixed capitalisaton in full_ns and tag --> adjust
