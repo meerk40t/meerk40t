@@ -105,16 +105,6 @@ def plugin(kernel, lifecycle=None):
         else:
             raise CommandSyntaxError
 
-    def nontransparent_image(source_image):
-        from PIL import Image
-        img = source_image
-        if img.mode == "RGBA":
-            ir,ig,ib,ia = img.split()
-            background = Image.new("RGB", source_image.size, "white")
-            background.paste(img, mask=ia)
-            img = background
-        return img
-
     @context.console_command(
         "path",
         help=_("return paths around image"),
@@ -232,8 +222,8 @@ def plugin(kernel, lifecycle=None):
             if node.lock:
                 channel(_("Can't modify a locked image: {name}").format(name=str(node)))
                 continue
-            img = nontransparent_image(node.image)
 
+            img = node.opaque_image
             img = img.convert("L")
 
             def thresh(g):
@@ -275,10 +265,6 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            # is transparence an issue?
-            img = nontransparent_image(inode.image)
-
-            # img = inode.image
             # if img.mode == "RGBA":
             #     pixel_data = img.load()
             #     width, height = img.size
@@ -286,12 +272,14 @@ def plugin(kernel, lifecycle=None):
             #         for x in range(width):
             #             if pixel_data[x, y][3] == 0:
             #                 pixel_data[x, y] = (255, 255, 255, 255)
+
+            # We don't need to apply F-S dithering ourselves, as pillow will do that for us
             if method != "Floyd-Steinberg":
                 try:
-                    inode.image = dither(inode.image, method)
+                    inode.image = dither(inode.opaque_image, method)
                 except NotImplementedError:
                     raise CommandSyntaxError("Method not recognized.")
-            inode.image = img.convert("1")
+            inode.image = inode.image.convert("1")
             inode.altered()
         return "image", data
 
@@ -759,7 +747,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = nontransparent_image(inode.image).convert("RGB")
+                img = inode.opaque_image.convert("RGB")
                 inode.image = ImageOps.solarize(img, threshold=threshold)
                 inode.altered()
                 channel(
@@ -784,7 +772,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             original_mode = inode.image.mode
-            img = nontransparent_image(inode.image)
+            img = inode.opaque_image
             if img.mode in ("P", "1"):
                 img = img.convert("RGB")
             img = img.convert("RGB")
@@ -897,7 +885,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = nontransparent_image(inode.image)  # .convert("RGB")
+                img = inode.opaque_image  # .convert("RGB")
                 inode.image = ImageOps.autocontrast(img, cutoff=cutoff)
                 inode.altered()
                 channel(_("Image Auto-Contrasted."))
@@ -964,7 +952,7 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = nontransparent_image(inode.image).convert("RGB")
+            img = inode.opaque_image.convert("RGB")
             inode.image = ImageOps.equalize(img)
             inode.altered()
             channel(_("Image Equalized."))
@@ -1215,7 +1203,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             im = inode.image
-            img = nontransparent_image(inode.image)
+            img = inode.opaque_image
             image = img.convert("L")
             image = image.rotate(angle, expand=1)
             size = image.size[0] * scale, image.size[1] * scale
@@ -1340,20 +1328,11 @@ def dither(image, method="Floyd-Steinberg"):
     :copyright: 2016-2017 by hbldh <henrik.blidh@nedomkull.com>
     https://github.com/hbldh/hitherdither
     """
-    def nontransparent_image(source_image):
-        from PIL import Image
-        img = source_image
-        if img.mode == "RGBA":
-            ir,ig,ib,ia = img.split()
-            background = Image.new("RGB", source_image.size, "white")
-            background.paste(img, mask=ia)
-            img = background
-        return img
 
     diff_map = _DIFFUSION_MAPS.get(method.lower())
     if diff_map is None:
         raise NotImplementedError
-    img = nontransparent_image(image)
+    img = image
     diff = img.convert("F")
     pix = diff.load()
     width, height = image.size
