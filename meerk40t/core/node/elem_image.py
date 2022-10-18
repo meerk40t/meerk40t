@@ -298,6 +298,8 @@ class ImageNode(Node):
         self.altered()
 
     def _convert_image_to_grayscale(self, image):
+        from PIL import Image
+
         # Precalculate RGB for L conversion.
         r = self.red * 0.299
         g = self.green * 0.587
@@ -314,6 +316,12 @@ class ImageNode(Node):
 
         # Convert image to L type.
         if image.mode != "L":
+            if image.mode == "RGBA":
+                r1,g1,b1,a1 = image.split()
+                background = Image.new("RGB", image.size, "white")
+                background.paste(image, mask=a1)
+                image = background
+
             image = image.convert("RGB")
             image = image.convert("L", matrix=(r, g, b, 1.0))
         return image
