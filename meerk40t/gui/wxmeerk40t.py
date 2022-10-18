@@ -30,6 +30,7 @@ from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_saf
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .alignment import Alignment
+from .hersheymanager import HersheyFontManager, HersheyFontSelector, register_hershey_stuff
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -650,10 +651,14 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
+        kernel.register("window/HersheyFontManager", HersheyFontManager)
+        kernel.register("window/HersheyFontSelector", HersheyFontSelector)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
+        # Hershey Manager stuff
+        register_hershey_stuff(kernel)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 

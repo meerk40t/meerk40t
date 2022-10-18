@@ -353,6 +353,30 @@ class ShxFont:
         self._scale = font_size / self.above
         self._horizontal = horizontal
         self._path = path
+        replacer = []
+        for tchar in text:
+            to_replace = None
+            # Yes, I am German :-)
+            if ord(tchar) not in self.glyphs:
+                if tchar == "ä":
+                    to_replace = (tchar, "ae")
+                elif tchar == "ö":
+                    to_replace = (tchar, "ue")
+                elif tchar == "ü":
+                    to_replace = (tchar, "ue")
+                elif tchar == "Ä":
+                    to_replace = (tchar, "Ae")
+                elif tchar == "Ö":
+                    to_replace = (tchar, "Oe")
+                elif tchar == "Ü":
+                    to_replace = (tchar, "Ue")
+                elif tchar == "ß":
+                    to_replace = (tchar, "ss")
+            if to_replace is not None and to_replace not in replacer:
+                replacer.append(to_replace)
+        for to_replace in replacer:
+            # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
+            text = text.replace(to_replace[0], to_replace[1])
         for letter in text:
             self._letter = letter
             try:
