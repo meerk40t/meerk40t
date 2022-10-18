@@ -145,88 +145,23 @@ class LaserPanel(wx.Panel):
         )
         sizer_control_misc.Add(self.button_simulate, 1, 0, 0)
 
-        self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
-        self.button_save_file.SetToolTip(_("Save the job"))
-        self.button_save_file.SetBitmap(icons8_save_50.GetBitmap(resize=25))
-        sizer_control_misc.Add(self.button_save_file, 1, 0, 0)
-
-        # self.button_load = wx.Button(self, wx.ID_ANY, _("Load"))
-        # self.button_load.SetToolTip(_("Load job"))
-        # self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
-        # self.button_load.Enable(False)
-        # sizer_control_misc.Add(self.button_load, 1, 0, 0)
-
-        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(sizer_1, 0, wx.EXPAND, 0)
+        sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
         self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
         self.button_clear.SetBitmap(icons8_delete_50.GetBitmap(resize=25))
-        sizer_1.Add(self.button_clear, 1, 0, 0)
+        sizer_control_update.Add(self.button_clear, 1, 0, 0)
 
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
         self.button_update.SetBitmap(icons8_goal_50.GetBitmap(resize=25))
-        sizer_1.Add(self.button_update, 1, 0, 0)
+        sizer_control_update.Add(self.button_update, 1, 0, 0)
 
-        frame_sizer = wx.BoxSizer(wx.VERTICAL)
-
-        sizer_2 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Frame"), wx.VERTICAL)
-        frame_sizer.Add(sizer_2, 1, wx.EXPAND, 0)
-
-        self.combo_box_1 = wx.ComboBox(self, wx.ID_ANY, choices=["Absolute Coordinates", "Origin", "Current Position"], style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.combo_box_1.SetSelection(0)
-        sizer_2.Add(self.combo_box_1, 0, 0, 0)
-
-        sizer_3 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_2.Add(sizer_3, 1, wx.EXPAND, 0)
-
-        sizer_4 = wx.BoxSizer(wx.VERTICAL)
-        sizer_3.Add(sizer_4, 0, wx.EXPAND, 0)
-
-        self.radio_btn_1 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_1.SetMinSize((30, 30))
-        sizer_4.Add(self.radio_btn_1, 0, 0, 0)
-
-        self.radio_btn_2 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_2.SetMinSize((30, 30))
-        sizer_4.Add(self.radio_btn_2, 0, 0, 0)
-
-        self.radio_btn_3 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_3.SetMinSize((30, 30))
-        sizer_4.Add(self.radio_btn_3, 0, 0, 0)
-
-        sizer_5 = wx.BoxSizer(wx.VERTICAL)
-        sizer_3.Add(sizer_5, 0, wx.EXPAND, 0)
-
-        self.radio_btn_4 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_4.SetMinSize((30, 30))
-        sizer_5.Add(self.radio_btn_4, 0, 0, 0)
-
-        self.radio_btn_5 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_5.SetMinSize((30, 30))
-        sizer_5.Add(self.radio_btn_5, 0, 0, 0)
-
-        self.radio_btn_6 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_6.SetMinSize((30, 30))
-        sizer_5.Add(self.radio_btn_6, 0, 0, 0)
-
-        sizer_6 = wx.BoxSizer(wx.VERTICAL)
-        sizer_3.Add(sizer_6, 0, wx.EXPAND, 0)
-
-        self.radio_btn_7 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_7.SetMinSize((30, 30))
-        sizer_6.Add(self.radio_btn_7, 0, 0, 0)
-
-        self.radio_btn_8 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_8.SetMinSize((30, 30))
-        sizer_6.Add(self.radio_btn_8, 0, 0, 0)
-
-        self.radio_btn_9 = wx.RadioButton(self, wx.ID_ANY, "")
-        self.radio_btn_9.SetMinSize((30, 30))
-        sizer_6.Add(self.radio_btn_9, 0, 0, 0)
-
-        sizer_main.Add(frame_sizer, 0, wx.EXPAND, 0)
+        self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save_file.SetToolTip(_("Save the job"))
+        self.button_save_file.SetBitmap(icons8_save_50.GetBitmap(resize=25))
+        sizer_control_update.Add(self.button_save_file, 1, 0, 0)
 
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
@@ -289,6 +224,7 @@ class LaserPanel(wx.Panel):
         for i in range(len(spools)):
             self.combo_devices.Append(spools[i])
         self.combo_devices.SetSelection(index)
+        self.button_save_file.Enable(hasattr(self.context.device, "extension"))
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
@@ -377,11 +313,14 @@ class LaserPanel(wx.Panel):
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
         gui = self.context.gui
-        extension = "egv"
+        extension = "txt"
+        if hasattr(self.context.device, "extension"):
+            extension = self.context.device.extension
+        filetype = f"*.{extension}"
         with wx.FileDialog(
                 gui,
                 _("Save Project"),
-                wildcard="*.egv | Engrave Files",
+                wildcard=filetype,
                 style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:

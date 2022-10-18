@@ -103,6 +103,7 @@ class LihuiyuDevice(Service, ViewPort):
         Service.__init__(self, kernel, path)
         self.name = "LihuiyuDevice"
         _ = kernel.translation
+        self.extension = "egv"
 
         choices = [
             {
