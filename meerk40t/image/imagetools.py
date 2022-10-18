@@ -759,7 +759,7 @@ def plugin(kernel, lifecycle=None):
         "invert", help=_("invert the image"), input_type="image", output_type="image"
     )
     def image_invert(command, channel, _, data, **kwargs):
-        from PIL import ImageOps
+        from PIL import ImageOps, Image
 
         for inode in data:
             if inode.lock:
@@ -769,7 +769,12 @@ def plugin(kernel, lifecycle=None):
                 continue
             img = inode.image
             original_mode = img.mode
-            if img.mode in ("P", "RGBA", "1"):
+            if img.mode == "RGBA":
+                r,g,b,a = img.split()
+                background = Image.new("RGB", img.size, "white")
+                background.paste(img, mask=a)
+                img = background
+            elif img.mode in ("P", "1"):
                 img = img.convert("RGB")
             try:
                 inode.image = ImageOps.invert(img)
