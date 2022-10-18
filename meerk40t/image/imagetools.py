@@ -105,6 +105,16 @@ def plugin(kernel, lifecycle=None):
         else:
             raise CommandSyntaxError
 
+    def nontransparent_image(source_image):
+        from PIL import Image
+        img = source_image
+        if img.mode == "RGBA":
+            ir,ig,ib,ia = img.split()
+            background = Image.new("RGB", source_image.size, "white")
+            background.paste(img, mask=ia)
+            img = background
+        return img
+
     @context.console_command(
         "path",
         help=_("return paths around image"),
@@ -211,6 +221,7 @@ def plugin(kernel, lifecycle=None):
     def image_threshold(
         command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs
     ):
+        from PIL import Image
         if threshold_min is None:
             raise CommandSyntaxError
         threshold_min, threshold_max = min(threshold_min, threshold_max), max(
@@ -221,7 +232,9 @@ def plugin(kernel, lifecycle=None):
             if node.lock:
                 channel(_("Can't modify a locked image: {name}").format(name=str(node)))
                 continue
-            img = node.image.convert("L")
+            img = nontransparent_image(node.image)
+
+            img = img.convert("L")
 
             def thresh(g):
                 if threshold_min >= g:
@@ -262,14 +275,17 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
-            if img.mode == "RGBA":
-                pixel_data = img.load()
-                width, height = img.size
-                for y in range(height):
-                    for x in range(width):
-                        if pixel_data[x, y][3] == 0:
-                            pixel_data[x, y] = (255, 255, 255, 255)
+            # is transparence an issue?
+            img = nontransparent_image(inode.image)
+
+            # img = inode.image
+            # if img.mode == "RGBA":
+            #     pixel_data = img.load()
+            #     width, height = img.size
+            #     for y in range(height):
+            #         for x in range(width):
+            #             if pixel_data[x, y][3] == 0:
+            #                 pixel_data[x, y] = (255, 255, 255, 255)
             if method != "Floyd-Steinberg":
                 try:
                     inode.image = dither(inode.image, method)
@@ -743,7 +759,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = inode.image
+                img = nontransparent_image(inode.image).convert("RGB")
                 inode.image = ImageOps.solarize(img, threshold=threshold)
                 inode.altered()
                 channel(
@@ -759,7 +775,7 @@ def plugin(kernel, lifecycle=None):
         "invert", help=_("invert the image"), input_type="image", output_type="image"
     )
     def image_invert(command, channel, _, data, **kwargs):
-        from PIL import ImageOps
+        from PIL import ImageOps, Image
 
         for inode in data:
             if inode.lock:
@@ -767,10 +783,11 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
-            original_mode = img.mode
-            if img.mode in ("P", "RGBA", "1"):
+            original_mode = inode.image.mode
+            img = nontransparent_image(inode.image)
+            if img.mode in ("P", "1"):
                 img = img.convert("RGB")
+            img = img.convert("RGB")
             try:
                 inode.image = ImageOps.invert(img)
                 if original_mode == "1":
@@ -871,7 +888,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_autocontrast(command, channel, _, data, cutoff, **kwargs):
-        from PIL import ImageOps
+        from PIL import ImageOps, Image
 
         for inode in data:
             if inode.lock:
@@ -880,9 +897,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = inode.image
-                if img.mode == "RGBA":
-                    img = img.convert("RGB")
+                img = nontransparent_image(inode.image)  # .convert("RGB")
                 inode.image = ImageOps.autocontrast(img, cutoff=cutoff)
                 inode.altered()
                 channel(_("Image Auto-Contrasted."))
@@ -949,7 +964,7 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
+            img = nontransparent_image(inode.image).convert("RGB")
             inode.image = ImageOps.equalize(img)
             inode.altered()
             channel(_("Image Equalized."))
@@ -1199,9 +1214,9 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            image = inode.image
-            im = image
-            image = image.convert("L")
+            im = inode.image
+            img = nontransparent_image(inode.image)
+            image = img.convert("L")
             image = image.rotate(angle, expand=1)
             size = image.size[0] * scale, image.size[1] * scale
             half_tone = Image.new("L", size)
@@ -1325,10 +1340,21 @@ def dither(image, method="Floyd-Steinberg"):
     :copyright: 2016-2017 by hbldh <henrik.blidh@nedomkull.com>
     https://github.com/hbldh/hitherdither
     """
+    def nontransparent_image(source_image):
+        from PIL import Image
+        img = source_image
+        if img.mode == "RGBA":
+            ir,ig,ib,ia = img.split()
+            background = Image.new("RGB", source_image.size, "white")
+            background.paste(img, mask=ia)
+            img = background
+        return img
+
     diff_map = _DIFFUSION_MAPS.get(method.lower())
     if diff_map is None:
         raise NotImplementedError
-    diff = image.convert("F")
+    img = nontransparent_image(image)
+    diff = img.convert("F")
     pix = diff.load()
     width, height = image.size
     for y in range(height):
