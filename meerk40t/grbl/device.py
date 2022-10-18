@@ -83,6 +83,7 @@ class GRBLDevice(Service, ViewPort):
     def __init__(self, kernel, path, *args, **kwargs):
         Service.__init__(self, kernel, path)
         self.name = "GRBLDevice"
+        self.extension = "gcode"
 
         self.setting(str, "label", path)
         _ = self._
