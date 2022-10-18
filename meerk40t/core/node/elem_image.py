@@ -310,8 +310,6 @@ class ImageNode(Node):
         return img
 
     def _convert_image_to_grayscale(self, image):
-        from PIL import Image
-
         # Precalculate RGB for L conversion.
         r = self.red * 0.299
         g = self.green * 0.587

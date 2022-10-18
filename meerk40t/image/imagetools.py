@@ -211,7 +211,6 @@ def plugin(kernel, lifecycle=None):
     def image_threshold(
         command, channel, _, data, threshold_max=None, threshold_min=None, **kwargs
     ):
-        from PIL import Image
         if threshold_min is None:
             raise CommandSyntaxError
         threshold_min, threshold_max = min(threshold_min, threshold_max), max(
