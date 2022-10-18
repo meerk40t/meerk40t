@@ -27,6 +27,7 @@ from meerk40t.gui.scenewidgets.elementswidget import ElementsWidget
 from meerk40t.gui.scenewidgets.gridwidget import GridWidget
 from meerk40t.gui.scenewidgets.guidewidget import GuideWidget
 from meerk40t.gui.scenewidgets.laserpathwidget import LaserPathWidget
+from meerk40t.gui.scenewidgets.machineoriginwidget import MachineOriginWidget
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
 from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
@@ -107,6 +108,7 @@ class MeerK40tScenePanel(wx.Panel):
         # Let the grid resize itself
         self.widget_scene.auto_tick = True
 
+        self.widget_scene.add_scenewidget(MachineOriginWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(GridWidget(self.widget_scene))
         self.widget_scene.add_scenewidget(BedWidget(self.widget_scene))
         self.widget_scene.add_interfacewidget(GuideWidget(self.widget_scene))
