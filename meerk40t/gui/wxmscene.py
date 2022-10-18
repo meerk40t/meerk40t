@@ -13,8 +13,10 @@ from meerk40t.gui.icons import (
     icons8_menu_50,
     icons8_r_black,
     icons8_r_white,
+    icons8_text_50,
     icons8_reference,
     icons8_ungroup_objects_50,
+    icons8_cursor_50,
 )
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -41,6 +43,7 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
+from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
@@ -152,8 +155,24 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/vector", VectorTool)
         context.register("tool/measure", MeasureTool)
         context.register("tool/ribbon", RibbonTool)
+        context.register("tool/linetext", LineTextTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
+        from meerk40t.extra.hershey import have_hershey_fonts
+        context.kernel.register(
+            "button/tools/Linetext",
+            {
+                "label": _("Vector Text"),
+                "icon": icons8_text_50,
+                "tip": _("Add a vector text element"),
+                "action": lambda v: context.kernel.elements("tool linetext\n"),
+                "group": "tool",
+                "size": 50,
+                "rule_enabled": lambda cond: have_hershey_fonts(context),
+                "identifier": "linetext",
+            },
+        )
+
         context.kernel.register(
             "button/align/refob",
             {
@@ -901,6 +920,14 @@ class MeerK40tScenePanel(wx.Panel):
         self.scene.signal("modified")
         self.widget_scene.request_refresh(*args)
 
+    @signal_listener("linetext")
+    def on_signal_linetext(self, origin, *args):
+        if len(args) == 1:
+            self.scene.signal("linetext", args[0])
+        elif len(args) > 1:
+            self.scene.signal("linetext", args[0], args[1])
+
+
     @signal_listener("element_added")
     @signal_listener("tree_changed")
     def on_elements_added(self, origin, nodes=None, *args):
@@ -949,26 +976,34 @@ class MeerK40tScenePanel(wx.Panel):
 
     def on_key_down(self, event):
         keyvalue = get_key_name(event)
+        ignore = self.widget_scene.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_down: {keyvalue}.")
-        if self.context.bind.trigger(keyvalue):
+        if not ignore and self.context.bind.trigger(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_down: {keyvalue} executed.")
         else:
             if self._keybind_channel:
-                self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
+                if ignore:
+                    self._keybind_channel(f"Scene key_down: {keyvalue} was ignored as tool active.")
+                else:
+                    self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
         event.Skip()
 
     def on_key_up(self, event, log=True):
         keyvalue = get_key_name(event)
+        ignore = self.widget_scene.tool_active
         if self._keybind_channel:
             self._keybind_channel(f"Scene key_up: {keyvalue}.")
-        if self.context.bind.untrigger(keyvalue):
+        if not ignore and self.context.bind.untrigger(keyvalue):
             if self._keybind_channel:
                 self._keybind_channel(f"Scene key_up: {keyvalue} executed.")
         else:
             if self._keybind_channel:
-                self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
+                if ignore:
+                    self._keybind_channel(f"Scene key_up: {keyvalue} was ignored as tool active.")
+                else:
+                    self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
 
 

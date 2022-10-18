@@ -265,7 +265,11 @@ class Node:
         #     except KeyError:
         #         # Addit
         #         mymap[sitem] = "??ERR??"
-        return text.format_map(mymap)
+        try:
+            result = text.format_map(mymap)
+        except ValueError:
+            result ="<invalid pattern>"
+        return result
 
     def default_map(self, default_map=None):
         if default_map is None:

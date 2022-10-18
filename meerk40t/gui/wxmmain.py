@@ -1953,6 +1953,7 @@ class MeerK40t(MWindow):
         submenus = {}
         menudata = []
         for window, _path, suffix_path in self.context.find("window/.*"):
+            suppress = False
             try:
                 name = window.name
             except AttributeError:
@@ -1969,6 +1970,8 @@ class MeerK40t(MWindow):
                         submenu_name = returnvalue[0]
                     if len(returnvalue) > 1:
                         win_caption = returnvalue[1]
+                    if len(returnvalue) > 2:
+                        suppress = returnvalue[2]
                 if submenu_name is None:
                     submenu_name = ""
                 if win_caption is None:
@@ -1985,6 +1988,8 @@ class MeerK40t(MWindow):
                 except AttributeError:
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
+                suppress = True
+            if suppress:
                 continue
             menudata.append([submenu_name, caption, name, window, suffix_path])
         # Now that we have everything lets sort...
