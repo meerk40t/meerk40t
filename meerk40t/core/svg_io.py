@@ -714,89 +714,19 @@ class SVGProcessor:
                 settings=element.values,
             )
             e_list.append(node)
-        elif isinstance(element, (Polygon, Polyline)) or (
-            isinstance(element, Path) and element.values.get("type") == "elem polyline"
-        ):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element,
-                    type="elem polyline",
-                    id=ident,
-                    label=_label,
-                    lock=_lock,
-                )
-                self.check_for_line_attributes(node, element)
-                self.check_for_fill_attributes(node, element)
-                e_list.append(node)
-        elif isinstance(element, Circle) or (
-            isinstance(element, Path) and element.values.get("type") == "elem circle"
-        ):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element,
-                    type="elem ellipse",
-                    id=ident,
-                    label=_label,
-                    lock=_lock,
-                )
-                e_list.append(node)
-        elif isinstance(element, Ellipse) or (
-            isinstance(element, Path) and element.values.get("type") == "elem ellipse"
-        ):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element,
-                    type="elem ellipse",
-                    id=ident,
-                    label=_label,
-                    lock=_lock,
-                )
-                e_list.append(node)
-        elif isinstance(element, Rect) or (
-            isinstance(element, Path) and element.values.get("type") == "elem rect"
-        ):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem rect", id=ident, label=_label, lock=_lock
-                )
-                self.check_for_line_attributes(node, element)
-                e_list.append(node)
-        elif isinstance(element, SimpleLine) or (
-            isinstance(element, Path) and element.values.get("type") == "elem line"
-        ):
-            if not element.is_degenerate():
-                if not element.transform.is_identity():
-                    # Shape did not reify, convert to path.
-                    element = Path(element)
-                    element.reify()
-                    element.approximate_arcs_with_cubics()
-                node = context_node.add(
-                    shape=element, type="elem line", id=ident, label=_label, lock=_lock
-                )
-                self.check_for_line_attributes(node, element)
-                e_list.append(node)
         elif isinstance(element, Path):
             if len(element) >= 0:
+                if element.values.get("type") == "elem polyline":
+                    # Type is polyline we should restore the node type if we have sufficient info to do so.
+                    pass
+                if element.values.get("type") == "elem ellipse":
+                    # There is not enough info to reconstruct this.
+                    pass
+                if element.values.get("type") == "elem rect":
+                    # There is not enough info to reconstruct this.
+                    pass
+                if element.values.get("type") == "elem line":
+                    pass
                 element.approximate_arcs_with_cubics()
                 node = context_node.add(
                     path=element, type="elem path", id=ident, label=_label, lock=_lock
@@ -805,6 +735,46 @@ class SVGProcessor:
                 self.check_for_fill_attributes(node, element)
                 self.check_for_mk_path_attributes(node, element)
                 e_list.append(node)
+        elif isinstance(element, (Polygon, Polyline)):
+            if element.is_degenerate():
+                return
+            node = context_node.add(
+                shape=element,
+                type="elem polyline",
+                id=ident,
+                label=_label,
+                lock=_lock,
+            )
+            self.check_for_line_attributes(node, element)
+            self.check_for_fill_attributes(node, element)
+            e_list.append(node)
+        elif isinstance(element, (Circle, Ellipse)):
+            if element.is_degenerate():
+                return
+            node = context_node.add(
+                shape=element,
+                type="elem ellipse",
+                id=ident,
+                label=_label,
+                lock=_lock,
+            )
+            e_list.append(node)
+        elif isinstance(element, Rect):
+            if element.is_degenerate():
+                return
+            node = context_node.add(
+                shape=element, type="elem rect", id=ident, label=_label, lock=_lock
+            )
+            self.check_for_line_attributes(node, element)
+            e_list.append(node)
+        elif isinstance(element, SimpleLine):
+            if element.is_degenerate():
+                return
+            node = context_node.add(
+                shape=element, type="elem line", id=ident, label=_label, lock=_lock
+            )
+            self.check_for_line_attributes(node, element)
+            e_list.append(node)
         elif isinstance(element, SVGImage):
             try:
                 element.load(os.path.dirname(self.pathname))
@@ -1023,7 +993,7 @@ class SVGLoader:
                 height = None
             svg = SVG.parse(
                 source=source,
-                reify=True,
+                reify=False,
                 width=width,
                 height=height,
                 ppi=ppi,
