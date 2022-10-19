@@ -4078,7 +4078,7 @@ class Elemental(Service):
             all_arguments_required=True,
         )
         def element_circle_r(channel, _, r_pos, data=None, **kwargs):
-            circ = Circle(r=float(r_pos))
+            circ = Ellipse(r=float(r_pos))
             if circ.is_degenerate():
                 channel(_("Shape is degenerate."))
                 return "elements", data
