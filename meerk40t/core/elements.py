@@ -5024,7 +5024,7 @@ class Elemental(Service):
             height += y_offset * 2
 
             _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            node = self.elem_branch.add(shape=_element, type="elem ellipse")
+            node = self.elem_branch.add(shape=_element, type="elem path")
             node.stroke = Color("red")
             self.set_emphasis([node])
             node.focus()
