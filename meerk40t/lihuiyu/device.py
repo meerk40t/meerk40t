@@ -711,16 +711,17 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Server cannot be attached to any device."))
             return
 
-        @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
-        def lhyemulator(channel, _, **kwargs):
-            try:
-                self.open_as("emulator/lihuiyu", "lhyemulator")
-                channel(
-                    _("Lihuiyu Emulator attached to {device}").format(device=str(self))
-                )
-            except KeyError:
-                channel(_("Emulator cannot be attached to any device."))
-            return
+        if self.has_feature("emulator/lihuiyu"):
+            @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
+            def lhyemulator(channel, _, **kwargs):
+                try:
+                    self.open_as("emulator/lihuiyu", "lhyemulator")
+                    channel(
+                        _("Lihuiyu Emulator attached to {device}").format(device=str(self))
+                    )
+                except KeyError:
+                    channel(_("Emulator cannot be attached to any device."))
+                return
 
     @property
     def viewbuffer(self):
