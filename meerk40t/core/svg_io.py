@@ -34,6 +34,10 @@ from ..svgelements import (
     SVG_ATTR_VERSION,
     SVG_ATTR_VIEWBOX,
     SVG_ATTR_WIDTH,
+    SVG_ATTR_CENTER_X,
+    SVG_ATTR_CENTER_Y,
+    SVG_ATTR_RADIUS_X,
+    SVG_ATTR_RADIUS_Y,
     SVG_ATTR_X,
     SVG_ATTR_XMLNS,
     SVG_ATTR_XMLNS_EV,
@@ -69,7 +73,8 @@ from ..svgelements import (
     SimpleLine,
     SVGImage,
     SVGText,
-    Use,
+    Use, SVG_TAG_ELLIPSE, SVG_TAG_LINE, SVG_ATTR_X1, SVG_ATTR_Y1, SVG_ATTR_X2, SVG_ATTR_Y2, SVG_TAG_POLYLINE,
+    SVG_ATTR_POINTS, SVG_TAG_RECT,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
 
@@ -162,10 +167,7 @@ class SVGWriter:
         scene_height = context.device.length_height
         root.set(SVG_ATTR_WIDTH, scene_width.length_mm)
         root.set(SVG_ATTR_HEIGHT, scene_height.length_mm)
-        px_width = scene_width.pixels
-        px_height = scene_height.pixels
-
-        viewbox = f"{0} {0} {round(px_width)} {round(px_height)}"
+        viewbox = f"{0} {0} {int(float(scene_width))} {int(float(scene_height))}"
         root.set(SVG_ATTR_VIEWBOX, viewbox)
         elements = context.elements
         elements.validate_ids()
@@ -218,14 +220,20 @@ class SVGWriter:
         @param elem_tree:
         @return:
         """
-
-        scale = Matrix.scale(1.0 / UNITS_PER_PIXEL)
         for c in elem_tree.children:
             if c.type == "elem ellipse":
-                element = abs(Path(c.shape) * scale)
+                element = c.shape
                 copy_attributes(c, element)
-                subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                subelement = SubElement(xml_tree, SVG_TAG_ELLIPSE)
+                subelement.set(SVG_ATTR_CENTER_X, str(element.cx))
+                subelement.set(SVG_ATTR_CENTER_Y, str(element.cy))
+                subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
+                subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
+                t = Matrix(c.matrix)
+                subelement.set(
+                    "transform",
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                )
             elif c.type == "elem image":
                 element = c.image
                 subelement = SubElement(xml_tree, SVG_TAG_IMAGE)
@@ -245,41 +253,75 @@ class SVGWriter:
                 subelement.set(SVG_ATTR_Y, "0")
                 subelement.set(SVG_ATTR_WIDTH, str(c.image.width))
                 subelement.set(SVG_ATTR_HEIGHT, str(c.image.height))
-                t = Matrix(c.matrix) * scale
+                t = c.matrix
                 subelement.set(
                     "transform",
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
                 )
             elif c.type == "elem line":
-                element = abs(Path(c.shape) * scale)
+                element = c.shape
                 copy_attributes(c, element)
-                subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                subelement = SubElement(xml_tree, SVG_TAG_LINE)
+                subelement.set(SVG_ATTR_X1, str(element.x1))
+                subelement.set(SVG_ATTR_Y1, str(element.y1))
+                subelement.set(SVG_ATTR_X2, str(element.x2))
+                subelement.set(SVG_ATTR_Y2, str(element.y2))
+                t = c.matrix
+                subelement.set(
+                    "transform",
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                )
+
             elif c.type == "elem path":
-                element = abs(c.path * scale)
+                element = c.path
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_PATH)
                 subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                t = c.matrix
+                subelement.set(
+                    "transform",
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                )
             elif c.type == "elem point":
-                element = Point(c.point) * scale
+                element = Point(c.point)
                 c.settings["x"] = element.x
                 c.settings["y"] = element.y
                 subelement = SubElement(xml_tree, "element")
+                t = c.matrix
+                subelement.set(
+                    "transform",
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                )
                 SVGWriter._write_custom(subelement, c)
             elif c.type == "elem polyline":
-                element = abs(Path(c.shape) * scale)
+                element = c.shape
                 copy_attributes(c, element)
-                subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
+                subelement.set(SVG_ATTR_POINTS, element.points)
+                t = c.matrix
+                subelement.set(
+                    "transform",
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                )
             elif c.type == "elem rect":
-                element = abs(Path(c.shape) * scale)
+                element = c.shape
                 copy_attributes(c, element)
-                subelement = SubElement(xml_tree, SVG_TAG_PATH)
-                subelement.set(SVG_ATTR_DATA, element.d(transformed=False))
+                subelement = SubElement(xml_tree, SVG_TAG_RECT)
+                subelement.set(SVG_ATTR_X, str(element.x))
+                subelement.set(SVG_ATTR_Y, str(element.y))
+                subelement.set(SVG_ATTR_RADIUS_X, str(element.rx))
+                subelement.set(SVG_ATTR_RADIUS_Y, str(element.ry))
+                subelement.set(SVG_ATTR_WIDTH, str(element.width))
+                subelement.set(SVG_ATTR_HEIGHT, str(element.height))
+                t = c.matrix
+                subelement.set(
+                    "transform",
+                    f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
+                )
             elif c.type == "elem text":
                 subelement = SubElement(xml_tree, SVG_TAG_TEXT)
                 subelement.text = c.text
-                t = Matrix(c.matrix) * scale
+                t = c.matrix
                 subelement.set(
                     SVG_ATTR_TRANSFORM,
                     f"matrix({t.a}, {t.b}, {t.c}, {t.d}, {t.e}, {t.f})",
@@ -335,7 +377,7 @@ class SVGWriter:
             for key, value in c.__dict__.items():
                 if (
                     not key.startswith("_")
-                    and key not in ("settings", "attributes")
+                    and key not in ("settings", "attributes", "linecap", "linejoin", "fillrule", "stroke_width")
                     and value is not None
                     and isinstance(value, (str, int, float, complex, list, dict))
                 ):
