@@ -4396,6 +4396,23 @@ class Elemental(Service):
                 paths.append(e)
             return "shapes", paths
 
+        @self.console_option("real", "r", action="store_true", type=bool, help="Display non-transformed path")
+        @self.console_command(
+            "path_d_info",
+            help=_("List the path_d of any recognized paths"),
+            input_type="elements",
+        )
+        def element_pathd_info(command, channel, _, data, real=True, **kwargs):
+            for node in data:
+                try:
+                    if node.path.transform.is_identity():
+                        channel(f"{str(node)} (Identity): {node.path.d(transformed=not real)}")
+                    else:
+                        channel(f"{str(node)}: {node.path.d(transformed=not real)}")
+                except AttributeError:
+                    channel(f"{str(node)}: Invalid")
+
+
         @self.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
         )
