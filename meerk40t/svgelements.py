@@ -2492,6 +2492,8 @@ class Matrix:
         elif len_args == 1:
             m = components[0]
             if isinstance(m, str):
+                if not m:
+                    return
                 self.parse(m)
                 self.render(**kwargs)
             else:
