@@ -10,7 +10,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Circle, Path
+from meerk40t.svgelements import Ellipse
 
 
 class CircleTool(ToolWidget):
@@ -58,13 +58,12 @@ class CircleTool(ToolWidget):
                     )
                 )
             if self.creation_mode == 1:
-                ellipse = Circle(cx, cy, radius)
+                ellipse = Ellipse(cx=cx, cy=cy, r=radius)
             else:
-                ellipse = Circle(
-                    (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
+                ellipse = Ellipse(
+                    cx=(x1 + x0) / 2.0, cy=(y1 + y0) / 2.0, r=abs(self.p1 - self.p2) / 2
                 )
-            t = Path(ellipse)
-            bbox = t.bbox()
+            bbox = ellipse.bbox()
             if bbox is not None:
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
                 units = self.scene.context.units_name
@@ -130,16 +129,16 @@ class CircleTool(ToolWidget):
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
                 if self.creation_mode == 1:
-                    ellipse = Circle(
-                        cx,
-                        cy,
-                        radius,
+                    ellipse = Ellipse(
+                        cx=cx,
+                        cy=cy,
+                        r=radius,
                     )
                 else:
-                    ellipse = Circle(
-                        (x1 + x0) / 2.0,
-                        (y1 + y0) / 2.0,
-                        abs(self.p1 - self.p2) / 2,
+                    ellipse = Ellipse(
+                        cx=(x1 + x0) / 2.0,
+                        cy=(y1 + y0) / 2.0,
+                        r=abs(self.p1 - self.p2) / 2,
                     )
 
                 if not ellipse.is_degenerate():
