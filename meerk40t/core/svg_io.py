@@ -297,7 +297,7 @@ class SVGWriter:
                 element = c.shape
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
-                subelement.set(SVG_ATTR_POINTS, element.points)
+                subelement.set(SVG_ATTR_POINTS, " ".join([f"{e[0]} {e[1]}" for e in element.points]))
                 t = c.matrix
                 subelement.set(
                     "transform",
