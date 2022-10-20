@@ -6,6 +6,7 @@ from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
     Path,
+    Rect,
 )
 
 
@@ -36,6 +37,7 @@ class RectNode(Node):
             del settings["type"]
         super(RectNode, self).__init__(type="elem rect", **settings)
         self._formatter = "{element_type} {id} {stroke}"
+        assert (isinstance(shape, Rect))
         self.shape = shape
         self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
