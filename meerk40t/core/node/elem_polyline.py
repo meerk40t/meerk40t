@@ -5,7 +5,7 @@ from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
-    Path,
+    Path, Polyline, Polygon,
 )
 
 
@@ -37,6 +37,7 @@ class PolylineNode(Node):
             del settings["type"]
         super(PolylineNode, self).__init__(type="elem polyline", **settings)
         self._formatter = "{element_type} {id} {stroke}"
+        assert (isinstance(shape, (Polyline, Polygon)))
         self.shape = shape
         self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
