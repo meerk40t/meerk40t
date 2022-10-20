@@ -27,7 +27,18 @@ class PropertyWindow(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
+
+    def on_page_changed(self, event):
+        event.Skip()
+        page = self.notebook_main.GetCurrentPage()
+        if page is None:
+            return
+        try:
+            page.pane_active()
+        except AttributeError:
+            pass
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
@@ -112,6 +123,7 @@ class PropertyWindow(MWindow):
 
         self.Layout()
         self.Thaw()
+        # self.Refresh()
 
     @staticmethod
     def sub_register(kernel):
