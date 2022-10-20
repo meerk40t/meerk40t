@@ -37,7 +37,7 @@ class RectNode(Node):
             del settings["type"]
         super(RectNode, self).__init__(type="elem rect", **settings)
         self._formatter = "{element_type} {id} {stroke}"
-        assert (isinstance(shape, Rect))
+        assert isinstance(shape, Rect)
         self.shape = shape
         self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
