@@ -60,28 +60,30 @@ class CropPanel(wx.Panel):
         self.set_widgets(node)
 
     def set_widgets(self, node):
+        if self.node is None:
+            self.label_info.SetLabel("")
+            self.Hide()
+            return
+        else:
+            self.Show()
         self._no_update = True
         self.node = node
         self.op = None
-        self._width = 100
-        self._height = 100
+        self._width, self._height = self.node.image.size
         self._bounds = [0, 0, self._width, self._height]
         flag = False
-        if node is None:
-            self.label_info.SetLabel("")
-        else:
-            for n in node.operations:
-                if n.get("name") == "crop":
-                    self.op = n
-                    break
-            self._width, self._height = self.node.image.size
-            self.label_info.SetLabel(f"{self._width} x {self._height} pixels")
-            if self.op is not None:
-                flag = self.op["enable"]
-                self._bounds = self.op["bounds"]
-                if self._bounds is None:
-                    self._bounds = [0, 0, self._width, self._height]
-                    self.op["bounds"] = self._bounds
+        for n in node.operations:
+            if n.get("name") == "crop":
+                self.op = n
+                break
+        self._width, self._height = self.node.image.size
+        self.label_info.SetLabel(f"{self._width} x {self._height} px")
+        if self.op is not None:
+            flag = self.op["enable"]
+            self._bounds = self.op["bounds"]
+            if self._bounds is None:
+                self._bounds = [0, 0, self._width, self._height]
+                self.op["bounds"] = self._bounds
 
         self.set_slider_limits("lrtb", False)
 
@@ -100,32 +102,18 @@ class CropPanel(wx.Panel):
 
     def __do_layout(self):
         # begin wxGlade: ContrastPanel.__do_layout
-        sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_info = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Image-Dimensions")), wx.HORIZONTAL
+        sizer_main = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Image-Dimensions")), wx.VERTICAL
         )
+        sizer_info = wx.BoxSizer(wx.HORIZONTAL)
         sizer_info.Add(self.check_enable_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_info.Add(self.button_reset, 0, wx.EXPAND, 0)
         sizer_info.Add(self.label_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
-
-        sizer_sliders = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Crop-Boundaries")), wx.VERTICAL
-        )
-        sizer_left_right = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_top_bottom = wx.BoxSizer(wx.HORIZONTAL)
 
         sizer_left = wx.BoxSizer(wx.HORIZONTAL)
         sizer_right = wx.BoxSizer(wx.HORIZONTAL)
         sizer_top = wx.BoxSizer(wx.HORIZONTAL)
         sizer_bottom = wx.BoxSizer(wx.HORIZONTAL)
-
-        sizer_left_right.Add(sizer_left, 1, wx.EXPAND, 0)
-        sizer_left_right.Add(sizer_right, 1, wx.EXPAND, 0)
-        sizer_sliders.Add(sizer_left_right, 1, wx.EXPAND, 0)
-
-        sizer_top_bottom.Add(sizer_top, 1, wx.EXPAND, 0)
-        sizer_top_bottom.Add(sizer_bottom, 1, wx.EXPAND, 0)
-        sizer_sliders.Add(sizer_top_bottom, 1, wx.EXPAND, 0)
 
         lbl_left = wx.StaticText(self, wx.ID_ANY, _("Left"))
         lbl_left.SetMinSize((60, -1))
@@ -158,7 +146,11 @@ class CropPanel(wx.Panel):
         sizer_bottom.Add(self.text_bottom, 1, wx.ALIGN_CENTER_VERTICAL)
 
         sizer_main.Add(sizer_info, 0, wx.EXPAND, 0)
-        sizer_main.Add(sizer_sliders, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_left, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_right, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_top, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_bottom, 0, wx.EXPAND, 0)
+
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
         self.Layout()
@@ -168,21 +160,27 @@ class CropPanel(wx.Panel):
             return
         w, h = self.node.image.size
         self._bounds = [0, 0, w, h]
-        self._no_update = True
-        self.set_slider_limits("lrtb", False)
-        self.cropleft = self._bounds[0]
-        self.cropright = self._bounds[1]
-        self.croptop = self._bounds[2]
-        self._no_update = False
-        self.cropbottom = self._bounds[3]
+        self.op["bounds"] = self._bounds
+        self.set_slider_limits("lrtb")
+        self.node.update(self.context)
 
     def on_check_enable_crop(self, event=None):
         flag = self.check_enable_crop.GetValue()
         if flag:
             if self.op is None:
                 w, h = self.node.image.size
+                self._width = w
+                self._height = h
                 self.op = {"name": "crop", "enable": True, "bounds": [0, 0, w, h]}
                 self.node.operations.append(self.op)
+                self.set_slider_limits("lrtb", False)
+                last = self._no_update
+                self._no_update = True
+                self.cropleft = 0
+                self.copright = w
+                self.croptop = 0
+                self.cropbottom = h
+                self._no_update = last
         else:
             if self.op is not None:
                 self.op["enable"] = flag
@@ -211,18 +209,46 @@ class CropPanel(wx.Panel):
             value = self._bounds[2]
             self.slider_left.SetMin(0)
             self.slider_left.SetMax(value - 1 if constraint else self._width)
+            if self._bounds[0] != self.slider_left.GetValue():
+                self.slider_left.SetValue(self._bounds[0])
+                dvalue = self._bounds[0]
+                if dvalue==0:
+                    self.text_left.SetValue(f"---")
+                else:
+                    self.text_left.SetValue(f"> {dvalue} px")
         if "r" in pattern:
             value = self._bounds[0]
             self.slider_right.SetMin(value + 1 if constraint else 0)
             self.slider_right.SetMax(self._width)
+            if self._bounds[2] != self.slider_right.GetValue():
+                self.slider_right.SetValue(self._bounds[2])
+                dvalue = self._width - self._bounds[2]
+                if dvalue==0:
+                    self.text_right.SetValue(f"---")
+                else:
+                    self.text_right.SetValue(f"{dvalue} px <")
         if "t" in pattern:
             value = self._bounds[3]
             self.slider_top.SetMin(0)
             self.slider_top.SetMax(value - 1 if constraint else self._height)
+            if self._bounds[1] != self.slider_top.GetValue():
+                self.slider_top.SetValue(self._bounds[1])
+                dvalue = self._bounds[1]
+                if dvalue==0:
+                    self.text_top.SetValue(f"---")
+                else:
+                    self.text_top.SetValue(f"> {dvalue} px")
         if "b" in pattern:
             value = self._bounds[1]
             self.slider_bottom.SetMin(value + 1 if constraint else 0)
             self.slider_bottom.SetMax(self._height)
+            if self._bounds[3] != self.slider_bottom.GetValue():
+                self.slider_bottom.SetValue(self._bounds[3])
+                dvalue = self._height - self._bounds[3]
+                if dvalue==0:
+                    self.text_bottom.SetValue(f"---")
+                else:
+                    self.text_bottom.SetValue(f"{dvalue} px <")
 
     @property
     def cropleft(self):
@@ -261,7 +287,7 @@ class CropPanel(wx.Panel):
         self._bounds[2] = value
         if self.slider_right.GetValue() != value:
             self.slider_right.SetValue(value)
-        dvalue= self._width - value
+        dvalue = self._width - value
         if dvalue==0:
             self.text_right.SetValue(f"---")
         else:
@@ -306,15 +332,9 @@ class CropPanel(wx.Panel):
 
     @cropbottom.setter
     def cropbottom(self, value):
-        # print(f"Set bottom to: {value}")
         self._bounds[3] = value
         if self.slider_bottom.GetValue() != value:
             self.slider_bottom.SetValue(value)
-        dvalue= self._height - value
-        if dvalue==0:
-            self.text_bottom.SetValue(f"---")
-        else:
-            self.text_bottom.SetValue(f"{dvalue} px <")
         # We need to adjust the boundaries of the top slider.
         self.set_slider_limits("t")
         if self.op is not None:
@@ -670,11 +690,11 @@ class ImagePropertyPanel(ScrolledPanel):
         return False
 
     def set_widgets(self, node=None):
+        if node is None:
+            node = self.node
         self.panel_id.set_widgets(node)
         self.panel_xy.set_widgets(node)
         self.panel_crop.set_widgets(node)
-        if node is None:
-            node = self.node
         self.node = node
         if node is None:
             return
@@ -707,13 +727,15 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 
+
+        sizer_dpi_dither = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dpi = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.HORIZONTAL
         )
         self.text_dpi.SetToolTip(_("Dots Per Inch"))
         sizer_dpi.Add(self.text_dpi, 1, wx.EXPAND, 0)
 
-        sizer_main.Add(sizer_dpi, 0, wx.EXPAND, 0)
+        sizer_dpi_dither.Add(sizer_dpi, 1, wx.EXPAND, 0)
 
         sizer_dither = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Dither")), wx.HORIZONTAL
@@ -721,7 +743,9 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_dither.Add(self.check_enable_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_dither.Add(self.combo_dither, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_main.Add(sizer_dither, 0, wx.EXPAND, 0)
+        sizer_dpi_dither.Add(sizer_dither, 1, wx.EXPAND, 0)
+
+        sizer_main.Add(sizer_dpi_dither, 0, wx.EXPAND, 0)
 
         # -----
 
@@ -745,16 +769,16 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_grayscale.Add(self.check_invert_grayscale, 0, 0, 0)
         sizer_grayscale_red.Add(self.slider_grayscale_red, 1, wx.EXPAND, 0)
         sizer_grayscale_red.Add(self.text_grayscale_red, 1, 0, 0)
-        sizer_rg.Add(sizer_grayscale_red, 0, wx.EXPAND, 0)
+        sizer_rg.Add(sizer_grayscale_red, 1, wx.EXPAND, 0)
         sizer_grayscale_green.Add(self.slider_grayscale_green, 1, wx.EXPAND, 0)
         sizer_grayscale_green.Add(self.text_grayscale_green, 1, 0, 0)
-        sizer_rg.Add(sizer_grayscale_green, 0, wx.EXPAND, 0)
+        sizer_rg.Add(sizer_grayscale_green, 1, wx.EXPAND, 0)
         sizer_grayscale_blue.Add(self.slider_grayscale_blue, 1, wx.EXPAND, 0)
         sizer_grayscale_blue.Add(self.text_grayscale_blue, 1, 0, 0)
-        sizer_bl.Add(sizer_grayscale_blue, 0, wx.EXPAND, 0)
+        sizer_bl.Add(sizer_grayscale_blue, 1, wx.EXPAND, 0)
         sizer_grayscale_lightness.Add(self.slider_grayscale_lightness, 1, wx.EXPAND, 0)
         sizer_grayscale_lightness.Add(self.text_grayscale_lightness, 1, 0, 0)
-        sizer_bl.Add(sizer_grayscale_lightness, 0, wx.EXPAND, 0)
+        sizer_bl.Add(sizer_grayscale_lightness, 1, wx.EXPAND, 0)
         sizer_grayscale.Add(sizer_rg, 5, wx.EXPAND, 0)
         sizer_grayscale.Add(sizer_bl, 5, wx.EXPAND, 0)
 
