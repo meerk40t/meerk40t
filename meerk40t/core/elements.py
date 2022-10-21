@@ -7,7 +7,7 @@ from os.path import realpath
 from random import randint, shuffle
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import CommandSyntaxError, Service, Settings, ConsoleFunction
+from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Service, Settings
 
 from ..svgelements import (
     SVG_RULE_EVENODD,
@@ -422,9 +422,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
-        self._save_restore_job = ConsoleFunction(
-            self, "save_restore_point\n", times=1
-        )
+        self._save_restore_job = ConsoleFunction(self, "save_restore_point\n", times=1)
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -743,6 +741,7 @@ class Elemental(Service):
             this_length = path.length()
 
             from numpy import linspace
+
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
 
@@ -969,7 +968,7 @@ class Elemental(Service):
                 if hasattr(node, opatt):
                     value = getattr(node, opatt, None)
                     found = True
-                    if opatt == "passes": # We need to look at one more info
+                    if opatt == "passes":  # We need to look at one more info
                         if not node.passes_custom or value < 1:
                             value = 1
                 else:  # Try setting
@@ -2492,10 +2491,16 @@ class Elemental(Service):
                     if matrix:
                         e.matrix *= matrix
                     newnode = self.elem_branch.add_node(e)
-                    if self.copy_increases_wordlist_references and hasattr(newnode, "text"):
+                    if self.copy_increases_wordlist_references and hasattr(
+                        newnode, "text"
+                    ):
                         newnode.text = self.wordlist_delta(newnode.text, delta_wordlist)
-                    elif self.copy_increases_wordlist_references and hasattr(newnode, "mktext"):
-                        newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
+                    elif self.copy_increases_wordlist_references and hasattr(
+                        newnode, "mktext"
+                    ):
+                        newnode.mktext = self.wordlist_delta(
+                            newnode.mktext, delta_wordlist
+                        )
                 self.signal("refresh_scene", "Scene")
                 return "elements", add_elem
 
@@ -4358,6 +4363,7 @@ class Elemental(Service):
                 return "elements", data
 
             from ..numpath import Numpath
+
             numpath = Numpath()
             for node in data:
                 try:
@@ -4426,7 +4432,13 @@ class Elemental(Service):
                 paths.append(e)
             return "shapes", paths
 
-        @self.console_option("real", "r", action="store_true", type=bool, help="Display non-transformed path")
+        @self.console_option(
+            "real",
+            "r",
+            action="store_true",
+            type=bool,
+            help="Display non-transformed path",
+        )
         @self.console_command(
             "path_d_info",
             help=_("List the path_d of any recognized paths"),
@@ -4436,12 +4448,13 @@ class Elemental(Service):
             for node in data:
                 try:
                     if node.path.transform.is_identity():
-                        channel(f"{str(node)} (Identity): {node.path.d(transformed=not real)}")
+                        channel(
+                            f"{str(node)} (Identity): {node.path.d(transformed=not real)}"
+                        )
                     else:
                         channel(f"{str(node)}: {node.path.d(transformed=not real)}")
                 except AttributeError:
                     channel(f"{str(node)}: Invalid")
-
 
         @self.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
@@ -6087,7 +6100,7 @@ class Elemental(Service):
         def undo_mark(data=None, **kwgs):
             self._undo_index += 1
             self._undo_stack.insert(self._undo_index, self._tree.backup_tree())
-            del self._undo_stack[self._undo_index + 1:]
+            del self._undo_stack[self._undo_index + 1 :]
             return "undo", self._undo_stack[self._undo_index]
 
         @self.console_command(
@@ -6450,6 +6463,7 @@ class Elemental(Service):
                     if path is not None:
 
                         from numpy import linspace
+
                         for subpath in path.as_subpaths():
                             psp = Path(subpath)
                             p = psp.first_point
@@ -6556,7 +6570,9 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}", helper=True)
+                _spooler.laserjob(
+                    list(trace_hull()), label=f"Trace Job: {method}", helper=True
+                )
 
             run_shape(spooler, hull)
 
@@ -7805,7 +7821,9 @@ class Elemental(Service):
             append_operation_interrupt(node, pos=pos, **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
-        @self.tree_operation(_("Add Origin/Beep/Interrupt"), node_type=op_nodes, help="")
+        @self.tree_operation(
+            _("Add Origin/Beep/Interrupt"), node_type=op_nodes, help=""
+        )
         def add_operation_origin_beep_interrupt(node, **kwargs):
             pos = add_after_index(node)
             append_operation_goto(node, pos=pos, **kwargs)
@@ -7971,7 +7989,7 @@ class Elemental(Service):
                 for n in range(copies):
                     delta_wordlist += 1
                     copy_node = copy(e)
-                    copy_node.matrix *= Matrix.translate((n+1)*dx, (n+1)*dy)
+                    copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
                     had_optional = False
                     for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
                         if hasattr(e, optional):
@@ -7979,7 +7997,9 @@ class Elemental(Service):
                             setattr(copy_node, optional, getattr(e, optional))
                     if self.copy_increases_wordlist_references and hasattr(e, "text"):
                         copy_node.text = self.wordlist_delta(e.text, delta_wordlist)
-                    elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
+                    elif self.copy_increases_wordlist_references and hasattr(
+                        e, "mktext"
+                    ):
                         copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
                     node.parent.add_node(copy_node)
                     if had_optional:

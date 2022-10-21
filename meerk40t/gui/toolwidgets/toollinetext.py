@@ -1,5 +1,5 @@
 from time import time
-from time import time
+
 import wx
 
 from meerk40t.core.units import Length
@@ -14,6 +14,7 @@ from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
 from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
+
 
 class LineTextTool(ToolWidget):
     """
@@ -130,7 +131,10 @@ class LineTextTool(ToolWidget):
                     self.node.stroke = self.color
                     self.scene.context.elements.elem_branch.add_node(self.node)
                     self.scene.context.signal("element_added", self.node)
-                    self.scene.context.signal("statusmsg", _("Complete text-entry by pressing either Enter or Escape"))
+                    self.scene.context.signal(
+                        "statusmsg",
+                        _("Complete text-entry by pressing either Enter or Escape"),
+                    )
                     self.node.emphasized = False
 
                 self.scene.context("window open HersheyFontSelector\n")
@@ -181,7 +185,9 @@ class LineTextTool(ToolWidget):
                 if self.node is None:
                     x = self.p1.real
                     y = self.p1.imag
-                    self.node = create_linetext_node(self.scene.context, x, y, self.vtext)
+                    self.node = create_linetext_node(
+                        self.scene.context, x, y, self.vtext
+                    )
                 else:
                     update_linetext(self.scene.context, self.node, self.vtext)
                 # self.node.stroke = self.color
@@ -219,7 +225,7 @@ class LineTextTool(ToolWidget):
             self.node.emphasized = False
             self.scene.request_refresh()
         elif signal == "linetext" and args[0] == "font":
-            if len(args)>1:
+            if len(args) > 1:
                 font = args[1]
                 self.node.mkfont = font
                 update_linetext(self.scene.context, self.node, self.node.mktext)

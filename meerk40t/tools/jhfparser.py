@@ -109,7 +109,7 @@ class JhfFont:
                 else:
                     leftval = self.hershey_val(leftchar)
                     rightval = self.hershey_val(rightchar)
-                    if cidx==0:
+                    if cidx == 0:
                         realleft = leftval
                         realright = leftval
                         realtop = rightval
@@ -130,15 +130,14 @@ class JhfFont:
             struct = {
                 "index": glyphindex,
                 "num": glyphnum,
-                "left": leftpos,            # what the glyph claims
-                "right": rightpos,          # what the glyph claims
-                "top": realtop,             # extension to the top
-                "bottom": realbottom,       # extension to the bottom
-                "realleft": realleft,       # the real extension
-                "realright": realright,     # the real extension
+                "left": leftpos,  # what the glyph claims
+                "right": rightpos,  # what the glyph claims
+                "top": realtop,  # extension to the top
+                "bottom": realbottom,  # extension to the bottom
+                "realleft": realleft,  # the real extension
+                "realright": realright,  # the real extension
                 "nverts": nverts,
                 "vertices": vertchars,
-
             }
             self.glyphs[glyphchar] = struct
             # if realleft != leftpos or realright != rightpos:
@@ -252,7 +251,7 @@ class JhfFont:
             # print (f"Replace all '{to_replace[0]}' with '{to_replace[1]}'")
             text = text.replace(to_replace[0], to_replace[1])
         # print (f"Top: {self.top}, bottom={self.bottom}")
-        offsety = -1 * self.top # Negative !
+        offsety = -1 * self.top  # Negative !
         for tchar in text:
             if tchar in self.glyphs:
                 # print(f"Char '{tchar}' (ord={ord(tchar)}), offsetx={offsetx}")

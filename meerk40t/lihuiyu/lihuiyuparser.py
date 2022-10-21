@@ -1,7 +1,7 @@
 from meerk40t.core.cutcode import CutCode, RawCut
 from meerk40t.core.parameters import Parameters
-from meerk40t.svgelements import Color
 from meerk40t.core.units import UNITS_PER_MIL
+from meerk40t.svgelements import Color
 
 
 class LihuiyuParser:
@@ -49,6 +49,7 @@ class LihuiyuParser:
 
     def parse(self, data, elements):
         from meerk40t.numpath import Numpath
+
         self.path = Numpath()
 
         def position(p):

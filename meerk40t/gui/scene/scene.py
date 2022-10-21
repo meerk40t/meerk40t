@@ -709,7 +709,9 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type="", nearest_snap=None, modifiers=None, keycode=None):
+    def event(
+        self, window_pos, event_type="", nearest_snap=None, modifiers=None, keycode=None
+    ):
         """
         Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
 

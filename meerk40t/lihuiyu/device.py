@@ -86,16 +86,19 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         try:
             from meerk40t.lihuiyu.lihuiyuparser import EgvLoader
+
             kernel.register("load/EgvLoader", EgvLoader)
         except ImportError:
             pass
         try:
             from .lihuiyuemulator import LihuiyuEmulator
+
             kernel.register("emulator/lihuiyu", LihuiyuEmulator)
         except ImportError:
             pass
         try:
             from meerk40t.lihuiyu.lihuiyuparser import LihuiyuParser
+
             kernel.register("parser/egv", LihuiyuParser)
         except ImportError:
             pass
@@ -311,7 +314,9 @@ class LihuiyuDevice(Service, ViewPort):
 
             if self.spooler.is_idle:
                 self.spooler.laserjob(
-                    list(move_at_speed()), label=f"move {dx} {dy} at {speed}", helper=True
+                    list(move_at_speed()),
+                    label=f"move {dx} {dy} at {speed}",
+                    helper=True,
                 )
             else:
                 channel(_("Busy"))
@@ -712,12 +717,15 @@ class LihuiyuDevice(Service, ViewPort):
             return
 
         if self.has_feature("emulator/lihuiyu"):
+
             @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
             def lhyemulator(channel, _, **kwargs):
                 try:
                     self.open_as("emulator/lihuiyu", "lhyemulator")
                     channel(
-                        _("Lihuiyu Emulator attached to {device}").format(device=str(self))
+                        _("Lihuiyu Emulator attached to {device}").format(
+                            device=str(self)
+                        )
                     )
                 except KeyError:
                     channel(_("Emulator cannot be attached to any device."))

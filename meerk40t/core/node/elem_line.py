@@ -5,7 +5,8 @@ from meerk40t.core.node.node import Fillrule, Linecap, Linejoin, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
-    Path, SimpleLine,
+    Path,
+    SimpleLine,
 )
 
 
@@ -37,7 +38,7 @@ class LineNode(Node):
             del settings["type"]
         super(LineNode, self).__init__(type="elem line", **settings)
         self._formatter = "{element_type} {id} {stroke}"
-        assert (isinstance(shape, SimpleLine))
+        assert isinstance(shape, SimpleLine)
         self.shape = shape
         self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix

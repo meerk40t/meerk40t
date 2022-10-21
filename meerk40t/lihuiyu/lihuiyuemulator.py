@@ -44,4 +44,3 @@ class LihuiyuEmulator(Module):
         active = self._attached_device
         send = context.channel(f"{active}/usb_send")
         send.unwatch(self.parser.write_packet)
-

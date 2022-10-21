@@ -1281,10 +1281,12 @@ class MoveWidget(Widget):
                 changed_nodes.append(e)
             delta_wordlist = 1
             if had_optional:
-                for property_op in self.scene.context.kernel.lookup_all("path_updater/.*"):
+                for property_op in self.scene.context.kernel.lookup_all(
+                    "path_updater/.*"
+                ):
                     property_op(self.scene.context, e)
 
-        if len(changed_nodes)>0:
+        if len(changed_nodes) > 0:
             self.scene.context.signal("element_property_update", changed_nodes)
         elements.classify(copy_nodes)
 
@@ -1334,7 +1336,7 @@ class MoveWidget(Widget):
         def move_to(dx, dy):
             b = elements._emphasized_bounds
             if b is None:
-               b = elements.selected_area()
+                b = elements.selected_area()
             allowlockmove = elements.lock_allows_move
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 if hasattr(e, "lock") and e.lock and not allowlockmove:

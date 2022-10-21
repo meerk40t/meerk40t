@@ -11,7 +11,7 @@ class ScenePanel(wx.Panel):
     def __init__(self, context, *args, scene_name="Scene", **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
-#        self.scene_panel = wx.Panel(self, wx.ID_ANY)
+        #        self.scene_panel = wx.Panel(self, wx.ID_ANY)
         self.scene_panel = wx.Window(self, wx.ID_ANY)
         self.scene = context.open_as("module/Scene", scene_name, self)
         self.context = context

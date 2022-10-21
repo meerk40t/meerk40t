@@ -330,7 +330,7 @@ class Node:
         try:
             result = text.format_map(mymap)
         except ValueError:
-            result ="<invalid pattern>"
+            result = "<invalid pattern>"
         return result
 
     def default_map(self, default_map=None):

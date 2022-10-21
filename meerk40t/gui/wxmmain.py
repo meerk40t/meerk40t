@@ -43,6 +43,9 @@ from .icons import (
     icons8_centerh_50,
     icons8_centerv_50,
     icons8_circle_50,
+    icons8_circled_left_50,
+    icons8_circled_right_50,
+    icons8_curly_brackets_50,
     icons8_cursor_50,
     icons8_flip_vertical,
     icons8_group_objects_50,
@@ -64,9 +67,6 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
-    icons8_curly_brackets_50,
-    icons8_circled_left_50,
-    icons8_circled_right_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -1086,7 +1086,6 @@ class MeerK40t(MWindow):
                         "action": lambda v: kernel.elements.wordlist_advance(-1),
                     },
                 ],
-
             },
         )
 
@@ -2716,6 +2715,7 @@ class MeerK40t(MWindow):
                             message="This requires a program restart before the language change will kick in!",
                             caption="Language changed",
                         )
+
                     return check
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())

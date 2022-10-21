@@ -1189,7 +1189,7 @@ class ShadowTree:
                     if not value.startswith(pattern):
                         mymap[key] = value
             return text.format_map(mymap)
-            
+
         def get_formatter(nodetype):
             default = self.context.elements.lookup(f"format/{nodetype}")
             lbl = nodetype.replace(" ", "_")

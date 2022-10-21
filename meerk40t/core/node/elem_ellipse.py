@@ -5,7 +5,9 @@ from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
-    Path, Ellipse, Circle,
+    Circle,
+    Ellipse,
+    Path,
 )
 
 
@@ -35,7 +37,7 @@ class EllipseNode(Node):
             del settings["type"]
         super(EllipseNode, self).__init__(type="elem ellipse", **settings)
         self.__formatter = "{element_type} {id} {stroke}"
-        assert(isinstance(shape, (Ellipse, Circle)))
+        assert isinstance(shape, (Ellipse, Circle))
         self.shape = shape
         self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix

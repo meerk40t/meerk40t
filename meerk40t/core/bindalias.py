@@ -159,7 +159,10 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+v": ("clipboard paste",),
     "ctrl+x": ("clipboard cut",),
-    "ctrl+z": ("undo", "reset",),
+    "ctrl+z": (
+        "undo",
+        "reset",
+    ),
     "ctrl+shift+z": ("redo",),
     "ctrl+1": ("bind 1 move $x $y",),
     "ctrl+2": ("bind 2 move $x $y",),

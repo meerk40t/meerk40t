@@ -364,7 +364,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
                     img = c.get("icon", None)
                     if img is not None:
-                        icon =wx.StaticBitmap(self, wx.ID_ANY, bitmap=img)
+                        icon = wx.StaticBitmap(self, wx.ID_ANY, bitmap=img)
                         last_box.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
                         last_box.AddSpacer(5)
                 else:
@@ -791,7 +791,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     check=check_flag,
                 )
                 ctrl_width = c.get("width", 0)
-                if ctrl_width>0:
+                if ctrl_width > 0:
                     control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)

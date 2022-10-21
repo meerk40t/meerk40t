@@ -298,9 +298,9 @@ class ImagePropertyPanel(ScrolledPanel):
 
     def on_combo_operation(self, event):
         idx = self.combo_operations.GetSelection()
-        if idx<=0:
+        if idx <= 0:
             return
-        elif idx==1:
+        elif idx == 1:
             self.node.operations = []
         else:
             script = self.image_ops[idx - 2]
@@ -311,6 +311,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.node.update(self.context)
         self.context.signal("element_property_reload", self.node)
         self.context.signal("propupdate", self.node)
+
 
 class ImageProperty(MWindow):
     def __init__(self, *args, node=None, **kwds):

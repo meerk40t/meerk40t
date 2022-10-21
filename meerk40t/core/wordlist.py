@@ -119,7 +119,7 @@ class Wordlist:
                     value = int(value) + delta
                 except ValueError:
                     value = 0
-                if value<0:
+                if value < 0:
                     value = 0
                 wordlist[2] = value
 
@@ -168,7 +168,9 @@ class Wordlist:
             wordlists.extend(list(skey.split(",")))
         for wkey in wordlists:
             wordlist = self.content[wkey]
-            if wordlist[0] in (0, 1) and wkey not in self.prohibited:  # Variable Wordlist type.
+            if (
+                wordlist[0] in (0, 1) and wkey not in self.prohibited
+            ):  # Variable Wordlist type.
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
                 if relative:
@@ -189,7 +191,7 @@ class Wordlist:
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(result):
-#            print(f"Key found: {bracketed_key}")
+            #            print(f"Key found: {bracketed_key}")
             key = bracketed_key[1:-1].lower().strip()
             # Let's check whether we have a modifier at the end: #<num>
             # if key.endswith("++"):
@@ -224,7 +226,7 @@ class Wordlist:
                 sformat = None
                 if key in self.content:
                     value = self.fetch_value(key, 2)
-                    if value is not None and isinstance(value, str) and len(value)>0:
+                    if value is not None and isinstance(value, str) and len(value) > 0:
                         if "%" in value:
                             # Seems to be a format string, so let's try it...
                             sformat = value
@@ -234,7 +236,7 @@ class Wordlist:
                 sformat = None
                 if key in self.content:
                     value = self.fetch_value(key, 2)
-                    if value is not None and isinstance(value, str) and len(value)>0:
+                    if value is not None and isinstance(value, str) and len(value) > 0:
                         if "%" in value:
                             # Seems to be a format string, so let's try it...
                             sformat = value
@@ -422,7 +424,7 @@ class Wordlist:
         # Lets gather the {} first...
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(orgtext):
-#            print(f"Key found: {bracketed_key}")
+            #            print(f"Key found: {bracketed_key}")
             newpattern = ""
             key = bracketed_key[1:-1].lower().strip()
             relative = 0
@@ -432,7 +434,9 @@ class Wordlist:
                 index_string = key[pos + 1 :]
                 key = key[:pos].strip()
 
-                if not index_string.startswith("+") and not index_string.startswith("-"):
+                if not index_string.startswith("+") and not index_string.startswith(
+                    "-"
+                ):
                     # We have a #<index> value without + or -, specific index value from 0
                     # no need to do something
                     continue
@@ -452,9 +456,9 @@ class Wordlist:
             if key in self.prohibited:
                 continue
             newindex = relative + increase
-            if newindex>0:
+            if newindex > 0:
                 newpattern = f"{{{key}#+{newindex}}}"
-            elif newindex<0:
+            elif newindex < 0:
                 newpattern = f"{{{key}#{newindex}}}"
             else:
                 # 0

@@ -318,10 +318,10 @@ class LaserPanel(wx.Panel):
             extension = self.context.device.extension
         filetype = f"*.{extension}"
         with wx.FileDialog(
-                gui,
-                _("Save Project"),
-                wildcard=filetype,
-                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+            gui,
+            _("Save Project"),
+            wildcard=filetype,
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
         ) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
