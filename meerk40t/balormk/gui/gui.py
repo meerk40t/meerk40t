@@ -102,6 +102,7 @@ def plugin(service, lifecycle):
                     "icon": icons8_light_off_50,
                     "tip": _("Turn light off"),
                     "action": lambda v: service("stop\n"),
+                    "signal": "stop_tracing",
                 },
             },
         )

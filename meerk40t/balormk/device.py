@@ -62,6 +62,7 @@ class ElementLightJob:
         connection.abort()
         self.stopped = True
         self.runtime += time.time() - self.time_started
+        self.service.signal("stop_tracing", True)
         return True
 
     def stop(self):
@@ -198,6 +199,7 @@ class LiveSelectionLightJob:
         connection.abort()
         self.stopped = True
         self.runtime += time.time() - self.time_started
+        self.service.signal("stop_tracing", True)
         return True
 
     def update_points(self, bounds):
@@ -374,6 +376,7 @@ class LiveFullLightJob:
         self.stopped = True
         self.runtime += time.time() - self.time_started
         self.service.unlisten("emphasized", self.on_emphasis_changed)
+        self.service.signal("stop_tracing", True)
         return True
 
     def stop(self):

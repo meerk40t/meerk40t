@@ -302,6 +302,8 @@ class RibbonPanel(wx.Panel):
         self.button_lookup = {}
         self.group_lookup = {}
 
+        self.toggle_signals = list()
+
         # Define Ribbon.
         self._ribbon = RB.RibbonBar(
             self,
@@ -351,6 +353,9 @@ class RibbonPanel(wx.Panel):
     def button_click(self, event):
         # Let's figure out what kind of action we need to perform
         evt_id = event.GetId()
+        self._button_click_id(evt_id, event=event)
+
+    def _button_click_id(self, evt_id, event=None):
         button = self.button_lookup.get(evt_id)
         if button is None:
             return
@@ -366,17 +371,19 @@ class RibbonPanel(wx.Panel):
                     if obutton.group == button.group and obutton.id != button.id:
                         obutton.parent.ToggleButton(obutton.id, False)
             else:  # got untoggled...
-                # so let' activate the first button of the group (implicitly defined as default...)
+                # so let's activate the first button of the group (implicitly defined as default...)
                 button_group = self.group_lookup.get(button.group)
                 if button_group:
                     first_button = button_group[0]
                     first_button.parent.ToggleButton(first_button.id, True)
 
                     # Clone event and recurse.
-                    mevent = event.Clone()
-                    mevent.SetId(first_button.id)
-                    self.button_click(mevent)
-                    return
+                    if event:
+                        _event = event.Clone()
+                        _event.SetId(first_button.id)
+                        self.button_click(_event)
+                        self._button_click_id(first_button.id, _event)
+                        return
         if button.action is not None:
             # We have an action to call.
             button.action(event)
@@ -491,6 +498,13 @@ class RibbonPanel(wx.Panel):
                 key_dict[k] = kwargs[k]
 
     def set_buttons(self, new_values, button_bar):
+        """
+        Set buttons is the primary button configuration routine. It is responsible for clearing and recreating buttons.
+
+        @param new_values: dictionary of button values to use.
+        @param button_bar: specific button bar these buttons are applied to.
+        @return:
+        """
         show_tip = not self.context.disable_tool_tips
         button_bar._current_layout = 0
         button_bar._hovered_button = None
@@ -603,6 +617,22 @@ class RibbonPanel(wx.Panel):
 
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
+                if "signal" in toggle_action:
+                    def make_toggle_click(_tb):
+                        def toggle_click(origin, set_value):
+                            if set_value:
+                                _tb.toggle = False
+                                self._restore_button_aspect(_tb, _tb.state_unpressed)
+                            else:
+                                _tb.toggle = True
+                                self._restore_button_aspect(_tb, _tb.state_pressed)
+                            _tb.parent.ToggleButton(_tb.id, _tb.toggle)
+                            _tb.parent.Refresh()
+                        return toggle_click
+                    signal_toggle_listener = make_toggle_click(b)
+                    self.context.listen(toggle_action["signal"], signal_toggle_listener)
+                    self.toggle_signals.append((toggle_action["signal"], signal_toggle_listener))
+
                 self._store_button_aspect(b, key, **toggle_action)
                 if "icon" in toggle_action:
                     toggle_icon = toggle_action.get("icon")
@@ -970,7 +1000,8 @@ class RibbonPanel(wx.Panel):
         pass
 
     def pane_hide(self):
-        pass
+        for key, listener in self.toggle_signals:
+            self.context.unlisten(key, listener)
 
     # def on_page_changing(self, event):
     #     page = event.GetPage()
