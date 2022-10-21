@@ -4,8 +4,8 @@ import time
 from math import isinf
 
 import wx
-from wx import aui
 import wx.lib.mixins.listctrl as listmix
+from wx import aui
 
 from meerk40t.gui.icons import (
     icons8_emergency_stop_button_50,
@@ -38,15 +38,18 @@ def register_panel_spooler(window, context):
     window.on_pane_create(pane)
     context.register("pane/spooler", pane)
 
-class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
-    ''' TextEditMixin allows any column to be edited. '''
 
-    #----------------------------------------------------------------------
-    def __init__(self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=0):
+class EditableListCtrl(wx.ListCtrl, listmix.TextEditMixin):
+    """TextEditMixin allows any column to be edited."""
+
+    # ----------------------------------------------------------------------
+    def __init__(
+        self, parent, ID=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=0
+    ):
         """Constructor"""
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
+
 
 class SpoolerPanel(wx.Panel):
     def __init__(self, *args, context=None, selected_device=None, **kwds):
@@ -104,7 +107,9 @@ class SpoolerPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.on_btn_clear, self.btn_clear)
         self.btn_clear.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
         self.list_job_history.Bind(wx.EVT_RIGHT_DOWN, self.on_btn_clear_right)
-        self.list_job_history.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.before_history_update)
+        self.list_job_history.Bind(
+            wx.EVT_LIST_BEGIN_LABEL_EDIT, self.before_history_update
+        )
         self.list_job_history.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_history_update)
         self.Bind(wx.EVT_BUTTON, self.on_button_pause, self.button_pause)
         self.Bind(wx.EVT_BUTTON, self.on_button_stop, self.button_stop)
@@ -305,10 +310,14 @@ class SpoolerPanel(wx.Panel):
             return check
 
         def toggle_1(event):
-            self.context.spool_history_clear_on_start = not self.context.spool_history_clear_on_start
+            self.context.spool_history_clear_on_start = (
+                not self.context.spool_history_clear_on_start
+            )
 
         def toggle_2(event):
-            self.context.spool_ignore_helper_jobs = not self.context.spool_ignore_helper_jobs
+            self.context.spool_ignore_helper_jobs = (
+                not self.context.spool_ignore_helper_jobs
+            )
 
         now = time.time()
         week_seconds = 60 * 60 * 24 * 7
@@ -346,12 +355,18 @@ class SpoolerPanel(wx.Panel):
             wx.ID_ANY, _("Clear history on startup"), "", wx.ITEM_CHECK
         )
         menuitem.Check(self.context.spool_history_clear_on_start)
-        self.Bind(wx.EVT_MENU, toggle_1, id=menuitem.GetId(),)
-        menuitem = menu.Append(
-            wx.ID_ANY, _("Ignore helper jobs"), "", wx.ITEM_CHECK
+        self.Bind(
+            wx.EVT_MENU,
+            toggle_1,
+            id=menuitem.GetId(),
         )
+        menuitem = menu.Append(wx.ID_ANY, _("Ignore helper jobs"), "", wx.ITEM_CHECK)
         menuitem.Check(self.context.spool_ignore_helper_jobs)
-        self.Bind(wx.EVT_MENU, toggle_2, id=menuitem.GetId(),)
+        self.Bind(
+            wx.EVT_MENU,
+            toggle_2,
+            id=menuitem.GetId(),
+        )
         if menu.MenuItemCount != 0:
             self.PopupMenu(menu)
             menu.Destroy()
@@ -682,7 +697,11 @@ class SpoolerPanel(wx.Panel):
         if newestinfo is not None:
             addit = True
             # No helper jobs....
-            if len(newestinfo)>=7 and newestinfo[6] and self.context.spool_ignore_helper_jobs:
+            if (
+                len(newestinfo) >= 7
+                and newestinfo[6]
+                and self.context.spool_ignore_helper_jobs
+            ):
                 addit = False
             if addit:
                 # We dont need the helper-flag, we use this for a jobinfo column
@@ -805,20 +824,20 @@ class SpoolerPanel(wx.Panel):
             pass
 
     def before_history_update(self, event):
-        list_id = event.GetIndex() #Get the current row
-        col_id = event.GetColumn () #Get the current column
+        list_id = event.GetIndex()  # Get the current row
+        col_id = event.GetColumn()  # Get the current column
         if col_id == self.column_history["jobinfo"]:
             event.Allow()
         else:
             event.Veto()
 
     def on_history_update(self, event):
-        list_id = event.GetIndex() # Get the current row
-        col_id = event.GetColumn () # Get the current column
-        new_data = event.GetLabel() # Get the changed data
+        list_id = event.GetIndex()  # Get the current row
+        col_id = event.GetColumn()  # Get the current column
+        new_data = event.GetLabel()  # Get the changed data
         if list_id >= 0 and col_id == self.column_history["jobinfo"]:
             idx = self.list_job_history.GetItemData(list_id)
-            while len(self.history[idx])<7:
+            while len(self.history[idx]) < 7:
                 self.history[idx].append(None)
             self.history[idx][6] = new_data
             self.save_history()

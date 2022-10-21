@@ -790,7 +790,9 @@ class LaserRender:
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(node.text, node, increment=False)
+            text = self.context.elements.wordlist_translate(
+                node.text, node, increment=False
+            )
             node.bounds_with_variables_translated = True
         else:
             text = node.text

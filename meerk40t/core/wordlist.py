@@ -62,6 +62,10 @@ class Wordlist:
             wordlist = self.content[skey]
         except KeyError:
             return None
+        if skey == "date":
+            return self.wordlist_datestr(None)
+        elif skey == "time":
+            return self.wordlist_timestr(None)
         # print (f"Retrieve {wordlist} for {skey}")
         if idx is None:  # Default
             idx = wordlist[1]
@@ -115,7 +119,7 @@ class Wordlist:
                     value = int(value) + delta
                 except ValueError:
                     value = 0
-                if value<0:
+                if value < 0:
                     value = 0
                 wordlist[2] = value
 
@@ -162,16 +166,17 @@ class Wordlist:
             wordlists.extend(self.content)
         else:
             wordlists.extend(list(skey.split(",")))
-
         for wkey in wordlists:
             wordlist = self.content[wkey]
-            if wordlist[0] == 1:  # Variable Wordlist type.
+            if (
+                wordlist[0] in (0, 1) and wkey not in self.prohibited
+            ):  # Variable Wordlist type.
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
                 if relative:
-                    wordlist[1] = min(wordlist[1] + index, last_index)
+                    self.content[wkey][1] = min(wordlist[1] + index, last_index)
                 else:
-                    wordlist[1] = min(index + 2, last_index)
+                    self.content[wkey][1] = min(index + 2, last_index)
 
     def reset(self, skey=None):
         # Resets position
@@ -186,7 +191,7 @@ class Wordlist:
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(result):
-#            print(f"Key found: {bracketed_key}")
+            #            print(f"Key found: {bracketed_key}")
             key = bracketed_key[1:-1].lower().strip()
             # Let's check whether we have a modifier at the end: #<num>
             # if key.endswith("++"):
@@ -221,7 +226,7 @@ class Wordlist:
                 sformat = None
                 if key in self.content:
                     value = self.fetch_value(key, 2)
-                    if value is not None and isinstance(value, str) and len(value)>0:
+                    if value is not None and isinstance(value, str) and len(value) > 0:
                         if "%" in value:
                             # Seems to be a format string, so let's try it...
                             sformat = value
@@ -231,7 +236,7 @@ class Wordlist:
                 sformat = None
                 if key in self.content:
                     value = self.fetch_value(key, 2)
-                    if value is not None and isinstance(value, str) and len(value)>0:
+                    if value is not None and isinstance(value, str) and len(value) > 0:
                         if "%" in value:
                             # Seems to be a format string, so let's try it...
                             sformat = value
@@ -411,3 +416,64 @@ class Wordlist:
             headers = []
         colcount = len(headers)
         return ct, colcount, headers
+
+    def wordlist_delta(self, orgtext, increase):
+        newtext = orgtext
+        toreplace = []
+        # list of tuples, (index found, old, new )
+        # Lets gather the {} first...
+        brackets = re.compile(r"\{[^}]+\}")
+        for bracketed_key in brackets.findall(orgtext):
+            #            print(f"Key found: {bracketed_key}")
+            newpattern = ""
+            key = bracketed_key[1:-1].lower().strip()
+            relative = 0
+            pos = key.find("#")
+            if pos > 0:  # Needs to be after first character
+                # Process offset modification.
+                index_string = key[pos + 1 :]
+                key = key[:pos].strip()
+
+                if not index_string.startswith("+") and not index_string.startswith(
+                    "-"
+                ):
+                    # We have a #<index> value without + or -, specific index value from 0
+                    # no need to do something
+                    continue
+                try:
+                    # This covers +x, -x, x
+                    relative = int(index_string)
+                except ValueError:
+                    relative = 0
+            else:
+                # it's the unmodified key...
+                if key.startswith("time@"):
+                    key = "time"
+                elif key.startswith("date@"):
+                    key = "date"
+            if key not in self.content:
+                continue
+            if key in self.prohibited:
+                continue
+            newindex = relative + increase
+            if newindex > 0:
+                newpattern = f"{{{key}#+{newindex}}}"
+            elif newindex < 0:
+                newpattern = f"{{{key}#{newindex}}}"
+            else:
+                # 0
+                newpattern = f"{{{key}}}"
+            if newpattern != bracketed_key:
+
+                item = [relative, bracketed_key, newpattern]
+                toreplace.append(item)
+
+        # Then sort the list according to the direction,
+        # as we dont want to replace the same pattern again and again
+        if increase >= 0:
+            toreplace.sort(key=lambda n: n[0])
+        else:
+            toreplace.sort(reverse=True, key=lambda n: n[0])
+        for item in toreplace:
+            newtext = newtext.replace(item[1], item[2])
+        return newtext

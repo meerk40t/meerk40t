@@ -6,12 +6,9 @@ from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from os.path import realpath
 from random import randint, shuffle
 
-from numpy import linspace
-
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Service, Settings
 
-from ..numpath import Numpath
 from ..svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
@@ -331,6 +328,21 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "copy_increases_wordlist_references",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Copy will increase {variable} references"),
+                "tip": _(
+                    "Active: if you copy a text-element containing a wordlist-reference, this will be increased (effectively referencing the next entry in the wordlist)"
+                ),
+                "page": "Scene",
+                "section": "_90_Wordlist",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file
@@ -400,6 +412,8 @@ class Elemental(Service):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
         )
+        self._undo_stack = []
+        self._undo_index = -1
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -408,6 +422,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
+        self._save_restore_job = ConsoleFunction(self, "save_restore_point\n", times=1)
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -522,19 +537,6 @@ class Elemental(Service):
         for section in self.penbox:
             for i, p in enumerate(self.penbox[section]):
                 self.pen_data.write_persistent_dict(f"{section} {i}", p)
-
-    def wordlist_fetch(self, key):
-        try:
-            wordlist = self.wordlists[key]
-        except KeyError:
-            return None
-
-        try:
-            wordlist[0] += 1
-            return wordlist[wordlist[0]]
-        except IndexError:
-            wordlist[0] = 1
-            return wordlist[wordlist[0]]
 
     def index_range(self, index_string):
         """
@@ -737,6 +739,9 @@ class Elemental(Service):
         subject_polygons = []
         if path is not None:
             this_length = path.length()
+
+            from numpy import linspace
+
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
 
@@ -914,6 +919,23 @@ class Elemental(Service):
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
 
+    def wordlist_delta(self, orgtext, increase):
+        newtext = self.mywordlist.wordlist_delta(orgtext, increase)
+        return newtext
+
+    def wordlist_fetch(self, key):
+        try:
+            wordlist = self.wordlists[key]
+        except KeyError:
+            return None
+
+        try:
+            wordlist[0] += 1
+            return wordlist[wordlist[0]]
+        except IndexError:
+            wordlist[0] = 1
+            return wordlist[wordlist[0]]
+
     def wordlist_advance(self, delta):
         self.mywordlist.move_all_indices(delta)
         self.signal("refresh_scene", "Scene")
@@ -946,7 +968,7 @@ class Elemental(Service):
                 if hasattr(node, opatt):
                     value = getattr(node, opatt, None)
                     found = True
-                    if opatt == "passes": # We need to look at one more info
+                    if opatt == "passes":  # We need to look at one more info
                         if not node.passes_custom or value < 1:
                             value = 1
                 else:  # Try setting
@@ -2464,10 +2486,21 @@ class Elemental(Service):
                 matrix = None
                 if x_pos != 0 or y_pos != 0:
                     matrix = Matrix.translate(dx, dy)
+                delta_wordlist = 1
                 for e in add_elem:
                     if matrix:
                         e.matrix *= matrix
-                    self.elem_branch.add_node(e)
+                    newnode = self.elem_branch.add_node(e)
+                    if self.copy_increases_wordlist_references and hasattr(
+                        newnode, "text"
+                    ):
+                        newnode.text = self.wordlist_delta(newnode.text, delta_wordlist)
+                    elif self.copy_increases_wordlist_references and hasattr(
+                        newnode, "mktext"
+                    ):
+                        newnode.mktext = self.wordlist_delta(
+                            newnode.mktext, delta_wordlist
+                        )
                 self.signal("refresh_scene", "Scene")
                 return "elements", add_elem
 
@@ -4052,7 +4085,7 @@ class Elemental(Service):
             all_arguments_required=True,
         )
         def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, **kwargs):
-            circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
+            circ = Ellipse(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
             if circ.is_degenerate():
                 channel(_("Shape is degenerate."))
                 return "elements", data
@@ -4078,7 +4111,7 @@ class Elemental(Service):
             all_arguments_required=True,
         )
         def element_circle_r(channel, _, r_pos, data=None, **kwargs):
-            circ = Circle(r=float(r_pos))
+            circ = Ellipse(r=float(r_pos))
             if circ.is_degenerate():
                 channel(_("Shape is degenerate."))
                 return "elements", data
@@ -4328,6 +4361,9 @@ class Elemental(Service):
                 return "elements", data
             if len(data) == 0:
                 return "elements", data
+
+            from ..numpath import Numpath
+
             numpath = Numpath()
             for node in data:
                 try:
@@ -4396,7 +4432,13 @@ class Elemental(Service):
                 paths.append(e)
             return "shapes", paths
 
-        @self.console_option("real", "r", action="store_true", type=bool, help="Display non-transformed path")
+        @self.console_option(
+            "real",
+            "r",
+            action="store_true",
+            type=bool,
+            help="Display non-transformed path",
+        )
         @self.console_command(
             "path_d_info",
             help=_("List the path_d of any recognized paths"),
@@ -4406,12 +4448,13 @@ class Elemental(Service):
             for node in data:
                 try:
                     if node.path.transform.is_identity():
-                        channel(f"{str(node)} (Identity): {node.path.d(transformed=not real)}")
+                        channel(
+                            f"{str(node)} (Identity): {node.path.d(transformed=not real)}"
+                        )
                     else:
                         channel(f"{str(node)}: {node.path.d(transformed=not real)}")
                 except AttributeError:
                     channel(f"{str(node)}: Invalid")
-
 
         @self.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
@@ -5024,7 +5067,7 @@ class Elemental(Service):
             height += y_offset * 2
 
             _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            node = self.elem_branch.add(shape=_element, type="elem ellipse")
+            node = self.elem_branch.add(shape=_element, type="elem path")
             node.stroke = Color("red")
             self.set_emphasis([node])
             node.focus()
@@ -6049,6 +6092,57 @@ class Elemental(Service):
                     return "elements", list(self.elems(emphasized=True))
 
         # ==========
+        # UNDO/REDO COMMANDS
+        # ==========
+        @self.console_command(
+            "save_restore_point",
+        )
+        def undo_mark(data=None, **kwgs):
+            self._undo_index += 1
+            self._undo_stack.insert(self._undo_index, self._tree.backup_tree())
+            del self._undo_stack[self._undo_index + 1 :]
+            return "undo", self._undo_stack[self._undo_index]
+
+        @self.console_command(
+            "undo",
+        )
+        def undo_undo(command, channel, _, **kwgs):
+            if not self._undo_stack:
+                return
+            if self._undo_index == 0:
+                # At bottom of stack.
+                channel("No undo available.")
+                return
+            self._undo_index -= 1
+            undo = self._undo_stack[self._undo_index]
+            self._tree.restore_tree(undo)
+            self.signal("refresh_scene")
+            self.signal("rebuild_tree")
+
+        @self.console_command(
+            "redo",
+        )
+        def undo_redo(command, channel, _, data=None, **kwgs):
+            if not self._undo_stack:
+                return
+            if self._undo_index >= len(self._undo_stack) - 1:
+                channel("No redo available.")
+                return
+            self._undo_index += 1
+            redo = self._undo_stack[self._undo_index]
+            self._tree.restore_tree(redo)
+            self.signal("refresh_scene")
+            self.signal("rebuild_tree")
+
+        @self.console_command(
+            "undolist",
+        )
+        def undo_list(command, channel, _, **kwgs):
+            for i, v in enumerate(self._undo_stack):
+                q = "*" if i == self._undo_index else " "
+                channel(f"{q}{str(i).ljust(5)}: undo {id(v)}:{str(v)} elements ")
+
+        # ==========
         # CLIPBOARD COMMANDS
         # ==========
         @self.console_option("name", "n", type=str)
@@ -6081,7 +6175,13 @@ class Elemental(Service):
         )
         def clipboard_copy(data=None, **kwargs):
             destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
+            self._clipboard[destination] = []
+            for e in data:
+                copy_node = copy(e)
+                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                self._clipboard[destination].append(copy_node)
             return "elements", self._clipboard[destination]
 
         @self.console_option(
@@ -6122,7 +6222,13 @@ class Elemental(Service):
         )
         def clipboard_cut(data=None, **kwargs):
             destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
+            self._clipboard[destination] = []
+            for e in data:
+                copy_node = copy(e)
+                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                self._clipboard[destination].append(copy_node)
             self.remove_elements(data)
             return "elements", self._clipboard[destination]
 
@@ -6355,6 +6461,9 @@ class Elemental(Service):
                         path = None
 
                     if path is not None:
+
+                        from numpy import linspace
+
                         for subpath in path.as_subpaths():
                             psp = Path(subpath)
                             p = psp.first_point
@@ -6461,7 +6570,9 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}", helper=True)
+                _spooler.laserjob(
+                    list(trace_hull()), label=f"Trace Job: {method}", helper=True
+                )
 
             run_shape(spooler, hull)
 
@@ -6710,6 +6821,7 @@ class Elemental(Service):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(node)
+                self.signal("propupdate", node)
 
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values(
@@ -6723,6 +6835,7 @@ class Elemental(Service):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(node)
+                self.signal("propupdate", node)
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
@@ -7708,7 +7821,9 @@ class Elemental(Service):
             append_operation_interrupt(node, pos=pos, **kwargs)
 
         @self.tree_submenu(_("Insert special operation(s)"))
-        @self.tree_operation(_("Add Origin/Beep/Interrupt"), node_type=op_nodes, help="")
+        @self.tree_operation(
+            _("Add Origin/Beep/Interrupt"), node_type=op_nodes, help=""
+        )
         def add_operation_origin_beep_interrupt(node, **kwargs):
             pos = add_after_index(node)
             append_operation_goto(node, pos=pos, **kwargs)
@@ -7866,18 +7981,91 @@ class Elemental(Service):
         @self.tree_operation(_("Make {copies} copies"), node_type=elem_nodes, help="")
         def duplicate_element_n(node, copies, **kwargs):
             copy_nodes = list()
+            dx = self.length_x("3mm")
+            dy = self.length_y("3mm")
+            delta_wordlist = 1
             for e in list(self.elems(emphasized=True)):
+                delta_wordlist = 0
                 for n in range(copies):
+                    delta_wordlist += 1
                     copy_node = copy(e)
-                    if hasattr(e, "wxfont"):
-                        copy_node.wxfont = e.wxfont
+                    copy_node.matrix *= Matrix.translate((n + 1) * dx, (n + 1) * dy)
+                    had_optional = False
+                    for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                        if hasattr(e, optional):
+                            had_optional = True
+                            setattr(copy_node, optional, getattr(e, optional))
+                    if self.copy_increases_wordlist_references and hasattr(e, "text"):
+                        copy_node.text = self.wordlist_delta(e.text, delta_wordlist)
+                    elif self.copy_increases_wordlist_references and hasattr(
+                        e, "mktext"
+                    ):
+                        copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
                     node.parent.add_node(copy_node)
+                    if had_optional:
+                        for property_op in self.kernel.lookup_all("path_updater/.*"):
+                            property_op(self.kernel.root, copy_node)
+
                     copy_nodes.append(copy_node)
 
             if self.classify_new:
                 self.classify(copy_nodes)
 
             self.set_emphasis(None)
+
+        def has_wordlist(node):
+            result = False
+            txt = ""
+            if hasattr(node, "text") and node.text is not None:
+                txt = node.text
+            if hasattr(node, "mktext") and node.mktext is not None:
+                txt = node.mktext
+            # Very stupid, but good enough
+            if "{" in txt and "}" in txt:
+                result = True
+            return result
+
+        @self.tree_conditional(lambda node: has_wordlist(node))
+        @self.tree_operation(
+            _("Increase Wordlist-Reference"),
+            node_type=(
+                "elem text",
+                "elem path",
+            ),
+            help="Adjusts the reference value for a wordlist, ie {name} to {name#+1}",
+        )
+        def wlist_plus(node, **kwargs):
+            delta_wordlist = 1
+            if hasattr(node, "text"):
+                node.text = self.wordlist_delta(node.text, delta_wordlist)
+                node.altered()
+                self.signal("element_property_update", [node])
+            elif hasattr(node, "mktext"):
+                node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, node)
+                self.signal("element_property_update", [node])
+
+        @self.tree_conditional(lambda node: has_wordlist(node))
+        @self.tree_operation(
+            _("Decrease Wordlist-Reference"),
+            node_type=(
+                "elem text",
+                "elem path",
+            ),
+            help="Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}",
+        )
+        def wlist_minus(node, **kwargs):
+            delta_wordlist = -1
+            if hasattr(node, "text"):
+                node.text = self.wordlist_delta(node.text, delta_wordlist)
+                node.altered()
+                self.signal("element_property_update", [node])
+            elif hasattr(node, "mktext"):
+                node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, node)
+                self.signal("element_property_update", [node])
 
         def has_vectorize(node):
             result = False
@@ -8305,11 +8493,17 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
+        # TODO: Reenable when Undo Completed
+        if self.setting(bool, "developer_mode", False):
+            self.schedule(self._save_restore_job)
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
+        # TODO: Reenable when Undo Completed
+        if self.setting(bool, "developer_mode", False):
+            self.schedule(self._save_restore_job)
 
     def listen_tree(self, listener):
         self._tree.listen(listener)

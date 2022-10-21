@@ -41,7 +41,10 @@ class PropertyWindow(MWindow):
             pass
 
     @signal_listener("selected")
-    def on_selected(self, origin, *args):
+    def properties_show(self, nodes):
+        if nodes is None:
+            return
+
         self.Freeze()
         for p in self.panel_instances:
             try:
@@ -58,9 +61,6 @@ class PropertyWindow(MWindow):
                 else 0
             )
 
-        nodes = list(self.context.elements.flat(selected=True, cascade=False))
-        if nodes is None:
-            return
         pages_to_instance = []
         for node in nodes:
             pages_in_node = []
@@ -124,6 +124,17 @@ class PropertyWindow(MWindow):
         self.Layout()
         self.Thaw()
         # self.Refresh()
+
+    @signal_listener("propupdate")
+    def on_propupdate(self, origin, node, *args):
+        if node is None:
+            return
+        self.properties_show([node])
+
+    @signal_listener("selected")
+    def on_selected(self, origin, *args):
+        nodes = list(self.context.elements.flat(selected=True, cascade=False))
+        self.properties_show(nodes)
 
     @staticmethod
     def sub_register(kernel):

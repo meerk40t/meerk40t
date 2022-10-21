@@ -11,7 +11,8 @@ class ScenePanel(wx.Panel):
     def __init__(self, context, *args, scene_name="Scene", **kwds):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
-        self.scene_panel = wx.Panel(self, wx.ID_ANY)
+        #        self.scene_panel = wx.Panel(self, wx.ID_ANY)
+        self.scene_panel = wx.Window(self, wx.ID_ANY)
         self.scene = context.open_as("module/Scene", scene_name, self)
         self.context = context
         self.scene_panel.SetDoubleBuffered(True)
@@ -26,6 +27,8 @@ class ScenePanel(wx.Panel):
 
         self.scene_panel.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         self.scene_panel.Bind(wx.EVT_KEY_UP, self.on_key_up)
+
+        self.scene_panel.Bind(wx.EVT_CHAR, self.on_key)
 
         self.scene_panel.Bind(wx.EVT_MOTION, self.on_mouse_move)
 
@@ -46,6 +49,7 @@ class ScenePanel(wx.Panel):
         self.scene_panel.Bind(wx.EVT_SIZE, self.on_size)
 
         self.last_key = None
+        self.last_char = None
 
         try:
             self.scene_panel.Bind(wx.EVT_MAGNIFY, self.on_magnify_mouse)
@@ -86,16 +90,38 @@ class ScenePanel(wx.Panel):
             modifiers.append("meta")
         return modifiers
 
-    def on_key_down(self, evt):
-        literal = get_key_name(evt, True)
-        if literal != self.last_key:
-            self.scene.event(self.scene.last_position, "key_down", None, literal)
-        self.last_key = literal
+    def on_key(self, evt):
+        # print (f"key: {chr(evt.GetKeyCode())} {chr(evt.GetUnicodeKey())}")
+        self.last_char = chr(evt.GetUnicodeKey())
         evt.Skip()
 
-    def on_key_up(self, evt):
+    def on_key_down(self, evt):
+        self.last_char = None
         literal = get_key_name(evt, True)
-        self.scene.event(self.scene.last_position, "key_up", None, literal)
+        if literal != self.last_key:
+            self.last_key = literal
+            self.scene.event(
+                window_pos=self.scene.last_position,
+                event_type="key_down",
+                nearest_snap=None,
+                modifiers=literal,
+                keycode=None,
+            )
+        evt.Skip()
+        self.SetFocus()
+
+    def on_key_up(self, evt):
+        # Only key provides the right character representation
+        literal = get_key_name(evt, True)
+        self.scene.event(
+            window_pos=self.scene.last_position,
+            event_type="key_up",
+            nearest_snap=None,
+            modifiers=literal,
+            keycode=self.last_char,
+        )
+        # After consumption all is done
+        self.last_char = None
         evt.Skip()
 
     def on_size(self, event=None):
