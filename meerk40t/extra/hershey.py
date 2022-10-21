@@ -71,6 +71,11 @@ def validate_node(node):
     #         value = 0
     #     node.mkcoordy = value
 
+def update(context, node):
+    # We need to check for the validity ourselves...
+    if hasattr(node, "mktext") and hasattr(node, "mkfont") and hasattr(node, "mkfontsize"):
+        update_linetext(context, node, node.mktext)
+
 def update_linetext(context, node, newtext):
     if node is None:
         return
@@ -102,7 +107,8 @@ def update_linetext(context, node, newtext):
     path = FontPath()
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
     horizontal = True
-    cfont.render(path, newtext, horizontal, float(fontsize))
+    mytext = context.elements.wordlist_translate(newtext)
+    cfont.render(path, mytext, horizontal, float(fontsize))
     node.path = path.path
     # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
     # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
@@ -162,7 +168,8 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         cfont = fontclass(font_path)
         path = FontPath()
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
-        cfont.render(path, text, horizontal, float(font_size))
+        mytext = context.elements.wordlist_translate(text)
+        cfont.render(path, mytext, horizontal, float(font_size))
     except ShxFontParseError as e:
         # channel(f"{e.args}")
         return
@@ -188,6 +195,9 @@ def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
         context = kernel.root
+
+        # Register update routine for linetext
+        kernel.register("path_updater/linetext", update)
 
         @context.console_option("font", "f", type=str, help=_("SHX font file."))
         @context.console_option(

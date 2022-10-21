@@ -323,6 +323,7 @@ class WordlistPanel(wx.Panel):
         self.grid_content.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_content)
         self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_content)
         self.grid_content.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit_content)
+        self.grid_content.Bind(wx.EVT_LEFT_DCLICK, self.on_content_dblclick)
         self.check_autosave.Bind(wx.EVT_CHECKBOX, self.on_checkbox_autosave)
 
         self.btn_edit_wordlist_del.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_del)
@@ -507,6 +508,12 @@ class WordlistPanel(wx.Panel):
         self.refresh_grid_content(skey, current)
         self.txt_pattern.SetValue(skey)
         event.Skip()
+
+    def on_content_dblclick(self, event):
+        index = self.grid_content.GetFirstSelected()
+        if index >= 0:
+            self.cbo_index_single.SetSelection(index)
+            self.on_single_index(event)
 
     def on_grid_content(self, event):
         # Single Click

@@ -1257,12 +1257,35 @@ class MoveWidget(Widget):
         context = self.scene.context
         elements = context.elements
         copy_nodes = list()
+        changed_nodes = list()
+        delta_wordlist = 1
         for e in list(elements.elems(emphasized=True)):
             copy_node = copy(e)
-            if hasattr(e, "wxfont"):
-                copy_node.wxfont = e.wxfont
+            had_optional = False
+            for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                if hasattr(e, optional):
+                    setattr(copy_node, optional, getattr(e, optional))
+                    had_optional = True
             e.parent.add_node(copy_node)
             copy_nodes.append(copy_node)
+            # The copy remains at the same place, we are moving the originals,
+            # to provide the impression we are doing the right thing, we amend
+            # consequently the original.
+            if elements.copy_increases_wordlist_references and hasattr(e, "text"):
+                e.text = elements.wordlist_delta(copy_node.text, delta_wordlist)
+                e.altered()
+                changed_nodes.append(e)
+            elif elements.copy_increases_wordlist_references and hasattr(e, "mktext"):
+                e.mktext = elements.wordlist_delta(e.mktext, delta_wordlist)
+                e.altered()
+                changed_nodes.append(e)
+            delta_wordlist = 1
+            if had_optional:
+                for property_op in self.scene.context.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.scene.context, e)
+
+        if len(changed_nodes)>0:
+            self.scene.context.signal("element_property_update", changed_nodes)
         elements.classify(copy_nodes)
 
     def process_draw(self, gc):
@@ -1310,6 +1333,8 @@ class MoveWidget(Widget):
 
         def move_to(dx, dy):
             b = elements._emphasized_bounds
+            if b is None:
+               b = elements.selected_area()
             allowlockmove = elements.lock_allows_move
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 if hasattr(e, "lock") and e.lock and not allowlockmove:
@@ -2247,21 +2272,23 @@ class SelectionWidget(Widget):
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
-            if self.contains(space_pos[0], space_pos[1]):
-                self.hovering = True
-                self.scene.context.signal("statusmsg", "")
-                self.tool_running = False
+            if space_pos is not None:
+                if self.contains(space_pos[0], space_pos[1]):
+                    self.hovering = True
+                    self.scene.context.signal("statusmsg", "")
+                    self.tool_running = False
 
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
-            for subwidget in self:
-                if (
-                    hasattr(subwidget, "hovering")
-                    and subwidget.hovering
-                    and not subwidget.contains(space_pos[0], space_pos[1])
-                ):
-                    subwidget.hovering = False
+            if space_pos is not None:
+                for subwidget in self:
+                    if (
+                        hasattr(subwidget, "hovering")
+                        and subwidget.hovering
+                        and not subwidget.contains(space_pos[0], space_pos[1])
+                    ):
+                        subwidget.hovering = False
             self.scene.cursor("arrow")
             self.scene.context.signal("statusmsg", "")
         elif event_type == "hover":
@@ -2269,16 +2296,16 @@ class SelectionWidget(Widget):
                 self.scene.cursor(self.cursor)
             # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
-
-            for subwidget in self:
-                if (
-                    hasattr(subwidget, "hovering")
-                    and subwidget.hovering
-                    and not subwidget.contains(space_pos[0], space_pos[1])
-                ):
-                    subwidget.hovering = False
-                    self.scene.cursor("arrow")
-                    self.scene.context.signal("statusmsg", "")
+            if space_pos is not None:
+                for subwidget in self:
+                    if (
+                        hasattr(subwidget, "hovering")
+                        and subwidget.hovering
+                        and not subwidget.contains(space_pos[0], space_pos[1])
+                    ):
+                        subwidget.hovering = False
+                        self.scene.cursor("arrow")
+                        self.scene.context.signal("statusmsg", "")
 
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
             # self.scene.tool_active = False

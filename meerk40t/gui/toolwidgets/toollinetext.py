@@ -92,6 +92,7 @@ class LineTextTool(ToolWidget):
         event_type=None,
         nearest_snap=None,
         modifiers=None,
+        keycode=None,
         **kwargs,
     ):
         def done():
@@ -158,17 +159,20 @@ class LineTextTool(ToolWidget):
             else:
                 response = RESPONSE_CHAIN
         elif event_type == "key_up":
-            # print (f"down: {modifiers}")
             if self.scene.tool_active:
                 response = RESPONSE_CONSUME
                 to_add = ""
-                if modifiers.startswith("shift+") and modifiers != "shift+":
-                    to_add = modifiers[-1].upper()
-                elif len(modifiers) == 1:
-                    to_add = modifiers
-                elif modifiers == "space":
-                    to_add = " "
-                elif modifiers == "back":
+                if keycode is not None:
+                    to_add = keycode
+                # if modifiers.startswith("shift+") and modifiers != "shift+":
+                #     to_add = modifiers[-1].upper()
+                # elif len(modifiers) == 1:
+                #     to_add = modifiers
+                # elif modifiers == "space":
+                #     to_add = " "
+                # elif modifiers == "back":
+                if modifiers == "back":
+                    to_add = ""
                     if len(self.vtext) > 0:
                         self.vtext = self.vtext[:-1]
                 if len(to_add) > 0:

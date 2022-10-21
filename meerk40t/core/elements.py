@@ -328,6 +328,21 @@ def plugin(kernel, lifecycle=None):
             },
         ]
         kernel.register_choices("preferences", choices)
+        choices = [
+            {
+                "attr": "copy_increases_wordlist_references",
+                "object": elements,
+                "default": True,
+                "type": bool,
+                "label": _("Copy will increase {variable} references"),
+                "tip": _(
+                    "Active: if you copy a text-element containing a wordlist-reference, this will be increased (effectively referencing the next entry in the wordlist)"
+                ),
+                "page": "Scene",
+                "section": "_90_Wordlist",
+            },
+        ]
+        kernel.register_choices("preferences", choices)
     elif lifecycle == "prestart":
         if hasattr(kernel.args, "input") and kernel.args.input is not None:
             # Load any input file
@@ -519,19 +534,6 @@ class Elemental(Service):
         for section in self.penbox:
             for i, p in enumerate(self.penbox[section]):
                 self.pen_data.write_persistent_dict(f"{section} {i}", p)
-
-    def wordlist_fetch(self, key):
-        try:
-            wordlist = self.wordlists[key]
-        except KeyError:
-            return None
-
-        try:
-            wordlist[0] += 1
-            return wordlist[wordlist[0]]
-        except IndexError:
-            wordlist[0] = 1
-            return wordlist[wordlist[0]]
 
     def index_range(self, index_string):
         """
@@ -912,6 +914,23 @@ class Elemental(Service):
                         pass
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
+
+    def wordlist_delta(self, orgtext, increase):
+        newtext = self.mywordlist.wordlist_delta(orgtext, increase)
+        return newtext
+
+    def wordlist_fetch(self, key):
+        try:
+            wordlist = self.wordlists[key]
+        except KeyError:
+            return None
+
+        try:
+            wordlist[0] += 1
+            return wordlist[wordlist[0]]
+        except IndexError:
+            wordlist[0] = 1
+            return wordlist[wordlist[0]]
 
     def wordlist_advance(self, delta):
         self.mywordlist.move_all_indices(delta)
@@ -2463,10 +2482,15 @@ class Elemental(Service):
                 matrix = None
                 if x_pos != 0 or y_pos != 0:
                     matrix = Matrix.translate(dx, dy)
+                delta_wordlist = 1
                 for e in add_elem:
                     if matrix:
                         e.matrix *= matrix
-                    self.elem_branch.add_node(e)
+                    newnode = self.elem_branch.add_node(e)
+                    if self.copy_increases_wordlist_references and hasattr(newnode, "text"):
+                        newnode.text = self.wordlist_delta(newnode.text, delta_wordlist)
+                    elif self.copy_increases_wordlist_references and hasattr(newnode, "mktext"):
+                        newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
                 self.signal("refresh_scene", "Scene")
                 return "elements", add_elem
 
@@ -6082,7 +6106,13 @@ class Elemental(Service):
         )
         def clipboard_copy(data=None, **kwargs):
             destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
+            self._clipboard[destination] = []
+            for e in data:
+                copy_node = copy(e)
+                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                self._clipboard[destination].append(copy_node)
             return "elements", self._clipboard[destination]
 
         @self.console_option(
@@ -6123,7 +6153,13 @@ class Elemental(Service):
         )
         def clipboard_cut(data=None, **kwargs):
             destination = self._clipboard_default
-            self._clipboard[destination] = [copy(e) for e in data]
+            self._clipboard[destination] = []
+            for e in data:
+                copy_node = copy(e)
+                for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                    if hasattr(e, optional):
+                        setattr(copy_node, optional, getattr(e, optional))
+                self._clipboard[destination].append(copy_node)
             self.remove_elements(data)
             return "elements", self._clipboard[destination]
 
@@ -7871,18 +7907,89 @@ class Elemental(Service):
         @self.tree_operation(_("Make {copies} copies"), node_type=elem_nodes, help="")
         def duplicate_element_n(node, copies, **kwargs):
             copy_nodes = list()
+            dx = self.length_x("3mm")
+            dy = self.length_y("3mm")
+            delta_wordlist = 1
             for e in list(self.elems(emphasized=True)):
+                delta_wordlist = 0
                 for n in range(copies):
+                    delta_wordlist += 1
                     copy_node = copy(e)
-                    if hasattr(e, "wxfont"):
-                        copy_node.wxfont = e.wxfont
+                    copy_node.matrix *= Matrix.translate((n+1)*dx, (n+1)*dy)
+                    had_optional = False
+                    for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                        if hasattr(e, optional):
+                            had_optional = True
+                            setattr(copy_node, optional, getattr(e, optional))
+                    if self.copy_increases_wordlist_references and hasattr(e, "text"):
+                        copy_node.text = self.wordlist_delta(e.text, delta_wordlist)
+                    elif self.copy_increases_wordlist_references and hasattr(e, "mktext"):
+                        copy_node.mktext = self.wordlist_delta(e.mktext, delta_wordlist)
                     node.parent.add_node(copy_node)
+                    if had_optional:
+                        for property_op in self.kernel.lookup_all("path_updater/.*"):
+                            property_op(self.kernel.root, copy_node)
+
                     copy_nodes.append(copy_node)
 
             if self.classify_new:
                 self.classify(copy_nodes)
 
             self.set_emphasis(None)
+
+        def has_wordlist(node):
+            result = False
+            txt = ""
+            if hasattr(node, "text") and node.text is not None:
+                txt = node.text
+            if hasattr(node, "mktext") and node.mktext is not None:
+                txt = node.mktext
+            # Very stupid, but good enough
+            if "{" in txt and "}" in txt:
+                result = True
+            return result
+
+        @self.tree_conditional(lambda node: has_wordlist(node))
+        @self.tree_operation(
+            _("Increase Wordlist-Reference"),
+            node_type=(
+                "elem text",
+                "elem path",
+            ),
+            help="Adjusts the reference value for a wordlist, ie {name} to {name#+1}",
+        )
+        def wlist_plus(node, **kwargs):
+            delta_wordlist = 1
+            if hasattr(node, "text"):
+                node.text = self.wordlist_delta(node.text, delta_wordlist)
+                node.altered()
+                self.signal("element_property_update", [node])
+            elif hasattr(node, "mktext"):
+                node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, node)
+                self.signal("element_property_update", [node])
+
+        @self.tree_conditional(lambda node: has_wordlist(node))
+        @self.tree_operation(
+            _("Decrease Wordlist-Reference"),
+            node_type=(
+                "elem text",
+                "elem path",
+            ),
+            help="Adjusts the reference value for a wordlist, ie {name#+3} to {name#+2}",
+        )
+        def wlist_minus(node, **kwargs):
+            delta_wordlist = -1
+            if hasattr(node, "text"):
+                node.text = self.wordlist_delta(node.text, delta_wordlist)
+                node.altered()
+                self.signal("element_property_update", [node])
+            elif hasattr(node, "mktext"):
+                node.mktext = self.wordlist_delta(node.mktext, delta_wordlist)
+                for property_op in self.kernel.lookup_all("path_updater/.*"):
+                    property_op(self.kernel.root, node)
+                self.signal("element_property_update", [node])
 
         def has_vectorize(node):
             result = False
