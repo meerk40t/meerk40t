@@ -1,6 +1,8 @@
 import os
+import re
 
 import wx
+from wx import aui
 
 from .icons import (
     icons8_add_new_25,
@@ -8,10 +10,114 @@ from .icons import (
     icons8_edit_25,
     icons8_paste_25,
     icons8_remove_25,
+    icons8_circled_right_50,
+    icons8_circled_left_50,
 )
 from .mwindow import MWindow
+from ..kernel import signal_listener
 
 _ = wx.GetTranslation
+
+def register_panel_wordlist(window, context):
+    pane = (
+        aui.AuiPaneInfo()
+        .Left()
+        .MinSize(150, 25)
+        .FloatingSize(150, 35)
+        .Caption(_("Wordlist"))
+        .CaptionVisible(not context.pane_lock)
+        .Name("wordlist")
+        .Hide()
+    )
+    pane.dock_proportion = 225
+    pane.control = WordlistMiniPanel(window, wx.ID_ANY, context=context)
+    pane.submenu = "_50_" + _("Tools")
+    window.on_pane_create(pane)
+    context.register("pane/wordlist", pane)
+
+class WordlistMiniPanel(wx.Panel):
+    def __init__(self, *args, context=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.button_edit = wx.Button(self, wx.ID_ANY, _("Edit"))
+        self.button_edit.SetBitmap(icons8_curly_brackets_50.GetBitmap(resize=25))
+        self.button_edit.SetToolTip(_("Manages Wordlist-Entries"))
+
+        self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
+        self.button_next.SetBitmap(icons8_circled_right_50.GetBitmap(resize=25))
+        self.button_next.SetToolTip(_("Wordlist: go to next page (right-click to next entry)"))
+
+        self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
+        self.button_prev.SetBitmap(icons8_circled_left_50.GetBitmap(resize=25))
+        self.button_prev.SetToolTip(_("Wordlist: go to previous page (right-click to previous entry)"))
+
+        main_sizer.Add(self.button_prev, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.button_edit, 1, wx.EXPAND, 0)
+        main_sizer.Add(self.button_next, 1, wx.EXPAND, 0)
+
+        self.button_next.Bind(wx.EVT_BUTTON, self.on_button_next_page)
+        self.button_prev.Bind(wx.EVT_BUTTON, self.on_button_prev_page)
+        self.button_next.Bind(wx.EVT_RIGHT_DOWN, self.on_button_next)
+        self.button_prev.Bind(wx.EVT_RIGHT_DOWN, self.on_button_prev)
+        self.button_edit.Bind(wx.EVT_BUTTON, self.on_button_edit)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+
+    def establish_max_delta(self):
+        # try to establish the needed delta to satisfy all variables...
+        deltamin = 0
+        deltamax = 0
+        for node in self.context.elements.elems():
+            sample = ""
+            if node.type == "elem text":
+                if node.text is not None:
+                    sample  = node.text
+            elif node.type == "elem path" and hasattr(node, "mktext"):
+                if node.mktext is not None:
+                    sample  = node.mktext
+            if sample == "":
+                continue
+            # we can be rather agnostic on the individual variable, we are interested in the highest {variable#+offset} pattern
+            brackets = re.compile(r"\{[^}]+\}")
+            for bracketed_key in brackets.findall(sample):
+    #            print(f"Key found: {bracketed_key}")
+                key = bracketed_key[1:-1].lower().strip()
+                relative = 0
+                pos = key.find("#")
+                if pos > 0:  # Needs to be after first character
+                    # Process offset modification.
+                    index_string = key[pos + 1 :]
+                    key = key[:pos].strip()
+                    if index_string.startswith("+") or index_string.startswith("-"):
+                        try:
+                            # This covers +x, -x, x
+                            relative = int(index_string)
+                        except ValueError:
+                            relative = 0
+                deltamin = min(relative, deltamin)
+                deltamax = max(relative, deltamax)
+
+        return deltamax
+
+    def on_button_edit(self, event):
+        self.context("window toggle Wordlist\n")
+
+    def on_button_prev(self, event):
+        self.context.elements.wordlist_advance(-1)
+
+    def on_button_prev_page(self, event):
+        delta = self.establish_max_delta()
+        self.context.elements.wordlist_advance(-1 - delta)
+
+    def on_button_next(self, event):
+        self.context.elements.wordlist_advance(+1)
+
+    def on_button_next_page(self, event):
+        delta = self.establish_max_delta()
+        self.context.elements.wordlist_advance(+1 + delta)
 
 
 class WordlistPanel(wx.Panel):
@@ -547,6 +653,10 @@ class WordlistPanel(wx.Panel):
             self.populate_gui()
         event.Skip()
 
+    @signal_listener("wordlist")
+    def signal_wordlist(self, origin, *args):
+        self.autosave()
+        self.refresh_grid_wordlist()
 
 class ImportPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
@@ -694,69 +804,17 @@ class AboutPanel(wx.Panel):
             wx.VERTICAL,
         )
         self.parent_panel = None
-
-        s = _(
-            "The objective of this functionality is to create burning templates, "
-            + "that can be reused for different data with minimal adjustment effort."
-        )
-        s += "\n" + _(
-            "Let's clarify the term variable first: a variable is a placeholder for "
-            + "some text that can be used as part of the text-definition of a Text-Object."
-        )
-        s += "\n" + _(
-            "Its reference (i.e. variable name) is used within curly brackets to indicate"
-            + "that it will eventually be replaced by 'real' content."
-        )
-
-        s += "\n\n" + _(
-            "Let's come back to our use-case, imagine you want to create a name-tag "
-            + "pattern that can be reused. Lets create a text-object inside a frame "
-            + "and set its text to"
-        )
-        s += "\n" + _(r"'This item belongs to {NAME}'")
-        s += _(
-            "If you define a variable named 'NAME' and assign a value like "
-            + "'John' to it, then the burned text will finally state:"
-        )
-        s += "\n" + _("'This item belongs to John'")
-
-        s += "\n\n" + _(
-            "You can define a set of variables (called wordlist) that could be populated"
-            + "by a standard comma-separated CSV file. The you could have not just one"
-            + "entry defined for 'NAME' but dozens of them. Which of the multiple entries"
-            + "is currently active is decided by its index value."
-        )
-        s += "\n\n" + _(
-            "You are not restricted to a single use of a variable (useful e.g."
-            + "if you want to batch-burn a couple of name-tags). "
-            + "The standard use {NAME} indicates "
-            + r"the value at position #index of the loaded list, {NAME#+1} (note the plus sign)"
-            + r"uses the next entry, {NAME#+2} the second entry after the current."
-        )
-        s += "\n\n" + _(
-            "Note: This usage does not change the index position, you need "
-            + r"to manually advance it. If you want to autoadvance the index after "
-            + "every use, then you can use {NAME++}."
-        )
-        s += "\n\n" + _(
-            "There are couple of predefined variables, that refer to the "
-            + r"current burn operation (like {op_power}, {op_speed} or others)"
-            + r"or contain date/time-information ({date}, {time})."
-        )
-        s += "\n\n" + _(
-            "Please note that date and time may be provided in a format that "
-            + r"allows to define their appearance according to local "
-            + r"preferences: e.g. {date@%d.%m.%Y} will provide a date "
-            + r"like 31.12.2022 and {time@%H:%M} a time like 23:59."
-        )
-        s += "\n" + _("For a complete set of format-directives see:")
-        s += (
-            "\n"
-            + r"https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior"
-        )
+        s = self.context.asset("wordlist_howto")
         info_label = wx.TextCtrl(
             self, wx.ID_ANY, value=s, style=wx.TE_READONLY | wx.TE_MULTILINE
         )
+        font = wx.Font(
+            10,
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
+        info_label.SetFont(font)
         info_label.SetBackgroundColour(self.GetBackgroundColour())
         info_box.Add(info_label, 1, wx.EXPAND, 0)
         main_sizer.Add(info_box, 1, wx.EXPAND, 0)

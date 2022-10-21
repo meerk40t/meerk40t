@@ -904,9 +904,9 @@ class GalvoController:
         table = []
         for j in range(65):
             for k in range(65):
-                dx = int(round(struct.unpack('d', f.read(8))[0]))
+                dx = int(round(struct.unpack("d", f.read(8))[0]))
                 dx = dx if dx >= 0 else -dx + 0x8000
-                dy = int(round(struct.unpack('d', f.read(8))[0]))
+                dy = int(round(struct.unpack("d", f.read(8))[0]))
                 dy = dy if dy >= 0 else -dy + 0x8000
                 table.append([dx & 0xFFFF, dy & 0xFFFF])
         return table

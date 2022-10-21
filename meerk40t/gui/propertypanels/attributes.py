@@ -298,6 +298,7 @@ class IdPanel(wx.Panel):
         else:
             self.Hide()
 
+
 class LinePropPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -308,25 +309,27 @@ class LinePropPanel(wx.Panel):
         capchoices = (_("Butt"), _("Round"), _("Square"))
         joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
         fillchoices = (_("Non-Zero"), _("Even-Odd"))
-        self.combo_cap = wx.ComboBox(self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.combo_join = wx.ComboBox(self, wx.ID_ANY, choices=joinchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
-        self.combo_fill = wx.ComboBox(self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY)
+        self.combo_cap = wx.ComboBox(
+            self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_join = wx.ComboBox(
+            self, wx.ID_ANY, choices=joinchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_fill = wx.ComboBox(
+            self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
-        self.sizer_cap = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Line-End")), wx.VERTICAL
-        )
+        self.box_cap = wx.StaticBox(self, wx.ID_ANY, _("Line-End"))
+        self.sizer_cap = wx.StaticBoxSizer(self.box_cap, wx.VERTICAL)
         self.sizer_cap.Add(self.combo_cap, 1, wx.EXPAND, 0)
 
-        self.sizer_join = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Line-Join")), wx.VERTICAL
-        )
+        self.box_join = wx.StaticBox(self, wx.ID_ANY, _("Line-Join"))
+        self.sizer_join = wx.StaticBoxSizer(self.box_join, wx.VERTICAL)
         self.sizer_join.Add(self.combo_join, 1, wx.EXPAND, 0)
-
-        self.sizer_fill = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Fillrule")), wx.VERTICAL
-        )
+        self.box_fill = wx.StaticBox(self, wx.ID_ANY, _("Fillrule"))
+        self.sizer_fill = wx.StaticBoxSizer(self.box_fill, wx.VERTICAL)
         self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
 
         sizer_attributes.Add(self.sizer_cap, 1, wx.EXPAND, 0)
@@ -392,13 +395,17 @@ class LinePropPanel(wx.Panel):
             self.combo_fill.SetSelection(int(node.fillrule))
 
         self.combo_cap.Show(vis1)
+        self.box_cap.Show(vis1)
         self.combo_join.Show(vis2)
+        self.box_join.Show(vis2)
         self.combo_fill.Show(vis3)
+        self.box_fill.Show(vis3)
 
         if vis1 or vis2 or vis3:
             self.Show()
         else:
             self.Hide()
+
 
 class PositionSizePanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):

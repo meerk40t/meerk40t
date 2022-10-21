@@ -50,7 +50,7 @@ class CutPlan:
         self.name = name
         self.context = planner
         self.plan = list()
-        self.original = list()
+        self.spool_commands = list()
         self.commands = list()
         self.channel = self.context.channel("optimize", timestamp=True)
         # self.setting(bool, "opt_rasters_split", True)
@@ -84,6 +84,23 @@ class CutPlan:
             for command in commands:
                 command()
 
+    def final(self):
+        """
+        Executes all the spool_commands built during the other stages.
+
+        If a command's execution added a spool_command we run it during final.
+
+        Final is called during at the time of spool. Just before the laserjob is created.
+        @return:
+        """
+        # Using copy of commands, so commands can add ops.
+        while self.spool_commands:
+            # Executing command can add a command, complete them all.
+            commands = self.spool_commands[:]
+            self.spool_commands.clear()
+            for command in commands:
+                command()
+
     def preprocess(self):
         """
         Preprocess stage.
@@ -112,132 +129,186 @@ class CutPlan:
                 continue
             if op.type.startswith("op"):
                 if hasattr(op, "preprocess"):
-                    op.preprocess(self.context, matrix, self.commands)
+                    op.preprocess(self.context, matrix, self)
                 for node in op.flat():
                     if node is op:
                         continue
                     if hasattr(node, "preprocess"):
-                        node.preprocess(self.context, matrix, self.commands)
+                        node.preprocess(self.context, matrix, self)
 
-    def blob(self):
+    def _to_grouped_plan(self, plan):
         """
-        Blob converts User operations to CutCode objects.
+        Break operations into grouped sequences of Operations and utility operations.
 
-        In order to have CutCode objects in the correct sequence for merging we need to:
-        1. Break operations into grouped sequences of Operations and utility operations.
-           We can only merge between contiguous groups of operations (with option set)
-        2. The sequence of CutObjects needs to reflect merge settings
-           Normal sequence is to iterate operations and then passes for each operation.
-           With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
+        We can only merge between contiguous groups of operations. We cannot merge util node types with op node types.
+
+        Anything that does not have a type is likely able to spool, but cannot merge and are not grouped. Only grouped
+        operations are candidates for cutcode merging.
+        @return:
         """
-
-        if not self.plan:
-            return
-        context = self.context
-
-        # Break plan operations into merge groups.
-        grouped_plan = list()
         last_type = None
         group = list()
-        for c in self.plan:
+        for c in plan:
             c_type = c.type if hasattr(c, "type") else type(c).__name__
             if last_type is not None:
                 if c_type.startswith("op") != last_type.startswith("op"):
                     # This is not able to be merged
-                    grouped_plan.append(group)
+                    yield group
                     group = list()
             group.append(c)
             last_type = c_type
         if group:
-            grouped_plan.append(group)
+            yield group
 
-        # If Merge operations and not merge passes we need to iterate passes first and operations second
-        passes_first = context.opt_merge_ops and not context.opt_merge_passes
-        blob_plan = list()
+    def _to_blob_plan_passes_first(self, grouped_plan):
+        """
+        If Merge operations and not merge passes we need to iterate passes first and operations second.
+
+        This function is specific to that case, when passes first operations second.
+
+        Converts the operations to cutcode.
+        @param grouped_plan:
+        @return:
+        """
         for plan in grouped_plan:
-            burning = True
-            pass_idx = -1
-            while burning:
-                burning = False
-                pass_idx += 1
+            pass_idx = 0
+            while True:
+                more_passes_possible = False
                 for op in plan:
-                    if not hasattr(op, "type"):
-                        blob_plan.append(op)
-                        continue
                     if (
-                        not op.type.startswith("op")
-                        and not op.type.startswith("util")
+                        not hasattr(op, "type")
                         or op.type == "util console"
+                        or (
+                            not op.type.startswith("op")
+                            and not op.type.startswith("util")
+                        )
                     ):
-                        blob_plan.append(op)
+                        # This is an irregular object and can't become cutcode.
+                        if pass_idx == 0:
+                            # irregular objects have an implicit single pass.
+                            yield op
                         continue
-                    copies = op.implicit_passes
-                    if passes_first:
-                        if pass_idx > copies - 1:
-                            continue
-                        copies = 1
-                        burning = True
+                    if pass_idx > op.implicit_passes - 1:
+                        continue
+                    more_passes_possible = True
+                    yield from self._blob_convert(op, 1, 1, force_idx=pass_idx)
+                if not more_passes_possible:
+                    # No operation needs additional passes.
+                    break
+                pass_idx += 1
+
+    def _to_blob_plan(self, grouped_plan):
+        """
+        Iterate operations first and passes second. Operation first mode. Passes are done within cutcode pass value.
+
+        Converts the operations to cutcode.
+
+        @param grouped_plan:
+        @return:
+        """
+        context = self.context
+        for plan in grouped_plan:
+            for op in plan:
+                if not hasattr(op, "type"):
+                    yield op
+                    continue
+                if (
+                    not op.type.startswith("op")
+                    and not op.type.startswith("util")
+                    or op.type == "util console"
+                ):
+                    yield op
+                    continue
+                if context.opt_merge_passes and (
+                    context.opt_nearest_neighbor or context.opt_inner_first
+                ):
                     # Providing we do some sort of post-processing of blobs,
                     # then merge passes is handled by the greedy or inner_first algorithms
+                    # So, we only need 1 copy and to set the passes.
+                    passes = op.implicit_passes
+                    copies = 1
+                else:
                     passes = 1
-                    if context.opt_merge_passes and (
-                        context.opt_nearest_neighbor or context.opt_inner_first
-                    ):
-                        passes = copies
-                        copies = 1
-                    if op.type == "op hatch":
-                        # hatch duplicates sub-objects.
-                        copies = 1
-                        passes = 1
-                    for p in range(copies):
-                        cutcode = CutCode(
-                            op.as_cutobjects(
-                                closed_distance=context.opt_closed_distance,
-                                passes=passes,
-                            ),
-                            settings=op.settings,
-                        )
-                        if len(cutcode) == 0:
-                            break
-                        cutcode.constrained = (
-                            op.type == "op cut" and context.opt_inner_first
-                        )
-                        cutcode.pass_index = pass_idx if passes_first else p
-                        cutcode.original_op = op.type
-                        blob_plan.append(cutcode)
+                    copies = op.implicit_passes
+                if op.type == "op hatch":
+                    # hatch duplicates sub-objects, within convert to blob.
+                    passes = 1
+                    copies = 1
+                yield from self._blob_convert(op, copies, passes)
 
-        self.plan.clear()
+    def _blob_convert(self, op, copies, passes, force_idx=None):
+        """
+        Converts the given op into cutcode. Provides `copies` copies of that cutcode, sets
+        the passes to passes for each cutcode object.
+
+        @param op:
+        @param copies:
+        @param passes:
+        @param force_idx:
+        @return:
+        """
+        context = self.context
+        for pass_idx in range(copies):
+            # If passes isn't equal to implicit passes then we need a different settings to permit change
+            settings = (
+                op.settings if op.implicit_passes == passes else dict(op.settings)
+            )
+            cutcode = CutCode(
+                op.as_cutobjects(
+                    closed_distance=context.opt_closed_distance,
+                    passes=passes,
+                ),
+                settings=settings,
+            )
+            if len(cutcode) == 0:
+                break
+            cutcode.constrained = op.type == "op cut" and context.opt_inner_first
+            cutcode.pass_index = pass_idx if force_idx is None else force_idx
+            cutcode.original_op = op.type
+            yield cutcode
+
+    def _to_merged_plan(self, blob_plan):
+        """
+        Convert the blobbed plan of cutcode (rather than operations) into a merged plan for those cutcode operations
+        which are permitted to merge into the same cutcode object. All items within the same cutcode object are
+        candidates for optimizations. For example, if a HomeCut was merged LineCut in the cutcode, that entire group
+        would merge together, finding the most optimized time to home the machine (if optimization was enabled).
+
+        @param blob_plan:
+        @return:
+        """
+        last_item = None
+        context = self.context
         for blob in blob_plan:
             try:
                 blob.jog_distance = context.opt_jog_minimum
                 blob.jog_enable = context.opt_rapid_between
             except AttributeError:
                 pass
-
-            if self._should_merge(context, blob):
+            if last_item and self._should_merge(context, last_item, blob):
+                # Do not check empty plan.
                 if blob.constrained:
-                    # if any merged object is constrained combined blob is also constrained.
-                    self.plan[-1].constrained = True
-                self.plan[-1].extend(blob)
+                    # if any merged object is constrained, then combined blob is also constrained.
+                    last_item.constrained = True
+                last_item.extend(blob)
+
             else:
                 if isinstance(blob, CutObject) and not isinstance(blob, CutCode):
                     cc = CutCode([blob])
                     cc.original_op = blob.original_op
                     cc.pass_index = blob.pass_index
-                    self.plan.append(cc)
+                    last_item = cc
+                    yield last_item
                 else:
-                    self.plan.append(blob)
+                    last_item = blob
+                    yield last_item
 
-    def _should_merge(self, context, current_item):
+    def _should_merge(self, context, last_item, current_item):
         """
         Checks whether we should merge the blob with the current plan.
 
         We can only merge things if we have the right objects and settings.
         """
-        if not self.plan:
-            # The plan is empty we can't merge with nothing.
-            return False
-        last_item = self.plan[-1]
         if not isinstance(last_item, CutCode):
             # The last plan item is not cutcode, merge is only between cutobjects adding to cutcode.
             return False
@@ -270,6 +341,29 @@ class CutPlan:
             # Do not merge if opt_inner_first is off, and operation was originally a cut.
             return False
         return True  # No reason these should not be merged.
+
+    def blob(self):
+        """
+        Blob converts User operations to CutCode objects.
+
+        In order to have CutCode objects in the correct sequence for merging we need to:
+        1. Break operations into grouped sequences of Operations and utility operations.
+           We can only merge between contiguous groups of operations (with option set)
+        2. The sequence of CutObjects needs to reflect merge settings
+           Normal sequence is to iterate operations and then passes for each operation.
+           With Merge ops and not Merge passes, we need to iterate on passes first and then ops within.
+        """
+
+        if not self.plan:
+            return
+        context = self.context
+        grouped_plan = list(self._to_grouped_plan(self.plan))
+        if context.opt_merge_ops and not context.opt_merge_passes:
+            blob_plan = list(self._to_blob_plan_passes_first(grouped_plan))
+        else:
+            blob_plan = list(self._to_blob_plan(grouped_plan))
+        self.plan.clear()
+        self.plan.extend(self._to_merged_plan(blob_plan))
 
     def preopt(self):
         """

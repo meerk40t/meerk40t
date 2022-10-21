@@ -318,17 +318,17 @@ class RasterOpNode(Node, Parameters):
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Preprocess is called during job planning. This should be called with
         the native matrix.
 
         @param context:
         @param matrix:
-        @param commands:
+        @param plan:
         @return:
         """
-
+        commands = plan.commands
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
@@ -374,8 +374,8 @@ class RasterOpNode(Node, Parameters):
                 else:
                     img_mx.post_translate(0, bounds[3])
 
-            except (AssertionError, MemoryError):
-                raise CutPlanningFailedError("Raster too large.")
+            except (AssertionError, MemoryError) as e:
+                raise CutPlanningFailedError("Raster too large.") from e
             image = image.convert("L")
             image_node = ImageNode(image=image, matrix=img_mx)
             self.children.clear()

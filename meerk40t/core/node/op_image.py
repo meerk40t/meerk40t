@@ -215,12 +215,14 @@ class ImageOpNode(Node, Parameters):
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Process the scale to native resolution done with the given matrix. In the case of image ops we are scaling
         the overscan length into usable native units.
 
+        @param context:
         @param matrix:
+        @param plan:
         @return:
         """
         overscan = float(Length(self.settings.get("overscan", "1mm")))
@@ -236,6 +238,7 @@ class ImageOpNode(Node, Parameters):
 
                 return process_images
 
+            commands = plan.commands
             commands.append(actual(node))
 
     def as_cutobjects(self, closed_distance=15, passes=1):

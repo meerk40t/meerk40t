@@ -64,6 +64,9 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    icons8_curly_brackets_50,
+    icons8_circled_left_50,
+    icons8_circled_right_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -1050,6 +1053,43 @@ class MeerK40t(MWindow):
             },
         )
 
+        kernel.register(
+            "button/preparation/Wordlist",
+            {
+                "label": _("Wordlist"),
+                "icon": icons8_curly_brackets_50,
+                "tip": _("Manages Wordlist-Entries"),
+                "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                "identifier": "prep_wordlist",
+                "priority": 99,
+                "default": "prep_wordlist_edit",
+                "multi": [
+                    {
+                        "identifier": "prep_wordlist_edit",
+                        "icon": icons8_curly_brackets_50,
+                        "tip": _("Manages Wordlist-Entries"),
+                        "label": _("Wordlist"),
+                        "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                    },
+                    {
+                        "identifier": "prep_wordlist_plus_1",
+                        "icon": icons8_circled_right_50,
+                        "tip": _("Wordlist: go to next entry"),
+                        "label": _("Next"),
+                        "action": lambda v: kernel.elements.wordlist_advance(1),
+                    },
+                    {
+                        "identifier": "prep_wordlist_minus_1",
+                        "label": _("Prev"),
+                        "icon": icons8_circled_left_50,
+                        "tip": _("Wordlist: go to prev entry"),
+                        "action": lambda v: kernel.elements.wordlist_advance(-1),
+                    },
+                ],
+
+            },
+        )
+
         # Default Size for small buttons
         buttonsize = STD_ICON_SIZE / 2
 
@@ -1913,6 +1953,7 @@ class MeerK40t(MWindow):
         submenus = {}
         menudata = []
         for window, _path, suffix_path in self.context.find("window/.*"):
+            suppress = False
             try:
                 name = window.name
             except AttributeError:
@@ -1929,6 +1970,8 @@ class MeerK40t(MWindow):
                         submenu_name = returnvalue[0]
                     if len(returnvalue) > 1:
                         win_caption = returnvalue[1]
+                    if len(returnvalue) > 2:
+                        suppress = returnvalue[2]
                 if submenu_name is None:
                     submenu_name = ""
                 if win_caption is None:
@@ -1945,6 +1988,8 @@ class MeerK40t(MWindow):
                 except AttributeError:
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
+                suppress = True
+            if suppress:
                 continue
             menudata.append([submenu_name, caption, name, window, suffix_path])
         # Now that we have everything lets sort...
@@ -2664,7 +2709,14 @@ class MeerK40t(MWindow):
                     m.Check(True)
 
                 def language_update(q):
-                    return lambda e: self.context.app.update_language(q)
+                    def check(event):
+                        self.context.app.update_language(q)
+                        # Intentionally no translation...
+                        wx.MessageBox(
+                            message="This requires a program restart before the language change will kick in!",
+                            caption="Language changed",
+                        )
+                    return check
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
                 if language_code not in trans and i != 0:

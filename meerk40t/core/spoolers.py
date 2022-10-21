@@ -25,6 +25,7 @@ def plugin(kernel, lifecycle):
 
             if data is not None:
                 # If plan data is in data, then we copy that and move on to next step.
+                data.final()
                 loops = 1
                 elements = kernel.elements
                 e = elements.op_branch
@@ -348,7 +349,7 @@ def plugin(kernel, lifecycle):
                 yield "home"
                 yield "wait_finish"
 
-            spooler.laserjob(list(home_dot_test()), label=f"Dot and Home Test")
+            spooler.laserjob(list(home_dot_test()), label=f"Dot and Home Test", helper=True)
             return "spooler", spooler
 
 
@@ -367,6 +368,7 @@ class LaserJob:
         self.loops = loops
         self.loops_executed = 0
         self._driver = driver
+        self.helper = False
         self.item_index = 0
 
         self._stopped = True
@@ -729,24 +731,26 @@ class Spooler:
     def queue(self):
         return self._queue
 
-    def laserjob(self, job, priority=0, loops=1, label=None):
+    def laserjob(self, job, priority=0, loops=1, label=None, helper=False):
         """
         send a wrapped laser job to the spooler.
         """
         if label is None:
             label = f"{self.__class__.__name__}:{len(job)} items"
         # label = str(job)
-        laserjob = LaserJob(
+        ljob = LaserJob(
             label, list(job), driver=self.driver, priority=priority, loops=loops
         )
+        ljob.helper = helper
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
-            self._queue.append(laserjob)
+            self._queue.append(ljob)
             self._queue.sort(key=lambda e: e.priority, reverse=True)
         self.context.signal("spooler;queue", len(self._queue))
 
-    def command(self, *job, priority=0):
+    def command(self, *job, priority=0, helper=True):
         laserjob = LaserJob(str(job), [job], driver=self.driver, priority=priority)
+        laserjob.helper = helper
         with self._lock:
             self._stop_lower_priority_running_jobs(priority)
             self._queue.append(laserjob)
@@ -775,11 +779,15 @@ class Spooler:
         with self._lock:
             for e in self._queue:
                 try:
+                    status = "completed"
                     needs_signal = e.is_running() and e.time_started is not None
                     loop = e.loops_executed
                     total = e.loops
                     if isinf(total):
+                        status = "stopped"
                         total = "∞"
+                    elif loop < total:
+                        status = "stopped"
                     passinfo = f"{loop}/{total}"
                     e.stop()
                     if needs_signal:
@@ -789,6 +797,8 @@ class Spooler:
                             e.runtime,
                             self.context.label,
                             passinfo,
+                            status,
+                            e.helper,
                         )
                         self.context.signal("spooler;completed", info)
                 except AttributeError:
@@ -799,14 +809,22 @@ class Spooler:
     def remove(self, element):
         with self._lock:
             try:
+                status = "completed"
                 loop = element.loops_executed
-                total = "∞" if isinf(element.loops) else element.loops
+                total = element.loops
+                if isinf(element.loops):
+                    status = "stopped"
+                    total = "∞"
+                elif loop < total:
+                    status = "stopped"
                 info = (
                     element.label,
                     element.time_started,
                     element.runtime,
                     self.context.label,
                     f"{loop}/{total}",
+                    status,
+                    element.helper,
                 )
                 self.context.signal("spooler;completed", info)
             except AttributeError:

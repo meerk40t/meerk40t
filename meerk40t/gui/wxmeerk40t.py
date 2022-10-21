@@ -30,6 +30,7 @@ from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_saf
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .alignment import Alignment
+from .hersheymanager import HersheyFontManager, HersheyFontSelector, register_hershey_stuff
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
@@ -266,8 +267,14 @@ class wxMeerK40t(wx.App, Module):
 
         # App started add the except hook
         sys.excepthook = handleGUIException
-        wx.ToolTip.SetAutoPop(10000)
-        wx.ToolTip.SetDelay(100)
+        # Set the delay after which the tooltip disappears or how long a tooltip remains visible.
+        self.context.setting(int, "tooltip_autopop", 10000)
+        # Set the delay after which the tooltip appears.
+        self.context.setting(int, "tooltip_delay", 100)
+        autopop_ms = self.context.tooltip_autopop
+        delay_ms = self.context.tooltip_delay
+        wx.ToolTip.SetAutoPop(autopop_ms)
+        wx.ToolTip.SetDelay(delay_ms)
         wx.ToolTip.SetReshow(0)
 
     def on_app_close(self, event=None):
@@ -589,6 +596,12 @@ class wxMeerK40t(wx.App, Module):
 
         context.setting(int, "language", None)
         language = context.language
+        from meerk40t.gui.help_assets.help_assets import asset
+
+        def get_asset(asset_name):
+            return asset(context, asset_name)
+
+        context.asset = get_asset
         if language is not None and language != 0:
             self.update_language(language)
 
@@ -638,10 +651,14 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("window/Scene", SceneWindow)
         kernel.register("window/DeviceManager", DeviceManager)
         kernel.register("window/Alignment", Alignment)
+        kernel.register("window/HersheyFontManager", HersheyFontManager)
+        kernel.register("window/HersheyFontSelector", HersheyFontSelector)
         kernel.register("window/SplitImage", RenderSplit)
         kernel.register("window/OperationInfo", OperationInformation)
         kernel.register("window/Lasertool", LaserTool)
         kernel.register("window/Templatetool", TemplateTool)
+        # Hershey Manager stuff
+        register_hershey_stuff(kernel)
 
         from meerk40t.gui.wxmribbon import register_panel_ribbon
 
@@ -671,6 +688,10 @@ class wxMeerK40t(wx.App, Module):
 
         kernel.register("wxpane/Snap", register_panel_snapoptions)
 
+        from meerk40t.gui.wordlisteditor import register_panel_wordlist
+
+        kernel.register("wxpane/wordlist", register_panel_wordlist)
+
         # from meerk40t.gui.auitoolbars import register_toolbars
 
         # kernel.register("wxpane/Toolbars", register_toolbars)
@@ -683,10 +704,10 @@ class wxMeerK40t(wx.App, Module):
         context = kernel.root
 
         context.setting(bool, "developer_mode", False)
-        if context.developer_mode:
-            from meerk40t.gui.mkdebug import register_panel_debugger
+        # if context.developer_mode:
+        #     from meerk40t.gui.mkdebug import register_panel_debugger
 
-            kernel.register("wxpane/debug_tree", register_panel_debugger)
+        #     kernel.register("wxpane/debug_tree", register_panel_debugger)
 
         @context.console_argument("sure", type=str, help="Are you sure? 'yes'?")
         @context.console_command("nuke_settings", hidden=True)
