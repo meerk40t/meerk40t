@@ -123,7 +123,9 @@ def asset(context, asset):
         lang = "hungarian"
     if language == 7:  # ("pt_PT", "português", wx.LANGUAGE_PORTUGUESE),
         lang = "portuguese"
-    if language == 8:  # ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
+    if (
+        language == 8
+    ):  # ("pt_BR", "português brasileiro", wx.LANGUAGE_PORTUGUESE_BRAZILIAN),
         lang = "portuguese_brazilian"
     if language == 9:  # ("ja", "日本", wx.LANGUAGE_JAPANESE),
         lang = "japanese"

@@ -11,6 +11,8 @@ from meerk40t.core.node.node import Fillrule, Linecap, Linejoin
 
 from ..svgelements import (
     SVG,
+    SVG_ATTR_CENTER_X,
+    SVG_ATTR_CENTER_Y,
     SVG_ATTR_DATA,
     SVG_ATTR_FILL,
     SVG_ATTR_FILL_OPACITY,
@@ -22,6 +24,9 @@ from ..svgelements import (
     SVG_ATTR_FONT_WEIGHT,
     SVG_ATTR_HEIGHT,
     SVG_ATTR_ID,
+    SVG_ATTR_POINTS,
+    SVG_ATTR_RADIUS_X,
+    SVG_ATTR_RADIUS_Y,
     SVG_ATTR_STROKE,
     SVG_ATTR_STROKE_OPACITY,
     SVG_ATTR_STROKE_WIDTH,
@@ -34,21 +39,25 @@ from ..svgelements import (
     SVG_ATTR_VERSION,
     SVG_ATTR_VIEWBOX,
     SVG_ATTR_WIDTH,
-    SVG_ATTR_CENTER_X,
-    SVG_ATTR_CENTER_Y,
-    SVG_ATTR_RADIUS_X,
-    SVG_ATTR_RADIUS_Y,
     SVG_ATTR_X,
+    SVG_ATTR_X1,
+    SVG_ATTR_X2,
     SVG_ATTR_XMLNS,
     SVG_ATTR_XMLNS_EV,
     SVG_ATTR_XMLNS_LINK,
     SVG_ATTR_Y,
+    SVG_ATTR_Y1,
+    SVG_ATTR_Y2,
     SVG_NAME_TAG,
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
+    SVG_TAG_ELLIPSE,
     SVG_TAG_GROUP,
     SVG_TAG_IMAGE,
+    SVG_TAG_LINE,
     SVG_TAG_PATH,
+    SVG_TAG_POLYLINE,
+    SVG_TAG_RECT,
     SVG_TAG_TEXT,
     SVG_VALUE_NON_SCALING_STROKE,
     SVG_VALUE_NONE,
@@ -73,8 +82,7 @@ from ..svgelements import (
     SimpleLine,
     SVGImage,
     SVGText,
-    Use, SVG_TAG_ELLIPSE, SVG_TAG_LINE, SVG_ATTR_X1, SVG_ATTR_Y1, SVG_ATTR_X2, SVG_ATTR_Y2, SVG_TAG_POLYLINE,
-    SVG_ATTR_POINTS, SVG_TAG_RECT,
+    Use,
 )
 from .units import DEFAULT_PPI, NATIVE_UNIT_PER_INCH, UNITS_PER_PIXEL, Length
 
@@ -297,7 +305,10 @@ class SVGWriter:
                 element = c.shape
                 copy_attributes(c, element)
                 subelement = SubElement(xml_tree, SVG_TAG_POLYLINE)
-                subelement.set(SVG_ATTR_POINTS, " ".join([f"{e[0]} {e[1]}" for e in element.points]))
+                subelement.set(
+                    SVG_ATTR_POINTS,
+                    " ".join([f"{e[0]} {e[1]}" for e in element.points]),
+                )
                 t = c.matrix
                 subelement.set(
                     "transform",
@@ -377,7 +388,15 @@ class SVGWriter:
             for key, value in c.__dict__.items():
                 if (
                     not key.startswith("_")
-                    and key not in ("settings", "attributes", "linecap", "linejoin", "fillrule", "stroke_width")
+                    and key
+                    not in (
+                        "settings",
+                        "attributes",
+                        "linecap",
+                        "linejoin",
+                        "fillrule",
+                        "stroke_width",
+                    )
                     and value is not None
                     and isinstance(value, (str, int, float, complex, list, dict))
                 ):

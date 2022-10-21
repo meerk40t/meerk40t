@@ -300,6 +300,7 @@ class ImageNode(Node):
     @property
     def opaque_image(self):
         from PIL import Image
+
         img = self.image
         if img is not None:
             if img.mode == "RGBA":

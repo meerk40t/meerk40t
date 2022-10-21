@@ -25,8 +25,7 @@ class MachineOriginWidget(Widget):
         return HITCHAIN_HIT
 
     def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
-        """
-        """
+        """ """
         return RESPONSE_CHAIN
 
     def process_draw(self, gc):
@@ -47,6 +46,10 @@ class MachineOriginWidget(Widget):
             gc.DrawRectangle(x - margin, y - margin, margin * 2, margin * 2)
             gc.SetBrush(wx.NullBrush)
             gc.SetPen(self.x_axis_pen)
-            gc.DrawLines([(x, y), (x_dx, x_dy), (xa1_dx, xa1_dy), (x_dx, x_dy), (xa2_dx, xa2_dy)])
+            gc.DrawLines(
+                [(x, y), (x_dx, x_dy), (xa1_dx, xa1_dy), (x_dx, x_dy), (xa2_dx, xa2_dy)]
+            )
             gc.SetPen(self.y_axis_pen)
-            gc.DrawLines([(x, y), (y_dx, y_dy), (ya1_dx, ya1_dy), (y_dx, y_dy), (ya2_dx, ya2_dy)])
+            gc.DrawLines(
+                [(x, y), (y_dx, y_dy), (ya1_dx, ya1_dy), (y_dx, y_dy), (ya2_dx, ya2_dy)]
+            )

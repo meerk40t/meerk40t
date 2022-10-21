@@ -30,10 +30,14 @@ from meerk40t.kernel import CommandSyntaxError, ConsoleFunction, Module, get_saf
 from ..main import APPLICATION_NAME, APPLICATION_VERSION
 from .about import About
 from .alignment import Alignment
-from .hersheymanager import HersheyFontManager, HersheyFontSelector, register_hershey_stuff
 from .bufferview import BufferView
 from .devicepanel import DeviceManager
 from .executejob import ExecuteJob
+from .hersheymanager import (
+    HersheyFontManager,
+    HersheyFontSelector,
+    register_hershey_stuff,
+)
 from .icons import (
     icons8_emergency_stop_button_50,
     icons8_gas_industry_50,

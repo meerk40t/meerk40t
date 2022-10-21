@@ -1,33 +1,30 @@
 import wx
 
+from meerk40t.core.element_types import elem_group_nodes, elem_ref_nodes, op_nodes
+from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import (
+    icons8_detective_50,
     icons8_diagonal_20,
     icons8_direction_20,
-    icons8_image_20,
-    icons8_laser_beam_20,
-    icons8_scatter_plot_20,
-    icons8_small_beam_20,
-    icons8_home_20,
-    icons8_return_20,
-    icons8_timer_20,
-    icons8_home_20,
-    icons8_return_20,
-    icons8_output_20,
-    icons8_input_20,
-    icons8_system_task_20,
-    icons8_scatter_plot_20,
     icons8_file_20,
     icons8_group_objects_20,
-    icons8_oval_50,
-    icons8_rectangular_50,
-    icons8_polyline_50,
-    icons8_text_50,
+    icons8_home_20,
+    icons8_image_20,
     icons8_image_50,
+    icons8_input_20,
+    icons8_laser_beam_20,
+    icons8_output_20,
+    icons8_oval_50,
+    icons8_polyline_50,
+    icons8_rectangular_50,
+    icons8_return_20,
+    icons8_scatter_plot_20,
+    icons8_small_beam_20,
+    icons8_system_task_20,
+    icons8_text_50,
+    icons8_timer_20,
     icons8_vector_50,
-    icons8_detective_50,
 )
-from meerk40t.core.element_types import op_nodes, elem_group_nodes, elem_ref_nodes
-from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 
 _ = wx.GetTranslation
 
@@ -79,7 +76,7 @@ class FormatterPanel(wx.Panel):
                 # wasnt in list...
                 pass
 
-        choices=[]
+        choices = []
         for node in self.node_list:
             imgsize = 20
             if node in images:
@@ -133,7 +130,9 @@ class FormatterPanel(wx.Panel):
                 }
             )
             # tree_changed does not suffice
-        patternpanel = ChoicePropertyPanel(self, wx.ID_ANY, context=self.context, choices=choices)
+        patternpanel = ChoicePropertyPanel(
+            self, wx.ID_ANY, context=self.context, choices=choices
+        )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(patternpanel, 1, wx.EXPAND, 0)
@@ -167,7 +166,8 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_origin import SetOriginOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
-        from meerk40t.svgelements import Ellipse, Rect, Path, Polyline, Image
+        from meerk40t.svgelements import Ellipse, Image, Path, Polyline, Rect
+
         bootstrap = {
             "op cut": CutOpNode,
             "op engrave": EngraveOpNode,
@@ -248,6 +248,7 @@ class FormatterPanel(wx.Panel):
     def on_text_formatter(self, textctrl, entry, isMax):
         def check(event=None):
             return
+
         return check
 
     def update_settings(self, operation, attribute, minmax, active, value):

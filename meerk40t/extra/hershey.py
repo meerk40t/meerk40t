@@ -1,12 +1,13 @@
 from glob import glob
-from os.path import join, realpath, exists, splitext
+from os.path import exists, join, realpath, splitext
 
 from meerk40t.core.node.elem_path import PathNode
 from meerk40t.core.units import Length
 from meerk40t.kernel import get_safe_path
 from meerk40t.svgelements import Arc, Color, Matrix, Path
-from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
 from meerk40t.tools.jhfparser import JhfFont
+from meerk40t.tools.shxparser import ShxFont, ShxFontParseError
+
 
 class FontPath:
     def __init__(self):
@@ -25,12 +26,14 @@ class FontPath:
         arc = Arc(start=(x0, -y0), control=(cx, -cy), end=(x1, -y1))
         self.path += arc
 
+
 def fonts_registered():
     registered_fonts = {
         "shx": ("Autocad", ShxFont),
         "jhf": ("Hershey", JhfFont),
     }
     return registered_fonts
+
 
 def have_hershey_fonts(context):
     safe_dir = realpath(get_safe_path(context.kernel.name))
@@ -43,6 +46,7 @@ def have_hershey_fonts(context):
         for p in glob(join(font_dir, "*." + extension.upper())):
             return True
     return False
+
 
 def validate_node(node):
     # After a svg load the attributes are still a string...
@@ -71,6 +75,17 @@ def validate_node(node):
     #         value = 0
     #     node.mkcoordy = value
 
+
+def update(context, node):
+    # We need to check for the validity ourselves...
+    if (
+        hasattr(node, "mktext")
+        and hasattr(node, "mkfont")
+        and hasattr(node, "mkfontsize")
+    ):
+        update_linetext(context, node, node.mktext)
+
+
 def update_linetext(context, node, newtext):
     if node is None:
         return
@@ -90,7 +105,7 @@ def update_linetext(context, node, newtext):
         return
     try:
         filename, file_extension = splitext(font_path)
-        if len(file_extension)>0:
+        if len(file_extension) > 0:
             # Remove dot...
             file_extension = file_extension[1:].lower()
         item = registered_fonts[file_extension]
@@ -102,13 +117,15 @@ def update_linetext(context, node, newtext):
     path = FontPath()
     # print (f"Path={path}, text={remainder}, font-size={font_size}")
     horizontal = True
-    cfont.render(path, newtext, horizontal, float(fontsize))
+    mytext = context.elements.wordlist_translate(newtext)
+    cfont.render(path, mytext, horizontal, float(fontsize))
     node.path = path.path
     # print (f"x={node.mkcoordx}, y={node.mkcoordy}")
     # node.path.transform = Matrix.translate(node.mkcoordx, node.mkcoordy)
 
     node.mktext = newtext
     node.altered()
+
 
 def create_linetext_node(context, x, y, text, font=None, font_size=None):
     registered_fonts = fonts_registered()
@@ -149,7 +166,7 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
     font_path = join(font_dir, font)
     try:
         filename, file_extension = splitext(font_path)
-        if len(file_extension)>0:
+        if len(file_extension) > 0:
             # Remove dot...
             file_extension = file_extension[1:].lower()
         item = registered_fonts[file_extension]
@@ -162,7 +179,8 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
         cfont = fontclass(font_path)
         path = FontPath()
         # print (f"Path={path}, text={remainder}, font-size={font_size}")
-        cfont.render(path, text, horizontal, float(font_size))
+        mytext = context.elements.wordlist_translate(text)
+        cfont.render(path, mytext, horizontal, float(font_size))
     except ShxFontParseError as e:
         # channel(f"{e.args}")
         return
@@ -184,10 +202,14 @@ def create_linetext_node(context, x, y, text, font=None, font_size=None):
 
     return path_node
 
+
 def plugin(kernel, lifecycle):
     if lifecycle == "register":
         _ = kernel.translation
         context = kernel.root
+
+        # Register update routine for linetext
+        kernel.register("path_updater/linetext", update)
 
         @context.console_option("font", "f", type=str, help=_("SHX font file."))
         @context.console_option(
@@ -202,7 +224,9 @@ def plugin(kernel, lifecycle):
             def display_fonts():
                 for extension, item in registered_fonts:
                     desc = item[0]
-                    channel(_("{ftype} fonts in {path}:").format(ftype=desc, path=font_dir))
+                    channel(
+                        _("{ftype} fonts in {path}:").format(ftype=desc, path=font_dir)
+                    )
                     for p in glob(join(font_dir, "*." + extension.lower())):
                         channel(p)
                     for p in glob(join(font_dir, "*." + extension.upper())):

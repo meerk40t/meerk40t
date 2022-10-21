@@ -762,7 +762,7 @@ def plugin(kernel, lifecycle=None):
         "invert", help=_("invert the image"), input_type="image", output_type="image"
     )
     def image_invert(command, channel, _, data, **kwargs):
-        from PIL import ImageOps, Image
+        from PIL import Image, ImageOps
 
         for inode in data:
             if inode.lock:
@@ -770,11 +770,15 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            original_mode = inode.image.mode
             img = inode.opaque_image
-            if img.mode in ("P", "1"):
+            original_mode = inode.image.mode
+            if img.mode == "RGBA":
+                r, g, b, a = img.split()
+                background = Image.new("RGB", img.size, "white")
+                background.paste(img, mask=a)
+                img = background
+            elif img.mode in ("P", "1"):
                 img = img.convert("RGB")
-            img = img.convert("RGB")
             try:
                 inode.image = ImageOps.invert(img)
                 if original_mode == "1":
@@ -875,7 +879,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_autocontrast(command, channel, _, data, cutoff, **kwargs):
-        from PIL import ImageOps, Image
+        from PIL import Image, ImageOps
 
         for inode in data:
             if inode.lock:

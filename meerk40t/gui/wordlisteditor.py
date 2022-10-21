@@ -4,19 +4,20 @@ import re
 import wx
 from wx import aui
 
+from ..kernel import signal_listener
 from .icons import (
     icons8_add_new_25,
+    icons8_circled_left_50,
+    icons8_circled_right_50,
     icons8_curly_brackets_50,
     icons8_edit_25,
     icons8_paste_25,
     icons8_remove_25,
-    icons8_circled_right_50,
-    icons8_circled_left_50,
 )
 from .mwindow import MWindow
-from ..kernel import signal_listener
 
 _ = wx.GetTranslation
+
 
 def register_panel_wordlist(window, context):
     pane = (
@@ -35,6 +36,7 @@ def register_panel_wordlist(window, context):
     window.on_pane_create(pane)
     context.register("pane/wordlist", pane)
 
+
 class WordlistMiniPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -47,11 +49,15 @@ class WordlistMiniPanel(wx.Panel):
 
         self.button_next = wx.Button(self, wx.ID_ANY, _("Next"))
         self.button_next.SetBitmap(icons8_circled_right_50.GetBitmap(resize=25))
-        self.button_next.SetToolTip(_("Wordlist: go to next page (right-click to next entry)"))
+        self.button_next.SetToolTip(
+            _("Wordlist: go to next page (right-click to next entry)")
+        )
 
         self.button_prev = wx.Button(self, wx.ID_ANY, _("Prev"))
         self.button_prev.SetBitmap(icons8_circled_left_50.GetBitmap(resize=25))
-        self.button_prev.SetToolTip(_("Wordlist: go to previous page (right-click to previous entry)"))
+        self.button_prev.SetToolTip(
+            _("Wordlist: go to previous page (right-click to previous entry)")
+        )
 
         main_sizer.Add(self.button_prev, 1, wx.EXPAND, 0)
         main_sizer.Add(self.button_edit, 1, wx.EXPAND, 0)
@@ -74,16 +80,16 @@ class WordlistMiniPanel(wx.Panel):
             sample = ""
             if node.type == "elem text":
                 if node.text is not None:
-                    sample  = node.text
+                    sample = node.text
             elif node.type == "elem path" and hasattr(node, "mktext"):
                 if node.mktext is not None:
-                    sample  = node.mktext
+                    sample = node.mktext
             if sample == "":
                 continue
             # we can be rather agnostic on the individual variable, we are interested in the highest {variable#+offset} pattern
             brackets = re.compile(r"\{[^}]+\}")
             for bracketed_key in brackets.findall(sample):
-    #            print(f"Key found: {bracketed_key}")
+                #            print(f"Key found: {bracketed_key}")
                 key = bracketed_key[1:-1].lower().strip()
                 relative = 0
                 pos = key.find("#")
@@ -323,6 +329,7 @@ class WordlistPanel(wx.Panel):
         self.grid_content.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_grid_content)
         self.grid_content.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.on_begin_edit_content)
         self.grid_content.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.on_end_edit_content)
+        self.grid_content.Bind(wx.EVT_LEFT_DCLICK, self.on_content_dblclick)
         self.check_autosave.Bind(wx.EVT_CHECKBOX, self.on_checkbox_autosave)
 
         self.btn_edit_wordlist_del.Bind(wx.EVT_LEFT_DOWN, self.on_btn_edit_wordlist_del)
@@ -508,6 +515,12 @@ class WordlistPanel(wx.Panel):
         self.txt_pattern.SetValue(skey)
         event.Skip()
 
+    def on_content_dblclick(self, event):
+        index = self.grid_content.GetFirstSelected()
+        if index >= 0:
+            self.cbo_index_single.SetSelection(index)
+            self.on_single_index(event)
+
     def on_grid_content(self, event):
         # Single Click
         event.Skip()
@@ -657,6 +670,7 @@ class WordlistPanel(wx.Panel):
     def signal_wordlist(self, origin, *args):
         self.autosave()
         self.refresh_grid_wordlist()
+
 
 class ImportPanel(wx.Panel):
     def __init__(self, *args, context=None, **kwds):

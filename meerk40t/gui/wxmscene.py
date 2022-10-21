@@ -10,13 +10,13 @@ from meerk40t.gui.icons import (
     STD_ICON_SIZE,
     icon_meerk40t,
     icons8_bed_50,
+    icons8_cursor_50,
     icons8_menu_50,
     icons8_r_black,
     icons8_r_white,
-    icons8_text_50,
     icons8_reference,
+    icons8_text_50,
     icons8_ungroup_objects_50,
-    icons8_cursor_50,
 )
 from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND, DRAW_MODE_GUIDES, LaserRender
 from meerk40t.gui.mwindow import MWindow
@@ -35,6 +35,7 @@ from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
 from meerk40t.gui.toolwidgets.toolellipse import EllipseTool
+from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.toolwidgets.toolmeasure import MeasureTool
 from meerk40t.gui.toolwidgets.toolpoint import PointTool
 from meerk40t.gui.toolwidgets.toolpolygon import PolygonTool
@@ -44,7 +45,6 @@ from meerk40t.gui.toolwidgets.toolrelocate import RelocateTool
 from meerk40t.gui.toolwidgets.toolribbon import RibbonTool
 from meerk40t.gui.toolwidgets.tooltext import TextTool
 from meerk40t.gui.toolwidgets.toolvector import VectorTool
-from meerk40t.gui.toolwidgets.toollinetext import LineTextTool
 from meerk40t.gui.utilitywidgets.checkboxwidget import CheckboxWidget
 from meerk40t.gui.utilitywidgets.cyclocycloidwidget import CyclocycloidWidget
 from meerk40t.gui.utilitywidgets.seekbarwidget import SeekbarWidget
@@ -161,6 +161,7 @@ class MeerK40tScenePanel(wx.Panel):
 
         buttonsize = int(STD_ICON_SIZE / 2)
         from meerk40t.extra.hershey import have_hershey_fonts
+
         context.kernel.register(
             "button/tools/Linetext",
             {
@@ -929,7 +930,6 @@ class MeerK40tScenePanel(wx.Panel):
         elif len(args) > 1:
             self.scene.signal("linetext", args[0], args[1])
 
-
     @signal_listener("element_added")
     @signal_listener("tree_changed")
     def on_elements_added(self, origin, nodes=None, *args):
@@ -987,7 +987,9 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             if self._keybind_channel:
                 if ignore:
-                    self._keybind_channel(f"Scene key_down: {keyvalue} was ignored as tool active.")
+                    self._keybind_channel(
+                        f"Scene key_down: {keyvalue} was ignored as tool active."
+                    )
                 else:
                     self._keybind_channel(f"Scene key_down: {keyvalue} unfound.")
         event.Skip()
@@ -1003,7 +1005,9 @@ class MeerK40tScenePanel(wx.Panel):
         else:
             if self._keybind_channel:
                 if ignore:
-                    self._keybind_channel(f"Scene key_up: {keyvalue} was ignored as tool active.")
+                    self._keybind_channel(
+                        f"Scene key_up: {keyvalue} was ignored as tool active."
+                    )
                 else:
                     self._keybind_channel(f"Scene key_up: {keyvalue} unfound.")
         event.Skip()
