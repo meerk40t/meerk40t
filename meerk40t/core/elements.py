@@ -7,7 +7,7 @@ from os.path import realpath
 from random import randint, shuffle
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import CommandSyntaxError, Service, Settings
+from meerk40t.kernel import CommandSyntaxError, Service, Settings, ConsoleFunction
 
 from ..svgelements import (
     SVG_RULE_EVENODD,
@@ -412,6 +412,8 @@ class Elemental(Service):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
         )
+        self._undo_stack = []
+        self._undo_index = -1
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -420,6 +422,9 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
+        self._save_restore_job = ConsoleFunction(
+            self, "save_restore_point\n", times=1
+        )
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -6074,6 +6079,57 @@ class Elemental(Service):
                     return "elements", list(self.elems(emphasized=True))
 
         # ==========
+        # UNDO/REDO COMMANDS
+        # ==========
+        @self.console_command(
+            "save_restore_point",
+        )
+        def undo_mark(data=None, **kwgs):
+            self._undo_index += 1
+            self._undo_stack.insert(self._undo_index, self._tree.backup_tree())
+            del self._undo_stack[self._undo_index + 1:]
+            return "undo", self._undo_stack[self._undo_index]
+
+        @self.console_command(
+            "undo",
+        )
+        def undo_undo(command, channel, _, **kwgs):
+            if not self._undo_stack:
+                return
+            if self._undo_index == 0:
+                # At bottom of stack.
+                channel("No undo available.")
+                return
+            self._undo_index -= 1
+            undo = self._undo_stack[self._undo_index]
+            self._tree.restore_tree(undo)
+            self.signal("refresh_scene")
+            self.signal("rebuild_tree")
+
+        @self.console_command(
+            "redo",
+        )
+        def undo_redo(command, channel, _, data=None, **kwgs):
+            if not self._undo_stack:
+                return
+            if self._undo_index >= len(self._undo_stack) - 1:
+                channel("No redo available.")
+                return
+            self._undo_index += 1
+            redo = self._undo_stack[self._undo_index]
+            self._tree.restore_tree(redo)
+            self.signal("refresh_scene")
+            self.signal("rebuild_tree")
+
+        @self.console_command(
+            "undolist",
+        )
+        def undo_list(command, channel, _, **kwgs):
+            for i, v in enumerate(self._undo_stack):
+                q = "*" if i == self._undo_index else " "
+                channel(f"{q}{str(i).ljust(5)}: undo {id(v)}:{str(v)} elements ")
+
+        # ==========
         # CLIPBOARD COMMANDS
         # ==========
         @self.console_option("name", "n", type=str)
@@ -8417,11 +8473,17 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
+        # TODO: Reenable when Undo Completed
+        if self.setting(bool, "developer_mode", False):
+            self.schedule(self._save_restore_job)
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
+        # TODO: Reenable when Undo Completed
+        if self.setting(bool, "developer_mode", False):
+            self.schedule(self._save_restore_job)
 
     def listen_tree(self, listener):
         self._tree.listen(listener)
