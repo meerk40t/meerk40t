@@ -1,9 +1,8 @@
 import unittest
 from copy import copy
-
-from meerk40t.core.cutplan import CutPlan
 from test import bootstrap
 
+from meerk40t.core.cutplan import CutPlan
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
 from meerk40t.svgelements import Matrix, Rect
 
