@@ -7,6 +7,544 @@ from .attributes import IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
+class CropPanel(wx.Panel):
+    name = _("Crop")
+    priority = 5
+
+    @staticmethod
+    def accepts(node):
+        if node.type != "elem image":
+            return False
+        for n in node.operations:
+            if n.get("name") == "crop":
+                return True
+        return False
+
+    def __init__(self, *args, context=None, node=None, **kwds):
+        kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+
+        self.check_enable_crop = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
+        self.button_reset = wx.Button(self, wx.ID_ANY, _("Reset"))
+
+        self.label_info = wx.StaticText(self, wx.ID_ANY, "--")
+
+        self.slider_left = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.slider_right = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.slider_top = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.slider_bottom = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.text_left = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_right = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_top = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+        self.text_bottom = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
+
+        self.__set_properties()
+        self.__do_layout()
+
+        self.Bind(wx.EVT_BUTTON, self.on_button_reset, self.button_reset)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_enable_crop, self.check_enable_crop)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_left, self.slider_left)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_right, self.slider_right)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_top, self.slider_top)
+        self.Bind(wx.EVT_SLIDER, self.on_slider_bottom, self.slider_bottom)
+
+        flag = False
+        self.button_reset.Enable(flag)
+        self.slider_left.Enable(flag)
+        self.slider_right.Enable(flag)
+        self.slider_top.Enable(flag)
+        self.slider_bottom.Enable(flag)
+
+        self.set_widgets(node)
+
+    def set_widgets(self, node):
+        self._no_update = True
+        self.node = node
+        self.op = None
+        self._width = 100
+        self._height = 100
+        self._bounds = [0, 0, self._width, self._height]
+        flag = False
+        if node is None:
+            self.label_info.SetLabel("")
+        else:
+            for n in node.operations:
+                if n.get("name") == "crop":
+                    self.op = n
+                    break
+            self._width, self._height = self.node.image.size
+            self.label_info.SetLabel(f"{self._width} x {self._height} pixels")
+            if self.op is not None:
+                flag = self.op["enable"]
+                self._bounds = self.op["bounds"]
+                if self._bounds is None:
+                    self._bounds = [0, 0, self._width, self._height]
+                    self.op["bounds"] = self._bounds
+
+        self.set_slider_limits("lrtb", False)
+
+        self.check_enable_crop.SetValue(flag)
+        self.cropleft = self._bounds[0]
+        self.cropright = self._bounds[2]
+        self.croptop = self._bounds[1]
+        self.cropbottom = self._bounds[3]
+        self._no_update = False
+
+    def __set_properties(self):
+        self.slider_left.SetToolTip(_("How many pixels do you want to crop from the left?"))
+        self.slider_right.SetToolTip(_("How many pixels do you want to crop from the right?"))
+        self.slider_top.SetToolTip(_("How many pixels do you want to crop from the top?"))
+        self.slider_bottom.SetToolTip(_("How many pixels do you want to crop from the bottom?"))
+
+    def __do_layout(self):
+        # begin wxGlade: ContrastPanel.__do_layout
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_info = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Image-Dimensions")), wx.HORIZONTAL
+        )
+        sizer_info.Add(self.check_enable_crop, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_info.Add(self.button_reset, 0, wx.EXPAND, 0)
+        sizer_info.Add(self.label_info, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_sliders = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Crop-Boundaries")), wx.VERTICAL
+        )
+        sizer_left_right = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_top_bottom = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_left = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_right = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_top = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_bottom = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_left_right.Add(sizer_left, 1, wx.EXPAND, 0)
+        sizer_left_right.Add(sizer_right, 1, wx.EXPAND, 0)
+        sizer_sliders.Add(sizer_left_right, 1, wx.EXPAND, 0)
+
+        sizer_top_bottom.Add(sizer_top, 1, wx.EXPAND, 0)
+        sizer_top_bottom.Add(sizer_bottom, 1, wx.EXPAND, 0)
+        sizer_sliders.Add(sizer_top_bottom, 1, wx.EXPAND, 0)
+
+        lbl_left = wx.StaticText(self, wx.ID_ANY, _("Left"))
+        lbl_left.SetMinSize((60, -1))
+        lbl_right = wx.StaticText(self, wx.ID_ANY, _("Right"))
+        lbl_right.SetMinSize((60, -1))
+        lbl_bottom = wx.StaticText(self, wx.ID_ANY, _("Bottom"))
+        lbl_bottom.SetMinSize((60, -1))
+        lbl_top = wx.StaticText(self, wx.ID_ANY, _("Top"))
+        lbl_top.SetMinSize((60, -1))
+
+        self.text_left.SetMaxSize((60, -1))
+        self.text_right.SetMaxSize((60, -1))
+        self.text_top.SetMaxSize((60, -1))
+        self.text_bottom.SetMaxSize((60, -1))
+
+        sizer_left.Add(lbl_left, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer_left.Add(self.slider_left, 4, wx.ALIGN_CENTER_VERTICAL)
+        sizer_left.Add(self.text_left, 1, wx.ALIGN_CENTER_VERTICAL)
+
+        sizer_right.Add(lbl_right, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer_right.Add(self.slider_right, 4, wx.ALIGN_CENTER_VERTICAL)
+        sizer_right.Add(self.text_right, 1, wx.ALIGN_CENTER_VERTICAL)
+
+        sizer_top.Add(lbl_top, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer_top.Add(self.slider_top, 4, wx.ALIGN_CENTER_VERTICAL)
+        sizer_top.Add(self.text_top, 1, wx.ALIGN_CENTER_VERTICAL)
+
+        sizer_bottom.Add(lbl_bottom, 0, wx.ALIGN_CENTER_VERTICAL)
+        sizer_bottom.Add(self.slider_bottom, 4, wx.ALIGN_CENTER_VERTICAL)
+        sizer_bottom.Add(self.text_bottom, 1, wx.ALIGN_CENTER_VERTICAL)
+
+        sizer_main.Add(sizer_info, 0, wx.EXPAND, 0)
+        sizer_main.Add(sizer_sliders, 0, wx.EXPAND, 0)
+        self.SetSizer(sizer_main)
+        sizer_main.Fit(self)
+        self.Layout()
+
+    def on_button_reset(self, event):
+        if self.node is None:
+            return
+        w, h = self.node.image.size
+        self._bounds = [0, 0, w, h]
+        self._no_update = True
+        self.set_slider_limits("lrtb", False)
+        self.cropleft = self._bounds[0]
+        self.cropright = self._bounds[1]
+        self.croptop = self._bounds[2]
+        self._no_update = False
+        self.cropbottom = self._bounds[3]
+
+    def on_check_enable_crop(self, event=None):
+        flag = self.check_enable_crop.GetValue()
+        if flag:
+            if self.op is None:
+                w, h = self.node.image.size
+                self.op = {"name": "crop", "enable": True, "bounds": [0, 0, w, h]}
+                self.node.operations.append(self.op)
+        else:
+            if self.op is not None:
+                self.op["enable"] = flag
+        if self.op is not None and not self._no_update:
+            self.node.update(self.context)
+        self.button_reset.Enable(flag)
+        self.slider_left.Enable(flag)
+        self.slider_right.Enable(flag)
+        self.slider_top.Enable(flag)
+        self.slider_bottom.Enable(flag)
+
+    def on_slider_left(self, event=None):
+        self.cropleft = self.slider_left.GetValue()
+
+    def on_slider_right(self, event=None):
+        self.cropright = self.slider_right.GetValue()
+
+    def on_slider_top(self, event=None):
+        self.croptop = self.slider_top.GetValue()
+
+    def on_slider_bottom(self, event=None):
+        self.cropbottom = self.slider_bottom.GetValue()
+
+    def set_slider_limits(self, pattern, constraint=True):
+        if "l" in pattern:
+            value = self._bounds[2]
+            self.slider_left.SetMin(0)
+            self.slider_left.SetMax(value - 1 if constraint else self._width)
+        if "r" in pattern:
+            value = self._bounds[0]
+            self.slider_right.SetMin(value + 1 if constraint else 0)
+            self.slider_right.SetMax(self._width)
+        if "t" in pattern:
+            value = self._bounds[3]
+            self.slider_top.SetMin(0)
+            self.slider_top.SetMax(value - 1 if constraint else self._height)
+        if "b" in pattern:
+            value = self._bounds[1]
+            self.slider_bottom.SetMin(value + 1 if constraint else 0)
+            self.slider_bottom.SetMax(self._height)
+
+    @property
+    def cropleft(self):
+        if self._bounds is None:
+            return None
+        else:
+            return self._bounds[0]
+
+    @cropleft.setter
+    def cropleft(self, value):
+        # print(f"Set left to: {value}")
+        self._bounds[0] = value
+        if self.slider_left.GetValue() != value:
+            self.slider_left.SetValue(value)
+        if value==0:
+            self.text_left.SetValue(f"---")
+        else:
+            self.text_left.SetValue(f"> {value} px")
+        # We need to adjust the boundaries of the right slider.
+        self.set_slider_limits("r")
+        if self.op is not None:
+            self.op["bounds"][0] = value
+            if not self._no_update:
+                self.node.update(self.context)
+
+    @property
+    def cropright(self):
+        if self._bounds is None:
+            return None
+        else:
+            return self._bounds[2]
+
+    @cropright.setter
+    def cropright(self, value):
+        # print(f"Set right to: {value}")
+        self._bounds[2] = value
+        if self.slider_right.GetValue() != value:
+            self.slider_right.SetValue(value)
+        dvalue= self._width - value
+        if dvalue==0:
+            self.text_right.SetValue(f"---")
+        else:
+            self.text_right.SetValue(f"{dvalue} px <")
+        # We need to adjust the boundaries of the left slider.
+        self.set_slider_limits("l")
+        if self.op is not None:
+            self.op["bounds"][2] = value
+            if not self._no_update:
+                self.node.update(self.context)
+
+    @property
+    def croptop(self):
+        if self._bounds is None:
+            return None
+        else:
+            return self._bounds[1]
+
+    @croptop.setter
+    def croptop(self, value):
+        # print(f"Set top to: {value}")
+        self._bounds[1] = value
+        if self.slider_top.GetValue() != value:
+            self.slider_top.SetValue(value)
+        if value==0:
+            self.text_top.SetValue(f"---")
+        else:
+            self.text_top.SetValue(f"> {value} px")
+        # We need to adjust the boundaries of the bottom slider.
+        self.set_slider_limits("b")
+        if self.op is not None:
+            self.op["bounds"][1] = value
+            if not self._no_update:
+                self.node.update(self.context)
+
+    @property
+    def cropbottom(self):
+        if self._bounds is None:
+            return None
+        else:
+            return self._bounds[3]
+
+    @cropbottom.setter
+    def cropbottom(self, value):
+        # print(f"Set bottom to: {value}")
+        self._bounds[3] = value
+        if self.slider_bottom.GetValue() != value:
+            self.slider_bottom.SetValue(value)
+        dvalue= self._height - value
+        if dvalue==0:
+            self.text_bottom.SetValue(f"---")
+        else:
+            self.text_bottom.SetValue(f"{dvalue} px <")
+        # We need to adjust the boundaries of the top slider.
+        self.set_slider_limits("t")
+        if self.op is not None:
+            self.op["bounds"][3] = value
+            if not self._no_update:
+                self.node.update(self.context)
+
+class ImageModificationPanel(ScrolledPanel):
+    name = _("Modification")
+    priority = 90
+
+    def __init__(self, *args, context=None, node=None, **kwargs):
+        # begin wxGlade: ConsolePanel.__init__
+        kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwargs)
+        self.context = context
+        self.node = node
+        self.scripts = []
+        choices = []
+        choices.append(_("Set to None"))
+        for entry in list(self.context.match("raster_script/.*", suffix=True)):
+            self.scripts.append(entry)
+            choices.append(_("Apply {entry}").format(entry=entry))
+        self.combo_scripts = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN)
+        self.combo_scripts.SetSelection(0)
+        self.button_apply = wx.Button(self, wx.ID_ANY, _("Apply Script"))
+        self.list_operations = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL)
+
+        self._do_layout()
+        self._do_logic()
+        self.set_widgets(node)
+
+
+    def _do_layout(self):
+        self.list_operations.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
+        self.list_operations.AppendColumn(_("Action"), format=wx.LIST_FORMAT_LEFT, width=65)
+        self.list_operations.AppendColumn(_("Active"), format=wx.LIST_FORMAT_LEFT, width=25)
+        self.list_operations.AppendColumn(_("Parameters"), format=wx.LIST_FORMAT_LEFT, width=95)
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_script = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("RasterWizard")), wx.HORIZONTAL
+        )
+
+        sizer_script.Add(self.combo_scripts, 1, wx.EXPAND, 0)
+        sizer_script.Add(self.button_apply, 0, wx.EXPAND, 0)
+
+        sizer_main.Add(sizer_script, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.list_operations, 1, wx.EXPAND, 0)
+
+        self.SetSizer(sizer_main)
+        self.Layout()
+        self.Centre()
+
+    def _do_logic(self):
+        self.button_apply.Bind(wx.EVT_BUTTON, self.on_apply_replace)
+        self.button_apply.Bind(wx.EVT_RIGHT_DOWN, self.on_apply_append)
+        self.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_list_menu)
+
+    @staticmethod
+    def accepts(node):
+        if node.type == "elem image":
+            return True
+        return False
+
+    def set_widgets(self, node=None):
+        self.node = node
+        if node is None:
+            return
+        self.fill_operations()
+
+    def fill_operations(self):
+        self.list_operations.DeleteAllItems()
+        idx = 0
+        for op in self.node.operations:
+            idx += 1
+            list_id = self.list_operations.InsertItem(self.list_operations.GetItemCount(), f"#{idx}")
+            self.list_operations.SetItem(list_id, 1, op["name"])
+            self.list_operations.SetItem(list_id, 2, "x" if op["enable"] else "-")
+            self.list_operations.SetItem(list_id, 3, str(op))
+
+    def apply_script(self, index, addition):
+        if index == 0:
+            self.node.operations = []
+            self.update_node()
+        else:
+            if index < 1 or index > len(self.scripts):
+                return
+            script = self.scripts[index - 1]
+            raster_script = self.context.lookup(f"raster_script/{script}")
+            if not addition:
+                self.node.operations = []
+            for entry in raster_script:
+                self.node.operations.append(entry)
+            self.update_node()
+
+    def update_node(self):
+        self.node.update(self.context.elements)
+        self.context.signal("element_property_update", self.node)
+        self.context.signal("selected", self.node)
+
+    def on_apply_replace(self, event):
+        idx = self.combo_scripts.GetSelection()
+        if idx>=0:
+            self.apply_script(idx, False)
+
+    def on_apply_append(self, event):
+        idx = self.combo_scripts.GetSelection()
+        if idx>=0:
+            self.apply_script(idx, True)
+
+    def on_list_menu(self, event):
+        def on_delete(index):
+            def check(event):
+                self.node.operations.pop(index)
+                self.update_node()
+            return check
+
+        def on_enable(index):
+            def check(event):
+                self.node.operations[index]["enable"] = not self.node.operations[index]["enable"]
+                self.update_node()
+            return check
+
+        def on_op_insert(index, op):
+            def check(event):
+                self.node.operations.insert(index, op)
+                self.update_node()
+            return check
+
+        def on_op_append(index, op):
+            def check(event):
+                self.node.operations.append(op)
+                self.update_node()
+            return check
+
+        index = self.list_operations.GetFirstSelected()
+
+        possible_ops = [
+            {"name": "crop", "enable": True, "bounds": None},
+            {
+                "name": "grayscale",
+                "enable": True,
+                "invert": False,
+                "red": 1.0,
+                "green": 1.0,
+                "blue": 1.0,
+                "lightness": 1.0,
+            },
+            {"name": "auto_contrast", "enable": True, "cutoff": 3},
+            {"name": "contrast", "enable": True, "contrast": 25, "brightness": 25},
+            {"name": "unsharp_mask", "enable": True, "percent": 500, "radius": 4, "threshold": 0,},
+            {
+                "name": "tone",
+                "type": "spline",
+                "enable": True,
+                "values": [[0, 0], [100, 150], [255, 255]],
+            },
+            {"name": "gamma", "enable": True, "factor": 3.5},
+            {"name": "edge_enhance", "enable": False},
+            {
+                "name": "halftone",
+                "enable": True,
+                "black": True,
+                "sample": 10,
+                "angle": 22,
+                "oversample": 2,
+            },
+            {"name": "dither", "enable": True, "type": "Floyd-Steinberg"},
+        ]
+        devmode = self.context.root.setting(bool, "developer_mode", False)
+        menu = wx.Menu()
+        if index>=0:
+            # Edit-Part
+            menuitem = menu.Append(wx.ID_ANY, _("Delete item"), _("Will delete the current entry"))
+            self.Bind(wx.EVT_MENU, on_delete(index), id=menuitem.GetId())
+
+            menuitem = menu.Append(wx.ID_ANY, _("Enable"), _("Toggles enable-status of operation"), kind=wx.ITEM_CHECK)
+            menuitem.Check(self.node.operations[index]["enable"])
+            self.Bind(wx.EVT_MENU, on_enable(index), id=menuitem.GetId())
+            if devmode:
+                menu.AppendSeparator()
+                for op in possible_ops:
+                    menuitem = menu.Append(wx.ID_ANY, _("Insert {op}").format(op=op["name"]), _("Will insert this operation before the current entry"))
+                    self.Bind(wx.EVT_MENU, on_op_insert(index, op), id=menuitem.GetId())
+                menu.AppendSeparator()
+        if devmode:
+            for op in possible_ops:
+                menuitem = menu.Append(wx.ID_ANY, _("Append {op}").format(op=op["name"]), _("Will append this operation to the end of the list"))
+                self.Bind(wx.EVT_MENU, on_op_append(index, op), id=menuitem.GetId())
+
+        if menu.MenuItemCount != 0:
+            self.PopupMenu(menu)
+            menu.Destroy()
+
+    def pane_show(self):
+        self.fill_operations()
+
+    def pane_active(self):
+        self.fill_operations()
+
+class ImageVectorisationPanel(ScrolledPanel):
+    name = _("Vectorisation")
+    priority = 95
+
+    def __init__(self, *args, context=None, node=None, **kwargs):
+        # begin wxGlade: ConsolePanel.__init__
+        kwargs["style"] = kwargs.get("style", 0) | wx.TAB_TRAVERSAL
+        wx.Panel.__init__(self, *args, **kwargs)
+        self.context = context
+        self.node = node
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+
+        self.SetSizer(sizer_main)
+        self.Layout()
+        self.Centre()
+        self.set_widgets(node)
+
+    @staticmethod
+    def accepts(node):
+        return False
+        if node.type == "elem image":
+            return True
+        return False
+
+    def set_widgets(self, node=None):
+        self.node = node
+        if node is None:
+            return
+
 
 class ImagePropertyPanel(ScrolledPanel):
     def __init__(self, *args, context=None, node=None, **kwargs):
@@ -32,6 +570,9 @@ class ImagePropertyPanel(ScrolledPanel):
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
 
+        self.panel_crop = CropPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
         self.check_enable_dither = wx.CheckBox(self, wx.ID_ANY, _("Dither"))
         self.choices = [
             "Floyd-Steinberg",
@@ -131,8 +672,10 @@ class ImagePropertyPanel(ScrolledPanel):
     def set_widgets(self, node=None):
         self.panel_id.set_widgets(node)
         self.panel_xy.set_widgets(node)
+        self.panel_crop.set_widgets(node)
         if node is None:
             node = self.node
+        self.node = node
         if node is None:
             return
 
@@ -162,6 +705,7 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_dim = wx.BoxSizer(wx.HORIZONTAL)
         sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
 
         sizer_dpi = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("DPI:")), wx.HORIZONTAL
@@ -271,25 +815,52 @@ class ImagePropertyPanel(ScrolledPanel):
         self.context.signal("element_property_reload", self.node)
 
 
-class ImageProperty(MWindow):
-    def __init__(self, *args, node=None, **kwds):
-        super().__init__(276, 218, *args, **kwds)
+# class ImageProperty(MWindow):
+#     def __init__(self, *args, node=None, **kwds):
+#         super().__init__(276, 218, *args, **kwds)
+#         self.panels = []
+#         main_sizer = wx.BoxSizer(wx.VERTICAL)
+#         panel_main = ImagePropertyPanel(
+#             self, wx.ID_ANY, context=self.context, node=node
+#         )
+#         panel_modify = ImageModificationPanel(
+#             self, wx.ID_ANY, context=self.context, node=node
+#         )
+#         panel_vector = ImageVectorisationPanel(
+#             self, wx.ID_ANY, context=self.context, node=node
+#         )
+#         notebook_main = wx.aui.AuiNotebook(
+#             self,
+#             -1,
+#             style=wx.aui.AUI_NB_TAB_EXTERNAL_MOVE
+#             | wx.aui.AUI_NB_SCROLL_BUTTONS
+#             | wx.aui.AUI_NB_TAB_SPLIT
+#             | wx.aui.AUI_NB_TAB_MOVE,
+#         )
+#         notebook_main.AddPage(panel_main, _("Properties"))
+#         notebook_main.AddPage(panel_modify, _("Modification"))
+#         notebook_main.AddPage(panel_vector, _("Vectorisation"))
 
-        self.panel = ImagePropertyPanel(
-            self, wx.ID_ANY, context=self.context, node=node
-        )
-        self.add_module_delegate(self.panel)
-        # begin wxGlade: ImageProperty.__set_properties
-        _icon = wx.NullIcon
-        _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
-        self.SetIcon(_icon)
-        self.SetTitle(_("Image Properties"))
+#         self.panels.append(panel_main)
+#         self.panels.append(panel_modify)
+#         self.panels.append(panel_vector)
+#         for panel in self.panels:
+#             self.add_module_delegate(panel)
+#         # begin wxGlade: ImageProperty.__set_properties
+#         _icon = wx.NullIcon
+#         _icon.CopyFromBitmap(icons8_image_50.GetBitmap())
+#         self.SetIcon(_icon)
+#         self.SetTitle(_("Image Properties"))
+#         main_sizer.Add(notebook_main, 1, wx.EXPAND, 0)
+#         self.SetSizer(main_sizer)
+#         self.Layout()
 
-    def restore(self, *args, node=None, **kwds):
-        self.panel.set_widgets(node)
+#     def restore(self, *args, node=None, **kwds):
+#         for panel in self.panels:
+#             panel.set_widgets(node)
 
-    def window_preserve(self):
-        return False
+#     def window_preserve(self):
+#         return False
 
-    def window_menu(self):
-        return False
+#     def window_menu(self):
+#         return False

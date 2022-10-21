@@ -49,7 +49,11 @@ from .operation_info import OperationInformation
 from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
-from .propertypanels.imageproperty import ImagePropertyPanel
+from .propertypanels.imageproperty import (
+    ImagePropertyPanel,
+    ImageModificationPanel,
+    ImageVectorisationPanel,
+)
 from .propertypanels.operationpropertymain import ParameterPanel
 from .propertypanels.pathproperty import PathPropertyPanel
 from .propertypanels.pointproperty import PointPropertyPanel
@@ -636,6 +640,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageNode/GammaProperty", GammaPanel)
         kernel.register("property/ImageNode/EdgeProperty", EdgePanel)
         kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
+
+        kernel.register("property/ImageNode/ImageModification", ImageModificationPanel)
+        kernel.register("property/ImageNode/ImageVectorisation", ImageVectorisationPanel)
 
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)

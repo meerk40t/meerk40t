@@ -387,7 +387,9 @@ class ImageNode(Node):
         @return: processed image
         """
         from PIL import ImageEnhance, ImageFilter, ImageOps
-
+        overall_left = 0
+        overall_top = 0
+        overall_right, overall_bottom = image.size
         for op in self.operations:
             name = op["name"]
             if name == "resample":
@@ -403,6 +405,11 @@ class ImageNode(Node):
                         upper = int(crop[1])
                         right = int(crop[2])
                         lower = int(crop[3])
+                        w, h = image.size
+                        overall_left += left
+                        overall_top += upper
+                        overall_right -= (w - right)
+                        overall_bottom -= (h - lower)
                         image = image.crop((left, upper, right, lower))
                 except KeyError:
                     pass
@@ -514,7 +521,7 @@ class ImageNode(Node):
             else:
                 # print(f"Unknown operation in raster-script: {name}")
                 continue
-        return image
+        return image, (overall_left, overall_top, overall_right, overall_bottom)
 
     def _apply_dither(self, image):
         """
@@ -649,7 +656,10 @@ class ImageNode(Node):
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
 
-        image = self._process_script(image)
+        image, newbounds = self._process_script(image)
+        # This may have again changed the size of the image (op crop)
+        # so we need to adjust the reject mask...
+        reject_mask = reject_mask.crop(newbounds)
 
         background = Image.new("L", image.size, "white")
         background.paste(image, mask=reject_mask)
