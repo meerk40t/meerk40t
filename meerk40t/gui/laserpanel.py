@@ -10,6 +10,7 @@ from meerk40t.gui.icons import (
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
     icons8_pentagon_50,
+    icons8_save_50,
 )
 from meerk40t.gui.wxutils import disable_window
 from meerk40t.kernel import lookup_listener, signal_listener
@@ -144,30 +145,23 @@ class LaserPanel(wx.Panel):
         )
         sizer_control_misc.Add(self.button_simulate, 1, 0, 0)
 
-        # self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
-        # self.button_save_file.SetToolTip(_("Save the job"))
-        # self.button_save_file.SetBitmap(icons8_save_50.GetBitmap())
-        # self.button_save_file.Enable(False)
-        # sizer_control_misc.Add(self.button_save_file, 1, 0, 0)
-
-        # self.button_load = wx.Button(self, wx.ID_ANY, _("Load"))
-        # self.button_load.SetToolTip(_("Load job"))
-        # self.button_load.SetBitmap(icons8_opened_folder_50.GetBitmap())
-        # self.button_load.Enable(False)
-        # sizer_control_misc.Add(self.button_load, 1, 0, 0)
-
-        sizer_1 = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_main.Add(sizer_1, 0, wx.EXPAND, 0)
+        sizer_control_update = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_main.Add(sizer_control_update, 0, wx.EXPAND, 0)
 
         self.button_clear = wx.Button(self, wx.ID_ANY, _("Clear"))
         self.button_clear.SetToolTip(_("Clear locally defined plan"))
         self.button_clear.SetBitmap(icons8_delete_50.GetBitmap(resize=25))
-        sizer_1.Add(self.button_clear, 1, 0, 0)
+        sizer_control_update.Add(self.button_clear, 1, 0, 0)
 
         self.button_update = wx.Button(self, wx.ID_ANY, _("Update"))
         self.button_update.SetToolTip(_("Update the Plan"))
         self.button_update.SetBitmap(icons8_goal_50.GetBitmap(resize=25))
-        sizer_1.Add(self.button_update, 1, 0, 0)
+        sizer_control_update.Add(self.button_update, 1, 0, 0)
+
+        self.button_save_file = wx.Button(self, wx.ID_ANY, _("Save"))
+        self.button_save_file.SetToolTip(_("Save the job"))
+        self.button_save_file.SetBitmap(icons8_save_50.GetBitmap(resize=25))
+        sizer_control_update.Add(self.button_save_file, 1, 0, 0)
 
         sizer_source = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(sizer_source, 0, wx.EXPAND, 0)
@@ -201,7 +195,7 @@ class LaserPanel(wx.Panel):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_menu_arm, self)
         self.Bind(wx.EVT_BUTTON, self.on_button_outline, self.button_outline)
         self.button_outline.Bind(wx.EVT_RIGHT_DOWN, self.on_button_outline_right)
-        # self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
+        self.Bind(wx.EVT_BUTTON, self.on_button_save, self.button_save_file)
         # self.Bind(wx.EVT_BUTTON, self.on_button_load, self.button_load)
         self.Bind(wx.EVT_BUTTON, self.on_button_clear, self.button_clear)
         self.Bind(wx.EVT_BUTTON, self.on_button_update, self.button_update)
@@ -230,6 +224,7 @@ class LaserPanel(wx.Panel):
         for i in range(len(spools)):
             self.combo_devices.Append(spools[i])
         self.combo_devices.SetSelection(index)
+        self.button_save_file.Enable(hasattr(self.context.device, "extension"))
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
@@ -317,7 +312,26 @@ class LaserPanel(wx.Panel):
         self.context("element* trace complex\n")
 
     def on_button_save(self, event):  # wxGlade: LaserPanel.<event_handler>
-        pass
+        gui = self.context.gui
+        extension = "txt"
+        if hasattr(self.context.device, "extension"):
+            extension = self.context.device.extension
+        filetype = f"*.{extension}"
+        with wx.FileDialog(
+                gui,
+                _("Save Project"),
+                wildcard=filetype,
+                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+        ) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+
+            if not pathname.lower().endswith(f".{extension}"):
+                pathname += f".{extension}"
+            self.context(
+                f'planz clear copy preprocess validate blob preopt optimize save_job "{pathname}"\n'
+            )
 
     def on_button_load(self, event):  # wxGlade: LaserPanel.<event_handler>
         pass

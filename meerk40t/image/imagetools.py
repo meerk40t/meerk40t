@@ -221,7 +221,9 @@ def plugin(kernel, lifecycle=None):
             if node.lock:
                 channel(_("Can't modify a locked image: {name}").format(name=str(node)))
                 continue
-            img = node.image.convert("L")
+
+            img = node.opaque_image
+            img = img.convert("L")
 
             def thresh(g):
                 if threshold_min >= g:
@@ -262,20 +264,21 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
-            if img.mode == "RGBA":
-                pixel_data = img.load()
-                width, height = img.size
-                for y in range(height):
-                    for x in range(width):
-                        if pixel_data[x, y][3] == 0:
-                            pixel_data[x, y] = (255, 255, 255, 255)
+            # if img.mode == "RGBA":
+            #     pixel_data = img.load()
+            #     width, height = img.size
+            #     for y in range(height):
+            #         for x in range(width):
+            #             if pixel_data[x, y][3] == 0:
+            #                 pixel_data[x, y] = (255, 255, 255, 255)
+
+            # We don't need to apply F-S dithering ourselves, as pillow will do that for us
             if method != "Floyd-Steinberg":
                 try:
-                    inode.image = dither(inode.image, method)
+                    inode.image = dither(inode.opaque_image, method)
                 except NotImplementedError:
                     raise CommandSyntaxError("Method not recognized.")
-            inode.image = img.convert("1")
+            inode.image = inode.image.convert("1")
             inode.altered()
         return "image", data
 
@@ -743,7 +746,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = inode.image
+                img = inode.opaque_image.convert("RGB")
                 inode.image = ImageOps.solarize(img, threshold=threshold)
                 inode.altered()
                 channel(
@@ -767,8 +770,8 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
-            original_mode = img.mode
+            img = inode.opaque_image
+            original_mode = inode.image.mode
             if img.mode == "RGBA":
                 r,g,b,a = img.split()
                 background = Image.new("RGB", img.size, "white")
@@ -876,7 +879,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_autocontrast(command, channel, _, data, cutoff, **kwargs):
-        from PIL import ImageOps
+        from PIL import ImageOps, Image
 
         for inode in data:
             if inode.lock:
@@ -885,9 +888,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = inode.image
-                if img.mode == "RGBA":
-                    img = img.convert("RGB")
+                img = inode.opaque_image  # .convert("RGB")
                 inode.image = ImageOps.autocontrast(img, cutoff=cutoff)
                 inode.altered()
                 channel(_("Image Auto-Contrasted."))
@@ -954,7 +955,7 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
+            img = inode.opaque_image.convert("RGB")
             inode.image = ImageOps.equalize(img)
             inode.altered()
             channel(_("Image Equalized."))
@@ -1204,9 +1205,9 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            image = inode.image
-            im = image
-            image = image.convert("L")
+            im = inode.image
+            img = inode.opaque_image
+            image = img.convert("L")
             image = image.rotate(angle, expand=1)
             size = image.size[0] * scale, image.size[1] * scale
             half_tone = Image.new("L", size)
@@ -1330,10 +1331,12 @@ def dither(image, method="Floyd-Steinberg"):
     :copyright: 2016-2017 by hbldh <henrik.blidh@nedomkull.com>
     https://github.com/hbldh/hitherdither
     """
+
     diff_map = _DIFFUSION_MAPS.get(method.lower())
     if diff_map is None:
         raise NotImplementedError
-    diff = image.convert("F")
+    img = image
+    diff = img.convert("F")
     pix = diff.load()
     width, height = image.size
     for y in range(height):

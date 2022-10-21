@@ -884,7 +884,7 @@ class TemplatePanel(wx.Panel):
                             stroke=set_color,
                             fill=fill_color,
                         )
-                        elem_type = "elem rect"
+                        elem_type = "elem ellipse"
                         elemnode = self.context.elements.elem_branch.add(
                             shape=pattern, type=elem_type
                         )

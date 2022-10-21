@@ -297,6 +297,18 @@ class ImageNode(Node):
             self._process_image_failed = True
         self.altered()
 
+    @property
+    def opaque_image(self):
+        from PIL import Image
+        img = self.image
+        if img is not None:
+            if img.mode == "RGBA":
+                r, g, b, a = img.split()
+                background = Image.new("RGB", img.size, "white")
+                background.paste(img, mask=a)
+                img = background
+        return img
+
     def _convert_image_to_grayscale(self, image):
         # Precalculate RGB for L conversion.
         r = self.red * 0.299
@@ -526,7 +538,7 @@ class ImageNode(Node):
 
         transparent_mask = self._get_transparent_mask(image)
 
-        image = self._convert_image_to_grayscale(image)
+        image = self._convert_image_to_grayscale(self.opaque_image)
 
         image = self._apply_mask(image, transparent_mask)
 
