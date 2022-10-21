@@ -618,6 +618,7 @@ class RibbonPanel(wx.Panel):
                 toggle_action = button["toggle"]
                 key = toggle_action.get("identifier", "toggle")
                 if "signal" in toggle_action:
+
                     def make_toggle_click(_tb):
                         def toggle_click(origin, set_value):
                             if set_value:
@@ -628,10 +629,14 @@ class RibbonPanel(wx.Panel):
                                 self._restore_button_aspect(_tb, _tb.state_pressed)
                             _tb.parent.ToggleButton(_tb.id, _tb.toggle)
                             _tb.parent.Refresh()
+
                         return toggle_click
+
                     signal_toggle_listener = make_toggle_click(b)
                     self.context.listen(toggle_action["signal"], signal_toggle_listener)
-                    self.toggle_signals.append((toggle_action["signal"], signal_toggle_listener))
+                    self.toggle_signals.append(
+                        (toggle_action["signal"], signal_toggle_listener)
+                    )
 
                 self._store_button_aspect(b, key, **toggle_action)
                 if "icon" in toggle_action:
