@@ -122,18 +122,12 @@ class GridWidget(Widget):
             return
         start_time = time()
         p = self.scene.context
-        units_width = float(p.device.unit_width)
-        units_height = float(p.device.unit_height)
         starts = []
         ends = []
         starts2 = []
         ends2 = []
         # Primary grid
-        self.zero_x = p.device.unit_width * p.device.show_origin_x
-        self.zero_y = p.device.unit_height * p.device.show_origin_y
-        # Just a reminder:
-        # show_origin_x decides the zero for x,
-        # flip_x is inverting the direction of the axis not the origin!
+        self.zero_x, self.zero_y = p.device.scene_to_show_position(0, 0)
 
         # We could be way too high
         start_x = self.zero_x
