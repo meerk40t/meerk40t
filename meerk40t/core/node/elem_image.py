@@ -388,6 +388,7 @@ class ImageNode(Node):
         @return: processed image
         """
         from PIL import ImageEnhance, ImageFilter, ImageOps
+
         overall_left = 0
         overall_top = 0
         overall_right, overall_bottom = image.size
@@ -409,8 +410,8 @@ class ImageNode(Node):
                         w, h = image.size
                         overall_left += left
                         overall_top += upper
-                        overall_right -= (w - right)
-                        overall_bottom -= (h - lower)
+                        overall_right -= w - right
+                        overall_bottom -= h - lower
                         image = image.crop((left, upper, right, lower))
                 except KeyError:
                     pass

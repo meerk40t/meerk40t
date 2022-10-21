@@ -7,6 +7,7 @@ from .attributes import IdPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
+
 class CropPanel(wx.Panel):
     name = _("Crop")
     priority = 5
@@ -31,10 +32,18 @@ class CropPanel(wx.Panel):
 
         self.label_info = wx.StaticText(self, wx.ID_ANY, "--")
 
-        self.slider_left = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
-        self.slider_right = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
-        self.slider_top = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
-        self.slider_bottom = wx.Slider(self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL)
+        self.slider_left = wx.Slider(
+            self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
+        )
+        self.slider_right = wx.Slider(
+            self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
+        )
+        self.slider_top = wx.Slider(
+            self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
+        )
+        self.slider_bottom = wx.Slider(
+            self, wx.ID_ANY, 0, -127, 127, style=wx.SL_AUTOTICKS | wx.SL_HORIZONTAL
+        )
         self.text_left = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         self.text_right = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
         self.text_top = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_READONLY)
@@ -95,10 +104,18 @@ class CropPanel(wx.Panel):
         self._no_update = False
 
     def __set_properties(self):
-        self.slider_left.SetToolTip(_("How many pixels do you want to crop from the left?"))
-        self.slider_right.SetToolTip(_("How many pixels do you want to crop from the right?"))
-        self.slider_top.SetToolTip(_("How many pixels do you want to crop from the top?"))
-        self.slider_bottom.SetToolTip(_("How many pixels do you want to crop from the bottom?"))
+        self.slider_left.SetToolTip(
+            _("How many pixels do you want to crop from the left?")
+        )
+        self.slider_right.SetToolTip(
+            _("How many pixels do you want to crop from the right?")
+        )
+        self.slider_top.SetToolTip(
+            _("How many pixels do you want to crop from the top?")
+        )
+        self.slider_bottom.SetToolTip(
+            _("How many pixels do you want to crop from the bottom?")
+        )
 
     def __do_layout(self):
         # begin wxGlade: ContrastPanel.__do_layout
@@ -212,7 +229,7 @@ class CropPanel(wx.Panel):
             if self._bounds[0] != self.slider_left.GetValue():
                 self.slider_left.SetValue(self._bounds[0])
                 dvalue = self._bounds[0]
-                if dvalue==0:
+                if dvalue == 0:
                     self.text_left.SetValue(f"---")
                 else:
                     self.text_left.SetValue(f"> {dvalue} px")
@@ -223,7 +240,7 @@ class CropPanel(wx.Panel):
             if self._bounds[2] != self.slider_right.GetValue():
                 self.slider_right.SetValue(self._bounds[2])
                 dvalue = self._width - self._bounds[2]
-                if dvalue==0:
+                if dvalue == 0:
                     self.text_right.SetValue(f"---")
                 else:
                     self.text_right.SetValue(f"{dvalue} px <")
@@ -234,7 +251,7 @@ class CropPanel(wx.Panel):
             if self._bounds[1] != self.slider_top.GetValue():
                 self.slider_top.SetValue(self._bounds[1])
                 dvalue = self._bounds[1]
-                if dvalue==0:
+                if dvalue == 0:
                     self.text_top.SetValue(f"---")
                 else:
                     self.text_top.SetValue(f"> {dvalue} px")
@@ -245,7 +262,7 @@ class CropPanel(wx.Panel):
             if self._bounds[3] != self.slider_bottom.GetValue():
                 self.slider_bottom.SetValue(self._bounds[3])
                 dvalue = self._height - self._bounds[3]
-                if dvalue==0:
+                if dvalue == 0:
                     self.text_bottom.SetValue(f"---")
                 else:
                     self.text_bottom.SetValue(f"{dvalue} px <")
@@ -263,7 +280,7 @@ class CropPanel(wx.Panel):
         self._bounds[0] = value
         if self.slider_left.GetValue() != value:
             self.slider_left.SetValue(value)
-        if value==0:
+        if value == 0:
             self.text_left.SetValue(f"---")
         else:
             self.text_left.SetValue(f"> {value} px")
@@ -288,7 +305,7 @@ class CropPanel(wx.Panel):
         if self.slider_right.GetValue() != value:
             self.slider_right.SetValue(value)
         dvalue = self._width - value
-        if dvalue==0:
+        if dvalue == 0:
             self.text_right.SetValue(f"---")
         else:
             self.text_right.SetValue(f"{dvalue} px <")
@@ -312,7 +329,7 @@ class CropPanel(wx.Panel):
         self._bounds[1] = value
         if self.slider_top.GetValue() != value:
             self.slider_top.SetValue(value)
-        if value==0:
+        if value == 0:
             self.text_top.SetValue(f"---")
         else:
             self.text_top.SetValue(f"> {value} px")
@@ -342,6 +359,7 @@ class CropPanel(wx.Panel):
             if not self._no_update:
                 self.node.update(self.context)
 
+
 class ImageModificationPanel(ScrolledPanel):
     name = _("Modification")
     priority = 90
@@ -358,21 +376,32 @@ class ImageModificationPanel(ScrolledPanel):
         for entry in list(self.context.match("raster_script/.*", suffix=True)):
             self.scripts.append(entry)
             choices.append(_("Apply {entry}").format(entry=entry))
-        self.combo_scripts = wx.ComboBox(self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN)
+        self.combo_scripts = wx.ComboBox(
+            self, wx.ID_ANY, choices=choices, style=wx.CB_READONLY | wx.CB_DROPDOWN
+        )
         self.combo_scripts.SetSelection(0)
         self.button_apply = wx.Button(self, wx.ID_ANY, _("Apply Script"))
-        self.list_operations = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL)
+        self.list_operations = wx.ListCtrl(
+            self,
+            wx.ID_ANY,
+            style=wx.LC_HRULES | wx.LC_REPORT | wx.LC_VRULES | wx.LC_SINGLE_SEL,
+        )
 
         self._do_layout()
         self._do_logic()
         self.set_widgets(node)
 
-
     def _do_layout(self):
         self.list_operations.AppendColumn(_("#"), format=wx.LIST_FORMAT_LEFT, width=58)
-        self.list_operations.AppendColumn(_("Action"), format=wx.LIST_FORMAT_LEFT, width=65)
-        self.list_operations.AppendColumn(_("Active"), format=wx.LIST_FORMAT_LEFT, width=25)
-        self.list_operations.AppendColumn(_("Parameters"), format=wx.LIST_FORMAT_LEFT, width=95)
+        self.list_operations.AppendColumn(
+            _("Action"), format=wx.LIST_FORMAT_LEFT, width=65
+        )
+        self.list_operations.AppendColumn(
+            _("Active"), format=wx.LIST_FORMAT_LEFT, width=25
+        )
+        self.list_operations.AppendColumn(
+            _("Parameters"), format=wx.LIST_FORMAT_LEFT, width=95
+        )
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_script = wx.StaticBoxSizer(
@@ -411,7 +440,9 @@ class ImageModificationPanel(ScrolledPanel):
         idx = 0
         for op in self.node.operations:
             idx += 1
-            list_id = self.list_operations.InsertItem(self.list_operations.GetItemCount(), f"#{idx}")
+            list_id = self.list_operations.InsertItem(
+                self.list_operations.GetItemCount(), f"#{idx}"
+            )
             self.list_operations.SetItem(list_id, 1, op["name"])
             self.list_operations.SetItem(list_id, 2, "x" if op["enable"] else "-")
             self.list_operations.SetItem(list_id, 3, str(op))
@@ -438,12 +469,12 @@ class ImageModificationPanel(ScrolledPanel):
 
     def on_apply_replace(self, event):
         idx = self.combo_scripts.GetSelection()
-        if idx>=0:
+        if idx >= 0:
             self.apply_script(idx, False)
 
     def on_apply_append(self, event):
         idx = self.combo_scripts.GetSelection()
-        if idx>=0:
+        if idx >= 0:
             self.apply_script(idx, True)
 
     def on_list_menu(self, event):
@@ -451,24 +482,30 @@ class ImageModificationPanel(ScrolledPanel):
             def check(event):
                 self.node.operations.pop(index)
                 self.update_node()
+
             return check
 
         def on_enable(index):
             def check(event):
-                self.node.operations[index]["enable"] = not self.node.operations[index]["enable"]
+                self.node.operations[index]["enable"] = not self.node.operations[index][
+                    "enable"
+                ]
                 self.update_node()
+
             return check
 
         def on_op_insert(index, op):
             def check(event):
                 self.node.operations.insert(index, op)
                 self.update_node()
+
             return check
 
         def on_op_append(index, op):
             def check(event):
                 self.node.operations.append(op)
                 self.update_node()
+
             return check
 
         index = self.list_operations.GetFirstSelected()
@@ -486,7 +523,13 @@ class ImageModificationPanel(ScrolledPanel):
             },
             {"name": "auto_contrast", "enable": True, "cutoff": 3},
             {"name": "contrast", "enable": True, "contrast": 25, "brightness": 25},
-            {"name": "unsharp_mask", "enable": True, "percent": 500, "radius": 4, "threshold": 0,},
+            {
+                "name": "unsharp_mask",
+                "enable": True,
+                "percent": 500,
+                "radius": 4,
+                "threshold": 0,
+            },
             {
                 "name": "tone",
                 "type": "spline",
@@ -507,23 +550,38 @@ class ImageModificationPanel(ScrolledPanel):
         ]
         devmode = self.context.root.setting(bool, "developer_mode", False)
         menu = wx.Menu()
-        if index>=0:
+        if index >= 0:
             # Edit-Part
-            menuitem = menu.Append(wx.ID_ANY, _("Delete item"), _("Will delete the current entry"))
+            menuitem = menu.Append(
+                wx.ID_ANY, _("Delete item"), _("Will delete the current entry")
+            )
             self.Bind(wx.EVT_MENU, on_delete(index), id=menuitem.GetId())
 
-            menuitem = menu.Append(wx.ID_ANY, _("Enable"), _("Toggles enable-status of operation"), kind=wx.ITEM_CHECK)
+            menuitem = menu.Append(
+                wx.ID_ANY,
+                _("Enable"),
+                _("Toggles enable-status of operation"),
+                kind=wx.ITEM_CHECK,
+            )
             menuitem.Check(self.node.operations[index]["enable"])
             self.Bind(wx.EVT_MENU, on_enable(index), id=menuitem.GetId())
             if devmode:
                 menu.AppendSeparator()
                 for op in possible_ops:
-                    menuitem = menu.Append(wx.ID_ANY, _("Insert {op}").format(op=op["name"]), _("Will insert this operation before the current entry"))
+                    menuitem = menu.Append(
+                        wx.ID_ANY,
+                        _("Insert {op}").format(op=op["name"]),
+                        _("Will insert this operation before the current entry"),
+                    )
                     self.Bind(wx.EVT_MENU, on_op_insert(index, op), id=menuitem.GetId())
                 menu.AppendSeparator()
         if devmode:
             for op in possible_ops:
-                menuitem = menu.Append(wx.ID_ANY, _("Append {op}").format(op=op["name"]), _("Will append this operation to the end of the list"))
+                menuitem = menu.Append(
+                    wx.ID_ANY,
+                    _("Append {op}").format(op=op["name"]),
+                    _("Will append this operation to the end of the list"),
+                )
                 self.Bind(wx.EVT_MENU, on_op_append(index, op), id=menuitem.GetId())
 
         if menu.MenuItemCount != 0:
@@ -535,6 +593,7 @@ class ImageModificationPanel(ScrolledPanel):
 
     def pane_active(self):
         self.fill_operations()
+
 
 class ImageVectorisationPanel(ScrolledPanel):
     name = _("Vectorisation")
@@ -744,7 +803,6 @@ class ImagePropertyPanel(ScrolledPanel):
         sizer_xy = wx.BoxSizer(wx.HORIZONTAL)
         sizer_main.Add(self.panel_id, 0, wx.EXPAND, 0)
         sizer_main.Add(self.panel_crop, 0, wx.EXPAND, 0)
-
 
         sizer_dpi_dither = wx.BoxSizer(wx.HORIZONTAL)
         sizer_dpi = wx.StaticBoxSizer(
