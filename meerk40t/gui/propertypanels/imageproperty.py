@@ -610,20 +610,20 @@ class ImagePropertyPanel(ScrolledPanel):
             choices=self.choices,
             style=wx.CB_DROPDOWN,
         )
-        self.op_choices = []
-        self.image_ops = []
-        self.op_choices.append(_("Choose a script to apply"))
-        self.op_choices.append(_("Set to None"))
-        for op in list(self.context.elements.match("raster_script", suffix=True)):
-            self.op_choices.append(_("Apply: {script}").format(script=op))
-            self.image_ops.append(op)
+        # self.op_choices = []
+        # self.image_ops = []
+        # self.op_choices.append(_("Choose a script to apply"))
+        # self.op_choices.append(_("Set to None"))
+        # for op in list(self.context.elements.match("raster_script", suffix=True)):
+        #     self.op_choices.append(_("Apply: {script}").format(script=op))
+        #     self.image_ops.append(op)
 
-        self.combo_operations = wx.ComboBox(
-            self,
-            wx.ID_ANY,
-            choices=self.op_choices,
-            style=wx.CB_DROPDOWN,
-        )
+        # self.combo_operations = wx.ComboBox(
+        #     self,
+        #     wx.ID_ANY,
+        #     choices=self.op_choices,
+        #     style=wx.CB_DROPDOWN,
+        # )
 
         self.check_invert_grayscale = wx.CheckBox(self, wx.ID_ANY, _("Invert"))
         self.slider_grayscale_red = wx.Slider(
@@ -656,7 +656,7 @@ class ImagePropertyPanel(ScrolledPanel):
             wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither
         )
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_operations)
+        # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_operations)
 
         self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
 
@@ -724,8 +724,8 @@ class ImagePropertyPanel(ScrolledPanel):
         self.check_enable_dither.SetValue(1)
         self.combo_dither.SetToolTip(_("Select dither algorithm to use"))
         self.combo_dither.SetSelection(0)
-        self.combo_operations.SetToolTip(_("Select image enhancement script to apply"))
-        self.combo_operations.SetSelection(0)
+        # self.combo_operations.SetToolTip(_("Select image enhancement script to apply"))
+        # self.combo_operations.SetSelection(0)
         self.check_invert_grayscale.SetToolTip(_("Invert Grayscale"))
         self.slider_grayscale_red.SetToolTip(_("Red component amount"))
         self.text_grayscale_red.SetToolTip(_("Red Factor"))
@@ -765,12 +765,12 @@ class ImagePropertyPanel(ScrolledPanel):
 
         sizer_main.Add(sizer_dpi_dither, 0, wx.EXPAND, 0)
 
-        sizer_rasterwizard = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Image-Operation")), wx.HORIZONTAL
-        )
-        sizer_rasterwizard.Add(self.combo_operations, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        # sizer_rasterwizard = wx.StaticBoxSizer(
+        #     wx.StaticBox(self, wx.ID_ANY, _("Image-Operation")), wx.HORIZONTAL
+        # )
+        # sizer_rasterwizard.Add(self.combo_operations, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        sizer_main.Add(sizer_rasterwizard, 0, wx.EXPAND, 0)
+        # sizer_main.Add(sizer_rasterwizard, 0, wx.EXPAND, 0)
 
         # -----
 
@@ -863,21 +863,21 @@ class ImagePropertyPanel(ScrolledPanel):
         self.node.update(self.context)
         self.context.signal("element_property_reload", self.node)
 
-    def on_combo_operation(self, event):
-        idx = self.combo_operations.GetSelection()
-        if idx <= 0:
-            return
-        elif idx == 1:
-            self.node.operations = []
-        else:
-            script = self.image_ops[idx - 2]
-            raster_script = self.context.lookup(f"raster_script/{script}")
-            if raster_script is None:
-                return
-            self.node.operations = raster_script
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
-        self.context.signal("propupdate", self.node)
+    # def on_combo_operation(self, event):
+    #     idx = self.combo_operations.GetSelection()
+    #     if idx <= 0:
+    #         return
+    #     elif idx == 1:
+    #         self.node.operations = []
+    #     else:
+    #         script = self.image_ops[idx - 2]
+    #         raster_script = self.context.lookup(f"raster_script/{script}")
+    #         if raster_script is None:
+    #             return
+    #         self.node.operations = raster_script
+    #     self.node.update(self.context)
+    #     self.context.signal("element_property_reload", self.node)
+    #     self.context.signal("propupdate", self.node)
 
 
 # class ImageProperty(MWindow):
