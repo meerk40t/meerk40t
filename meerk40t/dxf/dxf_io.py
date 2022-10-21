@@ -153,7 +153,7 @@ class DXFProcessor:
         except AttributeError:
             pass
         if entity.dxftype() == "CIRCLE":
-            element = Circle(center=entity.dxf.center, r=entity.dxf.radius)
+            element = Ellipse(center=entity.dxf.center, r=entity.dxf.radius)
             element.values[SVG_ATTR_VECTOR_EFFECT] = SVG_VALUE_NON_SCALING_STROKE
             element.transform.post_scale(self.scale, -self.scale)
             element.transform.post_translate_y(self.elements.device.unit_height)
@@ -162,7 +162,7 @@ class DXFProcessor:
             e_list.append(node)
             return
         elif entity.dxftype() == "ARC":
-            circ = Circle(center=entity.dxf.center, r=entity.dxf.radius)
+            circ = Ellipse(center=entity.dxf.center, r=entity.dxf.radius)
             start_angle = Angle.degrees(entity.dxf.start_angle)
             end_angle = Angle.degrees(entity.dxf.end_angle)
             if end_angle < start_angle:

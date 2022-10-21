@@ -94,12 +94,6 @@ def plugin(kernel, lifecycle=None):
             ruidabounce sends data to the ruidaemulator but sends data to the set bounce server.
             """
             root = kernel.root
-            root.setting(bool, "developer_mode", False)
-            if not root.developer_mode:
-                channel(
-                    "Use the 0.7.x series version of ruidacontrol. This still had some bugs in it and was disabled for now."
-                )
-                return
             try:
                 r2m = root.open_as("module/UDPServer", "rd2mk", port=50200)
                 r2mj = root.open_as("module/UDPServer", "rd2mk-jog", port=50207)

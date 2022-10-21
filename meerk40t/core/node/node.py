@@ -19,14 +19,14 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
 from copy import copy
-from enum import Enum
+from enum import IntEnum
 from time import time
 
 
 # LINEJOIN
 # Value	arcs | bevel |miter | miter-clip | round
 # Default value	miter
-class Linejoin(Enum):
+class Linejoin(IntEnum):
     JOIN_ARCS = 0
     JOIN_BEVEL = 1
     JOIN_MITER = 2
@@ -37,7 +37,7 @@ class Linejoin(Enum):
 # LINECAP
 # Value	butt | round | square
 # Default value	butt
-class Linecap(Enum):
+class Linecap(IntEnum):
     CAP_BUTT = 0
     CAP_ROUND = 1
     CAP_SQUARE = 2
@@ -46,7 +46,7 @@ class Linecap(Enum):
 # FILL-RULE
 # Value	nonzero | evenodd
 # Default value	nonzero
-class Fillrule(Enum):
+class Fillrule(IntEnum):
     FILLRULE_NONZERO = 0
     FILLRULE_EVENODD = 1
 
@@ -327,7 +327,11 @@ class Node:
         #     except KeyError:
         #         # Addit
         #         mymap[sitem] = "??ERR??"
-        return text.format_map(mymap)
+        try:
+            result = text.format_map(mymap)
+        except ValueError:
+            result ="<invalid pattern>"
+        return result
 
     def default_map(self, default_map=None):
         if default_map is None:

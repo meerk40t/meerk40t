@@ -429,6 +429,13 @@ class LaserRender:
         color = None
         for cut in cutcode:
             c = cut.line_color
+            if c is None:
+                c = 0
+            try:
+                if c.value is None:
+                    c = 0
+            except AttributeError:
+                pass
             if c is not color:
                 color = c
                 last_point = None
@@ -783,7 +790,7 @@ class LaserRender:
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(node.text, node)
+            text = self.context.elements.wordlist_translate(node.text, node, increment=False)
             node.bounds_with_variables_translated = True
         else:
             text = node.text

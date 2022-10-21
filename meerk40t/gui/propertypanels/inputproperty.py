@@ -55,4 +55,4 @@ class InputPropertyPanel(wx.Panel):
                 continue
             if hasattr(node, item_att):
                 item_value = getattr(node, item_att)
-                self.context.signal(item_att, item_value)
+                self.context.signal(item_att, item_value, self.operation)

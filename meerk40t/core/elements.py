@@ -614,7 +614,7 @@ class Elemental(Service):
         exclusive=False,
     ):
         # op_assign:    operation to assign to
-        # data:         nodes to assign to as minimum (will be extened is similar=True, see below)
+        # data:         nodes to assign to as minimum (will be extended is similar=True, see below)
         # impose:       - if "to_op" will use attrib-color (see below),
         #                 to impose the first evidence of color in data on the targetop
         #               - if "to_elem" will impose the color of the operation and make it the color of the
@@ -673,7 +673,7 @@ class Elemental(Service):
                 op_assign.remove_color_attribute("stroke")
                 op_assign.remove_color_attribute("fill")
                 op_assign.add_color_attribute(attrib)
-        # If we havent identified a color, then similar makes no sense
+        # If we haven't identified a color, then similar makes no sense
         if not has_a_color:
             similar = False
         # print ("We have now established the following:")
@@ -741,6 +741,7 @@ class Elemental(Service):
 
         subject_polygons = []
         if path is not None:
+            this_length = path.length()
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
 
@@ -759,6 +760,7 @@ class Elemental(Service):
                 Point(bb[2], bb[3]),
                 Point(bb[1], bb[3]),
             ]
+            this_length = 2 * (bb[3] - bb[1]) + 2 * (bb[2] - bb[0])
             subject_polygons.append(s)
 
         if len(subject_polygons) > 0:
@@ -791,7 +793,6 @@ class Elemental(Service):
                 if idx > 0:
                     dx = pt.x - last_x
                     dy = pt.y - last_y
-                    this_length += sqrt(dx * dx + dy * dy)
                     area_x_y += last_x * pt.y
                     area_y_x += last_y * pt.x
                 last_x = pt.x
@@ -918,7 +919,12 @@ class Elemental(Service):
                         # print(f"Attribute Error for node {q.type} trying to assign {dx:.2f}, {dy:.2f}")
         self.signal("tree_changed")
 
-    def wordlist_translate(self, pattern, elemnode=None):
+    def wordlist_advance(self, delta):
+        self.mywordlist.move_all_indices(delta)
+        self.signal("refresh_scene", "Scene")
+        self.signal("wordlist")
+
+    def wordlist_translate(self, pattern, elemnode=None, increment=True):
         # This allows to add / set values for a given wordlist
         node = None
         if elemnode is not None:
@@ -945,6 +951,9 @@ class Elemental(Service):
                 if hasattr(node, opatt):
                     value = getattr(node, opatt, None)
                     found = True
+                    if opatt == "passes": # We need to look at one more info
+                        if not node.passes_custom or value < 1:
+                            value = 1
                 else:  # Try setting
                     if hasattr(node, "settings"):
                         try:
@@ -959,8 +968,11 @@ class Elemental(Service):
             else:
                 value = f"<{opatt}>"
                 self.mywordlist.set_value(skey, value)
+        skey = "op_device"
+        value = self.device.label
+        self.mywordlist.set_value(skey, value)
 
-        result = self.mywordlist.translate(pattern)
+        result = self.mywordlist.translate(pattern, increment=increment)
         return result
 
     def _init_commands(self, kernel):
@@ -1146,7 +1158,7 @@ class Elemental(Service):
                 if key in self.mywordlist.content:
                     wordlist = self.mywordlist.content[key]
                     channel(
-                        _("Wordlist {name} (Type={type}, Index={index})):").format(
+                        _("Wordlist {name} (Type={type}, Index={index}):").format(
                             name=key, type=wordlist[0], index=wordlist[1] - 2
                         )
                     )
@@ -2754,6 +2766,11 @@ class Elemental(Service):
             elements_nodes = []
             elements = []
             for node in data:
+                oldstuff = []
+                for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                    if hasattr(node, attrib):
+                        oldval = getattr(node, attrib, None)
+                        oldstuff.append([attrib, oldval])
                 group_node = node.replace_node(type="group", label=node.label)
                 try:
                     p = node.as_path()
@@ -2761,8 +2778,10 @@ class Elemental(Service):
                     continue
                 for subpath in p.as_subpaths():
                     subelement = Path(subpath)
-                    elements.append(subelement)
-                    group_node.add(path=subelement, type="elem path")
+                    subnode = group_node.add(path=subelement, type="elem path")
+                    for item in oldstuff:
+                        setattr(subnode, item[0], item[1])
+                    elements.append(subnode)
                 elements_nodes.append(group_node)
                 if self.classify_new:
                     self.classify(elements)
@@ -3917,7 +3936,7 @@ class Elemental(Service):
         @self.console_option("dpi", "d", default=500, type=float)
         @self.console_command(
             "render",
-            help=_("Convert given elements to a raster image"),
+            help=_("Create a raster image from the given elements"),
             input_type=(None, "elements"),
             output_type="image",
         )
@@ -3963,6 +3982,67 @@ class Elemental(Service):
 
             return "image", [image_node]
 
+        @self.console_option(
+            "dpi", "d", help=_("interim image resolution"), default=500, type=float
+        )
+        @self.console_command(
+            "vectorize",
+            help=_("Convert given elements to a path"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def vectorize_elements(command, channel, _, dpi=500.0, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            reverse = self.classify_reverse
+            if reverse:
+                data = list(reversed(data))
+            make_raster = self.lookup("render-op/make_raster")
+            make_vector = self.lookup("render-op/make_vector")
+            if not make_raster:
+                channel(_("No renderer is registered to perform render."))
+                return
+            if not make_vector:
+                channel(_("No vectorization engine could be found."))
+                return
+
+            bounds = Node.union_bounds(data, attr="paint_bounds")
+            if bounds is None:
+                return
+            xmin, ymin, xmax, ymax = bounds
+            if isinf(xmin):
+                channel(_("No bounds for selected elements."))
+                return
+            width = xmax - xmin
+            height = ymax - ymin
+
+            dots_per_units = dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+            new_height = max(new_height, 1)
+            new_width = max(new_width, 1)
+
+            image = make_raster(
+                data,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+            path = make_vector(image)
+            matrix = Matrix.scale(width / new_width, height / new_height)
+            matrix.post_translate(bounds[0], bounds[1])
+            path.transform *= Matrix(matrix)
+            node = self.elem_branch.add(
+                path=abs(path),
+                stroke_width=0,
+                stroke_scaled=False,
+                type="elem path",
+                fillrule=Fillrule.FILLRULE_NONZERO,
+            )
+            self.signal("refresh_scene", "Scene")
+
+            return "elements", [node]
+
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
@@ -3977,7 +4057,7 @@ class Elemental(Service):
             all_arguments_required=True,
         )
         def element_circle(channel, _, x_pos, y_pos, r_pos, data=None, **kwargs):
-            circ = Circle(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
+            circ = Ellipse(cx=float(x_pos), cy=float(y_pos), r=float(r_pos))
             if circ.is_degenerate():
                 channel(_("Shape is degenerate."))
                 return "elements", data
@@ -4003,7 +4083,7 @@ class Elemental(Service):
             all_arguments_required=True,
         )
         def element_circle_r(channel, _, r_pos, data=None, **kwargs):
-            circ = Circle(r=float(r_pos))
+            circ = Ellipse(r=float(r_pos))
             if circ.is_degenerate():
                 channel(_("Shape is degenerate."))
                 return "elements", data
@@ -4320,6 +4400,23 @@ class Elemental(Service):
                     continue
                 paths.append(e)
             return "shapes", paths
+
+        @self.console_option("real", "r", action="store_true", type=bool, help="Display non-transformed path")
+        @self.console_command(
+            "path_d_info",
+            help=_("List the path_d of any recognized paths"),
+            input_type="elements",
+        )
+        def element_pathd_info(command, channel, _, data, real=True, **kwargs):
+            for node in data:
+                try:
+                    if node.path.transform.is_identity():
+                        channel(f"{str(node)} (Identity): {node.path.d(transformed=not real)}")
+                    else:
+                        channel(f"{str(node)}: {node.path.d(transformed=not real)}")
+                except AttributeError:
+                    channel(f"{str(node)}: Invalid")
+
 
         @self.console_argument(
             "path_d", type=str, help=_("svg path syntax command (quoted).")
@@ -4932,7 +5029,7 @@ class Elemental(Service):
             height += y_offset * 2
 
             _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            node = self.elem_branch.add(shape=_element, type="elem ellipse")
+            node = self.elem_branch.add(shape=_element, type="elem path")
             node.stroke = Color("red")
             self.set_emphasis([node])
             node.focus()
@@ -5893,7 +5990,7 @@ class Elemental(Service):
                     # ops next
                     entry = 0
                 else:
-                    # Not sure why and when this suposed to happen?
+                    # Not sure why and when this supposed to happen?
                     entry = 2
                 channel(
                     _(
@@ -6420,7 +6517,7 @@ class Elemental(Service):
                             Length(amount=p[1]).length_mm,
                         )
 
-                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}")
+                _spooler.laserjob(list(trace_hull()), label=f"Trace Job: {method}", helper=True)
 
             run_shape(spooler, hull)
 
@@ -7410,6 +7507,15 @@ class Elemental(Service):
             append_operation_interrupt(node, **kwargs)
 
         @self.tree_submenu(_("Append special operation(s)"))
+        @self.tree_operation(
+            _("Append Origin/Beep/Interrupt"), node_type="branch ops", help=""
+        )
+        def append_operation_origin_beep_interrupt(node, **kwargs):
+            append_operation_goto(node, **kwargs)
+            append_operation_beep(node, **kwargs)
+            append_operation_interrupt(node, **kwargs)
+
+        @self.tree_submenu(_("Append special operation(s)"))
         @self.tree_operation(_("Append Shutdown"), node_type="branch ops", help="")
         def append_operation_shutdown(node, pos=None, **kwargs):
             self.op_branch.add(
@@ -7531,7 +7637,7 @@ class Elemental(Service):
         @self.tree_operation(
             _("Make raster image"),
             node_type=("op image", "op raster"),
-            help=_("Convert a vector element into a raster element."),
+            help=_("Create an image from the assigned elements."),
         )
         def make_raster_image(node, **kwargs):
             data = list(node.flat(types=elem_ref_nodes))
@@ -7650,6 +7756,18 @@ class Elemental(Service):
         def add_operation_home_beep_interrupt(node, **kwargs):
             pos = add_after_index(node)
             append_operation_home(node, pos=pos, **kwargs)
+            if pos:
+                pos += 1
+            append_operation_beep(node, pos=pos, **kwargs)
+            if pos:
+                pos += 1
+            append_operation_interrupt(node, pos=pos, **kwargs)
+
+        @self.tree_submenu(_("Insert special operation(s)"))
+        @self.tree_operation(_("Add Origin/Beep/Interrupt"), node_type=op_nodes, help="")
+        def add_operation_origin_beep_interrupt(node, **kwargs):
+            pos = add_after_index(node)
+            append_operation_goto(node, pos=pos, **kwargs)
             if pos:
                 pos += 1
             append_operation_beep(node, pos=pos, **kwargs)
@@ -7817,6 +7935,25 @@ class Elemental(Service):
 
             self.set_emphasis(None)
 
+        def has_vectorize(node):
+            result = False
+            make_vector = self.lookup("render-op/make_vector")
+            if make_vector:
+                result = True
+            return result
+
+        @self.tree_conditional(lambda node: has_vectorize(node))
+        @self.tree_operation(
+            _("Trace bitmap"),
+            node_type=(
+                "elem text",
+                "elem image",
+            ),
+            help="Vectorize the given element",
+        )
+        def trace_bitmap(node, **kwargs):
+            self("vectorize\n")
+
         @self.tree_conditional(lambda node: not is_regmark(node))
         @self.tree_operation(
             _("Convert to path"),
@@ -7830,11 +7967,19 @@ class Elemental(Service):
             help="",
         )
         def convert_to_path(node, **kwargs):
+            oldstuff = []
+            for attrib in ("stroke", "fill", "stroke_width", "stroke_scaled"):
+                if hasattr(node, attrib):
+                    oldval = getattr(node, attrib, None)
+                    oldstuff.append([attrib, oldval])
             try:
                 path = node.as_path()
             except AttributeError:
                 return
-            node.replace_node(path=path, type="elem path")
+            newnode = node.replace_node(path=path, type="elem path")
+            for item in oldstuff:
+                setattr(newnode, item[0], item[1])
+            newnode.altered()
 
         @self.tree_submenu(_("Flip"))
         @self.tree_separator_before()
@@ -7967,6 +8112,9 @@ class Elemental(Service):
         )
         def merge_elements(node, **kwargs):
             self("element merge\n")
+            # Is the group now empty? --> delete
+            if len(node.children) == 0:
+                node.remove_node()
 
         @self.tree_conditional(lambda node: node.lock)
         @self.tree_separator_before()
@@ -8638,6 +8786,11 @@ class Elemental(Service):
     def clear_operations(self):
         operations = self._tree.get(type="branch ops")
         operations.remove_all_children()
+        if hasattr(operations, "loop_continuous"):
+            operations.loop_continuous = False
+            operations.loop_enabled = False
+            operations.loop_n = 1
+            self.signal("element_property_update", operations)
         self.signal("operation_removed")
 
     def clear_elements(self):
@@ -9481,7 +9634,7 @@ class Elemental(Service):
     #     Shapes/Text with no fill and non-grey strokes are vector by default - except
     #     for one edge case: Elements with strokes that have other raster elements
     #     overlaying the stroke should in some cases be considered raster elements,
-    #     but there are serveral use cases and counter examples are likely easy to create.
+    #     but there are several use cases and counter examples are likely easy to create.
     #     The algorithm below tries to be conservative in deciding whether to switch a default
     #     vector to a raster due to believing it is part of raster combined with elements on top.
     #     In essence, if there are raster elements on top (later in the list of elements) that
@@ -10143,6 +10296,16 @@ class Elemental(Service):
                     return True
         return False
 
+    def remove_empty_groups(self):
+        something_was_deleted = True
+        while something_was_deleted:
+            something_was_deleted = False
+            for node in self.elems_nodes():
+                if node.type in ("file", "group"):
+                    if len(node.children) == 0:
+                        node.remove_node()
+                        something_was_deleted = True
+
     @staticmethod
     def element_classify_color(element: SVGElement):
         element_color = element.stroke
@@ -10159,6 +10322,7 @@ class Elemental(Service):
                     try:
                         self.signal("freeze_tree", True)
                         results = loader.load(self, self, pathname, **kwargs)
+                        self.remove_empty_groups()
                         self.signal("freeze_tree", False)
                     except FileNotFoundError:
                         return False

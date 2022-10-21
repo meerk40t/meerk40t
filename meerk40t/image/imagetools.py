@@ -213,14 +213,16 @@ def plugin(kernel, lifecycle=None):
     ):
         if threshold_min is None:
             raise CommandSyntaxError
+        threshold_min, threshold_max = min(threshold_min, threshold_max), max(
+            threshold_max, threshold_min
+        )
         divide = (threshold_max - threshold_min) / 255.0
         for node in data:
             if node.lock:
                 channel(_("Can't modify a locked image: {name}").format(name=str(node)))
                 continue
-            image_node = copy(node)
-            image_node.image = image_node.image.copy()
-            img = image_node.image
+
+            img = node.opaque_image
             img = img.convert("L")
 
             def thresh(g):
@@ -235,10 +237,11 @@ def plugin(kernel, lifecycle=None):
 
             lut = [thresh(g) for g in range(256)]
             img = img.point(lut)
-            image_node.image = img
 
             elements = context.elements
-            node = elements.elem_branch.add(image=image_node, type="elem image")
+            node = elements.elem_branch.add(
+                image=img, type="elem image", matrix=copy(node.matrix)
+            )
             elements.classify([node])
         return "image", data
 
@@ -261,20 +264,21 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
-            if img.mode == "RGBA":
-                pixel_data = img.load()
-                width, height = img.size
-                for y in range(height):
-                    for x in range(width):
-                        if pixel_data[x, y][3] == 0:
-                            pixel_data[x, y] = (255, 255, 255, 255)
+            # if img.mode == "RGBA":
+            #     pixel_data = img.load()
+            #     width, height = img.size
+            #     for y in range(height):
+            #         for x in range(width):
+            #             if pixel_data[x, y][3] == 0:
+            #                 pixel_data[x, y] = (255, 255, 255, 255)
+
+            # We don't need to apply F-S dithering ourselves, as pillow will do that for us
             if method != "Floyd-Steinberg":
                 try:
-                    inode.image = dither(inode.image, method)
+                    inode.image = dither(inode.opaque_image, method)
                 except NotImplementedError:
                     raise CommandSyntaxError("Method not recognized.")
-            inode.image = img.convert("1")
+            inode.image = inode.image.convert("1")
             inode.altered()
         return "image", data
 
@@ -742,7 +746,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = inode.image
+                img = inode.opaque_image.convert("RGB")
                 inode.image = ImageOps.solarize(img, threshold=threshold)
                 inode.altered()
                 channel(
@@ -758,7 +762,7 @@ def plugin(kernel, lifecycle=None):
         "invert", help=_("invert the image"), input_type="image", output_type="image"
     )
     def image_invert(command, channel, _, data, **kwargs):
-        from PIL import ImageOps
+        from PIL import ImageOps, Image
 
         for inode in data:
             if inode.lock:
@@ -766,10 +770,11 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
-            original_mode = img.mode
-            if img.mode in ("P", "RGBA", "1"):
+            original_mode = inode.image.mode
+            img = inode.opaque_image
+            if img.mode in ("P", "1"):
                 img = img.convert("RGB")
+            img = img.convert("RGB")
             try:
                 inode.image = ImageOps.invert(img)
                 if original_mode == "1":
@@ -870,7 +875,7 @@ def plugin(kernel, lifecycle=None):
         output_type="image",
     )
     def image_autocontrast(command, channel, _, data, cutoff, **kwargs):
-        from PIL import ImageOps
+        from PIL import ImageOps, Image
 
         for inode in data:
             if inode.lock:
@@ -879,9 +884,7 @@ def plugin(kernel, lifecycle=None):
                 )
                 continue
             try:
-                img = inode.image
-                if img.mode == "RGBA":
-                    img = img.convert("RGB")
+                img = inode.opaque_image  # .convert("RGB")
                 inode.image = ImageOps.autocontrast(img, cutoff=cutoff)
                 inode.altered()
                 channel(_("Image Auto-Contrasted."))
@@ -948,7 +951,7 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            img = inode.image
+            img = inode.opaque_image.convert("RGB")
             inode.image = ImageOps.equalize(img)
             inode.altered()
             channel(_("Image Equalized."))
@@ -1198,9 +1201,9 @@ def plugin(kernel, lifecycle=None):
                     _("Can't modify a locked image: {name}").format(name=str(inode))
                 )
                 continue
-            image = inode.image
-            im = image
-            image = image.convert("L")
+            im = inode.image
+            img = inode.opaque_image
+            image = img.convert("L")
             image = image.rotate(angle, expand=1)
             size = image.size[0] * scale, image.size[1] * scale
             half_tone = Image.new("L", size)
@@ -1324,10 +1327,12 @@ def dither(image, method="Floyd-Steinberg"):
     :copyright: 2016-2017 by hbldh <henrik.blidh@nedomkull.com>
     https://github.com/hbldh/hitherdither
     """
+
     diff_map = _DIFFUSION_MAPS.get(method.lower())
     if diff_map is None:
         raise NotImplementedError
-    diff = image.convert("F")
+    img = image
+    diff = img.convert("F")
     pix = diff.load()
     width, height = image.size
     for y in range(height):

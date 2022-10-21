@@ -38,7 +38,7 @@ def plugin(service, lifecycle):
             },
         )
         service.register(
-            "button/config/Configuration",
+            "button/device/Configuration",
             {
                 "label": _("Config"),
                 "icon": icons8_computer_support_50,

@@ -64,6 +64,9 @@ from .icons import (
     icons8_vector_50,
     icons_evenspace_horiz,
     icons_evenspace_vert,
+    icons8_curly_brackets_50,
+    icons8_circled_left_50,
+    icons8_circled_right_50,
     set_icon_appearance,
 )
 from .laserrender import (
@@ -592,7 +595,7 @@ class MeerK40t(MWindow):
                 + "\n"
                 + _("by enter or stepping out of the field)"),
                 "page": "Gui",
-                "hidden": True,
+                # "hidden": True,
                 "section": "Misc.",
             },
         ]
@@ -625,7 +628,9 @@ class MeerK40t(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        buttonsize = STD_ICON_SIZE
+        bsize_normal = STD_ICON_SIZE
+        # bsize_small = STD_ICON_SIZE / 2
+        bsize_small = STD_ICON_SIZE
         kernel.register(
             "button/project/Open",
             {
@@ -634,7 +639,7 @@ class MeerK40t(MWindow):
                 "tip": _("Opens new project"),
                 "action": lambda e: kernel.console(".dialog_load\n"),
                 "priority": -200,
-                "size": buttonsize,
+                "size": bsize_normal,
             },
         )
         kernel.register(
@@ -645,7 +650,7 @@ class MeerK40t(MWindow):
                 "tip": _("Saves a project to disk"),
                 "action": lambda e: kernel.console(".dialog_save\n"),
                 "priority": -100,
-                "size": buttonsize,
+                "size": bsize_normal,
             },
         )
 
@@ -660,7 +665,7 @@ class MeerK40t(MWindow):
                 "tip": _("Regular selection tool"),
                 "action": lambda v: kernel.elements("tool none\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "none",
             },
         )
@@ -673,7 +678,7 @@ class MeerK40t(MWindow):
                 "tip": _("Set position to given location"),
                 "action": lambda v: kernel.elements("tool relocate\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "relocate",
             },
         )
@@ -686,7 +691,7 @@ class MeerK40t(MWindow):
                 "tip": _("Add a free-drawing element"),
                 "action": lambda v: kernel.elements("tool draw\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "draw",
             },
         )
@@ -699,7 +704,7 @@ class MeerK40t(MWindow):
                 "tip": _("Add an ellipse element"),
                 "action": lambda v: kernel.elements("tool ellipse\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "ellipse",
             },
         )
@@ -712,7 +717,7 @@ class MeerK40t(MWindow):
                 "tip": _("Add a circle element"),
                 "action": lambda v: kernel.elements("tool circle\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "circle",
             },
         )
@@ -727,7 +732,7 @@ class MeerK40t(MWindow):
                 ),
                 "action": lambda v: kernel.elements("tool polygon\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "polygon",
             },
         )
@@ -742,7 +747,7 @@ class MeerK40t(MWindow):
                 ),
                 "action": lambda v: kernel.elements("tool polyline\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "polyline",
             },
         )
@@ -755,7 +760,7 @@ class MeerK40t(MWindow):
                 "tip": _("Add a rectangular element"),
                 "action": lambda v: kernel.elements("tool rect\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "rect",
             },
         )
@@ -768,7 +773,7 @@ class MeerK40t(MWindow):
                 "tip": _("Add point to the scene"),
                 "action": lambda v: kernel.elements("tool point\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "point",
             },
         )
@@ -783,7 +788,7 @@ class MeerK40t(MWindow):
                 ),
                 "action": lambda v: kernel.elements("tool vector\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "vector",
             },
         )
@@ -796,13 +801,13 @@ class MeerK40t(MWindow):
                 "tip": _("Add a text element"),
                 "action": lambda v: kernel.elements("tool text\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "text",
             },
         )
 
         kernel.register(
-            "button/tools/Measure",
+            "button/extended_tools/Measure",
             {
                 "label": _("Measure"),
                 "icon": icons8_measure_50,
@@ -811,10 +816,11 @@ class MeerK40t(MWindow):
                 ),
                 "action": lambda v: kernel.elements("tool measure\n"),
                 "group": "tool",
-                "size": buttonsize,
+                "size": bsize_normal,
                 "identifier": "measure",
             },
         )
+
         # Default Size for smaller buttons
         buttonsize = STD_ICON_SIZE / 2
 
@@ -825,7 +831,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_flip_vertical,
                 "tip": _("Flip the selected element vertically"),
                 "action": lambda v: kernel.elements("scale 1 -1\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -839,7 +845,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_mirror_horizontal,
                 "tip": _("Mirror the selected element horizontally"),
                 "action": lambda v: kernel.elements("scale -1 1\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -853,7 +859,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rotate_right_50,
                 "tip": _("Rotate the selected element clockwise by 90 deg"),
                 "action": lambda v: kernel.elements("rotate 90deg\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -867,7 +873,7 @@ class MeerK40t(MWindow):
                 "icon": icons8_rotate_left_50,
                 "tip": _("Rotate the selected element counterclockwise by 90 deg"),
                 "action": lambda v: kernel.elements("rotate -90deg\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -881,7 +887,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_union_50,
                 "tip": _("Create a union of the selected elements"),
                 "action": lambda v: kernel.elements("element union\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -895,7 +901,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_subtract_50,
                 "tip": _("Create a difference of the selected elements"),
                 "action": lambda v: kernel.elements("element difference\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -909,7 +915,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_xor_50,
                 "tip": _("Create a xor of the selected elements"),
                 "action": lambda v: kernel.elements("element xor\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -923,7 +929,7 @@ class MeerK40t(MWindow):
                 "icon": icon_cag_common_50,
                 "tip": _("Create a intersection of the selected elements"),
                 "action": lambda v: kernel.elements("element intersection\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -968,14 +974,16 @@ class MeerK40t(MWindow):
                     group_node.append_child(node)
                 kernel.signal("element_property_reload", "Scene", group_node)
 
+        # Default Size for normal buttons
+        buttonsize = STD_ICON_SIZE
         kernel.register(
-            "button/geometry/Group",
+            "button/group/Group",
             {
                 "label": _("Group"),
                 "icon": icons8_group_objects_50,
                 "tip": _("Group elements together"),
                 "action": lambda v: group_selection(),
-                "size": buttonsize,
+                "size": bsize_normal,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1014,16 +1022,17 @@ class MeerK40t(MWindow):
             return result
 
         kernel.register(
-            "button/geometry/Ungroup",
+            "button/group/Ungroup",
             {
                 "label": _("Ungroup"),
                 "icon": icons8_ungroup_objects_50,
                 "tip": _("Ungroup elements"),
                 "action": lambda v: ungroup_selection(),
-                "size": buttonsize,
+                "size": bsize_normal,
                 "rule_enabled": lambda cond: part_of_group(),
             },
         )
+
         kernel.register(
             "button/align/AlignLeft",
             {
@@ -1036,13 +1045,54 @@ class MeerK40t(MWindow):
                     "align push first individual left pop\n"
                 ),
                 "right": lambda v: kernel.elements("align push bed group left pop\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
                 > 0,
             },
         )
+
+        kernel.register(
+            "button/preparation/Wordlist",
+            {
+                "label": _("Wordlist"),
+                "icon": icons8_curly_brackets_50,
+                "tip": _("Manages Wordlist-Entries"),
+                "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                "identifier": "prep_wordlist",
+                "priority": 99,
+                "default": "prep_wordlist_edit",
+                "multi": [
+                    {
+                        "identifier": "prep_wordlist_edit",
+                        "icon": icons8_curly_brackets_50,
+                        "tip": _("Manages Wordlist-Entries"),
+                        "label": _("Wordlist"),
+                        "action": lambda v: kernel.console("window toggle Wordlist\n"),
+                    },
+                    {
+                        "identifier": "prep_wordlist_plus_1",
+                        "icon": icons8_circled_right_50,
+                        "tip": _("Wordlist: go to next entry"),
+                        "label": _("Next"),
+                        "action": lambda v: kernel.elements.wordlist_advance(1),
+                    },
+                    {
+                        "identifier": "prep_wordlist_minus_1",
+                        "label": _("Prev"),
+                        "icon": icons8_circled_left_50,
+                        "tip": _("Wordlist: go to prev entry"),
+                        "action": lambda v: kernel.elements.wordlist_advance(-1),
+                    },
+                ],
+
+            },
+        )
+
+        # Default Size for small buttons
+        buttonsize = STD_ICON_SIZE / 2
+
         kernel.register(
             "button/align/AlignRight",
             {
@@ -1055,7 +1105,7 @@ class MeerK40t(MWindow):
                     "align push first individual right pop\n"
                 ),
                 "right": lambda v: kernel.elements("align push bed group right pop\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1074,7 +1124,7 @@ class MeerK40t(MWindow):
                     "align push first individual top pop\n"
                 ),
                 "right": lambda v: kernel.elements("align push bed group top pop\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1093,7 +1143,7 @@ class MeerK40t(MWindow):
                     "align push first individual bottom pop\n"
                 ),
                 "right": lambda v: kernel.elements("align push bed group bottom pop\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1114,7 +1164,7 @@ class MeerK40t(MWindow):
                 "right": lambda v: kernel.elements(
                     "align push bed group centerh pop\n"
                 ),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1135,7 +1185,7 @@ class MeerK40t(MWindow):
                 "right": lambda v: kernel.elements(
                     "align push bed group centerv pop\n"
                 ),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1149,7 +1199,7 @@ class MeerK40t(MWindow):
                 "icon": icons_evenspace_horiz,
                 "tip": _("Distribute Space Horizontally"),
                 "action": lambda v: kernel.elements("align spaceh\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1163,7 +1213,7 @@ class MeerK40t(MWindow):
                 "icon": icons_evenspace_vert,
                 "tip": _("Distribute Space Vertically"),
                 "action": lambda v: kernel.elements("align spacev\n"),
-                "size": buttonsize,
+                "size": bsize_small,
                 "rule_enabled": lambda cond: len(
                     list(kernel.elements.elems(emphasized=True))
                 )
@@ -1903,6 +1953,7 @@ class MeerK40t(MWindow):
         submenus = {}
         menudata = []
         for window, _path, suffix_path in self.context.find("window/.*"):
+            suppress = False
             try:
                 name = window.name
             except AttributeError:
@@ -1919,6 +1970,8 @@ class MeerK40t(MWindow):
                         submenu_name = returnvalue[0]
                     if len(returnvalue) > 1:
                         win_caption = returnvalue[1]
+                    if len(returnvalue) > 2:
+                        suppress = returnvalue[2]
                 if submenu_name is None:
                     submenu_name = ""
                 if win_caption is None:
@@ -1935,6 +1988,8 @@ class MeerK40t(MWindow):
                 except AttributeError:
                     caption = name[0].upper() + name[1:]
             if name in ("Scene", "About"):  # make no sense, so we omit these...
+                suppress = True
+            if suppress:
                 continue
             menudata.append([submenu_name, caption, name, window, suffix_path])
         # Now that we have everything lets sort...
@@ -2654,7 +2709,14 @@ class MeerK40t(MWindow):
                     m.Check(True)
 
                 def language_update(q):
-                    return lambda e: self.context.app.update_language(q)
+                    def check(event):
+                        self.context.app.update_language(q)
+                        # Intentionally no translation...
+                        wx.MessageBox(
+                            message="This requires a program restart before the language change will kick in!",
+                            caption="Language changed",
+                        )
+                    return check
 
                 self.Bind(wx.EVT_MENU, language_update(i), id=m.GetId())
                 if language_code not in trans and i != 0:

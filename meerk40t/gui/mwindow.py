@@ -112,7 +112,7 @@ class MWindow(wx.Frame, Module):
     def module_close(self, *args, shutdown=False, **kwargs):
         self.window_close()
         # We put this in the try bracket, as after nuke_settings
-        # all the context settign stuff will no longer work
+        # all the context setting stuff will no longer work
         try:
             if self.window_save:
                 self.window_context.setting(bool, "open_on_start", False)

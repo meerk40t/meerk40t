@@ -1,7 +1,10 @@
+import threading
+
 import wx
 
 from meerk40t.gui.icons import icons8_connected_50, icons8_disconnected_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -72,6 +75,8 @@ class MoshiControllerPanel(wx.Panel):
             wx.EVT_CHECKBOX, self.on_check_show_usb_log, self.checkbox_show_usb_log
         )
         self.last_control_state = None
+        self._buffer = ""
+        self._buffer_lock = threading.Lock()
         self.set_widgets()
 
     def __set_properties(self):
@@ -264,17 +269,16 @@ class MoshiControllerPanel(wx.Panel):
         pass
 
     def update_text(self, text):
-        if not wx.IsMainThread():
-            wx.CallAfter(self.update_text_gui, text + "\n")
-        else:
-            self.update_text_gui(text + "\n")
+        with self._buffer_lock:
+            self._buffer += f"{text}\n"
+        self.context.signal("moshi_controller_update")
 
-    def update_text_gui(self, text):
-        try:
-            if self.text_usb_log.IsShown():
-                self.text_usb_log.AppendText(text)
-        except RuntimeError:
-            pass
+    @signal_listener("moshi_controller_update")
+    def update_text_gui(self, origin, *args):
+        with self._buffer_lock:
+            buffer = self._buffer
+            self._buffer = ""
+        self.text_usb_log.AppendText(buffer)
 
     def set_widgets(self):
         self.context.setting(bool, "show_usb_log", False)

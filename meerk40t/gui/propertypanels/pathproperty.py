@@ -5,7 +5,7 @@ from meerk40t.gui.wxutils import ScrolledPanel
 from ...core.units import Length
 from ..icons import icons8_vector_50
 from ..mwindow import MWindow
-from .attributes import ColorPanel, IdPanel, PositionSizePanel
+from .attributes import ColorPanel, IdPanel, LinePropPanel, PositionSizePanel
 
 _ = wx.GetTranslation
 
@@ -19,11 +19,18 @@ class PathPropertyPanel(ScrolledPanel):
             bool, "_auto_classify", self.context.elements.classify_on_color
         )
         self.node = node
-
-        self.panel_id = IdPanel(
+        self.panels = []
+        # Id at top in all cases...
+        panel_id = IdPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
-        self.panel_stroke = ColorPanel(
+        self.panels.append(panel_id)
+
+        for property_class in self.context.lookup_all("path_attributes/.*"):
+            panel = property_class(self, id=wx.ID_ANY, context=self.context, node=self.node)
+            self.panels.append(panel)
+
+        panel_stroke = ColorPanel(
             self,
             id=wx.ID_ANY,
             context=self.context,
@@ -32,7 +39,8 @@ class PathPropertyPanel(ScrolledPanel):
             callback=self.callback_color,
             node=self.node,
         )
-        self.panel_fill = ColorPanel(
+        self.panels.append(panel_stroke)
+        panel_fill = ColorPanel(
             self,
             id=wx.ID_ANY,
             context=self.context,
@@ -41,9 +49,18 @@ class PathPropertyPanel(ScrolledPanel):
             callback=self.callback_color,
             node=self.node,
         )
-        self.panel_xy = PositionSizePanel(
+        self.panels.append(panel_fill)
+        # Next one is a placeholder...
+        self.panels.append(None)
+
+        panel_line = LinePropPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )
+        self.panels.append(panel_line)
+        panel_xy = PositionSizePanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panels.append(panel_xy)
 
         # Property display
         self.lbl_info_points = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
@@ -140,10 +157,9 @@ class PathPropertyPanel(ScrolledPanel):
         self.lbl_info_points.SetValue(f"{points:d}")
 
     def set_widgets(self, node):
-        self.panel_id.set_widgets(node)
-        self.panel_stroke.set_widgets(node)
-        self.panel_fill.set_widgets(node)
-        self.panel_xy.set_widgets(node)
+        for panel in self.panels:
+            if panel is not None:
+                panel.set_widgets(node)
 
         if node is not None:
             self.node = node
@@ -181,11 +197,12 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_h_infos.Add(sizer_info3, 1, wx.EXPAND, 0)
         sizer_h_infos.Add(self.btn_info_get, 0, wx.EXPAND, 0)
 
-        sizer_v_main.Add(self.panel_id, 0, wx.EXPAND, 0)
-        sizer_v_main.Add(self.panel_stroke, 0, wx.EXPAND, 0)
-        sizer_v_main.Add(self.panel_fill, 0, wx.EXPAND, 0)
-        sizer_v_main.Add(self.check_classify, 0, 0, 0)
-        sizer_v_main.Add(self.panel_xy, 0, wx.EXPAND, 0)
+        for panel in self.panels:
+            if panel is None:
+                sizer_v_main.Add(self.check_classify, 0, wx.EXPAND, 0)
+            else:
+                sizer_v_main.Add(panel, 0, wx.EXPAND, 0)
+
         sizer_v_main.Add(sizer_h_infos, 0, wx.EXPAND, 0)
         self.Bind(wx.EVT_CHECKBOX, self.on_check_classify, self.check_classify)
         self.SetSizer(sizer_v_main)

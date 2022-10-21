@@ -2,9 +2,11 @@ import wx
 
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
+from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.gui.choicepropertypanel import ChoicePropertyPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
+from meerk40t.kernel import signal_listener
 
 _ = wx.GetTranslation
 
@@ -53,22 +55,33 @@ class BalorConfiguration(MWindow):
         self.panels.append(newpanel)
         self.notebook_main.AddPage(newpanel, _("Default Actions"))
 
+        newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
+        self.panels.append(newpanel)
+        self.notebook_main.AddPage(newpanel, _("Display Options"))
+
         self.Layout()
         for panel in self.panels:
             self.add_module_delegate(panel)
 
     def window_close(self):
-        self.context.unlisten("flip_x", self.on_viewport_update)
-        self.context.unlisten("flip_y", self.on_viewport_update)
         for panel in self.panels:
             panel.pane_hide()
 
     def window_open(self):
-        self.context.listen("flip_x", self.on_viewport_update)
-        self.context.listen("flip_y", self.on_viewport_update)
         for panel in self.panels:
             panel.pane_show()
 
+    @signal_listener("corfile")
+    def on_corfile_changed(self, origin, *args):
+        from meerk40t.balormk.lmc_controller import GalvoController
+
+        scale = GalvoController.get_scale_from_correction_file(self.context.corfile)
+        self.context.lens_size = f"{65536.0 / scale:.03f}mm"
+        self.context.signal("lens_size", self.context.lens_size, self.context)
+        self.context.signal("bedsize", False)
+
+    @signal_listener("flip_x")
+    @signal_listener("flip_y")
     def on_viewport_update(self, origin, *args):
         self.context("viewport_update\n")
         self.context.signal("bedsize", False)

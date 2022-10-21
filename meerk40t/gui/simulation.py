@@ -65,6 +65,9 @@ class SimulationPanel(wx.Panel, Job):
         # poor mans slide out
         self.btn_slide_options = wx.Button(self, wx.ID_ANY, "<")
         self.btn_slide_options.Bind(wx.EVT_BUTTON, self.slide_out)
+        self.btn_slide_options.SetToolTip(
+            _("Show/Hide optimization options for this job.")
+        )
         choices = self.context.lookup("choices/optimize")[:7]
         self.panel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
@@ -143,6 +146,10 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
+
+        ##############
+        # BUILD SCENE
+        ##############
 
         self.widget_scene.add_scenewidget(SimulationWidget(self.widget_scene, self))
         self.sim_travel = SimulationTravelWidget(self.widget_scene, self)
@@ -474,6 +481,22 @@ class SimulationPanel(wx.Panel, Job):
         self.sim_travel.initvars()
         self.update_fields()
         self.request_refresh()
+
+    @signal_listener("activate;device")
+    def on_activate_device(self, origin, device):
+        self.available_devices = self.context.kernel.services("device")
+        self.selected_device = self.context.device
+        spools = []
+        index = -1
+        for i, s in enumerate(self.available_devices):
+            if s is self.selected_device:
+                index = i
+                break
+        spools = [s.label for s in self.available_devices]
+        self.combo_device.Clear()
+        self.combo_device.SetItems(spools)
+        self.combo_device.SetSelection(index)
+        self.on_combo_device(None)
 
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
@@ -825,13 +848,14 @@ class Simulation(MWindow):
                 ),
 
         kernel.register(
-            "button/project/Simulation",
+            "button/jobstart/Simulation",
             {
                 "label": _("Simulate"),
                 "icon": icons8_laser_beam_hazard2_50,
                 "tip": _("Simulate the current laser job"),
                 "action": open_simulator,
                 "size": STD_ICON_SIZE,
+                "priority": 1,
             },
         )
 

@@ -280,7 +280,7 @@ class HatchOpNode(Node, Parameters):
         if pos != len(points):
             yield points[pos : len(points)]
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Preprocess hatch values
 
@@ -362,6 +362,7 @@ class HatchOpNode(Node, Parameters):
                     self.add_node(node)
 
         if self.children:
+            commands = plan.commands
             commands.append(hatch)
 
     def as_cutobjects(self, closed_distance=15, passes=1):

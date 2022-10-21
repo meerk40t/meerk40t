@@ -87,18 +87,19 @@ class PathNode(Node):
         """If the stroke is not scaled, the matrix scale will scale the stroke, and we
         need to countermand that scaling by dividing by the square root of the absolute
         value of the determinant of the local matrix (1d matrix scaling)"""
-        scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
-        sw = self.stroke_width / scalefactor
-        limit = 25 * sqrt(zoomscale) / scalefactor
-        if sw < limit:
-            sw = limit
-        return sw
+        scalefactor = sqrt(abs(self.matrix.determinant))
+        if self.stroke_scaled:
+            # Our implied stroke-width is prescaled.
+            return self.stroke_width
+        else:
+            sw = self.stroke_width / scalefactor
+            return sw
 
     def bbox(self, transformed=True, with_stroke=False):
         self._sync_svg()
         return self.path.bbox(transformed=transformed, with_stroke=with_stroke)
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
@@ -161,6 +162,11 @@ class PathNode(Node):
         )
         self.path.transform = self.matrix
         self.path.stroke_width = self.stroke_width
+        try:
+            del self.path.values["viewport_transform"]
+            # If we had transforming viewport that is no longer relevant
+        except KeyError:
+            pass
 
     def as_path(self):
         self._sync_svg()

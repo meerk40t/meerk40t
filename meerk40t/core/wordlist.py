@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+from copy import copy
 from datetime import datetime
 
 
@@ -13,7 +14,6 @@ class Wordlist:
     """
 
     def __init__(self, versionstr, directory=None):
-        self.content = []
         # The content-dictionary contains an array per entry
         # index 0 indicates the type:
         #   0 (static) text entry
@@ -28,6 +28,8 @@ class Wordlist:
             "op_device": [0, 2, "<device>"],
             "op_speed": [0, 2, "<speed>"],
             "op_power": [0, 2, "<power>"],
+            "op_passes": [0, 2, "<passes>"],
+            "op_dpi": [0, 2, "<dpi>"],
         }
         self.prohibited = (
             "version",
@@ -36,7 +38,11 @@ class Wordlist:
             "op_device",
             "op_speed",
             "op_power",
+            "op_passes",
+            "op_dpi",
         )
+        self.transaction_open = False
+        self.content_backup = {}
         if directory is None:
             directory = os.getcwd()
         self.default_filename = os.path.join(directory, "wordlist.json")
@@ -56,6 +62,7 @@ class Wordlist:
             wordlist = self.content[skey]
         except KeyError:
             return None
+        # print (f"Retrieve {wordlist} for {skey}")
         if idx is None:  # Default
             idx = wordlist[1]
 
@@ -90,6 +97,28 @@ class Wordlist:
             return
         self.content[skey].pop(idx)
 
+    def move_all_indices(self, delta):
+        for wkey in self.content:
+            wordlist = self.content[wkey]
+            if wkey in self.prohibited:
+                continue
+            if wordlist[0] in (0, 1):  # Text or csv
+                last_index = len(wordlist) - 1
+                # Zero-based outside, +2 inside
+                newidx = min(wordlist[1] + delta, last_index)
+                if newidx < 2:
+                    newidx = 2
+                wordlist[1] = newidx
+            elif wordlist[0] == 2:  # Counter-type
+                value = wordlist[2]
+                try:
+                    value = int(value) + delta
+                except ValueError:
+                    value = 0
+                if value<0:
+                    value = 0
+                wordlist[2] = value
+
     def set_value(self, skey, value, idx=None, wtype=None):
         # Special treatment:
         # Index = None - use current
@@ -104,6 +133,10 @@ class Wordlist:
             if idx is None:
                 # use current position
                 idx = self.content[skey][1]
+                try:
+                    idx = int(idx)
+                except ValueError:
+                    idx = 0
             elif idx < 0:
                 # append
                 self.content[skey].append(value)
@@ -149,17 +182,19 @@ class Wordlist:
         else:
             self.content[skey][1] = 2
 
-    def translate(self, pattern):
+    def translate(self, pattern, increment=True):
         result = pattern
         brackets = re.compile(r"\{[^}]+\}")
         for bracketed_key in brackets.findall(result):
-            key = bracketed_key[1:-1].lower()
+#            print(f"Key found: {bracketed_key}")
+            key = bracketed_key[1:-1].lower().strip()
             # Let's check whether we have a modifier at the end: #<num>
-            if key.endswith("++"):
-                autoincrement = True
-                key = key[:-2]
-            else:
-                autoincrement = False
+            # if key.endswith("++"):
+            #     autoincrement = True
+            #     key = key[:-2].strip()
+            # else:
+            #     autoincrement = False
+            autoincrement = False
 
             reset = False
             relative = 0
@@ -167,7 +202,7 @@ class Wordlist:
             if pos > 0:  # Needs to be after first character
                 # Process offset modification.
                 index_string = key[pos + 1 :]
-                key = key[:pos]
+                key = key[:pos].strip()
 
                 if not index_string.startswith("+") and not index_string.startswith(
                     "-"
@@ -182,9 +217,25 @@ class Wordlist:
 
             # And now date and time...
             if key == "date":
-                value = self.wordlist_datestr(None)
+                # Do we have a format str?
+                sformat = None
+                if key in self.content:
+                    value = self.fetch_value(key, 2)
+                    if value is not None and isinstance(value, str) and len(value)>0:
+                        if "%" in value:
+                            # Seems to be a format string, so let's try it...
+                            sformat = value
+                value = self.wordlist_datestr(sformat)
             elif key == "time":
-                value = self.wordlist_timestr(None)
+                # Do we have a format str?
+                sformat = None
+                if key in self.content:
+                    value = self.fetch_value(key, 2)
+                    if value is not None and isinstance(value, str) and len(value)>0:
+                        if "%" in value:
+                            # Seems to be a format string, so let's try it...
+                            sformat = value
+                value = self.wordlist_timestr(sformat)
             elif key.startswith("date@"):
                 # Original cASEs, vkey is already lowered...
                 sformat = bracketed_key[6:-1]
@@ -203,8 +254,12 @@ class Wordlist:
                 if wordlist[0] == 2:  # Counter-type
                     # Counter index is the value.
                     value = wordlist[2] if not reset else 0
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        value = 0
                     value += relative
-                    if autoincrement:
+                    if autoincrement and increment:
                         # autoincrement of counter means value + 1
                         wordlist[2] = value + 1
                 else:
@@ -212,7 +267,7 @@ class Wordlist:
                     current_index = wordlist[1] if not reset else 0
                     current_index += relative
                     value = self.fetch_value(key, current_index)
-                    if autoincrement:
+                    if autoincrement and increment:
                         # Index set to current index + 1
                         wordlist[1] = current_index + 1
 
@@ -250,6 +305,29 @@ class Wordlist:
             choices.append(f"{skey} ({value})")
         return choices
 
+    def begin_transaction(self):
+        # We want to store all our values
+        if not self.transaction_open:
+            self.content_backup = {}
+            for key in self.content:
+                item = copy(self.content[key])
+                self.content_backup[key] = item
+            self.transaction_open = True
+
+    def rollback_transaction(self):
+        if self.transaction_open:
+            self.content = {}
+            for key in self.content_backup:
+                item = copy(self.content_backup[key])
+                self.content[key] = item
+            self.transaction_open = False
+            self.content_backup = {}
+
+    def commit_transaction(self):
+        if self.transaction_open:
+            self.transaction_open = False
+            self.content_backup = {}
+
     def load_data(self, filename):
         if filename is None:
             filename = self.default_filename
@@ -258,12 +336,14 @@ class Wordlist:
                 self.content = json.load(f)
         except (json.JSONDecodeError, PermissionError, OSError, FileNotFoundError):
             pass
+        self.transaction_open = False
 
     def save_data(self, filename):
         if filename is None:
             filename = self.default_filename
         with open(filename, "w") as f:
             json.dump(self.content, f)
+        self.transaction_open = False
 
     def delete(self, skey):
         try:
