@@ -62,6 +62,10 @@ class Wordlist:
             wordlist = self.content[skey]
         except KeyError:
             return None
+        if skey == "date":
+            return self.wordlist_datestr(None)
+        elif skey == "time":
+            return self.wordlist_timestr(None)
         # print (f"Retrieve {wordlist} for {skey}")
         if idx is None:  # Default
             idx = wordlist[1]
@@ -165,7 +169,7 @@ class Wordlist:
 
         for wkey in wordlists:
             wordlist = self.content[wkey]
-            if wordlist[0] == 1:  # Variable Wordlist type.
+            if wordlist[0] in (0, 1) and wkey not in self.prohibited:  # Variable Wordlist type.
                 last_index = len(wordlist) - 1
                 # Zero-based outside, +2 inside
                 if relative:

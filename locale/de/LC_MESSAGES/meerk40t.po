@@ -10217,6 +10217,15 @@ msgstr "Dithering"
 msgid "Enable Dither"
 msgstr "Dithering aktivieren"
 
+msgid "Select image enhancement script to apply"
+msgstr "Welcher Algorithmus soll auf Bild angewandt werden?"
+
+msgid "Choose a script to apply"
+msgstr "Algorithmus ausführen"
+
+msgid "Image-Operation"
+msgstr "Bild-Manipulation"
+
 #: meerk40t/gui/propertypanels/imageproperty.py:146
 msgid "Select dither algorithm to use"
 msgstr "Wählen Sie den zu verwendenden Dithering-Algorithmus aus"

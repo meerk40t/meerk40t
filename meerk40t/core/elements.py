@@ -6713,6 +6713,7 @@ class Elemental(Service):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(node)
+                self.signal("propupdate", node)
 
         @self.tree_submenu(_("RasterWizard"))
         @self.tree_values(
@@ -6726,6 +6727,7 @@ class Elemental(Service):
             activate = self.kernel.lookup("function/open_property_window_for_node")
             if activate is not None:
                 activate(node)
+                self.signal("propupdate", node)
 
         def radio_match(node, speed=0, **kwargs):
             return node.speed == float(speed)
