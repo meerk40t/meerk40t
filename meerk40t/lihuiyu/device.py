@@ -47,7 +47,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
 )
 from .laserspeed import LaserSpeed
-from .lihuiyuemulator import EgvLoader, LihuiyuEmulator, LihuiyuParser
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -85,9 +84,21 @@ def plugin(kernel, lifecycle=None):
 
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
-        kernel.register("load/EgvLoader", EgvLoader)
-        kernel.register("emulator/lihuiyu", LihuiyuEmulator)
-        kernel.register("parser/egv", LihuiyuParser)
+        try:
+            from meerk40t.lihuiyu.lihuiyuparser import EgvLoader
+            kernel.register("load/EgvLoader", EgvLoader)
+        except ImportError:
+            pass
+        try:
+            from .lihuiyuemulator import LihuiyuEmulator
+            kernel.register("emulator/lihuiyu", LihuiyuEmulator)
+        except ImportError:
+            pass
+        try:
+            from meerk40t.lihuiyu.lihuiyuparser import LihuiyuParser
+            kernel.register("parser/egv", LihuiyuParser)
+        except ImportError:
+            pass
     if lifecycle == "preboot":
         suffix = "lhystudios"
         for d in kernel.derivable(suffix):
@@ -700,16 +711,17 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Server cannot be attached to any device."))
             return
 
-        @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
-        def lhyemulator(channel, _, **kwargs):
-            try:
-                self.open_as("emulator/lihuiyu", "lhyemulator")
-                channel(
-                    _("Lihuiyu Emulator attached to {device}").format(device=str(self))
-                )
-            except KeyError:
-                channel(_("Emulator cannot be attached to any device."))
-            return
+        if self.has_feature("emulator/lihuiyu"):
+            @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
+            def lhyemulator(channel, _, **kwargs):
+                try:
+                    self.open_as("emulator/lihuiyu", "lhyemulator")
+                    channel(
+                        _("Lihuiyu Emulator attached to {device}").format(device=str(self))
+                    )
+                except KeyError:
+                    channel(_("Emulator cannot be attached to any device."))
+                return
 
     @property
     def viewbuffer(self):

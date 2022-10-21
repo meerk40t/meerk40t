@@ -1,5 +1,3 @@
-from meerk40t.gui.icons import icons8_info_50
-
 
 def plugin(service, lifecycle):
     if lifecycle == "invalidate":
@@ -18,6 +16,7 @@ def plugin(service, lifecycle):
             icons8_connected_50,
             icons8_emergency_stop_button_50,
             icons8_pause_50,
+            icons8_info_50,
         )
 
         service.register("window/Serial-Controller", SerialController)

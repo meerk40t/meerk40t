@@ -6,12 +6,9 @@ from math import cos, gcd, isinf, pi, sin, sqrt, tau
 from os.path import realpath
 from random import randint, shuffle
 
-from numpy import linspace
-
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import CommandSyntaxError, Service, Settings
 
-from ..numpath import Numpath
 from ..svgelements import (
     SVG_RULE_EVENODD,
     SVG_RULE_NONZERO,
@@ -737,6 +734,8 @@ class Elemental(Service):
         subject_polygons = []
         if path is not None:
             this_length = path.length()
+
+            from numpy import linspace
             for subpath in path.as_subpaths():
                 subj = Path(subpath).npoint(linspace(0, 1, interpolation))
 
@@ -4328,6 +4327,8 @@ class Elemental(Service):
                 return "elements", data
             if len(data) == 0:
                 return "elements", data
+
+            from ..numpath import Numpath
             numpath = Numpath()
             for node in data:
                 try:
@@ -6355,6 +6356,8 @@ class Elemental(Service):
                         path = None
 
                     if path is not None:
+
+                        from numpy import linspace
                         for subpath in path.as_subpaths():
                             psp = Path(subpath)
                             p = psp.first_point
