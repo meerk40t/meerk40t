@@ -824,7 +824,7 @@ class Kernel:
         self.console_job = Job(
             job_name="kernel.console.ticks",
             process=self._console_job_tick,
-            interval=0.05,
+            interval=0.1,
         )
         self._current_directory = "."
         self._console_buffer = ""
