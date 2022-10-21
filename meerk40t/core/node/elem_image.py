@@ -390,7 +390,12 @@ class ImageNode(Node):
 
         for op in self.operations:
             name = op["name"]
-            if name == "crop":
+            if name == "resample":
+                # This is just a reminder, that while this may still appear in the scripts it is intentionally
+                # ignored (or needs to be revised with the upcoming appearance of passthrough) as it is not
+                # serving the purpose of the past
+                continue
+            elif name == "crop":
                 try:
                     if op["enable"] and op["bounds"] is not None:
                         crop = op["bounds"]
@@ -506,6 +511,9 @@ class ImageNode(Node):
                         )
                 except KeyError:
                     pass
+            else:
+                # print(f"Unknown operation in raster-script: {name}")
+                continue
         return image
 
     def _apply_dither(self, image):
