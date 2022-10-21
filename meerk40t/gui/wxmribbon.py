@@ -1000,7 +1000,8 @@ class RibbonPanel(wx.Panel):
         pass
 
     def pane_hide(self):
-        pass
+        for key, listener in self.toggle_signals:
+            self.context.unlisten(key, listener)
 
     # def on_page_changing(self, event):
     #     page = event.GetPage()
