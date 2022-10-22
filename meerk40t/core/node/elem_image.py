@@ -399,7 +399,7 @@ class ImageNode(Node):
                 # ignored (or needs to be revised with the upcoming appearance of passthrough) as it is not
                 # serving the purpose of the past
                 continue
-            elif name == "crop":
+            if name == "crop":
                 try:
                     if op["enable"] and op["bounds"] is not None:
                         crop = op["bounds"]
