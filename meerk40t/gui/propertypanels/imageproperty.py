@@ -1,4 +1,4 @@
-import threading
+# import threading
 import wx
 
 from meerk40t.core.units import UNITS_PER_INCH
@@ -614,8 +614,8 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.context = context
         self.node = node
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.vector_lock = threading.Lock()
-        self.alive = True
+        # self.vector_lock = threading.Lock()
+        # self.alive = True
 
         sizer_options = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Options")), wx.VERTICAL
@@ -740,9 +740,9 @@ class ImageVectorisationPanel(ScrolledPanel):
         label_spacer = wx.StaticText(self, wx.ID_ANY, " ")
         sizer_buttons.Add(label_spacer, 1, 0, 0)
 
-        self.check_generate = wx.CheckBox(self, wx.ID_ANY, _("Generate Preview"))
-        self.check_generate.SetToolTip(_("Autogenerate a preview of the result"))
-        sizer_buttons.Add(self.check_generate, 0, 0, 0)
+        self.button_generate = wx.Button(self, wx.ID_ANY, _("Preview"))
+        self.button_generate.SetToolTip(_("Generate a preview of the result"))
+        sizer_buttons.Add(self.button_generate, 0, 0, 0)
 
         sizer_preview = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Preview")), wx.VERTICAL
@@ -758,10 +758,10 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.SetSizer(main_sizer)
         main_sizer.Fit(self)
 
-        self._preview = True
-        self._need_updates = False
+        # self._preview = True
+        # self._need_updates = False
 
-        self.check_generate.SetValue(self._preview)
+        # self.check_generate.SetValue(self._preview)
 
         self.wximage = wx.NullBitmap
         self.wxvector = wx.NullBitmap
@@ -770,22 +770,23 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.Layout()
         self.Centre()
         self.Bind(wx.EVT_BUTTON, self.on_button_create, self.button_vector)
-        self.Bind(wx.EVT_CHECKBOX, self.on_check_preview, self.check_generate)
+        # self.Bind(wx.EVT_CHECKBOX, self.on_check_preview, self.check_generate)
+        self.Bind(wx.EVT_BUTTON, self.on_changes, self.button_generate)
         self.Bind(wx.EVT_SIZE, self.on_size)
-        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_alphamax)
-        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_blacklevel)
-        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_tolerance)
-        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_turdsize)
-        self.Bind(wx.EVT_COMBOBOX, self.on_changes, self.combo_turnpolicy)
-        self.stop = None
-        self._update_thread = self.context.threaded(
-                self.generate_preview, result=self.stop, daemon=True
-            )
+        # self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_alphamax)
+        # self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_blacklevel)
+        # self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_tolerance)
+        # self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_turdsize)
+        # self.Bind(wx.EVT_COMBOBOX, self.on_changes, self.combo_turnpolicy)
+        # self.stop = None
+        # self._update_thread = self.context.threaded(
+        #         self.generate_preview, result=self.stop, daemon=True
+        #     )
 
         self.set_widgets(node)
 
-    def on_check_preview(self, event):
-        self._preview = self.check_generate.GetValue()
+    # def on_check_preview(self, event):
+    #     self._preview = self.check_generate.GetValue()
 
     def on_size(self, event):
         self.set_images(True)
@@ -798,7 +799,8 @@ class ImageVectorisationPanel(ScrolledPanel):
         self._visible = False
 
     def on_changes(self, event):
-        self._need_updates = True
+        # self._need_updates = True
+        self.generate_preview()
 
     def on_button_create(self, event):
         ipolicy = self.combo_turnpolicy.GetSelection()
@@ -847,115 +849,110 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.bitmap_preview.SetBitmap(self.wximage)
 
     def generate_preview(self):
-        while self.alive:
-            if not self._visible:
-                wx.Sleep(0.05)
-            if not self._preview:
-                wx.Sleep(0.05)
-            while self._need_updates:
-                self.wxvector = wx.NullBitmap
-                with self.vector_lock:
 
-                    if self._preview and self.node is not None and self.node.image is not None:
-                        make_vector = self.context.kernel.lookup("render-op/make_vector")
-                        make_raster = self.context.kernel.lookup("render-op/make_raster")
-                        if make_vector is None or make_raster is None:
-                            return
-                        matrix = self.node.matrix
-                        image = self.node.opaque_image
-                        ipolicy = self.combo_turnpolicy.GetSelection()
-                        # turnpolicy = self.turn_choices[ipolicy].lower()
-                        # slider 0 .. 10 translate to 0 .. 10
-                        turdsize = self.slider_turdsize.GetValue()
-                        # slider 0 .. 100 translate to 0 .. 1
-                        blacklevel = (
-                            self.slider_blacklevel.GetValue()
-                            / self.slider_blacklevel.GetMax()
-                            * 1.0
-                        )
-                        # slider 0 .. 150 translate to 0 .. 1.5
-                        opttolerance = (
-                            self.slider_tolerance.GetValue() / self.slider_tolerance.GetMax() * 1.5
-                        )
-                        # slider 0 .. 12 translate to 0 .. 1.333
-                        alphamax = (
-                            self.slider_alphamax.GetValue()
-                            / self.slider_alphamax.GetMax()
-                            * 4.0
-                            / 3.0
-                        )
-                        opticurve = self.check_opticurve.GetValue()
-                        bounds = self.node.paint_bounds
-                        if bounds is None:
-                            bounds = self.node.bounds
-                        if bounds is None:
-                            return
-                        xmin, ymin, xmax, ymax = bounds
-                        width = xmax - xmin
-                        height = ymax - ymin
-                        dpi = 500
-                        dots_per_units = dpi / UNITS_PER_INCH
-                        new_width = width * dots_per_units
-                        new_height = height * dots_per_units
-                        new_height = max(new_height, 1)
-                        new_width = max(new_width, 1)
+        # from time import sleep
+        make_vector = self.context.kernel.lookup("render-op/make_vector")
+        make_raster = self.context.kernel.lookup("render-op/make_raster")
+        # while self.alive:
+        if not self._visible:
+            return
+        self.wxvector = wx.NullBitmap
 
-                        image = make_raster(
-                            self.node,
-                            bounds=bounds,
-                            width=new_width,
-                            height=new_height,
-                        )
-                        try:
-                            path = make_vector(
-                                image=image,
-                                interpolationpolicy=ipolicy,
-                                turdsize=turdsize,
-                                alphamax=alphamax,
-                                opticurve=opticurve,
-                                opttolerance=opttolerance,
-                                blacklevel=blacklevel,
-                            )
-                        except:
-                            return
-                        path.transform *= Matrix(matrix)
-                        dummynode = PathNode(
-                            path=abs(path),
-                            stroke_width=0,
-                            stroke_scaled=False,
-                            fillrule=0,   # Fillrule.FILLRULE_NONZERO
-                        )
-                        if dummynode is None:
-                            return
-                        bounds = dummynode.paint_bounds
-                        if bounds is None:
-                            bounds = dummynode.bounds
-                        if bounds is None:
-                            return
-                        pw, ph = self.vector_preview.GetSize()
-                        iw, ih = self.node.image.size
-                        wfac = pw / iw
-                        hfac = ph / ih
-                        # The smaller of the two decide how to scale the picture
-                        if wfac < hfac:
-                            factor = wfac
-                        else:
-                            factor = hfac
-                        image = make_raster(
-                            dummynode,
-                            bounds,
-                            width=pw,
-                            height=ph,
-                            keep_ratio=True,
-                        )
-                        rw, rh  = image.size
-                        # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
-                        # if factor < 1.0:
-                        #     image = image.resize((int(iw * factor), int(ih * factor)))
-                        self.wxvector = self.img_2_wx(image)
+        if self.node is not None and self.node.image is not None:
+            matrix = self.node.matrix
+            image = self.node.opaque_image
+            ipolicy = self.combo_turnpolicy.GetSelection()
+            # turnpolicy = self.turn_choices[ipolicy].lower()
+            # slider 0 .. 10 translate to 0 .. 10
+            turdsize = self.slider_turdsize.GetValue()
+            # slider 0 .. 100 translate to 0 .. 1
+            blacklevel = (
+                self.slider_blacklevel.GetValue()
+                / self.slider_blacklevel.GetMax()
+                * 1.0
+            )
+            # slider 0 .. 150 translate to 0 .. 1.5
+            opttolerance = (
+                self.slider_tolerance.GetValue() / self.slider_tolerance.GetMax() * 1.5
+            )
+            # slider 0 .. 12 translate to 0 .. 1.333
+            alphamax = (
+                self.slider_alphamax.GetValue()
+                / self.slider_alphamax.GetMax()
+                * 4.0
+                / 3.0
+            )
+            opticurve = self.check_opticurve.GetValue()
+            bounds = self.node.paint_bounds
+            if bounds is None:
+                bounds = self.node.bounds
+            if bounds is None:
+                return
+            xmin, ymin, xmax, ymax = bounds
+            width = xmax - xmin
+            height = ymax - ymin
+            dpi = 500
+            dots_per_units = dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+            new_height = max(new_height, 1)
+            new_width = max(new_width, 1)
 
-                    self.vector_preview.SetBitmap(self.wxvector)
-                    self._need_updates = False
+            try:
+                image = make_raster(
+                    self.node,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                )
+                path = make_vector(
+                    image=image,
+                    interpolationpolicy=ipolicy,
+                    turdsize=turdsize,
+                    alphamax=alphamax,
+                    opticurve=opticurve,
+                    opttolerance=opttolerance,
+                    blacklevel=blacklevel,
+                )
+            except:
+                return
+            path.transform *= Matrix(matrix)
+            dummynode = PathNode(
+                path=abs(path),
+                stroke_width=0,
+                stroke_scaled=False,
+                fillrule=0,   # Fillrule.FILLRULE_NONZERO
+            )
+            if dummynode is None:
+                return
+            bounds = dummynode.paint_bounds
+            if bounds is None:
+                bounds = dummynode.bounds
+            if bounds is None:
+                return
+            pw, ph = self.vector_preview.GetSize()
+            iw, ih = self.node.image.size
+            wfac = pw / iw
+            hfac = ph / ih
+            # The smaller of the two decide how to scale the picture
+            if wfac < hfac:
+                factor = wfac
+            else:
+                factor = hfac
+            image = make_raster(
+                dummynode,
+                bounds,
+                width=pw,
+                height=ph,
+                keep_ratio=True,
+            )
+            rw, rh  = image.size
+            # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
+            # if factor < 1.0:
+            #     image = image.resize((int(iw * factor), int(ih * factor)))
+            self.wxvector = self.img_2_wx(image)
+
+        self.vector_preview.SetBitmap(self.wxvector)
 
     @staticmethod
     def accepts(node):
