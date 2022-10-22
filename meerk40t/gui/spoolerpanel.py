@@ -797,7 +797,7 @@ class SpoolerPanel(wx.Panel):
             pass
         filename = os.path.join(directory, "history.csv")
         try:
-            with open(filename, "w") as f:
+            with open(filename, "w", encoding="utf-8") as f:
                 simpleline = "device;jobname;start;end;duration;passes"
                 f.write(simpleline + "\n")
                 for info in self.history:
