@@ -371,8 +371,8 @@ class ViewPort:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
-        dx = self.unit_width * (self.origin_x - self.show_origin_x)
-        dy = self.unit_height * (self.origin_y - self.show_origin_y)
+        dx = self.unit_width * self.show_origin_x
+        dy = self.unit_height * self.show_origin_y
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         return " ".join(ops)
