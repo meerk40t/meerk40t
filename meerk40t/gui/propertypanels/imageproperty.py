@@ -1,17 +1,15 @@
 import threading
-import threading
 import wx
 
 from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.core.node.elem_path import PathNode
-from meerk40t.gui.icons import icons8_image_50
-from meerk40t.gui.mwindow import MWindow
+# from meerk40t.gui.icons import icons8_image_50
+# from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel
 from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
-
 
 class CropPanel(wx.Panel):
     name = _("Crop")
