@@ -127,7 +127,8 @@ class GridWidget(Widget):
         starts2 = []
         ends2 = []
         # Primary grid
-        self.zero_x, self.zero_y = p.device.scene_to_show_position(0, 0)
+        self.zero_x = p.device.unit_width * p.device.show_origin_x
+        self.zero_y = p.device.unit_height * p.device.show_origin_y
 
         # We could be way too high
         start_x = self.zero_x
