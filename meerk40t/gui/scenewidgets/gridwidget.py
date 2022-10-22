@@ -275,7 +275,8 @@ class GridWidget(Widget):
         )
         p = self.scene.context
 
-        self.sx, self.sy = p.device.scene_to_show_position(0, 0)
+        self.sx = p.device.unit_width * p.device.show_origin_x
+        self.sy = p.device.unit_height * p.device.show_origin_y
         if self.scene.grid_secondary_cx is None:
             self.sx2 = self.sx
         else:
