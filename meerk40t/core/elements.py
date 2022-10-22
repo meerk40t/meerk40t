@@ -4013,13 +4013,79 @@ class Elemental(Service):
         @self.console_option(
             "dpi", "d", help=_("interim image resolution"), default=500, type=float
         )
+        @self.console_option(
+            "turnpolicy",
+            "z",
+            type=str,
+            default="minority",
+            help=_("how to resolve ambiguities in path decomposition"),
+        )
+        @self.console_option(
+            "turdsize",
+            "t",
+            type=int,
+            default=2,
+            help=_("suppress speckles of up to this size (default 2)"),
+        )
+        @self.console_option(
+            "alphamax", "a", type=float, default=1, help=_("corner threshold parameter")
+        )
+        @self.console_option(
+            "opticurve",
+            "n",
+            type=bool,
+            action="store_true",
+            help=_("turn off curve optimization"),
+        )
+        @self.console_option(
+            "opttolerance",
+            "O",
+            type=float,
+            help=_("curve optimization tolerance"),
+            default=0.2,
+        )
+        @self.console_option(
+            "color",
+            "C",
+            type=Color,
+            help=_("set foreground color (default Black)"),
+        )
+        @self.console_option(
+            "invert",
+            "i",
+            type=bool,
+            action="store_true",
+            help=_("invert bitmap"),
+        )
+        @self.console_option(
+            "blacklevel",
+            "k",
+            type=float,
+            default=0.5,
+            help=_("blacklevel?!"),
+        )
         @self.console_command(
             "vectorize",
             help=_("Convert given elements to a path"),
             input_type=(None, "elements"),
             output_type="elements",
         )
-        def vectorize_elements(command, channel, _, dpi=500.0, data=None, **kwargs):
+        def vectorize_elements(
+            command,
+            channel,
+            _,
+            dpi=500.0,
+            turnpolicy=None,
+            turdsize=None,
+            alphamax=None,
+            opticurve=None,
+            opttolerance=None,
+            color=None,
+            invert=None,
+            blacklevel=None,
+            data=None,
+            **kwargs
+        ):
             if data is None:
                 data = list(self.elems(emphasized=True))
             reverse = self.classify_reverse
@@ -4033,6 +4099,35 @@ class Elemental(Service):
             if not make_vector:
                 channel(_("No vectorization engine could be found."))
                 return
+
+            policies = {
+                "black": 0,  # POTRACE_TURNPOLICY_BLACK
+                "white": 1,  # POTRACE_TURNPOLICY_WHITE
+                "left": 2,  # POTRACE_TURNPOLICY_LEFT
+                "right": 3,  # POTRACE_TURNPOLICY_RIGHT
+                "minority": 4,  # POTRACE_TURNPOLICY_MINORITY
+                "majority": 5,  # POTRACE_TURNPOLICY_MAJORITY
+                "random": 6,  # POTRACE_TURNPOLICY_RANDOM
+            }
+
+            if turnpolicy not in policies:
+                turnpolicy = "minority"
+            ipolicy = policies[turnpolicy]
+
+            if turdsize is None:
+                turdsize = 2
+            if alphamax is None:
+                alphamax = 1
+            if opticurve is None:
+                opticurve = True
+            if opttolerance is None:
+                opttolerance = 0.2
+            if color is None:
+                color = Color("black")
+            if invert is None:
+                invert = False
+            if blacklevel is None:
+                blacklevel = 0.5
 
             bounds = Node.union_bounds(data, attr="paint_bounds")
             if bounds is None:
@@ -4056,7 +4151,17 @@ class Elemental(Service):
                 width=new_width,
                 height=new_height,
             )
-            path = make_vector(image)
+            path = make_vector(
+                image,
+                interpolationpolicy=ipolicy,
+                invert=invert,
+                turdsize=turdsize,
+                alphamax=alphamax,
+                opticurve=opticurve,
+                opttolerance=opttolerance,
+                color=color,
+                blacklevel=blacklevel,
+            )
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
             path.transform *= Matrix(matrix)
