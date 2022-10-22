@@ -229,10 +229,6 @@ class GalvoController:
         self.service = service
         self.is_shutdown = False  # Shutdown finished.
 
-        self.max_attempts = 5
-        self.refused_count = 0
-        self.count = 0
-
         name = self.service.label
         self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
@@ -318,22 +314,23 @@ class GalvoController:
                 self.connection = USBConnection(self.usb_log)
         self._is_opening = True
         self._abort_open = False
+        count = 0
         while not self.connection.is_open(self._machine_index):
             try:
-                v = self.connection.open(self._machine_index)
-                if v < 0:
-                    self.count += 1
-                    time.sleep(0.3)
-                    if self.is_shutdown or self._abort_open:
-                        self._is_opening = False
-                        self._abort_open = False
-                        return
-                    continue
+                if self.connection.open(self._machine_index) < 0:
+                    raise ConnectionError
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
-                self.connection.close(self._machine_index)
-                self.refused_count += 1
-                time.sleep(0.5)
+                count += 1
+                if self.is_shutdown or self._abort_open:
+                    self._is_opening = False
+                    self._abort_open = False
+                    return
+                if self.connection.is_open(self._machine_index):
+                    self.connection.close(self._machine_index)
+                if count >= 10:
+                    raise ConnectionRefusedError("Could not connect to the LMC controller.")
+                time.sleep(0.3)
                 continue
         self._is_opening = False
         self._abort_open = False

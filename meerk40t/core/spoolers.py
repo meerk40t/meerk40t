@@ -717,6 +717,9 @@ class Spooler:
             except ConnectionAbortedError:
                 # Driver could no longer connect to where it was told to send the data.
                 return
+            except ConnectionRefusedError:
+                # Driver connection failed but we are not aborting the spooler thread
+                continue
             if fully_executed:
                 # all work finished
                 self.remove(program)

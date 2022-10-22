@@ -158,6 +158,9 @@ class ElementLightJob:
 
 
 class LiveSelectionLightJob:
+    """
+    Live Bounds Job.
+    """
     def __init__(
         self,
         service,
@@ -1300,6 +1303,10 @@ class BalorDevice(Service, ViewPort):
             "select-light", help=_("Execute selection light idle job")
         )
         def select_light(**kwargs):
+            """
+            Start a live bounds job.
+            """
+            # Live Bounds Job.
             if self.job is not None:
                 self.job.stop()
             self.job = LiveSelectionLightJob(self)
