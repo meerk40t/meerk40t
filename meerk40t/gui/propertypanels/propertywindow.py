@@ -35,10 +35,14 @@ class PropertyWindow(MWindow):
         page = self.notebook_main.GetCurrentPage()
         if page is None:
             return
-        try:
-            page.pane_active()
-        except AttributeError:
-            pass
+        for panel in self.panel_instances:
+            try:
+                if panel is page:
+                    page.pane_active()
+                else:
+                    panel.pane_deactive()
+            except AttributeError:
+                pass
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
