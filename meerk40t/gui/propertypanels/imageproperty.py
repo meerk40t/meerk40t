@@ -1,9 +1,14 @@
+import threading
+import threading
 import wx
 
-from ..icons import icons8_image_50
-from ..mwindow import MWindow
-from ..wxutils import ScrolledPanel, TextCtrl
-from .attributes import IdPanel, PositionSizePanel
+from meerk40t.core.units import UNITS_PER_INCH
+from meerk40t.core.node.elem_path import PathNode
+from meerk40t.gui.icons import icons8_image_50
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel
+from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
+from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
 
@@ -26,6 +31,11 @@ class CropPanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.node = node
+        self._width = None
+        self._height = None
+        self._bounds = None
+        self.op = None
+        self._no_update = False
 
         self.check_enable_crop = wx.CheckBox(self, wx.ID_ANY, _("Enable"))
         self.button_reset = wx.Button(self, wx.ID_ANY, _("Reset"))
@@ -194,7 +204,7 @@ class CropPanel(wx.Panel):
                 last = self._no_update
                 self._no_update = True
                 self.cropleft = 0
-                self.copright = w
+                self.cropright = w
                 self.croptop = 0
                 self.cropbottom = h
                 self._no_update = last
@@ -230,7 +240,7 @@ class CropPanel(wx.Panel):
                 self.slider_left.SetValue(self._bounds[0])
                 dvalue = self._bounds[0]
                 if dvalue == 0:
-                    self.text_left.SetValue(f"---")
+                    self.text_left.SetValue("---")
                 else:
                     self.text_left.SetValue(f"> {dvalue} px")
         if "r" in pattern:
@@ -241,7 +251,7 @@ class CropPanel(wx.Panel):
                 self.slider_right.SetValue(self._bounds[2])
                 dvalue = self._width - self._bounds[2]
                 if dvalue == 0:
-                    self.text_right.SetValue(f"---")
+                    self.text_right.SetValue("---")
                 else:
                     self.text_right.SetValue(f"{dvalue} px <")
         if "t" in pattern:
@@ -252,7 +262,7 @@ class CropPanel(wx.Panel):
                 self.slider_top.SetValue(self._bounds[1])
                 dvalue = self._bounds[1]
                 if dvalue == 0:
-                    self.text_top.SetValue(f"---")
+                    self.text_top.SetValue("---")
                 else:
                     self.text_top.SetValue(f"> {dvalue} px")
         if "b" in pattern:
@@ -263,7 +273,7 @@ class CropPanel(wx.Panel):
                 self.slider_bottom.SetValue(self._bounds[3])
                 dvalue = self._height - self._bounds[3]
                 if dvalue == 0:
-                    self.text_bottom.SetValue(f"---")
+                    self.text_bottom.SetValue("---")
                 else:
                     self.text_bottom.SetValue(f"{dvalue} px <")
 
@@ -281,7 +291,7 @@ class CropPanel(wx.Panel):
         if self.slider_left.GetValue() != value:
             self.slider_left.SetValue(value)
         if value == 0:
-            self.text_left.SetValue(f"---")
+            self.text_left.SetValue("---")
         else:
             self.text_left.SetValue(f"> {value} px")
         # We need to adjust the boundaries of the right slider.
@@ -306,7 +316,7 @@ class CropPanel(wx.Panel):
             self.slider_right.SetValue(value)
         dvalue = self._width - value
         if dvalue == 0:
-            self.text_right.SetValue(f"---")
+            self.text_right.SetValue("---")
         else:
             self.text_right.SetValue(f"{dvalue} px <")
         # We need to adjust the boundaries of the left slider.
@@ -330,7 +340,7 @@ class CropPanel(wx.Panel):
         if self.slider_top.GetValue() != value:
             self.slider_top.SetValue(value)
         if value == 0:
-            self.text_top.SetValue(f"---")
+            self.text_top.SetValue("---")
         else:
             self.text_top.SetValue(f"> {value} px")
         # We need to adjust the boundaries of the bottom slider.
@@ -605,24 +615,366 @@ class ImageVectorisationPanel(ScrolledPanel):
         wx.Panel.__init__(self, *args, **kwargs)
         self.context = context
         self.node = node
-        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.vector_lock = threading.Lock()
+        self.alive = True
 
-        self.SetSizer(sizer_main)
+        sizer_options = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Options")), wx.VERTICAL
+        )
+        main_sizer.Add(sizer_options, 1, wx.EXPAND, 0)
+
+        sizer_turn = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(sizer_turn, 0, wx.EXPAND, 0)
+
+        label_turn = wx.StaticText(self, wx.ID_ANY, _("Turnpolicy"))
+        label_turn.SetMinSize((70, -1))
+        sizer_turn.Add(label_turn, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.turn_choices = [
+            "Black",
+            "White",
+            "Left",
+            "Right",
+            "Minority",
+            "Majority",
+            "Random",
+        ]
+        self.combo_turnpolicy = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.turn_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_turnpolicy.SetToolTip(
+            _(
+                "This parameter determines how to resolve ambiguities during decomposition of bitmaps into paths.\n\n"
+                + "BLACK: prefers to connect black (foreground) components.\n"
+                + "WHITE: prefers to connect white (background) components.\n"
+                + "LEFT: always take a left turn.\n"
+                + "RIGHT: always take a right turn.\n"
+                + "MINORITY: prefers to connect the color (black or white) that occurs least frequently in a local neighborhood of the current position.\n"
+                + "MAJORITY: prefers to connect the color (black or white) that occurs most frequently in a local neighborhood of the current position.\n"
+                + "RANDOM: choose randomly."
+            )
+        )
+        self.combo_turnpolicy.SetSelection(4)
+        sizer_turn.Add(self.combo_turnpolicy, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_turd = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(sizer_turd, 0, wx.EXPAND, 0)
+
+        label_turd = wx.StaticText(self, wx.ID_ANY, _("Despeckle"))
+        label_turd.SetMinSize((70, -1))
+        sizer_turd.Add(label_turd, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.slider_turdsize = wx.Slider(self, wx.ID_ANY, 2, 0, 10)
+        self.slider_turdsize.SetToolTip(
+            _("Suppress speckles of up to this size (default 2 px)")
+        )
+        sizer_turd.Add(self.slider_turdsize, 1, wx.EXPAND, 0)
+
+        sizer_alphamax = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(sizer_alphamax, 0, wx.EXPAND, 0)
+
+        label_alphamax = wx.StaticText(self, wx.ID_ANY, _("Corners"))
+        label_alphamax.SetMinSize((70, -1))
+        sizer_alphamax.Add(label_alphamax, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.slider_alphamax = wx.Slider(self, wx.ID_ANY, 9, 0, 12)
+        self.slider_alphamax.SetToolTip(
+            _(
+                "This parameter is a threshold for the detection of corners. It controls the smoothness of the traced curve."
+            )
+        )
+        sizer_alphamax.Add(self.slider_alphamax, 1, wx.EXPAND, 0)
+
+        sizer_opticurve = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(sizer_opticurve, 0, wx.EXPAND, 0)
+
+        label_opticurve = wx.StaticText(self, wx.ID_ANY, _("Simplify"))
+        label_opticurve.SetMinSize((70, -1))
+        sizer_opticurve.Add(label_opticurve, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.check_opticurve = wx.CheckBox(self, wx.ID_ANY, "")
+        self.check_opticurve.SetToolTip(
+            _(
+                "Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
+            )
+        )
+        self.check_opticurve.SetValue(1)
+        sizer_opticurve.Add(self.check_opticurve, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        sizer_opttolerance = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(sizer_opttolerance, 0, wx.EXPAND, 0)
+
+        label_opttolerance = wx.StaticText(self, wx.ID_ANY, _("Tolerance"))
+        label_opttolerance.SetMinSize((70, -1))
+        sizer_opttolerance.Add(label_opttolerance, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.slider_tolerance = wx.Slider(self, wx.ID_ANY, 20, 0, 150)
+        self.slider_tolerance.SetToolTip(
+            _(
+                "This defines the amount of error allowed in this simplification.\n"
+                + "Larger values tend to decrease the number of segments, at the expense of less accuracy."
+            )
+        )
+        sizer_opttolerance.Add(self.slider_tolerance, 1, wx.EXPAND, 0)
+
+        sizer_blacklevel = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(sizer_blacklevel, 0, wx.EXPAND, 0)
+
+        label_blacklevel = wx.StaticText(self, wx.ID_ANY, _("Black-Level"))
+        label_blacklevel.SetMinSize((70, -1))
+        sizer_blacklevel.Add(label_blacklevel, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.slider_blacklevel = wx.Slider(
+            self, wx.ID_ANY, 50, 0, 100, style=wx.SL_HORIZONTAL | wx.SL_LABELS
+        )
+        self.slider_blacklevel.SetToolTip(_("Establish when 'black' starts"))
+        sizer_blacklevel.Add(self.slider_blacklevel, 1, wx.EXPAND, 0)
+
+        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_options.Add(sizer_buttons, 1, wx.EXPAND, 0)
+
+        self.button_vector = wx.Button(self, wx.ID_ANY, _("Vectorize"))
+        sizer_buttons.Add(self.button_vector, 0, 0, 0)
+
+        label_spacer = wx.StaticText(self, wx.ID_ANY, " ")
+        sizer_buttons.Add(label_spacer, 1, 0, 0)
+
+        self.check_generate = wx.CheckBox(self, wx.ID_ANY, _("Generate Preview"))
+        self.check_generate.SetToolTip(_("Autogenerate a preview of the result"))
+        sizer_buttons.Add(self.check_generate, 0, 0, 0)
+
+        sizer_preview = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Preview")), wx.VERTICAL
+        )
+        main_sizer.Add(sizer_preview, 2, wx.EXPAND, 0)
+
+        self.bitmap_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
+        sizer_preview.Add(self.bitmap_preview, 1, wx.EXPAND, 0)
+
+        self.vector_preview = wx.StaticBitmap(self, wx.ID_ANY, wx.NullBitmap)
+        sizer_preview.Add(self.vector_preview, 1, wx.EXPAND, 0)
+
+        self.SetSizer(main_sizer)
+        main_sizer.Fit(self)
+
+        self._preview = True
+        self._need_updates = False
+
+        self.check_generate.SetValue(self._preview)
+
+        self.wximage = wx.NullBitmap
+        self.wxvector = wx.NullBitmap
+        self._visible = False
+
         self.Layout()
         self.Centre()
+        self.Bind(wx.EVT_BUTTON, self.on_button_create, self.button_vector)
+        self.Bind(wx.EVT_CHECKBOX, self.on_check_preview, self.check_generate)
+        self.Bind(wx.EVT_SIZE, self.on_size)
+        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_alphamax)
+        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_blacklevel)
+        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_tolerance)
+        self.Bind(wx.EVT_SLIDER, self.on_changes, self.slider_turdsize)
+        self.Bind(wx.EVT_COMBOBOX, self.on_changes, self.combo_turnpolicy)
+        self.stop = None
+        self._update_thread = self.context.threaded(
+                self.generate_preview, result=self.stop, daemon=True
+            )
+
         self.set_widgets(node)
+
+    def on_check_preview(self, event):
+        self._preview = self.check_generate.GetValue()
+
+    def on_size(self, event):
+        self.set_images(True)
+
+    def pane_active(self):
+        self._visible = True
+        self.set_images(True)
+
+    def pane_deactive(self):
+        self._visible = False
+
+    def on_changes(self, event):
+        self._need_updates = True
+
+    def on_button_create(self, event):
+        ipolicy = self.combo_turnpolicy.GetSelection()
+        turnpolicy = self.turn_choices[ipolicy].lower()
+        # slider 0 .. 10 translate to 0 .. 10
+        turdsize = self.slider_turdsize.GetValue()
+        # slider 0 .. 100 translate to 0 .. 1
+        blacklevel = (
+            self.slider_blacklevel.GetValue() / self.slider_blacklevel.GetMax() * 1.0
+        )
+        # slider 0 .. 150 translate to 0 .. 1.5
+        opttolerance = (
+            self.slider_tolerance.GetValue() / self.slider_tolerance.GetMax() * 1.5
+        )
+        # slider 0 .. 12 translate to 0 .. 1.333
+        alphamax = (
+            self.slider_alphamax.GetValue() / self.slider_alphamax.GetMax() * 4.0 / 3.0
+        )
+        opticurve = self.check_opticurve.GetValue()
+        cmd = f"vectorize -z {turnpolicy} -t {turdsize} -a {alphamax}{' -n' if opticurve else ''} -O {opttolerance} -k {blacklevel}\n"
+        self.context(cmd)
+
+    def set_images(self, refresh=False):
+        if not self._visible:
+            return
+        if self.node is None or self.node.image is None:
+            self.wximage = wx.NullBitmap
+        else:
+            if refresh:
+                pw, ph = self.bitmap_preview.GetSize()
+                iw, ih = self.node.image.size
+                wfac = pw / iw
+                hfac = ph / ih
+                # The smaller of the two decide how to scale the picture
+                if wfac < hfac:
+                    factor = wfac
+                else:
+                    factor = hfac
+                # print (f"Window: {pw} x {ph}, Image= {iw} x {ih}, factor={factor:.3f}")
+                if factor < 1.0:
+                    image = self.node.opaque_image.resize((int(iw * factor), int(ih * factor)))
+                else:
+                    image = self.node.opaque_image
+                self.wximage = self.img_2_wx(image)
+
+        self.bitmap_preview.SetBitmap(self.wximage)
+
+    def generate_preview(self):
+        while self.alive:
+            if not self._visible:
+                wx.Sleep(0.05)
+            if not self._preview:
+                wx.Sleep(0.05)
+            while self._need_updates:
+                self.wxvector = wx.NullBitmap
+                with self.vector_lock:
+
+                    if self._preview and self.node is not None and self.node.image is not None:
+                        make_vector = self.context.kernel.lookup("render-op/make_vector")
+                        make_raster = self.context.kernel.lookup("render-op/make_raster")
+                        if make_vector is None or make_raster is None:
+                            return
+                        matrix = self.node.matrix
+                        image = self.node.opaque_image
+                        ipolicy = self.combo_turnpolicy.GetSelection()
+                        # turnpolicy = self.turn_choices[ipolicy].lower()
+                        # slider 0 .. 10 translate to 0 .. 10
+                        turdsize = self.slider_turdsize.GetValue()
+                        # slider 0 .. 100 translate to 0 .. 1
+                        blacklevel = (
+                            self.slider_blacklevel.GetValue()
+                            / self.slider_blacklevel.GetMax()
+                            * 1.0
+                        )
+                        # slider 0 .. 150 translate to 0 .. 1.5
+                        opttolerance = (
+                            self.slider_tolerance.GetValue() / self.slider_tolerance.GetMax() * 1.5
+                        )
+                        # slider 0 .. 12 translate to 0 .. 1.333
+                        alphamax = (
+                            self.slider_alphamax.GetValue()
+                            / self.slider_alphamax.GetMax()
+                            * 4.0
+                            / 3.0
+                        )
+                        opticurve = self.check_opticurve.GetValue()
+                        bounds = self.node.paint_bounds
+                        if bounds is None:
+                            bounds = self.node.bounds
+                        if bounds is None:
+                            return
+                        xmin, ymin, xmax, ymax = bounds
+                        width = xmax - xmin
+                        height = ymax - ymin
+                        dpi = 500
+                        dots_per_units = dpi / UNITS_PER_INCH
+                        new_width = width * dots_per_units
+                        new_height = height * dots_per_units
+                        new_height = max(new_height, 1)
+                        new_width = max(new_width, 1)
+
+                        image = make_raster(
+                            self.node,
+                            bounds=bounds,
+                            width=new_width,
+                            height=new_height,
+                        )
+                        try:
+                            path = make_vector(
+                                image=image,
+                                interpolationpolicy=ipolicy,
+                                turdsize=turdsize,
+                                alphamax=alphamax,
+                                opticurve=opticurve,
+                                opttolerance=opttolerance,
+                                blacklevel=blacklevel,
+                            )
+                        except:
+                            return
+                        path.transform *= Matrix(matrix)
+                        dummynode = PathNode(
+                            path=abs(path),
+                            stroke_width=0,
+                            stroke_scaled=False,
+                            fillrule=0,   # Fillrule.FILLRULE_NONZERO
+                        )
+                        if dummynode is None:
+                            return
+                        bounds = dummynode.paint_bounds
+                        if bounds is None:
+                            bounds = dummynode.bounds
+                        if bounds is None:
+                            return
+                        pw, ph = self.vector_preview.GetSize()
+                        iw, ih = self.node.image.size
+                        wfac = pw / iw
+                        hfac = ph / ih
+                        # The smaller of the two decide how to scale the picture
+                        if wfac < hfac:
+                            factor = wfac
+                        else:
+                            factor = hfac
+                        image = make_raster(
+                            dummynode,
+                            bounds,
+                            width=pw,
+                            height=ph,
+                            keep_ratio=True,
+                        )
+                        rw, rh  = image.size
+                        # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
+                        # if factor < 1.0:
+                        #     image = image.resize((int(iw * factor), int(ih * factor)))
+                        self.wxvector = self.img_2_wx(image)
+
+                    self.vector_preview.SetBitmap(self.wxvector)
+                    self._need_updates = False
 
     @staticmethod
     def accepts(node):
-        return False
         if node.type == "elem image":
             return True
         return False
 
+    def img_2_wx(self, image):
+        width, height = image.size
+        newimage = image.convert("RGB")
+        return wx.Bitmap.FromBuffer(width, height, newimage.tobytes())
+
     def set_widgets(self, node=None):
         self.node = node
-        if node is None:
-            return
+        if node is not None:
+            self._need_updates = True
+        self.set_images()
 
 
 class ImagePropertyPanel(ScrolledPanel):
