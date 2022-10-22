@@ -365,14 +365,14 @@ class ViewPort:
         @return:
         """
         ops = []
-        _offset_x = self.unit_width * (self.origin_x - self.show_origin_x)
-        _offset_y = self.unit_height * (self.origin_y - self.show_origin_y)
-        if _offset_x != 0 or _offset_y != 0:
-            ops.append(f"translate({_offset_x:.13f}, {_offset_y:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
+        dx = self.unit_width * self.show_origin_x
+        dy = self.unit_height * self.show_origin_y
+        if dx != 0 or dy != 0:
+            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:
             ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)

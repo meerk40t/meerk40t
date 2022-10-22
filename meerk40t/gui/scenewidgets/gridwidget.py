@@ -122,8 +122,6 @@ class GridWidget(Widget):
             return
         start_time = time()
         p = self.scene.context
-        units_width = float(p.device.unit_width)
-        units_height = float(p.device.unit_height)
         starts = []
         ends = []
         starts2 = []
@@ -131,9 +129,6 @@ class GridWidget(Widget):
         # Primary grid
         self.zero_x = p.device.unit_width * p.device.show_origin_x
         self.zero_y = p.device.unit_height * p.device.show_origin_y
-        # Just a reminder:
-        # show_origin_x decides the zero for x,
-        # flip_x is inverting the direction of the axis not the origin!
 
         # We could be way too high
         start_x = self.zero_x
@@ -278,13 +273,10 @@ class GridWidget(Widget):
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
-        points = self.scene.tick_distance * scaled_conversion
-
         p = self.scene.context
 
         self.sx = p.device.unit_width * p.device.show_origin_x
         self.sy = p.device.unit_height * p.device.show_origin_y
-
         if self.scene.grid_secondary_cx is None:
             self.sx2 = self.sx
         else:

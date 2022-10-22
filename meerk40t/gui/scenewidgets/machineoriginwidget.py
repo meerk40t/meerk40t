@@ -35,13 +35,13 @@ class MachineOriginWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
             margin = 5000
             context = self.scene.context
-            x, y = context.device.device_to_scene_position(0, 0)
-            x_dx, x_dy = context.device.device_to_scene_position(500, 0)
-            xa1_dx, xa1_dy = context.device.device_to_scene_position(450, 50)
-            xa2_dx, xa2_dy = context.device.device_to_scene_position(450, -50)
-            y_dx, y_dy = context.device.device_to_scene_position(0, 500)
-            ya1_dx, ya1_dy = context.device.device_to_scene_position(50, 450)
-            ya2_dx, ya2_dy = context.device.device_to_scene_position(-50, 450)
+            x, y = context.device.show_to_scene_position(0, 0)
+            x_dx, x_dy = context.device.show_to_scene_position(50000, 0)
+            xa1_dx, xa1_dy = context.device.show_to_scene_position(45000, 5000)
+            xa2_dx, xa2_dy = context.device.show_to_scene_position(45000, -5000)
+            y_dx, y_dy = context.device.show_to_scene_position(0, 50000)
+            ya1_dx, ya1_dy = context.device.show_to_scene_position(5000, 45000)
+            ya2_dx, ya2_dy = context.device.show_to_scene_position(-5000, 45000)
             gc.SetBrush(self.brush)
             gc.DrawRectangle(x - margin, y - margin, margin * 2, margin * 2)
             gc.SetBrush(wx.NullBrush)
