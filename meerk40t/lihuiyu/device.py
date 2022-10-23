@@ -1447,7 +1447,6 @@ class LihuiyuDriver(Parameters):
         if self.plot_data is None:
             return False
         for x, y, on in self.plot_data:
-            self.current_steps += 1
             while self.hold_work(0):
                 time.sleep(0.05)
             sx = self.native_x
