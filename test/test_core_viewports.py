@@ -30,10 +30,8 @@ class TestViewport(unittest.TestCase):
 
             x, y = view.scene_to_device_position(0, 0)
             x, y = view.device_to_scene_position(x, y)
-            self.assertGreaterEqual(x, -10)
-            self.assertGreaterEqual(10, x)
-            self.assertGreaterEqual(y, -10)
-            self.assertGreaterEqual(10, y)
+            self.assertAlmostEqual(x, 0, delta=10)
+            self.assertAlmostEqual(y, 0, delta=10)
 
     def test_viewport_lihuiyu_user_scale(self):
         """
@@ -55,30 +53,22 @@ class TestViewport(unittest.TestCase):
             origin_y=0,
         )
         x, y = view.scene_to_device_position(0, 0)
-        self.assertGreaterEqual(x, -1)
-        self.assertGreaterEqual(1, x)
-        self.assertGreaterEqual(y, -1)
-        self.assertGreaterEqual(1, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.scene_to_device_position(0, 0)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.device_to_scene_position(0, Length(bed_height).mil)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, float(Length(bed_height)) - 10)
-        self.assertGreaterEqual(float(Length(bed_height)) + 10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, float(Length(bed_height)), delta=10)
 
         x, y = view.device_to_scene_position(
             Length(bed_width).mil, Length(bed_height).mil
         )
-        self.assertGreaterEqual(x, float(Length(bed_width)) * 1.2 - 10)
-        self.assertGreaterEqual(float(Length(bed_width)) * 1.2 + 10, x)
-        self.assertGreaterEqual(y, float(Length(bed_height)) - 10)
-        self.assertGreaterEqual(float(Length(bed_height)) + 10, y)
+        self.assertAlmostEqual(x, float(Length(bed_width)) * 1.2, delta=10)
+        self.assertAlmostEqual(y, float(Length(bed_height)), delta=10)
 
     def test_viewport_lihuiyu_swap_xy(self):
         """
@@ -101,30 +91,22 @@ class TestViewport(unittest.TestCase):
             swap_xy=True,
         )
         x, y = view.scene_to_device_position(0, 0)
-        self.assertGreaterEqual(x, -1)
-        self.assertGreaterEqual(1, x)
-        self.assertGreaterEqual(y, -1)
-        self.assertGreaterEqual(1, y)
+        self.assertAlmostEqual(x, 0, delta=2)
+        self.assertAlmostEqual(y, 0, delta=2)
 
         x, y = view.scene_to_device_position(0, 0)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.device_to_scene_position(0, Length(bed_height).mil)
-        self.assertGreaterEqual(x, float(Length(bed_height)) - 10)
-        self.assertGreaterEqual(float(Length(bed_height)) + 10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+        self.assertAlmostEqual(x, float(Length(bed_height)), delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.device_to_scene_position(
             Length(bed_width).mil, Length(bed_height).mil
         )
-        self.assertGreaterEqual(x, float(Length(bed_height)) - 10)
-        self.assertGreaterEqual(float(Length(bed_height)) + 10, x)
-        self.assertGreaterEqual(y, float(Length(bed_width)) * 1.2 - 10)
-        self.assertGreaterEqual(float(Length(bed_width)) * 1.2 + 10, y)
+        self.assertAlmostEqual(x, float(Length(bed_height)), delta=10)
+        self.assertAlmostEqual(y, float(Length(bed_width)) * 1.2, delta=10)
 
     def test_viewport_grbl(self):
         """
@@ -144,22 +126,16 @@ class TestViewport(unittest.TestCase):
             flip_y=True,
         )
         x, y = view.scene_to_device_position(0, 0)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, Length(bed_size).mil - 10)
-        self.assertGreaterEqual(Length(bed_size).mil + 10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, Length(bed_size).mil, delta=10)
 
         x, y = view.scene_to_device_position(0, float(Length(bed_size)))
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.device_to_scene_position(0, Length(bed_size).mil)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
     def test_viewport_grbl_user_scale(self):
         """
@@ -181,209 +157,102 @@ class TestViewport(unittest.TestCase):
             flip_y=True,
         )
         x, y = view.scene_to_device_position(0, 0)
-        self.assertGreaterEqual(x, -1)
-        self.assertGreaterEqual(1, x)
-        self.assertGreaterEqual(y, Length(bed_size).mm - 1)
-        self.assertGreaterEqual(Length(bed_size).mm + 1, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, Length(bed_size).mm, delta=1)
 
         x, y = view.scene_to_device_position(0, float(Length(bed_size)))
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
         x, y = view.device_to_scene_position(0, Length(bed_size).mm)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+        self.assertAlmostEqual(x, 0, delta=10)
+        self.assertAlmostEqual(y, 0, delta=10)
 
-    def test_viewport_balor(self):
+    def test_viewport_balor_device_to_scene(self):
         """
         Test Balor-esque viewport.
-        Center x, y.
+        Center x, y. normal_x/flip_x, normal_y/flip_y, swap and non-linear
+
+        Device to show position.
 
         :return:
         """
-        lens_size = "110mm"
-        unit_size = float(Length(lens_size))
+        lens_size_x = "110mm"
+        lens_size_y = "100mm"  # 10mm less
+        unit_size_x = float(Length(lens_size_x))
+        unit_size_y = float(Length(lens_size_y))
         galvo_range = 0xFFFF
-        units_per_galvo = unit_size / galvo_range
+        units_per_galvo_x = unit_size_x / galvo_range
+        units_per_galvo_y = unit_size_y / galvo_range
 
-        flip_x = False
-        flip_y = False
-        view = ViewPort(
-            lens_size,
-            lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
-            origin_x=1.0 if flip_x else 0.0,
-            origin_y=1.0 if flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
-            flip_x=flip_x,
-            flip_y=flip_y,
-        )
+        for flip_x in (False, True):
+            for flip_y in (False, True):
+                for swap_xy in (False, True):
+                    view = ViewPort(
+                        lens_size_x,
+                        lens_size_y,
+                        native_scale_x=units_per_galvo_x,
+                        native_scale_y=units_per_galvo_y,
+                        origin_x=1.0 if flip_x else 0.0,
+                        origin_y=1.0 if flip_y else 0.0,
+                        show_origin_x=0.5,
+                        show_origin_y=0.5,
+                        flip_x=flip_x,
+                        flip_y=flip_y,
+                        swap_xy=swap_xy,
+                    )
+                    sx, sy = view.device_to_scene_position(0x7FFF, 0x7FFF)
+                    if swap_xy:
+                        self.assertAlmostEqual(sx, unit_size_y / 2, delta=10)
+                        self.assertAlmostEqual(sy, unit_size_x / 2, delta=10)
+                    else:
+                        self.assertAlmostEqual(sx, unit_size_x / 2, delta=10)
+                        self.assertAlmostEqual(sy, unit_size_y / 2, delta=10)
+                    vx, vy = view.physical_to_device_position("50%", "50%")
+                    self.assertAlmostEqual(vx, 0x7FFF, delta=10)
+                    self.assertAlmostEqual(vy, 0x7FFF, delta=10)
 
-        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
-
-        hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertAlmostEqual(hx, 0)
-        self.assertAlmostEqual(hy, 0)
-
-        sx, sy = view.device_to_scene_position(0, 0)
-        self.assertAlmostEqual(sx, 0)
-        self.assertAlmostEqual(sy, 0)
-
-        cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
-        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertAlmostEqual(cx, qx)
-        self.assertAlmostEqual(cy, qy)
-
-    def test_viewport_balor_flip_y(self):
+    def test_viewport_balor_device_to_show(self):
         """
         Test Balor-esque viewport.
-        Center x, y. flip_y
+        Center x, y. normal_x/flip_x, normal_y/flip_y, swap and non-linear
+
+        Device to show position.
 
         :return:
         """
-        lens_size = "110mm"
-        unit_size = float(Length(lens_size))
+        lens_size_x = "110mm"
+        lens_size_y = "100mm"  # 10mm less
+        unit_size_x = float(Length(lens_size_x))
+        unit_size_y = float(Length(lens_size_y))
         galvo_range = 0xFFFF
-        units_per_galvo = unit_size / galvo_range
+        units_per_galvo_x = unit_size_x / galvo_range
+        units_per_galvo_y = unit_size_y / galvo_range
 
-        flip_x = False
-        flip_y = True
-        view = ViewPort(
-            lens_size,
-            lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
-            origin_x=1.0 if flip_x else 0.0,
-            origin_y=1.0 if flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
-            flip_x=flip_x,
-            flip_y=flip_y,
-        )
+        for flip_x in (False, True):
+            for flip_y in (False, True):
+                for swap_xy in (False, True):
+                    view = ViewPort(
+                        lens_size_x,
+                        lens_size_y,
+                        native_scale_x=units_per_galvo_x,
+                        native_scale_y=units_per_galvo_y,
+                        origin_x=1.0 if flip_x else 0.0,
+                        origin_y=1.0 if flip_y else 0.0,
+                        show_origin_x=0.5,
+                        show_origin_y=0.5,
+                        flip_x=flip_x,
+                        flip_y=flip_y,
+                        swap_xy=swap_xy,
+                    )
+                    x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
+                    self.assertAlmostEqual(x, 0, delta=10)
+                    self.assertAlmostEqual(y, 0, delta=10)
+                    x, y = view.show_to_device_position(0, 0)
+                    self.assertAlmostEqual(x, 0x7FFF, delta=10)
+                    self.assertAlmostEqual(y, 0x7FFF, delta=10)
 
-        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
-
-        hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertAlmostEqual(hx, 0)
-        self.assertAlmostEqual(hy, 0)
-
-        sx, sy = view.device_to_scene_position(0, 0)
-        self.assertAlmostEqual(sx, 0)
-        self.assertAlmostEqual(sy, view.unit_height)
-
-        cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
-        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertAlmostEqual(cx, qx)
-        self.assertAlmostEqual(cy, qy)
-
-    def test_viewport_balor_flip_x(self):
-        """
-        Test Balor-esque viewport.
-        Center x, y. flip_x, flip_y and swap
-
-        :return:
-        """
-        lens_size = "110mm"
-        unit_size = float(Length(lens_size))
-        galvo_range = 0xFFFF
-        units_per_galvo = unit_size / galvo_range
-
-        flip_x = True
-        flip_y = False
-        view = ViewPort(
-            lens_size,
-            lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
-            origin_x=1.0 if flip_x else 0.0,
-            origin_y=1.0 if flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
-            flip_x=flip_x,
-            flip_y=flip_y,
-        )
-
-        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
-
-        hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertAlmostEqual(hx, 0)
-        self.assertAlmostEqual(hy, 0)
-
-        sx, sy = view.device_to_scene_position(0, 0)
-        self.assertAlmostEqual(sx, view.unit_width)
-        self.assertAlmostEqual(sy, 0)
-
-        cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
-        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertAlmostEqual(cx, qx)
-        self.assertAlmostEqual(cy, qy)
-
-    def test_viewport_balor_flip_xy_swap(self):
-        """
-        Test Balor-esque viewport.
-        Center x, y. flip_x
-
-        :return:
-        """
-        lens_size = "110mm"
-        unit_size = float(Length(lens_size))
-        galvo_range = 0xFFFF
-        units_per_galvo = unit_size / galvo_range
-
-        flip_x = True
-        flip_y = True
-        view = ViewPort(
-            lens_size,
-            lens_size,
-            native_scale_x=units_per_galvo,
-            native_scale_y=units_per_galvo,
-            origin_x=1.0 if flip_x else 0.0,
-            origin_y=1.0 if flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
-            flip_x=flip_x,
-            flip_y=flip_y,
-            swap_xy=True,
-        )
-
-        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
-
-        hx, hy = view.physical_to_show_position("55mm", "55mm")
-        self.assertAlmostEqual(hx, 0)
-        self.assertAlmostEqual(hy, 0)
-
-        sx, sy = view.device_to_scene_position(0, 0)
-        self.assertAlmostEqual(sx, view.unit_height)  # Swap_XY
-        self.assertAlmostEqual(sy, view.unit_width)
-
-        cx, cy = view.physical_to_scene_position("-55mm", "-55mm")  # Offset half/bed
-        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertAlmostEqual(cx, qx)
-        self.assertAlmostEqual(cy, qy)
-
-    def test_viewport_balor_flip_xy_swap_nonlinear(self):
+    def test_viewport_balor_physical_to_show(self):
         """
         Test Balor-esque viewport.
         Center x, y. flip_x, flip_y, swap and offset
@@ -398,37 +267,71 @@ class TestViewport(unittest.TestCase):
         units_per_galvo_x = unit_size_x / galvo_range
         units_per_galvo_y = unit_size_y / galvo_range
 
-        flip_x = True
-        flip_y = True
-        view = ViewPort(
-            lens_size_x,
-            lens_size_y,
-            native_scale_x=units_per_galvo_x,
-            native_scale_y=units_per_galvo_y,
-            origin_x=1.0 if flip_x else 0.0,
-            origin_y=1.0 if flip_y else 0.0,
-            show_origin_x=0.5,
-            show_origin_y=0.5,
-            flip_x=flip_x,
-            flip_y=flip_y,
-            swap_xy=True,
-        )
+        for flip_x in (False, True):
+            for flip_y in (False, True):
+                for swap_xy in (False, True):
+                    view = ViewPort(
+                        lens_size_x,
+                        lens_size_y,
+                        native_scale_x=units_per_galvo_x,
+                        native_scale_y=units_per_galvo_y,
+                        origin_x=1.0 if flip_x else 0.0,
+                        origin_y=1.0 if flip_y else 0.0,
+                        show_origin_x=0.5,
+                        show_origin_y=0.5,
+                        flip_x=flip_x,
+                        flip_y=flip_y,
+                        swap_xy=swap_xy,
+                    )
+                    hx, hy = view.physical_to_show_position("55mm", "50mm")
+                    self.assertAlmostEqual(hx, 0)
+                    self.assertAlmostEqual(hy, 0)
 
-        x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
-        self.assertGreaterEqual(x, -10)
-        self.assertGreaterEqual(10, x)
-        self.assertGreaterEqual(y, -10)
-        self.assertGreaterEqual(10, y)
+    def test_viewport_balor_physical_to_scene(self):
+        """
+        Test Balor-esque viewport.
+        Center x, y. flip_x, flip_y, swap and offset
 
-        hx, hy = view.physical_to_show_position("50mm", "55mm")
-        self.assertAlmostEqual(hx, 0)
-        self.assertAlmostEqual(hy, 0)
+        :return:
+        """
+        lens_size_x = "110mm"
+        lens_size_y = "100mm"  # 10mm less
+        unit_size_x = float(Length(lens_size_x))
+        unit_size_y = float(Length(lens_size_y))
+        galvo_range = 0xFFFF
+        units_per_galvo_x = unit_size_x / galvo_range
+        units_per_galvo_y = unit_size_y / galvo_range
 
-        sx, sy = view.device_to_scene_position(0, 0)
-        self.assertAlmostEqual(sx, view.unit_height)
-        self.assertAlmostEqual(sy, view.unit_width)
+        for flip_x in (False, True):
+            for flip_y in (False, True):
+                for swap_xy in (False, True):
+                    view = ViewPort(
+                        lens_size_x,
+                        lens_size_y,
+                        native_scale_x=units_per_galvo_x,
+                        native_scale_y=units_per_galvo_y,
+                        origin_x=1.0 if flip_x else 0.0,
+                        origin_y=1.0 if flip_y else 0.0,
+                        show_origin_x=0.5,
+                        show_origin_y=0.5,
+                        flip_x=flip_x,
+                        flip_y=flip_y,
+                        swap_xy=swap_xy,
+                    )
+                    sx, sy = view.physical_to_scene_position("50%", "50%")
 
-        cx, cy = view.physical_to_scene_position("-55mm", "-50mm")  # Offset half/bed
-        qx, qy = view.device_to_show_position(0, 0)  # Upper Left Corner.
-        self.assertAlmostEqual(cx, qx)
-        self.assertAlmostEqual(cy, qy)
+                    dim0 = view.unit_width / 2
+                    dim1 = view.unit_height / 2
+                    if swap_xy:
+                        self.assertAlmostEqual(sx, dim1)
+                        self.assertAlmostEqual(sy, dim0)
+                    else:
+                        self.assertAlmostEqual(sx, dim0)
+                        self.assertAlmostEqual(sy, dim1)
+
+                    cx, cy = view.device_to_scene_position(0x7FFF, 0x7FFF)
+                    self.assertAlmostEqual(sx, cx, delta=10)
+                    self.assertAlmostEqual(sy, cy, delta=10)
+
+
+

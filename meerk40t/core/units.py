@@ -152,6 +152,8 @@ class ViewPort:
         """
         unit_x = Length(x, relative_length=self._width, unitless=unitless).units
         unit_y = Length(y, relative_length=self._height, unitless=unitless).units
+        if self.swap_xy:
+            return unit_y, unit_x
         return unit_x, unit_y
 
     def physical_to_show_position(self, x, y, unitless=1):
@@ -343,15 +345,15 @@ class ViewPort:
 
         @return:
         """
+        sx = self.user_scale_x * self.native_scale_x
+        sy = self.user_scale_y * self.native_scale_y
+        dx = self.unit_width * self.origin_x
+        dy = self.unit_height * self.origin_y
         ops = []
-        _scale_x = self.user_scale_x * self.native_scale_x
-        _scale_y = self.user_scale_y * self.native_scale_y
-        if _scale_x != 1.0 or _scale_y != 1.0:
-            ops.append(f"scale({1.0 / _scale_x:.13f}, {1.0 / _scale_y:.13f})")
-        _offset_x = self.unit_width * self.origin_x
-        _offset_y = self.unit_height * self.origin_y
-        if _offset_x != 0 or _offset_y != 0:
-            ops.append(f"translate({_offset_x:.13f}, {_offset_y:.13f})")
+        if sx != 1.0 or sy != 1.0:
+            ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+        if dx != 0 or dy != 0:
+            ops.append(f"translate({dx:.13f}, {dy:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
@@ -364,13 +366,13 @@ class ViewPort:
         """
         @return:
         """
-        ops = []
-        if self.flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if self.flip_x:
-            ops.append("scale(-1.0, 1.0)")
         dx = self.unit_width * self.show_origin_x
         dy = self.unit_height * self.show_origin_y
+        ops = []
+        if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
+        if self.flip_y:
+            ops.append("scale(1.0, -1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:
