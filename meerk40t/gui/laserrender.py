@@ -661,6 +661,8 @@ class LaserRender:
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
+        if node is None:
+            return
         text = node.text
         if text is None or text == "":
             return
@@ -696,7 +698,7 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(text, node)
+            text = self.context.elements.wordlist_translate(text, elemnode=node)
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
@@ -791,7 +793,7 @@ class LaserRender:
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
             text = self.context.elements.wordlist_translate(
-                node.text, node, increment=False
+                node.text, elemnode=node, increment=False
             )
             node.bounds_with_variables_translated = True
         else:
