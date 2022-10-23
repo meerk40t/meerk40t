@@ -63,6 +63,8 @@ class PointNode(Node):
         self.set_dirty_bounds()
 
     def bbox(self, transformed=True, with_stroke=False):
+        if self.point is None:
+            return None
         p = self.matrix.point_in_matrix_space(self.point)
         return p[0], p[1], p[0], p[1]
 
