@@ -3979,10 +3979,10 @@ class Elemental(Service):
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
-            bounds_regular = Node.union_bounds(data)
             bounds = Node.union_bounds(data, attr="paint_bounds")
-            for idx in range(4):
-                print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds_regular[idx]:.2f}")
+            # bounds_regular = Node.union_bounds(data)
+            # for idx in range(4):
+            #     print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds_regular[idx]:.2f}")
             if bounds is None:
                 return
             xmin, ymin, xmax, ymax = bounds
