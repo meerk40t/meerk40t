@@ -20,6 +20,7 @@ class MoshiConfigurationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.parent = args[0]
         self.choices = self.context.lookup("choices", "bed_dim")
         self.panel_pref1 = ChoicePropertyPanel(
             self,
@@ -32,7 +33,12 @@ class MoshiConfigurationPanel(ScrolledPanel):
         self.SetSizer(sizer_main)
         self.Layout()
         self.SetupScrolling()
+        self.parent.add_module_delegate(self.panel_pref1)
+
         # end wxGlade
+
+    def delegates(self):
+        yield self.panel_pref1
 
     def pane_show(self):
         return
@@ -66,7 +72,7 @@ class MoshiDriverGui(MWindow):
         self.panels = []
 
         panel_config = MoshiConfigurationPanel(
-            self.notebook_main, wx.ID_ANY, context=self.context
+            self, wx.ID_ANY, context=self.context
         )
 
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
