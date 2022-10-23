@@ -277,6 +277,7 @@ def plugin(kernel, lifecycle):
                 if hasattr(outlinenode, "fill"):
                     outlinenode.fill = None
                 outlinenode.stroke = Color("black")
+                outlinenode.altered()
                 data.append(outlinenode)
 
             # Make sure they have the right size by adding a dummy node to it...
@@ -287,6 +288,7 @@ def plugin(kernel, lifecycle):
                 masknode.fill = Color("black")
             if hasattr(masknode, "stroke"):
                 masknode.stroke = Color("black")
+                masknode.altered()
             elemimage, elemmatrix = create_image(data, total_bounds, dpi)
             maskimage, maskmatrix = create_image(maskdata, total_bounds, dpi)
             if not invert:

@@ -3954,6 +3954,7 @@ class Elemental(Service):
             node = self.elem_branch.add(shape=poly_path, type="elem polyline")
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -3978,8 +3979,10 @@ class Elemental(Service):
             if not make_raster:
                 channel(_("No renderer is registered to perform render."))
                 return
-
             bounds = Node.union_bounds(data, attr="paint_bounds")
+            # bounds_regular = Node.union_bounds(data)
+            # for idx in range(4):
+            #     print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds_regular[idx]:.2f}")
             if bounds is None:
                 return
             xmin, ymin, xmax, ymax = bounds
@@ -4223,6 +4226,7 @@ class Elemental(Service):
             node = self.elem_branch.add(shape=circ, type="elem ellipse")
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4253,6 +4257,7 @@ class Elemental(Service):
             node = self.elem_branch.add(shape=ellip, type="elem ellipse")
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4311,6 +4316,7 @@ class Elemental(Service):
             node = self.elem_branch.add(shape=rect, type="elem rect")
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4336,6 +4342,7 @@ class Elemental(Service):
             simple_line = SimpleLine(x0, y0, x1, y1)
             node = self.elem_branch.add(shape=simple_line, type="elem line")
             node.stroke = self.default_stroke
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4365,6 +4372,7 @@ class Elemental(Service):
             node.font_size = size
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4436,6 +4444,7 @@ class Elemental(Service):
             node = self.elem_branch.add(shape=shape, type="elem polyline")
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -4581,6 +4590,7 @@ class Elemental(Service):
             node = self.elem_branch.add(path=path, type="elem path")
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if data is None:
@@ -5174,6 +5184,7 @@ class Elemental(Service):
             _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
             node = self.elem_branch.add(shape=_element, type="elem path")
             node.stroke = Color("red")
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             if self.classify_new:
@@ -6721,6 +6732,7 @@ class Elemental(Service):
             node = self.elem_branch.add(shape=shape, type="elem polyline")
             node.stroke = self.default_stroke
             node.fill = self.default_fill
+            node.altered()
             self.set_emphasis([node])
             node.focus()
             data.append(node)
