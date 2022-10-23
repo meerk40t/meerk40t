@@ -39,6 +39,7 @@ class FormatterPanel(wx.Panel):
         # begin wxGlade: PassesPanel.__init__
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
+        self.parent = args[0]
         self.context = context
         self.data = {}
         images = {
@@ -138,6 +139,7 @@ class FormatterPanel(wx.Panel):
         main_sizer.Add(patternpanel, 1, wx.EXPAND, 0)
         self.SetSizer(main_sizer)
         self.Layout()
+        self.parent.add_module_delegate(patternpanel)
 
         self.update_widgets()
 
