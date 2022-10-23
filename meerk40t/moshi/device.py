@@ -435,9 +435,6 @@ class MoshiDriver(Parameters):
         self.hold = False
         self.paused = False
 
-        self.current_steps = 0
-        self.total_steps = 0
-
         self.service._buffer_size = 0
 
         self.preferred_offset_x = 0
@@ -495,43 +492,6 @@ class MoshiDriver(Parameters):
 
         @return:
         """
-        self.current_steps = 0
-        self.total_steps = 0
-        skip_calc = True
-        if not skip_calc:
-            # preprocess queue to establish steps
-            assessment_start = time.time()
-            dummy_planner = PlotPlanner(self.settings)
-            for q in self.queue:
-                if isinstance(q, LineCut):
-                    self.total_steps += 1
-                elif isinstance(q, (QuadCut, CubicCut)):
-                    interp = self.service.interpolate
-                    step_size = 1.0 / float(interp)
-                    t = step_size
-                    for p in range(int(interp)):
-                        self.total_steps += 1
-                        t += step_size
-                elif isinstance(q, WaitCut):
-                    self.total_steps += 1
-                elif isinstance(q, HomeCut):
-                    self.total_steps += 1
-                elif isinstance(q, GotoCut):
-                    self.total_steps += 1
-                elif isinstance(q, SetOriginCut):
-                    self.total_steps += 1
-                elif isinstance(q, DwellCut):
-                    self.total_steps += 1
-                    # Moshi cannot fire in place.
-                elif isinstance(q, (InputCut, OutputCut)):
-                    self.total_steps += 1
-                else:
-                    dummy_planner.push(q)
-                    dummy_data = list(dummy_planner.gen())
-                    self.total_steps += len(dummy_data)
-                    dummy_planner.clear()
-            # print ("Moshi-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
-
         for q in self.queue:
             x = self.native_x
             y = self.native_y
@@ -540,14 +500,12 @@ class MoshiDriver(Parameters):
                 self._goto_absolute(start_x, start_y, 0)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                self.current_steps += 1
                 self._goto_absolute(*q.end, 1)
             elif isinstance(q, (QuadCut, CubicCut)):
                 interp = self.service.interpolate
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
-                    self.current_steps += 1
                     while self.hold_work(0):
                         time.sleep(0.05)
                     self._goto_absolute(*q.point(t), 1)
@@ -555,16 +513,13 @@ class MoshiDriver(Parameters):
                 last_x, last_y = q.end
                 self._goto_absolute(last_x, last_y, 1)
             elif isinstance(q, HomeCut):
-                self.current_steps += 1
                 self.home()
             elif isinstance(q, GotoCut):
-                self.current_steps += 1
                 start = q.start
                 self._goto_absolute(
                     self.origin_x + start[0], self.origin_y + start[1], 0
                 )
             elif isinstance(q, SetOriginCut):
-                self.current_steps += 1
                 if q.set_current:
                     x = self.native_x
                     y = self.native_y
@@ -572,22 +527,19 @@ class MoshiDriver(Parameters):
                     x, y = q.start
                 self.set_origin(x, y)
             elif isinstance(q, WaitCut):
-                self.current_steps += 1
                 # Moshi has no forced wait functionality.
                 # self.wait_finish()
                 # self.wait(q.dwell_time)
+                pass
             elif isinstance(q, DwellCut):
-                self.current_steps += 1
                 # Moshi cannot fire in place.
                 pass
             elif isinstance(q, (InputCut, OutputCut)):
-                self.current_steps += 1
                 # Moshi has no core GPIO functionality
                 pass
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
-                    self.current_steps += 1
                     if self.hold_work(0):
                         time.sleep(0.05)
                         continue
@@ -633,8 +585,6 @@ class MoshiDriver(Parameters):
                         continue
                     self._goto_absolute(x, y, on & 1)
         self.queue.clear()
-        self.current_steps = 0
-        self.total_steps = 0
 
     def move_ori(self, x, y):
         """

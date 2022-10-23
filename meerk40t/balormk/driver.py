@@ -43,8 +43,6 @@ class BalorDriver:
         self.plot_planner.settings_then_jog = True
         self._aborting = False
         self._list_bits = None
-        self.current_steps = 0
-        self.total_steps = 0
 
     def __repr__(self):
         return f"BalorDriver({self.name})"
@@ -119,46 +117,7 @@ class BalorDriver:
 
         @return:
         """
-        self.current_steps = 0
-        self.total_steps = 0
         # preprocess queue to establish steps
-        skip_calc = True
-        if not skip_calc:
-            assessment_start = time.time()
-            dummy_planner = PlotPlanner(
-                dict(), single=True, smooth=False, ppi=False, shift=False, group=True
-            )
-            for q in self.queue:
-                if isinstance(q, LineCut):
-                    self.total_steps += 1
-                elif isinstance(q, (QuadCut, CubicCut)):
-                    interp = self.service.interpolate
-                    for p in range(int(interp)):
-                        self.total_steps += 1
-                elif isinstance(q, PlotCut):
-                    for x, y, on in q.plot[1:]:
-                        self.total_steps += 1
-                elif isinstance(q, DwellCut):
-                    self.total_steps += 1
-                elif isinstance(q, WaitCut):
-                    self.total_steps += 1
-                elif isinstance(q, HomeCut):
-                    self.total_steps += 1
-                elif isinstance(q, GotoCut):
-                    self.total_steps += 1
-                elif isinstance(q, SetOriginCut):
-                    self.total_steps += 1
-                elif isinstance(q, OutputCut):
-                    self.total_steps += 1
-                elif isinstance(q, InputCut):
-                    self.total_steps += 1
-                else:
-                    dummy_planner.push(q)
-                    dummy_data = list(dummy_planner.gen())
-                    self.total_steps += len(dummy_data)
-                    dummy_planner.clear()
-            # print ("Balor-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
-
         con = self.connection
         con._light_speed = None
         con._dark_speed = None
@@ -185,7 +144,6 @@ class BalorDriver:
                 self._aborting = False
                 return
             if isinstance(q, LineCut):
-                self.current_steps += 1
                 last_x, last_y = con.get_last_xy()
                 x, y = q.start
                 if last_x != x or last_y != y:
@@ -200,7 +158,6 @@ class BalorDriver:
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
-                    self.current_steps += 1
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -218,7 +175,6 @@ class BalorDriver:
                 if last_x != x or last_y != y:
                     con.goto(x, y)
                 for x, y, on in q.plot[1:]:
-                    self.current_steps += 1
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -252,7 +208,6 @@ class BalorDriver:
                             con.power(current_power * on)
                     con.mark(x, y)
             elif isinstance(q, DwellCut):
-                self.current_steps += 1
                 start = q.start
                 con.goto(start[0], start[1])
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
@@ -262,33 +217,27 @@ class BalorDriver:
                     dwell_time -= d
                 con.list_delay_time(int(self.service.delay_end / 10.0))
             elif isinstance(q, WaitCut):
-                self.current_steps += 1
                 dwell_time = q.dwell_time * 100  # Dwell time in ms units in 10 us
                 while dwell_time > 0:
                     d = min(dwell_time, 60000)
                     con.list_delay_time(int(d))
                     dwell_time -= d
             elif isinstance(q, HomeCut):
-                self.current_steps += 1
                 con.goto(0x8000, 0x8000)
             elif isinstance(q, GotoCut):
-                self.current_steps += 1
                 con.goto(0x8000, 0x8000)
             elif isinstance(q, SetOriginCut):
                 # Currently not supporting set origin cut.
-                self.current_steps += 1
+                pass
             elif isinstance(q, OutputCut):
-                self.current_steps += 1
                 con.port_set(q.output_mask, q.output_value)
                 con.list_write_port()
             elif isinstance(q, InputCut):
-                self.current_steps += 1
                 input_value = q.input_value
                 con.list_wait_for_input(input_value)
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
-                    self.current_steps += 1
                     # LOOP CHECKS
                     if self._aborting:
                         con.abort()
@@ -350,8 +299,6 @@ class BalorDriver:
                                 )
                                 con.power(current_power * on)
                         con.mark(x, y)
-        self.current_steps = 0
-        self.total_steps = 0
         con.list_delay_time(int(self.service.delay_end / 10.0))
         self._list_bits = None
         con.rapid_mode()

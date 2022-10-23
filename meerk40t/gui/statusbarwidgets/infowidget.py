@@ -319,12 +319,8 @@ class BurnProgressPanel(SimpleInfoWidget):
                 self._job_active = True
                 self._job_loops = spool_obj.loops
                 self._loops_executed = spool_obj.loops_executed
-                if hasattr(self._driver, "total_steps"):
-                    self._job_len = self._driver.total_steps
-                    self._job_pos = self._driver.current_steps
-                else:
-                    self._job_len = len(spool_obj.items)
-                    self._job_pos = spool_obj.item_index
+                self._job_len = len(spool_obj.items)
+                self._job_pos = spool_obj.item_index
                 self.inspect_job_details(spool_obj)
                 self._job_elapsed = time.time() - spool_obj.time_started
                 self._job_estimate = spool_obj.estimate_time()
