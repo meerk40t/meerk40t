@@ -4087,7 +4087,7 @@ class Elemental(Service):
             invert=None,
             blacklevel=None,
             data=None,
-            **kwargs
+            **kwargs,
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -4271,7 +4271,7 @@ class Elemental(Service):
             outer=None,
             times=None,
             data=None,
-            **kwargs
+            **kwargs,
         ):
             if data is None:
                 data = list(self.elems(emphasized=True))
@@ -4328,15 +4328,23 @@ class Elemental(Service):
                 copy_data = []
                 for e in data:
                     node_copy = copy(e)
+                    for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                        if hasattr(e, optional):
+                            setattr(node_copy, optional, getattr(e, optional))
+
                     if outer and hasattr(node_copy, "fill"):
                         node_copy.fill = Color("black")
                     if hasattr(node_copy, "stroke"):
                         node_copy.stroke = Color("black")
                         node_copy.stroke_width += 2 * (numidx + 1) * offset
-                        node_copy.altered()
+                    node_copy.set_dirty_bounds()
+                    # We need to establish the bounds, they might still be undefined?!
+                    _ = node_copy.bounds
+                    _ = node_copy.paint_bounds
+                    ## DOES NOT WORK !!! WTF
+                    #  print (f"e={e.paint_bounds}, c={node_copy.paint_bounds}")
                     copy_data.append(node_copy)
-
-                bounds = Node.union_bounds(copy_data, attr="paint_bounds")
+                bounds = Node.union_bounds(data, attr="paint_bounds")
                 if bounds is None:
                     return
                 xmin, ymin, xmax, ymax = bounds
@@ -4358,6 +4366,14 @@ class Elemental(Service):
                     width=new_width,
                     height=new_height,
                 )
+                # debug the generated picture...
+                if False:
+                    matrix = Matrix.scale(width / new_width, height / new_height)
+                    matrix.post_translate(bounds[0], bounds[1])
+
+                    image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
+                    self.elem_branch.add_node(image_node)
+
                 path = make_vector(
                     image,
                     interpolationpolicy=ipolicy,
@@ -4377,7 +4393,7 @@ class Elemental(Service):
                     path=abs(path),
                     stroke_width=1000,
                     stroke_scaled=False,
-                    fill = None,
+                    fill=None,
                     type="elem path",
                     fillrule=Fillrule.FILLRULE_NONZERO,
                 )
@@ -8390,6 +8406,17 @@ class Elemental(Service):
                     property_op(self.kernel.root, node)
                 self.signal("element_property_update", [node])
 
+        @self.tree_submenu(_("Outline element(s)..."))
+        @self.tree_iterate("offset", 1, 10)
+        @self.tree_operation(
+            _("...with {offset}mm distance"),
+            node_type=elem_nodes,
+            help="",
+        )
+        def make_outlines(node, offset=1, **kwargs):
+            self(f"outline {offset}mm\n")
+            self.signal("refresh_tree")
+
         def has_vectorize(node):
             result = False
             make_vector = self.lookup("render-op/make_vector")
@@ -9651,6 +9678,11 @@ class Elemental(Service):
             if e is not None:
                 bounds = e.bounds
                 bounds_painted = e.paint_bounds
+                if bounds_painted is None or bounds is None:
+                    e.set_dirty_bounds()
+                    bounds = e.bounds
+                    bounds_painted = e.paint_bounds
+
                 e_list.append(e)
                 if self._emphasized_bounds is not None:
                     cc = self._emphasized_bounds
