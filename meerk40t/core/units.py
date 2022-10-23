@@ -343,15 +343,15 @@ class ViewPort:
 
         @return:
         """
+        sx = self.user_scale_x * self.native_scale_x
+        sy = self.user_scale_y * self.native_scale_y
+        dx = self.unit_width * self.origin_x
+        dy = self.unit_height * self.origin_y
         ops = []
-        _scale_x = self.user_scale_x * self.native_scale_x
-        _scale_y = self.user_scale_y * self.native_scale_y
-        if _scale_x != 1.0 or _scale_y != 1.0:
-            ops.append(f"scale({1.0 / _scale_x:.13f}, {1.0 / _scale_y:.13f})")
-        _offset_x = self.unit_width * self.origin_x
-        _offset_y = self.unit_height * self.origin_y
-        if _offset_x != 0 or _offset_y != 0:
-            ops.append(f"translate({_offset_x:.13f}, {_offset_y:.13f})")
+        if sx != 1.0 or sy != 1.0:
+            ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
+        if dx != 0 or dy != 0:
+            ops.append(f"translate({dx:.13f}, {dy:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
