@@ -5760,6 +5760,27 @@ class Elemental(Service):
             return "elements", data
 
         @self.console_command(
+            "circle_arc_path",
+            help=_("Convert paths to use circular arcs."),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_circ_arc_path(command, channel, _, data=None, **kwargs):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            for e in data:
+                try:
+                    if e.lock:
+                        continue
+                except AttributeError:
+                    pass
+                if e.type == "elem path":
+                    e.path.approximate_bezier_with_circular_arcs()
+                    e.altered()
+
+            return "elements", data
+
+        @self.console_command(
             "classify",
             help=_("classify elements into operations"),
             input_type=(None, "elements"),
