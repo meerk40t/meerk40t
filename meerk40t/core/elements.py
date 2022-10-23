@@ -4179,6 +4179,213 @@ class Elemental(Service):
 
             return "elements", [node]
 
+        @self.console_option(
+            "dpi", "d", help=_("interim image resolution"), default=500, type=float
+        )
+        @self.console_option(
+            "turnpolicy",
+            "z",
+            type=str,
+            default="minority",
+            help=_("how to resolve ambiguities in path decomposition"),
+        )
+        @self.console_option(
+            "turdsize",
+            "t",
+            type=int,
+            default=2,
+            help=_("suppress speckles of up to this size (default 2)"),
+        )
+        @self.console_option(
+            "alphamax", "a", type=float, default=1, help=_("corner threshold parameter")
+        )
+        @self.console_option(
+            "opticurve",
+            "n",
+            type=bool,
+            action="store_true",
+            help=_("turn off curve optimization"),
+        )
+        @self.console_option(
+            "opttolerance",
+            "O",
+            type=float,
+            help=_("curve optimization tolerance"),
+            default=0.2,
+        )
+        @self.console_option(
+            "color",
+            "C",
+            type=Color,
+            help=_("set foreground color (default Black)"),
+        )
+        @self.console_option(
+            "invert",
+            "i",
+            type=bool,
+            action="store_true",
+            help=_("invert bitmap"),
+        )
+        @self.console_option(
+            "blacklevel",
+            "k",
+            type=float,
+            default=0.5,
+            help=_("blacklevel?!"),
+        )
+        @self.console_option(
+            "outer",
+            "u",
+            type=bool,
+            action="store_true",
+            help=_("Only outer line"),
+        )
+        @self.console_option(
+            "times",
+            "x",
+            type=int,
+            default=1,
+            help=_("How many offsetlines (default 1)"),
+        )
+        @self.console_argument("offset", type=Length, help="Offset distance")
+        @self.console_command(
+            "outline",
+            help=_("Create an outline path at the inner and outer side of a path"),
+            input_type=(None, "elements"),
+            output_type="elements",
+        )
+        def element_outline(
+            command,
+            channel,
+            _,
+            offset=None,
+            dpi=500.0,
+            turnpolicy=None,
+            turdsize=None,
+            alphamax=None,
+            opticurve=None,
+            opttolerance=None,
+            color=None,
+            invert=None,
+            blacklevel=None,
+            outer=None,
+            times=None,
+            data=None,
+            **kwargs
+        ):
+            if data is None:
+                data = list(self.elems(emphasized=True))
+            reverse = self.classify_reverse
+            if reverse:
+                data = list(reversed(data))
+            make_raster = self.lookup("render-op/make_raster")
+            make_vector = self.lookup("render-op/make_vector")
+            if not make_raster:
+                channel(_("No renderer is registered to perform render."))
+                return
+            if not make_vector:
+                channel(_("No vectorization engine could be found."))
+                return
+
+            policies = {
+                "black": 0,  # POTRACE_TURNPOLICY_BLACK
+                "white": 1,  # POTRACE_TURNPOLICY_WHITE
+                "left": 2,  # POTRACE_TURNPOLICY_LEFT
+                "right": 3,  # POTRACE_TURNPOLICY_RIGHT
+                "minority": 4,  # POTRACE_TURNPOLICY_MINORITY
+                "majority": 5,  # POTRACE_TURNPOLICY_MAJORITY
+                "random": 6,  # POTRACE_TURNPOLICY_RANDOM
+            }
+
+            if turnpolicy not in policies:
+                turnpolicy = "minority"
+            ipolicy = policies[turnpolicy]
+
+            if turdsize is None:
+                turdsize = 2
+            if alphamax is None:
+                alphamax = 1
+            if opticurve is None:
+                opticurve = True
+            if opttolerance is None:
+                opttolerance = 0.2
+            if color is None:
+                color = Color("black")
+            if invert is None:
+                invert = False
+            if blacklevel is None:
+                blacklevel = 0.5
+            if offset is None:
+                offset = self.length("5mm")
+            else:
+                offset = self.length(offset)
+            if times is None or times < 1:
+                times = 1
+            if outer is None:
+                outer = False
+            outputdata = []
+            for numidx in range(times):
+                copy_data = []
+                for e in data:
+                    node_copy = copy(e)
+                    if outer and hasattr(node_copy, "fill"):
+                        node_copy.fill = Color("black")
+                    if hasattr(node_copy, "stroke"):
+                        node_copy.stroke = Color("black")
+                        node_copy.stroke_width += 2 * (numidx + 1) * offset
+                        node_copy.altered()
+                    copy_data.append(node_copy)
+
+                bounds = Node.union_bounds(copy_data, attr="paint_bounds")
+                if bounds is None:
+                    return
+                xmin, ymin, xmax, ymax = bounds
+                if isinf(xmin):
+                    channel(_("No bounds for selected elements."))
+                    return
+                width = xmax - xmin
+                height = ymax - ymin
+
+                dots_per_units = dpi / UNITS_PER_INCH
+                new_width = width * dots_per_units
+                new_height = height * dots_per_units
+                new_height = max(new_height, 1)
+                new_width = max(new_width, 1)
+
+                image = make_raster(
+                    copy_data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                )
+                path = make_vector(
+                    image,
+                    interpolationpolicy=ipolicy,
+                    invert=invert,
+                    turdsize=turdsize,
+                    alphamax=alphamax,
+                    opticurve=opticurve,
+                    opttolerance=opttolerance,
+                    color=color,
+                    blacklevel=blacklevel,
+                )
+                path.fill = None
+                matrix = Matrix.scale(width / new_width, height / new_height)
+                matrix.post_translate(bounds[0], bounds[1])
+                path.transform *= Matrix(matrix)
+                node = self.elem_branch.add(
+                    path=abs(path),
+                    stroke_width=1000,
+                    stroke_scaled=False,
+                    fill = None,
+                    type="elem path",
+                    fillrule=Fillrule.FILLRULE_NONZERO,
+                )
+                outputdata.append(node)
+
+            self.signal("refresh_scene", "Scene")
+            return "elements", outputdata
+
         # ==========
         # ELEMENT/SHAPE COMMANDS
         # ==========
@@ -5148,15 +5355,15 @@ class Elemental(Service):
             "y_offset", type=self.length_y, help=_("y offset"), default="0"
         )
         @self.console_command(
-            "outline",
-            help=_("outline the current selected elements"),
+            "frame",
+            help=_("Draws a frame the current selected elements"),
             input_type=(
                 None,
                 "elements",
             ),
             output_type="elements",
         )
-        def element_outline(
+        def element_frame(
             command,
             channel,
             _,
@@ -5180,9 +5387,8 @@ class Elemental(Service):
             y_pos -= y_offset
             width += x_offset * 2
             height += y_offset * 2
-
-            _element = Path(Rect(x=x_pos, y=y_pos, width=width, height=height))
-            node = self.elem_branch.add(shape=_element, type="elem path")
+            _element = Rect(x=x_pos, y=y_pos, width=width, height=height)
+            node = self.elem_branch.add(shape=_element, type="elem rect")
             node.stroke = Color("red")
             node.altered()
             self.set_emphasis([node])
