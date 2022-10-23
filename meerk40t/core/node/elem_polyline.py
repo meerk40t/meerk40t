@@ -51,6 +51,7 @@ class PolylineNode(Node):
             if stroke_scale is None
             else stroke_scale
         )
+        self.set_dirty_bounds()
         self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
@@ -169,6 +170,7 @@ class PolylineNode(Node):
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
+        self.shape.stroke = self.stroke
         try:
             del self.shape.values["viewport_transform"]
             # If we had transforming viewport that is no longer relevant

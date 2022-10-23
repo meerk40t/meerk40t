@@ -49,6 +49,7 @@ class EllipseNode(Node):
             if stroke_scale is None
             else stroke_scale
         )
+        self.set_dirty_bounds()
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.label = label
         self.lock = lock
@@ -161,6 +162,7 @@ class EllipseNode(Node):
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
+        self.shape.stroke = self.stroke
         try:
             del self.shape.values["viewport_transform"]
             # If we had transforming viewport that is no longer relevant
