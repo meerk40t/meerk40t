@@ -145,9 +145,7 @@ def init_commands(kernel):
         input_type="wordlist",
         output_type="wordlist",
     )
-    def wordlist_set(
-            command, channel, _, key=None, value=None, index=None, **kwargs
-    ):
+    def wordlist_set(command, channel, _, key=None, value=None, index=None, **kwargs):
         if key is not None and value is not None:
             self.mywordlist.set_value(skey=key, value=value, idx=index)
         else:
@@ -178,9 +176,7 @@ def init_commands(kernel):
         input_type="wordlist",
         output_type="wordlist",
     )
-    def wordlist_restore(
-            command, channel, _, filename=None, remainder=None, **kwargs
-    ):
+    def wordlist_restore(command, channel, _, filename=None, remainder=None, **kwargs):
         new_file = filename
         if filename is not None:
             new_file = os.path.join(self.kernel.current_directory, filename)
@@ -199,9 +195,7 @@ def init_commands(kernel):
         input_type="wordlist",
         output_type="wordlist",
     )
-    def wordlist_backup(
-            command, channel, _, filename=None, remainder=None, **kwargs
-    ):
+    def wordlist_backup(command, channel, _, filename=None, remainder=None, **kwargs):
         new_file = filename
         if filename is not None:
             new_file = os.path.join(self.kernel.current_directory, filename)
@@ -293,7 +287,7 @@ def init_commands(kernel):
         output_type="penbox",
     )
     def penbox_add(
-            command, channel, _, count=None, data=None, remainder=None, **kwargs
+        command, channel, _, count=None, data=None, remainder=None, **kwargs
     ):
         if count is None:
             raise CommandSyntaxError
@@ -312,7 +306,7 @@ def init_commands(kernel):
         output_type="penbox",
     )
     def penbox_del(
-            command, channel, _, count=None, data=None, remainder=None, **kwargs
+        command, channel, _, count=None, data=None, remainder=None, **kwargs
     ):
         if count is None:
             raise CommandSyntaxError
@@ -337,15 +331,15 @@ def init_commands(kernel):
         output_type="penbox",
     )
     def penbox_set(
-            command,
-            channel,
-            _,
-            index=None,
-            key=None,
-            value=None,
-            data=None,
-            remainder=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        index=None,
+        key=None,
+        value=None,
+        data=None,
+        remainder=None,
+        **kwargs,
     ):
         if not value:
             raise CommandSyntaxError
@@ -469,9 +463,7 @@ def init_commands(kernel):
         input_type="ops",
         output_type="ops",
     )
-    def penbox_pass(
-            command, channel, _, key=None, remainder=None, data=None, **kwargs
-    ):
+    def penbox_pass(command, channel, _, key=None, remainder=None, data=None, **kwargs):
         if data is not None:
             if key is not None:
                 for op in data:
@@ -503,7 +495,7 @@ def init_commands(kernel):
         output_type="ops",
     )
     def penbox_value(
-            command, channel, _, key=None, remainder=None, data=None, **kwargs
+        command, channel, _, key=None, remainder=None, data=None, **kwargs
     ):
         if data is not None:
             if key is not None:
@@ -698,9 +690,7 @@ def init_commands(kernel):
                 r"(speed|power|step|acceleration|passes|color|op|overscan|len)",
             ),
         ]
-        filter_re = re.compile(
-            "|".join("(?P<%s>%s)" % pair for pair in _filter_parse)
-        )
+        filter_re = re.compile("|".join("(?P<%s>%s)" % pair for pair in _filter_parse))
         operator = list()
         operand = list()
 
@@ -864,19 +854,19 @@ def init_commands(kernel):
         output_type="ops",
     )
     def makeop(
-            command,
-            data=None,
-            color=None,
-            default=None,
-            speed=None,
-            power=None,
-            dpi=None,
-            overscan=None,
-            passes=None,
-            parallel=False,
-            stroke=False,
-            fill=False,
-            **kwargs,
+        command,
+        data=None,
+        color=None,
+        default=None,
+        speed=None,
+        power=None,
+        dpi=None,
+        overscan=None,
+        passes=None,
+        parallel=False,
+        stroke=False,
+        fill=False,
+        **kwargs,
     ):
         op_list = []
 
@@ -982,9 +972,9 @@ def init_commands(kernel):
         output_type="ops",
     )
     def makeop(
-            command,
-            time=None,
-            **kwargs,
+        command,
+        time=None,
+        **kwargs,
     ):
         op = WaitOperation(wait=time)
         self.add_op(op)
@@ -1009,10 +999,10 @@ def init_commands(kernel):
         output_type="ops",
     )
     def makeop(
-            command,
-            mask=None,
-            value=None,
-            **kwargs,
+        command,
+        mask=None,
+        value=None,
+        **kwargs,
     ):
         if command == "inputop":
             op = InputOperation(mask=mask, value=value)
@@ -1027,9 +1017,9 @@ def init_commands(kernel):
         help=_("<consoleop> - Create new utility operation"),
     )
     def makeop(
-            command,
-            remainder=None,
-            **kwargs,
+        command,
+        remainder=None,
+        **kwargs,
     ):
         if remainder is not None:
             op = ConsoleOperation(command=remainder)
@@ -1078,14 +1068,14 @@ def init_commands(kernel):
         "speed", help=_("speed <speed>"), input_type="ops", output_type="ops"
     )
     def op_speed(
-            command,
-            channel,
-            _,
-            speed=None,
-            difference=False,
-            progress=False,
-            data=None,
-            **kwrgs,
+        command,
+        channel,
+        _,
+        speed=None,
+        difference=False,
+        progress=False,
+        data=None,
+        **kwrgs,
     ):
         if speed is None:
             for op in data:
@@ -1153,14 +1143,14 @@ def init_commands(kernel):
         "power", help=_("power <ppi>"), input_type="ops", output_type="ops"
     )
     def op_power(
-            command,
-            channel,
-            _,
-            power=None,
-            difference=False,
-            progress=False,
-            data=None,
-            **kwrgs,
+        command,
+        channel,
+        _,
+        power=None,
+        difference=False,
+        progress=False,
+        data=None,
+        **kwrgs,
     ):
         if power is None:
             for op in data:
@@ -1215,14 +1205,14 @@ def init_commands(kernel):
         "frequency", help=_("frequency <kHz>"), input_type="ops", output_type="ops"
     )
     def op_frequency(
-            command,
-            channel,
-            _,
-            frequency=None,
-            difference=False,
-            progress=False,
-            data=None,
-            **kwrgs,
+        command,
+        channel,
+        _,
+        frequency=None,
+        difference=False,
+        progress=False,
+        data=None,
+        **kwrgs,
     ):
         if frequency is None:
             for op in data:
@@ -1305,22 +1295,22 @@ def init_commands(kernel):
         output_type="ops",
     )
     def op_hatch_distance(
-            command,
-            channel,
-            _,
-            distance=None,
-            difference=False,
-            progress=False,
-            data=None,
-            **kwrgs,
+        command,
+        channel,
+        _,
+        distance=None,
+        difference=False,
+        progress=False,
+        data=None,
+        **kwrgs,
     ):
         if distance is None:
             for op in data:
                 old = op.hatch_distance
                 channel(
-                    _(
-                        "Hatch Distance for '{name}' is currently: {distance}"
-                    ).format(name=str(op), distance=old)
+                    _("Hatch Distance for '{name}' is currently: {distance}").format(
+                        name=str(op), distance=old
+                    )
                 )
             return
         delta = 0
@@ -1368,27 +1358,23 @@ def init_commands(kernel):
         output_type="ops",
     )
     def op_hatch_distance(
-            command,
-            channel,
-            _,
-            angle=None,
-            difference=False,
-            progress=False,
-            data=None,
-            **kwrgs,
+        command,
+        channel,
+        _,
+        angle=None,
+        difference=False,
+        progress=False,
+        data=None,
+        **kwrgs,
     ):
         if angle is None:
             for op in data:
                 old = f"{Angle.parse(op.hatch_angle).as_turns:.4f}turn"
-                old_hatch_angle_deg = (
-                    f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
-                )
+                old_hatch_angle_deg = f"{Angle.parse(op.hatch_angle).as_degrees:.4f}deg"
                 channel(
                     _(
                         "Hatch Angle for '{name}' is currently: {angle} ({angle_degree})"
-                    ).format(
-                        name=str(op), angle=old, angle_degree=old_hatch_angle_deg
-                    )
+                    ).format(name=str(op), angle=old, angle_degree=old_hatch_angle_deg)
                 )
             return
         delta = 0
@@ -1437,9 +1423,7 @@ def init_commands(kernel):
                 except AttributeError:
                     pass
             if no_op:
-                channel(
-                    _("Operation '{name}' can't be disabled.").format(name=str(op))
-                )
+                channel(_("Operation '{name}' can't be disabled.").format(name=str(op)))
         return "ops", data
 
     @self.console_command(
@@ -1460,9 +1444,7 @@ def init_commands(kernel):
                 except AttributeError:
                     pass
             if no_op:
-                channel(
-                    _("Operation '{name}' can't be enabled.").format(name=str(op))
-                )
+                channel(_("Operation '{name}' can't be enabled.").format(name=str(op)))
         return "ops", data
 
     # ==========
@@ -1541,16 +1523,12 @@ def init_commands(kernel):
                 if matrix:
                     e.matrix *= matrix
                 newnode = self.elem_branch.add_node(e)
-                if self.copy_increases_wordlist_references and hasattr(
-                        newnode, "text"
-                ):
+                if self.copy_increases_wordlist_references and hasattr(newnode, "text"):
                     newnode.text = self.wordlist_delta(newnode.text, delta_wordlist)
                 elif self.copy_increases_wordlist_references and hasattr(
-                        newnode, "mktext"
+                    newnode, "mktext"
                 ):
-                    newnode.mktext = self.wordlist_delta(
-                        newnode.mktext, delta_wordlist
-                    )
+                    newnode.mktext = self.wordlist_delta(newnode.mktext, delta_wordlist)
             self.signal("refresh_scene", "Scene")
             return "elements", add_elem
 
@@ -1871,15 +1849,15 @@ def init_commands(kernel):
     # ==========
 
     def _align_xy(
-            channel,
-            _,
-            mode,
-            bounds,
-            elements,
-            align_x=None,
-            align_y=None,
-            asgroup=None,
-            **kwargs,
+        channel,
+        _,
+        mode,
+        bounds,
+        elements,
+        align_x=None,
+        align_y=None,
+        asgroup=None,
+        **kwargs,
     ):
         """
         This routine prepares the data according to some validation.
@@ -2106,9 +2084,9 @@ def init_commands(kernel):
         mode, group, bound, elements = data
         if boundaries is None:
             channel(
-                _(
-                    "You need to provide the boundaries for align-mode {mode}"
-                ).format(mode="ref")
+                _("You need to provide the boundaries for align-mode {mode}").format(
+                    mode="ref"
+                )
             )
             return
         mode = "ref"
@@ -2130,9 +2108,7 @@ def init_commands(kernel):
         input_type=("elements", None),
         output_type="align",
     )
-    def align_elements_base(
-            command, channel, _, data=None, remainder=None, **kwargs
-    ):
+    def align_elements_base(command, channel, _, data=None, remainder=None, **kwargs):
         """
         Base align commands. Triggers other base commands within the command context
         'align'.
@@ -2164,9 +2140,9 @@ def init_commands(kernel):
                         break
                 if not singular:
                     while (
-                            snode.parent
-                            and snode.parent is not elem_branch
-                            and snode.parent.type != "file"
+                        snode.parent
+                        and snode.parent is not elem_branch
+                        and snode.parent.type != "file"
                     ):
                         snode = snode.parent
             if snode is not None and snode not in d:
@@ -2198,13 +2174,13 @@ def init_commands(kernel):
         output_type="align",
     )
     def subtype_align_xy(
-            command,
-            channel,
-            _,
-            data=None,
-            alignx=None,
-            aligny=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        data=None,
+        alignx=None,
+        aligny=None,
+        **kwargs,
     ):
         mode, group, bound, elements = data
         _align_xy(channel, _, mode, bound, elements, alignx, aligny, group)
@@ -2262,9 +2238,7 @@ def init_commands(kernel):
     )
     def subtype_align_center(command, channel, _, data=None, **kwargs):
         mode, group, bound, elements = data
-        _align_xy(
-            command, channel, _, mode, bound, elements, "center", "center", group
-        )
+        _align_xy(command, channel, _, mode, bound, elements, "center", "center", group)
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
@@ -2321,9 +2295,7 @@ def init_commands(kernel):
                 haslock = True
                 break
         if haslock:
-            channel(
-                _("Your selection contains a locked element, that cannot be moved")
-            )
+            channel(_("Your selection contains a locked element, that cannot be moved"))
             return
         for node in elements:
             subbox = node.bounds
@@ -2371,9 +2343,7 @@ def init_commands(kernel):
                 haslock = True
                 break
         if haslock:
-            channel(
-                _("Your selection contains a locked element, that cannot be moved")
-            )
+            channel(_("Your selection contains a locked element, that cannot be moved"))
             return
         for node in elements:
             subbox = node.bounds
@@ -2402,7 +2372,7 @@ def init_commands(kernel):
         output_type="align",
     )
     def subtype_align(
-            command, channel, _, data=None, preserve_aspect_ratio="none", **kwargs
+        command, channel, _, data=None, preserve_aspect_ratio="none", **kwargs
     ):
         """
         Align the elements to within the bed according to SVG Viewbox rules. The following aspect ratios
@@ -2449,9 +2419,7 @@ def init_commands(kernel):
                 haslock = True
                 break
         if haslock:
-            channel(
-                _("Your selection contains a locked element, that cannot be moved")
-            )
+            channel(_("Your selection contains a locked element, that cannot be moved"))
             return
         left_edge = min([e[0] for e in boundary_points])
         top_edge = min([e[1] for e in boundary_points])
@@ -2459,34 +2427,34 @@ def init_commands(kernel):
         bottom_edge = max([e[3] for e in boundary_points])
 
         if preserve_aspect_ratio in (
-                "xminymin",
-                "xmidymin",
-                "xmaxymin",
-                "xminymid",
-                "xmidymid",
-                "xmaxymid",
-                "xminymax",
-                "xmidymax",
-                "xmaxymax",
-                "xminymin meet",
-                "xmidymin meet",
-                "xmaxymin meet",
-                "xminymid meet",
-                "xmidymid meet",
-                "xmaxymid meet",
-                "xminymax meet",
-                "xmidymax meet",
-                "xmaxymax meet",
-                "xminymin slice",
-                "xmidymin slice",
-                "xmaxymin slice",
-                "xminymid slice",
-                "xmidymid slice",
-                "xmaxymid slice",
-                "xminymax slice",
-                "xmidymax slice",
-                "xmaxymax slice",
-                "none",
+            "xminymin",
+            "xmidymin",
+            "xmaxymin",
+            "xminymid",
+            "xmidymid",
+            "xmaxymid",
+            "xminymax",
+            "xmidymax",
+            "xmaxymax",
+            "xminymin meet",
+            "xmidymin meet",
+            "xmaxymin meet",
+            "xminymid meet",
+            "xmidymid meet",
+            "xmaxymid meet",
+            "xminymax meet",
+            "xmidymax meet",
+            "xmaxymax meet",
+            "xminymin slice",
+            "xmidymin slice",
+            "xmaxymin slice",
+            "xminymid slice",
+            "xmidymid slice",
+            "xmaxymid slice",
+            "xminymax slice",
+            "xmidymax slice",
+            "xmaxymax slice",
+            "none",
         ):
             for node in elements:
                 device_width = self.length_x("100%")
@@ -2535,16 +2503,16 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_grid(
-            command,
-            channel,
-            _,
-            c: int,
-            r: int,
-            x: str,
-            y: str,
-            origin=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        c: int,
+        r: int,
+        x: str,
+        y: str,
+        origin=None,
+        data=None,
+        **kwargs,
     ):
         if r is None:
             raise CommandSyntaxError
@@ -2614,17 +2582,17 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_radial(
-            command,
-            channel,
-            _,
-            repeats: int,
-            radius=None,
-            startangle=None,
-            endangle=None,
-            rotate=None,
-            deltaangle=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        repeats: int,
+        radius=None,
+        startangle=None,
+        endangle=None,
+        rotate=None,
+        deltaangle=None,
+        data=None,
+        **kwargs,
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -2715,17 +2683,17 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_circularcopies(
-            command,
-            channel,
-            _,
-            copies: int,
-            radius=None,
-            startangle=None,
-            endangle=None,
-            rotate=None,
-            deltaangle=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        copies: int,
+        radius=None,
+        startangle=None,
+        endangle=None,
+        rotate=None,
+        deltaangle=None,
+        data=None,
+        **kwargs,
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -2785,9 +2753,7 @@ def init_commands(kernel):
         self.signal("refresh_scene", "Scene")
         return "elements", data_out
 
-    @self.console_argument(
-        "corners", type=int, help=_("Number of corners/vertices")
-    )
+    @self.console_argument("corners", type=int, help=_("Number of corners/vertices"))
     @self.console_argument(
         "cx", type=self.length_x, help=_("X-Value of polygon's center")
     )
@@ -2830,9 +2796,7 @@ def init_commands(kernel):
             "Length of alternating sequence (1 for starlike figures, >=2 for more gear-like patterns)"
         ),
     )
-    @self.console_option(
-        "density", "d", type=int, help=_("Amount of vertices to skip")
-    )
+    @self.console_option("density", "d", type=int, help=_("Amount of vertices to skip"))
     @self.console_command(
         "shape",
         help=_(
@@ -2842,21 +2806,21 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_shape(
-            command,
-            channel,
-            _,
-            corners,
-            cx,
-            cy,
-            radius,
-            startangle=None,
-            inscribed=None,
-            side_length=None,
-            radius_inner=None,
-            alternate_seq=None,
-            density=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        corners,
+        cx,
+        cy,
+        radius,
+        startangle=None,
+        inscribed=None,
+        side_length=None,
+        radius_inner=None,
+        alternate_seq=None,
+        density=None,
+        data=None,
+        **kwargs,
     ):
         if corners is None:
             raise CommandSyntaxError
@@ -2916,9 +2880,7 @@ def init_commands(kernel):
                 radius_inner = radius
             else:
                 try:
-                    radius_inner = float(
-                        Length(radius_inner, relative_length=radius)
-                    )
+                    radius_inner = float(Length(radius_inner, relative_length=radius))
                 except ValueError:
                     raise CommandSyntaxError
 
@@ -2981,13 +2943,9 @@ def init_commands(kernel):
                     j = i + 2
                     if gcd(j, corners) == 1:
                         if ct % 3 == 0:
-                            possible_combinations += (
-                                f"\n shape {corners} ... -d {j}"
-                            )
+                            possible_combinations += f"\n shape {corners} ... -d {j}"
                         else:
-                            possible_combinations += (
-                                f", shape {corners} ... -d {j} "
-                            )
+                            possible_combinations += f", shape {corners} ... -d {j} "
                         ct += 1
                 channel(
                     _("Just for info: we have missed {count} vertices...").format(
@@ -3124,20 +3082,20 @@ def init_commands(kernel):
         output_type="elements",
     )
     def vectorize_elements(
-            command,
-            channel,
-            _,
-            dpi=500.0,
-            turnpolicy=None,
-            turdsize=None,
-            alphamax=None,
-            opticurve=None,
-            opttolerance=None,
-            color=None,
-            invert=None,
-            blacklevel=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        dpi=500.0,
+        turnpolicy=None,
+        turdsize=None,
+        alphamax=None,
+        opticurve=None,
+        opttolerance=None,
+        color=None,
+        invert=None,
+        blacklevel=None,
+        data=None,
+        **kwargs,
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -3305,23 +3263,23 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_outline(
-            command,
-            channel,
-            _,
-            offset=None,
-            dpi=500.0,
-            turnpolicy=None,
-            turdsize=None,
-            alphamax=None,
-            opticurve=None,
-            opttolerance=None,
-            color=None,
-            invert=None,
-            blacklevel=None,
-            outer=None,
-            times=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        offset=None,
+        dpi=500.0,
+        turnpolicy=None,
+        turdsize=None,
+        alphamax=None,
+        opticurve=None,
+        opttolerance=None,
+        color=None,
+        invert=None,
+        blacklevel=None,
+        outer=None,
+        times=None,
+        data=None,
+        **kwargs,
     ):
         """
         Phase 1: We create a rendered image of the data, then we vectorize
@@ -3432,10 +3390,7 @@ def init_commands(kernel):
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
         image_node = ImageNode(
-            image=data_image,
-            matrix=matrix,
-            dpi=dpi,
-            label="Phase 1 render image"
+            image=data_image, matrix=matrix, dpi=dpi, label="Phase 1 render image"
         )
 
         path = make_vector(
@@ -3530,7 +3485,7 @@ def init_commands(kernel):
                 fill=None,
                 stroke=pathcolor,
                 # fillrule=Fillrule.FILLRULE_NONZERO,
-                label=f"Phase 2 outline path #{numidx}"
+                label=f"Phase 2 outline path #{numidx}",
             )
             outline_node.fill = None
             outputdata.append(outline_node)
@@ -3603,9 +3558,7 @@ def init_commands(kernel):
         output_type="elements",
         all_arguments_required=True,
     )
-    def element_ellipse(
-            channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs
-    ):
+    def element_ellipse(channel, _, x_pos, y_pos, rx_pos, ry_pos, data=None, **kwargs):
         ellip = Ellipse(
             cx=float(x_pos), cy=float(y_pos), rx=float(rx_pos), ry=float(ry_pos)
         )
@@ -3653,16 +3606,16 @@ def init_commands(kernel):
         all_arguments_required=True,
     )
     def element_rect(
-            channel,
-            _,
-            x_pos,
-            y_pos,
-            width,
-            height,
-            rx=None,
-            ry=None,
-            data=None,
-            **kwargs,
+        channel,
+        _,
+        x_pos,
+        y_pos,
+        width,
+        height,
+        rx=None,
+        ry=None,
+        data=None,
+        **kwargs,
     ):
         """
         Draws a svg rectangle with optional rounded corners.
@@ -3718,9 +3671,7 @@ def init_commands(kernel):
         input_type=(None, "elements"),
         output_type="elements",
     )
-    def element_text(
-            command, channel, _, data=None, text=None, size=None, **kwargs
-    ):
+    def element_text(command, channel, _, data=None, text=None, size=None, **kwargs):
         if text is None:
             channel(_("No text specified"))
             return
@@ -3745,8 +3696,8 @@ def init_commands(kernel):
         "text-anchor",
         help=_("set text object text-anchor; start, middle, end"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         hidden=True,
         output_type="elements",
@@ -3763,9 +3714,7 @@ def init_commands(kernel):
             return
         for e in data:
             if hasattr(e, "lock") and e.lock:
-                channel(
-                    _("Can't modify a locked element: {name}").format(name=str(e))
-                )
+                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
             if e.type == "elem text":
                 old_anchor = e.anchor
@@ -3775,9 +3724,7 @@ def init_commands(kernel):
             e.altered()
         return "elements", data
 
-    @self.console_argument(
-        "mlist", type=Length, help=_("list of positions"), nargs="*"
-    )
+    @self.console_argument("mlist", type=Length, help=_("list of positions"), nargs="*")
     @self.console_command(
         ("polygon", "polyline"),
         help=_("poly(gon|line) (Length Length)*"),
@@ -3965,14 +3912,12 @@ def init_commands(kernel):
         "stroke-width",
         help=_("stroke-width <length>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
-    def element_stroke_width(
-            command, channel, _, stroke_width, data=None, **kwargs
-    ):
+    def element_stroke_width(command, channel, _, stroke_width, data=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         if stroke_width is None:
@@ -4028,9 +3973,7 @@ def init_commands(kernel):
             return
         for e in data:
             if hasattr(e, "lock") and e.lock:
-                channel(
-                    _("Can't modify a locked element: {name}").format(name=str(e))
-                )
+                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
             e.stroke_width = stroke_width
             e.altered()
@@ -4040,8 +3983,8 @@ def init_commands(kernel):
         ("enable_stroke_scale", "disable_stroke_scale"),
         help=_("stroke-width <length>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         hidden=True,
         output_type="elements",
@@ -4054,9 +3997,7 @@ def init_commands(kernel):
             return
         for e in data:
             if hasattr(e, "lock") and e.lock:
-                channel(
-                    _("Can't modify a locked element: {name}").format(name=str(e))
-                )
+                channel(_("Can't modify a locked element: {name}").format(name=str(e)))
                 continue
             e.stroke_scaled = command == "enable_stroke_scale"
             e.altered()
@@ -4072,14 +4013,12 @@ def init_commands(kernel):
         "linecap",
         help=_("linecap <cap>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
-    def element_cap(
-            command, channel, _, cap=None, data=None, filter=None, **kwargs
-    ):
+    def element_cap(command, channel, _, cap=None, data=None, filter=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         apply = data
@@ -4151,14 +4090,12 @@ def init_commands(kernel):
         "linejoin",
         help=_("linejoin <join>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
-    def element_join(
-            command, channel, _, join=None, data=None, filter=None, **kwargs
-    ):
+    def element_join(command, channel, _, join=None, data=None, filter=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         apply = data
@@ -4230,22 +4167,20 @@ def init_commands(kernel):
     @self.console_argument(
         "rule",
         type=str,
-        help=_(
-            "rule to apply to fill the path (one of {nonzero}, {evenodd})"
-        ).format(nonzero=SVG_RULE_NONZERO, evenodd=SVG_RULE_EVENODD),
+        help=_("rule to apply to fill the path (one of {nonzero}, {evenodd})").format(
+            nonzero=SVG_RULE_NONZERO, evenodd=SVG_RULE_EVENODD
+        ),
     )
     @self.console_command(
         "fillrule",
         help=_("fillrule <rule>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
-    def element_rule(
-            command, channel, _, rule=None, data=None, filter=None, **kwargs
-    ):
+    def element_rule(command, channel, _, rule=None, data=None, filter=None, **kwargs):
         if data is None:
             data = list(self.elems(emphasized=True))
         apply = data
@@ -4312,13 +4247,13 @@ def init_commands(kernel):
         "stroke",
         help=_("stroke <svg color>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
     def element_stroke(
-            command, channel, _, color, data=None, classify=None, filter=None, **kwargs
+        command, channel, _, color, data=None, classify=None, filter=None, **kwargs
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -4349,9 +4284,7 @@ def init_commands(kernel):
                     name = name[:50] + "…"
                 if not hasattr(e, "stroke"):
                     pass
-                elif (
-                        hasattr(e, "stroke") and e.stroke is None or e.stroke == "none"
-                ):
+                elif hasattr(e, "stroke") and e.stroke is None or e.stroke == "none":
                     channel(f"{i}: stroke = none - {name}")
                 else:
                     channel(f"{i}: stroke = {e.stroke.hex} - {name}")
@@ -4362,9 +4295,7 @@ def init_commands(kernel):
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
-                        _("Can't modify a locked element: {name}").format(
-                            name=str(e)
-                        )
+                        _("Can't modify a locked element: {name}").format(name=str(e))
                     )
                     continue
                 e.stroke = None
@@ -4373,9 +4304,7 @@ def init_commands(kernel):
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
-                        _("Can't modify a locked element: {name}").format(
-                            name=str(e)
-                        )
+                        _("Can't modify a locked element: {name}").format(name=str(e))
                     )
                     continue
                 e.stroke = Color(color)
@@ -4407,13 +4336,13 @@ def init_commands(kernel):
         "fill",
         help=_("fill <svg color>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
     def element_fill(
-            command, channel, _, color, data=None, classify=None, filter=None, **kwargs
+        command, channel, _, color, data=None, classify=None, filter=None, **kwargs
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -4446,9 +4375,7 @@ def init_commands(kernel):
                     pass
                 elif e.fill is None or e.fill == "none":
                     channel(
-                        _("{index}: fill = none - {name}").format(
-                            index=i, name=name
-                        )
+                        _("{index}: fill = none - {name}").format(index=i, name=name)
                     )
                 else:
                     channel(
@@ -4463,9 +4390,7 @@ def init_commands(kernel):
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
-                        _("Can't modify a locked element: {name}").format(
-                            name=str(e)
-                        )
+                        _("Can't modify a locked element: {name}").format(name=str(e))
                     )
                     continue
                 e.fill = None
@@ -4474,9 +4399,7 @@ def init_commands(kernel):
             for e in apply:
                 if hasattr(e, "lock") and e.lock:
                     channel(
-                        _("Can't modify a locked element: {name}").format(
-                            name=str(e)
-                        )
+                        _("Can't modify a locked element: {name}").format(name=str(e))
                     )
                     continue
                 e.fill = Color(color)
@@ -4509,19 +4432,19 @@ def init_commands(kernel):
         "frame",
         help=_("Draws a frame the current selected elements"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
     def element_frame(
-            command,
-            channel,
-            _,
-            x_offset=None,
-            y_offset=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        x_offset=None,
+        y_offset=None,
+        data=None,
+        **kwargs,
     ):
         """
         Draws an outline of the current shape.
@@ -4566,21 +4489,21 @@ def init_commands(kernel):
         "rotate",
         help=_("rotate <angle>"),
         input_type=(
-                None,
-                "elements",
+            None,
+            "elements",
         ),
         output_type="elements",
     )
     def element_rotate(
-            command,
-            channel,
-            _,
-            angle,
-            cx=None,
-            cy=None,
-            absolute=False,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        angle,
+        cx=None,
+        cy=None,
+        absolute=False,
+        data=None,
+        **kwargs,
     ):
         if angle is None:
             channel("----------")
@@ -4636,12 +4559,8 @@ def init_commands(kernel):
 
     @self.console_argument("scale_x", type=str, help=_("scale_x value"))
     @self.console_argument("scale_y", type=str, help=_("scale_y value"))
-    @self.console_option(
-        "px", "x", type=self.length_x, help=_("scale x origin point")
-    )
-    @self.console_option(
-        "py", "y", type=self.length_y, help=_("scale y origin point")
-    )
+    @self.console_option("px", "x", type=self.length_x, help=_("scale x origin point"))
+    @self.console_option("py", "y", type=self.length_y, help=_("scale y origin point"))
     @self.console_option(
         "absolute",
         "a",
@@ -4656,16 +4575,16 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_scale(
-            command,
-            channel,
-            _,
-            scale_x=None,
-            scale_y=None,
-            px=None,
-            py=None,
-            absolute=False,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        scale_x=None,
+        scale_y=None,
+        px=None,
+        py=None,
+        absolute=False,
+        data=None,
+        **kwargs,
     ):
         if scale_x is None:
             channel("----------")
@@ -4752,13 +4671,13 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_area(
-            command,
-            channel,
-            _,
-            new_area=None,
-            density=None,
-            data=None,
-            **kwargs,
+        command,
+        channel,
+        _,
+        new_area=None,
+        density=None,
+        data=None,
+        **kwargs,
     ):
         if density is None:
             density = 200
@@ -4832,7 +4751,7 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_translate(
-            command, channel, _, tx, ty, absolute=False, data=None, **kwargs
+        command, channel, _, tx, ty, absolute=False, data=None, **kwargs
     ):
         if tx is None:
             channel("----------")
@@ -4862,9 +4781,9 @@ def init_commands(kernel):
             if not absolute:
                 for node in data:
                     if (
-                            hasattr(node, "lock")
-                            and node.lock
-                            and not self.lock_allows_move
+                        hasattr(node, "lock")
+                        and node.lock
+                        and not self.lock_allows_move
                     ):
                         continue
 
@@ -4873,9 +4792,9 @@ def init_commands(kernel):
             else:
                 for node in data:
                     if (
-                            hasattr(node, "lock")
-                            and node.lock
-                            and not self.lock_allows_move
+                        hasattr(node, "lock")
+                        and node.lock
+                        and not self.lock_allows_move
                     ):
                         continue
                     otx = node.matrix.value_trans_x()
@@ -4898,7 +4817,7 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_position(
-            command, channel, _, tx, ty, absolute=False, data=None, **kwargs
+        command, channel, _, tx, ty, absolute=False, data=None, **kwargs
     ):
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -4941,11 +4860,7 @@ def init_commands(kernel):
             ntx = tx - otx
             nty = ty - oty
             for node in data:
-                if (
-                        hasattr(node, "lock")
-                        and node.lock
-                        and not self.lock_allows_move
-                ):
+                if hasattr(node, "lock") and node.lock and not self.lock_allows_move:
                     continue
                 node.matrix.post_translate(ntx, nty)
                 node.modified()
@@ -4959,9 +4874,7 @@ def init_commands(kernel):
     @self.console_argument(
         "y_pos", type=self.length_y, help=_("y position for top left corner")
     )
-    @self.console_argument(
-        "width", type=self.length_x, help=_("new width of selected")
-    )
+    @self.console_argument("width", type=self.length_x, help=_("new width of selected"))
     @self.console_argument(
         "height", type=self.length_y, help=_("new height of selected")
     )
@@ -4972,7 +4885,7 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_resize(
-            command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs
+        command, channel, _, x_pos, y_pos, width, height, data=None, **kwargs
     ):
         if height is None:
             raise CommandSyntaxError
@@ -5028,7 +4941,7 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_matrix(
-            command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
+        command, channel, _, sx, kx, ky, sy, tx, ty, data=None, **kwargs
     ):
         if ty is None:
             channel("----------")
@@ -5252,9 +5165,7 @@ def init_commands(kernel):
                     j = "-"
                 else:
                     j = ":"
-                channel(
-                    f"{'.'.join(p).ljust(10)}{j} {str(n.type)} - {str(n.label)}"
-                )
+                channel(f"{'.'.join(p).ljust(10)}{j} {str(n.type)} - {str(n.label)}")
                 t_list(p, n)
 
         for d in data:
@@ -5303,9 +5214,7 @@ def init_commands(kernel):
         input_type="tree",
         output_type="tree",
     )
-    def tree_menu(
-            command, channel, _, data=None, node=None, execute=None, **kwargs
-    ):
+    def tree_menu(command, channel, _, data=None, node=None, execute=None, **kwargs):
         """
         Create menu for a particular node.
         Processes submenus, references, radio_state and check_state as needed.
@@ -5480,34 +5389,34 @@ def init_commands(kernel):
         #     (typecount[0], typecount[1], typecount[2], typecount[3], typecount[4]))
         single = False
         if (
-                typecount[0] > 0
-                and typecount[1] == 0
-                and typecount[2] == 0
-                and typecount[3] == 0
+            typecount[0] > 0
+            and typecount[1] == 0
+            and typecount[2] == 0
+            and typecount[3] == 0
         ):
             single = True
             entry = 0
         elif (
-                typecount[1] > 0
-                and typecount[0] == 0
-                and typecount[2] == 0
-                and typecount[3] == 0
+            typecount[1] > 0
+            and typecount[0] == 0
+            and typecount[2] == 0
+            and typecount[3] == 0
         ):
             single = True
             entry = 1
         elif (
-                typecount[2] > 0
-                and typecount[0] == 0
-                and typecount[1] == 0
-                and typecount[3] == 0
+            typecount[2] > 0
+            and typecount[0] == 0
+            and typecount[1] == 0
+            and typecount[3] == 0
         ):
             single = True
             entry = 2
         elif (
-                typecount[3] > 0
-                and typecount[0] == 0
-                and typecount[1] == 0
-                and typecount[2] == 0
+            typecount[3] > 0
+            and typecount[0] == 0
+            and typecount[1] == 0
+            and typecount[2] == 0
         ):
             single = True
             entry = 3
@@ -5594,7 +5503,7 @@ def init_commands(kernel):
     def undo_mark(data=None, **kwgs):
         self._undo_index += 1
         self._undo_stack.insert(self._undo_index, self._tree.backup_tree())
-        del self._undo_stack[self._undo_index + 1:]
+        del self._undo_stack[self._undo_index + 1 :]
         return "undo", self._undo_stack[self._undo_index]
 
     @self.console_command(
@@ -5678,12 +5587,8 @@ def init_commands(kernel):
             self._clipboard[destination].append(copy_node)
         return "elements", self._clipboard[destination]
 
-    @self.console_option(
-        "dx", "x", help=_("paste offset x"), type=Length, default=0
-    )
-    @self.console_option(
-        "dy", "y", help=_("paste offset y"), type=Length, default=0
-    )
+    @self.console_option("dx", "x", help=_("paste offset x"), type=Length, default=0)
+    @self.console_option("dy", "y", help=_("paste offset y"), type=Length, default=0)
     @self.console_command(
         "paste",
         help=_("clipboard paste"),
@@ -5766,9 +5671,7 @@ def init_commands(kernel):
     # ==========
     # NOTES COMMANDS
     # ==========
-    @self.console_option(
-        "append", "a", type=bool, action="store_true", default=False
-    )
+    @self.console_option("append", "a", type=bool, action="store_true", default=False)
     @self.console_command("note", help=_("note <note>"))
     def note(command, channel, _, append=False, remainder=None, **kwargs):
         _note = remainder
@@ -5832,9 +5735,7 @@ def init_commands(kernel):
             I, radius = circle_from1(A, B)
             return I, radius
         else:
-            I = get_circle_center(
-                B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1]
-            )
+            I = get_circle_center(B[0] - A[0], B[1] - A[1], C[0] - A[0], C[1] - A[1])
             I[0] += A[0]
             I[1] += A[1]
             radius = dist(I, A)
@@ -5985,10 +5886,10 @@ def init_commands(kernel):
                 max_val[1] = max(max_val[1], bounds[3])
         if method == "quick":
             if (
-                    not isinf(min_val[0])
-                    and not isinf(min_val[1])
-                    and not isinf(max_val[0])
-                    and not isinf(max_val[0])
+                not isinf(min_val[0])
+                and not isinf(min_val[1])
+                and not isinf(max_val[0])
+                and not isinf(max_val[0])
             ):
                 pts += [
                     (min_val[0], min_val[1]),
@@ -6027,7 +5928,7 @@ def init_commands(kernel):
         input_type=("elements", "shapes", None),
     )
     def trace_trace_spooler(
-            command, channel, _, method=None, resolution=None, data=None, **kwargs
+        command, channel, _, method=None, resolution=None, data=None, **kwargs
     ):
         if method is None:
             method = "quick"
@@ -6084,7 +5985,7 @@ def init_commands(kernel):
         output_type="elements",
     )
     def trace_trace_generator(
-            command, channel, _, method=None, resolution=None, data=None, **kwargs
+        command, channel, _, method=None, resolution=None, data=None, **kwargs
     ):
         if method is None:
             method = "quick"
