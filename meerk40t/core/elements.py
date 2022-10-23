@@ -25,6 +25,7 @@ from ..svgelements import (
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
+from .node.elem_path import PathNode
 from .node.node import Fillrule, Linecap, Linejoin, Node
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -948,7 +949,7 @@ class Elemental(Service):
             # Does it belong to an op?
             node = elemnode.parent
             # That only seems to be true during burn...
-            if not node.type.startswith("op"):
+            if node is not None and not node.type.startswith("op"):
                 node = None
                 # print (f"Does not have an op node as parent ({elemnode.text})")
                 for op in list(self.ops()):
@@ -4273,8 +4274,20 @@ class Elemental(Service):
             data=None,
             **kwargs,
         ):
+            """
+            Phase 1: We create a rendered image of the data, then we vectorize
+            this representation
+            Phase 2: This path will then be adjusted by applying
+            altered stroke-widths and rendered and vectorized again.
+
+            This two phase approach is required as not all nodes have
+            a proper stroke-width that can be adjusted (eg text or images...)
+            """
             if data is None:
                 data = list(self.elems(emphasized=True))
+            if data is None or len(data) == 0:
+                return
+
             reverse = self.classify_reverse
             if reverse:
                 data = list(reversed(data))
@@ -4310,7 +4323,9 @@ class Elemental(Service):
             if opttolerance is None:
                 opttolerance = 0.2
             if color is None:
-                color = Color("black")
+                pathcolor = Color("blue")
+            else:
+                pathcolor = color
             if invert is None:
                 invert = False
             if blacklevel is None:
@@ -4324,29 +4339,102 @@ class Elemental(Service):
             if outer is None:
                 outer = False
             outputdata = []
-            for numidx in range(times):
-                copy_data = []
-                for e in data:
-                    node_copy = copy(e)
-                    for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
-                        if hasattr(e, optional):
-                            setattr(node_copy, optional, getattr(e, optional))
+            mydata = []
+            for node in data:
+                if outer and hasattr(node, "fill"):
+                    e = copy(node)
+                    e.fill = Color("black")
+                    if hasattr(e, "stroke"):
+                        e.stroke = Color("black")
+                    if hasattr(e, "fillrule"):
+                        e.fillrule = 0
+                    mydata.append(e)
+                else:
+                    mydata.append(node)
+            ###############################################
+            # Phase 1: render and vectorize first outline
+            ###############################################
+            bounds = Node.union_bounds(mydata, attr="paint_bounds")
+            # bounds_regular = Node.union_bounds(data)
+            # for idx in range(4):
+            #     print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds_regular[idx]:.2f}")
+            if bounds is None:
+                return
+            xmin, ymin, xmax, ymax = bounds
+            if isinf(xmin):
+                channel(_("No bounds for selected elements."))
+                return
+            width = xmax - xmin
+            height = ymax - ymin
 
-                    if outer and hasattr(node_copy, "fill"):
-                        node_copy.fill = Color("black")
-                    if hasattr(node_copy, "stroke"):
-                        node_copy.stroke = Color("black")
-                        node_copy.stroke_width += 2 * (numidx + 1) * offset
-                    node_copy.set_dirty_bounds()
-                    # We need to establish the bounds, they might still be undefined?!
-                    _ = node_copy.bounds
-                    _ = node_copy.paint_bounds
-                    ## DOES NOT WORK !!! WTF
-                    #  print (f"e={e.paint_bounds}, c={node_copy.paint_bounds}")
-                    copy_data.append(node_copy)
-                bounds = Node.union_bounds(data, attr="paint_bounds")
+            dots_per_units = dpi / UNITS_PER_INCH
+            new_width = width * dots_per_units
+            new_height = height * dots_per_units
+            new_height = max(new_height, 1)
+            new_width = max(new_width, 1)
+            dpi = 500
+
+            data_image = make_raster(
+                mydata,
+                bounds=bounds,
+                width=new_width,
+                height=new_height,
+            )
+            matrix = Matrix.scale(width / new_width, height / new_height)
+            matrix.post_translate(bounds[0], bounds[1])
+            image_node = ImageNode(
+                image=data_image,
+                matrix=matrix,
+                dpi=dpi,
+                label="Phase 1 render image"
+            )
+
+            path = make_vector(
+                data_image,
+                interpolationpolicy=ipolicy,
+                invert=invert,
+                turdsize=turdsize,
+                alphamax=alphamax,
+                opticurve=opticurve,
+                opttolerance=opttolerance,
+                color=color,
+                blacklevel=blacklevel,
+            )
+            matrix = Matrix.scale(width / new_width, height / new_height)
+            matrix.post_translate(bounds[0], bounds[1])
+            path.transform *= Matrix(matrix)
+            data_node = PathNode(
+                path = abs(path),
+                stroke_width = 0,
+                stroke=Color("black"),
+                stroke_scaled=False,
+                fill=None,
+                # fillrule=Fillrule.FILLRULE_NONZERO,
+                label="Phase 1 Outline path",
+            )
+            data_node.fill = None
+            # If you want to debug the phases then uncomment the following lines to
+            # see the interim path and interim message
+
+            # self.elem_branch.add_node(data_node)
+            # self.elem_branch.add_node(image_node)
+
+            copy_data = [image_node, data_node]
+
+            ################################################################
+            # Phase 2: change outline witdh and render and vectorize again
+            ################################################################
+            for numidx in range(times):
+                data_node.stroke_width += 2 * offset
+                data_node.set_dirty_bounds()
+                pb = data_node.paint_bounds
+                bounds = Node.union_bounds(copy_data, attr="paint_bounds")
+                # print (f"{pb} - {bounds}")
                 if bounds is None:
                     return
+                # bounds_regular = Node.union_bounds(copy_data)
+                # for idx in range(4):
+                #     print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds[idx]:.2f}")
                 xmin, ymin, xmax, ymax = bounds
                 if isinf(xmin):
                     channel(_("No bounds for selected elements."))
@@ -4359,23 +4447,20 @@ class Elemental(Service):
                 new_height = height * dots_per_units
                 new_height = max(new_height, 1)
                 new_width = max(new_width, 1)
+                dpi = 500
 
-                image = make_raster(
+                image_2 = make_raster(
                     copy_data,
                     bounds=bounds,
                     width=new_width,
                     height=new_height,
                 )
-                # debug the generated picture...
-                if False:
-                    matrix = Matrix.scale(width / new_width, height / new_height)
-                    matrix.post_translate(bounds[0], bounds[1])
+                matrix = Matrix.scale(width / new_width, height / new_height)
+                matrix.post_translate(bounds[0], bounds[1])
+                image_node_2 = ImageNode(image=image_2, matrix=matrix, dpi=dpi)
 
-                    image_node = ImageNode(image=image, matrix=matrix, dpi=dpi)
-                    self.elem_branch.add_node(image_node)
-
-                path = make_vector(
-                    image,
+                path_2 = make_vector(
+                    image_2,
                     interpolationpolicy=ipolicy,
                     invert=invert,
                     turdsize=turdsize,
@@ -4385,20 +4470,21 @@ class Elemental(Service):
                     color=color,
                     blacklevel=blacklevel,
                 )
-                path.fill = None
                 matrix = Matrix.scale(width / new_width, height / new_height)
                 matrix.post_translate(bounds[0], bounds[1])
-                path.transform *= Matrix(matrix)
-                node = self.elem_branch.add(
-                    path=abs(path),
-                    stroke_width=1000,
+                path_2.transform *= Matrix(matrix)
+                outline_node = self.elem_branch.add(
+                    path=abs(path_2),
+                    stroke_width=0,
                     stroke_scaled=False,
-                    fill=None,
                     type="elem path",
-                    fillrule=Fillrule.FILLRULE_NONZERO,
+                    fill=None,
+                    stroke=pathcolor,
+                    # fillrule=Fillrule.FILLRULE_NONZERO,
+                    label = f"Phase 2 outline path #{numidx}"
                 )
-                outputdata.append(node)
-
+                outline_node.fill = None
+                outputdata.append(outline_node)
             self.signal("refresh_scene", "Scene")
             return "elements", outputdata
 
