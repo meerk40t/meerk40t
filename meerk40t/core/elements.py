@@ -46,6 +46,7 @@ def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":
         from meerk40t.core import element_commands
+
         return [element_commands.plugin]
     elif lifecycle == "preregister":
         kernel.register(
