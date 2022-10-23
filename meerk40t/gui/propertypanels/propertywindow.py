@@ -27,11 +27,25 @@ class PropertyWindow(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
 
-    def properties_show(self, nodes):
-        if nodes is None:
+    def on_page_changed(self, event):
+        event.Skip()
+        page = self.notebook_main.GetCurrentPage()
+        if page is None:
             return
+        for panel in self.panel_instances:
+            try:
+                if panel is page:
+                    page.pane_active()
+                else:
+                    panel.pane_deactive()
+            except AttributeError:
+                pass
+
+    @signal_listener("selected")
+    def on_selected(self, origin, *args):
         self.Freeze()
         for p in self.panel_instances:
             try:
@@ -48,6 +62,9 @@ class PropertyWindow(MWindow):
                 else 0
             )
 
+        nodes = list(self.context.elements.flat(selected=True, cascade=False))
+        if nodes is None:
+            return
         pages_to_instance = []
         for node in nodes:
             pages_in_node = []
@@ -110,17 +127,7 @@ class PropertyWindow(MWindow):
 
         self.Layout()
         self.Thaw()
-
-    @signal_listener("propupdate")
-    def on_propupdate(self, origin, node, *args):
-        if node is None:
-            return
-        self.properties_show([node])
-
-    @signal_listener("selected")
-    def on_selected(self, origin, *args):
-        nodes = list(self.context.elements.flat(selected=True, cascade=False))
-        self.properties_show(nodes)
+        # self.Refresh()
 
     @staticmethod
     def sub_register(kernel):
