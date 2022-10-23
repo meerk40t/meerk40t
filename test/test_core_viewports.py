@@ -280,10 +280,12 @@ class TestViewport(unittest.TestCase):
                         flip_y=flip_y,
                         swap_xy=swap_xy,
                     )
-                    if not swap_xy:
+                    if swap_xy:
+                        hx, hy = view.physical_to_show_position("50mm", "55mm")
+                    else:
                         hx, hy = view.physical_to_show_position("55mm", "50mm")
-                        self.assertAlmostEqual(hx, 0)
-                        self.assertAlmostEqual(hy, 0)
+                    self.assertAlmostEqual(hx, 0)
+                    self.assertAlmostEqual(hy, 0)
 
     def test_viewport_balor_physical_to_scene(self):
         """
