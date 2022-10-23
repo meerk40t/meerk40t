@@ -471,9 +471,6 @@ class GRBLDriver(Parameters):
         self.queue = []
         self.plot_data = None
 
-        self.current_steps = 0
-        self.total_steps = 0
-
         self.on_value = 0
         self.power_dirty = True
         self.speed_dirty = True
@@ -616,50 +613,6 @@ class GRBLDriver(Parameters):
 
         @return:
         """
-        self.current_steps = 0
-        self.total_steps = 0
-        skip_calc = True
-        if not skip_calc:
-            # preprocess queue to establish steps
-            assessment_start = time.time()
-            dummy_planner = PlotPlanner(
-                self.settings,
-                single=True,
-                smooth=False,
-                ppi=False,
-                shift=False,
-                group=True,
-            )
-
-            for q in self.queue:
-                if isinstance(q, LineCut):
-                    self.total_steps += 1
-                elif isinstance(q, (QuadCut, CubicCut)):
-                    interp = self.service.interpolate
-                    step_size = 1.0 / float(interp)
-                    t = step_size
-                    for p in range(int(interp)):
-                        self.total_steps += 1
-                        t += step_size
-                elif isinstance(q, WaitCut):
-                    self.total_steps += 1
-                elif isinstance(q, HomeCut):
-                    self.total_steps += 1
-                elif isinstance(q, GotoCut):
-                    self.total_steps += 1
-                elif isinstance(q, SetOriginCut):
-                    self.total_steps += 1
-                elif isinstance(q, DwellCut):
-                    self.total_steps += 1
-                elif isinstance(q, (InputCut, OutputCut)):
-                    self.total_steps += 1
-                else:
-                    dummy_planner.push(q)
-                    dummy_data = list(dummy_planner.gen())
-                    self.total_steps += len(dummy_data)
-                    dummy_planner.clear()
-            # print ("GRBL-Assessment done, Steps=%d - did take %.1f sec" % (self.total_steps, time.time()-assessment_start))
-
         self._g91_absolute()
         self._g94_feedrate()
         self._clean()
@@ -689,7 +642,6 @@ class GRBLDriver(Parameters):
                 self.set("speed", q.speed)
             self.settings.update(q.settings)
             if isinstance(q, LineCut):
-                self.current_steps += 1
                 self.move_mode = 1
                 self._move(*q.end)
             elif isinstance(q, (QuadCut, CubicCut)):
@@ -698,7 +650,6 @@ class GRBLDriver(Parameters):
                 step_size = 1.0 / float(interp)
                 t = step_size
                 for p in range(int(interp)):
-                    self.current_steps += 1
                     while self.paused:
                         time.sleep(0.05)
                     self._move(*q.point(t))
@@ -706,17 +657,13 @@ class GRBLDriver(Parameters):
                 last_x, last_y = q.end
                 self._move(last_x, last_y)
             elif isinstance(q, WaitCut):
-                self.current_steps += 1
                 self.wait(q.dwell_time)
             elif isinstance(q, HomeCut):
-                self.current_steps += 1
                 self.home()
             elif isinstance(q, GotoCut):
-                self.current_steps += 1
                 start = q.start
                 self._move(self.origin_x + start[0], self.origin_y + start[1])
             elif isinstance(q, SetOriginCut):
-                self.current_steps += 1
                 if q.set_current:
                     x = self.native_x
                     y = self.native_y
@@ -724,16 +671,13 @@ class GRBLDriver(Parameters):
                     x, y = q.start
                 self.set_origin(x, y)
             elif isinstance(q, DwellCut):
-                self.current_steps += 1
                 self.dwell(q.dwell_time)
             elif isinstance(q, (InputCut, OutputCut)):
-                self.current_steps += 1
                 # GRBL has no core GPIO functionality
                 pass
             else:
                 self.plot_planner.push(q)
                 for x, y, on in self.plot_planner.gen():
-                    self.current_steps += 1
                     while self.paused:
                         time.sleep(0.05)
                     if on > 1:
@@ -766,8 +710,6 @@ class GRBLDriver(Parameters):
                     self.on_value = on
                     self._move(x, y)
         self.queue.clear()
-        self.current_steps = 0
-        self.total_steps = 0
 
         self.grbl("G1 S0\r")
         self.grbl("M5\r")
