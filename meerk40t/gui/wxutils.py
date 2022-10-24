@@ -92,8 +92,10 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
 
 def create_choices_for_node(node, elements) -> List[dict]:
     choices = []
+    from meerk40t.core.treeop import get_tree_operation_for_node
 
-    for func in elements.tree_operations_for_node(node):
+    tree_operations_for_node = get_tree_operation_for_node(elements)
+    for func in tree_operations_for_node(node):
         choice = {}
         choices.append(choice)
         choice["action"] = func
@@ -136,6 +138,9 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     menu = wx.Menu()
     submenus = {}
     radio_check_not_needed = []
+    from meerk40t.core.treeop import get_tree_operation_for_node
+
+    tree_operations_for_node = get_tree_operation_for_node(elements)
 
     def menu_functions(f, node):
         func_dict = dict(f.func_dict)
@@ -155,7 +160,8 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     if optional_2nd_node is not None:
         mc1 = menu.MenuItemCount
         last_was_separator = False
-        for func in elements.tree_operations_for_node(optional_2nd_node):
+
+        for func in tree_operations_for_node(optional_2nd_node):
             submenu_name = func.submenu
             submenu = None
             if submenu_name in submenus:
@@ -227,7 +233,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         if not last_was_separator and mc2 - mc1 > 0:
             menu.AppendSeparator()
 
-    for func in elements.tree_operations_for_node(node):
+    for func in tree_operations_for_node(node):
         submenu_name = func.submenu
         submenu = None
         if submenu_name in submenus:
