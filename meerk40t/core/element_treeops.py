@@ -1768,9 +1768,14 @@ def init_tree(kernel):
         self("image ccw\n")
 
     @tree_submenu(_("Image"))
-    @tree_operation(_("Save output.png"), node_type="elem image", help="")
+    @tree_operation(_("Save original image to output.png"), node_type="elem image", help="")
     def image_save(node, **kwargs):
         self("image save output.png\n")
+
+    @tree_submenu(_("Image"))
+    @tree_operation(_("Save processed image to output.png"), node_type="elem image", help="")
+    def image_save_processed(node, **kwargs):
+        self("image save output.png --processed\n")
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()
