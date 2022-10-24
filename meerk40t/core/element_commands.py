@@ -5237,7 +5237,10 @@ def init_commands(kernel):
 
             return specific
 
-        for func in self.tree_operations_for_node(menu_node):
+        from meerk40t.core.treeop import get_tree_operation_for_node
+
+        tree_operations_for_node = get_tree_operation_for_node(self)
+        for func in tree_operations_for_node(menu_node):
             submenu_name = func.submenu
             submenu = None
             if submenu_name in submenus:
