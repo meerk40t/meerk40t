@@ -1,8 +1,10 @@
 # import threading
 import wx
+from PIL import Image
 
-from meerk40t.core.units import UNITS_PER_INCH
 from meerk40t.core.node.elem_path import PathNode
+from meerk40t.core.units import UNITS_PER_INCH
+
 # from meerk40t.gui.icons import icons8_image_50
 # from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.propertypanels.attributes import IdPanel, PositionSizePanel
@@ -10,6 +12,10 @@ from meerk40t.gui.wxutils import ScrolledPanel, TextCtrl
 from meerk40t.svgelements import Matrix
 
 _ = wx.GetTranslation
+
+# The default value needs to be true, as the static method will be called before init happened...
+HAS_VECTOR_ENGINE = True
+
 
 class CropPanel(wx.Panel):
     name = _("Crop")
@@ -616,6 +622,25 @@ class ImageVectorisationPanel(ScrolledPanel):
         main_sizer = wx.BoxSizer(wx.HORIZONTAL)
         # self.vector_lock = threading.Lock()
         # self.alive = True
+        # Only display if we have a vector engine
+        make_vector = self.context.kernel.lookup("render-op/make_vector")
+        if make_vector:
+            global HAS_VECTOR_ENGINE
+            HAS_VECTOR_ENGINE = True
+        if not make_vector:
+            main_sizer.Add(
+                wx.StaticText(
+                    self, wx.ID_ANY, "No vector engine installed, you need potrace"
+                ),
+                1,
+                wx.EXPAND,
+                0,
+            )
+            self.SetSizer(main_sizer)
+            main_sizer.Fit(self)
+            self.Layout()
+            self.Centre()
+            return
 
         sizer_options = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Options")), wx.VERTICAL
@@ -824,14 +849,28 @@ class ImageVectorisationPanel(ScrolledPanel):
         self.context(cmd)
 
     def set_images(self, refresh=False):
+        def opaque(source):
+            img = source
+            if img is not None:
+                if img.mode == "RGBA":
+                    r, g, b, a = img.split()
+                    background = Image.new("RGB", img.size, "white")
+                    background.paste(img, mask=a)
+                    img = background
+            return img
+
         if not self._visible:
             return
         if self.node is None or self.node.image is None:
             self.wximage = wx.NullBitmap
         else:
             if refresh:
+                source_image = self.node._processed_image
+                if source_image is None:
+                    source_image = self.node.image
+                source_image = opaque(source_image)
                 pw, ph = self.bitmap_preview.GetSize()
-                iw, ih = self.node.image.size
+                iw, ih = source_image.size
                 wfac = pw / iw
                 hfac = ph / ih
                 # The smaller of the two decide how to scale the picture
@@ -841,9 +880,9 @@ class ImageVectorisationPanel(ScrolledPanel):
                     factor = hfac
                 # print (f"Window: {pw} x {ph}, Image= {iw} x {ih}, factor={factor:.3f}")
                 if factor < 1.0:
-                    image = self.node.opaque_image.resize((int(iw * factor), int(ih * factor)))
+                    image = source_image.resize((int(iw * factor), int(ih * factor)))
                 else:
-                    image = self.node.opaque_image
+                    image = source_image
                 self.wximage = self.img_2_wx(image)
 
         self.bitmap_preview.SetBitmap(self.wximage)
@@ -921,7 +960,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                 path=abs(path),
                 stroke_width=0,
                 stroke_scaled=False,
-                fillrule=0,   # Fillrule.FILLRULE_NONZERO
+                fillrule=0,  # Fillrule.FILLRULE_NONZERO
             )
             if dummynode is None:
                 return
@@ -946,7 +985,7 @@ class ImageVectorisationPanel(ScrolledPanel):
                 height=ph,
                 keep_ratio=True,
             )
-            rw, rh  = image.size
+            rw, rh = image.size
             # print (f"Area={pw}x{ph}, Org={iw}x{ih}, Raster={rw}x{rh}")
             # if factor < 1.0:
             #     image = image.resize((int(iw * factor), int(ih * factor)))
@@ -956,7 +995,10 @@ class ImageVectorisationPanel(ScrolledPanel):
 
     @staticmethod
     def accepts(node):
-        if node.type == "elem image":
+        # Changing the staticmethod into a regular method will cause a crash, so therefore this circumvention
+        # Not the nicest thing in the world, as we need to instantiate the class once to reset the status flag
+        global HAS_VECTOR_ENGINE
+        if node.type == "elem image" and HAS_VECTOR_ENGINE:
             return True
         return False
 

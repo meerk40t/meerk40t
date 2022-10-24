@@ -1450,6 +1450,7 @@ def init_tree(kernel):
                 property_op(self.kernel.root, node)
             self.signal("element_property_update", [node])
 
+    @tree_conditional(lambda node: has_vectorize(node))
     @tree_submenu(_("Outline element(s)..."))
     @tree_iterate("offset", 1, 10)
     @tree_operation(
