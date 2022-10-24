@@ -15,6 +15,8 @@ _ = wx.GetTranslation
 
 # The default value needs to be true, as the static method will be called before init happened...
 HAS_VECTOR_ENGINE = True
+
+
 class CropPanel(wx.Panel):
     name = _("Crop")
     priority = 5
@@ -626,7 +628,14 @@ class ImageVectorisationPanel(ScrolledPanel):
             global HAS_VECTOR_ENGINE
             HAS_VECTOR_ENGINE = True
         if not make_vector:
-            main_sizer.Add(wx.StaticText("No vector engine installed, you need potrace"), 1, wx.EXPAND, 0)
+            main_sizer.Add(
+                wx.StaticText(
+                    self, wx.ID_ANY, "No vector engine installed, you need potrace"
+                ),
+                1,
+                wx.EXPAND,
+                0,
+            )
             self.SetSizer(main_sizer)
             main_sizer.Fit(self)
             self.Layout()
