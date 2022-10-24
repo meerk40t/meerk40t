@@ -42,6 +42,23 @@ def plugin(kernel, lifecycle=None):
             "page": "Input/Output",
             "section": "Input",
         },
+        {
+            "attr": "create_image_group",
+            "object": kernel.elements,
+            "default": True,
+            "type": bool,
+            "label": _("Create a file-node for imported image"),
+            "tip": "\n".join(
+                (
+                    _("Unset: Attach the image directly to elements."),
+                    _(
+                        "Set: Put the image under a file-node created for it."
+                    ),
+                )
+            ),
+            "page": "Input/Output",
+            "section": "Input",
+        },
     ]
     kernel.register_choices("preferences", choices)
 
@@ -1768,16 +1785,22 @@ class ImageLoader:
         except (KeyError, IndexError):
             pass
 
+        context.setting(bool, "create_image_group", True)
         element_branch = elements_service.get(type="branch elems")
-
-        file_node = element_branch.add(type="file", label=os.path.basename(pathname))
-        file_node.filepath = pathname
+        if context.create_image_group:
+            file_node = element_branch.add(type="file", label=os.path.basename(pathname))
+            file_node.filepath = pathname
+        else:
+            file_node = element_branch
         n = file_node.add(
             image=image,
             matrix=matrix,
             type="elem image",
             dpi=_dpi,
         )
-        file_node.focus()
+        if context.create_image_group:
+            file_node.focus()
+        else:
+            n.focus()
         elements_service.classify([n])
         return True
