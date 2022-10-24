@@ -1116,16 +1116,28 @@ def plugin(kernel, lifecycle=None):
 
         return "image", data
 
+    @context.console_option(
+        "processed",
+        "p",
+        help=_("Save the processed image to disk"),
+        action="store_true",
+        type=bool,
+    )
     @context.console_argument(
         "filename", type=str, help=_("filename"), default="output.png"
     )
     @context.console_command(
         "save", help=_("save image to disk"), input_type="image", output_type="image"
     )
-    def image_save(command, channel, _, data, filename, **kwargs):
+    def image_save(command, channel, _, data, filename, processed=None, **kwargs):
+        if processed is None:
+            processed = False
         for inode in data:
             try:
-                img = inode.image
+                if processed and inode._processed_image is not None:
+                    img = inode._processed_image
+                else:
+                    img = inode.image
                 img.save(filename)
                 channel(_("Saved: {filename}").format(filename=filename))
             except IndexError:
