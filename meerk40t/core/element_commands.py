@@ -3182,6 +3182,7 @@ def init_commands(kernel):
             stroke_scaled=False,
             type="elem path",
             fillrule=Fillrule.FILLRULE_NONZERO,
+            linejoin=Linejoin.JOIN_ROUND,
         )
         self.signal("refresh_scene", "Scene")
 
@@ -3293,6 +3294,7 @@ def init_commands(kernel):
         if data is None:
             data = list(self.elems(emphasized=True))
         if data is None or len(data) == 0:
+            channel(_("No elements to outline."))
             return
 
         reverse = self.classify_reverse
@@ -3414,11 +3416,12 @@ def init_commands(kernel):
             stroke_scaled=False,
             fill=None,
             # fillrule=Fillrule.FILLRULE_NONZERO,
+            linejoin=Linejoin.JOIN_ROUND,
             label="Phase 1 Outline path",
         )
         data_node.fill = None
         # If you want to debug the phases then uncomment the following lines to
-        # see the interim path and interim message
+        # see the interim path and interim render image
 
         # self.elem_branch.add_node(data_node)
         # self.elem_branch.add_node(image_node)
@@ -3461,7 +3464,7 @@ def init_commands(kernel):
             )
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
-            image_node_2 = ImageNode(image=image_2, matrix=matrix, dpi=dpi)
+            image_node_2 = ImageNode(image=image_2, matrix=matrix, dpi=dpi, label="Phase 2 render image")
 
             path_2 = make_vector(
                 image_2,
@@ -3485,10 +3488,15 @@ def init_commands(kernel):
                 fill=None,
                 stroke=pathcolor,
                 # fillrule=Fillrule.FILLRULE_NONZERO,
+                linejoin=Linejoin.JOIN_ROUND,
                 label=f"Phase 2 outline path #{numidx}",
             )
             outline_node.fill = None
             outputdata.append(outline_node)
+            # If you want to debug the phases then uncomment the following line to
+            # see the interim image
+            # self.elem_branch.add_node(image_node_2)
+
         self.signal("refresh_scene", "Scene")
         return "elements", outputdata
 
