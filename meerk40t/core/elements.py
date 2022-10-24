@@ -16,7 +16,7 @@ from .node.op_engrave import EngraveOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
 from .node.rootnode import RootNode
-from .units import  Length
+from .units import Length
 from .wordlist import Wordlist
 
 
