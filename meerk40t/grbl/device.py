@@ -1188,6 +1188,7 @@ class GrblController:
                             self.old_y = new_y
                         elif line.startswith("G28"):
                             # home
+                            #TODO: Likely should be multiplied by width, height
                             new_x = self.driver.origin_x
                             new_y = self.driver.origin_y
                             self.service.signal(
