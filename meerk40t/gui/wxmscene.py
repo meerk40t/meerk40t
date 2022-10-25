@@ -31,6 +31,7 @@ from meerk40t.gui.scenewidgets.machineoriginwidget import MachineOriginWidget
 from meerk40t.gui.scenewidgets.rectselectwidget import RectSelectWidget
 from meerk40t.gui.scenewidgets.reticlewidget import ReticleWidget
 from meerk40t.gui.scenewidgets.selectionwidget import SelectionWidget
+from meerk40t.gui.toolwidgets.toolbug import BugTool
 from meerk40t.gui.toolwidgets.toolcircle import CircleTool
 from meerk40t.gui.toolwidgets.toolcontainer import ToolContainer
 from meerk40t.gui.toolwidgets.tooldraw import DrawTool
@@ -157,6 +158,7 @@ class MeerK40tScenePanel(wx.Panel):
         context.register("tool/vector", VectorTool)
         context.register("tool/measure", MeasureTool)
         context.register("tool/ribbon", RibbonTool)
+        context.register("tool/bug", BugTool)
         context.register("tool/linetext", LineTextTool)
 
         buttonsize = int(STD_ICON_SIZE / 2)
