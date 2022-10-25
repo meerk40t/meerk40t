@@ -28,6 +28,7 @@ class BugTool(ToolWidget):
         self.renderer.draw_path_node(n, gc, draw_mode=0)
 
     def tick(self):
+        self.scene.request_refresh()
         return True
 
     def event(
