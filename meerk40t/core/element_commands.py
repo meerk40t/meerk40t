@@ -3250,7 +3250,7 @@ def init_commands(kernel):
         help=_("Only outer line"),
     )
     @self.console_option(
-        "times",
+        "steps",
         "x",
         type=int,
         default=1,
@@ -3278,7 +3278,7 @@ def init_commands(kernel):
         invert=None,
         blacklevel=None,
         outer=None,
-        times=None,
+        steps=None,
         data=None,
         **kwargs,
     ):
@@ -3353,8 +3353,8 @@ def init_commands(kernel):
             offset = self.length("5mm")
         else:
             offset = self.length(offset)
-        if times is None or times < 1:
-            times = 1
+        if steps is None or steps < 1:
+            steps = 1
         if outer is None:
             outer = False
         outputdata = []
@@ -3442,7 +3442,7 @@ def init_commands(kernel):
         ################################################################
         # Phase 2: change outline witdh and render and vectorize again
         ################################################################
-        for numidx in range(times):
+        for numidx in range(steps):
             data_node.stroke_width += 2 * offset
             data_node.set_dirty_bounds()
             pb = data_node.paint_bounds
