@@ -580,7 +580,7 @@ class GuideWidget(Widget):
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
-                if p.device.flip_x:
+                if p.device.show_flip_x:
                     mark_point *= -1
                 if mark_point >= 0 or p.show_negative_guide or show_x_primary:
                     starts.append((x, edge_gap))
@@ -614,7 +614,7 @@ class GuideWidget(Widget):
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
                 if round(float(mark_point) * 1000) == 0:
                     mark_point = 0.0  # prevents -0
-                if p.device.flip_y:
+                if p.device.show_flip_y:
                     mark_point *= -1
                 if mark_point >= 0 or p.show_negative_guide or show_y_primary:
                     starts.append((edge_gap, y))
@@ -658,7 +658,7 @@ class GuideWidget(Widget):
                     )
                     if round(float(mark_point) * 1000) == 0:
                         mark_point = 0.0  # prevents -0
-                    if p.device.flip_x:
+                    if p.device.show_flip_x:
                         mark_point *= -1
                     if mark_point >= 0 or p.show_negative_guide or show_x_secondary:
                         starts.append((x, edge_gap))
@@ -691,7 +691,7 @@ class GuideWidget(Widget):
                     )
                     if round(float(mark_point) * 1000) == 0:
                         mark_point = 0.0  # prevents -0
-                    if p.device.flip_y:
+                    if p.device.show_flip_y:
                         mark_point *= -1
                     if mark_point >= 0 or p.show_negative_guide or show_y_secondary:
                         starts.append((w - edge_gap, y))
