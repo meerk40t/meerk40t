@@ -3370,73 +3370,6 @@ def init_commands(kernel):
                 mydata.append(e)
             else:
                 mydata.append(node)
-        ###############################################
-        # Phase 0: render and vectorize first outline
-        ###############################################
-        if outer:
-            # Generate the outline, break it into subpaths
-            bounds = Node.union_bounds(mydata, attr="paint_bounds")
-            # bounds_regular = Node.union_bounds(data)
-            # for idx in range(4):
-            #     print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds_regular[idx]:.2f}")
-            if bounds is None:
-                return
-            xmin, ymin, xmax, ymax = bounds
-            if isinf(xmin):
-                channel(_("No bounds for selected elements."))
-                return
-            width = xmax - xmin
-            height = ymax - ymin
-
-            dots_per_units = dpi / UNITS_PER_INCH
-            new_width = width * dots_per_units
-            new_height = height * dots_per_units
-            new_height = max(new_height, 1)
-            new_width = max(new_width, 1)
-            dpi = 500
-
-            data_image = make_raster(
-                mydata,
-                bounds=bounds,
-                width=new_width,
-                height=new_height,
-            )
-            matrix = Matrix.scale(width / new_width, height / new_height)
-            matrix.post_translate(bounds[0], bounds[1])
-
-            path = make_vector(
-                data_image,
-                interpolationpolicy=ipolicy,
-                invert=invert,
-                turdsize=turdsize,
-                alphamax=alphamax,
-                opticurve=opticurve,
-                opttolerance=opttolerance,
-                color=color,
-                blacklevel=blacklevel,
-            )
-            matrix = Matrix.scale(width / new_width, height / new_height)
-            matrix.post_translate(bounds[0], bounds[1])
-            path.transform *= Matrix(matrix)
-            # Now break it into subpaths...
-            for pasp in path.as_subpaths():
-                subpath = Path(pasp)
-                data_node = PathNode(
-                    path=abs(subpath),
-                    stroke_width=1,
-                    stroke=Color("black"),
-                    stroke_scaled=False,
-                    fill=Color("black"),
-                    # fillrule=Fillrule.FILLRULE_NONZERO,
-                    linejoin=Linejoin.JOIN_ROUND,
-                    label="Phase 0 Outline subpath",
-                )
-                # This seems to be necessary to make sure the fill sticks
-                data_node.fill = Color("black")
-                mydata.append(data_node)
-                # If you want to debug the phases then uncomment the following lines to
-                # see the interim path nodes
-                # self.elem_branch.add_node(data_node)
 
         ###############################################
         # Phase 1: render and vectorize first outline
@@ -3558,8 +3491,95 @@ def init_commands(kernel):
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
             path_2.transform *= Matrix(matrix)
-            outline_node = self.elem_branch.add(
+            # That's our final path (or is it? Depends on outer...)
+            path_final = path_2
+            data_node_2 = PathNode(
                 path=abs(path_2),
+                stroke_width=1,
+                stroke=Color("black"),
+                stroke_scaled=False,
+                fill=None,
+                # fillrule=Fillrule.FILLRULE_NONZERO,
+                linejoin=Linejoin.JOIN_ROUND,
+                label="Phase 2 Outline path",
+            )
+            data_node_2.fill = None
+
+            # If you want to debug the phases then uncomment the following line to
+            # see the interim image
+            # self.elem_branch.add_node(image_node_2)
+            # self.elem_branch.add_node(data_node_2)
+            #######################################################
+            # Phase 3: render and vectorize last outline for outer
+            #######################################################
+            if outer:
+                # Generate the outline, break it into subpaths
+                copy_data = []
+                # Now break it into subpaths...
+                for pasp in path_final.as_subpaths():
+                    subpath = Path(pasp)
+                    data_node = PathNode(
+                        path=abs(subpath),
+                        stroke_width=1,
+                        stroke=Color("black"),
+                        stroke_scaled=False,
+                        fill=Color("black"),
+                        # fillrule=Fillrule.FILLRULE_NONZERO,
+                        linejoin=Linejoin.JOIN_ROUND,
+                        label="Phase 3 Outline subpath",
+                    )
+                    # This seems to be necessary to make sure the fill sticks
+                    data_node.fill = Color("black")
+                    copy_data.append(data_node)
+                    # If you want to debug the phases then uncomment the following lines to
+                    # see the interim path nodes
+                    # self.elem_branch.add_node(data_node)
+                bounds = Node.union_bounds(copy_data, attr="paint_bounds")
+                # bounds_regular = Node.union_bounds(data)
+                # for idx in range(4):
+                #     print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds_regular[idx]:.2f}")
+                if bounds is None:
+                    return
+                xmin, ymin, xmax, ymax = bounds
+                if isinf(xmin):
+                    channel(_("No bounds for selected elements."))
+                    return
+                width = xmax - xmin
+                height = ymax - ymin
+
+                dots_per_units = dpi / UNITS_PER_INCH
+                new_width = width * dots_per_units
+                new_height = height * dots_per_units
+                new_height = max(new_height, 1)
+                new_width = max(new_width, 1)
+                dpi = 500
+
+                data_image = make_raster(
+                    copy_data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                )
+                matrix = Matrix.scale(width / new_width, height / new_height)
+                matrix.post_translate(bounds[0], bounds[1])
+
+                path_final = make_vector(
+                    data_image,
+                    interpolationpolicy=ipolicy,
+                    invert=invert,
+                    turdsize=turdsize,
+                    alphamax=alphamax,
+                    opticurve=opticurve,
+                    opttolerance=opttolerance,
+                    color=color,
+                    blacklevel=blacklevel,
+                )
+                matrix = Matrix.scale(width / new_width, height / new_height)
+                matrix.post_translate(bounds[0], bounds[1])
+                path_final.transform *= Matrix(matrix)
+
+            outline_node = self.elem_branch.add(
+                path=abs(path_final),
                 stroke_width=1,
                 stroke_scaled=False,
                 type="elem path",
@@ -3571,11 +3591,10 @@ def init_commands(kernel):
             )
             outline_node.fill = None
             outputdata.append(outline_node)
-            # If you want to debug the phases then uncomment the following line to
-            # see the interim image
-            # self.elem_branch.add_node(image_node_2)
 
         self.signal("refresh_scene", "Scene")
+        if len(outputdata) > 0:
+            self.signal("element_property_update", outputdata)
         return "elements", outputdata
 
     # ==========
