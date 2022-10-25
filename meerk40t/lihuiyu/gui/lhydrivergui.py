@@ -629,6 +629,7 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
     def on_check_swapxy(self, event=None):
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
+        self.context.show_swap_xy = False
         self.context("viewport_update\n")
         self.context.signal("bedsize", False)
 
@@ -638,8 +639,14 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.context.signal("bedsize", False)
 
     def on_check_home_right(self, event=None):
-        self.context.home_right = self.checkbox_home_right.GetValue()
-        self.context.origin_x = 1.0 if self.context.home_right else 0.0
+        direction = self.checkbox_home_right.GetValue()
+        self.context.home_right = direction
+        if direction:
+            self.context.show_flip_x = True
+            self.context.origin_x = 1.0
+        else:
+            self.context.show_flip_x = False
+            self.context.origin_x = 0.0
         self.context.show_origin_x = self.context.origin_x
         self.context("viewport_update\n")
         self.context.signal("bedsize", False)
@@ -650,8 +657,14 @@ class ConfigurationInterfacePanel(ScrolledPanel):
         self.context.signal("bedsize", False)
 
     def on_check_home_bottom(self, event=None):
-        self.context.home_bottom = self.checkbox_home_bottom.GetValue()
-        self.context.origin_y = 1.0 if self.context.home_bottom else 0.0
+        direction = self.checkbox_home_bottom.GetValue()
+        self.context.home_bottom = direction
+        if direction:
+            self.context.show_flip_y = True
+            self.context.origin_y = 1.0
+        else:
+            self.context.show_flip_y = False
+            self.context.origin_y = 0.0
         self.context.show_origin_y = self.context.origin_y
         self.context("viewport_update\n")
         self.context.signal("bedsize", False)
