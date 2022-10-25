@@ -3250,7 +3250,7 @@ def init_commands(kernel):
         help=_("Only outer line"),
     )
     @self.console_option(
-        "times",
+        "steps",
         "x",
         type=int,
         default=1,
@@ -3278,7 +3278,7 @@ def init_commands(kernel):
         invert=None,
         blacklevel=None,
         outer=None,
-        times=None,
+        steps=None,
         data=None,
         **kwargs,
     ):
@@ -3290,6 +3290,16 @@ def init_commands(kernel):
 
         This two phase approach is required as not all nodes have
         a proper stroke-width that can be adjusted (eg text or images...)
+
+        The subvariant --outer requires one additional pass where we disassemble
+        the first outline and fill the subpaths, This will effectively deal with
+        donut-type shapes
+
+        The need for --inner was't high on my priority list (as it is somwhat
+        difficult to implement, --outer just uses a clever hack to deal with
+        topology edge cases. So if we are in need of inner we need to create
+        the outline shape, break it in subpaths and delete the outer shapes
+        manually. Sorry.
         """
         if data is None:
             data = list(self.elems(emphasized=True))
@@ -3343,8 +3353,8 @@ def init_commands(kernel):
             offset = self.length("5mm")
         else:
             offset = self.length(offset)
-        if times is None or times < 1:
-            times = 1
+        if steps is None or steps < 1:
+            steps = 1
         if outer is None:
             outer = False
         outputdata = []
@@ -3360,6 +3370,7 @@ def init_commands(kernel):
                 mydata.append(e)
             else:
                 mydata.append(node)
+
         ###############################################
         # Phase 1: render and vectorize first outline
         ###############################################
@@ -3391,7 +3402,7 @@ def init_commands(kernel):
         )
         matrix = Matrix.scale(width / new_width, height / new_height)
         matrix.post_translate(bounds[0], bounds[1])
-        image_node = ImageNode(
+        image_node_1 = ImageNode(
             image=data_image, matrix=matrix, dpi=dpi, label="Phase 1 render image"
         )
 
@@ -3411,7 +3422,7 @@ def init_commands(kernel):
         path.transform *= Matrix(matrix)
         data_node = PathNode(
             path=abs(path),
-            stroke_width=0,
+            stroke_width=1,
             stroke=Color("black"),
             stroke_scaled=False,
             fill=None,
@@ -3424,14 +3435,14 @@ def init_commands(kernel):
         # see the interim path and interim render image
 
         # self.elem_branch.add_node(data_node)
-        # self.elem_branch.add_node(image_node)
+        # self.elem_branch.add_node(image_node_1)
 
-        copy_data = [image_node, data_node]
+        copy_data = [image_node_1, data_node]
 
         ################################################################
         # Phase 2: change outline witdh and render and vectorize again
         ################################################################
-        for numidx in range(times):
+        for numidx in range(steps):
             data_node.stroke_width += 2 * offset
             data_node.set_dirty_bounds()
             pb = data_node.paint_bounds
@@ -3480,24 +3491,110 @@ def init_commands(kernel):
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
             path_2.transform *= Matrix(matrix)
-            outline_node = self.elem_branch.add(
+            # That's our final path (or is it? Depends on outer...)
+            path_final = path_2
+            data_node_2 = PathNode(
                 path=abs(path_2),
-                stroke_width=0,
+                stroke_width=1,
+                stroke=Color("black"),
+                stroke_scaled=False,
+                fill=None,
+                # fillrule=Fillrule.FILLRULE_NONZERO,
+                linejoin=Linejoin.JOIN_ROUND,
+                label="Phase 2 Outline path",
+            )
+            data_node_2.fill = None
+
+            # If you want to debug the phases then uncomment the following line to
+            # see the interim image
+            # self.elem_branch.add_node(image_node_2)
+            # self.elem_branch.add_node(data_node_2)
+            #######################################################
+            # Phase 3: render and vectorize last outline for outer
+            #######################################################
+            if outer:
+                # Generate the outline, break it into subpaths
+                copy_data = []
+                # Now break it into subpaths...
+                for pasp in path_final.as_subpaths():
+                    subpath = Path(pasp)
+                    data_node = PathNode(
+                        path=abs(subpath),
+                        stroke_width=1,
+                        stroke=Color("black"),
+                        stroke_scaled=False,
+                        fill=Color("black"),
+                        # fillrule=Fillrule.FILLRULE_NONZERO,
+                        linejoin=Linejoin.JOIN_ROUND,
+                        label="Phase 3 Outline subpath",
+                    )
+                    # This seems to be necessary to make sure the fill sticks
+                    data_node.fill = Color("black")
+                    copy_data.append(data_node)
+                    # If you want to debug the phases then uncomment the following lines to
+                    # see the interim path nodes
+                    # self.elem_branch.add_node(data_node)
+                bounds = Node.union_bounds(copy_data, attr="paint_bounds")
+                # bounds_regular = Node.union_bounds(data)
+                # for idx in range(4):
+                #     print (f"Bounds[{idx}] = {bounds_regular[idx]:.2f} vs {bounds_regular[idx]:.2f}")
+                if bounds is None:
+                    return
+                xmin, ymin, xmax, ymax = bounds
+                if isinf(xmin):
+                    channel(_("No bounds for selected elements."))
+                    return
+                width = xmax - xmin
+                height = ymax - ymin
+
+                dots_per_units = dpi / UNITS_PER_INCH
+                new_width = width * dots_per_units
+                new_height = height * dots_per_units
+                new_height = max(new_height, 1)
+                new_width = max(new_width, 1)
+                dpi = 500
+
+                data_image = make_raster(
+                    copy_data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                )
+                matrix = Matrix.scale(width / new_width, height / new_height)
+                matrix.post_translate(bounds[0], bounds[1])
+
+                path_final = make_vector(
+                    data_image,
+                    interpolationpolicy=ipolicy,
+                    invert=invert,
+                    turdsize=turdsize,
+                    alphamax=alphamax,
+                    opticurve=opticurve,
+                    opttolerance=opttolerance,
+                    color=color,
+                    blacklevel=blacklevel,
+                )
+                matrix = Matrix.scale(width / new_width, height / new_height)
+                matrix.post_translate(bounds[0], bounds[1])
+                path_final.transform *= Matrix(matrix)
+
+            outline_node = self.elem_branch.add(
+                path=abs(path_final),
+                stroke_width=1,
                 stroke_scaled=False,
                 type="elem path",
                 fill=None,
                 stroke=pathcolor,
                 # fillrule=Fillrule.FILLRULE_NONZERO,
                 linejoin=Linejoin.JOIN_ROUND,
-                label=f"Phase 2 outline path #{numidx}",
+                label=f"Outline path #{numidx}",
             )
             outline_node.fill = None
             outputdata.append(outline_node)
-            # If you want to debug the phases then uncomment the following line to
-            # see the interim image
-            # self.elem_branch.add_node(image_node_2)
 
         self.signal("refresh_scene", "Scene")
+        if len(outputdata) > 0:
+            self.signal("element_property_update", outputdata)
         return "elements", outputdata
 
     # ==========
