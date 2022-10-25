@@ -865,9 +865,7 @@ class ImageVectorisationPanel(ScrolledPanel):
             self.wximage = wx.NullBitmap
         else:
             if refresh:
-                source_image = self.node._processed_image
-                if source_image is None:
-                    source_image = self.node.image
+                source_image = self.node.active_image
                 source_image = opaque(source_image)
                 pw, ph = self.bitmap_preview.GetSize()
                 iw, ih = source_image.size
@@ -1101,12 +1099,12 @@ class ImagePropertyPanel(ScrolledPanel):
         self.__do_layout()
 
         self.Bind(
-            wx.EVT_CHECKBOX, self.on_check_enable_dither, self.check_enable_dither
+            wx.EVT_CHECKBOX, self.on_dither, self.check_enable_dither
         )
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_dither_type, self.combo_dither)
+        self.Bind(wx.EVT_COMBOBOX, self.on_dither, self.combo_dither)
         # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_operations)
 
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_combo_dither_type, self.combo_dither)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_dither, self.combo_dither)
 
         self.text_dpi.SetActionRoutine(self.on_text_dpi)
 
@@ -1272,15 +1270,21 @@ class ImagePropertyPanel(ScrolledPanel):
         new_step = float(self.text_dpi.GetValue())
         self.node.dpi = new_step
 
-    def on_check_enable_dither(
-        self, event=None
-    ):  # wxGlade: RasterWizard.<event_handler>
-        self.node.dither = self.check_enable_dither.GetValue()
-        self.node.update(self.context)
-        self.context.signal("element_property_reload", self.node)
-
-    def on_combo_dither_type(self, event=None):  # wxGlade: RasterWizard.<event_handler>
-        self.node.dither_type = self.choices[self.combo_dither.GetSelection()]
+    def on_dither(self, event=None):
+        # Dither can be set by two different means:
+        # a) directly b) via a script
+        dither_op = None
+        for op in self.node.operations:
+            if op["name"] == "dither":
+                dither_op = op
+                break
+        dither_flag = self.check_enable_dither.GetValue()
+        dither_type = self.choices[self.combo_dither.GetSelection()]
+        if dither_op is not None:
+            dither_op["enable"] = dither_flag
+            dither_op["type"] = dither_type
+        self.node.dither = dither_flag
+        self.node.dither_type = dither_type
         self.node.update(self.context)
         self.context.signal("element_property_reload", self.node)
 
