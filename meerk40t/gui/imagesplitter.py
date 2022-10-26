@@ -484,9 +484,9 @@ class RenderSplit(MWindow):
         kernel.register(
             "button/align/SplitImage",
             {
-                "label": _("Splitter"),
+                "label": _("Image ops"),
                 "icon": icons8_split_table_50,
-                "tip": _("Open create split image dialog"),
+                "tip": _("Open create split image dialog / keyhole generation"),
                 "action": lambda v: kernel.console("window toggle SplitImage\n"),
                 "size": bsize_normal,
                 "rule_enabled": lambda cond: len(
