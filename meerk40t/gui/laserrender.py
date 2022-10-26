@@ -61,7 +61,7 @@ DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
 DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
-
+DRAW_MODE_ORIGIN = 0x4000000
 
 def swizzlecolor(c):
     if c is None:
