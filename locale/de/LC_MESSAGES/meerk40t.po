@@ -4342,22 +4342,20 @@ msgstr ""
 #: meerk40t/gui/about.py:9
 msgid ""
 "MeerK40t is a free MIT Licensed open source project\n"
-"for lasering on K40 Devices.\n"
-"\n"
+"for lasering on K40 Devices.\n\n"
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but the barest trickle\n"
-"that becomes a raging river."
+"who sincerely hopes his contributions will be but\n"
+"the barest trickle that becomes a raging river."
 msgstr ""
-"Meerk40t ist ein kostenloses, auf der MIT Lizenz ba-\n"
-"sierendes Open-Source Projekt, um auf K40 Geräten\n"
-"zu lasern.\n"
+"Meerk40t ist ein auf der MIT Lizenz basierendes\n"
+"Open-Source Projekt, um auf K40 Geräten zu lasern.\n\n"
 "Mithilfe bei diesem Projekt ist jederzeit willkommen.\n"
-"Vielen Dank für vergangene und künftige Hilfe.\n"
-"Dieses Programm ist v.a. das Werk von Tartarize,\n"
-"der hofft, dass seine Arbeit am Ende ein kleiner Teil\n"
-"viel größeren Werks sein wird."
+"Herzlichen Dank für vergangene und künftige Hilfe.\n"
+"Dieses Programm ist v.a. das Werk von Tatarize,\n"
+"der hofft, dass seine Arbeit am Ende ein kleiner\n"
+"Teil eines viel größeren Werks sein wird."
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
@@ -8212,8 +8210,6 @@ msgid ""
 msgstr ""
 "Nutze den im Bild gespeicherten DPI-Wert, um das Bild korrekt zu "
 "skalieren."
-
-
 
 #: meerk40t/image/imagetools.py:52
 msgid "image <operation>*"
@@ -12151,9 +12147,6 @@ msgstr "Anzeige"
 
 msgid "Shape-Attributes"
 msgstr "Element-Attribute"
-
-#~ msgid "About %s v%s"
-#~ msgstr "Über %s v%s"
 
 msgid "GUI Appearance"
 msgstr "GUI Erscheinungsbild"
