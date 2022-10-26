@@ -5,7 +5,7 @@ from meerk40t.core.node.elem_path import PathNode
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.scene.sceneconst import RESPONSE_CHAIN, RESPONSE_CONSUME
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Path, Ellipse
+from meerk40t.svgelements import Path, Ellipse, Move, Close
 
 
 class BugTool(ToolWidget):
@@ -23,7 +23,22 @@ class BugTool(ToolWidget):
         shape *= f"rotate({self.step}deg)"
         shape *= "scale(1,2)"
         self.step += 1
-        n = PathNode(path=abs(Path(shape)))
+        path = Path( stroke="blue", stroke_width=1000)
+        for p in abs(Path(shape)):
+            path += p
+            if not isinstance(p, (Close, Move)):
+                path += Move(p.end)
+                gc.SetPen(wx.GREEN_PEN)
+                if p.end:
+                    x = p.end.x
+                    y = p.end.y
+                    gc.DrawRectangle(x-4000, y-4000, 8000, 8000)
+                gc.SetPen(wx.RED_PEN)
+                if p.start:
+                    x = p.start.x
+                    y = p.start.y
+                    gc.DrawRectangle(x - 5000, y - 5000, 10000, 10000)
+        n = PathNode(path=path)
         n.bbox()
         self.renderer.draw_path_node(n, gc, draw_mode=0)
 
