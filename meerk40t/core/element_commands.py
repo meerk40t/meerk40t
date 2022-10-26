@@ -2238,7 +2238,7 @@ def init_commands(kernel):
     )
     def subtype_align_center(command, channel, _, data=None, **kwargs):
         mode, group, bound, elements = data
-        _align_xy(command, channel, _, mode, bound, elements, "center", "center", group)
+        _align_xy(channel, _, mode, bound, elements, "center", "center", group)
         return "align", (mode, group, bound, elements)
 
     @self.console_command(
