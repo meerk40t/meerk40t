@@ -7644,6 +7644,12 @@ msgid "Don't use icons in the tree"
 msgstr "Verzichte auf die Anzeige von Icons im Baum"
 
 #: meerk40t/gui/wxmmain.py:2114
+msgid "Hide Origin-Indicator"
+msgstr "Ursprung ausblenden"
+
+msgid "Don't show the origin indicator"
+msgstr "Unterdrücke die Anzeige des Ursprungs-Indikator"
+
 msgid "Hide Grid"
 msgstr "Gitter ausblenden"
 
