@@ -233,8 +233,6 @@ class FormatterPanel(wx.Panel):
                 node = bootstrap[nodetype]()
 
         if node is not None:
-            if node.type == "elem image":
-                print(node.image)
             mymap = node.default_map()
             for entry in mymap:
                 if available != "":
