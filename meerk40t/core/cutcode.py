@@ -409,6 +409,42 @@ class CutCode(CutGroup):
             yield "plot", cutobject
         yield "plot_start"
 
+    def provide_statistics(self, include_start=False):
+        result = []
+        cutcode = list(self.flat())
+        if len(cutcode) == 0:
+            return result
+        stop_at = len(cutcode)
+        distance_travel = 0
+        distance_cut = 0
+        extra = 0
+        duration_cut = 0
+        duration_travel = 0
+        if include_start:
+            if self.start is not None:
+                distance_travel += abs(complex(*self.start) - complex(*cutcode[0].start))
+            else:
+                distance_travel += abs(0 - complex(*cutcode[0].start))
+        for i in range(0, stop_at):
+            if i>0:
+                prev = cutcode[i - 1]
+                delta = Point.distance(prev.end, curr.start)
+                distance_travel += delta
+            curr = cutcode[i]
+            distance_cut += curr.length()
+            extra += curr.extra()
+            native_speed = curr.settings.get("native_speed", curr.speed)
+            if native_speed != 0:
+                duration_cut += curr.length() / native_speed
+            rapid_speed = self._native_speed(cutcode)
+            if rapid_speed is not None:
+                duration_travel = distance_travel / rapid_speed
+            item = (i, distance_travel, distance_cut, extra, duration_travel, duration_cut)
+            # print (item)
+            result.append(item)
+
+        return result
+
     def length_travel(self, include_start=False, stop_at=-1):
         """
         Calculates the distance traveled between cutcode objects.
