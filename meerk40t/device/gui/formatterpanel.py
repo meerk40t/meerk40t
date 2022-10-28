@@ -168,7 +168,8 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_origin import SetOriginOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
-        from meerk40t.svgelements import Ellipse, Image, Path, Polyline, Rect
+        from meerk40t.svgelements import Ellipse, Path, Polyline, Rect
+        from PIL import Image
 
         bootstrap = {
             "op cut": CutOpNode,
@@ -213,8 +214,8 @@ class FormatterPanel(wx.Panel):
                 elif nodetype == "elem path":
                     path = Path(Ellipse(0, 0, 10, 10))
                 elif nodetype == "elem image":
-                    image = Image()
-                    image.image = icons8_detective_50.GetImage()
+                    # Let's use an arbitrary image
+                    image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
                 elif nodetype == "elem polyline":
                     shape = Polyline()
 
@@ -232,6 +233,8 @@ class FormatterPanel(wx.Panel):
                 node = bootstrap[nodetype]()
 
         if node is not None:
+            if node.type == "elem image":
+                print(node.image)
             mymap = node.default_map()
             for entry in mymap:
                 if available != "":
