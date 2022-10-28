@@ -554,6 +554,22 @@ def init_tree(kernel):
         self.set_emphasis(None)
         self.signal("operation_removed")
 
+    @tree_conditional(
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        > 1
+    )
+    @tree_calc("ecount", lambda i: len(list(self.flat(selected=True, cascade=False, types=op_nodes))))
+    @tree_operation(
+        _("Delete {ecount} operations fully"),
+        node_type=op_nodes,
+        help="",
+    )
+    def remove_type_op_multiple(node, **kwargs):
+        for op in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+            op.remove_node()
+        self.set_emphasis(None)
+        self.signal("operation_removed")
+
     def contains_no_locked_items():
         nolock = True
         for e in list(self.flat(selected=True, cascade=True)):
