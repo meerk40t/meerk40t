@@ -9,6 +9,7 @@ class ToolContainer(Widget):
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
+        self._active_tool = None
 
     def hit(self):
         return HITCHAIN_DELEGATE_AND_HIT
@@ -24,6 +25,9 @@ class ToolContainer(Widget):
             self.set_tool(tool)
 
     def set_tool(self, tool):
+        if self._active_tool == tool:
+            return
+        self._active_tool = tool
         self.scene.tool_active = False
         self.remove_all_widgets()
         self.scene.cursor("arrow")

@@ -1,5 +1,6 @@
 import math
 import platform
+import re
 
 import wx
 
@@ -35,6 +36,9 @@ class SimulationPanel(wx.Panel, Job):
         self.auto_clear = auto_clear
 
         Job.__init__(self)
+        self._playback_cuts = True
+        self._cut_end_time = []
+
         self.job_name = "simulate"
         self.run_main = True
         self.process = self.animate_sim
@@ -51,6 +55,8 @@ class SimulationPanel(wx.Panel, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
+        self.statistics = self.cutcode.provide_statistics()
+
         self.max = max(len(self.cutcode), 0) + 1
         self.progress = self.max
         self.view_pane = ScenePanel(
@@ -112,7 +118,21 @@ class SimulationPanel(wx.Panel, Job):
         self.text_playback_speed = wx.TextCtrl(
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
-
+        self.radio_cut = wx.RadioButton(self, wx.ID_ANY, _("Steps"))
+        self.radio_time_seconds = wx.RadioButton(self, wx.ID_ANY, _("Time (sec.)"))
+        self.radio_time_minutes = wx.RadioButton(self, wx.ID_ANY, _("Time (min)"))
+        self.radio_cut.SetValue(True)
+        self.radio_cut.SetToolTip(
+            _(
+                "Cut operations Playback-Mode: play will jump from one completed operations to next"
+            )
+        )
+        self.radio_time_seconds.SetToolTip(
+            _("Timed Playback-Mode: play will jump from one second to next")
+        )
+        self.radio_time_minutes.SetToolTip(
+            _("Timed Playback-Mode: play will jump from one minute to next")
+        )
         self.available_devices = list(self.context.kernel.services("device"))
         self.selected_device = self.context.device
         index = -1
@@ -144,6 +164,13 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_cut)
+        self.Bind(
+            wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_seconds
+        )
+        self.Bind(
+            wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
+        )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
 
@@ -219,9 +246,9 @@ class SimulationPanel(wx.Panel, Job):
         h_sizer_text_2 = wx.BoxSizer(wx.HORIZONTAL)
         h_sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        sizer_6 = wx.BoxSizer(wx.VERTICAL)
-        sizer_4 = wx.BoxSizer(wx.VERTICAL)
-        sizer_5 = wx.BoxSizer(wx.HORIZONTAL)
+        sizer_execute = wx.BoxSizer(wx.VERTICAL)
+        sizer_speed_options = wx.BoxSizer(wx.VERTICAL)
+        sizer_pb_speed = wx.BoxSizer(wx.HORIZONTAL)
         sizer_total_time = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Total Time")), wx.HORIZONTAL
         )
@@ -296,15 +323,24 @@ class SimulationPanel(wx.Panel, Job):
         h_sizer_text_2.Add(sizer_total_time, 1, wx.EXPAND, 0)
 
         h_sizer_buttons.Add(self.button_play, 0, 0, 0)
-        sizer_4.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
+        sizer_speed_options.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
+
         label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed"))
-        sizer_5.Add(label_playback_speed, 2, wx.ALIGN_CENTER_VERTICAL, 0)
-        sizer_5.Add(self.text_playback_speed, 1, wx.EXPAND, 0)
-        sizer_4.Add(sizer_5, 0, wx.EXPAND, 0)
-        h_sizer_buttons.Add(sizer_4, 1, wx.EXPAND, 0)
-        sizer_6.Add(self.combo_device, 0, wx.EXPAND, 0)
-        sizer_6.Add(self.button_spool, 0, wx.EXPAND, 0)
-        h_sizer_buttons.Add(sizer_6, 1, wx.EXPAND, 0)
+        sizer_pb_speed.Add(label_playback_speed, 2, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_pb_speed.Add(self.text_playback_speed, 1, wx.EXPAND, 0)
+
+        sizer_display = wx.BoxSizer(wx.HORIZONTAL)
+        label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Playback Mode"))
+        sizer_display.Add(label_playback_mode, 1, wx.EXPAND, 0)
+        sizer_display.Add(self.radio_cut, 1, wx.EXPAND, 0)
+        sizer_display.Add(self.radio_time_seconds, 1, wx.EXPAND, 0)
+        sizer_display.Add(self.radio_time_minutes, 1, wx.EXPAND, 0)
+        sizer_speed_options.Add(sizer_pb_speed, 0, wx.EXPAND, 0)
+        sizer_speed_options.Add(sizer_display, 0, wx.EXPAND, 0)
+        h_sizer_buttons.Add(sizer_speed_options, 1, wx.EXPAND, 0)
+        sizer_execute.Add(self.combo_device, 0, wx.EXPAND, 0)
+        sizer_execute.Add(self.button_spool, 0, wx.EXPAND, 0)
+        h_sizer_buttons.Add(sizer_execute, 1, wx.EXPAND, 0)
 
         v_sizer_main.Add(self.hscene_sizer, 1, wx.EXPAND, 0)
         v_sizer_main.Add(h_sizer_scroll, 0, wx.EXPAND, 0)
@@ -383,14 +419,54 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.widget_scene.request_refresh()
 
+    def progress_to_idx(self, progress):
+        residual = 0
+        idx = progress
+        if not self._playback_cuts:
+            # progress is the time indicator
+            idx = len(self.statistics) - 1
+            prev_time = None
+            while idx >= 0:
+                item = self.statistics[idx]
+                this_time = item["time_at_end_of_burn"]
+                # print (f"{idx} {this_time} vs {progress} - {item}")
+                if this_time <= progress:
+                    if prev_time is not None:
+                        # We compute a 0 to 1 ratio of the progress
+                        residual = (progress - this_time) / (prev_time - this_time)
+                    break
+                prev_time = this_time
+                idx -= 1
+            idx += 1
+            if idx == 0:
+                item = self.statistics[idx]
+                start_time = item["time_at_start"]
+                this_time = item["time_at_end_of_burn"]
+                residual = (progress - start_time) / (this_time - start_time)
+
+        if idx >= len(self.statistics):
+            idx = len(self.statistics) - 1
+        if idx < 0:
+            idx = 0
+        # print(
+        #     f"Cut-Mode={self._playback_cuts}, prog={progress}, idx={idx}, stats={len(self.statistics)}"
+        # )
+        return idx, residual
+
     def on_mouse_right_down(self, event=None):
+        def cut_before(event):
+            step, residual = self.progress_to_idx(self.progress)
+            self.context(f"plan{self.plan_name} sublist {step} -1\n")
+
+        def cut_after(event):
+            step, residual = self.progress_to_idx(self.progress)
+            self.context(f"plan{self.plan_name} sublist 0 {step}\n")
+
         gui = self
         menu = wx.Menu()
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context(
-                f"plan{self.plan_name} sublist {self.progress} -1\n"
-            ),
+            cut_before,
             menu.Append(
                 wx.ID_ANY,
                 _("Delete cuts before"),
@@ -399,7 +475,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda e: self.context(f"plan{self.plan_name} sublist 0 {self.progress}\n"),
+            cut_after,
             menu.Append(
                 wx.ID_ANY,
                 _("Delete cuts after"),
@@ -461,6 +537,24 @@ class SimulationPanel(wx.Panel, Job):
             gui.PopupMenu(menu)
             menu.Destroy()
 
+    def _set_slider_dimensions(self):
+        if self._playback_cuts:
+            self.max = max(len(self.cutcode), 1)
+        else:
+            totalduration = 0
+            maxidx = len(self.statistics)
+            if maxidx > 0:
+                totalduration = int(
+                    self.statistics[-1]["total_time_extra"]
+                    + self.statistics[-1]["total_time_travel"]
+                    + self.statistics[-1]["total_time_cut"]
+                )
+            self.max = max(totalduration, 1)
+        self.progress = self.max
+        self.slider_progress.SetMin(0)
+        self.slider_progress.SetMax(self.max)
+        self.slider_progress.SetValue(self.max)
+
     def _refresh_simulated_plan(self):
         # Stop animation
         if self.running:
@@ -473,11 +567,10 @@ class SimulationPanel(wx.Panel, Job):
             if isinstance(c, CutCode):
                 self.cutcode.extend(c)
         self.cutcode = CutCode(self.cutcode.flat())
-        self.max = max(len(self.cutcode), 0) + 1
-        self.progress = self.max
-        self.slider_progress.SetMin(0)
-        self.slider_progress.SetMax(self.max)
-        self.slider_progress.SetValue(self.max)
+        self.statistics = self.cutcode.provide_statistics()
+        # for idx, stat in enumerate(self.statistics):
+        #     print(f"#{idx}: {stat}")
+        self._set_slider_dimensions()
         self.sim_travel.initvars()
         self.update_fields()
         self.request_refresh()
@@ -503,21 +596,42 @@ class SimulationPanel(wx.Panel, Job):
         if plan_name == self.plan_name:
             self._refresh_simulated_plan()
 
+    def on_radio_playback_mode(self, event):
+        self._playback_cuts = self.radio_cut.GetValue()
+        self._set_slider_dimensions()
+
     def update_fields(self):
-        step = self.progress
+        step, residual = self.progress_to_idx(self.progress)
+        item = self.statistics[step - 1]
+        partials = {
+            "total_distance_travel": 0,
+            "total_distance_cut": 0,
+            "total_time_travel": 0,
+            "total_time_cut": 0,
+            "total_time_extra": 0,
+        }
+        if residual != 0 and step < len(self.statistics):
+            itemnext = self.statistics[step]
+            for entry in partials:
+                partials[entry] = residual * (itemnext[entry] - item[entry])
 
         ###################
         # UPDATE POSITIONAL
         ###################
 
         mm = self.cutcode.settings.get("native_mm", 39.3701)
-        travel_mm = self.cutcode.length_travel(stop_at=step) / mm
-        cuts_mm = self.cutcode.length_cut(stop_at=step) / mm
-        self.text_distance_travel_step.SetValue(f"{travel_mm:.2f}mm")
-        self.text_distance_laser_step.SetValue(f"{cuts_mm:.2f}mm")
-        self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
+        # item = (i, distance_travel, distance_cut, extra, duration_travel, duration_cut)
+        travel_mm = (
+            item["total_distance_travel"] + partials["total_distance_travel"]
+        ) / mm
+        cuts_mm = (item["total_distance_cut"] + partials["total_distance_cut"]) / mm
+        # travel_mm = self.cutcode.length_travel(stop_at=step) / mm
+        # cuts_mm = self.cutcode.length_cut(stop_at=step) / mm
+        self.text_distance_travel_step.SetValue(f"{travel_mm:.0f}mm")
+        self.text_distance_laser_step.SetValue(f"{cuts_mm:.0f}mm")
+        self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.0f}mm")
         try:
-            time_travel = self.cutcode.duration_travel(step)
+            time_travel = item["total_time_travel"] + partials["total_time_travel"]
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
@@ -527,7 +641,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_travel = 0
         try:
-            time_cuts = self.cutcode.duration_cut(stop_at=step)
+            time_cuts = item["total_time_cut"] + partials["total_time_cut"]
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
@@ -537,8 +651,12 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_cuts = 0
         try:
-            extra = self.cutcode.extra_time(stop_at=step)
+            extra = item["total_time_extra"] + partials["total_time_extra"]
             time_total = time_travel + time_cuts + extra
+            if self._playback_cuts:
+                time_total = time_travel + time_cuts + extra
+            else:
+                time_total = self.progress
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
             t_seconds = int(time_total % 60)
@@ -552,14 +670,14 @@ class SimulationPanel(wx.Panel, Job):
         # UPDATE TOTAL
         ###################
 
-        travel_mm = self.cutcode.length_travel() / mm
-        cuts_mm = self.cutcode.length_cut() / mm
-        self.text_distance_travel.SetValue(f"{travel_mm:.2f}mm")
-        self.text_distance_laser.SetValue(f"{cuts_mm:.2f}mm")
-        self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
+        travel_mm = self.statistics[-1]["total_distance_travel"] / mm
+        cuts_mm = self.statistics[-1]["total_distance_cut"] / mm
+        self.text_distance_travel.SetValue(f"{travel_mm:.0f}mm")
+        self.text_distance_laser.SetValue(f"{cuts_mm:.0f}mm")
+        self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.0f}mm")
 
         try:
-            time_travel = self.cutcode.duration_travel()
+            time_travel = self.statistics[-1]["total_time_travel"]
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
@@ -567,7 +685,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_travel = 0
         try:
-            time_cuts = self.cutcode.duration_cut()
+            time_cuts = self.statistics[-1]["total_time_cut"]
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
@@ -575,7 +693,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_cuts = 0
         try:
-            extra = self.cutcode.extra_time()
+            extra = self.statistics[-1]["total_time_extra"]
             time_total = time_travel + time_cuts + extra
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
@@ -656,7 +774,10 @@ class SimulationPanel(wx.Panel, Job):
         self._start()
 
     def animate_sim(self, event=None):
-        self.progress += 1
+        if self.radio_time_minutes.GetValue():
+            self.progress += 60
+        else:
+            self.progress += 1
         if self.progress >= self.max:
             self.progress = self.max
             self.slider_progress.SetValue(self.progress)
@@ -703,12 +824,72 @@ class SimulationWidget(Widget):
         self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
 
     def process_draw(self, gc: wx.GraphicsContext):
-        if self.sim.progress > 1:
+        if self.sim.progress >= 0:
+            residual = 0
+            idx = 0
             if self.sim.progress < self.sim.max:
-                sim_cut = self.sim.cutcode[: self.sim.progress - 1]
+                idx, residual = self.sim.progress_to_idx(self.sim.progress)
+                # print(f"SimWidget, idx={idx}, residual={residual:.3f}")
+                sim_cut = self.sim.cutcode[:idx]
             else:
                 sim_cut = self.sim.cutcode
             self.renderer.draw_cutcode(sim_cut, gc, 0, 0)
+            if residual > 0:
+                # We draw interpolated lines to acknowledge we are in the middle of a cut operation
+                starts = []
+                ends = []
+                cutstart = wx.Point2D(self.sim.cutcode[idx].start)
+                cutend = wx.Point2D(self.sim.cutcode[idx].end)
+                if self.sim.statistics[idx]["type"] == "RasterCut":
+                    # We draw a rectangle covering the raster area
+                    spath = str(self.sim.cutcode[idx].path)
+                    sparse = re.compile(" ([0-9,\.]*) ")
+                    min_x = None
+                    max_x = None
+                    path_width = 0
+                    for numpair in sparse.findall(spath):
+                        comma_idx = numpair.find(",")
+                        if comma_idx >= 0:
+                            left_num = numpair[:comma_idx]
+                            right_num = numpair[comma_idx + 1 :]
+                            # print (f"'{numpair}' -> '{left_num}', '{right_num}'")
+                            try:
+                                c_x = float(left_num)
+                                c_y = float(right_num)
+                                if min_x is None:
+                                    min_x = c_x
+                                    max_x = c_x
+                                else:
+                                    if c_x < min_x:
+                                        min_x = c_x
+                                    if c_x > max_x:
+                                        max_x = c_x
+                                    path_width = max_x - min_x
+                            except ValueError:
+                                pass
+                    # print(f"path={self.sim.cutcode[idx].path}")
+                    # print(f"Raster: ({cutstart[0]}, {cutstart[1]}) - ({cutend[0]}, {cutend[1]})")
+                    # print(f"w={abs(cutend[0] - cutstart[0])}, w-cutop = {2*self.sim.cutcode[idx].width}, w_path={path_width}")
+                    # c_vars = vars(self.sim.cutcode[idx])
+                    # for cv in c_vars:
+                    #     print(f"{cv}={c_vars[cv]}")
+                    rect_y = cutstart[1]
+                    rect_x = self.sim.cutcode[idx].offset_x
+                    rect_w = max(2 * self.sim.cutcode[idx].width, path_width)
+                    rect_h = residual * (cutend[1] - cutstart[1])
+                    interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
+                    gc.SetPen(interim_pen)
+                    gc.DrawRectangle(rect_x, rect_y, rect_w, rect_h)
+                else:
+                    end = wx.Point2D(
+                        cutstart[0] + residual * (cutend[0] - cutstart[0]),
+                        cutstart[1] + residual * (cutend[1] - cutstart[1]),
+                    )
+                    starts.append(cutstart)
+                    ends.append(end)
+                    interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
+                    gc.SetPen(interim_pen)
+                    gc.StrokeLineSegments(starts, ends)
 
 
 class SimulationTravelWidget(Widget):
@@ -719,6 +900,7 @@ class SimulationTravelWidget(Widget):
 
     def __init__(self, scene, sim):
         Widget.__init__(self, scene, all=False)
+        self.sim_matrix = scene.context.device.device_to_scene_matrix()
         self.sim = sim
         self.matrix.post_cat(scene.context.device.device_to_scene_matrix())
         self.initvars()
@@ -733,10 +915,12 @@ class SimulationTravelWidget(Widget):
         for i, curr in enumerate(list(self.sim.cutcode)):
             if prev is not None:
                 if prev.end != curr.start:
+                    # This is a travel
                     start = wx.Point2D(*prev.end)
                     end = wx.Point2D(*curr.start)
                     self.starts.append(start)
                     self.ends.append(end)
+                    # print (f"Travel found at idx {i}, {start}->{end}")
                     s = complex(start[0], start[1])
                     e = complex(end[0], end[1])
                     d = abs(s - e)
@@ -759,20 +943,67 @@ class SimulationTravelWidget(Widget):
                             self.ends.append(wx.Point2D(m0.real, m0.imag))
                             self.starts.append(m)
                             self.ends.append(wx.Point2D(m1.real, m1.imag))
+            else:
+                end = wx.Point2D(*curr.start)
+                self.starts = list()
+                self.ends = list()
+                self.starts.append(wx.Point2D(0, 0))
+                self.ends.append(end)
             self.pos.append(len(self.starts))
             prev = curr
 
     def process_draw(self, gc: wx.GraphicsContext):
         if len(self.pos):
+            residual = 0
             if self.sim.progress < self.sim.max:
-                pos = self.pos[self.sim.progress - 1]
+                idx, residual = self.sim.progress_to_idx(self.sim.progress)
+                pos = self.pos[idx]
+                # print(f"TravelWidget, idx={idx}, residual={residual:.3f}, pos={pos}")
             else:
                 pos = self.pos[-1]
-            if pos > 1:
+            if pos >= 0:
                 starts = self.starts[:pos]
                 ends = self.ends[:pos]
+                if residual > 0 and idx > 0:
+                    p1 = self.sim.cutcode[idx - 1].end
+                    p2 = self.sim.cutcode[idx - 1].start
+                    # progress = time
+                    t1 = self.sim.statistics[idx - 1]
+                    t2 = self.sim.statistics[idx]
+                    end_time = t1["time_at_end_of_travel"]
+                    # Time after travel.
+                    new_time = t2["time_at_end_of_travel"]
+                    if (
+                        t1["total_time_travel"] != t2["total_time_travel"]
+                    ):  # Travel time
+                        fact = (min(self.sim.progress, new_time) - end_time) / (
+                            new_time - end_time
+                        )
+                        newstart = wx.Point2D(p1[0], p1[1])
+                        newend = wx.Point2D(
+                            p1[0] + fact * (p2[0] - p1[0]),
+                            p1[1] + fact * (p2[1] - p1[1]),
+                        )
+                        mystarts = list()
+                        myends = list()
+                        mystarts.append(newstart)
+                        myends.append(newend)
+                        interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_DOT)
+                        gc.SetPen(interim_pen)
+                        gc.StrokeLineSegments(mystarts, myends)
                 gc.SetPen(wx.BLACK_DASHED_PEN)
                 gc.StrokeLineSegments(starts, ends)
+                # for idx, pt_start in enumerate(starts):
+                #     pt_end = ends[idx]
+                #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
+                # starts = list()
+                # ends = list()
+                # starts.append(wx.Point2D(0, 0))
+                # ends.append(wx.Point2D(10000, 10000))
+                # starts.append(wx.Point2D(0, 10000))
+                # ends.append(wx.Point2D(10000, 0))
+                # gc.SetPen(wx.CYAN_PEN)
+                # gc.StrokeLineSegments(starts, ends)
 
 
 class SimReticleWidget(Widget):
@@ -791,16 +1022,52 @@ class SimReticleWidget(Widget):
         x = 0
         y = 0
         if (
-            self.sim.progress > 0
-            and self.sim.cutcode is not None
+            # self.sim.progress > 0 and
+            self.sim.cutcode is not None
             and len(self.sim.cutcode)
         ):
+            idx, residual = self.sim.progress_to_idx(self.sim.progress)
+            dx = 0
+            dy = 0
             if self.sim.progress != self.sim.max:
-                pos = self.sim.cutcode[self.sim.progress - 1].start
+                if idx > 0:
+                    pos = self.sim.cutcode[idx - 1].end
+                else:
+                    pos = self.sim.cutcode[idx].start
+                if residual > 0:
+                    # We could still be traversing or already burning...
+                    # We have two time stamps one after travel,
+                    # one after burn
+                    item = self.sim.statistics[idx]
+                    # print(
+                    #     f"Time stamp: {self.sim.progress}, "
+                    #     + f"at start: {item['time_at_start']}, "
+                    #     + f"after travel: {item['time_at_end_of_travel']}, "
+                    #     + f"after burn: {item['time_at_end_of_burn']}"
+                    # )
+                    if self.sim.progress < item["time_at_end_of_travel"]:
+                        # All travel done...
+                        fraction = (self.sim.progress - item["time_at_start"]) / (
+                            item["time_at_end_of_travel"] - item["time_at_start"]
+                        )
+                        pos = self.sim.cutcode[idx - 1].end
+                        npos = self.sim.cutcode[idx].start
+                    else:
+                        # Still travelling, duration
+                        fraction = (
+                            self.sim.progress - item["time_at_end_of_travel"]
+                        ) / (
+                            item["time_at_end_of_burn"] - item["time_at_end_of_travel"]
+                        )
+                        pos = self.sim.cutcode[idx].start
+                        npos = self.sim.cutcode[idx].end
+
+                    dx = fraction * (npos[0] - pos[0])
+                    dy = fraction * (npos[1] - pos[1])
             else:
-                pos = self.sim.cutcode[self.sim.progress - 2].end
-            x = pos[0]
-            y = pos[1]
+                pos = self.sim.cutcode[idx].end
+            x = pos[0] + dx
+            y = pos[1] + dy
             x, y = self.sim_matrix.point_in_matrix_space((x, y))
 
         try:
