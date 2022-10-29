@@ -11,10 +11,11 @@ def plugin(kernel, lifecycle=None):
             print("GRBL plugin could not load because pyserial is not installed.")
             return True
     elif lifecycle == "register":
-        from .device import GCodeLoader, GRBLDevice, GRBLDriver, GRBLEmulator
+        from .device import GRBLDevice, GRBLDriver
+        from .gcodeloader import GCodeLoader
+        from .grblemulator import GRBLEmulator
 
         kernel.register("provider/device/grbl", GRBLDevice)
-
         _ = kernel.translation
         kernel.register("driver/grbl", GRBLDriver)
         kernel.register("emulator/grbl", GRBLEmulator)
