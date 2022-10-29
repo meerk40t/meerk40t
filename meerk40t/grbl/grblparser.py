@@ -1,7 +1,5 @@
 import re
 
-from meerk40t.kernel import  Module
-
 from ..core.cutcode import (
     CutCode,
     HomeCut,
@@ -58,7 +56,7 @@ def _tokenize_code(code_line):
         yield code
 
 
-class GRBLParser(Module, Parameters):
+class GRBLParser(Parameters):
     def __init__(self):
         Parameters.__init__(self)
         self.design = False
@@ -90,7 +88,6 @@ class GRBLParser(Module, Parameters):
         self.on_mode = 1
         self.power = 0
         self.speed = 0
-        self.used_speed = 0
         self.buffer = ""
         self.relative = False  # G90 default.
         self.grbl_settings = {
@@ -129,8 +126,10 @@ class GRBLParser(Module, Parameters):
             131: 200.000,  # Y-axis max travel mm
             132: 200.000,  # Z-axis max travel mm.
         }
-        self.grbl_channel = self.context.channel("grbl")
         self.reply = None
+        self.position = None
+        self.last_x = None
+        self.last_y = None
         self.channel = None
 
     def __repr__(self):
@@ -154,8 +153,6 @@ class GRBLParser(Module, Parameters):
         return self._use_set
 
     def grbl_write(self, data):
-        if self.grbl_channel:
-            self.grbl_channel(data)
         if self.reply:
             self.reply(data)
 
@@ -421,7 +418,8 @@ class GRBLParser(Module, Parameters):
             del gc["g"]
 
         if "comment" in gc:
-            self.grbl_channel(f'Comment: {gc["comment"]}')
+            if self.channel:
+                self.channel(f'Comment: {gc["comment"]}')
             del gc["comment"]
 
         if "f" in gc:  # Feed_rate
@@ -466,14 +464,25 @@ class GRBLParser(Module, Parameters):
                 y = 0
             if self.move_mode == 0:
                 self.plotcut.plot_append(x, y, 0)
+
+                if self.position:
+                    self.position((self.last_x, self.last_y, x, y))
             elif self.move_mode == 1:
                 self.plotcut.plot_append(x, y, self.power / 1000.0)
+                if self.position:
+                    self.position((self.last_x, self.last_y, x, y))
             elif self.move_mode == 2:
                 # TODO: Implement CW_ARC
                 self.plotcut.plot_append(x, y, self.power / 1000.0)
+                if self.position:
+                    self.position((self.last_x, self.last_y, x, y))
             elif self.move_mode == 3:
                 # TODO: Implement CCW_ARC
                 self.plotcut.plot_append(x, y, self.power / 1000.0)
+                if self.position:
+                    self.position((self.last_x, self.last_y, x, y))
+            self.last_x = x
+            self.last_y = y
         return 0
 
     def g93_feedrate(self):

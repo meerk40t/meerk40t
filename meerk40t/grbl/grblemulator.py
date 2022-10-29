@@ -27,17 +27,17 @@ class GRBEmulator(Module):
         self._attached_device = None
 
     def __repr__(self):
-        return f"LihuiyuEmulator({self.name})"
+        return f"GcodeEmulator({self.name})"
 
     def module_open(self, *args, **kwargs):
         context = self.context
         active = self.context.driver.name
         self._attached_device = active
         send = context.channel(f"{active}/usb_send")
-        send.watch(self.parser.write_packet)
+        send.watch(self.parser.write)
 
     def module_close(self, *args, **kwargs):
         context = self.context
         active = self._attached_device
         send = context.channel(f"{active}/usb_send")
-        send.unwatch(self.parser.write_packet)
+        send.unwatch(self.parser.write)
