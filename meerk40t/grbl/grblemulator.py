@@ -3,7 +3,7 @@ from meerk40t.grbl.grblparser import GRBLParser
 from meerk40t.kernel import Module
 
 
-class GRBEmulator(Module):
+class GRBLEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         self.parser = GRBLParser()
