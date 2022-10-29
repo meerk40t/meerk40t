@@ -1,5 +1,6 @@
 import math
 import platform
+import re
 
 import wx
 
@@ -118,9 +119,12 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, "100%", style=wx.TE_READONLY
         )
         self.radio_cut = wx.RadioButton(self, wx.ID_ANY, _("Steps"))
-        self.radio_time = wx.RadioButton(self, wx.ID_ANY, _("Time"))
+        self.radio_time_seconds = wx.RadioButton(self, wx.ID_ANY, _("Time (sec.)"))
+        self.radio_time_minutes = wx.RadioButton(self, wx.ID_ANY, _("Time (min)"))
         self.radio_cut.SetValue(True)
-
+        self.radio_cut.SetToolTip(_("Cut operations Playback-Mode: play will jump from one completed operations to next"))
+        self.radio_time_seconds.SetToolTip(_("Timed Playback-Mode: play will jump from one second to next"))
+        self.radio_time_minutes.SetToolTip(_("Timed Playback-Mode: play will jump from one minute to next"))
         self.available_devices = list(self.context.kernel.services("device"))
         self.selected_device = self.context.device
         index = -1
@@ -153,7 +157,8 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_cut)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_seconds)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes)
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
 
@@ -316,7 +321,8 @@ class SimulationPanel(wx.Panel, Job):
         label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Playback Mode"))
         sizer_display.Add(label_playback_mode, 1, wx.EXPAND, 0)
         sizer_display.Add(self.radio_cut, 1, wx.EXPAND, 0)
-        sizer_display.Add(self.radio_time, 1, wx.EXPAND, 0)
+        sizer_display.Add(self.radio_time_seconds, 1, wx.EXPAND, 0)
+        sizer_display.Add(self.radio_time_minutes, 1, wx.EXPAND, 0)
         sizer_speed_options.Add(sizer_pb_speed, 0, wx.EXPAND, 0)
         sizer_speed_options.Add(sizer_display, 0, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_speed_options, 1, wx.EXPAND, 0)
@@ -424,7 +430,7 @@ class SimulationPanel(wx.Panel, Job):
                 item = self.statistics[idx]
                 start_time = item["time_at_start"]
                 this_time = item["time_at_end_of_burn"]
-                residual =  (progress - start_time) / (this_time - start_time)
+                residual = (progress - start_time) / (this_time - start_time)
 
         if idx >= len(self.statistics):
             idx = len(self.statistics) - 1
@@ -585,6 +591,17 @@ class SimulationPanel(wx.Panel, Job):
     def update_fields(self):
         step, residual = self.progress_to_idx(self.progress)
         item = self.statistics[step - 1]
+        partials = {
+            "total_distance_travel": 0,
+            "total_distance_cut": 0,
+            "total_time_travel": 0,
+            "total_time_cut": 0,
+            "total_time_extra": 0,
+        }
+        if residual != 0 and step < len(self.statistics):
+            itemnext = self.statistics[step]
+            for entry in partials:
+                partials[entry] = residual * (itemnext[entry] - item[entry])
 
         ###################
         # UPDATE POSITIONAL
@@ -592,15 +609,17 @@ class SimulationPanel(wx.Panel, Job):
 
         mm = self.cutcode.settings.get("native_mm", 39.3701)
         # item = (i, distance_travel, distance_cut, extra, duration_travel, duration_cut)
-        travel_mm = item["total_distance_travel"] / mm
-        cuts_mm = item["total_distance_cut"] / mm
+        travel_mm = (
+            item["total_distance_travel"] + partials["total_distance_travel"]
+        ) / mm
+        cuts_mm = (item["total_distance_cut"] + partials["total_distance_cut"]) / mm
         # travel_mm = self.cutcode.length_travel(stop_at=step) / mm
         # cuts_mm = self.cutcode.length_cut(stop_at=step) / mm
-        self.text_distance_travel_step.SetValue(f"{travel_mm:.2f}mm")
-        self.text_distance_laser_step.SetValue(f"{cuts_mm:.2f}mm")
-        self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
+        self.text_distance_travel_step.SetValue(f"{travel_mm:.0f}mm")
+        self.text_distance_laser_step.SetValue(f"{cuts_mm:.0f}mm")
+        self.text_distance_total_step.SetValue(f"{travel_mm + cuts_mm:.0f}mm")
         try:
-            time_travel = item["total_time_travel"]
+            time_travel = item["total_time_travel"] + partials["total_time_travel"]
             t_hours = int(time_travel // 3600)
             t_mins = int((time_travel % 3600) // 60)
             t_seconds = int(time_travel % 60)
@@ -610,7 +629,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_travel = 0
         try:
-            time_cuts = item["total_time_cut"]
+            time_cuts = item["total_time_cut"] + partials["total_time_cut"]
             t_hours = int(time_cuts // 3600)
             t_mins = int((time_cuts % 3600) // 60)
             t_seconds = int(time_cuts % 60)
@@ -620,7 +639,7 @@ class SimulationPanel(wx.Panel, Job):
         except ZeroDivisionError:
             time_cuts = 0
         try:
-            extra = item["total_time_extra"]
+            extra = item["total_time_extra"] + partials["total_time_extra"]
             time_total = time_travel + time_cuts + extra
             if self._playback_cuts:
                 time_total = time_travel + time_cuts + extra
@@ -641,9 +660,9 @@ class SimulationPanel(wx.Panel, Job):
 
         travel_mm = self.statistics[-1]["total_distance_travel"] / mm
         cuts_mm = self.statistics[-1]["total_distance_cut"] / mm
-        self.text_distance_travel.SetValue(f"{travel_mm:.2f}mm")
-        self.text_distance_laser.SetValue(f"{cuts_mm:.2f}mm")
-        self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.2f}mm")
+        self.text_distance_travel.SetValue(f"{travel_mm:.0f}mm")
+        self.text_distance_laser.SetValue(f"{cuts_mm:.0f}mm")
+        self.text_distance_total.SetValue(f"{travel_mm + cuts_mm:.0f}mm")
 
         try:
             time_travel = self.statistics[-1]["total_time_travel"]
@@ -743,7 +762,10 @@ class SimulationPanel(wx.Panel, Job):
         self._start()
 
     def animate_sim(self, event=None):
-        self.progress += 1
+        if self.radio_time_minutes.GetValue():
+            self.progress += 60
+        else:
+            self.progress += 1
         if self.progress >= self.max:
             self.progress = self.max
             self.slider_progress.SetValue(self.progress)
@@ -808,9 +830,43 @@ class SimulationWidget(Widget):
                 cutend = wx.Point2D(self.sim.cutcode[idx].end)
                 if self.sim.statistics[idx]["type"] == "RasterCut":
                     # We draw a rectangle covering the raster area
+                    spath = str(self.sim.cutcode[idx].path)
+                    sparse = re.compile(" ([0-9,\.]*) ")
+                    min_x = None
+                    max_x = None
+                    path_width = 0
+                    for numpair in sparse.findall(spath):
+                        comma_idx = numpair.find(",")
+                        if comma_idx>=0:
+                            left_num = numpair[:comma_idx]
+                            right_num = numpair[comma_idx+1:]
+                            # print (f"'{numpair}' -> '{left_num}', '{right_num}'")
+                            try:
+                                c_x = float(left_num)
+                                c_y = float(right_num)
+                                if min_x is None:
+                                    min_x = c_x
+                                    max_x = c_x
+                                else:
+                                    if c_x < min_x:
+                                        min_x = c_x
+                                    if c_x > max_x:
+                                        max_x = c_x
+                                    path_width = max_x - min_x
+                            except ValueError:
+                                pass
+                    # print(f"path={self.sim.cutcode[idx].path}")
+                    # print(f"Raster: ({cutstart[0]}, {cutstart[1]}) - ({cutend[0]}, {cutend[1]})")
+                    # print(f"w={abs(cutend[0] - cutstart[0])}, w-cutop = {2*self.sim.cutcode[idx].width}, w_path={path_width}")
+                    # c_vars = vars(self.sim.cutcode[idx])
+                    # for cv in c_vars:
+                    #     print(f"{cv}={c_vars[cv]}")
                     rect_y = cutstart[1]
                     rect_x = self.sim.cutcode[idx].offset_x
-                    rect_w = 2 * self.sim.cutcode[idx].width
+                    rect_w = max(
+                        2 * self.sim.cutcode[idx].width,
+                        path_width
+                    )
                     rect_h = residual * (cutend[1] - cutstart[1])
                     interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
                     gc.SetPen(interim_pen)
@@ -855,6 +911,7 @@ class SimulationTravelWidget(Widget):
                     end = wx.Point2D(*curr.start)
                     self.starts.append(start)
                     self.ends.append(end)
+                    # print (f"Travel found at idx {i}, {start}->{end}")
                     s = complex(start[0], start[1])
                     e = complex(end[0], end[1])
                     d = abs(s - e)
@@ -881,8 +938,7 @@ class SimulationTravelWidget(Widget):
                 end = wx.Point2D(*curr.start)
                 self.starts = list()
                 self.ends = list()
-                x, y = self.sim_matrix.point_in_matrix_space((0, 0))
-                self.starts.append(wx.Point2D(x, y))
+                self.starts.append(wx.Point2D(0, 0))
                 self.ends.append(end)
             self.pos.append(len(self.starts))
             prev = curr
@@ -928,6 +984,17 @@ class SimulationTravelWidget(Widget):
                         gc.StrokeLineSegments(mystarts, myends)
                 gc.SetPen(wx.BLACK_DASHED_PEN)
                 gc.StrokeLineSegments(starts, ends)
+                # for idx, pt_start in enumerate(starts):
+                #     pt_end = ends[idx]
+                #     print (f"#{idx}: ({pt_start[0]:.0f}, {pt_start[1]:.0f}) - ({pt_end[0]:.0f}, {pt_end[1]:.0f})")
+                # starts = list()
+                # ends = list()
+                # starts.append(wx.Point2D(0, 0))
+                # ends.append(wx.Point2D(10000, 10000))
+                # starts.append(wx.Point2D(0, 10000))
+                # ends.append(wx.Point2D(10000, 0))
+                # gc.SetPen(wx.CYAN_PEN)
+                # gc.StrokeLineSegments(starts, ends)
 
 
 class SimReticleWidget(Widget):
