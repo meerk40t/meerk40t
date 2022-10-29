@@ -7,7 +7,7 @@ class GRBEmulator(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         self.parser = GRBLParser()
-        self.parser.channel = self.context.channel("lhy")
+        self.parser.channel = self.context.channel("grbl_events")
 
         def pos(p):
             if p is None:
