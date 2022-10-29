@@ -122,9 +122,17 @@ class SimulationPanel(wx.Panel, Job):
         self.radio_time_seconds = wx.RadioButton(self, wx.ID_ANY, _("Time (sec.)"))
         self.radio_time_minutes = wx.RadioButton(self, wx.ID_ANY, _("Time (min)"))
         self.radio_cut.SetValue(True)
-        self.radio_cut.SetToolTip(_("Cut operations Playback-Mode: play will jump from one completed operations to next"))
-        self.radio_time_seconds.SetToolTip(_("Timed Playback-Mode: play will jump from one second to next"))
-        self.radio_time_minutes.SetToolTip(_("Timed Playback-Mode: play will jump from one minute to next"))
+        self.radio_cut.SetToolTip(
+            _(
+                "Cut operations Playback-Mode: play will jump from one completed operations to next"
+            )
+        )
+        self.radio_time_seconds.SetToolTip(
+            _("Timed Playback-Mode: play will jump from one second to next")
+        )
+        self.radio_time_minutes.SetToolTip(
+            _("Timed Playback-Mode: play will jump from one minute to next")
+        )
         self.available_devices = list(self.context.kernel.services("device"))
         self.selected_device = self.context.device
         index = -1
@@ -157,8 +165,12 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_cut)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_seconds)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes)
+        self.Bind(
+            wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_seconds
+        )
+        self.Bind(
+            wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
+        )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         # end wxGlade
 
@@ -837,9 +849,9 @@ class SimulationWidget(Widget):
                     path_width = 0
                     for numpair in sparse.findall(spath):
                         comma_idx = numpair.find(",")
-                        if comma_idx>=0:
+                        if comma_idx >= 0:
                             left_num = numpair[:comma_idx]
-                            right_num = numpair[comma_idx+1:]
+                            right_num = numpair[comma_idx + 1 :]
                             # print (f"'{numpair}' -> '{left_num}', '{right_num}'")
                             try:
                                 c_x = float(left_num)
@@ -863,10 +875,7 @@ class SimulationWidget(Widget):
                     #     print(f"{cv}={c_vars[cv]}")
                     rect_y = cutstart[1]
                     rect_x = self.sim.cutcode[idx].offset_x
-                    rect_w = max(
-                        2 * self.sim.cutcode[idx].width,
-                        path_width
-                    )
+                    rect_w = max(2 * self.sim.cutcode[idx].width, path_width)
                     rect_h = residual * (cutend[1] - cutstart[1])
                     interim_pen = wx.Pen(wx.GREEN, 1, wx.PENSTYLE_SOLID)
                     gc.SetPen(interim_pen)

@@ -434,7 +434,9 @@ class CutCode(CutGroup):
         total_duration_travel = 0
         if include_start:
             if self.start is not None:
-                distance_travel += abs(complex(*self.start) - complex(*cutcode[0].start))
+                distance_travel += abs(
+                    complex(*self.start) - complex(*cutcode[0].start)
+                )
             else:
                 distance_travel += abs(0 - complex(*cutcode[0].start))
         prev_end = 0
@@ -442,7 +444,7 @@ class CutCode(CutGroup):
             duration_of_this_travel = 0
             duration_of_this_burn = 0
             length_of_this_travel = 0
-            if i>0:
+            if i > 0:
                 prev = cutcode[i - 1]
                 length_of_this_travel = Point.distance(prev.end, curr.start)
                 distance_travel += length_of_this_travel
@@ -464,7 +466,9 @@ class CutCode(CutGroup):
                 total_duration_cut += duration_of_this_burn
 
             end_of_this_travel = prev_end + duration_of_this_travel
-            end_of_this_burn = prev_end + duration_of_this_travel + this_extra + duration_of_this_burn
+            end_of_this_burn = (
+                prev_end + duration_of_this_travel + this_extra + duration_of_this_burn
+            )
             item = {
                 "type": cut_type,
                 "total_distance_travel": distance_travel,
