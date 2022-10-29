@@ -58,9 +58,8 @@ def _tokenize_code(code_line):
         yield code
 
 
-class GRBLEmulator(Module, Parameters):
-    def __init__(self, context, path):
-        Module.__init__(self, context, path)
+class GRBLParser(Module, Parameters):
+    def __init__(self):
         Parameters.__init__(self)
         self.design = False
         self.control = False
@@ -71,9 +70,8 @@ class GRBLEmulator(Module, Parameters):
 
         self._use_set = None
 
-        self.spooler = self.context.device.spooler
-        self.device = self.context.device
-        self.elements = self.context.elements
+        self.spooler = None
+        self.device = None
 
         self.home_adjust = None
         self.scale_x = 1
@@ -134,7 +132,6 @@ class GRBLEmulator(Module, Parameters):
         self.grbl_channel = self.context.channel("grbl")
         self.reply = None
         self.channel = None
-        self.elements = None
 
     def __repr__(self):
         return f"GRBL({self.name}, {len(self.cutcode)} cuts)"
@@ -163,9 +160,9 @@ class GRBLEmulator(Module, Parameters):
             self.reply(data)
 
     def realtime_write(self, bytes_to_write):
-        device = self.device
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
+            device = self if self.device is None else self.device
             if device.state == 0:
                 state = "Idle"
             else:
@@ -178,11 +175,14 @@ class GRBLEmulator(Module, Parameters):
             s = device.power
             self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
         elif bytes_to_write == "~":  # Resume.
-            self.spooler.laserjob("resume", helper=True)
+            if self.spooler:
+                self.spooler.laserjob("resume", helper=True)
         elif bytes_to_write == "!":  # Pause.
-            self.spooler.laserjob("pause", helper=True)
+            if self.spooler:
+                self.spooler.laserjob("pause", helper=True)
         elif bytes_to_write == "\x18":  # Soft reset.
-            self.spooler.laserjob("abort", helper=True)
+            if self.spooler:
+                self.spooler.laserjob("abort", helper=True)
         elif bytes_to_write == "\x85":
             pass  # Jog Abort.
 
@@ -257,7 +257,8 @@ class GRBLEmulator(Module, Parameters):
                 def realtime_home():
                     yield "home"
 
-                self.spooler.send(realtime_home)
+                if self.spooler:
+                    self.spooler.send(realtime_home)
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             elif data.startswith("$"):
@@ -302,10 +303,12 @@ class GRBLEmulator(Module, Parameters):
                     pass
                 elif v == 8:
                     # Flood coolant On
-                    self.spooler.laserjob(["signal", ("coolant", True)], helper=True)
+                    if self.spooler:
+                        self.spooler.laserjob(["signal", ("coolant", True)], helper=True)
                 elif v == 9:
                     # Flood coolant Off
-                    self.spooler.laserjob(["signal", ("coolant", False)], helper=True)
+                    if self.spooler:
+                        self.spooler.laserjob(["signal", ("coolant", False)], helper=True)
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
