@@ -11,14 +11,17 @@ def plugin(kernel, lifecycle=None):
             print("GRBL plugin could not load because pyserial is not installed.")
             return True
     elif lifecycle == "register":
+        _ = kernel.translation
+
         from .device import GRBLDevice, GRBLDriver
-        from .gcodeloader import GCodeLoader
-        from .grblemulator import GRBLEmulator
 
         kernel.register("provider/device/grbl", GRBLDevice)
-        _ = kernel.translation
         kernel.register("driver/grbl", GRBLDriver)
+
+        from .grblemulator import GRBLEmulator
         kernel.register("emulator/grbl", GRBLEmulator)
+
+        from .gcodeloader import GCodeLoader
         kernel.register("load/GCodeLoader", GCodeLoader)
 
         @kernel.console_option(
@@ -67,7 +70,6 @@ def plugin(kernel, lifecycle=None):
             #         "This was not fully tested prior to feature freeze for the 0.8.x version of MeerK40t. So it was disabled. Look for it in a future version."
             #     )
             #     return
-            root = kernel.root
             try:
                 server = root.open_as("module/TCPServer", "grbl", port=port)
                 emulator = root.open("emulator/grbl")
@@ -104,6 +106,18 @@ def plugin(kernel, lifecycle=None):
                 channel(str(e.strerror))
             return
 
+        @kernel.console_command("grblinterpreter", help=_("activate the grbl interpreter."))
+        def lhyemulator(channel, _, **kwargs):
+            try:
+                kernel.driver.open_as("emulator/grbl", "grblinterpreter")
+                channel(
+                    _("Grbl Interpreter attached to {device}").format(
+                        device=str(kernel.driver)
+                    )
+                )
+            except KeyError:
+                channel(_("Interpreter cannot be attached to any device."))
+            return
     elif lifecycle == "preboot":
         suffix = "grbl"
         for d in kernel.derivable(suffix):
