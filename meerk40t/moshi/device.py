@@ -568,7 +568,8 @@ class MoshiDriver(Parameters):
                         elif on & PLOT_LEFT_UPPER:
                             self.preferred_offset_x = x
                             self.preferred_offset_y = y
-                        elif on & PLOT_SETTING:  # Plot planner settings have changed.
+                        elif on & PLOT_SETTING:
+                            # Plot planner settings have changed.
                             p_set = Parameters(self.plot_planner.settings)
                             if p_set.power != self.power:
                                 self._set_power(p_set.power)
