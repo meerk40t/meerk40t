@@ -310,9 +310,14 @@ class GRBLParser:
             elif data == "$N":
                 pass
             elif data == "$H":
-                self.plotter("home")
-                return 0
-                # return 5  # Homing cycle not enabled by settings.
+                if self.settings["homing_cycle_enable"]:
+                    self.plotter("home")
+                    self.plotter("move", self.x, self.y, 0, 0)
+                    self.x = 0
+                    self.y = 0
+                    return 0
+                else:
+                    return 5  # Homing cycle not enabled by settings.
             elif data.startswith("$"):
                 return 3  # GRBL '$' system command was not recognized or supported.
         if data.startswith("cat"):
