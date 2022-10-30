@@ -184,23 +184,23 @@ class GRBLParser(Parameters):
             pass  # Jog Abort.
 
     def write(self, data):
-        if b"?" in data:
-            data = data.replace(b"?", b"")
-            self.realtime_write("?")
-        if b"~" in data:
-            data = data.replace(b"~", b"")
-            self.realtime_write("~")
-        if b"!" in data:
-            data = data.replace(b"!", b"")
-            self.realtime_write("!")
-        if b"\x18" in data:
-            data = data.replace(b"\x18", b"")
-            self.realtime_write("\x18")
-        if b"\x85" in data:
-            data = data.replace(b"\x85", b"")
-            self.realtime_write("\x85")
-
-        self.buffer += data.decode("utf-8")
+        if isinstance(data, (bytes, bytearray)):
+            if b"?" in data:
+                data = data.replace(b"?", b"")
+                self.realtime_write("?")
+            if b"~" in data:
+                data = data.replace(b"~", b"")
+                self.realtime_write("~")
+            if b"!" in data:
+                data = data.replace(b"!", b"")
+                self.realtime_write("!")
+            if b"\x18" in data:
+                data = data.replace(b"\x18", b"")
+                self.realtime_write("\x18")
+            if b"\x85" in data:
+                data = data.replace(b"\x85", b"")
+                self.realtime_write("\x85")
+            self.buffer += data.decode("utf-8")
         while "\b" in self.buffer:
             self.buffer = re.sub(".\b", "", self.buffer, count=1)
             if self.buffer.startswith("\b"):
