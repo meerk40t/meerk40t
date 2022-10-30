@@ -18,9 +18,17 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/grbl", GRBLDevice)
         kernel.register("driver/grbl", GRBLDriver)
 
+        from .grblinterpreter import GRBLInterpreter
+
+        kernel.register("interpreter/grbl", GRBLInterpreter)
+
         from .grblemulator import GRBLEmulator
 
         kernel.register("emulator/grbl", GRBLEmulator)
+
+        from .grblparser import GRBLParser
+
+        kernel.register("parser/grbl", GRBLParser)
 
         from .gcodeloader import GCodeLoader
 
@@ -95,7 +103,7 @@ def plugin(kernel, lifecycle=None):
         )
         def lhyemulator(channel, _, **kwargs):
             try:
-                kernel.device.open_as("emulator/grbl", "grblinterpreter")
+                kernel.device.open_as("interpreter/grbl", "grblinterpreter")
                 channel(
                     _("Grbl Interpreter attached to {device}").format(
                         device=str(kernel.device)
