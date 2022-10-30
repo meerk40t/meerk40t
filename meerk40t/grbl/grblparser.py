@@ -16,14 +16,27 @@ FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]*")
 """
 GRBL Parser.
 
-The grbl parser is intended to be reusable it parses commands sent to the write() function and will update the internal
-state of the parser as needed and send processed values to the self.plotter. These commands consist of 1 command type
-and some number of operands.
-"new": asks for a new plot
-"move", x, y: move to the position x, y
-"home": Home the device (this is always followed by a move to 0,0).
-...
+The grbl parser is intended to be a reusable parser. For commands sent to the write()
+function and will update the internal state of the parser as needed and send processed 
+values to the self.plotter. These commands consist of a command and some number of operands.
 
+"new": asks for a new plot
+"home": Home the device (this is always followed by a move to 0,0).
+"move", ox, oy, x, y: move to the position x, y from ox, oy
+"line", ox, oy, x, y, power: line to the position, x, y from ox, oy at power `power`.
+"arc", ox, oy, cx, cy, x, y, power: arc to the position, x, y from ox, oy via cx,cy (control)
+        at power `power`. 
+"wait", t: Time in seconds to wait
+"resume": Resume the laser operation
+"pause": Pause the laser operation
+"abort": Abort the laser operations
+"jog_abort": Abort the current jog action for the laser (usually $J)
+"coolant", <boolean>: Turns the coolant on or off.
+
+These commands are called on the `plotter` function which should be passed during the init.
+
+The reply callable is given any responses to these written code commands.
+The channel callable is given any additional information about the gcode.  
 """
 
 
@@ -321,9 +334,6 @@ class GRBLParser:
                     return 5  # Homing cycle not enabled by settings.
             elif data.startswith("$"):
                 return 3  # GRBL '$' system command was not recognized or supported.
-        if data.startswith("cat"):
-            # Weird call to cat files for some Smoothie boards
-            return 2
 
         commands = {}
         for c in _tokenize_code(data):
