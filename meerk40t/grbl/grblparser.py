@@ -71,13 +71,13 @@ soft_limits_enabled = 20
 hard_limits_enabled = 21
 homing_cycle_enable = 22
 homing_direction_invert = 23
-homing_locate_feed_rate, = 24
-homing_search_seek_rate, = 25
-homing_switch_debounce_delay, = 26
+homing_locate_feed_rate = 24
+homing_search_seek_rate = 25
+homing_switch_debounce_delay = 26
 homing_switch_pulloff_distance = 27
-maximum_spindle_speed, = 30
-minimum_spindle_speed, = 31
-laser_mode_enable, = 32
+maximum_spindle_speed = 30
+minimum_spindle_speed = 31
+laser_mode_enable = 32
 x_axis_steps_per_millimeter = 100
 y_axis_steps_per_millimeter = 101
 z_axis_steps_per_millimeter = 102
@@ -90,6 +90,43 @@ z_axis_acceleration = 122
 x_axis_max_travel = 130
 y_axis_max_travel = 131
 z_axis_max_travel = 132
+
+lookup = {
+    step_pulse_microseconds: "step_pulse_microseconds",
+    step_idle_delay: "step_idle_delay",
+    step_pulse_invert: "step_pulse_invert",
+    step_direction_invert: "step_direction_invert",
+    invert_step_enable_pin: "invert_step_enable_pin",
+    invert_limit_pins: "invert_limit_pins",
+    invert_probe_pin: "invert_probe_pin",
+    status_report_options: "status_report_options",
+    junction_deviation: "junction_deviation",
+    arc_tolerance: "arc_tolerance",
+    report_in_inches: "report_in_inches",
+    soft_limits_enabled: "soft_limits_enabled",
+    hard_limits_enabled: "hard_limits_enabled",
+    homing_cycle_enable: "homing_cycle_enable",
+    homing_direction_invert: "homing_direction_invert",
+    homing_locate_feed_rate: "homing_locate_feed_rate,",
+    homing_search_seek_rate: "homing_search_seek_rate",
+    homing_switch_debounce_delay: "homing_switch_debounce_delay,",
+    homing_switch_pulloff_distance: "homing_switch_pulloff_distance",
+    maximum_spindle_speed: "maximum_spindle_speed,",
+    minimum_spindle_speed: "minimum_spindle_speed,",
+    laser_mode_enable: "laser_mode_enable,",
+    x_axis_steps_per_millimeter: "x_axis_steps_per_millimeter",
+    y_axis_steps_per_millimeter: "y_axis_steps_per_millimeter",
+    z_axis_steps_per_millimeter: "z_axis_steps_per_millimeter",
+    x_axis_max_rate: "x_axis_max_rate",
+    y_axis_max_rate: "y_axis_max_rate",
+    z_axis_max_rate: "z_axis_max_rate",
+    x_axis_acceleration: "x_axis_acceleration",
+    y_axis_acceleration: "y_axis_acceleration",
+    z_axis_acceleration: "z_axis_acceleration",
+    x_axis_max_travel: "x_axis_max_travel",
+    y_axis_max_travel: "y_axis_max_travel",
+    z_axis_max_travel: "z_axis_max_travel",
+}
 
 
 class GRBLParser:
@@ -131,7 +168,7 @@ class GRBLParser:
             "y_axis_max_travel": 200.000,  # Y-axis max travel mm
             "z_axis_max_travel": 200.000,  # Z-axis max travel mm.
             "speed": 0,
-            "power": 0
+            "power": 0,
         }
 
         self.compensation = False
@@ -184,8 +221,8 @@ class GRBLParser:
             x /= self.scale
             y /= self.scale
             z = 0.0
-            f = self.feed_invert(self.settings.get("speed",0))
-            s = self.settings.get("power",0)
+            f = self.feed_invert(self.settings.get("speed", 0))
+            s = self.settings.get("power", 0)
             self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
         elif bytes_to_write == "~":  # Resume.
             self.plotter("resume")
@@ -230,7 +267,7 @@ class GRBLParser:
             # Process normalized lineends.
             pos = self._buffer.find("\r")
             command = self._buffer[0:pos].strip("\r")
-            self._buffer = self._buffer[pos + 1:]
+            self._buffer = self._buffer[pos + 1 :]
             cmd = self.process(command)
             if cmd == 0:  # Execute GCode.
                 self.grbl_write("ok\r\n")
@@ -245,8 +282,8 @@ class GRBLParser:
                 )
                 return 0
             elif data == "$$":
-                for s in self.grbl_settings:
-                    v = self.grbl_settings[s]
+                for s in lookup:
+                    v = self.settings.get(lookup[s], 0)
                     if isinstance(v, int):
                         self.grbl_write("$%d=%d\r\n" % (s, v))
                     elif isinstance(v, float):
@@ -254,15 +291,17 @@ class GRBLParser:
                 return 0
             if GRBL_SET_RE.match(data):
                 settings = list(GRBL_SET_RE.findall(data))[0]
-                # print(settings)
+                index = settings[0]
+                value = settings[1]
                 try:
-                    c = self.grbl_settings[int(settings[0])]
+                    name = lookup[index]
+                    c = self.settings[name]
                 except KeyError:
                     return 3
                 if isinstance(c, float):
-                    self.grbl_settings[int(settings[0])] = float(settings[1])
+                    self.settings[name] = float(value)
                 else:
-                    self.grbl_settings[int(settings[0])] = int(settings[1])
+                    self.settings[name] = int(value)
                 return 0
             elif data == "$I":
                 pass
