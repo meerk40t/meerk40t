@@ -13,13 +13,22 @@ class GRBLEmulator(Module):
             if p is None:
                 return
             x0, y0, x1, y1 = p
+            if x0 is None:
+                return
+            if y0 is None:
+                return
+            if x1 is None:
+                return
+            if y1 is None:
+                return
+
             self.context.signal(
                 "emulator;position",
                 (
-                    x0 * UNITS_PER_MIL,
-                    y0 * UNITS_PER_MIL,
-                    x1 * UNITS_PER_MIL,
-                    y1 * UNITS_PER_MIL,
+                    x0,
+                    y0,
+                    x1,
+                    y1,
                 ),
             )
 
