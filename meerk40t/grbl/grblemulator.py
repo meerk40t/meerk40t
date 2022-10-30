@@ -101,13 +101,5 @@ class GRBLEmulator(Module):
             self._use_set = Parameters(dict(self.parser.settings))
         return self._use_set
 
-    def module_open(self, *args, **kwargs):
-        self._attached_device = "none"
-        if hasattr(self.context, "com_port"):
-            self._attached_device = self.context.com_port.lower()
-        send = self.context.channel(f"send-{self._attached_device}")
-        send.watch(self.parser.write)
-
-    def module_close(self, *args, **kwargs):
-        send = self.context.channel(f"send-{self._attached_device}")
-        send.unwatch(self.parser.write)
+    def write(self, data):
+        self.parser.write(data)
