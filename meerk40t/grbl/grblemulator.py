@@ -1,6 +1,5 @@
 from meerk40t.core.cutcode import PlotCut, CutCode, WaitCut
 from meerk40t.core.parameters import Parameters
-from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.grbl.grblparser import GRBLParser
 from meerk40t.kernel import Module
 
@@ -13,7 +12,6 @@ class GRBLEmulator(Module):
 
         self.design = False
         self.control = False
-        self.saving = False
         self.parser.channel = service.channel("grbl_events")
 
         self.cutcode = CutCode()
