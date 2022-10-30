@@ -128,12 +128,12 @@ class GRBLParser(Parameters):
         }
         self.reply = None
         self.position = None
-        self.last_x = None
-        self.last_y = None
         self.channel = None
+        self.x = 0
+        self.y = 0
 
     def __repr__(self):
-        return f"GRBL({self.name}, {len(self.cutcode)} cuts)"
+        return f"GRBL({len(self.cutcode)} cuts)"
 
     def generate(self):
         for cutobject in self.cutcode:
@@ -215,7 +215,7 @@ class GRBLParser(Parameters):
             self.buffer = re.sub("\n", "\r", self.buffer)
         while "\r" in self.buffer:
             # Process normalized lineends.
-            pos = self.buffer.find("\n")
+            pos = self.buffer.find("\r")
             command = self.buffer[0:pos].strip("\r")
             self.buffer = self.buffer[pos + 1 :]
             cmd = self.process(command)
@@ -450,6 +450,8 @@ class GRBLParser(Parameters):
 
             del gc["s"]
         if "x" in gc or "y" in gc:
+            ox = self.x
+            oy = self.y
             if "x" in gc:
                 x = gc["x"].pop(0)
                 if x is None:
@@ -470,27 +472,24 @@ class GRBLParser(Parameters):
                     del gc["y"]
             else:
                 y = 0
+            if self.relative:
+                self.x += x
+                self.y += y
+            else:
+                self.x = x
+                self.y = y
             if self.move_mode == 0:
-                self.plotcut.plot_append(x, y, 0)
-
-                if self.position:
-                    self.position((self.last_x, self.last_y, x, y))
+                self.plotcut.plot_append(self.x, self.y, 0)
             elif self.move_mode == 1:
-                self.plotcut.plot_append(x, y, self.power / 1000.0)
-                if self.position:
-                    self.position((self.last_x, self.last_y, x, y))
+                self.plotcut.plot_append(self.x, self.y, self.power / 1000.0)
             elif self.move_mode == 2:
                 # TODO: Implement CW_ARC
-                self.plotcut.plot_append(x, y, self.power / 1000.0)
-                if self.position:
-                    self.position((self.last_x, self.last_y, x, y))
+                self.plotcut.plot_append(self.x, self.y, self.power / 1000.0)
             elif self.move_mode == 3:
                 # TODO: Implement CCW_ARC
-                self.plotcut.plot_append(x, y, self.power / 1000.0)
-                if self.position:
-                    self.position((self.last_x, self.last_y, x, y))
-            self.last_x = x
-            self.last_y = y
+                self.plotcut.plot_append(self.x, self.y, self.power / 1000.0)
+            if self.position:
+                self.position((ox, oy, self.x, self.y))
         return 0
 
     def g93_feedrate(self):
