@@ -21,6 +21,8 @@ function and will update the internal state of the parser as needed and send pro
 values to the self.plotter. These commands consist of a command and some number of operands.
 
 "new": asks for a new plot
+"start": start of new design
+"end": design is ended
 "home": Home the device (this is always followed by a move to 0,0).
 "move", ox, oy, x, y: move to the position x, y from ox, oy
 "line", ox, oy, x, y, power: line to the position, x, y from ox, oy at power `power`.
@@ -362,10 +364,10 @@ class GRBLParser:
                     return 0
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode
-                    self.plotter("new")
+                    self.plotter("start")
                 elif v == 5:
                     # Spindle Off - Laser Mode
-                    self.plotter("new")
+                    self.plotter("end")
                 elif v == 7:
                     #  Mist coolant control.
                     pass
