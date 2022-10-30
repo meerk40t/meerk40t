@@ -200,15 +200,21 @@ class GRBLParser(Parameters):
             if b"\x85" in data:
                 data = data.replace(b"\x85", b"")
                 self.realtime_write("\x85")
-            self.buffer += data.decode("utf-8")
-        else:
-            self.buffer += data
+            data = data.decode("utf-8")
+        self.buffer += data
         while "\b" in self.buffer:
+            # Process Backspaces.
             self.buffer = re.sub(".\b", "", self.buffer, count=1)
             if self.buffer.startswith("\b"):
                 self.buffer = re.sub("\b+", "", self.buffer)
-
+        while "\r\n" in self.buffer:
+            # Process CRLF endlines
+            self.buffer = re.sub("\r\n", "\r", self.buffer)
         while "\n" in self.buffer:
+            # Process CR endlines
+            self.buffer = re.sub("\n", "\r", self.buffer)
+        while "\r" in self.buffer:
+            # Process normalized lineends.
             pos = self.buffer.find("\n")
             command = self.buffer[0:pos].strip("\r")
             self.buffer = self.buffer[pos + 1 :]
