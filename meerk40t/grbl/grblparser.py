@@ -1,20 +1,11 @@
 import re
 
-from ..core.cutcode import (
-    CutCode,
-    HomeCut,
-    PlotCut,
-    WaitCut,
-)
-from ..core.parameters import Parameters
-from ..core.units import UNITS_PER_INCH, UNITS_PER_MIL, UNITS_PER_MM
+MM_PER_INCH = 25.4
+MIL_PER_INCH = 1000.0
+MM_PER_MIL = MM_PER_INCH / MIL_PER_INCH
+INCH_PER_MIL = 1.0 / MIL_PER_INCH
+MIL_PER_MM = MIL_PER_INCH / MM_PER_MIL
 
-MM_PER_MIL = UNITS_PER_MM / UNITS_PER_MIL
-
-STATE_ABORT = -1
-STATE_DEFAULT = 0
-STATE_CONCAT = 1
-STATE_COMPACT = 2
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
 CODE_RE = re.compile(r"([A-Za-z])")
@@ -22,7 +13,16 @@ FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]*")
 
 
 """
-GRBL Emulator
+GRBL Parser.
+
+The grbl parser is intended to be reusable it parses commands sent to the write() function and will update the internal
+state of the parser as needed and send processed values to the self.plotter. These commands consist of 1 command type
+and some number of operands.
+"new": asks for a new plot
+"move", x, y: move to the position x, y
+"home": Home the device (this is always followed by a move to 0,0).
+...
+
 """
 
 
@@ -56,101 +56,110 @@ def _tokenize_code(code_line):
         yield code
 
 
-class GRBLParser(Parameters):
-    def __init__(self):
-        Parameters.__init__(self)
-        self.design = False
-        self.control = False
-        self.saving = False
+step_pulse_microseconds = 0
+step_idle_delay = 25
+step_pulse_invert = 2
+step_direction_invert = 3
+invert_step_enable_pin = 4
+invert_limit_pins = 5
+invert_probe_pin = 6
+status_report_options = 10
+junction_deviation = 11
+arc_tolerance = 12
+report_in_inches = 13
+soft_limits_enabled = 20
+hard_limits_enabled = 21
+homing_cycle_enable = 22
+homing_direction_invert = 23
+homing_locate_feed_rate, = 24
+homing_search_seek_rate, = 25
+homing_switch_debounce_delay, = 26
+homing_switch_pulloff_distance = 27
+maximum_spindle_speed, = 30
+minimum_spindle_speed, = 31
+laser_mode_enable, = 32
+x_axis_steps_per_millimeter = 100
+y_axis_steps_per_millimeter = 101
+z_axis_steps_per_millimeter = 102
+x_axis_max_rate = 110
+y_axis_max_rate = 111
+z_axis_max_rate = 112
+x_axis_acceleration = 120
+y_axis_acceleration = 121
+z_axis_acceleration = 122
+x_axis_max_travel = 130
+y_axis_max_travel = 131
+z_axis_max_travel = 132
 
-        self.cutcode = CutCode()
-        self.plotcut = PlotCut()
 
-        self._use_set = None
-
-        self.spooler = None
-        self.device = None
-
-        self.home_adjust = None
-        self.scale_x = 1
-        self.scale_y = -1
-
-        # Initially assume mm mode 39.4 mils in an mm. G20 DEFAULT
-        self.scale = UNITS_PER_MM
+class GRBLParser:
+    def __init__(self, plotter):
+        self.plotter = plotter
+        self.settings = {
+            "step_pulse_microseconds": 10,  # step pulse microseconds
+            "step_idle_delay": 25,  # step idle delay
+            "step_pulse_invert": 0,  # step pulse invert
+            "step_direction_invert": 0,  # step direction invert
+            "invert_step_enable_pin": 0,  # invert step enable pin, boolean
+            "invert_limit_pins": 0,  # invert limit pins, boolean
+            "invert_probe_pin": 0,  # invert probe pin
+            "status_report_options": 255,  # status report options
+            "junction_deviation": 0.010,  # Junction deviation, mm
+            "arc_tolerance": 0.002,  # arc tolerance, mm
+            "report_in_inches": 0,  # Report in inches
+            "soft_limits_enabled": 0,  # Soft limits enabled.
+            "hard_limits_enabled": 0,  # hard limits enabled
+            "homing_cycle_enable": 0,  # Homing cycle enable
+            "homing_direction_invert": 0,  # Homing direction invert
+            "homing_locate_feed_rate": 25.000,  # Homing locate feed rate, mm/min
+            "homing_search_seek_rate": 500.000,  # Homing search seek rate, mm/min
+            "homing_switch_debounce_delay": 250,  # Homing switch debounce delay, ms
+            "homing_switch_pulloff_distance": 1.000,  # Homing switch pull-off distance, mm
+            "maximum_spindle_speed": 1000,  # Maximum spindle speed, RPM
+            "minimum_spindle_speed": 0,  # Minimum spindle speed, RPM
+            "laser_mode_enable": 1,  # Laser mode enable, boolean
+            "x_axis_steps_per_millimeter": 250.000,  # X-axis steps per millimeter
+            "y_axis_steps_per_millimeter": 250.000,  # Y-axis steps per millimeter
+            "z_axis_steps_per_millimeter": 250.000,  # Z-axis steps per millimeter
+            "x_axis_max_rate": 500.000,  # X-axis max rate mm/min
+            "y_axis_max_rate": 500.000,  # Y-axis max rate mm/min
+            "z_axis_max_rate": 500.000,  # Z-axis max rate mm/min
+            "x_axis_acceleration": 10.000,  # X-axis acceleration, mm/s^2
+            "y_axis_acceleration": 10.000,  # Y-axis acceleration, mm/s^2
+            "z_axis_acceleration": 10.000,  # Z-axis acceleration, mm/s^2
+            "x_axis_max_travel": 200.000,  # X-axis max travel mm.
+            "y_axis_max_travel": 200.000,  # Y-axis max travel mm
+            "z_axis_max_travel": 200.000,  # Z-axis max travel mm.
+            "speed": 0,
+            "power": 0
+        }
 
         self.compensation = False
         self.feed_convert = None
         self.feed_invert = None
-        self.g94_feedrate()  # G94 DEFAULT, mm mode
+
         self.move_mode = 0
-        self.home = None
-        self.home2 = None
-        self.on_mode = 1
-        self.power = 0  # TODO: wrongly duplicates parameters
-        self.speed = 0  # TODO: wrongly duplicates parameters
-        self.buffer = ""
-        self.relative = False  # G90 default.
-        self.grbl_settings = {
-            0: 10,  # step pulse microseconds
-            1: 25,  # step idle delay
-            2: 0,  # step pulse invert
-            3: 0,  # step direction invert
-            4: 0,  # invert step enable pin, boolean
-            5: 0,  # invert limit pins, boolean
-            6: 0,  # invert probe pin
-            10: 255,  # status report options
-            11: 0.010,  # Junction deviation, mm
-            12: 0.002,  # arc tolerance, mm
-            13: 0,  # Report in inches
-            20: 0,  # Soft limits enabled.
-            21: 0,  # hard limits enabled
-            22: 0,  # Homing cycle enable
-            23: 0,  # Homing direction invert
-            24: 25.000,  # Homing locate feed rate, mm/min
-            25: 500.000,  # Homing search seek rate, mm/min
-            26: 250,  # Homing switch debounce delay, ms
-            27: 1.000,  # Homing switch pull-off distance, mm
-            30: 1000,  # Maximum spindle speed, RPM
-            31: 0,  # Minimum spindle speed, RPM
-            32: 1,  # Laser mode enable, boolean
-            100: 250.000,  # X-axis steps per millimeter
-            101: 250.000,  # Y-axis steps per millimeter
-            102: 250.000,  # Z-axis steps per millimeter
-            110: 500.000,  # X-axis max rate mm/min
-            111: 500.000,  # Y-axis max rate mm/min
-            112: 500.000,  # Z-axis max rate mm/min
-            120: 10.000,  # X-axis acceleration, mm/s^2
-            121: 10.000,  # Y-axis acceleration, mm/s^2
-            122: 10.000,  # Z-axis acceleration, mm/s^2
-            130: 200.000,  # X-axis max travel mm.
-            131: 200.000,  # Y-axis max travel mm
-            132: 200.000,  # Z-axis max travel mm.
-        }
-        self.reply = None
-        self.position = None
-        self.channel = None
         self.x = 0
         self.y = 0
+        self.home = None
+        self.home2 = None
+
+        # Initially assume mm mode 39.4 mils in a mm. G20 DEFAULT
+        self.scale = MM_PER_MIL
+
+        # G94 feedrate default, mm mode
+        self.g94_feedrate()
+
+        # G90 default.
+        self.relative = False
+
+        self.reply = None
+        self.channel = None
+
+        self._buffer = ""
 
     def __repr__(self):
-        return f"GRBL({len(self.cutcode)} cuts)"
-
-    def generate(self):
-        for cutobject in self.cutcode:
-            yield "plot", cutobject
-        yield "plot_start"
-
-    def new_plot_cut(self):
-        if len(self.plotcut):
-            self.plotcut.settings = self.cutset()
-            self.plotcut.check_if_rasterable()
-            self.cutcode.append(self.plotcut)
-            self.plotcut = PlotCut()
-
-    def cutset(self):
-        if self._use_set is None:
-            self._use_set = self.derive()
-        return self._use_set
+        return "GRBLParser()"
 
     def grbl_write(self, data):
         if self.reply:
@@ -167,29 +176,25 @@ class GRBLParser(Parameters):
     def realtime_write(self, bytes_to_write):
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
-            device = self if self.device is None else self.device
-            if device.state == 0:
+            if self.state == 0:
                 state = "Idle"
             else:
                 state = "Busy"
-            x, y = device.current
+            x, y = self.current
             x /= self.scale
             y /= self.scale
             z = 0.0
-            f = self.feed_invert(device.speed)
-            s = device.power
+            f = self.feed_invert(self.settings.get("speed",0))
+            s = self.settings.get("power",0)
             self.grbl_write(f"<{state}|MPos:{x},{y},{z}|FS:{f},{s}>\r\n")
         elif bytes_to_write == "~":  # Resume.
-            if self.spooler:
-                self.spooler.laserjob("resume", helper=True)
+            self.plotter("resume")
         elif bytes_to_write == "!":  # Pause.
-            if self.spooler:
-                self.spooler.laserjob("pause", helper=True)
+            self.plotter("pause")
         elif bytes_to_write == "\x18":  # Soft reset.
-            if self.spooler:
-                self.spooler.laserjob("abort", helper=True)
+            self.plotter("abort")
         elif bytes_to_write == "\x85":
-            pass  # Jog Abort.
+            self.plotter("jog_abort")
 
     def write(self, data):
         if isinstance(data, (bytes, bytearray)):
@@ -209,23 +214,23 @@ class GRBLParser(Parameters):
                 data = data.replace(b"\x85", b"")
                 self.realtime_write("\x85")
             data = data.decode("utf-8")
-        self.buffer += data
-        while "\b" in self.buffer:
+        self._buffer += data
+        while "\b" in self._buffer:
             # Process Backspaces.
-            self.buffer = re.sub(".\b", "", self.buffer, count=1)
-            if self.buffer.startswith("\b"):
-                self.buffer = re.sub("\b+", "", self.buffer)
-        while "\r\n" in self.buffer:
+            self._buffer = re.sub(".\b", "", self._buffer, count=1)
+            if self._buffer.startswith("\b"):
+                self._buffer = re.sub("\b+", "", self._buffer)
+        while "\r\n" in self._buffer:
             # Process CRLF endlines
-            self.buffer = re.sub("\r\n", "\r", self.buffer)
-        while "\n" in self.buffer:
+            self._buffer = re.sub("\r\n", "\r", self._buffer)
+        while "\n" in self._buffer:
             # Process CR endlines
-            self.buffer = re.sub("\n", "\r", self.buffer)
-        while "\r" in self.buffer:
+            self._buffer = re.sub("\n", "\r", self._buffer)
+        while "\r" in self._buffer:
             # Process normalized lineends.
-            pos = self.buffer.find("\r")
-            command = self.buffer[0:pos].strip("\r")
-            self.buffer = self.buffer[pos + 1 :]
+            pos = self._buffer.find("\r")
+            command = self._buffer[0:pos].strip("\r")
+            self._buffer = self._buffer[pos + 1:]
             cmd = self.process(command)
             if cmd == 0:  # Execute GCode.
                 self.grbl_write("ok\r\n")
@@ -266,12 +271,7 @@ class GRBLParser(Parameters):
             elif data == "$N":
                 pass
             elif data == "$H":
-
-                def realtime_home():
-                    yield "home"
-
-                if self.spooler:
-                    self.spooler.send(realtime_home)
+                self.plotter("home")
                 return 0
                 # return 5  # Homing cycle not enabled by settings.
             elif data.startswith("$"):
@@ -296,32 +296,30 @@ class GRBLParser(Parameters):
             for v in gc["m"]:
                 if v in (0, 1):
                     # Stop or Unconditional Stop
-                    self.new_plot_cut()
+                    self.plotter("new")
                 elif v == 2:
                     # Program End
-                    self.new_plot_cut()
+                    self.plotter("new")
                     return 0
                 elif v == 30:
                     # Program Stop
-                    self.new_plot_cut()
+                    self.plotter("new")
                     return 0
                 elif v in (3, 4):
                     # Spindle On - Clockwise/CCW Laser Mode
-                    self.new_plot_cut()
+                    self.plotter("new")
                 elif v == 5:
                     # Spindle Off - Laser Mode
-                    self.new_plot_cut()
+                    self.plotter("new")
                 elif v == 7:
                     #  Mist coolant control.
                     pass
                 elif v == 8:
                     # Flood coolant On
-                    if self.spooler:
-                        self.spooler.laserjob(["signal", ("coolant", True)], helper=True)
+                    self.plotter("coolant", True)
                 elif v == 9:
                     # Flood coolant Off
-                    if self.spooler:
-                        self.spooler.laserjob(["signal", ("coolant", False)], helper=True)
+                    self.plotter("coolant", True)
                 elif v == 56:
                     pass  # Parking motion override control.
                 elif v == 911:
@@ -358,8 +356,8 @@ class GRBLParser(Parameters):
                         t = float(gc["s"].pop())
                         if len(gc["s"]) == 0:
                             del gc["s"]
-                    self.new_plot_cut()
-                    self.cutcode.append(WaitCut(t))
+                    self.plotter("new")
+                    self.plotter("wait", t)
                 elif v == 17:
                     # Set XY coords.
                     pass
@@ -371,13 +369,14 @@ class GRBLParser(Parameters):
                     return 2
                 elif v in (20, 70):
                     # g20 is inch mode.
-                    self.scale = UNITS_PER_INCH
+                    self.scale = MIL_PER_INCH
                 elif v in (21, 71):
                     # g21 is mm mode. 39.3701 mils in a mm
-                    self.scale = UNITS_PER_MM
+                    self.scale = MIL_PER_MM
                 elif v == 28:
                     # Move to Origin (Home)
-                    self.cutcode.append(HomeCut())
+                    self.plotter("home")
+                    self.plotter("move", 0, 0)
                 elif v == 38.1:
                     # Touch Plate
                     pass
@@ -443,10 +442,10 @@ class GRBLParser(Parameters):
                 if v is None:
                     return 2  # Numeric value format is not valid or missing an expected value.
                 feed_rate = self.feed_convert(v)
-                if self.speed != feed_rate:
-                    self.speed = feed_rate
+                if self.settings.get("speed", 0) != feed_rate:
+                    self.settings["speed"] = feed_rate
                     # On speed change we start a new plot.
-                    self.new_plot_cut()
+                    self.plotter("new")
             del gc["f"]
         if "s" in gc:
             for v in gc["s"]:
@@ -454,8 +453,7 @@ class GRBLParser(Parameters):
                     return 2  # Numeric value format is not valid or missing an expected value.
                 if 0.0 < v <= 1.0:
                     v *= 1000  # numbers between 0-1 are taken to be in range 0-1.
-                self.power = v
-
+                self.settings["power"] = v
             del gc["s"]
         if "x" in gc or "y" in gc:
             ox = self.x
@@ -465,7 +463,7 @@ class GRBLParser(Parameters):
                 if x is None:
                     x = 0
                 else:
-                    x *= self.scale * self.scale_x
+                    x *= self.scale
                 if len(gc["x"]) == 0:
                     del gc["x"]
             else:
@@ -475,7 +473,7 @@ class GRBLParser(Parameters):
                 if y is None:
                     y = 0
                 else:
-                    y *= self.scale * self.scale_y
+                    y *= self.scale
                 if len(gc["y"]) == 0:
                     del gc["y"]
             else:
@@ -486,29 +484,32 @@ class GRBLParser(Parameters):
             else:
                 self.x = x
                 self.y = y
+            power = self.settings.get("power", 0)
             if self.move_mode == 0:
-                self.plotcut.plot_append(self.x, self.y, 0)
+                self.plotter("move", ox, oy, self.x, self.y)
             elif self.move_mode == 1:
-                self.plotcut.plot_append(self.x, self.y, self.power / 1000.0)
+                self.plotter("line", ox, oy, self.x, self.y, power / 1000.0)
             elif self.move_mode == 2:
-                # TODO: Implement CW_ARC
-                self.plotcut.plot_append(self.x, self.y, self.power / 1000.0)
+                # CW ARC
+                cx = ox
+                cy = oy
+                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
             elif self.move_mode == 3:
-                # TODO: Implement CCW_ARC
-                self.plotcut.plot_append(self.x, self.y, self.power / 1000.0)
-            if self.position:
-                self.position((ox, oy, self.x, self.y))
+                # CCW ARC
+                cx = ox
+                cy = oy
+                self.plotter("arc", ox, oy, cx, cy, self.x, self.y, power / 1000.0)
         return 0
 
     def g93_feedrate(self):
         # Feed Rate in Minutes / Unit
-        self.feed_convert = lambda s: (60.0 / s) * self.scale / UNITS_PER_MM
-        self.feed_invert = lambda s: (60.0 / s) * UNITS_PER_MM / self.scale
+        self.feed_convert = lambda s: (60.0 / s) * self.scale / MIL_PER_MM
+        self.feed_invert = lambda s: (60.0 / s) * MIL_PER_MM / self.scale
 
     def g94_feedrate(self):
         # Feed Rate in Units / Minute
-        self.feed_convert = lambda s: s / ((self.scale / UNITS_PER_INCH) * 60.0)
-        self.feed_invert = lambda s: s * ((self.scale / UNITS_PER_INCH) * 60.0)
+        self.feed_convert = lambda s: s / ((self.scale / MIL_PER_INCH) * 60.0)
+        self.feed_invert = lambda s: s * ((self.scale / MIL_PER_INCH) * 60.0)
         # units to mm, seconds to minutes.
 
     @property
