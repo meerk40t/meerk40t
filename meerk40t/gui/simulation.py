@@ -182,7 +182,7 @@ class SimulationPanel(wx.Panel, Job):
             wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
         )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
-        self.list_operations.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_listbox_operation_rightclick)
+        self.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick)
         self.Bind(
             wx.EVT_LISTBOX_DCLICK,
             self.on_listbox_operation_dclick,
