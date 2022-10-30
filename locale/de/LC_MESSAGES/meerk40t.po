@@ -5006,12 +5006,12 @@ msgid "Keyhole operation"
 msgstr "Schlüsselloch-Arbeitsgang"
 
 #: meerk40t/gui/imagesplitter.py:485
-msgid "Splitter"
-msgstr "Zerlegen"
+msgid "Image ops"
+msgstr "Bild-Manip."
 
 #: meerk40t/gui/imagesplitter.py:487
-msgid "Open create split image dialog"
-msgstr "Öffnet den Dialog um Bilder zu zerlegen"
+msgid "Open create split image dialog / keyhole generation"
+msgstr "Öffnet den Dialog, um Bilder zu zerlegen bzw. Bildaussschnitte zu erzeugen"
 
 #: meerk40t/gui/keymap.py:25
 msgid "Add Hotkey"
@@ -7644,6 +7644,12 @@ msgid "Don't use icons in the tree"
 msgstr "Verzichte auf die Anzeige von Icons im Baum"
 
 #: meerk40t/gui/wxmmain.py:2114
+msgid "Hide Origin-Indicator"
+msgstr "Ursprung ausblenden"
+
+msgid "Don't show the origin indicator"
+msgstr "Unterdrücke die Anzeige des Ursprungs-Indikator"
+
 msgid "Hide Grid"
 msgstr "Gitter ausblenden"
 

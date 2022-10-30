@@ -318,6 +318,9 @@ class LinePropPanel(wx.Panel):
         self.combo_fill = wx.ComboBox(
             self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
         )
+        self.combo_cap.SetMaxSize(wx.Size(100, -1))
+        self.combo_join.SetMaxSize(wx.Size(100, -1))
+        self.combo_fill.SetMaxSize(wx.Size(100, -1))
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
@@ -346,6 +349,8 @@ class LinePropPanel(wx.Panel):
         self.set_widgets(self.node)
 
     def on_cap(self, event):
+        if self.node is None or self.node.lock:
+            return
         id = self.combo_cap.GetSelection()
         try:
             self.node.linecap = id
@@ -355,6 +360,8 @@ class LinePropPanel(wx.Panel):
             pass
 
     def on_join(self, event):
+        if self.node is None or self.node.lock:
+            return
         id = self.combo_join.GetSelection()
         try:
             self.node.linejoin = id
@@ -364,6 +371,8 @@ class LinePropPanel(wx.Panel):
             pass
 
     def on_fill(self, event):
+        if self.node is None or self.node.lock:
+            return
         id = self.combo_fill.GetSelection()
         try:
             self.node.fillrule = id
@@ -405,6 +414,139 @@ class LinePropPanel(wx.Panel):
             self.Show()
         else:
             self.Hide()
+
+
+class StrokeWidthPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        s_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Stroke-Width")), wx.HORIZONTAL
+        )
+        main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
+        # Plus one combobox + value field for stroke width
+        strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
+        self.text_width = wx.TextCtrl(
+            self, wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_width.SetMaxSize(wx.Size(100, -1))
+
+        self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
+        self.combo_units = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.unit_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_units.SetSelection(0)
+        self.combo_units.SetMaxSize(wx.Size(100, -1))
+
+        self.chk_scale = wx.CheckBox(self, wx.ID_ANY, _("Scale"))
+        self.chk_scale.SetToolTip(
+            _("Toggle the behaviour of stroke-growth.")
+            + "\n"
+            + _("Active: stroke width remains the same, regardless of the element size")
+            + "\n"
+            + _("Inactive: stroke grows/shrink with scaled element")
+        )
+        s_sizer.Add(strokewidth_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        s_sizer.Add(self.text_width, 1, wx.EXPAND, 0)
+        s_sizer.Add(self.combo_units, 1, wx.EXPAND, 0)
+        s_sizer.Add(self.chk_scale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.text_width)
+        self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.set_widgets(self.node)
+
+    def on_chk_scale(self, event):
+        if self.node is None or self.node.lock:
+            return
+        flag = self.chk_scale.GetValue()
+        try:
+            if self.node.stroke_scaled != flag:
+                self.node.stroke_scaled = flag
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
+    def on_stroke_width(self, event):
+        if self.node is None or self.node.lock:
+            return
+        try:
+            swidth = float(
+                Length(
+                    f"{self.text_width.GetValue()}{self.unit_choices[self.combo_units.GetSelection()]}"
+                )
+            )
+            if self.node.stroke_width != swidth:
+                self.node.stroke_width = swidth
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
+    def set_widgets(self, node):
+        self.node = node
+        enable = False
+        if self.node is None:
+            self.text_width.SetValue("0")
+            self.combo_units.SetSelection(0)
+            self.chk_scale.SetValue(True)
+        elif hasattr(self.node, "stroke_width") and hasattr(self.node, "stroke_scaled"):
+            enable = True
+            self.chk_scale.SetValue(self.node.stroke_scaled)
+            # Lets establish which unit might be the best to represent the display
+            if self.node.stroke_width is None or self.node.stroke_width == 0:
+                value = 0
+                idxunit = 2  # mm
+            best_post = 99999999
+            delta = 0.99999999
+            best_pre = 0
+            for idx, unit in enumerate(self.unit_choices):
+                std = float(Length(f"1{unit}"))
+                fraction = abs(self.node.stroke_width / std)
+                if fraction == 0:
+                    continue
+                curr_post = 0
+                curr_pre = int(fraction)
+                while fraction < 1:
+                    curr_post += 1
+                    fraction *= 10
+                fraction -= curr_pre
+                # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
+                takespref = False
+                if (fraction < delta):
+                    takespref = True
+                elif fraction == delta and curr_pre > best_pre:
+                    takespref = True
+                elif fraction == delta and curr_post < best_post:
+                    takespref = True
+                if takespref:
+                    best_pre = curr_pre
+                    delta = fraction
+                    best_post = curr_post
+                    idxunit = idx
+                    value = self.node.stroke_width / std
+            self.text_width.SetValue(str(round(value, 6)))
+            self.combo_units.SetSelection(idxunit)
+
+        self.text_width.Enable(enable)
+        self.combo_units.Enable(enable)
+        self.chk_scale.Enable(enable)
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
 
 
 class PositionSizePanel(wx.Panel):

@@ -568,15 +568,15 @@ class MoshiDriver(Parameters):
                         elif on & PLOT_LEFT_UPPER:
                             self.preferred_offset_x = x
                             self.preferred_offset_y = y
-                        elif on & PLOT_SETTING:  # Plot planner settings have changed.
-                            p_set = self.plot_planner.settings
-                            s_set = self.settings
-                            if p_set.power != s_set.power:
+                        elif on & PLOT_SETTING:
+                            # Plot planner settings have changed.
+                            p_set = Parameters(self.plot_planner.settings)
+                            if p_set.power != self.power:
                                 self._set_power(p_set.power)
                             if (
-                                p_set.speed != s_set.speed
-                                or p_set.raster_step_x != s_set.raster_step_x
-                                or p_set.raster_step_y != s_set.raster_step_y
+                                p_set.speed != self.speed
+                                or p_set.raster_step_x != self.raster_step_x
+                                or p_set.raster_step_y != self.raster_step_y
                             ):
                                 self._set_speed(p_set.speed)
                                 self._set_step(p_set.raster_step_x, p_set.raster_step_y)

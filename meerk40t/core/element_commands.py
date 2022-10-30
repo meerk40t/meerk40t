@@ -2645,13 +2645,13 @@ def init_commands(kernel):
                     x_pos = -1 * radius
                     y_pos = 0
                     # e *= "translate(%f, %f)" % (x_pos, y_pos)
-                    e *= f"rotate({currentangle}rad, {center_x}, {center_y})"
+                    e.matrix *= f"rotate({currentangle}rad, {center_x}, {center_y})"
                 else:
                     x_pos = -1 * radius + radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
-                    e *= f"translate({x_pos}, {y_pos})"
+                    e.matrix *= f"translate({x_pos}, {y_pos})"
+                self.elem_branch.add_node(e)
 
-            self.add_elems(add_elem)
             data_out.extend(add_elem)
 
             currentangle += segment_len
@@ -2739,14 +2739,15 @@ def init_commands(kernel):
                 if rotate:
                     x_pos = radius
                     y_pos = 0
-                    e *= f"translate({x_pos}, {y_pos})"
-                    e *= f"rotate({currentangle}rad, {center_x}, {center_y})"
+                    e.matrix *= f"translate({x_pos}, {y_pos})"
+                    e.matrix *= f"rotate({currentangle}rad, {center_x}, {center_y})"
+                    e.modified()
                 else:
                     x_pos = radius * cos(currentangle)
                     y_pos = radius * sin(currentangle)
-                    e *= f"translate({x_pos}, {y_pos})"
-
-            self.add_elems(add_elem)
+                    e.matrix *= f"translate({x_pos}, {y_pos})"
+                    e.modified()
+                self.elem_branch.add_node(e)
             data_out.extend(add_elem)
             currentangle += segment_len
 

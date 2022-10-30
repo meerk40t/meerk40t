@@ -91,6 +91,7 @@ from .laserrender import (
     DRAW_MODE_STROKES,
     DRAW_MODE_TEXT,
     DRAW_MODE_VARIABLES,
+    DRAW_MODE_ORIGIN,
     swizzlecolor,
 )
 from .mwindow import MWindow
@@ -2180,6 +2181,16 @@ class MeerK40t(MWindow):
                 "subsegment": "Tree",
             },
             ### Scene-Appearance
+            {
+                "label": _("Hide Origin-Indicator"),
+                "help": _("Don't show the origin indicator"),
+                "criteria": self.context.draw_mode & DRAW_MODE_ORIGIN != 0,
+                "action": toggle_draw_mode,
+                "parameter": DRAW_MODE_ORIGIN,
+                "level": 2,
+                "segment": "Scene Appearance",
+                "subsegment": "Scene",
+            },
             {
                 "label": _("Hide Grid"),
                 "help": _("Don't show the sizing grid"),
