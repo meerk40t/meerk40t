@@ -73,7 +73,7 @@ def plugin(kernel, lifecycle=None):
                     root.close("grbl")
                     root.close("emulator/grbl")
                     return
-                root.channel("grbl/send").greet = "Grbl 1.1e ['$' for help]\r"
+                root.channel("grbl/send", pure=True).greet = "Grbl 1.1e ['$' for help]\r"
                 channel(_("GRBL Mode."))
                 if verbose:
                     console = kernel.channel("console")
@@ -81,7 +81,7 @@ def plugin(kernel, lifecycle=None):
                     server.events_channel.watch(console)
                 # Link emulator and server.
                 root.channel("grbl/recv").watch(emulator.write)
-                emulator.reply = root.channel("grbl/send")
+                emulator.set_reply(root.channel("grbl/send", pure=True))
 
                 channel(
                     _("TCP Server for GRBL Emulator on port: {port}").format(port=port)

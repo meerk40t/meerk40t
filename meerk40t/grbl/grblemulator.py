@@ -28,6 +28,9 @@ class GRBLEmulator(Module):
     def __repr__(self):
         return f"GcodeEmulator({self.name})"
 
+    def set_reply(self, reply):
+        self.parser.reply = reply
+
     def plotter(self, command, *args):
         if command == "move":
             x0, y0, x1, y1 = args
