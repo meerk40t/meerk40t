@@ -26,7 +26,6 @@ from .wxutils import disable_window
 
 _ = wx.GetTranslation
 
-
 class SimulationPanel(wx.Panel, Job):
     def __init__(self, *args, context=None, plan_name=None, auto_clear=True, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
@@ -44,11 +43,11 @@ class SimulationPanel(wx.Panel, Job):
         self.process = self.animate_sim
         self.interval = 0.1
         if plan_name:
-            cutplan = self.context.planner.get_or_make_plan(plan_name)
+            self.cutplan = self.context.planner.get_or_make_plan(plan_name)
         else:
-            cutplan = self.context.planner.default_plan
-        self.plan_name = cutplan.name
-        self.operations = cutplan.plan
+            self.cutplan = self.context.planner.default_plan
+        self.plan_name = self.cutplan.name
+        self.operations = self.cutplan.plan
         self.cutcode = CutCode()
 
         for c in self.operations:
@@ -75,9 +74,20 @@ class SimulationPanel(wx.Panel, Job):
             _("Show/Hide optimization options for this job.")
         )
         choices = self.context.lookup("choices/optimize")[:7]
-        self.panel_optimize = ChoicePropertyPanel(
+        self.subpanel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
+        self.subpanel_operations = wx.Panel(self, wx.ID_ANY)
+        self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
+
+        self.panel_optimize = wx.Notebook(self, wx.ID_ANY)
+        self.subpanel_optimize.Reparent(self.panel_optimize)
+        self.subpanel_operations.Reparent(self.panel_optimize)
+        self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimization"))
+        self.panel_optimize.AddPage(self.subpanel_operations, _("Operations"))
+        self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
+        self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
+        self.checkbox_optimize.SetValue(1)
         self.btn_redo_it = wx.Button(self, wx.ID_ANY, _("Recalculate"))
         self.btn_redo_it.Bind(wx.EVT_BUTTON, self.on_redo_it)
 
@@ -142,10 +152,10 @@ class SimulationPanel(wx.Panel, Job):
                 break
         spools = [s.label for s in self.available_devices]
 
-        self.combo_device = wx.ComboBox(
-            self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
-        )
-        self.combo_device.SetSelection(index)
+        # self.combo_device = wx.ComboBox(
+        #     self, wx.ID_ANY, choices=spools, style=wx.CB_DROPDOWN
+        # )
+        # self.combo_device.SetSelection(index)
         self.button_spool = wx.Button(self, wx.ID_ANY, _("Send to Laser"))
         self._slided_in = None
 
@@ -161,7 +171,7 @@ class SimulationPanel(wx.Panel, Job):
         self.Bind(wx.EVT_SLIDER, self.on_slider_progress, self.slider_progress)
         self.Bind(wx.EVT_BUTTON, self.on_button_play, self.button_play)
         self.Bind(wx.EVT_SLIDER, self.on_slider_playback, self.slider_playbackspeed)
-        self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
+        # self.Bind(wx.EVT_COMBOBOX, self.on_combo_device, self.combo_device)
         self.Bind(wx.EVT_BUTTON, self.on_button_spool, self.button_spool)
         self.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_cut)
@@ -172,6 +182,13 @@ class SimulationPanel(wx.Panel, Job):
             wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
         )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
+        self.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick)
+        self.Bind(
+            wx.EVT_LISTBOX_DCLICK,
+            self.on_listbox_operation_dclick,
+            self.list_operations,
+        )
+        self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
         # end wxGlade
 
         ##############
@@ -212,7 +229,7 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(icons8_play_50.GetBitmap())
         self.text_playback_speed.SetMinSize((55, 23))
-        self.combo_device.SetToolTip(_("Select the device"))
+        # self.combo_device.SetToolTip(_("Select the device"))
         self.button_spool.SetFont(
             wx.Font(
                 18,
@@ -276,6 +293,11 @@ class SimulationPanel(wx.Panel, Job):
         # |   E    |   +-------+
         # |   W    |   |Refresh|
         # +--------+---+-------+
+        ops_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.list_operations.Reparent(self.subpanel_operations)
+        ops_sizer.Add(self.list_operations, 1, wx.EXPAND, 0)
+        self.subpanel_operations.SetSizer(ops_sizer)
+        self.subpanel_operations.Layout()
         # Linux requires a minimum  height / width to display a text inside a button
         system = platform.system()
         if system == "Darwin":
@@ -289,6 +311,8 @@ class SimulationPanel(wx.Panel, Job):
         self.btn_slide_options.SetMinSize(wx.Size(mysize, -1))
         self.voption_sizer = wx.BoxSizer(wx.VERTICAL)
         self.voption_sizer.Add(self.panel_optimize, 1, wx.EXPAND, 0)
+        self.checkbox_optimize.SetMinSize(wx.Size(-1, 23))
+        self.voption_sizer.Add(self.checkbox_optimize, 0, wx.EXPAND, 0)
         self.voption_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
 
         self.hscene_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -325,21 +349,23 @@ class SimulationPanel(wx.Panel, Job):
         h_sizer_buttons.Add(self.button_play, 0, 0, 0)
         sizer_speed_options.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
 
-        label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed"))
+        label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed")+ " ")
         sizer_pb_speed.Add(label_playback_speed, 2, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_pb_speed.Add(self.text_playback_speed, 1, wx.EXPAND, 0)
 
         sizer_display = wx.BoxSizer(wx.HORIZONTAL)
-        label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Playback Mode"))
-        sizer_display.Add(label_playback_mode, 1, wx.EXPAND, 0)
-        sizer_display.Add(self.radio_cut, 1, wx.EXPAND, 0)
-        sizer_display.Add(self.radio_time_seconds, 1, wx.EXPAND, 0)
-        sizer_display.Add(self.radio_time_minutes, 1, wx.EXPAND, 0)
+        label_playback_mode = wx.StaticText(self, wx.ID_ANY, _("Mode") + " ")
+        sizer_display.Add(label_playback_mode, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        # Make sure it has about textbox size, otherwise too narrow
+        self.radio_cut.SetMinSize(wx.Size(-1, 23))
+        sizer_display.Add(self.radio_cut, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_display.Add(self.radio_time_seconds, 1, wx.ALIGN_CENTER_VERTICAL, 0)
+        sizer_display.Add(self.radio_time_minutes, 1, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_speed_options.Add(sizer_pb_speed, 0, wx.EXPAND, 0)
         sizer_speed_options.Add(sizer_display, 0, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_speed_options, 1, wx.EXPAND, 0)
-        sizer_execute.Add(self.combo_device, 0, wx.EXPAND, 0)
-        sizer_execute.Add(self.button_spool, 0, wx.EXPAND, 0)
+        # sizer_execute.Add(self.combo_device, 0, wx.EXPAND, 0)
+        sizer_execute.Add(self.button_spool, 1, wx.EXPAND, 0)
         h_sizer_buttons.Add(sizer_execute, 1, wx.EXPAND, 0)
 
         v_sizer_main.Add(self.hscene_sizer, 1, wx.EXPAND, 0)
@@ -464,25 +490,26 @@ class SimulationPanel(wx.Panel, Job):
 
         gui = self
         menu = wx.Menu()
-        self.Bind(
-            wx.EVT_MENU,
-            cut_before,
-            menu.Append(
-                wx.ID_ANY,
-                _("Delete cuts before"),
-                _("Delete all cuts before the current position in Simulation"),
-            ),
-        )
-        self.Bind(
-            wx.EVT_MENU,
-            cut_after,
-            menu.Append(
-                wx.ID_ANY,
-                _("Delete cuts after"),
-                _("Delete all cuts after the current position in Simulation"),
-            ),
-        )
-        menu.AppendSeparator()
+        if self.radio_cut.GetValue():
+            self.Bind(
+                wx.EVT_MENU,
+                cut_before,
+                menu.Append(
+                    wx.ID_ANY,
+                    _("Delete cuts before"),
+                    _("Delete all cuts before the current position in Simulation"),
+                ),
+            )
+            self.Bind(
+                wx.EVT_MENU,
+                cut_after,
+                menu.Append(
+                    wx.ID_ANY,
+                    _("Delete cuts after"),
+                    _("Delete all cuts after the current position in Simulation"),
+                ),
+            )
+            menu.AppendSeparator()
         id1 = menu.Append(
             wx.ID_ANY,
             _("Show Background"),
@@ -554,13 +581,35 @@ class SimulationPanel(wx.Panel, Job):
         self.slider_progress.SetMin(0)
         self.slider_progress.SetMax(self.max)
         self.slider_progress.SetValue(self.max)
+        value = self.slider_playbackspeed.GetValue()
+        value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
+        if self.radio_cut.GetValue():
+            factor = 0.1    # steps
+        else:
+            factor = 1    # seconds
+        self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
+        def name_str(e):
+            try:
+                return e.__name__
+            except AttributeError:
+                return str(e)
+
         # Stop animation
         if self.running:
             self._stop()
             return
         # Refresh cutcode
+        if self.plan_name:
+            self.cutplan = self.context.planner.get_or_make_plan(self.plan_name)
+        else:
+            self.cutplan = self.context.planner.default_plan
+        self.list_operations.Clear()
+        if self.cutplan.plan is not None and len(self.cutplan.plan) != 0:
+            self.list_operations.InsertItems([name_str(e) for e in self.cutplan.plan], 0)
+        self.plan_name = self.cutplan.name
+        self.operations = self.cutplan.plan
         self.cutcode = CutCode()
 
         for c in self.operations:
@@ -575,21 +624,21 @@ class SimulationPanel(wx.Panel, Job):
         self.update_fields()
         self.request_refresh()
 
-    @signal_listener("activate;device")
-    def on_activate_device(self, origin, device):
-        self.available_devices = self.context.kernel.services("device")
-        self.selected_device = self.context.device
-        spools = []
-        index = -1
-        for i, s in enumerate(self.available_devices):
-            if s is self.selected_device:
-                index = i
-                break
-        spools = [s.label for s in self.available_devices]
-        self.combo_device.Clear()
-        self.combo_device.SetItems(spools)
-        self.combo_device.SetSelection(index)
-        self.on_combo_device(None)
+    # @signal_listener("activate;device")
+    # def on_activate_device(self, origin, device):
+    #     self.available_devices = self.context.kernel.services("device")
+    #     self.selected_device = self.context.device
+    #     spools = []
+    #     index = -1
+    #     for i, s in enumerate(self.available_devices):
+    #         if s is self.selected_device:
+    #             index = i
+    #             break
+    #     spools = [s.label for s in self.available_devices]
+    #     self.combo_device.Clear()
+    #     self.combo_device.SetItems(spools)
+    #     self.combo_device.SetSelection(index)
+    #     self.on_combo_device(None)
 
     @signal_listener("plan")
     def on_plan_change(self, origin, plan_name, status):
@@ -599,6 +648,45 @@ class SimulationPanel(wx.Panel, Job):
     def on_radio_playback_mode(self, event):
         self._playback_cuts = self.radio_cut.GetValue()
         self._set_slider_dimensions()
+
+    def on_listbox_operation_rightclick(self, event):
+        def remove_operation(event):
+            idx = self.list_operations.GetSelection()
+
+        if self.list_operations.GetSelection()<0:
+            return
+
+        gui = self
+
+        menu = wx.Menu()
+        self.Bind(
+            wx.EVT_MENU,
+            remove_operation,
+            menu.Append(
+                wx.ID_ANY,
+                _("Remove operation"),
+                _("Removes the current operation from the active cutplan"),
+            ),
+        )
+
+        if menu.MenuItemCount != 0:
+            gui.PopupMenu(menu)
+            menu.Destroy()
+
+    def on_checkbox_optimize(self, event):
+        if self.checkbox_optimize.GetValue():
+            self.subpanel_optimize.Enable(True)
+        else:
+            self.subpanel_optimize.Enable(False)
+
+    def on_listbox_operation_dclick(self, event):
+        return
+        # node_index = self.list_operations.GetSelection()
+        # if node_index == -1:
+        #     return
+        # obj = self.cutplan.plan[node_index]
+        # self.context.open("window/Properties", self)
+        # self.context.kernel.activate_instance(obj)
 
     def update_fields(self):
         step, residual = self.progress_to_idx(self.progress)
@@ -708,9 +796,13 @@ class SimulationPanel(wx.Panel, Job):
 
     def on_redo_it(self, event):
         with wx.BusyInfo(_("Preparing simulation...")):
+            if self.checkbox_optimize.GetValue():
+                opt = " optimize"
+            else:
+                opt = ""
             self.context(
-                "plan{plan} clear\nplan{plan} copy preprocess validate blob preopt optimize\n".format(
-                    plan=self.plan_name
+                "plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{optimize}\n".format(
+                    plan=self.plan_name, optimize=opt
                 )
             )
         self._refresh_simulated_plan()
@@ -723,7 +815,8 @@ class SimulationPanel(wx.Panel, Job):
             bbox, self.view_pane.Size, 0.1
         )
         self.update_fields()
-        self.panel_optimize.pane_show()
+        # self.panel_optimize.pane_show()
+        self.panel_optimize.Show()
 
     def pane_hide(self):
         if self.auto_clear:
@@ -731,7 +824,8 @@ class SimulationPanel(wx.Panel, Job):
         self.context.close("SimScene")
         self.context.unschedule(self)
         self.running = False
-        self.panel_optimize.pane_hide()
+        # self.panel_optimize.pane_hide()
+        self.panel_optimize.Hide()
 
     @signal_listener("refresh_scene")
     def on_refresh_scene(self, origin, scene_name=None, *args):
@@ -792,17 +886,23 @@ class SimulationPanel(wx.Panel, Job):
 
         value = self.slider_playbackspeed.GetValue()
         value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
-        self.interval = 0.1 * 100.0 / float(value)
+        if self.radio_cut.GetValue():
+            factor = 0.1    # steps
+        else:
+            factor = 1    # seconds
+        self.interval = factor * 100.0 / float(value)
 
         self.text_playback_speed.SetValue(f"{value}%")
 
-    def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
-        index = self.combo_device.GetSelection()
-        self.selected_device = self.available_devices[index]
-        self.selected_device.kernel.activate_service_path(
-            "device", self.selected_device.path
-        )
-        self.fit_scene_to_panel()
+    # def on_combo_device(self, event=None):  # wxGlade: Preview.<event_handler>
+    #     index = self.combo_device.GetSelection()
+    #     if self.selected_device is not self.available_devices[index]:
+    #         self.selected_device = self.available_devices[index]
+    #         self.selected_device.kernel.activate_service_path(
+    #             "device", self.selected_device.path
+    #         )
+    #         self.on_redo_it(event)
+    #         self.fit_scene_to_panel()
 
     def on_button_spool(self, event=None):  # wxGlade: Simulation.<event_handler>
         self.context(f"plan{self.plan_name} spool\n")
@@ -1111,7 +1211,7 @@ class Simulation(MWindow):
         def open_simulator(v=None):
             with wx.BusyInfo(_("Preparing simulation...")):
                 kernel.console(
-                    "plan0 copy preprocess validate blob preopt optimize\nwindow toggle Simulation 0\n"
+                    "planz copy preprocess validate blob preopt optimize\nwindow toggle Simulation z\n"
                 ),
 
         kernel.register(
