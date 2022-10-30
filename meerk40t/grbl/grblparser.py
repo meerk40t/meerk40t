@@ -201,6 +201,8 @@ class GRBLParser(Parameters):
                 data = data.replace(b"\x85", b"")
                 self.realtime_write("\x85")
             self.buffer += data.decode("utf-8")
+        else:
+            self.buffer += data
         while "\b" in self.buffer:
             self.buffer = re.sub(".\b", "", self.buffer, count=1)
             if self.buffer.startswith("\b"):
