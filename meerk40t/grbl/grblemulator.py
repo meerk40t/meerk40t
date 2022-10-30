@@ -31,13 +31,19 @@ class GRBLEmulator(Module):
 
     def plotter(self, command, *args):
         if command == "move":
-            x, y = args
-            self.plotcut.plot_append(x, y, 0)
-            ox, oy = self.context.physical_to_device_length(x, y)
-            self.context.signal("emulator;position", (ox, oy, ox, ox))
-        elif command in ("line", "arc"):
-            # This should actually do different things if line or arc to.
+            x0, y0, x1, y1 = args
+            self.plotcut.plot_append(x1, y1, 0)
+            ox, oy = self.context.physical_to_device_length(x0, y0)
+            nx, ny = self.context.physical_to_device_length(x1, y1)
+            self.context.signal("emulator;position", (ox, oy, nx, ny))
+        elif command in "line":
             x0, y0, x1, y1, power = args
+            self.plotcut.plot_append(x1, y1, power)
+            ox, oy = self.context.physical_to_device_length(x0, y0)
+            nx, ny = self.context.physical_to_device_length(x1, y1)
+            self.context.signal("emulator;position", (ox, oy, nx, ny))
+        elif command in "arc":
+            x0, y0, cx, cy, x1, y1, power = args
             self.plotcut.plot_append(x1, y1, power)
             ox, oy = self.context.physical_to_device_length(x0, y0)
             nx, ny = self.context.physical_to_device_length(x1, y1)
