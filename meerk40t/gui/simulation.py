@@ -7,6 +7,13 @@ import wx
 from meerk40t.kernel import Job, signal_listener
 
 from ..core.cutcode import CutCode
+from ..core.node.util_console import ConsoleOperation
+from ..core.node.util_goto import GotoOperation
+from ..core.node.util_home import HomeOperation
+from ..core.node.util_origin import SetOriginOperation
+from ..core.node.util_output import OutputOperation
+from ..core.node.util_wait import WaitOperation
+from ..core.units import Length
 from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
 from .icons import (
@@ -26,10 +33,12 @@ from .wxutils import disable_window
 
 _ = wx.GetTranslation
 
+
 class SimulationPanel(wx.Panel, Job):
     def __init__(self, *args, context=None, plan_name=None, auto_clear=True, **kwds):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
+        self.parent = args[0]
         self.context = context
         self.plan_name = plan_name
         self.auto_clear = auto_clear
@@ -182,7 +191,9 @@ class SimulationPanel(wx.Panel, Job):
             wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
         )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
-        self.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick)
+        self.list_operations.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick
+        )
         self.Bind(
             wx.EVT_LISTBOX_DCLICK,
             self.on_listbox_operation_dclick,
@@ -216,6 +227,9 @@ class SimulationPanel(wx.Panel, Job):
             BedWidget(self.widget_scene, name="Simulation")
         )
         self.widget_scene.add_interfacewidget(SimReticleWidget(self.widget_scene, self))
+
+        self.parent.add_module_delegate(self.subpanel_optimize)
+
         self.running = False
         if index == -1:
             disable_window(self)
@@ -349,7 +363,7 @@ class SimulationPanel(wx.Panel, Job):
         h_sizer_buttons.Add(self.button_play, 0, 0, 0)
         sizer_speed_options.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
 
-        label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed")+ " ")
+        label_playback_speed = wx.StaticText(self, wx.ID_ANY, _("Playback Speed") + " ")
         sizer_pb_speed.Add(label_playback_speed, 2, wx.ALIGN_CENTER_VERTICAL, 0)
         sizer_pb_speed.Add(self.text_playback_speed, 1, wx.EXPAND, 0)
 
@@ -584,9 +598,9 @@ class SimulationPanel(wx.Panel, Job):
         value = self.slider_playbackspeed.GetValue()
         value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
         if self.radio_cut.GetValue():
-            factor = 0.1    # steps
+            factor = 0.1  # steps
         else:
-            factor = 1    # seconds
+            factor = 1  # seconds
         self.interval = factor * 100.0 / float(value)
 
     def _refresh_simulated_plan(self):
@@ -607,7 +621,9 @@ class SimulationPanel(wx.Panel, Job):
             self.cutplan = self.context.planner.default_plan
         self.list_operations.Clear()
         if self.cutplan.plan is not None and len(self.cutplan.plan) != 0:
-            self.list_operations.InsertItems([name_str(e) for e in self.cutplan.plan], 0)
+            self.list_operations.InsertItems(
+                [name_str(e) for e in self.cutplan.plan], 0
+            )
         self.plan_name = self.cutplan.name
         self.operations = self.cutplan.plan
         self.cutcode = CutCode()
@@ -652,8 +668,29 @@ class SimulationPanel(wx.Panel, Job):
     def on_listbox_operation_rightclick(self, event):
         def remove_operation(event):
             idx = self.list_operations.GetSelection()
+            self.cutplan.plan.pop(idx)
+            self.context.signal("plan", self.plan_name, 1)
+            # self._refresh_simulated_plan()
 
-        if self.list_operations.GetSelection()<0:
+        def append_operation(operation):
+            def check(event):
+                self.cutplan.plan.append(my_operation)
+                self.context.signal("plan", self.plan_name, 1)
+
+            my_operation = operation
+            return check
+
+        def insert_operation(operation):
+            def check(event):
+                self.cutplan.plan.insert(
+                    self.list_operations.GetSelection(), my_operation
+                )
+                self.context.signal("plan", self.plan_name, 1)
+
+            my_operation = operation
+            return check
+
+        if self.list_operations.GetSelection() < 0:
             return
 
         gui = self
@@ -668,6 +705,114 @@ class SimulationPanel(wx.Panel, Job):
                 _("Removes the current operation from the active cutplan"),
             ),
         )
+        standards = (
+            ("Home", "util home", ""),
+            ("Goto Origin", "util goto", "0,0"),
+            ("Beep", "util console", "beep"),
+            ("Interrupt", "util console", 'interrupt "Spooling was interrupted"'),
+            ("Console", "util console", ""),
+            ("Set Origin", "util origin", ""),
+        )
+        pre_items = []
+        for elem in standards:
+            desc = elem[0]
+            optype = elem[1]
+            opparam = elem[2]
+
+            if optype is not None:
+                addop = None
+                if optype == "util console":
+                    addop = ConsoleOperation(command=opparam)
+                elif optype == "util home":
+                    addop = HomeOperation()
+                # elif optype == "util output":
+                #     if opparam is not None:
+                #         params = opparam.split(",")
+                #         mask = 0
+                #         setvalue = 0
+                #         if len(params) > 0:
+                #             try:
+                #                 mask = int(params[0])
+                #             except ValueError:
+                #                 mask = 0
+                #         if len(params) > 1:
+                #             try:
+                #                 setvalue = int(params[1])
+                #             except ValueError:
+                #                 setvalue = 0
+                #         if mask != 0 or setvalue != 0:
+                #             addop = OutputOperation(mask, setvalue)
+                elif optype == "util goto":
+                    if opparam is not None:
+                        params = opparam.split(",")
+                        x = 0
+                        y = 0
+                        if len(params) > 0:
+                            try:
+                                x = float(Length(params[0]))
+                            except ValueError:
+                                x = 0
+                        if len(params) > 1:
+                            try:
+                                y = float(Length(params[1]))
+                            except ValueError:
+                                y = 0
+                        addop = GotoOperation(x=x, y=y)
+                elif optype == "util origin":
+                    if opparam is not None and opparam != "":
+                        params = opparam.split(",")
+                        x = 0
+                        y = 0
+                        if len(params) > 0:
+                            try:
+                                x = float(Length(params[0]))
+                            except ValueError:
+                                x = 0
+                        if len(params) > 1:
+                            try:
+                                y = float(Length(params[1]))
+                            except ValueError:
+                                y = 0
+                        addop = SetOriginOperation(x=x, y=y)
+                    else:
+                        addop = SetOriginOperation(x=None, y=None)
+                elif optype == "util wait":
+                    if opparam is not None:
+                        try:
+                            opparam = float(opparam)
+                        except ValueError:
+                            opparam = None
+                    if opparam is not None:
+                        addop = WaitOperation(wait=opparam)
+                if addop is not None:
+                    pre_items.append([desc, addop])
+
+        menu.AppendSeparator()
+        for entry in pre_items:
+            self.Bind(
+                wx.EVT_MENU,
+                insert_operation(entry[1]),
+                menu.Append(
+                    wx.ID_ANY,
+                    _("Insert '{operation}' to cutplan").format(operation=entry[0]),
+                    _(
+                        "Inserts this special operation before the current cutplan entrys"
+                    ),
+                ),
+            )
+        menu.AppendSeparator()
+        for entry in pre_items:
+            self.Bind(
+                wx.EVT_MENU,
+                append_operation(entry[1]),
+                menu.Append(
+                    wx.ID_ANY,
+                    _("Appends '{operation}' to cutplan").format(
+                        operation=entry[0]
+                    ),
+                    _("Appends this special operation at the end of the cutplan"),
+                ),
+            )
 
         if menu.MenuItemCount != 0:
             gui.PopupMenu(menu)
@@ -796,14 +941,13 @@ class SimulationPanel(wx.Panel, Job):
 
     def on_redo_it(self, event):
         with wx.BusyInfo(_("Preparing simulation...")):
+            plan = self.plan_name
             if self.checkbox_optimize.GetValue():
                 opt = " optimize"
             else:
                 opt = ""
             self.context(
-                "plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{optimize}\n".format(
-                    plan=self.plan_name, optimize=opt
-                )
+                f"plan{plan} clear\nplan{plan} copy preprocess validate blob preopt{opt}\n"
             )
         self._refresh_simulated_plan()
 
@@ -887,9 +1031,9 @@ class SimulationPanel(wx.Panel, Job):
         value = self.slider_playbackspeed.GetValue()
         value = int((10.0 ** (value // 90)) * (1.0 + float(value % 90) / 10.0))
         if self.radio_cut.GetValue():
-            factor = 0.1    # steps
+            factor = 0.1  # steps
         else:
-            factor = 1    # seconds
+            factor = 1  # seconds
         self.interval = factor * 100.0 / float(value)
 
         self.text_playback_speed.SetValue(f"{value}%")
