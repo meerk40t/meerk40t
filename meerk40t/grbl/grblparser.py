@@ -415,7 +415,9 @@ class GRBLParser:
                 elif v == 28:
                     # Move to Origin (Home)
                     self.plotter("home")
-                    self.plotter("move", 0, 0)
+                    self.plotter("move", self.x, self.y, 0, 0)
+                    self.x = 0
+                    self.y = 0
                 elif v == 38.1:
                     # Touch Plate
                     pass
