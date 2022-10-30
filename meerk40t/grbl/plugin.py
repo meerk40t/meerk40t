@@ -109,10 +109,10 @@ def plugin(kernel, lifecycle=None):
         @kernel.console_command("grblinterpreter", help=_("activate the grbl interpreter."))
         def lhyemulator(channel, _, **kwargs):
             try:
-                kernel.driver.open_as("emulator/grbl", "grblinterpreter")
+                kernel.device.open_as("emulator/grbl", "grblinterpreter")
                 channel(
                     _("Grbl Interpreter attached to {device}").format(
-                        device=str(kernel.driver)
+                        device=str(kernel.device)
                     )
                 )
             except KeyError:
