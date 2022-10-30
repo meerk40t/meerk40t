@@ -86,8 +86,8 @@ class GRBLParser(Parameters):
         self.home = None
         self.home2 = None
         self.on_mode = 1
-        self.power = 0
-        self.speed = 0
+        self.power = 0  # TODO: wrongly duplicates parameters
+        self.speed = 0  # TODO: wrongly duplicates parameters
         self.buffer = ""
         self.relative = False  # G90 default.
         self.grbl_settings = {
