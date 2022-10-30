@@ -68,7 +68,7 @@ class GRBLEmulator(Module):
         if not len(self.cutcode):
             # Nothing to spool.
             return
-        matrix = self.device.scene_to_device_matrix()
+        matrix = self.context.device.scene_to_device_matrix()
         for plot in self.cutcode:
             try:
                 for i in range(len(plot.plot)):
@@ -79,7 +79,7 @@ class GRBLEmulator(Module):
                 # This may be a WaitCut and has no plot.
                 pass
         if self.control:
-            self.context.spooler.laserjob([self.cutcode])
+            self.context.device.spooler.laserjob([self.cutcode])
         if self.design:
             elements = self.context.elements
             node = CutNode(cutcode=self.cutcode)
