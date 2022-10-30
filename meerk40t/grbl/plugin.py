@@ -98,21 +98,6 @@ def plugin(kernel, lifecycle=None):
                 channel(str(e.strerror))
             return
 
-        @kernel.console_command(
-            "grblinterpreter", help=_("activate the grbl interpreter.")
-        )
-        def lhyemulator(channel, _, **kwargs):
-            try:
-                kernel.device.open_as("interpreter/grbl", "grblinterpreter")
-                channel(
-                    _("Grbl Interpreter attached to {device}").format(
-                        device=str(kernel.device)
-                    )
-                )
-            except KeyError:
-                channel(_("Interpreter cannot be attached to any device."))
-            return
-
     elif lifecycle == "preboot":
         suffix = "grbl"
         for d in kernel.derivable(suffix):
