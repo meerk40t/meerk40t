@@ -368,15 +368,15 @@ class GRBLDevice(Service, ViewPort):
             except (PermissionError, IOError):
                 channel(_("Could not save: {filename}").format(filename=filename))
 
-        @kernel.console_command(
+        @self.console_command(
             "grblinterpreter", help=_("activate the grbl interpreter.")
         )
         def lhyemulator(channel, _, **kwargs):
             try:
-                kernel.device.open_as("interpreter/grbl", "grblinterpreter")
+                self.open_as("interpreter/grbl", "grblinterpreter")
                 channel(
                     _("Grbl Interpreter attached to {device}").format(
-                        device=str(kernel.device)
+                        device=str(self)
                     )
                 )
             except KeyError:
