@@ -984,8 +984,8 @@ class GrblController:
         self.com_port = self.service.com_port
         self.baud_rate = self.service.baud_rate
         self.channel = self.service.channel("grbl_state", buffer_size=20)
-        self.send = self.service.channel(f"send-{self.com_port.lower()}")
-        self.recv = self.service.channel(f"recv-{self.com_port.lower()}")
+        self.send = self.service.channel(f"send-{self.com_port.lower()}", pure=True)
+        self.recv = self.service.channel(f"recv-{self.com_port.lower()}", pure=True)
         if not self.service.mock:
             self.connection = SerialConnection(self.service)
         else:
