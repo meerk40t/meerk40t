@@ -70,7 +70,7 @@ class GRBLEmulator(Module):
 
     def new_plot_cut(self):
         if len(self.plotcut):
-            self.plotcut.settings = self.cutset()
+            self.plotcut.settings = dict(self.parser.settings)
             self.plotcut.check_if_rasterable()
             self.cutcode.append(self.plotcut)
             self.plotcut = PlotCut()
