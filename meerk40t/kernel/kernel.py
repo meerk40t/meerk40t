@@ -3027,13 +3027,14 @@ class Kernel(Settings):
             return "channel", channel_name
 
         @self.console_argument("channel_name", help=_("channel name"))
+        @self.console_option("close", "c", type=bool, action="store_true")
         @self.console_command(
             "print",
             help=_("print this channel to the standard out"),
             input_type="channel",
             output_type="channel",
         )
-        def channel_print(channel, _, channel_name, **kwargs):
+        def channel_print(channel, _, channel_name, close=False, **kwargs):
             if channel_name is None:
                 raise CommandSyntaxError(_("channel_name is not specified."))
             try:
@@ -3044,8 +3045,12 @@ class Kernel(Settings):
                         break
             except ValueError:
                 pass
-            channel(_("Printing Channel: {name}").format(name=channel_name))
-            self.channel(channel_name).watch(print)
+            if close:
+                channel(_("No longer printing Channel: {name}").format(name=channel_name))
+                self.channel(channel_name).unwatch(print)
+            else:
+                channel(_("Printing Channel: {name}").format(name=channel_name))
+                self.channel(channel_name).watch(print)
             return "channel", channel_name
 
         @self.console_option(
