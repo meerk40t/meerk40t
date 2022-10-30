@@ -2,9 +2,10 @@ import re
 
 MM_PER_INCH = 25.4
 MIL_PER_INCH = 1000.0
+
 MM_PER_MIL = MM_PER_INCH / MIL_PER_INCH
 INCH_PER_MIL = 1.0 / MIL_PER_INCH
-MIL_PER_MM = MIL_PER_INCH / MM_PER_MIL
+MIL_PER_MM = MIL_PER_INCH / MM_PER_INCH
 
 
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
@@ -181,8 +182,8 @@ class GRBLParser:
         self.home = None
         self.home2 = None
 
-        # Initially assume mm mode 39.4 mils in a mm. G20 DEFAULT
-        self.scale = MM_PER_MIL
+        # Initially assume mm mode 39.4 mils in a mm. G21 mm DEFAULT
+        self.scale = MIL_PER_MM
 
         # G94 feedrate default, mm mode
         self.g94_feedrate()
