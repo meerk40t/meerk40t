@@ -30,14 +30,12 @@ class GRBLEmulator(Module):
         return f"GcodeEmulator({self.name})"
 
     def module_open(self, *args, **kwargs):
-        context = self.context
-        active = self.context.driver.name
-        self._attached_device = active
-        send = context.channel(f"{active}/usb_send")
+        self._attached_device = "none"
+        if hasattr(self.context, "com_port"):
+            self._attached_device = self.context.com_port.lower()
+        send = self.context.channel(f"send-{self._attached_device}")
         send.watch(self.parser.write)
 
     def module_close(self, *args, **kwargs):
-        context = self.context
-        active = self._attached_device
-        send = context.channel(f"{active}/usb_send")
+        send = self.context.channel(f"send-{self._attached_device}")
         send.unwatch(self.parser.write)
