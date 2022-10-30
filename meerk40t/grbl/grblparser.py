@@ -156,6 +156,14 @@ class GRBLParser(Parameters):
         if self.reply:
             self.reply(data)
 
+    @property
+    def current(self):
+        return self.x, self.y
+
+    @property
+    def state(self):
+        return 0
+
     def realtime_write(self, bytes_to_write):
         if bytes_to_write == "?":  # Status report
             # Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
@@ -269,7 +277,7 @@ class GRBLParser(Parameters):
             elif data.startswith("$"):
                 return 3  # GRBL '$' system command was not recognized or supported.
         if data.startswith("cat"):
-            # Weird call to cat files for some other grbl boards
+            # Weird call to cat files for some Smoothie boards
             return 2
 
         commands = {}
