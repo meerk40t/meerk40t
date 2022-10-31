@@ -375,9 +375,7 @@ class GRBLDevice(Service, ViewPort):
             try:
                 self.open_as("interpreter/grbl", "grblinterpreter")
                 channel(
-                    _("Grbl Interpreter attached to {device}").format(
-                        device=str(self)
-                    )
+                    _("Grbl Interpreter attached to {device}").format(device=str(self))
                 )
             except KeyError:
                 channel(_("Interpreter cannot be attached to any device."))

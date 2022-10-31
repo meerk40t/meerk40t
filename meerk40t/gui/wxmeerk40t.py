@@ -646,7 +646,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
 
         kernel.register("property/ImageNode/ImageModification", ImageModificationPanel)
-        kernel.register("property/ImageNode/ImageVectorisation", ImageVectorisationPanel)
+        kernel.register(
+            "property/ImageNode/ImageVectorisation", ImageVectorisationPanel
+        )
 
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)

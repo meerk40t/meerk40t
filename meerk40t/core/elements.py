@@ -71,7 +71,9 @@ def plugin(kernel, lifecycle=None):
         kernel.register("format/elem rect", "{element_type} {desc} {stroke}")
         kernel.register("format/elem text", "{element_type} {desc} {text}")
         kernel.register("format/reference", "*{reference}")
-        kernel.register("format/group", "{element_type} {desc} ({children} children, {total} total)")
+        kernel.register(
+            "format/group", "{element_type} {desc} ({children} children, {total} total)"
+        )
         kernel.register("format/blob", "{element_type} {data_type}:{label} @{length}")
         kernel.register("format/file", "{element_type} {filename}")
         kernel.register("format/lasercode", "{element_type} {command_count}")

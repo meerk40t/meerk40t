@@ -73,7 +73,9 @@ def plugin(kernel, lifecycle=None):
                     root.close("grbl")
                     root.close("emulator/grbl")
                     return
-                root.channel("grbl/send", pure=True).greet = "Grbl 1.1e ['$' for help]\r"
+                root.channel(
+                    "grbl/send", pure=True
+                ).greet = "Grbl 1.1e ['$' for help]\r"
                 channel(_("GRBL Mode."))
                 if verbose:
                     console = kernel.channel("console")

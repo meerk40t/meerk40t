@@ -161,6 +161,7 @@ class LiveSelectionLightJob:
     """
     Live Bounds Job.
     """
+
     def __init__(
         self,
         service,

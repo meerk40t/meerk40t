@@ -3046,7 +3046,9 @@ class Kernel(Settings):
             except ValueError:
                 pass
             if close:
-                channel(_("No longer printing Channel: {name}").format(name=channel_name))
+                channel(
+                    _("No longer printing Channel: {name}").format(name=channel_name)
+                )
                 self.channel(channel_name).unwatch(print)
             else:
                 channel(_("Printing Channel: {name}").format(name=channel_name))

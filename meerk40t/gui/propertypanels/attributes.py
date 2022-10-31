@@ -523,7 +523,7 @@ class StrokeWidthPanel(wx.Panel):
                 fraction -= curr_pre
                 # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
                 takespref = False
-                if (fraction < delta):
+                if fraction < delta:
                     takespref = True
                 elif fraction == delta and curr_pre > best_pre:
                     takespref = True
