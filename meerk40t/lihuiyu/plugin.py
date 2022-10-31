@@ -10,19 +10,19 @@ def plugin(kernel, lifecycle=None):
     if lifecycle == "register":
         kernel.register("provider/device/lhystudios", LihuiyuDevice)
         try:
-            from meerk40t.lihuiyu.egvloader import EgvLoader
+            from .loader import EgvLoader
 
             kernel.register("load/EgvLoader", EgvLoader)
         except ImportError:
             pass
         try:
-            from .lihuiyuinterpreter import LihuiyuInterpreter
+            from .interpreter import LihuiyuInterpreter
 
             kernel.register("interpreter/lihuiyu", LihuiyuInterpreter)
         except ImportError:
             pass
         try:
-            from meerk40t.lihuiyu.lihuiyuparser import LihuiyuParser
+            from .parser import LihuiyuParser
 
             kernel.register("parser/egv", LihuiyuParser)
         except ImportError:

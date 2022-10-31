@@ -1,4 +1,4 @@
-from meerk40t.grbl.grblparser import GRBLParser
+from meerk40t.grbl.parser import GRBLParser
 from meerk40t.kernel import Module
 
 

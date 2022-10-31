@@ -1,6 +1,6 @@
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.kernel import Module
-from meerk40t.lihuiyu.lihuiyuparser import LihuiyuParser
+from meerk40t.lihuiyu.parser import LihuiyuParser
 
 
 class LihuiyuInterpreter(Module):
