@@ -54,8 +54,8 @@ from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
 from .propertypanels.imageproperty import (
-    ImagePropertyPanel,
     ImageModificationPanel,
+    ImagePropertyPanel,
     ImageVectorisationPanel,
 )
 from .propertypanels.operationpropertymain import ParameterPanel
@@ -646,7 +646,9 @@ class wxMeerK40t(wx.App, Module):
         kernel.register("property/ImageNode/AutoContrastProperty", AutoContrastPanel)
 
         kernel.register("property/ImageNode/ImageModification", ImageModificationPanel)
-        kernel.register("property/ImageNode/ImageVectorisation", ImageVectorisationPanel)
+        kernel.register(
+            "property/ImageNode/ImageVectorisation", ImageVectorisationPanel
+        )
 
         kernel.register("window/Console", Console)
         kernel.register("window/Preferences", Preferences)

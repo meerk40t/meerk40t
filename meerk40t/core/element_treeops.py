@@ -3,9 +3,7 @@ from copy import copy
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..svgelements import (
-    Matrix,
-)
+from ..svgelements import Matrix
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
@@ -16,23 +14,22 @@ from .node.op_engrave import EngraveOpNode
 from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
-from .units import UNITS_PER_INCH
-
 from .treeop import (
+    get_tree_operation,
     tree_calc,
+    tree_check,
     tree_conditional,
-    tree_radio,
+    tree_conditional_try,
     tree_iterate,
+    tree_prompt,
+    tree_radio,
+    tree_reference,
+    tree_separator_after,
+    tree_separator_before,
     tree_submenu,
     tree_values,
-    tree_conditional_try,
-    tree_check,
-    tree_prompt,
-    tree_reference,
-    tree_separator_before,
-    tree_separator_after,
-    get_tree_operation,
 )
+from .units import UNITS_PER_INCH
 
 
 def plugin(kernel, lifecycle=None):
@@ -551,6 +548,25 @@ def init_tree(kernel):
     def remove_type_op(node, **kwargs):
 
         node.remove_node()
+        self.set_emphasis(None)
+        self.signal("operation_removed")
+
+    @tree_conditional(
+        lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
+        > 1
+    )
+    @tree_calc(
+        "ecount",
+        lambda i: len(list(self.flat(selected=True, cascade=False, types=op_nodes))),
+    )
+    @tree_operation(
+        _("Delete {ecount} operations fully"),
+        node_type=op_nodes,
+        help="",
+    )
+    def remove_type_op_multiple(node, **kwargs):
+        for op in list(self.flat(selected=True, cascade=False, types=op_nodes)):
+            op.remove_node()
         self.set_emphasis(None)
         self.signal("operation_removed")
 
@@ -1450,6 +1466,7 @@ def init_tree(kernel):
                 property_op(self.kernel.root, node)
             self.signal("element_property_update", [node])
 
+    @tree_conditional(lambda node: has_vectorize(node))
     @tree_submenu(_("Outline element(s)..."))
     @tree_iterate("offset", 1, 10)
     @tree_operation(
@@ -1767,9 +1784,18 @@ def init_tree(kernel):
         self("image ccw\n")
 
     @tree_submenu(_("Image"))
-    @tree_operation(_("Save output.png"), node_type="elem image", help="")
+    @tree_operation(
+        _("Save original image to output.png"), node_type="elem image", help=""
+    )
     def image_save(node, **kwargs):
         self("image save output.png\n")
+
+    @tree_submenu(_("Image"))
+    @tree_operation(
+        _("Save processed image to output.png"), node_type="elem image", help=""
+    )
+    def image_save_processed(node, **kwargs):
+        self("image save output.png --processed\n")
 
     @tree_conditional(lambda node: len(node.children) > 0)
     @tree_separator_before()

@@ -1,6 +1,6 @@
 import wx
 
-from meerk40t.gui.laserrender import DRAW_MODE_BACKGROUND
+from meerk40t.gui.laserrender import DRAW_MODE_ORIGIN
 from meerk40t.gui.scene.sceneconst import HITCHAIN_HIT, RESPONSE_CHAIN
 from meerk40t.gui.scene.widget import Widget
 
@@ -32,24 +32,25 @@ class MachineOriginWidget(Widget):
         """
         Draws the background on the scene.
         """
-        if self.scene.context.draw_mode & DRAW_MODE_BACKGROUND == 0:
-            margin = 5000
-            context = self.scene.context
-            x, y = context.device.show_to_scene_position(0, 0)
-            x_dx, x_dy = context.device.show_to_scene_position(50000, 0)
-            xa1_dx, xa1_dy = context.device.show_to_scene_position(45000, 5000)
-            xa2_dx, xa2_dy = context.device.show_to_scene_position(45000, -5000)
-            y_dx, y_dy = context.device.show_to_scene_position(0, 50000)
-            ya1_dx, ya1_dy = context.device.show_to_scene_position(5000, 45000)
-            ya2_dx, ya2_dy = context.device.show_to_scene_position(-5000, 45000)
-            gc.SetBrush(self.brush)
-            gc.DrawRectangle(x - margin, y - margin, margin * 2, margin * 2)
-            gc.SetBrush(wx.NullBrush)
-            gc.SetPen(self.x_axis_pen)
-            gc.DrawLines(
-                [(x, y), (x_dx, x_dy), (xa1_dx, xa1_dy), (x_dx, x_dy), (xa2_dx, xa2_dy)]
-            )
-            gc.SetPen(self.y_axis_pen)
-            gc.DrawLines(
-                [(x, y), (y_dx, y_dy), (ya1_dx, ya1_dy), (y_dx, y_dy), (ya2_dx, ya2_dy)]
-            )
+        if self.scene.context.draw_mode & DRAW_MODE_ORIGIN != 0:
+            return
+        margin = 5000
+        context = self.scene.context
+        x, y = context.device.show_to_scene_position(0, 0)
+        x_dx, x_dy = context.device.show_to_scene_position(50000, 0)
+        xa1_dx, xa1_dy = context.device.show_to_scene_position(45000, 5000)
+        xa2_dx, xa2_dy = context.device.show_to_scene_position(45000, -5000)
+        y_dx, y_dy = context.device.show_to_scene_position(0, 50000)
+        ya1_dx, ya1_dy = context.device.show_to_scene_position(5000, 45000)
+        ya2_dx, ya2_dy = context.device.show_to_scene_position(-5000, 45000)
+        gc.SetBrush(self.brush)
+        gc.DrawRectangle(x - margin, y - margin, margin * 2, margin * 2)
+        gc.SetBrush(wx.NullBrush)
+        gc.SetPen(self.x_axis_pen)
+        gc.DrawLines(
+            [(x, y), (x_dx, x_dy), (xa1_dx, xa1_dy), (x_dx, x_dy), (xa2_dx, xa2_dy)]
+        )
+        gc.SetPen(self.y_axis_pen)
+        gc.DrawLines(
+            [(x, y), (y_dx, y_dy), (ya1_dx, ya1_dy), (y_dx, y_dy), (ya2_dx, ya2_dy)]
+        )

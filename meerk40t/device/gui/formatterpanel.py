@@ -144,6 +144,8 @@ class FormatterPanel(wx.Panel):
         self.update_widgets()
 
     def get_node_patterns(self, nodetype):
+        from PIL import Image
+
         from meerk40t.core.node.elem_ellipse import EllipseNode
         from meerk40t.core.node.elem_image import ImageNode
         from meerk40t.core.node.elem_line import LineNode
@@ -168,7 +170,7 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_origin import SetOriginOperation
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
-        from meerk40t.svgelements import Ellipse, Image, Path, Polyline, Rect
+        from meerk40t.svgelements import Ellipse, Path, Polyline, Rect
 
         bootstrap = {
             "op cut": CutOpNode,
@@ -213,8 +215,8 @@ class FormatterPanel(wx.Panel):
                 elif nodetype == "elem path":
                     path = Path(Ellipse(0, 0, 10, 10))
                 elif nodetype == "elem image":
-                    image = Image()
-                    image.image = icons8_detective_50.GetImage()
+                    # Let's use an arbitrary image
+                    image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
                 elif nodetype == "elem polyline":
                     shape = Polyline()
 

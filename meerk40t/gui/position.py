@@ -274,16 +274,20 @@ class PositionPanel(wx.Panel):
         self.position_aspect_ratio = self.chk_lock.GetValue()
 
     def on_text_w_enter(self):
-        self.on_text_w_action(True)
+        if self.text_w.is_changed:
+            self.on_text_w_action(True)
 
     def on_text_h_enter(self):
-        self.on_text_h_action(True)
+        if self.text_h.is_changed:
+            self.on_text_h_action(True)
 
     def on_text_x_enter(self):
-        self.on_text_x_action(True)
+        if self.text_x.is_changed:
+            self.on_text_x_action(True)
 
     def on_text_y_enter(self):
-        self.on_text_y_action(True)
+        if self.text_y.is_changed:
+            self.on_text_y_action(True)
 
     def execute_wh_changes(self, refresh_after=True):
         delta = 1.0e-6

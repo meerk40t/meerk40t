@@ -71,9 +71,7 @@ class MoshiDriverGui(MWindow):
         )
         self.panels = []
 
-        panel_config = MoshiConfigurationPanel(
-            self, wx.ID_ANY, context=self.context
-        )
+        panel_config = MoshiConfigurationPanel(self, wx.ID_ANY, context=self.context)
 
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)

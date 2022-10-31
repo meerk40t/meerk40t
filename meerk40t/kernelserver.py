@@ -231,9 +231,9 @@ class TCPServer(Module):
                     except (ConnectionAbortedError, ConnectionResetError):
                         connection.close()
 
-            recv = self.context.channel(f"{self.name}/recv")
+            recv = self.context.channel(f"{self.name}/recv", pure=True)
             send_channel_name = f"{self.name}/send"
-            self.context.channel(send_channel_name).watch(send)
+            self.context.channel(send_channel_name, pure=True).watch(send)
             while self.state != STATE_TERMINATE:
                 try:
                     data_from_socket = connection.recv(1024)

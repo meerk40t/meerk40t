@@ -1,3 +1,9 @@
+"""
+Galvo USB Connection
+
+Performs the required interactions with the Galvo backend through pyusb and libusb.
+"""
+
 import time
 
 import usb.core

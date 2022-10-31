@@ -4,7 +4,7 @@ from math import isinf
 import wx
 
 from ...core.element_types import elem_nodes
-from ...core.spoolers import LaserJob
+from ...core.laserjob import LaserJob
 from ...core.units import Length
 from ..icons import icons8_up_50
 from .statusbarwidget import StatusBarWidget

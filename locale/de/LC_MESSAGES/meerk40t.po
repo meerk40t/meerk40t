@@ -4342,22 +4342,20 @@ msgstr ""
 #: meerk40t/gui/about.py:9
 msgid ""
 "MeerK40t is a free MIT Licensed open source project\n"
-"for lasering on K40 Devices.\n"
-"\n"
+"for lasering on K40 Devices.\n\n"
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but the barest trickle\n"
-"that becomes a raging river."
+"who sincerely hopes his contributions will be but\n"
+"the barest trickle that becomes a raging river."
 msgstr ""
-"Meerk40t ist ein kostenloses, auf der MIT Lizenz ba-\n"
-"sierendes Open-Source Projekt, um auf K40 Geräten\n"
-"zu lasern.\n"
+"Meerk40t ist ein auf der MIT Lizenz basierendes\n"
+"Open-Source Projekt, um auf K40 Geräten zu lasern.\n\n"
 "Mithilfe bei diesem Projekt ist jederzeit willkommen.\n"
-"Vielen Dank für vergangene und künftige Hilfe.\n"
-"Dieses Programm ist v.a. das Werk von Tartarize,\n"
-"der hofft, dass seine Arbeit am Ende ein kleiner Teil\n"
-"viel größeren Werks sein wird."
+"Herzlichen Dank für vergangene und künftige Hilfe.\n"
+"Dieses Programm ist v.a. das Werk von Tatarize,\n"
+"der hofft, dass seine Arbeit am Ende ein kleiner\n"
+"Teil eines viel größeren Werks sein wird."
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
@@ -5008,12 +5006,12 @@ msgid "Keyhole operation"
 msgstr "Schlüsselloch-Arbeitsgang"
 
 #: meerk40t/gui/imagesplitter.py:485
-msgid "Splitter"
-msgstr "Zerlegen"
+msgid "Image ops"
+msgstr "Bild-Manip."
 
 #: meerk40t/gui/imagesplitter.py:487
-msgid "Open create split image dialog"
-msgstr "Öffnet den Dialog um Bilder zu zerlegen"
+msgid "Open create split image dialog / keyhole generation"
+msgstr "Öffnet den Dialog, um Bilder zu zerlegen bzw. Bildaussschnitte zu erzeugen"
 
 #: meerk40t/gui/keymap.py:25
 msgid "Add Hotkey"
@@ -6793,7 +6791,7 @@ msgstr "Wortliste"
 
 #: meerk40t/gui/wordlisteditor.py:623
 msgid "Manages Wordlist-Entries"
-msgstr ""
+msgstr "Wortlisten-Einträge ändern/erstellen"
 
 #: meerk40t/gui/wxmeerk40t.py:89
 msgid "Processing and sending..."
@@ -7646,6 +7644,12 @@ msgid "Don't use icons in the tree"
 msgstr "Verzichte auf die Anzeige von Icons im Baum"
 
 #: meerk40t/gui/wxmmain.py:2114
+msgid "Hide Origin-Indicator"
+msgstr "Ursprung ausblenden"
+
+msgid "Don't show the origin indicator"
+msgstr "Unterdrücke die Anzeige des Ursprungs-Indikator"
+
 msgid "Hide Grid"
 msgstr "Gitter ausblenden"
 
@@ -8189,6 +8193,15 @@ msgstr ""
 #: meerk40t/image/imagetools.py:33
 msgid "Image DPI Scaling"
 msgstr "Bild-DPI-Skalierung"
+
+msgid "Create a file-node for imported image"
+msgstr "Erzeuge Datei-Element für ein importiertes Bild"
+
+msgid "Unset: Attach the image directly to elements."
+msgstr "Inaktiv: Fügt das Bild direkt in die Elemente ein"
+
+msgid "Set: Put the image under a file-node created for it."
+msgstr "Aktiv: Fügt das Bild unterhalb eines Datei-Elements ein"
 
 #: meerk40t/image/imagetools.py:36
 msgid "Unset: Use the image as if it were 1000 pixels per inch."
@@ -10226,6 +10239,83 @@ msgstr "Algorithmus ausführen"
 msgid "Image-Operation"
 msgstr "Bild-Manipulation"
 
+msgid "Image-Dimensions"
+msgstr "Bild zuschneiden"
+
+msgid "How many pixels do you want to crop from the left?"
+msgstr "Wieviele Pixel sollen auf der linken Seite abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the lefright?"
+msgstr "Wieviele Pixel sollen auf der rechten Seite abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the top?"
+msgstr "Wieviele Pixel sollen auf der oberen Kante abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the bottom?"
+msgstr "Wieviele Pixel sollen auf der unteren Kante abgeschnitten werden?"
+
+msgid "Apply script"
+msgstr "Skript anwenden"
+
+msgid "Action"
+msgstr "Aktion"
+
+msgid "Vectorisation"
+msgstr "Vektorisieren"
+
+msgid "Vectorize"
+msgstr "Vektorisieren"
+
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid "Turnpolicy"
+msgstr ""
+
+msgid "Despeckle"
+msgstr "Flecken"
+
+msgid "Corners"
+msgstr "Ecken"
+
+msgid "Simplify"
+msgstr "Vereinfachen"
+
+msgid "Tolerance"
+msgstr "Toleranz"
+
+msgid "Black-Level"
+msgstr "Schwarzwert"
+
+msgid ""
+"This parameter determines how to resolve ambiguities during decomposition of bitmaps into paths.\n\n"
+"BLACK: prefers to connect black (foreground) components.\n"
+"WHITE: prefers to connect white (background) components.\n"
+"LEFT: always take a left turn.\n"
+"RIGHT: always take a right turn.\n"
+"MINORITY: prefers to connect the color (black or white) that occurs least frequently in a local neighborhood of the current position.\n"
+"MAJORITY: prefers to connect the color (black or white) that occurs most frequently in a local neighborhood of the current position.\n"
+"RANDOM: choose randomly."
+msgstr ""
+
+msgid "Suppress speckles of up to this size (default 2 px)"
+msgstr "Unterdrückt Flecken bis zu dieser Größe (Standard 2 px)"
+
+msgid ""
+"This parameter is a threshold for the detection of corners. It controls the smoothness of the traced curve."
+msgstr ""
+
+msgid "Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
+msgstr "Versucht die Kurve zu 'vereinfachen', indem die Zahl der Bezier-Segment verringert wird."
+
+msgid ""
+"This defines the amount of error allowed in this simplification.\n"
+"Larger values tend to decrease the number of segments, at the expense of less accuracy."
+msgstr ""
+
+msgid "Establish when 'black' starts"
+msgstr "Definiert, wann 'Schwarz' beginnt"
+
 #: meerk40t/gui/propertypanels/imageproperty.py:146
 msgid "Select dither algorithm to use"
 msgstr "Wählen Sie den zu verwendenden Dithering-Algorithmus aus"
@@ -12063,9 +12153,6 @@ msgstr "Anzeige"
 
 msgid "Shape-Attributes"
 msgstr "Element-Attribute"
-
-#~ msgid "About %s v%s"
-#~ msgstr "Über %s v%s"
 
 msgid "GUI Appearance"
 msgstr "GUI Erscheinungsbild"
@@ -14722,3 +14809,85 @@ msgstr "Gehe zum nächsten Wortlisten-Eintrag"
 
 msgid "Wordlist: go to prev entry"
 msgstr "Gehe zum vorherigen Wortlisten-Eintrag"
+
+msgid "Vector Text"
+msgstr "Vektor Text"
+
+msgid "Add a vector text element"
+msgstr "Erstellt ein Vektor-Text-Element"
+
+msgid "Font-Manager"
+msgstr "Font-Manager"
+
+msgid "Open the vector-font management window."
+msgstr "Öffnet das Tool zum Verwalten der Vektor-Zeichensätze"
+
+msgid "Fonts"
+msgstr "Zeichensätze"
+
+msgid "Font-Directory"
+msgstr "Verzeichnis für die Zeichensätze"
+
+msgid "Goto a font-source..."
+msgstr "Gehe zu Zeichensatz-Quelle..."
+
+msgid "Hershey Fonts - #1"
+msgstr ""
+
+msgid "Hershey Fonts - #2"
+msgstr ""
+
+msgid "Autocad-SHX-Fonts"
+msgstr ""
+
+msgid ""
+"MeerK40t can use Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+"They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
+"See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+msgstr ""
+"MeerK40t kann Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
+"Diese können wie jedes andere Basiselement skaliert und gebrannt (auch ausgeschnitten) werden.\n"
+"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts"
+
+msgid "Choose font directory"
+msgstr "Zeichensatz-Verzeichnis auswählen"
+
+msgid "Select a font-file to be imported into the the font-directory {fontdir}"
+msgstr "Zeichensatz auswählen, der in das Verzeichnis {fontdir} importiert werden soll"
+
+msgid "Fonts imported: {count}"
+msgstr "Importierte Zeichensätze: {count}"
+
+msgid "Import completed"
+msgstr "Import abgeschlossen"
+
+msgid "Font-Import completed.\nImported: {ok}\nFailed: {fail}\nTotal: {total}"
+msgstr "Zeichensatz-Import abgeschlossen.\nImportiert: {ok}\nFehler: {fail}\nGesamt: {total}"
+
+msgid "Do you really want to delete this font: {font}"
+msgstr "Soll der Zeichensatz {font} wirklich gelöscht werden?"
+
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgid ""
+"You will be led now to a source in the web, where you can download free fonts.\n"
+"Please be respect individual property rights!\nDestination: {url}\n"
+msgstr ""
+"Wir gehen nun zu einer Quelle im Internet, wo freie Zeichensätze heruntergeladen werden können.\n"
+"Bitte beachten und respektieren Sie individuelle Rechte an diesen Dateien!\n{url}\n"
+
+msgid ""
+"Unpack the downloaded archive after the download and select the extracted files with help of the 'Import'-Button."
+msgstr ""
+"Bitte das vollständig heruntergeladene Archiv nach dem Download entpacken. "
+"Danach die Zeichensätze mit Hilfe der 'Import'-Funktion importieren."
+
+msgid "Complete text-entry by pressing either Enter or Escape"
+msgstr "Text-Eingabe mit Eingabetaste oder Escape abschließen."
+
+msgid "Outline element(s)..."
+msgstr "Umrande Elemente..."
+
+msgid "...with {offset}mm distance"
+msgstr "...mit {offset}mm Abstand"

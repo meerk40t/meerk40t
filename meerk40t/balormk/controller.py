@@ -1,3 +1,10 @@
+"""
+Galvo Controller
+
+The balor controller takes low level lmc galvo commands and converts them into lists and shorts commands to send
+to the hardware controller.
+"""
+
 import struct
 import time
 from copy import copy
@@ -329,7 +336,9 @@ class GalvoController:
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
                 if count >= 10:
-                    raise ConnectionRefusedError("Could not connect to the LMC controller.")
+                    raise ConnectionRefusedError(
+                        "Could not connect to the LMC controller."
+                    )
                 time.sleep(0.3)
                 continue
         self._is_opening = False

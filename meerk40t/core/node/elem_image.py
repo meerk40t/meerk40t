@@ -134,6 +134,11 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
+        if self._processed_image is None and (len(self.operations) > 0 or self.dither):
+            step = UNITS_PER_INCH / self.dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y)
         if self._processed_image is not None:
             return self._processed_image
         else:
@@ -518,6 +523,18 @@ class ImageNode(Node):
                             oversample=op["oversample"],
                             black=op["black"],
                         )
+                except KeyError:
+                    pass
+            elif name == "dither":
+                # Set dither
+                try:
+                    if op["enable"] and op["type"] is not None:
+                        self.dither_type = op["type"]
+                        self.dither = True
+                    else:
+                        # Takes precedence
+                        self.dither = False
+                        # image = self._apply_dither(image)
                 except KeyError:
                     pass
             else:

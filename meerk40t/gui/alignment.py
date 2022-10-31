@@ -1608,7 +1608,7 @@ class Alignment(MWindow):
 
     @staticmethod
     def sub_register(kernel):
-        buttonsize = int(STD_ICON_SIZE / 2)
+        buttonsize = STD_ICON_SIZE
         kernel.register(
             "button/align/AlignExpert",
             {

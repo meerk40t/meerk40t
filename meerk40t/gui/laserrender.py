@@ -61,6 +61,7 @@ DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
 DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
+DRAW_MODE_ORIGIN = 0x4000000
 
 
 def swizzlecolor(c):
@@ -782,13 +783,15 @@ class LaserRender:
         @param node:
         @return:
         """
-
-        bmp = wx.Bitmap(1000, 500, 32)
+        dimension_x = 1000
+        dimension_y = 500
+        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(wx.BLACK_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
+
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
@@ -809,8 +812,25 @@ class LaserRender:
                 text = text.lower()
         svgfont_to_wx(node)
         gc.SetFont(node.wxfont, wx.WHITE)
-        gc.DrawText(text, 0, 0)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        needs_revision = False
+        revision_factor = 3
+        if revision_factor * f_width >= dimension_x:
+            dimension_x = revision_factor * f_width
+            needs_revision = True
+        if revision_factor * f_height > dimension_y:
+            dimension_y = revision_factor * f_height
+            needs_revision = True
+        if needs_revision:
+            bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+            dc = wx.MemoryDC()
+            dc.SelectObject(bmp)
+            dc.SetBackground(wx.BLACK_BRUSH)
+            dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            gc.SetFont(node.wxfont, wx.WHITE)
+
+        gc.DrawText(text, 0, 0)
         try:
             img = bmp.ConvertToImage()
             buf = img.GetData()

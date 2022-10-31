@@ -5,7 +5,13 @@ from meerk40t.gui.wxutils import ScrolledPanel
 from ...core.units import Length
 from ..icons import icons8_vector_50
 from ..mwindow import MWindow
-from .attributes import ColorPanel, IdPanel, LinePropPanel, PositionSizePanel
+from .attributes import (
+    ColorPanel,
+    IdPanel,
+    LinePropPanel,
+    PositionSizePanel,
+    StrokeWidthPanel,
+)
 
 _ = wx.GetTranslation
 
@@ -53,6 +59,10 @@ class PathPropertyPanel(ScrolledPanel):
         # Next one is a placeholder...
         self.panels.append(None)
 
+        panel_width = StrokeWidthPanel(
+            self, id=wx.ID_ANY, context=self.context, node=self.node
+        )
+        self.panels.append(panel_width)
         panel_line = LinePropPanel(
             self, id=wx.ID_ANY, context=self.context, node=self.node
         )

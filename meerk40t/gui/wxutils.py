@@ -661,6 +661,10 @@ class TextCtrl(wx.TextCtrl):
                     self._event_generated = None
 
     @property
+    def is_changed(self):
+        return self.GetValue() != self._last_valid_value
+
+    @property
     def Value(self):
         return self.GetValue()
 
