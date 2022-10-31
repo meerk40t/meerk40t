@@ -113,7 +113,7 @@ def static_plugins(kernel, lifecycle):
 
         plugins.append(grbl_driver_plugin)
 
-        from .ruida import device as ruida_driver
+        from .ruida import plugin as ruida_driver
 
         plugins.append(ruida_driver.plugin)
 
