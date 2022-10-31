@@ -1,3 +1,10 @@
+"""
+Ruida Emulator
+
+The emulator allows us to listen for connections that send ruida data, we emulate that a ruida controller and turn
+the received data into laser commands to be executed by the local driver.
+"""
+
 import os
 from io import BytesIO
 from typing import Tuple, Union

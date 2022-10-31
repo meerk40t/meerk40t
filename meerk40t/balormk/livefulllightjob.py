@@ -1,3 +1,10 @@
+"""
+Live Full Light Job
+
+This light job is full live because it syncs with the elements to run the current elements. This can change when the
+elements change.
+"""
+
 import time
 
 from meerk40t.core.units import UNITS_PER_PIXEL

@@ -1,3 +1,10 @@
+"""
+Lihuiyu TCP Connection
+
+Governs the TCP out connections for the lihuiyu device. This allows the output controller to write to a particular
+network location.
+"""
+
 import socket
 import threading
 import time

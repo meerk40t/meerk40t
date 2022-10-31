@@ -1,3 +1,9 @@
+"""
+GRBL Device Plugin
+
+Registers the required files to run the GRBL device.
+"""
+
 def plugin(kernel, lifecycle=None):
     if lifecycle == "plugins":
         from .gui import gui

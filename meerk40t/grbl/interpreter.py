@@ -1,3 +1,11 @@
+"""
+GRBL Interpreter
+
+The Interpreter listens to the local GRBL code being sent to the Controller and parses it. This allows it GRBL to track
+position based on the data sent, and debug the device. This listens to the current device and thus must be attached
+to a GRBL device.
+"""
+
 from meerk40t.grbl.parser import GRBLParser
 from meerk40t.kernel import Module
 

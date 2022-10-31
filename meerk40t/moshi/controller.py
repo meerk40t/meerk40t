@@ -1,3 +1,9 @@
+"""
+Moshiboard Controller
+
+Tasked with sending data to usb connection.
+"""
+
 import threading
 import time
 

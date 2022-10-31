@@ -1,3 +1,11 @@
+"""
+RD Loader
+
+Registers the RDLoader for .rd files.
+
+This file type simply loads a blob node.
+"""
+
 import os
 
 

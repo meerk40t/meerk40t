@@ -1,3 +1,9 @@
+"""
+Moshiboard Driver
+
+Governs the generic commands issued by laserjob and spooler and converts that into regular Moshi laser output.
+"""
+
 import time
 
 from ..core.cutcode import (

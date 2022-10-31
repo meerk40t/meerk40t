@@ -1,4 +1,12 @@
+
 #!/usr/bin/env python
+
+"""
+LaserSpeed
+
+This is the standard library for converting to and from speed code information for LHYMICRO-GL.
+"""
+
 
 from math import floor
 

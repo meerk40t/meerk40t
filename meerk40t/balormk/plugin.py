@@ -1,3 +1,9 @@
+"""
+Galvo Device Plugin
+
+This registers the relevant files for using an LMC Galvo Device.
+"""
+
 def plugin(kernel, lifecycle):
     if lifecycle == "plugins":
         from meerk40t.balormk.gui import gui

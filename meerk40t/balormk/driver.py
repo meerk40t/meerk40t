@@ -1,3 +1,9 @@
+"""
+Galvo Driver
+
+The Driver has a set of different commands which are standardly sent and utilizes those which can be performed by this
+driver.
+"""
 import time
 
 from meerk40t.balormk.controller import GalvoController

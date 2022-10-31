@@ -1,3 +1,9 @@
+"""
+Serial Connection
+
+Registers the serial connection using pyserial to talk with the serial devices.
+"""
+
 import serial
 from serial import SerialException
 

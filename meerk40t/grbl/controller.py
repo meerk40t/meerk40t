@@ -1,3 +1,9 @@
+"""
+GRBL Controller
+
+Tasked with sending data to the different connection.
+"""
+
 import threading
 import time
 

@@ -1,3 +1,9 @@
+"""
+GCode Loader
+
+Provides the required hooks to register the loader of gcode file.
+"""
+
 import os
 
 

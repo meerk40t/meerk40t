@@ -1,3 +1,31 @@
+"""
+GRBL Parser.
+
+The grbl parser is intended to be a reusable parser. For commands sent to the write()
+function and will update the internal state of the parser as needed and send processed
+values to the self.plotter. These commands consist of a command and some number of operands.
+
+"new": asks for a new plot
+"start": start of new design
+"end": design is ended
+"home": Home the device (this is always followed by a move to 0,0).
+"move", ox, oy, x, y: move to the position x, y from ox, oy
+"line", ox, oy, x, y, power: line to the position, x, y from ox, oy at power `power`.
+"arc", ox, oy, cx, cy, x, y, power: arc to the position, x, y from ox, oy via cx,cy (control)
+        at power `power`.
+"wait", t: Time in seconds to wait
+"resume": Resume the laser operation
+"pause": Pause the laser operation
+"abort": Abort the laser operations
+"jog_abort": Abort the current jog action for the laser (usually $J)
+"coolant", <boolean>: Turns the coolant on or off.
+
+These commands are called on the `plotter` function which should be passed during the init.
+
+The reply callable is given any responses to these written code commands.
+The channel callable is given any additional information about the gcode.
+"""
+
 import re
 
 MM_PER_INCH = 25.4
@@ -11,35 +39,6 @@ MIL_PER_MM = MIL_PER_INCH / MM_PER_INCH
 GRBL_SET_RE = re.compile(r"\$(\d+)=([-+]?[0-9]*\.?[0-9]*)")
 CODE_RE = re.compile(r"([A-Za-z])")
 FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]*")
-
-
-"""
-GRBL Parser.
-
-The grbl parser is intended to be a reusable parser. For commands sent to the write()
-function and will update the internal state of the parser as needed and send processed 
-values to the self.plotter. These commands consist of a command and some number of operands.
-
-"new": asks for a new plot
-"start": start of new design
-"end": design is ended
-"home": Home the device (this is always followed by a move to 0,0).
-"move", ox, oy, x, y: move to the position x, y from ox, oy
-"line", ox, oy, x, y, power: line to the position, x, y from ox, oy at power `power`.
-"arc", ox, oy, cx, cy, x, y, power: arc to the position, x, y from ox, oy via cx,cy (control)
-        at power `power`. 
-"wait", t: Time in seconds to wait
-"resume": Resume the laser operation
-"pause": Pause the laser operation
-"abort": Abort the laser operations
-"jog_abort": Abort the current jog action for the laser (usually $J)
-"coolant", <boolean>: Turns the coolant on or off.
-
-These commands are called on the `plotter` function which should be passed during the init.
-
-The reply callable is given any responses to these written code commands.
-The channel callable is given any additional information about the gcode.  
-"""
 
 
 def _tokenize_code(code_line):
