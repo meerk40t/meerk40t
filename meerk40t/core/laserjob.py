@@ -223,4 +223,3 @@ class LaserJob:
             result += time_for_past_passes + time_for_future_passes
 
         return result
-
