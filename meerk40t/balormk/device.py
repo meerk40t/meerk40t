@@ -944,7 +944,7 @@ class BalorDevice(Service, ViewPort):
             There are methods for reading and writing raw info from files in order to send that
             data. You can also use shorthand commands.
             """
-            from meerk40t.balormk.lmc_controller import (
+            from meerk40t.balormk.controller import (
                 list_command_lookup,
                 single_command_lookup,
             )

@@ -53,7 +53,7 @@ class MockConnection:
 
     def _parse_list(self, packet):
         commands = []
-        from meerk40t.balormk.lmc_controller import list_command_lookup
+        from meerk40t.balormk.controller import list_command_lookup
 
         last_cmd = None
         repeats = 0
@@ -75,7 +75,7 @@ class MockConnection:
         return "\n".join(commands)
 
     def _parse_single(self, packet):
-        from meerk40t.balormk.lmc_controller import single_command_lookup
+        from meerk40t.balormk.controller import single_command_lookup
 
         b0 = packet[1] << 8 | packet[0]
         b1 = packet[3] << 8 | packet[2]

@@ -1,6 +1,6 @@
 import time
 
-from meerk40t.balormk.lmc_controller import GalvoController
+from meerk40t.balormk.controller import GalvoController
 from meerk40t.core.cutcode import (
     CubicCut,
     DwellCut,
