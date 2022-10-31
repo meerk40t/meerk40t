@@ -312,8 +312,8 @@ MOSHI_READ = 14
 
 class MoshiBuilder:
     """
-    MoshiBlobs are datablobs of Moshi types. These are series of commands which should be executed as a program within
-    the Moshicontroller.
+    MoshiBuilder builds datablobs of Moshi type. These are series of commands which should be executed as a program
+    within the Moshicontroller.
     """
 
     def __init__(self, channel=None):

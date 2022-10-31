@@ -974,7 +974,7 @@ class MoshiDriver(Parameters):
 
     def _ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
         """
-        Ensure blob mode makes sure it's in program or raster mode.
+        Ensure builder is needed. Makes sure it's in program or raster mode.
         """
         if self.state in (DRIVER_STATE_RASTER, DRIVER_STATE_PROGRAM):
             return
@@ -1054,7 +1054,7 @@ class MoshiController:
     The Moshiboard Controller takes data programs built by the MoshiDriver and sends to the Moshiboard
     according to established moshi protocols.
 
-    The output device is concerned with sending the moshiblobs to the control board and control events and
+    The output device is concerned with sending the moshibuilder.data to the control board and control events and
     to the CH341 chip on the Moshiboard. We use the same ch341 driver as the Lihuiyu boards. Giving us
     access to both libusb drivers and windll drivers.
 
@@ -1062,7 +1062,7 @@ class MoshiController:
     Check processing-state of board, seeking 205
     Send Preamble.
     Check processing-state of board, seeking 205
-    Send bulk data of moshiblob. No checks between packets.
+    Send bulk data of moshibuilder. No checks between packets.
     Send Epilogue.
     While Check processing-state is 207:
         wait 0.2 seconds
