@@ -594,8 +594,11 @@ class Spooler:
 
     def remove(self, element):
         with self._lock:
+            status = "completed"
+            if element.status == "running":
+                element.stop()
+                status = "stopped"
             try:
-                status = "completed"
                 loop = element.loops_executed
                 total = element.loops
                 if isinf(element.loops):
