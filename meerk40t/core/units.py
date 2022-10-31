@@ -89,7 +89,6 @@ class ViewPort:
         show_origin_y=None,
         show_flip_x=None,
         show_flip_y=None,
-        show_swap_xy=None,
     ):
         self._device_to_scene_matrix = None
         self._device_to_show_matrix = None
@@ -117,13 +116,10 @@ class ViewPort:
             show_flip_x = flip_x
         if show_flip_y is None:
             show_flip_y = flip_y
-        if show_swap_xy is None:
-            show_swap_xy = swap_xy
         self.show_origin_x = show_origin_x
         self.show_origin_y = show_origin_y
         self.show_flip_x = show_flip_x
         self.show_flip_y = show_flip_y
-        self.show_swap_xy = show_swap_xy
 
         self._width = None
         self._height = None
@@ -387,8 +383,6 @@ class ViewPort:
             ops.append("scale(1.0, -1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
-        if self.show_swap_xy:
-            ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
 
     def native_mm(self):
