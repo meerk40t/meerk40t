@@ -103,7 +103,7 @@ class SimulationPanel(wx.Panel, Job):
         self.panel_optimize = wx.Notebook(self, wx.ID_ANY)
         self.subpanel_optimize.Reparent(self.panel_optimize)
         self.subpanel_operations.Reparent(self.panel_optimize)
-        self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimization"))
+        self.panel_optimize.AddPage(self.subpanel_optimize, _("Optimizations"))
         self.panel_optimize.AddPage(self.subpanel_operations, _("Operations"))
         self.checkbox_optimize = wx.CheckBox(self, wx.ID_ANY, _("Optimize"))
         self.checkbox_optimize.SetToolTip(_("Enable/Disable Optimize"))
@@ -124,6 +124,7 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.text_time_laser = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_travel = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
+        self.text_time_extra = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_time_total = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_READONLY)
         self.text_distance_laser_step = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
@@ -138,6 +139,9 @@ class SimulationPanel(wx.Panel, Job):
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.text_time_travel_step = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_READONLY
+        )
+        self.text_time_extra_step = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_READONLY
         )
         self.text_time_total_step = wx.TextCtrl(
@@ -240,11 +244,12 @@ class SimulationPanel(wx.Panel, Job):
         self.running = False
 
     def __set_properties(self):
-        self.text_distance_laser.SetToolTip(_("Time Estimate: Lasering Time"))
-        self.text_distance_travel.SetToolTip(_("Time Estimate: Traveling Time"))
-        self.text_distance_total.SetToolTip(_("Time Estimate: Total Time"))
+        self.text_distance_laser.SetToolTip(_("Distance Estimate: while Lasering"))
+        self.text_distance_travel.SetToolTip(_("Distance Estimate: Traveling"))
+        self.text_distance_total.SetToolTip(_("Distance Estimate: Total"))
         self.text_time_laser.SetToolTip(_("Time Estimate: Lasering Time"))
         self.text_time_travel.SetToolTip(_("Time Estimate: Traveling Time"))
+        self.text_time_extra.SetToolTip(_("Time Estimate: Extra Time (ie to swing around)"))
         self.text_time_total.SetToolTip(_("Time Estimate: Total Time"))
         self.button_play.SetBitmap(icons8_play_50.GetBitmap())
         self.text_playback_speed.SetMinSize((55, 23))
@@ -276,6 +281,8 @@ class SimulationPanel(wx.Panel, Job):
         self.text_time_total_step.SetMinSize((35, -1))
         self.text_time_travel.SetMinSize((35, -1))
         self.text_time_travel_step.SetMinSize((35, -1))
+        self.text_time_extra.SetMinSize((35, -1))
+        self.text_time_extra_step.SetMinSize((35, -1))
         v_sizer_main = wx.BoxSizer(wx.VERTICAL)
         h_sizer_scroll = wx.BoxSizer(wx.HORIZONTAL)
         h_sizer_text_1 = wx.BoxSizer(wx.HORIZONTAL)
@@ -293,6 +300,9 @@ class SimulationPanel(wx.Panel, Job):
         )
         sizer_laser_time = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Laser Time")), wx.HORIZONTAL
+        )
+        sizer_extra_time = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Extra Time")), wx.HORIZONTAL
         )
         sizer_total_distance = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, _("Total Distance")), wx.HORIZONTAL
@@ -376,6 +386,10 @@ class SimulationPanel(wx.Panel, Job):
         sizer_total_time.Add(self.text_time_total_step, 1, wx.EXPAND, 0)
         sizer_total_time.Add(self.text_time_total, 1, wx.EXPAND, 0)
         h_sizer_text_2.Add(sizer_total_time, 1, wx.EXPAND, 0)
+
+        sizer_extra_time.Add(self.text_time_extra_step, 1, wx.EXPAND, 0)
+        sizer_extra_time.Add(self.text_time_extra, 1, wx.EXPAND, 0)
+        h_sizer_text_2.Add(sizer_extra_time, 1, wx.EXPAND, 0)
 
         h_sizer_buttons.Add(self.button_play, 0, 0, 0)
         sizer_speed_options.Add(self.slider_playbackspeed, 0, wx.EXPAND, 0)
@@ -995,6 +1009,12 @@ class SimulationPanel(wx.Panel, Job):
             time_cuts = 0
         try:
             extra = item["total_time_extra"] + partials["total_time_extra"]
+            t_hours = int(extra // 3600)
+            t_mins = int((extra % 3600) // 60)
+            t_seconds = int(extra % 60)
+            self.text_time_extra_step.SetValue(
+                f"{int(t_hours)}:{int(t_mins):02d}:{int(t_seconds):02d}"
+            )
             time_total = time_travel + time_cuts + extra
             if self._playback_cuts:
                 time_total = time_travel + time_cuts + extra
@@ -1037,6 +1057,10 @@ class SimulationPanel(wx.Panel, Job):
             time_cuts = 0
         try:
             extra = self.statistics[-1]["total_time_extra"]
+            t_hours = int(extra // 3600)
+            t_mins = int((extra % 3600) // 60)
+            t_seconds = int(extra % 60)
+            self.text_time_extra.SetValue(f"{t_hours}:{t_mins:02d}:{t_seconds:02d}")
             time_total = time_travel + time_cuts + extra
             t_hours = int(time_total // 3600)
             t_mins = int((time_total % 3600) // 60)
