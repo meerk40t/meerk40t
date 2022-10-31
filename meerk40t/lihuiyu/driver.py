@@ -1,3 +1,12 @@
+"""
+Lihuiyu Driver
+
+Governs the generic commands issued by laserjob and spooler and converts that into regular LHYMicro-GL output.
+
+This built data is then sent to the controller, which could be network, or usb, or mock depending on the selected
+output.
+"""
+
 import math
 import time
 

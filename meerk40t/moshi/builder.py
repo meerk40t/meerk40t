@@ -1,3 +1,10 @@
+"""
+Moshiboard Builder
+
+Builder for Moshiboard command data output information. Allows interactions through simple commands to export the
+required data to run a Moshiboard.
+"""
+
 swizzle_table = [
     [
         b"\x00",

@@ -1,3 +1,9 @@
+"""
+Live Selection Light Job
+
+This provides a live light job of the current selection. If there is no selection this provides a crosshair wait.
+"""
+
 import time
 
 from meerk40t.core.units import UNITS_PER_PIXEL

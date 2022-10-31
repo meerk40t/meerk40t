@@ -1,3 +1,10 @@
+"""
+GRBL Device
+
+Defines the interactions between the device service and the meerk40t's viewport.
+Registers relevant commands and options.
+"""
+
 from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.spoolers import Spooler
@@ -5,10 +12,6 @@ from ..core.laserjob import LaserJob
 from ..core.units import UNITS_PER_MIL, ViewPort
 from .controller import GrblController
 from .driver import GRBLDriver
-
-"""
-GRBL device.
-"""
 
 
 class GRBLDevice(Service, ViewPort):

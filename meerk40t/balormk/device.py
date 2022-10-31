@@ -1,3 +1,8 @@
+"""
+Galvo Device
+
+Defines how the balor device interacts with the scene, and accepts data via the spooler.
+"""
 import os
 import re
 import struct

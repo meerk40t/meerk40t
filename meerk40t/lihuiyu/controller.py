@@ -1,3 +1,19 @@
+"""
+Lihuiyu Controller
+
+Deals with the sending of data via the registered connection, and processes some limited realtime commands.
+
+    - : require wait finish at the end of the queue processing.
+    * : clear the buffers, and abort the thread.
+    ! : pause.
+    & : resume.
+    % : fail checksum, do not resend
+    ~ : begin/end realtime exception (Note, these characters would be consumed during
+            the write process and should not exist in the queue)
+    \x18 : quit.
+
+"""
+
 import threading
 import time
 

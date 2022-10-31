@@ -1,46 +1,7 @@
 # Balor
 
-BalorMK is the meerk40t plugin-driver for Balor by Bryce Schroeder which controls the LMC ezcad2 galvo laser boards.
+BalorMK began life as the meerk40t plugin-driver for Balor by Bryce Schroeder which controls the LMC ezcad2 galvo laser boards. This was eventually rewritten but still uses many of the original names. Even as the backend was rewritten.
 
-## Commands
-
-### Spool
-
-Send Balor or Plan to spooler
-
-### Mark
-
-Create a mark job out of selected elements.
-
-### Light
-
-Create a lighting job out of selected elements.
-
-### Stop
-
-Stop the looping idle job.
-
-### estop 
-
-### pause
-
-### resume
-
-### usb_connect
-
-### usb_disconnect
-
-### print, png, debug, save
-
-### duplicates, loop
-
-### goto
-
-### red, red off
-
-### status, lstatus, serial_number
-
-### correction
 
 ## Licensing
 

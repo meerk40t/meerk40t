@@ -1,3 +1,9 @@
+"""
+Ruida Parser
+
+Parsed the relevant ruida data for the emulator.
+"""
+
 from io import BytesIO
 
 

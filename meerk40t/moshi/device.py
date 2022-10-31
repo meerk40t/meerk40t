@@ -1,3 +1,11 @@
+"""
+Moshiboard Device
+
+
+Defines the interactions between the device service and the meerk40t's viewport.
+Registers relevant commands and options.
+"""
+
 from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
 
 from ..core.spoolers import Spooler

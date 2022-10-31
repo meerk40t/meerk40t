@@ -1,3 +1,9 @@
+"""
+GRBL Driver
+
+Governs the generic commands issued by laserjob and spooler and converts that into regular GRBL Gcode output.
+"""
+
 import time
 
 from ..core.cutcode import (

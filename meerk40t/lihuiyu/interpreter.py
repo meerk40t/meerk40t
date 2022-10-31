@@ -1,3 +1,10 @@
+"""
+Lihuiyu Interpreter
+
+This interpreter like all interpreters listens to the local data being sent and parses that data to calculate the
+expected position of the device.
+"""
+
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.kernel import Module
 from meerk40t.lihuiyu.parser import LihuiyuParser

@@ -1,3 +1,9 @@
+"""
+Lihuiyu Device Plugin
+
+Registers the needed classes for the lihuiyu device.
+"""
+
 from meerk40t.lihuiyu.device import LihuiyuDevice
 
 

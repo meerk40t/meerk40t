@@ -1,3 +1,10 @@
+"""
+Galvo Controller
+
+The balor controller takes low level lmc galvo commands and converts them into lists and shorts commands to send
+to the hardware controller.
+"""
+
 import struct
 import time
 from copy import copy

@@ -1,3 +1,9 @@
+"""
+Moshi Device Plugin
+
+Registers the needed classes for the moshi device.
+"""
+
 from meerk40t.moshi.device import MoshiDevice
 
 

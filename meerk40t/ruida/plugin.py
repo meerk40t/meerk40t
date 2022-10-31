@@ -1,3 +1,10 @@
+"""
+Moshi Device Plugin
+
+Registers the needed classes for ruida device (or would if the ruida device could be controlled).
+"""
+
+
 from meerk40t.ruida.device import RuidaDevice
 from meerk40t.ruida.emulator import RuidaEmulator
 from meerk40t.ruida.loader import RDLoader

@@ -1,3 +1,10 @@
+"""
+Lihuiyu Device
+
+Registers the Device service for M2 Nano (and family), registering the relevant commands and provides the viewport for
+the given device type.
+"""
+
 from hashlib import md5
 
 from meerk40t.core.spoolers import Spooler
