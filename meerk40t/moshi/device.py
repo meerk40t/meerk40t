@@ -1,13 +1,9 @@
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_PAUSE,
-    Service,
-)
-from .controller import MoshiController
-from .driver import MoshiDriver
+from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
+
 from ..core.spoolers import Spooler
 from ..core.units import UNITS_PER_MIL, ViewPort
-
+from .controller import MoshiController
+from .driver import MoshiDriver
 
 
 class MoshiDevice(Service, ViewPort):
@@ -323,4 +319,3 @@ class MoshiDevice(Service, ViewPort):
         self.origin_x = 1.0 if self.home_right else 0.0
         self.origin_y = 1.0 if self.home_bottom else 0.0
         super().realize()
-

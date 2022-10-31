@@ -1,7 +1,6 @@
 import threading
 import time
 
-
 from .mock_connection import MockConnection
 from .serial_connection import SerialConnection
 

@@ -149,4 +149,3 @@ class ElementLightJob:
         if con.light_off():
             con.list_write_port()
         return True
-

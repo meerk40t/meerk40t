@@ -1,10 +1,9 @@
 from meerk40t.kernel import CommandSyntaxError, Service
-from .controller import GrblController
-from .driver import GRBLDriver
 
 from ..core.spoolers import LaserJob, Spooler
 from ..core.units import UNITS_PER_MIL, ViewPort
-
+from .controller import GrblController
+from .driver import GRBLDriver
 
 """
 GRBL device.

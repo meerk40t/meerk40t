@@ -1,4 +1,3 @@
-
 import threading
 import time
 
@@ -14,7 +13,6 @@ from meerk40t.kernel import (
     STATE_UNKNOWN,
     STATE_WAIT,
 )
-
 
 STATUS_BAD_STATE = 204
 # 0xCC, 11001100
@@ -743,4 +741,3 @@ class LihuiyuController:
                 self.abort_waiting = False
                 return  # Wait abort was requested.
         self.update_state(original_state)
-

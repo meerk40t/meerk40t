@@ -1,7 +1,6 @@
 import math
 import time
 
-
 from meerk40t.tools.zinglplotter import ZinglPlotter
 
 from ..core.cutcode import (
@@ -29,7 +28,6 @@ from ..device.basedevice import (
     PLOT_SETTING,
 )
 from .laserspeed import LaserSpeed
-
 
 distance_lookup = [
     b"",
@@ -1365,4 +1363,3 @@ class LihuiyuDriver(Parameters):
             self._x_engaged = False
             self._y_engaged = True
             return x_dir + y_dir
-

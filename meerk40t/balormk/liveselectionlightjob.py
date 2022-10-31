@@ -1,6 +1,5 @@
 import time
 
-
 from meerk40t.core.units import UNITS_PER_PIXEL
 from meerk40t.svgelements import Matrix
 
@@ -182,4 +181,3 @@ class LiveSelectionLightJob:
                 return False
             con.light(*pt, long=dark_delay, short=dark_delay)
         return True
-

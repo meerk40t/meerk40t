@@ -27,9 +27,7 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from .builder import (
-    MoshiBuilder,
-)
+from .builder import MoshiBuilder
 
 
 class MoshiDriver(Parameters):
@@ -686,4 +684,3 @@ class MoshiDriver(Parameters):
 
     def laser_enable(self, *values):
         self.laser_enabled = True
-

@@ -1,19 +1,12 @@
-
 from hashlib import md5
 
 from meerk40t.core.spoolers import LaserJob, Spooler
-from meerk40t.kernel import (
-    STATE_ACTIVE,
-    STATE_PAUSE,
-    CommandSyntaxError,
-    Service,
-)
+from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service
+
+from ..core.units import UNITS_PER_MIL, Length, ViewPort
 from .controller import LihuiyuController
 from .driver import LihuiyuDriver
 from .tcp_connection import TCPOutput
-
-
-from ..core.units import UNITS_PER_MIL, Length, ViewPort
 
 
 class LihuiyuDevice(Service, ViewPort):
@@ -626,7 +619,9 @@ class LihuiyuDevice(Service, ViewPort):
 
         if self.has_feature("interpreter/lihuiyu"):
 
-            @self.console_command("lhyinterpreter", help=_("activate the lhyinterpreter."))
+            @self.console_command(
+                "lhyinterpreter", help=_("activate the lhyinterpreter.")
+            )
             def lhyinterpreter(channel, _, **kwargs):
                 try:
                     self.open_as("interpreter/lihuiyu", "lhyinterpreter")
@@ -679,4 +674,3 @@ class LihuiyuDevice(Service, ViewPort):
             return self.tcp
         else:
             return self.controller
-
