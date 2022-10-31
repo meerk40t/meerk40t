@@ -1,4 +1,3 @@
-from meerk40t.core.cutcode import CutCode, RawCut
 from meerk40t.core.parameters import Parameters
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.svgelements import Color
@@ -105,7 +104,7 @@ class LihuiyuParser:
 
     def header_write(self, data):
         """
-        Write data to the emulator including the header. This is intended for saved .egv files which include a default
+        Write data to the parser including the header. This is intended for saved .egv files which include a default
         header.
         """
         if self.header_skipped:

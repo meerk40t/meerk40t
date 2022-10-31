@@ -16,9 +16,9 @@ def plugin(kernel, lifecycle=None):
         except ImportError:
             pass
         try:
-            from .lihuiyuemulator import LihuiyuEmulator
+            from .lihuiyuinterpreter import LihuiyuInterpreter
 
-            kernel.register("emulator/lihuiyu", LihuiyuEmulator)
+            kernel.register("interpreter/lihuiyu", LihuiyuInterpreter)
         except ImportError:
             pass
         try:

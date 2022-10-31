@@ -684,19 +684,19 @@ class LihuiyuDevice(Service, ViewPort):
                 channel(_("Server cannot be attached to any device."))
             return
 
-        if self.has_feature("emulator/lihuiyu"):
+        if self.has_feature("interpreter/lihuiyu"):
 
-            @self.console_command("lhyemulator", help=_("activate the lhyemulator."))
-            def lhyemulator(channel, _, **kwargs):
+            @self.console_command("lhyinterpreter", help=_("activate the lhyinterpreter."))
+            def lhyinterpreter(channel, _, **kwargs):
                 try:
-                    self.open_as("emulator/lihuiyu", "lhyemulator")
+                    self.open_as("interpreter/lihuiyu", "lhyinterpreter")
                     channel(
-                        _("Lihuiyu Emulator attached to {device}").format(
+                        _("Lihuiyu interpreter attached to {device}").format(
                             device=str(self)
                         )
                     )
                 except KeyError:
-                    channel(_("Emulator cannot be attached to any device."))
+                    channel(_("Intepreter cannot be attached to any device."))
                 return
 
     @property
