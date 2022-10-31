@@ -399,4 +399,3 @@ class LihuiyuParser:
                 self.channel(
                     f"Diagonal {'Top' if self.top else 'Bottom'} {'Left' if self.left else 'Right'}"
                 )
-

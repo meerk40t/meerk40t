@@ -13,4 +13,3 @@ def plugin(kernel, lifecycle=None):
         suffix = "moshi"
         for d in kernel.derivable(suffix):
             kernel.root(f"service device start -p {d} {suffix}\n")
-
