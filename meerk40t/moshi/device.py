@@ -43,14 +43,14 @@ from ..device.basedevice import (
     PLOT_SETTING,
     PLOT_START,
 )
-from .moshiblob import (
+from .moshibuilder import (
     MOSHI_EPILOGUE,
     MOSHI_ESTOP,
     MOSHI_FREEMOTOR,
     MOSHI_LASER,
     MOSHI_PROLOGUE,
     MOSHI_READ,
-    MoshiBlob,
+    MoshiBuilder,
     swizzle_table,
 )
 
@@ -415,7 +415,7 @@ class MoshiDriver(Parameters):
         self.plot_planner = PlotPlanner(self.settings)
         self.queue = list()
 
-        self.program = MoshiBlob()
+        self.program = MoshiBuilder()
 
         self.is_paused = False
         self.hold = False
@@ -969,7 +969,7 @@ class MoshiDriver(Parameters):
         self.pipe_channel("Pushed program to output...")
         if len(self.program):
             self.service.controller.push_program(self.program)
-            self.program = MoshiBlob()
+            self.program = MoshiBuilder()
             self.program.channel = self.pipe_channel
 
     def _ensure_program_or_raster_mode(self, x, y, x1=None, y1=None):
