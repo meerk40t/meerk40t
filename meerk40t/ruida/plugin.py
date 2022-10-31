@@ -1,7 +1,7 @@
 from meerk40t.ruida.device import RuidaDevice
 from meerk40t.ruida.rdloader import RDLoader
-from meerk40t.ruida.ruidaemulator import RuidaEmulator
-from meerk40t.ruida.ruidaparser import RuidaParser
+from meerk40t.ruida.emulator import RuidaEmulator
+from meerk40t.ruida.parser import RuidaParser
 
 
 def plugin(kernel, lifecycle=None):
