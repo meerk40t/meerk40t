@@ -370,10 +370,11 @@ class LihuiyuDevice(Service, ViewPort):
             help=_("realtime pause/resume of the machine"),
         )
         def realtime_pause(**kwargs):
-            if self.driver.is_paused:
+            if self.driver.paused:
                 self.driver.resume()
             else:
                 self.driver.pause()
+            self.signal("pause")
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(channel, _, **kwargs):

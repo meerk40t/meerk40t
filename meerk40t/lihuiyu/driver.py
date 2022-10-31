@@ -159,7 +159,7 @@ class LihuiyuDriver(Parameters):
         self.CODE_LASER_ON = b"D"
         self.CODE_LASER_OFF = b"U"
 
-        self.is_paused = False
+        self.paused = False
         self.service._buffer_size = 0
 
         def primary_hold():
@@ -230,7 +230,7 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         self(b"~PN!\n~")
-        self.is_paused = True
+        self.paused = True
 
     def resume(self, *values):
         """
@@ -243,7 +243,7 @@ class LihuiyuDriver(Parameters):
         @return:
         """
         self(b"~PN&\n~")
-        self.is_paused = False
+        self.paused = False
 
     def reset(self):
         """
@@ -265,7 +265,7 @@ class LihuiyuDriver(Parameters):
         self._reset_modes()
         self.state = DRIVER_STATE_RAPID
         self.service.signal("driver;mode", self.state)
-        self.is_paused = False
+        self.paused = False
 
     def abort(self):
         self(b"I\n")

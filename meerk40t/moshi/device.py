@@ -258,6 +258,7 @@ class MoshiDevice(Service, ViewPort):
             self.controller.update_state(STATE_PAUSE)
             self.controller.pause()
             channel(_("Moshi Channel Paused."))
+            self.signal("pause")
 
         @self.console_command("resume", input_type="moshi", help=_("Resume Controller"))
         def pipe_resume(command, channel, _, **kwargs):
@@ -267,6 +268,7 @@ class MoshiDevice(Service, ViewPort):
             self.controller.update_state(STATE_ACTIVE)
             self.controller.start()
             channel(_("Moshi Channel Resumed."))
+            self.signal("pause")
 
         @self.console_command(("estop", "abort"), help=_("Abort Job"))
         def pipe_abort(command, channel, _, **kwargs):
