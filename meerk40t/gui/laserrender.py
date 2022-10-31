@@ -63,6 +63,7 @@ DRAW_MODE_LINEWIDTH = 0x1000000
 DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
 DRAW_MODE_ORIGIN = 0x4000000
 
+
 def swizzlecolor(c):
     if c is None:
         return None

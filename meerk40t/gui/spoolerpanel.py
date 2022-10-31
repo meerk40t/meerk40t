@@ -589,8 +589,10 @@ class SpoolerPanel(wx.Panel):
                         if isinf(total):
                             total = "∞"
                         pass_str = f"{loop}/{total}"
-                        if spool_obj.steps_total>0:
-                            pass_str += f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
+                        if spool_obj.steps_total > 0:
+                            pass_str += (
+                                f" ({spool_obj.steps_done}/{spool_obj.steps_total})"
+                            )
                         self.list_job_spool.SetItem(
                             list_id, self.column_job["passes"], pass_str
                         )

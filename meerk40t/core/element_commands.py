@@ -3476,7 +3476,9 @@ def init_commands(kernel):
             )
             matrix = Matrix.scale(width / new_width, height / new_height)
             matrix.post_translate(bounds[0], bounds[1])
-            image_node_2 = ImageNode(image=image_2, matrix=matrix, dpi=dpi, label="Phase 2 render image")
+            image_node_2 = ImageNode(
+                image=image_2, matrix=matrix, dpi=dpi, label="Phase 2 render image"
+            )
 
             path_2 = make_vector(
                 image_2,

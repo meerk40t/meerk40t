@@ -1098,9 +1098,7 @@ class ImagePropertyPanel(ScrolledPanel):
         self.__set_properties()
         self.__do_layout()
 
-        self.Bind(
-            wx.EVT_CHECKBOX, self.on_dither, self.check_enable_dither
-        )
+        self.Bind(wx.EVT_CHECKBOX, self.on_dither, self.check_enable_dither)
         self.Bind(wx.EVT_COMBOBOX, self.on_dither, self.combo_dither)
         # self.Bind(wx.EVT_COMBOBOX, self.on_combo_operation, self.combo_operations)
 

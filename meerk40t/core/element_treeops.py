@@ -558,7 +558,10 @@ def init_tree(kernel):
         lambda cond: len(list(self.flat(selected=True, cascade=False, types=op_nodes)))
         > 1
     )
-    @tree_calc("ecount", lambda i: len(list(self.flat(selected=True, cascade=False, types=op_nodes))))
+    @tree_calc(
+        "ecount",
+        lambda i: len(list(self.flat(selected=True, cascade=False, types=op_nodes))),
+    )
     @tree_operation(
         _("Delete {ecount} operations fully"),
         node_type=op_nodes,
@@ -1784,12 +1787,16 @@ def init_tree(kernel):
         self("image ccw\n")
 
     @tree_submenu(_("Image"))
-    @tree_operation(_("Save original image to output.png"), node_type="elem image", help="")
+    @tree_operation(
+        _("Save original image to output.png"), node_type="elem image", help=""
+    )
     def image_save(node, **kwargs):
         self("image save output.png\n")
 
     @tree_submenu(_("Image"))
-    @tree_operation(_("Save processed image to output.png"), node_type="elem image", help="")
+    @tree_operation(
+        _("Save processed image to output.png"), node_type="elem image", help=""
+    )
     def image_save_processed(node, **kwargs):
         self("image save output.png --processed\n")
 

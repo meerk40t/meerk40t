@@ -329,7 +329,9 @@ class GalvoController:
                 if self.connection.is_open(self._machine_index):
                     self.connection.close(self._machine_index)
                 if count >= 10:
-                    raise ConnectionRefusedError("Could not connect to the LMC controller.")
+                    raise ConnectionRefusedError(
+                        "Could not connect to the LMC controller."
+                    )
                 time.sleep(0.3)
                 continue
         self._is_opening = False

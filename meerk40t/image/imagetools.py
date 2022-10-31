@@ -51,9 +51,7 @@ def plugin(kernel, lifecycle=None):
             "tip": "\n".join(
                 (
                     _("Unset: Attach the image directly to elements."),
-                    _(
-                        "Set: Put the image under a file-node created for it."
-                    ),
+                    _("Set: Put the image under a file-node created for it."),
                 )
             ),
             "page": "Input/Output",
@@ -1800,7 +1798,9 @@ class ImageLoader:
         context.setting(bool, "create_image_group", True)
         element_branch = elements_service.get(type="branch elems")
         if context.create_image_group:
-            file_node = element_branch.add(type="file", label=os.path.basename(pathname))
+            file_node = element_branch.add(
+                type="file", label=os.path.basename(pathname)
+            )
             file_node.filepath = pathname
         else:
             file_node = element_branch
