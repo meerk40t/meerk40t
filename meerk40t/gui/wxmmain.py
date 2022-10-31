@@ -83,6 +83,7 @@ from .laserrender import (
     DRAW_MODE_INVERT,
     DRAW_MODE_LASERPATH,
     DRAW_MODE_LINEWIDTH,
+    DRAW_MODE_ORIGIN,
     DRAW_MODE_PATH,
     DRAW_MODE_REFRESH,
     DRAW_MODE_REGMARKS,
@@ -91,7 +92,6 @@ from .laserrender import (
     DRAW_MODE_STROKES,
     DRAW_MODE_TEXT,
     DRAW_MODE_VARIABLES,
-    DRAW_MODE_ORIGIN,
     swizzlecolor,
 )
 from .mwindow import MWindow

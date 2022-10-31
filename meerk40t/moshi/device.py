@@ -60,20 +60,6 @@ STATUS_ERROR = 237  # ERROR
 STATUS_RESET = 239  # Seen during reset
 
 
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "plugins":
-        from .gui import gui
-
-        return [gui.plugin]
-
-    if lifecycle == "register":
-        kernel.register("provider/device/moshi", MoshiDevice)
-    if lifecycle == "preboot":
-        suffix = "moshi"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
-
-
 def get_code_string_from_moshicode(code):
     """
     Moshiboard CH341 codes into code strings.

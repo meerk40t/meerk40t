@@ -144,6 +144,8 @@ class FormatterPanel(wx.Panel):
         self.update_widgets()
 
     def get_node_patterns(self, nodetype):
+        from PIL import Image
+
         from meerk40t.core.node.elem_ellipse import EllipseNode
         from meerk40t.core.node.elem_image import ImageNode
         from meerk40t.core.node.elem_line import LineNode
@@ -169,7 +171,6 @@ class FormatterPanel(wx.Panel):
         from meerk40t.core.node.util_output import OutputOperation
         from meerk40t.core.node.util_wait import WaitOperation
         from meerk40t.svgelements import Ellipse, Path, Polyline, Rect
-        from PIL import Image
 
         bootstrap = {
             "op cut": CutOpNode,

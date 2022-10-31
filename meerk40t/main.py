@@ -101,11 +101,11 @@ def static_plugins(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
-        from .lihuiyu import device as lihuiyu
+        from .lihuiyu import plugin as lihuiyu_driver
 
-        plugins.append(lihuiyu.plugin)
+        plugins.append(lihuiyu_driver.plugin)
 
-        from .moshi import device as moshi_driver
+        from .moshi import plugin as moshi_driver
 
         plugins.append(moshi_driver.plugin)
 
@@ -113,7 +113,7 @@ def static_plugins(kernel, lifecycle):
 
         plugins.append(grbl_driver_plugin)
 
-        from .ruida import device as ruida_driver
+        from .ruida import plugin as ruida_driver
 
         plugins.append(ruida_driver.plugin)
 

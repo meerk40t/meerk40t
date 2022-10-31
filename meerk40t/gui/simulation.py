@@ -16,14 +16,13 @@ from ..core.node.util_wait import WaitOperation
 from ..core.units import Length
 from ..svgelements import Matrix
 from .choicepropertypanel import ChoicePropertyPanel
-from .zmatrix import ZMatrix
 from .icons import (
     STD_ICON_SIZE,
+    icons8_image_50,
     icons8_laser_beam_hazard2_50,
     icons8_pause_50,
     icons8_play_50,
     icons8_route_50,
-    icons8_image_50,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
@@ -32,7 +31,7 @@ from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
 from .wxutils import disable_window
-from .laserrender import LaserRender
+from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
 
@@ -94,8 +93,12 @@ class SimulationPanel(wx.Panel, Job):
         )
         self.subpanel_operations = wx.Panel(self, wx.ID_ANY)
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
-        self.text_operation_param = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_operation_param.SetToolTip(_("Modify operation parameter, press Enter to apply"))
+        self.text_operation_param = wx.TextCtrl(
+            self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_operation_param.SetToolTip(
+            _("Modify operation parameter, press Enter to apply")
+        )
 
         self.panel_optimize = wx.Notebook(self, wx.ID_ANY)
         self.subpanel_optimize.Reparent(self.panel_optimize)
@@ -186,8 +189,12 @@ class SimulationPanel(wx.Panel, Job):
             wx.EVT_RADIOBUTTON, self.on_radio_playback_mode, self.radio_time_minutes
         )
         self.view_pane.scene_panel.Bind(wx.EVT_RIGHT_DOWN, self.on_mouse_right_down)
-        self.list_operations.Bind(wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick)
-        self.list_operations.Bind(wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick)
+        self.list_operations.Bind(
+            wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick
+        )
+        self.list_operations.Bind(
+            wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick
+        )
         self.list_operations.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_select)
         self.text_operation_param.Bind(wx.EVT_TEXT_ENTER, self.on_text_operation_param)
         self.Bind(wx.EVT_CHECKBOX, self.on_checkbox_optimize, self.checkbox_optimize)
@@ -324,7 +331,6 @@ class SimulationPanel(wx.Panel, Job):
         opt_sizer.Add(self.btn_redo_it, 0, wx.EXPAND, 0)
         self.subpanel_optimize.SetSizer(opt_sizer)
         self.subpanel_optimize.Layout()
-
 
         # Linux requires a minimum  height / width to display a text inside a button
         system = platform.system()
@@ -632,7 +638,9 @@ class SimulationPanel(wx.Panel, Job):
             self.cutplan = self.context.planner.default_plan
         self.list_operations.Clear()
         if self.cutplan.plan is not None and len(self.cutplan.plan) != 0:
-            self.list_operations.InsertItems([name_str(e) for e in self.cutplan.plan], 0)
+            self.list_operations.InsertItems(
+                [name_str(e) for e in self.cutplan.plan], 0
+            )
         self.plan_name = self.cutplan.name
         self.operations = self.cutplan.plan
         # for e in self.operations:
@@ -687,7 +695,7 @@ class SimulationPanel(wx.Panel, Job):
         content = self.text_operation_param.GetValue()
         idx = self.list_operations.GetSelection()
         flag = False
-        if idx>=0:
+        if idx >= 0:
             op = self.cutplan.plan[idx]
             if isinstance(op, ConsoleOperation):
                 op.command = content
@@ -745,7 +753,7 @@ class SimulationPanel(wx.Panel, Job):
         flag = False
         content = ""
         idx = self.list_operations.GetSelection()
-        if idx>=0:
+        if idx >= 0:
             op = self.cutplan.plan[idx]
             if isinstance(op, ConsoleOperation):
                 content = op.command
@@ -920,9 +928,7 @@ class SimulationPanel(wx.Panel, Job):
                 append_operation(entry[1]),
                 menu.Append(
                     wx.ID_ANY,
-                    _("Appends '{operation}' at end").format(
-                        operation=entry[0]
-                    ),
+                    _("Appends '{operation}' at end").format(operation=entry[0]),
                     _("Appends this special operation at the end of the cutplan"),
                 ),
             )
@@ -936,7 +942,6 @@ class SimulationPanel(wx.Panel, Job):
             self.options_optimize.Enable(True)
         else:
             self.options_optimize.Enable(False)
-
 
     def update_fields(self):
         step, residual = self.progress_to_idx(self.progress)
@@ -1194,7 +1199,9 @@ class SimulationWidget(Widget):
                     matrix.post_translate(
                         cut.offset_x + x, cut.offset_y + y
                     )  # Adjust image xy
-                    gc.ConcatTransform(wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix)))
+                    gc.ConcatTransform(
+                        wx.GraphicsContext.CreateMatrix(gc, ZMatrix(matrix))
+                    )
                     try:
                         cache = cut.cache
                         cache_id = cut.cache_id
@@ -1208,7 +1215,9 @@ class SimulationWidget(Widget):
                         # No valid cache. Generate.
                         cut._cache_width, cut._cache_height = image.size
                         try:
-                            cut.cache = self.renderer.make_thumbnail(image, maximum=5000)
+                            cut.cache = self.renderer.make_thumbnail(
+                                image, maximum=5000
+                            )
                         except (MemoryError, RuntimeError):
                             cut.cache = None
                         cut.cache_id = id(image)
@@ -1256,7 +1265,9 @@ class SimulationWidget(Widget):
                     gc.Clip(clip_x, clip_y, clip_w, clip_h)
                     if cut.cache is not None:
                         # Cache exists and is valid.
-                        gc.DrawBitmap(cut.cache, 0, 0, cut._cache_width, cut._cache_height)
+                        gc.DrawBitmap(
+                            cut.cache, 0, 0, cut._cache_width, cut._cache_height
+                        )
                         # gc.SetBrush(wx.RED_BRUSH)
                         # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                     else:
