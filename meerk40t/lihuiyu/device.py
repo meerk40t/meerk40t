@@ -1,6 +1,7 @@
 from hashlib import md5
 
-from meerk40t.core.spoolers import LaserJob, Spooler
+from meerk40t.core.spoolers import Spooler
+from meerk40t.core.laserjob import LaserJob
 from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, CommandSyntaxError, Service
 
 from ..core.units import UNITS_PER_MIL, Length, ViewPort
