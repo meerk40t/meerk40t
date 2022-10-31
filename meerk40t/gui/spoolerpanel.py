@@ -164,6 +164,7 @@ class SpoolerPanel(wx.Panel):
         if not self.clear_data:
             self.reload_history()
 
+        self.set_pause_color()
         # if index == -1:
         #     disable_window(self)
 
@@ -386,6 +387,7 @@ class SpoolerPanel(wx.Panel):
         self.update_spooler = True
         self.refresh_spooler_list()
         self.refresh_history()
+        self.set_pause_color()
 
     def on_list_drag(self, event):  # wxGlade: JobSpooler.<event_handler>
         # Todo: Drag to reprioritise jobs
@@ -440,8 +442,10 @@ class SpoolerPanel(wx.Panel):
         menu = wx.Menu()
         if element.status.lower() == "running":
             action = _("Stop")
+            remove_mode = "stop"
         else:
             action = _("Remove")
+            remove_mode = "stop"
         item = menu.Append(
             wx.ID_ANY,
             "{action} {name} [{label}]".format(
@@ -450,7 +454,7 @@ class SpoolerPanel(wx.Panel):
             "",
             wx.ITEM_NORMAL,
         )
-        info_tuple = [spooler, element]
+        info_tuple = [spooler, element, remove_mode]
         self.Bind(wx.EVT_MENU, self.on_tree_popup_delete(info_tuple), item)
 
         item = menu.Append(wx.ID_ANY, _("Clear All"), "", wx.ITEM_NORMAL)
@@ -480,7 +484,13 @@ class SpoolerPanel(wx.Panel):
     def on_tree_popup_delete(self, element):
         def delete(event=None):
             spooler = element[0]
-            spooler.remove(element[1])
+            mode = element[2]
+            job = element[1]
+            spooler.remove(job)
+            # That will remove the job but create a log entry if needed.
+            if mode == "stop":
+                # Force stop of laser.
+                self.context("estop\n")
             self.refresh_spooler_list()
 
         return delete
@@ -847,6 +857,22 @@ class SpoolerPanel(wx.Panel):
             # Set the new data in the listctrl
             self.list_job_history.SetItem(list_id, col_id, new_data)
 
+    def set_pause_color(self):
+        new_color = None
+        new_caption = _("Pause")
+        try:
+            if self.context.device.driver.paused:
+                new_color = wx.YELLOW
+                new_caption = _("Resume")
+        except AttributeError:
+            pass
+        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetLabelText(new_caption)
+
+    @signal_listener("pause")
+    def on_device_pause_toggle(self, origin, *args):
+        self.set_pause_color()
+
     @signal_listener("activate;device")
     def on_activate_device(self, origin, device):
         self.available_devices = self.context.kernel.services("device")
@@ -868,6 +894,7 @@ class SpoolerPanel(wx.Panel):
         self.combo_device.SetItems(spools)
         self.combo_device.SetSelection(index)
         self.on_combo_device(None)
+        self.set_pause_color()
 
     @signal_listener("spooler;completed")
     def on_spooler_completed(self, origin, info, *args):

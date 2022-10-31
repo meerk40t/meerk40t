@@ -225,6 +225,23 @@ class LaserPanel(wx.Panel):
             self.combo_devices.Append(spools[i])
         self.combo_devices.SetSelection(index)
         self.button_save_file.Enable(hasattr(self.context.device, "extension"))
+        self.set_pause_color()
+
+    def set_pause_color(self):
+        new_color = None
+        new_caption = _("Pause")
+        try:
+            if self.context.device.driver.paused:
+                new_color = wx.YELLOW
+                new_caption = _("Resume")
+        except AttributeError:
+            pass
+        self.button_pause.SetBackgroundColour(new_color)
+        self.button_pause.SetLabelText(new_caption)
+
+    @signal_listener("pause")
+    def on_device_pause_toggle(self, origin, *args):
+        self.set_pause_color()
 
     @signal_listener("plan")
     def plan_update(self, origin, *message):
@@ -376,3 +393,4 @@ class LaserPanel(wx.Panel):
         # Device change, so let's focus properly...
         zl = self.context.zoom_margin
         self.context(f"scene focus -{zl}% -{zl}% {100 + zl}% {100 + zl}%\n")
+        self.set_pause_color()
