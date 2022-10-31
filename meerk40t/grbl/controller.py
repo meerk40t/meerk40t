@@ -2,8 +2,8 @@ import threading
 import time
 
 
-from .mockconnection import MockConnection
-from .serialconnection import SerialConnection
+from .mock_connection import MockConnection
+from .serial_connection import SerialConnection
 
 
 class GrblController:
