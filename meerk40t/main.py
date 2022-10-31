@@ -101,9 +101,9 @@ def static_plugins(kernel, lifecycle):
 
         plugins.append(basedevice.plugin)
 
-        from .lihuiyu import device as lihuiyu
+        from .lihuiyu import plugin as lihuiyu_driver
 
-        plugins.append(lihuiyu.plugin)
+        plugins.append(lihuiyu_driver.plugin)
 
         from .moshi import device as moshi_driver
 

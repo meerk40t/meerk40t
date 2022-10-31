@@ -76,38 +76,6 @@ REQUEST_AXIS = 0b0000001000000000
 REQUEST_HORIZONTAL_MAJOR = 0b0000010000000000  # Requested horizontal major axis.
 
 
-def plugin(kernel, lifecycle=None):
-    if lifecycle == "plugins":
-        from .gui import gui as lhygui
-
-        return [lhygui.plugin]
-
-    if lifecycle == "register":
-        kernel.register("provider/device/lhystudios", LihuiyuDevice)
-        try:
-            from meerk40t.lihuiyu.lihuiyuparser import EgvLoader
-
-            kernel.register("load/EgvLoader", EgvLoader)
-        except ImportError:
-            pass
-        try:
-            from .lihuiyuemulator import LihuiyuEmulator
-
-            kernel.register("emulator/lihuiyu", LihuiyuEmulator)
-        except ImportError:
-            pass
-        try:
-            from meerk40t.lihuiyu.lihuiyuparser import LihuiyuParser
-
-            kernel.register("parser/egv", LihuiyuParser)
-        except ImportError:
-            pass
-    if lifecycle == "preboot":
-        suffix = "lhystudios"
-        for d in kernel.derivable(suffix):
-            kernel.root(f"service device start -p {d} {suffix}\n")
-
-
 class LihuiyuDevice(Service, ViewPort):
     """
     LihuiyuDevice is driver for the M2 Nano and other classes of Lihuiyu boards.
