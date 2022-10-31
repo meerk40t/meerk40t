@@ -54,8 +54,8 @@ from .preferences import Preferences
 from .propertypanels.consoleproperty import ConsolePropertiesPanel
 from .propertypanels.groupproperties import GroupPropertiesPanel
 from .propertypanels.imageproperty import (
-    ImagePropertyPanel,
     ImageModificationPanel,
+    ImagePropertyPanel,
     ImageVectorisationPanel,
 )
 from .propertypanels.operationpropertymain import ParameterPanel

@@ -3,9 +3,7 @@ from copy import copy
 
 from meerk40t.kernel import CommandSyntaxError
 
-from ..svgelements import (
-    Matrix,
-)
+from ..svgelements import Matrix
 from .cutcode import CutCode
 from .element_types import *
 from .node.elem_image import ImageNode
@@ -16,23 +14,22 @@ from .node.op_engrave import EngraveOpNode
 from .node.op_hatch import HatchOpNode
 from .node.op_image import ImageOpNode
 from .node.op_raster import RasterOpNode
-from .units import UNITS_PER_INCH
-
 from .treeop import (
+    get_tree_operation,
     tree_calc,
+    tree_check,
     tree_conditional,
-    tree_radio,
+    tree_conditional_try,
     tree_iterate,
+    tree_prompt,
+    tree_radio,
+    tree_reference,
+    tree_separator_after,
+    tree_separator_before,
     tree_submenu,
     tree_values,
-    tree_conditional_try,
-    tree_check,
-    tree_prompt,
-    tree_reference,
-    tree_separator_before,
-    tree_separator_after,
-    get_tree_operation,
 )
+from .units import UNITS_PER_INCH
 
 
 def plugin(kernel, lifecycle=None):

@@ -3,7 +3,6 @@ from meerk40t.kernel import Service
 from ..core.spoolers import Spooler
 from ..core.units import Length, ViewPort
 
-
 """
 Ruida device interfacing. We do not send or interpret ruida code, but we can emulator ruidacode into cutcode and read
 ruida files (*.rd) and turn them likewise into cutcode.

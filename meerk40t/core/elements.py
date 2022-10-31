@@ -4,10 +4,7 @@ from os.path import realpath
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings
 
-from ..svgelements import (
-    Color,
-    SVGElement,
-)
+from ..svgelements import Color, SVGElement
 from .element_types import *
 from .node.op_cut import CutOpNode
 from .node.op_dots import DotsOpNode
@@ -22,8 +19,7 @@ from .wordlist import Wordlist
 def plugin(kernel, lifecycle=None):
     _ = kernel.translation
     if lifecycle == "plugins":
-        from meerk40t.core import element_commands
-        from meerk40t.core import element_treeops
+        from meerk40t.core import element_commands, element_treeops
 
         return [element_commands.plugin, element_treeops.plugin]
     elif lifecycle == "preregister":

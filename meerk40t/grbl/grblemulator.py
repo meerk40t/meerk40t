@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode import PlotCut, CutCode, WaitCut
+from meerk40t.core.cutcode import CutCode, PlotCut, WaitCut
 from meerk40t.core.node.cutnode import CutNode
 from meerk40t.core.parameters import Parameters
 from meerk40t.grbl.grblparser import GRBLParser
