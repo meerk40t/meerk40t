@@ -1,5 +1,5 @@
 from meerk40t.ruida.device import RuidaDevice
-from meerk40t.ruida.rdloader import RDLoader
+from meerk40t.ruida.loader import RDLoader
 from meerk40t.ruida.emulator import RuidaEmulator
 from meerk40t.ruida.parser import RuidaParser
 
