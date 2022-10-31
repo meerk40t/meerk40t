@@ -18,19 +18,19 @@ def plugin(kernel, lifecycle=None):
         kernel.register("provider/device/grbl", GRBLDevice)
         kernel.register("driver/grbl", GRBLDriver)
 
-        from .grblinterpreter import GRBLInterpreter
+        from .interpreter import GRBLInterpreter
 
         kernel.register("interpreter/grbl", GRBLInterpreter)
 
-        from .grblemulator import GRBLEmulator
+        from .emulator import GRBLEmulator
 
         kernel.register("emulator/grbl", GRBLEmulator)
 
-        from .grblparser import GRBLParser
+        from .parser import GRBLParser
 
         kernel.register("parser/grbl", GRBLParser)
 
-        from .gcodeloader import GCodeLoader
+        from .loader import GCodeLoader
 
         kernel.register("load/GCodeLoader", GCodeLoader)
 

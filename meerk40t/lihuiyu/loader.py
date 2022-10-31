@@ -1,5 +1,5 @@
 from meerk40t.core.cutcode import CutCode, RawCut
-from meerk40t.lihuiyu.lihuiyuparser import LihuiyuParser
+from meerk40t.lihuiyu.parser import LihuiyuParser
 
 
 class EGVBlob:

@@ -1,9 +1,9 @@
 from meerk40t.core.units import UNITS_PER_MIL
 from meerk40t.kernel import Module
-from meerk40t.lihuiyu.lihuiyuparser import LihuiyuParser
+from meerk40t.lihuiyu.parser import LihuiyuParser
 
 
-class LihuiyuEmulator(Module):
+class LihuiyuInterpreter(Module):
     def __init__(self, context, path):
         Module.__init__(self, context, path)
         self.context.setting(bool, "fix_speeds", False)
@@ -30,7 +30,7 @@ class LihuiyuEmulator(Module):
         self._attached_device = None
 
     def __repr__(self):
-        return f"LihuiyuEmulator({self.name})"
+        return f"LihuiyuInterpreter({self.name})"
 
     def module_open(self, *args, **kwargs):
         context = self.context
