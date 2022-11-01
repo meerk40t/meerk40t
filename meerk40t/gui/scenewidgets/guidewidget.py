@@ -19,7 +19,6 @@ class GuideWidget(Widget):
 
     def __init__(self, scene):
         Widget.__init__(self, scene, all=False)
-        self.scene.context.setting(bool, "show_negative_guide", True)
         self.edge_gap = 5
         self.line_length = 20
         self.calc_area(True, 0, 0)
@@ -535,23 +534,12 @@ class GuideWidget(Widget):
         #  ... and now for secondary
         if self.scene.grid_secondary_cx is not None:
             x = self.scene.grid_secondary_cx
-            relative_x = self.scene.grid_secondary_cx / p.device.unit_width
-        else:
-            relative_x = p.device.show_origin_x
+
         if self.scene.grid_secondary_cy is not None:
             y = self.scene.grid_secondary_cy
-            relative_y = self.scene.grid_secondary_cy / p.device.unit_height
-        else:
-            relative_y = p.device.show_origin_y
 
         sx_secondary, sy_secondary = self.scene.convert_scene_to_window([x, y])
 
-        # Do we need to show the guide regardless of the 'show negative guide' setting?
-        show_x_primary = p.device.show_origin_x not in (0.0, 1.0)
-        show_y_primary = p.device.show_origin_y not in (0.0, 1.0)
-
-        show_x_secondary = relative_x not in (0.0, 1.0)
-        show_y_secondary = relative_y not in (0.0, 1.0)
         if points_x_primary == 0:
             return
         offset_x_primary = float(sx_primary) % points_x_primary
@@ -559,9 +547,6 @@ class GuideWidget(Widget):
         offset_x_secondary = float(sx_secondary) % points_x_secondary
         offset_y_secondary = float(sy_secondary) % points_y_secondary
 
-        # print ("The intended scale is in {units} with a tick every {delta} {units}]".format(delta=self.scene.tick_distance, units=self.units))
-        # print("Ticks start for x at %.1f, for y at %.1f with a step-size of %.1f, %.1f" % (offset_x_primary, offset_y_primary, points_x_primary, points_y_primary))
-        # print("Start-location is at %.1f, %.1f" % (sx_primary, sy_primary))
         length = self.line_length
         edge_gap = self.edge_gap
 
@@ -578,33 +563,32 @@ class GuideWidget(Widget):
         while x < w:
             if x >= 45:
                 mark_point = (x - sx_primary) / self.scaled_conversion_x
-                if round(float(mark_point) * 1000) == 0:
-                    mark_point = 0.0  # prevents -0
                 if p.device.show_flip_x:
                     mark_point *= -1
-                if mark_point >= 0 or p.show_negative_guide or show_x_primary:
-                    starts.append((x, edge_gap))
-                    ends.append((x, length + edge_gap))
+                if round(float(mark_point) * 1000) == 0:
+                    mark_point = 0.0  # prevents -0
+                starts.append((x, edge_gap))
+                ends.append((x, length + edge_gap))
 
+                starts.append((x, h - edge_gap))
+                ends.append((x, h - length - edge_gap))
+                # Show half distance as well if there's enough room
+                if t_height < 0.5 * points_x_primary:
+                    starts.append((x - 0.5 * points_x_primary, edge_gap))
+                    ends.append(
+                        (x - 0.5 * points_x_primary, 0.25 * length + edge_gap)
+                    )
+
+                if not self.scene.draw_grid_secondary:
                     starts.append((x, h - edge_gap))
                     ends.append((x, h - length - edge_gap))
-                    # Show half distance as well if there's enough room
-                    if t_height < 0.5 * points_x_primary:
-                        starts.append((x - 0.5 * points_x_primary, edge_gap))
-                        ends.append(
-                            (x - 0.5 * points_x_primary, 0.25 * length + edge_gap)
-                        )
-
-                    if not self.scene.draw_grid_secondary:
-                        starts.append((x, h - edge_gap))
-                        ends.append((x, h - length - edge_gap))
-                        starts.append((x - 0.5 * points_x_primary, h - edge_gap))
-                        ends.append(
-                            (x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)
-                        )
-                    if (x - last_text_pos) >= t_height * 1.25:
-                        gc.DrawText(f"{mark_point:g}", x, edge_gap, -math.tau / 4)
-                        last_text_pos = x
+                    starts.append((x - 0.5 * points_x_primary, h - edge_gap))
+                    ends.append(
+                        (x - 0.5 * points_x_primary, h - 0.25 * length - edge_gap)
+                    )
+                if (x - last_text_pos) >= t_height * 1.25:
+                    gc.DrawText(f"{mark_point:g}", x, edge_gap, -math.tau / 4)
+                    last_text_pos = x
             x += points_x_primary
 
         y = offset_y_primary
@@ -612,32 +596,31 @@ class GuideWidget(Widget):
         while y < h:
             if y >= 20:
                 mark_point = (y - sy_primary) / self.scaled_conversion_y
-                if round(float(mark_point) * 1000) == 0:
-                    mark_point = 0.0  # prevents -0
                 if p.device.show_flip_y:
                     mark_point *= -1
-                if mark_point >= 0 or p.show_negative_guide or show_y_primary:
-                    starts.append((edge_gap, y))
-                    ends.append((length + edge_gap, y))
-                    # if there is enough room for a mid-distance stroke...
-                    if t_height < 0.5 * points_y_primary:
-                        starts.append((edge_gap, y - 0.5 * points_y_primary))
-                        ends.append(
-                            (0.25 * length + edge_gap, y - 0.5 * points_y_primary)
-                        )
+                if round(float(mark_point) * 1000) == 0:
+                    mark_point = 0.0  # prevents -0
+                starts.append((edge_gap, y))
+                ends.append((length + edge_gap, y))
+                # if there is enough room for a mid-distance stroke...
+                if t_height < 0.5 * points_y_primary:
+                    starts.append((edge_gap, y - 0.5 * points_y_primary))
+                    ends.append(
+                        (0.25 * length + edge_gap, y - 0.5 * points_y_primary)
+                    )
 
-                    if not self.scene.draw_grid_secondary:
-                        starts.append((w - edge_gap, y))
-                        ends.append((w - length - edge_gap, y))
-                        starts.append((w - edge_gap, y - 0.5 * points_y_primary))
-                        ends.append(
-                            (w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary)
-                        )
+                if not self.scene.draw_grid_secondary:
+                    starts.append((w - edge_gap, y))
+                    ends.append((w - length - edge_gap, y))
+                    starts.append((w - edge_gap, y - 0.5 * points_y_primary))
+                    ends.append(
+                        (w - 0.25 * length - edge_gap, y - 0.5 * points_y_primary)
+                    )
 
-                    if (y - last_text_pos) >= t_height * 1.25:
-                        # Adding zero makes -0 into positive 0
-                        gc.DrawText(f"{mark_point + 0:g}", edge_gap, y + 0)
-                        last_text_pos = y
+                if (y - last_text_pos) >= t_height * 1.25:
+                    # Adding zero makes -0 into positive 0
+                    gc.DrawText(f"{mark_point + 0:g}", edge_gap, y + 0)
+                    last_text_pos = y
             y += points_y_primary
         if len(starts) > 0:
             gc.StrokeLineSegments(starts, ends)
@@ -660,7 +643,7 @@ class GuideWidget(Widget):
                         mark_point = 0.0  # prevents -0
                     if p.device.show_flip_x:
                         mark_point *= -1
-                    if mark_point >= 0 or p.show_negative_guide or show_x_secondary:
+                    if mark_point >= 0:
                         starts.append((x, edge_gap))
                         ends.append((x, length + edge_gap))
 
@@ -693,7 +676,7 @@ class GuideWidget(Widget):
                         mark_point = 0.0  # prevents -0
                     if p.device.show_flip_y:
                         mark_point *= -1
-                    if mark_point >= 0 or p.show_negative_guide or show_y_secondary:
+                    if mark_point >= 0:
                         starts.append((w - edge_gap, y))
                         ends.append((w - length - edge_gap, y))
                         # if there is enough room for a mid-distance stroke...
