@@ -491,8 +491,31 @@ class GuideWidget(Widget):
         else:
             return RESPONSE_CHAIN
 
-    def _draw_primary_guides(self, gc):
-        w, h = gc.Size
+
+    def _get_center_primary(self):
+        """Calculate center position for primary grid"""
+        p = self.scene.context
+        x = p.device.unit_width * p.device.show_origin_x
+        y = p.device.unit_height * p.device.show_origin_y
+        return self.scene.convert_scene_to_window([x, y])
+
+
+    def _get_center_secondary(self):
+        """
+        # Calculate center position for secondary grid
+        """
+        p = self.scene.context
+        x = p.device.unit_width * p.device.show_origin_x
+        y = p.device.unit_height * p.device.show_origin_y
+        if self.scene.grid_secondary_cx is not None:
+            x = self.scene.grid_secondary_cx
+
+        if self.scene.grid_secondary_cy is not None:
+            y = self.scene.grid_secondary_cy
+
+        return self.scene.convert_scene_to_window([x, y])
+
+    def _set_scaled_conversion(self):
         p = self.scene.context
         self.scaled_conversion_x = (
             p.device.length(f"1{p.units_name}", as_float=True)
@@ -502,16 +525,18 @@ class GuideWidget(Widget):
             p.device.length(f"1{p.units_name}", as_float=True)
             * self.scene.widget_root.scene_widget.matrix.value_scale_y()
         )
+
+    def _draw_primary_guides(self, gc):
+        w, h = gc.Size
+        p = self.scene.context
+        self._set_scaled_conversion()
         if self.scaled_conversion_x == 0:
             return
         points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
         points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
 
         self.units = p.units_name
-        # Calculate center position for primary grid
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
-        sx_primary, sy_primary = self.scene.convert_scene_to_window([x, y])
+        sx_primary, sy_primary = self._get_center_primary()
         if points_x_primary == 0:
             return
         offset_x_primary = float(sx_primary) % points_x_primary
@@ -594,14 +619,7 @@ class GuideWidget(Widget):
     def _draw_secondary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
-        self.scaled_conversion_x = (
-            p.device.length(f"1{p.units_name}", as_float=True)
-            * self.scene.widget_root.scene_widget.matrix.value_scale_x()
-        )
-        self.scaled_conversion_y = (
-            p.device.length(f"1{p.units_name}", as_float=True)
-            * self.scene.widget_root.scene_widget.matrix.value_scale_y()
-        )
+        self._set_scaled_conversion()
         if self.scaled_conversion_x == 0:
             return
         # Establish the delta for about 15 ticks
@@ -623,16 +641,7 @@ class GuideWidget(Widget):
         points_y_secondary = factor_y_secondary * points_y_primary
         self.units = p.units_name
 
-        # Calculate center position for primary grid
-        x = p.device.unit_width * p.device.show_origin_x
-        y = p.device.unit_height * p.device.show_origin_y
-        if self.scene.grid_secondary_cx is not None:
-            x = self.scene.grid_secondary_cx
-
-        if self.scene.grid_secondary_cy is not None:
-            y = self.scene.grid_secondary_cy
-
-        sx_secondary, sy_secondary = self.scene.convert_scene_to_window([x, y])
+        sx_secondary, sy_secondary = self._get_center_secondary()
 
         offset_x_secondary = float(sx_secondary) % points_x_secondary
         offset_y_secondary = float(sy_secondary) % points_y_secondary
