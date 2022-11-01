@@ -319,6 +319,7 @@ class GRBLDevice(Service, ViewPort):
                 self.driver.resume()
             else:
                 self.driver.pause()
+            self.signal("pause")
 
         @self.console_command(
             "resume",
@@ -327,6 +328,7 @@ class GRBLDevice(Service, ViewPort):
         )
         def resume(command, channel, _, data=None, remainder=None, **kwgs):
             self.driver.resume()
+            self.signal("pause")
 
         @self.console_command(
             "viewport_update",

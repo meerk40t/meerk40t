@@ -811,6 +811,7 @@ class BalorDevice(Service, ViewPort):
             else:
                 channel("Pausing current job")
             self.driver.pause()
+            self.signal("pause")
 
         @self.console_command(
             "resume",
@@ -819,6 +820,7 @@ class BalorDevice(Service, ViewPort):
         def resume(command, channel, _, data=None, remainder=None, **kwgs):
             channel("Resume the current job")
             self.driver.resume()
+            self.signal("pause")
 
         @self.console_option(
             "idonotlovemyhouse",

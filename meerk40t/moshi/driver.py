@@ -60,7 +60,7 @@ class MoshiDriver(Parameters):
 
         self.program = MoshiBuilder()
 
-        self.is_paused = False
+        self.paused = False
         self.hold = False
         self.paused = False
 
