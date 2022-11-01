@@ -374,8 +374,8 @@ class ViewPort:
         """
         @return:
         """
-        dx = self.unit_width * self.show_origin_x
-        dy = self.unit_height * self.show_origin_y
+        dx = self.unit_width * (self.show_origin_x - self.origin_x)
+        dy = self.unit_height * (self.show_origin_y - self.origin_y)
         ops = []
         if self.show_flip_x:
             ops.append("scale(-1.0, 1.0)")
@@ -383,6 +383,12 @@ class ViewPort:
             ops.append("scale(1.0, -1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
+        if self.flip_x:
+            ops.append("scale(-1.0, 1.0)")
+        if self.flip_y:
+            ops.append("scale(1.0, -1.0)")
+        if self.swap_xy:
+            ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
 
     def native_mm(self):
