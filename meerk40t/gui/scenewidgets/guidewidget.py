@@ -491,14 +491,12 @@ class GuideWidget(Widget):
         else:
             return RESPONSE_CHAIN
 
-
     def _get_center_primary(self):
         """Calculate center position for primary grid"""
         p = self.scene.context
         x = p.device.unit_width * p.device.show_origin_x
         y = p.device.unit_height * p.device.show_origin_y
         return self.scene.convert_scene_to_window([x, y])
-
 
     def _get_center_secondary(self):
         """
@@ -535,7 +533,6 @@ class GuideWidget(Widget):
         points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
         points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
 
-        self.units = p.units_name
         sx_primary, sy_primary = self._get_center_primary()
         if points_x_primary == 0:
             return
@@ -544,11 +541,7 @@ class GuideWidget(Widget):
 
         length = self.line_length
         edge_gap = self.edge_gap
-
         gc.SetPen(self.pen_guide1)
-        font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        gc.SetFont(font, self.color_guide1)
-        gc.DrawText(self.units, edge_gap, edge_gap)
         (t_width, t_height) = gc.GetTextExtent("0")
 
         starts = []
@@ -628,14 +621,16 @@ class GuideWidget(Widget):
         points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
         if points_x_primary == 0:
             return
-        if self.scene.grid_secondary_scale_x is None:
-            factor_x_secondary = 1.0
-        else:
-            factor_x_secondary = self.scene.grid_secondary_scale_x
-        if self.scene.grid_secondary_scale_y is None:
-            factor_y_secondary = 1.0
-        else:
-            factor_y_secondary = self.scene.grid_secondary_scale_y
+        factor_x_secondary = (
+            1.0
+            if self.scene.grid_secondary_scale_x is None
+            else self.scene.grid_secondary_scale_x
+        )
+        factor_y_secondary = (
+            1.0
+            if self.scene.grid_secondary_scale_y is None
+            else self.scene.grid_secondary_scale_y
+        )
 
         points_x_secondary = factor_x_secondary * points_x_primary
         points_y_secondary = factor_y_secondary * points_y_primary
@@ -648,13 +643,10 @@ class GuideWidget(Widget):
 
         length = self.line_length
         edge_gap = self.edge_gap
-
-        font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        gc.DrawText(self.units, edge_gap, edge_gap)
-        (t_width, t_height) = gc.GetTextExtent("0")
-
         gc.SetPen(self.pen_guide2)
+        font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         gc.SetFont(font, self.color_guide2)
+        (t_width, t_height) = gc.GetTextExtent("0")
 
         starts = []
         ends = []
@@ -744,15 +736,24 @@ class GuideWidget(Widget):
         if starts_hi and ends_hi:
             gc.StrokeLineSegments(starts_hi, ends_hi)
 
+    def _draw_units(self, gc):
+        gc.DrawText(self.units, self.edge_gap, self.edge_gap)
+
     def process_draw(self, gc):
         """
         Draw the guidelines
         """
         w, h = gc.Size
         self.calc_area(False, w, h)
-
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
+        p = self.scene.context
+        self.units = p.units_name
+        font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        gc.SetFont(font, self.color_guide1)  # Set font for all text.
+
+        self._draw_units(gc)
+
         self._draw_primary_guides(gc)
 
         if self.scene.draw_grid_secondary:
