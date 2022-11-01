@@ -107,7 +107,6 @@ class LihuiyuDevice(Service, ViewPort):
             origin_y=1.0 if self.home_bottom else 0.0,
             show_flip_x=self.home_right,
             show_flip_y=self.home_bottom,
-            show_swap_xy=False,
         )
         self.setting(bool, "opt_rapid_between", True)
         self.setting(int, "opt_jog_mode", 0)

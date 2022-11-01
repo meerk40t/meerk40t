@@ -629,7 +629,6 @@ class ConfigurationInterfacePanel(ScrolledPanel):
 
     def on_check_swapxy(self, event=None):
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
-        self.context.show_swap_xy = False
         self.context("viewport_update\n")
         self.context.signal("bedsize", False)
 
