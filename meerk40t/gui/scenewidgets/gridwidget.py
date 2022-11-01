@@ -113,23 +113,10 @@ class GridWidget(Widget):
         """
         return RESPONSE_CHAIN
 
-    def calculate_grid(self):
-        """
-        Based on the current matrix calculate the grid within the bed-space.
-        """
-        mat = self.scene.widget_root.scene_widget.matrix
-        if mat.is_identity():
-            return
-        start_time = time()
-        p = self.scene.context
+    def _calc_primary_grid(self):
         starts = []
         ends = []
-        starts2 = []
-        ends2 = []
         # Primary grid
-        self.zero_x = p.device.unit_width * p.device.show_origin_x
-        self.zero_y = p.device.unit_height * p.device.show_origin_y
-
         # We could be way too high
         start_x = self.zero_x
         while start_x - self.tlenx1 > self.min_x:
@@ -147,18 +134,19 @@ class GridWidget(Widget):
         while x <= self.max_x:
             starts.append((x, self.min_y))
             ends.append((x, self.max_y))
-            # starts.append((x, 0))
-            # ends.append((x, units_height))
             x += self.tlenx1
 
         y = start_y
         while y <= self.max_y:
             starts.append((self.min_x, y))
             ends.append((self.max_x, y))
-            # starts.append((0, y))
-            # ends.append((units_width, y))
             y += self.tleny1
+        self.grid = starts, ends
 
+    def _calc_secondary_grid(self):
+        starts2 = []
+        ends2 = []
+        # Primary grid
         # Secondary grid
         # We could be way too high
         start_x = self.zero_x
@@ -184,11 +172,20 @@ class GridWidget(Widget):
             starts2.append((self.min_x, y))
             ends2.append((self.max_x, y))
             y += self.tleny2
-
-        self.grid = starts, ends
         self.grid2 = starts2, ends2
-        end_time = time()
-        # print ("Grid-Calc %s done, time=%.6f, grid1=%d, grid2=%d" % (self.name, end_time - start_time, len(starts), len(starts2)))
+
+    def calculate_grid(self):
+        """
+        Based on the current matrix calculate the grid within the bed-space.
+        """
+        d = self.scene.context.device
+        mat = self.scene.widget_root.scene_widget.matrix
+        if mat.is_identity():
+            return
+        self.zero_x = d.unit_width * d.show_origin_x
+        self.zero_y = d.unit_height * d.show_origin_y
+        self._calc_primary_grid()
+        self._calc_secondary_grid()
 
     def calculate_tickdistance(self, w, h):
         # Establish the delta for about 15 ticks
