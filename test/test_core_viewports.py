@@ -26,10 +26,19 @@ class TestViewport(unittest.TestCase):
                 flip_x=bool(random.randint(0, 1)),
                 flip_y=bool(random.randint(0, 1)),
                 swap_xy=bool(random.randint(0, 1)),
+                show_origin_x=random.random(),
+                show_origin_y=random.random(),
+                show_flip_x=bool(random.randint(0, 1)),
+                show_flip_y=bool(random.randint(0, 1)),
             )
 
             x, y = view.scene_to_device_position(0, 0)
             x, y = view.device_to_scene_position(x, y)
+            self.assertAlmostEqual(x, 0, delta=10)
+            self.assertAlmostEqual(y, 0, delta=10)
+
+            x, y = view.show_to_device_position(0, 0)
+            x, y = view.device_to_show_position(x, y)
             self.assertAlmostEqual(x, 0, delta=10)
             self.assertAlmostEqual(y, 0, delta=10)
 
@@ -188,29 +197,33 @@ class TestViewport(unittest.TestCase):
         for flip_x in (False, True):
             for flip_y in (False, True):
                 for swap_xy in (False, True):
-                    view = ViewPort(
-                        lens_size_x,
-                        lens_size_y,
-                        native_scale_x=units_per_galvo_x,
-                        native_scale_y=units_per_galvo_y,
-                        origin_x=1.0 if flip_x else 0.0,
-                        origin_y=1.0 if flip_y else 0.0,
-                        show_origin_x=0.5,
-                        show_origin_y=0.5,
-                        flip_x=flip_x,
-                        flip_y=flip_y,
-                        swap_xy=swap_xy,
-                    )
-                    sx, sy = view.device_to_scene_position(0x7FFF, 0x7FFF)
-                    if swap_xy:
-                        self.assertAlmostEqual(sx, unit_size_y / 2, delta=10)
-                        self.assertAlmostEqual(sy, unit_size_x / 2, delta=10)
-                    else:
-                        self.assertAlmostEqual(sx, unit_size_x / 2, delta=10)
-                        self.assertAlmostEqual(sy, unit_size_y / 2, delta=10)
-                    vx, vy = view.physical_to_device_position("50%", "50%")
-                    self.assertAlmostEqual(vx, 0x7FFF, delta=10)
-                    self.assertAlmostEqual(vy, 0x7FFF, delta=10)
+                    for show_flip_x in (False, True):
+                        for show_flip_y in (False, True):
+                            view = ViewPort(
+                                lens_size_x,
+                                lens_size_y,
+                                native_scale_x=units_per_galvo_x,
+                                native_scale_y=units_per_galvo_y,
+                                origin_x=1.0 if flip_x else 0.0,
+                                origin_y=1.0 if flip_y else 0.0,
+                                flip_x=flip_x,
+                                flip_y=flip_y,
+                                swap_xy=swap_xy,
+                                show_origin_x=0.5,
+                                show_origin_y=0.5,
+                                show_flip_x=show_flip_x,
+                                show_flip_y=show_flip_y,
+                            )
+                            sx, sy = view.device_to_scene_position(0x7FFF, 0x7FFF)
+                            if swap_xy:
+                                self.assertAlmostEqual(sx, unit_size_y / 2, delta=10)
+                                self.assertAlmostEqual(sy, unit_size_x / 2, delta=10)
+                            else:
+                                self.assertAlmostEqual(sx, unit_size_x / 2, delta=10)
+                                self.assertAlmostEqual(sy, unit_size_y / 2, delta=10)
+                            vx, vy = view.physical_to_device_position("50%", "50%")
+                            self.assertAlmostEqual(vx, 0x7FFF, delta=10)
+                            self.assertAlmostEqual(vy, 0x7FFF, delta=10)
 
     def test_viewport_balor_device_to_show(self):
         """
@@ -232,25 +245,29 @@ class TestViewport(unittest.TestCase):
         for flip_x in (False, True):
             for flip_y in (False, True):
                 for swap_xy in (False, True):
-                    view = ViewPort(
-                        lens_size_x,
-                        lens_size_y,
-                        native_scale_x=units_per_galvo_x,
-                        native_scale_y=units_per_galvo_y,
-                        origin_x=1.0 if flip_x else 0.0,
-                        origin_y=1.0 if flip_y else 0.0,
-                        show_origin_x=0.5,
-                        show_origin_y=0.5,
-                        flip_x=flip_x,
-                        flip_y=flip_y,
-                        swap_xy=swap_xy,
-                    )
-                    x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
-                    self.assertAlmostEqual(x, 0, delta=10)
-                    self.assertAlmostEqual(y, 0, delta=10)
-                    x, y = view.show_to_device_position(0, 0)
-                    self.assertAlmostEqual(x, 0x7FFF, delta=10)
-                    self.assertAlmostEqual(y, 0x7FFF, delta=10)
+                    for show_flip_x in (False, True):
+                        for show_flip_y in (False, True):
+                            view = ViewPort(
+                                lens_size_x,
+                                lens_size_y,
+                                native_scale_x=units_per_galvo_x,
+                                native_scale_y=units_per_galvo_y,
+                                origin_x=1.0 if flip_x else 0.0,
+                                origin_y=1.0 if flip_y else 0.0,
+                                flip_x=flip_x,
+                                flip_y=flip_y,
+                                swap_xy=swap_xy,
+                                show_origin_x=0.5,
+                                show_origin_y=0.5,
+                                show_flip_x=show_flip_x,
+                                show_flip_y=show_flip_y,
+                            )
+                            x, y = view.device_to_show_position(0x7FFF, 0x7FFF)
+                            self.assertAlmostEqual(x, 0, delta=10)
+                            self.assertAlmostEqual(y, 0, delta=10)
+                            x, y = view.show_to_device_position(0, 0)
+                            self.assertAlmostEqual(x, 0x7FFF, delta=10)
+                            self.assertAlmostEqual(y, 0x7FFF, delta=10)
 
     def test_viewport_balor_physical_to_show(self):
         """
