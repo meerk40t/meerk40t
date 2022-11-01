@@ -639,30 +639,29 @@ class GuideWidget(Widget):
                     mark_point = (x - sx_secondary) / (
                         factor_x_secondary * self.scaled_conversion_x
                     )
-                    if round(float(mark_point) * 1000) == 0:
-                        mark_point = 0.0  # prevents -0
                     if p.device.show_flip_x:
                         mark_point *= -1
-                    if mark_point >= 0:
-                        starts.append((x, edge_gap))
-                        ends.append((x, length + edge_gap))
+                    if round(float(mark_point) * 1000) == 0:
+                        mark_point = 0.0  # prevents -0
+                    starts.append((x, edge_gap))
+                    ends.append((x, length + edge_gap))
 
-                        starts.append((x, h - edge_gap))
-                        ends.append((x, h - length - edge_gap))
-                        # Show half distance as well if there's enough room
-                        if t_height < 0.5 * points_x_secondary:
-                            starts.append((x - 0.5 * points_x_secondary, h - edge_gap))
-                            ends.append(
-                                (
-                                    x - 0.5 * points_x_secondary,
-                                    h - 0.25 * length - edge_gap,
-                                )
+                    starts.append((x, h - edge_gap))
+                    ends.append((x, h - length - edge_gap))
+                    # Show half distance as well if there's enough room
+                    if t_height < 0.5 * points_x_secondary:
+                        starts.append((x - 0.5 * points_x_secondary, h - edge_gap))
+                        ends.append(
+                            (
+                                x - 0.5 * points_x_secondary,
+                                h - 0.25 * length - edge_gap,
                             )
-                        info = f"{mark_point:g}"
-                        (t_w, t_h) = gc.GetTextExtent(info)
-                        if (x - last_text_pos) >= t_h * 1.25:
-                            gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
-                            last_text_pos = x
+                        )
+                    info = f"{mark_point:g}"
+                    (t_w, t_h) = gc.GetTextExtent(info)
+                    if (x - last_text_pos) >= t_h * 1.25:
+                        gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
+                        last_text_pos = x
                 x += points_x_secondary
 
             y = offset_y_secondary
@@ -672,28 +671,27 @@ class GuideWidget(Widget):
                     mark_point = (y - sy_secondary) / (
                         factor_y_secondary * self.scaled_conversion_y
                     )
-                    if round(float(mark_point) * 1000) == 0:
-                        mark_point = 0.0  # prevents -0
                     if p.device.show_flip_y:
                         mark_point *= -1
-                    if mark_point >= 0:
-                        starts.append((w - edge_gap, y))
-                        ends.append((w - length - edge_gap, y))
-                        # if there is enough room for a mid-distance stroke...
-                        if t_height < 0.5 * points_y_secondary:
-                            starts.append((w - edge_gap, y - 0.5 * points_y_secondary))
-                            ends.append(
-                                (
-                                    w - 0.25 * length - edge_gap,
-                                    y - 0.5 * points_y_secondary,
-                                )
+                    if round(float(mark_point) * 1000) == 0:
+                        mark_point = 0.0  # prevents -0
+                    starts.append((w - edge_gap, y))
+                    ends.append((w - length - edge_gap, y))
+                    # if there is enough room for a mid-distance stroke...
+                    if t_height < 0.5 * points_y_secondary:
+                        starts.append((w - edge_gap, y - 0.5 * points_y_secondary))
+                        ends.append(
+                            (
+                                w - 0.25 * length - edge_gap,
+                                y - 0.5 * points_y_secondary,
                             )
+                        )
 
-                        info = f"{mark_point + 0:g}"  # -0.0 + 0 == 0
-                        (t_w, t_h) = gc.GetTextExtent(info)
-                        if (y - last_text_pos) >= t_h * 1.25:
-                            gc.DrawText(info, w - edge_gap - t_w, y + 0)
-                            last_text_pos = y
+                    info = f"{mark_point + 0:g}"  # -0.0 + 0 == 0
+                    (t_w, t_h) = gc.GetTextExtent(info)
+                    if (y - last_text_pos) >= t_h * 1.25:
+                        gc.DrawText(info, w - edge_gap - t_w, y + 0)
+                        last_text_pos = y
                 y += points_y_secondary
 
             gc.StrokeLineSegments(starts, ends)
