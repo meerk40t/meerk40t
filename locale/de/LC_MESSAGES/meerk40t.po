@@ -6414,12 +6414,24 @@ msgid "Send to Laser"
 msgstr "An Laser senden"
 
 #: meerk40t/gui/simulation.py:173 meerk40t/gui/simulation.py:176
+msgid "Distance Estimate: while Lasering"
+msgstr "Fahrweg während Laser an ist"
+
+msgid "Distance Estimate: Traveling"
+msgstr "Fahrweg während Laser aus ist"
+
+msgid "Distance Estimate: Total"
+msgstr "Gesamter Fahrweg"
+
 msgid "Time Estimate: Lasering Time"
 msgstr "Zeitschätzung: Laser-Dauer"
 
 #: meerk40t/gui/simulation.py:174 meerk40t/gui/simulation.py:177
 msgid "Time Estimate: Traveling Time"
 msgstr "Zeitschätzung: Schlitten-Bewegung-Dauer"
+
+msgid "Time Estimate: Extra Time (ie to swing around)"
+msgstr "Zeitschätzung: Extra-Dauer (etwa für Bewegungsumkehr)"
 
 #: meerk40t/gui/simulation.py:175 meerk40t/gui/simulation.py:178
 msgid "Time Estimate: Total Time"
@@ -6526,6 +6538,42 @@ msgstr "Simulation"
 #: meerk40t/gui/simulation.py:832
 msgid "Simulate the current laser job"
 msgstr "Simuliere den aktuellen Laser-Job"
+
+msgid "Mode"
+msgstr "Modus"
+
+msgid "Steps"
+msgstr "Schritte"
+
+msgid "Time (sec.)"
+msgstr "Zeit (sec)"
+
+msgid "Time (min)"
+msgstr "Zeit (min)"
+
+msgid "Cut operations Playback-Mode: play will jump from one completed operations to next"
+msgstr "Wiedergabe-Modus: springt vom kompletten Einzelbrennvorgang zum Nächsten"
+
+msgid "Timed Playback-Mode: play will jump from one second to next"
+msgstr "Wiedergabe-Modus: Zeitlich, zeigt Brennvorgang von Sekunde zu Sekunde"
+
+msgid "Timed Playback-Mode: play will jump from one minute to next"
+msgstr "Wiedergabe-Modus: Zeitlich, zeigt Brennvorgang von Minute zu Minute"
+
+msgid "Modify operation parameter, press Enter to apply"
+msgstr "Modifiziere den Parameter der Operation, drücke Return um Änderungen zu übernehmen"
+
+msgid "Remove operation"
+msgstr "Entferne Brenn-Operation"
+
+msgid "Removes the current operation from the active cutplan"
+msgstr "Entfernt den aktuellen Eintrag aus der Liste aller Brennvorgänge"
+
+msgid "Insert '{operation}' before"
+msgstr "Einfügen '{operation}'"
+
+msgid "Appends '{operation}' at end"
+msgstr "Anhängen: '{operation}'"
 
 #: meerk40t/gui/snapoptions.py:17
 msgid "Snap-Options"
