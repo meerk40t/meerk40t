@@ -1,4 +1,4 @@
-from math import atan, cos, sin, sqrt, tau
+from math import atan2, cos, sin, sqrt, tau
 from time import time
 
 import wx
@@ -231,37 +231,6 @@ class GridWidget(Widget):
 
         self.scene.tick_distance = delta1
 
-    @staticmethod
-    def calc_atan(dx, dy):
-        if dx == 0:
-            if dy < 0:
-                c_angle = -1 / 4 * tau
-                quadrant = 4
-            elif dy == 0:
-                c_angle = 0
-                quadrant = 0
-            else:
-                c_angle = 1 / 4 * tau
-                quadrant = 1
-        elif dx > 0 and dy >= 0:
-            # Quadrant 1: angle between 0 und 90 (0 - tau / 4)
-            c_angle = atan(dy / dx)
-            quadrant = 1
-        elif dx < 0 and dy >= 0:
-            # Quadrant 2: angle between 90 und 180 (1/4 tau - 2/4 tau)
-            c_angle = atan(dy / dx) + tau / 2
-            quadrant = 2
-        elif dx < 0 and dy < 0:
-            # Quadrant 3: angle between 180 und 270 (2/4 tau - 3/4 tau)
-            c_angle = atan(dy / dx) + tau / 2
-            quadrant = 3
-        elif dx > 0 and dy < 0:
-            # Quadrant 4: angle between 270 und 360 (2/4 tau - 3/4 tau)
-            c_angle = atan(dy / dx)
-            quadrant = 4
-        # print ("Quadrant %d, angle=%.2f (%.2f)" % ( quadrant, c_angle, c_angle / tau * 360.0))
-        return c_angle
-
     def calculate_gridsize(self, w, h):
         scaled_conversion = (
             self.scene.context.device.length(
@@ -411,8 +380,8 @@ class GridWidget(Widget):
             dy1 = pt1[1] - self.cy
             dx2 = pt2[0] - self.cx
             dy2 = pt2[1] - self.cy
-            max_a = self.calc_atan(dx1, dy1)
-            min_a = self.calc_atan(dx2, dy2)
+            max_a = atan2(dy1, dx1)
+            min_a = atan2(dy2, dx2)
 
         while max_a < min_a:
             max_a += tau
