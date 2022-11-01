@@ -32,6 +32,7 @@ class GuideWidget(Widget):
         self.color_guide1 = None
         self.color_guide2 = None
         self.set_colors()
+        self.font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
 
     def set_colors(self):
         self.color_guide1 = self.scene.colors.color_guide
@@ -529,21 +530,18 @@ class GuideWidget(Widget):
     def _draw_primary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
-        if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
-            return
-        points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
-        points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
         sx_primary, sy_primary = self._get_center_primary()
-        offset_x_primary = float(sx_primary) % points_x_primary
-        offset_y_primary = float(sy_primary) % points_y_primary
-
         length = self.line_length
         edge_gap = self.edge_gap
         gc.SetPen(self.pen_guide1)
+        gc.SetFont(self.font, self.color_guide1)
+
         (t_width, t_height) = gc.GetTextExtent("0")
 
         starts = []
         ends = []
+        points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
+        offset_x_primary = float(sx_primary) % points_x_primary
         x = offset_x_primary
         last_text_pos = x - 30  # Arbitrary
         while x < w:
@@ -575,6 +573,8 @@ class GuideWidget(Widget):
                     last_text_pos = x
             x += points_x_primary
 
+        points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
+        offset_y_primary = float(sy_primary) % points_y_primary
         y = offset_y_primary
         last_text_pos = y - 30  # arbitrary
         while y < h:
@@ -610,41 +610,35 @@ class GuideWidget(Widget):
     def _draw_secondary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
-        if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
-            return
-        points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
-        points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
-        factor_x_secondary = 1.0
+
+        fx = 1.0
         if self.scene.grid_secondary_scale_x is not None:
-            factor_x_secondary = self.scene.grid_secondary_scale_x
-        factor_y_secondary = 1.0
+            fx = self.scene.grid_secondary_scale_x
+        points_x = fx * self.scene.tick_distance * self.scaled_conversion_x
+
+        fy = 1.0
         if self.scene.grid_secondary_scale_y is not None:
-            factor_y_secondary = self.scene.grid_secondary_scale_y
-        points_x_secondary = factor_x_secondary * points_x_primary
-        points_y_secondary = factor_y_secondary * points_y_primary
+            fy = self.scene.grid_secondary_scale_y
+        points_y = fy * self.scene.tick_distance * self.scaled_conversion_y
         self.units = p.units_name
 
-        sx_secondary, sy_secondary = self._get_center_secondary()
-
-        offset_x_secondary = float(sx_secondary) % points_x_secondary
-        offset_y_secondary = float(sy_secondary) % points_y_secondary
+        sx, sy = self._get_center_secondary()
 
         length = self.line_length
         edge_gap = self.edge_gap
+
         gc.SetPen(self.pen_guide2)
-        font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        gc.SetFont(font, self.color_guide2)
+        gc.SetFont(self.font, self.color_guide2)
         (t_width, t_height) = gc.GetTextExtent("0")
 
         starts = []
         ends = []
-        x = offset_x_secondary
+        offset_x = float(sx) % points_x
+        x = offset_x
         last_text_pos = x - 30
         while x < w:
             if x >= 45:
-                mark_point = (x - sx_secondary) / (
-                    factor_x_secondary * self.scaled_conversion_x
-                )
+                mark_point = (x - sx) / (fx * self.scaled_conversion_x)
                 if p.device.show_flip_x:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
@@ -655,11 +649,11 @@ class GuideWidget(Widget):
                 starts.append((x, h - edge_gap))
                 ends.append((x, h - length - edge_gap))
                 # Show half distance as well if there's enough room
-                if t_height < 0.5 * points_x_secondary:
-                    starts.append((x - 0.5 * points_x_secondary, h - edge_gap))
+                if t_height < 0.5 * points_x:
+                    starts.append((x - 0.5 * points_x, h - edge_gap))
                     ends.append(
                         (
-                            x - 0.5 * points_x_secondary,
+                            x - 0.5 * points_x,
                             h - 0.25 * length - edge_gap,
                         )
                     )
@@ -668,15 +662,14 @@ class GuideWidget(Widget):
                 if (x - last_text_pos) >= t_h * 1.25:
                     gc.DrawText(info, x, h - edge_gap - t_w, -math.tau / 4)
                     last_text_pos = x
-            x += points_x_secondary
+            x += points_x
 
-        y = offset_y_secondary
+        offset_y = float(sy) % points_y
+        y = offset_y
         last_text_pos = y - 30
         while y < h:
             if y >= 20:
-                mark_point = (y - sy_secondary) / (
-                    factor_y_secondary * self.scaled_conversion_y
-                )
+                mark_point = (y - sy) / (fy * self.scaled_conversion_y)
                 if p.device.show_flip_y:
                     mark_point *= -1
                 if round(float(mark_point) * 1000) == 0:
@@ -684,12 +677,12 @@ class GuideWidget(Widget):
                 starts.append((w - edge_gap, y))
                 ends.append((w - length - edge_gap, y))
                 # if there is enough room for a mid-distance stroke...
-                if t_height < 0.5 * points_y_secondary:
-                    starts.append((w - edge_gap, y - 0.5 * points_y_secondary))
+                if t_height < 0.5 * points_y:
+                    starts.append((w - edge_gap, y - 0.5 * points_y))
                     ends.append(
                         (
                             w - 0.25 * length - edge_gap,
-                            y - 0.5 * points_y_secondary,
+                            y - 0.5 * points_y,
                         )
                     )
 
@@ -698,7 +691,7 @@ class GuideWidget(Widget):
                 if (y - last_text_pos) >= t_h * 1.25:
                     gc.DrawText(info, w - edge_gap - t_w, y + 0)
                     last_text_pos = y
-            y += points_y_secondary
+            y += points_y
 
         gc.StrokeLineSegments(starts, ends)
 
@@ -725,6 +718,9 @@ class GuideWidget(Widget):
             gc.StrokeLineSegments(starts_hi, ends_hi)
 
     def _draw_units(self, gc):
+        p = self.scene.context
+        self.units = p.units_name
+        gc.SetFont(self.font, self.color_guide1)
         gc.DrawText(self.units, self.edge_gap, self.edge_gap)
 
     def process_draw(self, gc):
@@ -736,10 +732,9 @@ class GuideWidget(Widget):
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         self._set_scaled_conversion()
-        p = self.scene.context
-        self.units = p.units_name
-        font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
-        gc.SetFont(font, self.color_guide1)  # Set font for all text.
+        if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
+            # Cannot be drawn.
+            return
 
         self._draw_units(gc)
 
