@@ -1,5 +1,4 @@
 from math import atan2, cos, sin, sqrt, tau
-from time import time
 
 import wx
 
@@ -103,15 +102,6 @@ class GridWidget(Widget):
         self.set_line_width(self.grid_line_pen, 1)
         self.set_line_width(self.grid_line_pen2, 1)
         self.set_line_width(self.grid_line_pen3, 1)
-
-    def hit(self):
-        return HITCHAIN_HIT
-
-    def event(self, window_pos=None, space_pos=None, event_type=None, **kwargs):
-        """
-        Capture and deal with events.
-        """
-        return RESPONSE_CHAIN
 
     def _calc_primary_grid(self):
         starts = []
