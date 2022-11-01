@@ -290,7 +290,7 @@ class GridWidget(Widget):
         # print (f"y={self.tleny1} ({Length(amount=self.tleny1, digits=3).length_mm})")
         self.tlenx2 = self.tlenx1 * self.scene.grid_secondary_scale_x
         self.tleny2 = self.tleny1 * self.scene.grid_secondary_scale_y
-        # lets establish which circles we really have to draw
+        # let's establish which circles we really have to draw
         self.min_radius = float("inf")
         self.max_radius = -float("inf")
         test_points = (
@@ -413,123 +413,110 @@ class GridWidget(Widget):
         and identifies all attraction points (center, corners, sides)
         Notabene this calculation generates SCREEN coordinates
         """
-        from time import time
-
-        start_time = time()
-        prim_ct = 0
-        second_ct = 0
-        circ_ct = 0
         self.scene.grid_points = []  # Clear all
 
         # Let's add grid points - set just the visible part of the grid
-        p = self.scene.context
+
         if self.scene.draw_grid_primary:
-            # That's easy just the rectangular stuff
-            # We could be way too high
-            start_x = self.zero_x
-            while start_x - self.tlenx1 > self.min_x:
-                start_x -= self.tlenx1
-            start_y = self.zero_y
-            while start_y - self.tleny1 > self.min_y:
-                start_y -= self.tleny1
-            # But we could be way too low, too
-            while start_x < self.min_x:
-                start_x += self.tlenx1
-            while start_y < self.min_y:
-                start_y += self.tleny1
-            x = start_x
-            while x <= self.max_x:
-                y = start_y
-                while y <= self.max_y:
+            self._calculate_grid_points_primary()
+        if self.scene.draw_grid_secondary:
+            self._calculate_grid_points_secondary()
+        if self.scene.draw_grid_circular:
+            self._calculate_grid_points_circular()
+
+    def _calculate_grid_points_primary(self):
+        # That's easy just the rectangular stuff
+        # We could be way too high
+        start_x = self.zero_x
+        while start_x - self.tlenx1 > self.min_x:
+            start_x -= self.tlenx1
+        start_y = self.zero_y
+        while start_y - self.tleny1 > self.min_y:
+            start_y -= self.tleny1
+        # But we could be way too low, too
+        while start_x < self.min_x:
+            start_x += self.tlenx1
+        while start_y < self.min_y:
+            start_y += self.tleny1
+        x = start_x
+        while x <= self.max_x:
+            y = start_y
+            while y <= self.max_y:
+                # mx, my = self.scene.convert_scene_to_window([x, y])
+                self.scene.grid_points.append([x, y])
+                y += self.tleny1
+            x += self.tlenx1
+
+    def _calculate_grid_points_secondary(self):
+        if (
+            self.scene.draw_grid_primary
+            and self.sx == 0
+            and self.sy == 0
+            and self.scene.grid_secondary_scale_x == 1
+            and self.scene.grid_secondary_scale_y == 1
+        ):
+            return  # is it identical to the primary?
+        # We could be way too high
+        start_x = self.zero_x
+        while start_x - self.tlenx2 > self.min_x:
+            start_x -= self.tlenx2
+        start_y = self.zero_y
+        while start_y - self.tleny2 > self.min_y:
+            start_y -= self.tleny2
+        # But we could be way too low, too
+        while start_x < self.min_x:
+            start_x += self.tlenx2
+        while start_y < self.min_y:
+            start_y += self.tleny2
+        x = start_x
+        while x <= self.max_x:
+            y = start_y
+            while y <= self.max_y:
+                # mx, my = self.scene.convert_scene_to_window([x, y])
+                self.scene.grid_points.append([x, y])
+                y += self.tleny2
+            x += self.tlenx2
+
+    def _calculate_grid_points_circular(self):
+        p = self.scene.context
+        # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
+        start_x = self.cx
+        start_y = self.cy
+        x = start_x
+        y = start_y
+        # mx, my = self.scene.convert_scene_to_window([x, y])
+        self.scene.grid_points.append([x, y])
+        max_r = abs(complex(p.device.unit_width, p.device.unit_height))  # hypot
+        tlen = (self.tlenx1 + self.tleny1) / 2
+        r_fourth = max_r // (4 * tlen) * tlen
+        segments = 48
+        r_angle = 0
+        i = 0
+        while r_angle < self.min_angle:
+            r_angle += tau / segments
+            i += 1
+        while r_angle < self.max_angle:
+            c_angle = r_angle
+            while c_angle > tau:
+                c_angle -= tau
+            if i % 2 == 0:
+                r = 0
+            else:
+                r = r_fourth
+            while r < self.min_radius:
+                r += tlen
+
+            while r <= self.max_radius:
+                r += tlen
+                x = start_x + r * cos(c_angle)
+                y = start_y + r * sin(c_angle)
+
+                if self.min_x <= x <= self.max_x and self.min_y <= y <= self.max_y:
                     # mx, my = self.scene.convert_scene_to_window([x, y])
                     self.scene.grid_points.append([x, y])
-                    y += self.tleny1
-                x += self.tlenx1
-        prim_ct = len(self.scene.grid_points)
-        s_time_2 = time()
-        if self.scene.draw_grid_secondary:
-            # is it identical to the primary?
-            if (
-                not self.scene.draw_grid_primary
-                or self.sx != 0
-                or self.sy != 0
-                or self.scene.grid_secondary_scale_x != 1
-                or self.scene.grid_secondary_scale_y != 1
-            ):
-                # We could be way too high
-                start_x = self.zero_x
-                while start_x - self.tlenx2 > self.min_x:
-                    start_x -= self.tlenx2
-                start_y = self.zero_y
-                while start_y - self.tleny2 > self.min_y:
-                    start_y -= self.tleny2
-                # But we could be way too low, too
-                while start_x < self.min_x:
-                    start_x += self.tlenx2
-                while start_y < self.min_y:
-                    start_y += self.tleny2
-                x = start_x
-                while x <= self.max_x:
-                    y = start_y
-                    while y <= self.max_y:
-                        # mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([x, y])
-                        y += self.tleny2
-                    x += self.tlenx2
-        second_ct = len(self.scene.grid_points) - prim_ct
 
-        s_time_3 = time()
-        if self.scene.draw_grid_circular:
-            # Okay, we are drawing on 48 segments line, even from center to outline, odd from 1/3rd to outline
-            start_x = self.cx
-            start_y = self.cy
-            x = start_x
-            y = start_y
-            # mx, my = self.scene.convert_scene_to_window([x, y])
-            self.scene.grid_points.append([x, y])
-            max_r = sqrt(
-                p.device.unit_width * p.device.unit_width
-                + p.device.unit_height * p.device.unit_height
-            )
-            tlen = (self.tlenx1 + self.tleny1) / 2
-            r_fourth = max_r // (4 * tlen) * tlen
-            segments = 48
-            r_angle = 0
-            i = 0
-            while r_angle < self.min_angle:
-                r_angle += tau / segments
-                i += 1
-            while r_angle < self.max_angle:
-                c_angle = r_angle
-                while c_angle > tau:
-                    c_angle -= tau
-                if i % 2 == 0:
-                    r = 0
-                else:
-                    r = r_fourth
-                while r < self.min_radius:
-                    r += tlen
-
-                while r <= self.max_radius:
-                    r += tlen
-                    x = start_x + r * cos(c_angle)
-                    y = start_y + r * sin(c_angle)
-
-                    if self.min_x <= x <= self.max_x and self.min_y <= y <= self.max_y:
-                        # mx, my = self.scene.convert_scene_to_window([x, y])
-                        self.scene.grid_points.append([x, y])
-
-                i += 1
-                r_angle += tau / segments
-            circ_ct = len(self.scene.grid_points) - prim_ct - second_ct
-
-        end_time = time()
-        # print("Ready, time needed: %.6f, grid points added=%d (primary=%d, %.6f, secondary=%d, %.6f circ=%d, %.6f)" %
-        #    (end_time - start_time,
-        #    len(self.scene.grid_points),
-        #    prim_ct, s_time_2-start_time,
-        #    second_ct, s_time_3-s_time_2,
-        #    circ_ct, end_time-s_time_3))
+            i += 1
+            r_angle += tau / segments
 
     def process_draw(self, gc):
         """
@@ -609,7 +596,7 @@ class GridWidget(Widget):
                 step = self.tlenx1
                 factor = max(2 * (1 - sox), 2 * (1 - soy))
                 # Initially I drew a complete circle, which is a waste in most situations,
-                # so lets create a path
+                # so let's create a path
                 circle_path = gc.CreatePath()
                 y = 0
                 while y < 2 * self.min_radius:
