@@ -21,7 +21,15 @@ class GuideWidget(Widget):
         Widget.__init__(self, scene, all=False)
         self.edge_gap = 5
         self.line_length = 20
-        self.calc_area(True, 0, 0)
+        self.scale_x_lower = 0
+        self.scale_x_upper = self.edge_gap + self.line_length
+        self.scale_y_lower = 0
+        self.scale_y_upper = self.edge_gap + self.line_length
+        # Set secondary to primary initially
+        self.scale_x2_lower = self.scale_x_lower
+        self.scale_x2_upper = self.scale_x_upper
+        self.scale_y2_lower = self.scale_y_lower
+        self.scale_y2_upper = self.scale_y_upper
         self.scaled_conversion_x = 0
         self.scaled_conversion_y = 0
         self.units = None
@@ -29,12 +37,16 @@ class GuideWidget(Widget):
         self.pen_guide1 = wx.Pen()
         self.pen_guide2 = wx.Pen()
         self.pen_magnets = wx.Pen()
+        self.color_units = None
         self.color_guide1 = None
         self.color_guide2 = None
         self.set_colors()
-        self.font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.font = wx.Font(
+            10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
+        )
 
     def set_colors(self):
+        self.color_units = self.scene.colors.color_guide
         self.color_guide1 = self.scene.colors.color_guide
         self.color_guide2 = self.scene.colors.color_guide2
         self.pen_guide1.SetColour(self.color_guide1)
@@ -44,25 +56,6 @@ class GuideWidget(Widget):
 
     def hit(self):
         return HITCHAIN_HIT
-
-    def calc_area(self, lower, w, h):
-        if lower:
-            self.scale_x_lower = 0
-            self.scale_x_upper = self.edge_gap + self.line_length
-            self.scale_y_lower = 0
-            self.scale_y_upper = self.edge_gap + self.line_length
-            # Set secondary to primary initially
-            self.scale_x2_lower = self.scale_x_lower
-            self.scale_x2_upper = self.scale_x_upper
-            self.scale_y2_lower = self.scale_y_lower
-            self.scale_y2_upper = self.scale_y_upper
-
-        else:
-
-            self.scale_x2_lower = w - self.edge_gap - self.line_length
-            self.scale_x2_upper = w
-            self.scale_y2_lower = h - self.edge_gap - self.line_length
-            self.scale_y2_upper = h
 
     def contains(self, x, y=None):
         # Slightly more complex than usual due to left, top area
@@ -720,7 +713,7 @@ class GuideWidget(Widget):
     def _draw_units(self, gc):
         p = self.scene.context
         self.units = p.units_name
-        gc.SetFont(self.font, self.color_guide1)
+        gc.SetFont(self.font, self.color_units)
         gc.DrawText(self.units, self.edge_gap, self.edge_gap)
 
     def process_draw(self, gc):
@@ -728,7 +721,10 @@ class GuideWidget(Widget):
         Draw the guidelines
         """
         w, h = gc.Size
-        self.calc_area(False, w, h)
+        self.scale_x2_lower = w - self.edge_gap - self.line_length
+        self.scale_x2_upper = w
+        self.scale_y2_lower = h - self.edge_gap - self.line_length
+        self.scale_y2_upper = h
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
         self._set_scaled_conversion()
