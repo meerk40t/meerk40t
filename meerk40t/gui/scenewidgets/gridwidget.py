@@ -564,8 +564,7 @@ class GridWidget(Widget):
 
         matrix = self.scene.widget_root.scene_widget.matrix
         try:
-            scale_x = matrix.value_scale_x()
-            line_width = 1.0 / scale_x
+            line_width = 1.0 / sqrt(abs(matrix.determinant))
         except (OverflowError, ValueError, ZeroDivisionError):
             matrix.reset()
             return
