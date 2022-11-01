@@ -383,6 +383,8 @@ class ViewPort:
             ops.append("scale(1.0, -1.0)")
         if dx != 0 or dy != 0:
             ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
+        if self.swap_xy:
+            ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
 
     def native_mm(self):
