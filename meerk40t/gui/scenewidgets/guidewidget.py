@@ -529,7 +529,6 @@ class GuideWidget(Widget):
     def _draw_primary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
-        self._set_scaled_conversion()
         if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
             return
         points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
@@ -611,7 +610,6 @@ class GuideWidget(Widget):
     def _draw_secondary_guides(self, gc):
         w, h = gc.Size
         p = self.scene.context
-        self._set_scaled_conversion()
         if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
             return
         points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
@@ -737,6 +735,7 @@ class GuideWidget(Widget):
         self.calc_area(False, w, h)
         if self.scene.context.draw_mode & DRAW_MODE_GUIDES != 0:
             return
+        self._set_scaled_conversion()
         p = self.scene.context
         self.units = p.units_name
         font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
