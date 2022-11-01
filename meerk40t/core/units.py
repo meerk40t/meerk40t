@@ -360,12 +360,12 @@ class ViewPort:
         ops = []
         if sx != 1.0 or sy != 1.0:
             ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
-        if dx != 0 or dy != 0:
-            ops.append(f"translate({dx:.13f}, {dy:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
+        if dx != 0 or dy != 0:
+            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:
             ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
