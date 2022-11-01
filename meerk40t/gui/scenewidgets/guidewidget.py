@@ -492,7 +492,9 @@ class GuideWidget(Widget):
             return RESPONSE_CHAIN
 
     def _get_center_primary(self):
-        """Calculate center position for primary grid"""
+        """
+        Calculate center position for primary grid
+        """
         p = self.scene.context
         x = p.device.unit_width * p.device.show_origin_x
         y = p.device.unit_height * p.device.show_origin_y
@@ -500,7 +502,7 @@ class GuideWidget(Widget):
 
     def _get_center_secondary(self):
         """
-        # Calculate center position for secondary grid
+        Calculate center position for secondary grid
         """
         p = self.scene.context
         x = p.device.unit_width * p.device.show_origin_x
@@ -528,14 +530,11 @@ class GuideWidget(Widget):
         w, h = gc.Size
         p = self.scene.context
         self._set_scaled_conversion()
-        if self.scaled_conversion_x == 0:
+        if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
             return
         points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
         points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
-
         sx_primary, sy_primary = self._get_center_primary()
-        if points_x_primary == 0:
-            return
         offset_x_primary = float(sx_primary) % points_x_primary
         offset_y_primary = float(sy_primary) % points_y_primary
 
@@ -613,25 +612,16 @@ class GuideWidget(Widget):
         w, h = gc.Size
         p = self.scene.context
         self._set_scaled_conversion()
-        if self.scaled_conversion_x == 0:
+        if self.scaled_conversion_x == 0 or self.scene.tick_distance == 0:
             return
-        # Establish the delta for about 15 ticks
-        # print ("set scene_tick_distance to %f" % delta)
         points_x_primary = self.scene.tick_distance * self.scaled_conversion_x
         points_y_primary = self.scene.tick_distance * self.scaled_conversion_y
-        if points_x_primary == 0:
-            return
-        factor_x_secondary = (
-            1.0
-            if self.scene.grid_secondary_scale_x is None
-            else self.scene.grid_secondary_scale_x
-        )
-        factor_y_secondary = (
-            1.0
-            if self.scene.grid_secondary_scale_y is None
-            else self.scene.grid_secondary_scale_y
-        )
-
+        factor_x_secondary = 1.0
+        if self.scene.grid_secondary_scale_x is not None:
+            factor_x_secondary = self.scene.grid_secondary_scale_x
+        factor_y_secondary = 1.0
+        if self.scene.grid_secondary_scale_y is not None:
+            factor_y_secondary = self.scene.grid_secondary_scale_y
         points_x_secondary = factor_x_secondary * points_x_primary
         points_y_secondary = factor_y_secondary * points_y_primary
         self.units = p.units_name
