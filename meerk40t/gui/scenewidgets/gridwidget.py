@@ -231,14 +231,16 @@ class GridWidget(Widget):
 
         self.scene.tick_distance = delta1
 
-    def calculate_gridsize(self, w, h):
-        scaled_conversion = (
+    def get_scaled_conversion(self):
+        return (
             self.scene.context.device.length(
                 f"1{self.scene.context.units_name}",
                 as_float=True,
             )
             * self.scene.widget_root.scene_widget.matrix.value_scale_x()
         )
+
+    def calculate_gridsize(self, w, h):
         p = self.scene.context
 
         self.sx = p.device.unit_width * p.device.show_origin_x
