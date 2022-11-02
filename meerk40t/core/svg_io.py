@@ -967,6 +967,12 @@ class SVGProcessor:
 
                 try:
                     op = self.elements.op_branch.add(type=node_type, **attrs)
+                    overlooked_attributes = [
+                        "output",
+                    ]
+                    for overlooked in overlooked_attributes:
+                        if overlooked in element.values and hasattr(op, overlooked):
+                            setattr(op, overlooked, element.values.get(overlooked))
                     op.validate()
                     op.id = node_id
                 except AttributeError:
