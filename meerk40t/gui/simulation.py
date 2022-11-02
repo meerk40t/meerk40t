@@ -89,9 +89,9 @@ class OperationsPanel(wx.Panel):
         ops_sizer.Add(self.text_operation_param, 0, wx.EXPAND, 0)
         self.SetSizer(ops_sizer)
         self.Layout()
-        self.SetCutPlan(self.cutplan)
+        self.set_cut_plan(self.cutplan)
 
-    def SetCutPlan(self, cutplan):
+    def set_cut_plan(self, cutplan):
         def name_str(e):
             try:
                 return e.__name__
@@ -380,6 +380,7 @@ class CutcodePanel(wx.Panel):
         self.cutcode = cutcode
         self.plan_name = plan_name
         self.list_cutcode = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE)
+        self.last_selected = []
         # self.text_operation_param = wx.TextCtrl(
         #     self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
         # )
@@ -445,12 +446,16 @@ class CutcodePanel(wx.Panel):
             return res
 
         self.cutcode = cutcode
+        # Reset highlighted flags
+        if cutcode is not None:
+            for cut in self.cutcode:
+                cut.highlighted = False
         self.plan_name = plan_name
         self.list_cutcode.Clear()
         self.list_cutcode.Enable(True)
         if self.cutcode is None:
             self.list_cutcode.InsertItems(
-                [e for e in ("Please select a cutcode entry", "from the operations panel")], 0
+                ["Please select a cutcode entry", "from the operations panel"], 0
             )
             self.list_cutcode.Enable(False)
         elif len(self.cutcode) != 0:
@@ -522,7 +527,15 @@ class CutcodePanel(wx.Panel):
     #         self.context.signal("plan", self.plan_name, 1)
 
     def on_listbox_operation_select(self, event):
-        return
+        for cut in self.last_selected:
+            self.cutcode[cut].highlighted = False
+        self.last_selected = self.list_cutcode.GetSelections()
+        if self.last_selected is None:
+            self.last_selected = []
+        for cut in self.last_selected:
+            self.cutcode[cut].highlighted = True
+        self.context.signal("refresh_simulation")
+
         # flag = False
         # content = ""
         # idx = self.list_cutcode.GetSelection()
@@ -1364,7 +1377,7 @@ class SimulationPanel(wx.Panel, Job):
         self.plan_name = self.cutplan.name
         self.operations = self.cutplan.plan
         self.subpanel_cutcode.set_cutcode_entry(None, self.plan_name)
-        self.subpanel_operations.SetCutPlan(self.cutplan)
+        self.subpanel_operations.set_cut_plan(self.cutplan)
         # for e in self.operations:
         #     print(f"Refresh: {type(e).__name__} {e}")
         #     try:
@@ -1393,6 +1406,10 @@ class SimulationPanel(wx.Panel, Job):
     def on_plan_change(self, origin, plan_name, status):
         if plan_name == self.plan_name:
             self._refresh_simulated_plan()
+
+    @signal_listener("refresh_simulation")
+    def on_request_refresh(self, origin, *args):
+        self.widget_scene.request_refresh()
 
     def on_radio_playback_mode(self, event):
         self._playback_cuts = self.radio_cut.GetValue()

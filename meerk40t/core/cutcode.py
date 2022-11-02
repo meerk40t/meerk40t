@@ -51,6 +51,7 @@ class CutObject(Parameters):
             # If passes is greater than 1 we must flag custom passes as on.
             self.passes_custom = True
         self._burns_done = 0
+        self.highlighted = False
 
         self.mode = None
         self.inside = None
