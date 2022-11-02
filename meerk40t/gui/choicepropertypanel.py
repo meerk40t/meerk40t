@@ -832,6 +832,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     limited=True,
                     check="length",
                 )
+                if isinstance(data, Length):
+                    if not data._digits:
+                        if data._preferred_units in ("mm", "cm", "in", "inch"):
+                           data._digits = 4
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
