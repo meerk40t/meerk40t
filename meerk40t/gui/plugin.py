@@ -89,18 +89,6 @@ and a wxpython version <= 4.1.1."""
     elif lifecycle == "postboot":
         choices = [
             {
-                "attr": "show_negative_guide",
-                "object": kernel.root,
-                "default": True,
-                "type": bool,
-                "label": _("Show Negative Guide"),
-                "tip": _(
-                    "Extend the Guide rulers with negative values to assist lining up objects partially outside the left/top of the bed"
-                ),
-                "page": "Scene",
-                "section": "General",
-            },
-            {
                 "attr": "windows_save",
                 "object": kernel.root,
                 "default": True,
