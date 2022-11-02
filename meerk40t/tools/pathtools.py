@@ -793,13 +793,13 @@ class VectorMontonizer:
             self.cluster_low_value = -float("inf")
         return self.clusters[self.cluster_range_index][1]
 
-    def is_point_inside(self, x, y):
+    def is_point_inside(self, x, y, tolerance = 0):
         self.scanline(y)
         self.sort_actives()
         for i in range(1, len(self.actives), 2):
             prior = self.actives[i - 1]
             after = self.actives[i]
-            if self.intercept(prior, y) <= x <= self.intercept(after, y):
+            if self.intercept(prior, y) - tolerance <= x <= self.intercept(after, y) + tolerance:
                 return True
         return False
 

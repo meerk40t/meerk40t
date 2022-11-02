@@ -164,6 +164,18 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Optimizations",
                 "section": "Burn sequence",
+                "subsection": "Inner burn",            },
+            {
+                "attr": "opt_inner_tolerance",
+                "object": context,
+                "default": "0",
+                "type": Length,
+                "label": _("Tolerance"),
+                "tip": _("Tolerance to decide if a shape is truly inside another one."),
+                "page": "Optimizations",
+                "section": "Burn sequence",
+                "subsection": "Inner burn",
+                "conditional": (context, "opt_inner_first"),
             },
             {
                 "attr": "opt_inners_grouped",
