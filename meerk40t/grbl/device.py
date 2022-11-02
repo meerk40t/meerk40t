@@ -9,7 +9,7 @@ from meerk40t.kernel import CommandSyntaxError, Service
 
 from ..core.spoolers import Spooler
 from ..core.laserjob import LaserJob
-from ..core.units import UNITS_PER_MIL, ViewPort
+from ..core.units import UNITS_PER_MIL, ViewPort, Length
 from .controller import GrblController
 from .driver import GRBLDriver
 
@@ -31,7 +31,7 @@ class GRBLDevice(Service, ViewPort):
                 "attr": "bedwidth",
                 "object": self,
                 "default": "235mm",
-                "type": str,
+                "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "subsection": "Dimensions",
@@ -41,7 +41,7 @@ class GRBLDevice(Service, ViewPort):
                 "attr": "bedheight",
                 "object": self,
                 "default": "235mm",
-                "type": str,
+                "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "subsection": "Dimensions",
