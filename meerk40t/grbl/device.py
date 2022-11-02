@@ -79,7 +79,7 @@ class GRBLDevice(Service, ViewPort):
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": ("bedsize"),
+                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -91,7 +91,7 @@ class GRBLDevice(Service, ViewPort):
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
                 "subsection": "_10_Flip Axis",
-                "signals": ("bedsize"),
+                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -336,6 +336,10 @@ class GRBLDevice(Service, ViewPort):
             help=_("Update grbl codes for movement"),
         )
         def codes_update(**kwargs):
+            self.origin_x = 1.0 if self.home_right else 0.0
+            self.show_origin_x = self.origin_x
+            self.origin_y = 1.0 if self.home_bottom else 0.0
+            self.show_origin_y = self.origin_y
             self.realize()
 
         @self.console_argument("filename", type=str)
