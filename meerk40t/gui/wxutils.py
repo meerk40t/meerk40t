@@ -508,6 +508,20 @@ class TextCtrl(wx.TextCtrl):
         return status
 
     def SetValue(self, newvalue):
+        identical = False
+        current = super().GetValue()
+        if self._check == "float":
+            try:
+                v1 = float(current)
+                v2 = float(newvalue)
+                if v1==v2:
+                    identical = True
+            except ValueError:
+                pass
+        if identical:
+            # print (f"...ignored {current}={v1}, {newvalue}={v2}")
+            return
+        # print(f"SetValue called: {current} != {newvalue}")
         self._last_valid_value = newvalue
         status = self.get_warn_status(newvalue)
         self.warn_status = status
