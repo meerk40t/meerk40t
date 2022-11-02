@@ -425,11 +425,17 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
+        highlight_color = Color("magenta")
+        wx_color = wx.Colour(swizzlecolor(highlight_color))
+        highlight_pen = wx.Pen(wx_color, width=3, style=wx.PENSTYLE_SHORT_DASH)
         p = None
         last_point = None
         color = None
         for cut in cutcode:
-            c = cut.line_color
+            if cut.highlighted:
+                c = highlight_color
+            else:
+                c = cut.line_color
             if c is None:
                 c = 0
             try:
@@ -499,8 +505,10 @@ class LaserRender:
                 if cut.cache is not None:
                     # Cache exists and is valid.
                     gc.DrawBitmap(cut.cache, 0, 0, cut._cache_width, cut._cache_height)
-                    # gc.SetBrush(wx.RED_BRUSH)
-                    # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                    if cut.highlighted:
+                        # gc.SetBrush(wx.RED_BRUSH)
+                        gc.SetPen(highlight_pen)
+                        gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                 else:
                     # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
