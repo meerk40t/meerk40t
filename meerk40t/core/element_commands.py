@@ -5813,6 +5813,7 @@ def init_commands(kernel):
                 self.note += "\n" + _note
             else:
                 self.note = _note
+            self.signal("note", self.note)
             channel(_("Note Set."))
             channel(str(self.note))
 
