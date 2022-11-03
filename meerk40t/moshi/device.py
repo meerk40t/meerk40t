@@ -9,7 +9,7 @@ Registers relevant commands and options.
 from meerk40t.kernel import STATE_ACTIVE, STATE_PAUSE, Service
 
 from ..core.spoolers import Spooler
-from ..core.units import UNITS_PER_MIL, ViewPort
+from ..core.units import UNITS_PER_MIL, ViewPort, Length
 from .controller import MoshiController
 from .driver import MoshiDriver
 
@@ -56,7 +56,7 @@ class MoshiDevice(Service, ViewPort):
                 "attr": "bedwidth",
                 "object": self,
                 "default": "330mm",
-                "type": str,
+                "type": Length,
                 "label": _("Width"),
                 "tip": _("Width of the laser bed."),
                 "section": "_10_Dimensions",
@@ -67,7 +67,7 @@ class MoshiDevice(Service, ViewPort):
                 "attr": "bedheight",
                 "object": self,
                 "default": "210mm",
-                "type": str,
+                "type": Length,
                 "label": _("Height"),
                 "tip": _("Height of the laser bed."),
                 "section": "_10_Dimensions",
@@ -83,7 +83,8 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the X-axis. Board units to actual physical units."
                 ),
-                "subsection": "Scale",
+                "section": "_40_Laser Parameters",
+                "subsection": "_05_Scale",
             },
             {
                 "attr": "scale_y",
@@ -94,7 +95,8 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "Scale factor for the Y-axis. Board units to actual physical units."
                 ),
-                "subsection": "Scale",
+                "section": "_40_Laser Parameters",
+                "subsection": "_05_Scale",
             },
             {
                 "attr": "flip_x",
@@ -105,8 +107,9 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "+X is standard for grbl but sometimes settings can flip that."
                 ),
+                "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": ("bedsize"),
+                "signals": "bedsize",
             },
             {
                 "attr": "flip_y",
@@ -117,8 +120,9 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "-Y is standard for grbl but sometimes settings can flip that."
                 ),
+                "section": "_40_Laser Parameters",
                 "subsection": "_10_Flip Axis",
-                "signals": ("bedsize"),
+                "signals": "bedsize",
             },
             {
                 "attr": "swap_xy",
@@ -129,7 +133,8 @@ class MoshiDevice(Service, ViewPort):
                 "tip": _(
                     "Swaps the X and Y axis. This happens before the FlipX and FlipY."
                 ),
-                "subsection": "_20_Axis corrections",
+                "section": "_40_Laser Parameters",
+                "subsection": "_10_Flip Axis",
                 "signals": "bedsize",
             },
             {
@@ -139,6 +144,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Home Bottom"),
                 "tip": _("Indicates the device Home is on the bottom"),
+                "section": "_40_Laser Parameters",
                 "subsection": "_30_Home position",
                 "signals": "bedsize",
             },
@@ -149,6 +155,7 @@ class MoshiDevice(Service, ViewPort):
                 "type": bool,
                 "label": _("Home Right"),
                 "tip": _("Indicates the device Home is at the right side"),
+                "section": "_40_Laser Parameters",
                 "subsection": "_30_Home position",
                 "signals": "bedsize",
             },
@@ -304,6 +311,20 @@ class MoshiDevice(Service, ViewPort):
             reports its status as READY (205)
             """
             self.controller.abort_waiting = True
+
+        @self.console_command(
+            "viewport_update",
+            hidden=True,
+            help=_("Update moshi dimension parameters"),
+        )
+        def codes_update(**kwargs):
+            self.origin_x = 1.0 if self.home_right else 0.0
+            self.show_flip_x = self.home_right
+            self.show_origin_x = self.origin_x
+            self.origin_y = 1.0 if self.home_bottom else 0.0
+            self.show_origin_y = self.origin_y
+            self.show_flip_y = self.home_bottom
+            self.realize()
 
     @property
     def viewbuffer(self):
