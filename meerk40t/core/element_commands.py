@@ -32,7 +32,7 @@ from .node.util_console import ConsoleOperation
 from .node.util_input import InputOperation
 from .node.util_output import OutputOperation
 from .node.util_wait import WaitOperation
-from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, Length
+from .units import UNITS_PER_INCH, UNITS_PER_PIXEL, UNITS_PER_MM, UNITS_PER_POINT, Length
 
 
 def plugin(kernel, lifecycle=None):
@@ -4026,6 +4026,23 @@ def init_commands(kernel):
         output_type="elements",
     )
     def element_stroke_width(command, channel, _, stroke_width, data=None, **kwargs):
+        def width_string(value):
+            if value is None:
+                return "-"
+            res = ""
+            display_units = (
+                (1, ""),
+                (UNITS_PER_PIXEL, "px"),
+                (UNITS_PER_POINT, "pt"),
+                (UNITS_PER_MM, "mm"),
+            )
+            for unit in display_units:
+                unit_value = value / unit[0]
+                if res != "":
+                    res += ", "
+                res += f"{unit_value:.3f}{unit[1]}"
+            return res
+
         if data is None:
             data = list(self.elems(emphasized=True))
         if stroke_width is None:
@@ -4041,37 +4058,32 @@ def init_commands(kernel):
                 elif not hasattr(e, "stroke_scaled"):
                     channel(
                         _(
-                            "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - scaled-stroke"
+                            "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
                         ).format(
                             index=i,
-                            stroke_width="None",
-                            implied_stroke_width="None",
+                            typename="scaled-stroke",
+                            stroke_width=width_string(e.stroke_width),
+                            scaled_stroke_width=width_string(None),
                             name=name,
                         )
                     )
                 else:
                     if e.stroke_scaled:
-                        channel(
-                            _(
-                                "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - scaled-stroke"
-                            ).format(
-                                index=i,
-                                stroke_width=e.stroke_width,
-                                implied_stroke_width=e.implied_stroke_width(),
-                                name=name,
-                            )
-                        )
+                        typename="scaled-stroke"
                     else:
-                        channel(
-                            _(
-                                "{index}: stroke-width = {stroke_width}/{implied_stroke_width} - {name} - non-scaling-stroke"
-                            ).format(
-                                index=i,
-                                stroke_width=e.stroke_width,
-                                implied_stroke_width=e.implied_stroke_width(),
-                                name=name,
-                            )
+                        typename="non-scaling-stroke"
+
+                    channel(
+                        _(
+                            "{index}: {name} - {typename}\n   stroke-width = {stroke_width}\n   scaled-width = {scaled_stroke_width}"
+                        ).format(
+                            index=i,
+                            typename=typename,
+                            stroke_width=width_string(e.stroke_width),
+                            scaled_stroke_width=width_string(e.implied_stroke_width()),
+                            name=name,
                         )
+                    )
                 i += 1
             channel("----------")
             return
