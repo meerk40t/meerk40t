@@ -510,6 +510,7 @@ class StrokeWidthPanel(wx.Panel):
             best_post = 99999999
             delta = 0.99999999
             best_pre = 0
+            found_something = False
             for idx, unit in enumerate(self.unit_choices):
                 std = float(Length(f"1{unit}"))
                 fraction = abs(self.node.stroke_width / std)
@@ -535,6 +536,17 @@ class StrokeWidthPanel(wx.Panel):
                     best_post = curr_post
                     idxunit = idx
                     value = self.node.stroke_width / std
+                    found_something = True
+
+            if not found_something:
+                std = float(Length(f"1mm"))
+                if self.node.stroke_width / std < 0.1:
+                    idxunit = 0  # px
+                else:
+                    idxunit = 2  # mm
+                unit = self.unit_choices[idxunit]
+                std = float(Length(f"1{unit}"))
+                value = self.node.stroke_width / std
             self.text_width.SetValue(str(round(value, 6)))
             self.combo_units.SetSelection(idxunit)
 
