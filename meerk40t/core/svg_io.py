@@ -442,11 +442,12 @@ class SVGWriter:
                 if stroke_opacity != 1.0 and stroke_opacity is not None:
                     subelement.set(SVG_ATTR_STROKE_OPACITY, str(stroke_opacity))
                 try:
-                    stroke_scale = (
-                        math.sqrt(c.matrix.determinant) if c.stroke_scaled else 1.0
-                    )
+                    stroke_width = str(c.stroke_width)  # Natively sized
+
                     # Note this is the reversed scaling in `implied_stroke_width`
-                    stroke_width = str(c.stroke_width * stroke_scale)
+                    # stroke_scale = (
+                    #     math.sqrt(c.matrix.determinant) if c.stroke_scaled else 1.0
+                    # )
                     # stroke_width = (
                     #     Length(
                     #         amount=c.stroke_width * stroke_scale,
