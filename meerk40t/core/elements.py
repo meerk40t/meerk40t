@@ -1278,6 +1278,7 @@ class Elemental(Service):
 
     def clear_note(self):
         self.note = None
+        self.signal("note", self.note)
 
     # def drag_and_drop(self, dragging_nodes, drop_node, inheritance_mode="auto", inherit_stroke = True, inherit_fill = True):
 
