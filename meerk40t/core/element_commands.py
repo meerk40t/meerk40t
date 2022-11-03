@@ -1634,6 +1634,8 @@ def init_commands(kernel):
                 channel(_("No elements to transfer"))
             else:
                 move_nodes_to(target, data)
+                if cmd == "free" and self.classify_new:
+                    self.classify(data)
         elif cmd == "clear":
             self.clear_regmarks()
             data = None
