@@ -455,7 +455,7 @@ class CutcodePanel(wx.Panel):
         self.list_cutcode.Enable(True)
         if self.cutcode is None:
             self.list_cutcode.InsertItems(
-                ["Please select a cutcode entry", "from the operations panel"], 0
+                [_("Please select a cutcode entry"), _("from the operations panel")], 0
             )
             self.list_cutcode.Enable(False)
         elif len(self.cutcode) != 0:
