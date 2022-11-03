@@ -429,7 +429,7 @@ class CutPlan:
                 tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
             except ValueError:
                 pass
-        print(f"Tolerance: {tolerance}")
+        # print(f"Tolerance: {tolerance}")
 
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
@@ -460,7 +460,7 @@ class CutPlan:
                 tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
             except ValueError:
                 pass
-        print(f"Tolerance: {tolerance}")
+        # print(f"Tolerance: {tolerance}")
 
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
