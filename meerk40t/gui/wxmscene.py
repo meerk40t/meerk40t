@@ -1,5 +1,6 @@
 import platform
 import random
+from math import sqrt
 
 import wx
 from wx import aui
@@ -969,7 +970,8 @@ class MeerK40tScenePanel(wx.Panel):
         sw = float(Length(stroke_width))
         for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
             try:
-                e.stroke_width = sw
+                stroke_scale = sqrt(e.matrix.determinant) if e.stroke_scaled else 1.0
+                e.stroke_width = sw / stroke_scale
                 e.altered()
             except AttributeError:
                 # Ignore and carry on...
