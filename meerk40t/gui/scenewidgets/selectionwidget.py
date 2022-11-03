@@ -75,7 +75,10 @@ def process_event(
 
     if event_type == "leftdown":
         # We want to establish that we don't have a singular Shift key or a singular ctrl-key
-        if not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)):
+        # as these will extend / reduce the selection
+        if widget_identifier == "move" or (
+            not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers))
+        ):
             cx = (widget.left + widget.right) / 2
             cy = (widget.top + widget.bottom) / 2
             # print(f"Start: x={space_pos[0]}, y={space_pos[1]}, dx={space_pos[4]}, dy={space_pos[5]}")
@@ -1384,7 +1387,10 @@ class MoveWidget(Widget):
             # )
 
         if event == 1:  # end
-            move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
+            if nearest_snap is None:
+                move_to(lastdx, lastdy)
+            else:
+                move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
             self.check_for_magnets()
             for e in elements.flat(types=elem_group_nodes, emphasized=True):
                 try:
