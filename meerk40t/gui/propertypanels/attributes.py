@@ -1,5 +1,5 @@
 import wx
-
+from math import sqrt
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import CheckBox, TextCtrl
@@ -486,8 +486,13 @@ class StrokeWidthPanel(wx.Panel):
                     f"{self.text_width.GetValue()}{self.unit_choices[self.combo_units.GetSelection()]}"
                 )
             )
-            if self.node.stroke_width != swidth:
-                self.node.stroke_width = swidth
+            stroke_scale = (
+                sqrt(self.node.matrix.determinant) if self.node.stroke_scaled else 1.0
+            )
+            stroke_width = swidth / stroke_scale
+            if self.node.stroke_width != stroke_width:
+                self.node.stroke_width = stroke_width
+                self.node.altered()
                 self.context.signal("refresh_scene", "Scene")
                 self.context.signal("element_property_update", self.node)
         except (ValueError, AttributeError):
@@ -504,49 +509,57 @@ class StrokeWidthPanel(wx.Panel):
             enable = True
             self.chk_scale.SetValue(self.node.stroke_scaled)
             # Lets establish which unit might be the best to represent the display
+            found_something = False
             if self.node.stroke_width is None or self.node.stroke_width == 0:
                 value = 0
-                idxunit = 2  # mm
-            best_post = 99999999
-            delta = 0.99999999
-            best_pre = 0
-            found_something = False
-            for idx, unit in enumerate(self.unit_choices):
-                std = float(Length(f"1{unit}"))
-                fraction = abs(self.node.stroke_width / std)
-                if fraction == 0:
-                    continue
-                curr_post = 0
-                curr_pre = int(fraction)
-                while fraction < 1:
-                    curr_post += 1
-                    fraction *= 10
-                fraction -= curr_pre
-                # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
-                takespref = False
-                if fraction < delta:
-                    takespref = True
-                elif fraction == delta and curr_pre > best_pre:
-                    takespref = True
-                elif fraction == delta and curr_post < best_post:
-                    takespref = True
-                if takespref:
-                    best_pre = curr_pre
-                    delta = fraction
-                    best_post = curr_post
-                    idxunit = idx
-                    value = self.node.stroke_width / std
-                    found_something = True
+                idxunit = 0  # px
+                found_something = True
+            else:
+                best_post = 99999999
+                delta = 0.99999999
+                best_pre = 0
+                factor = (
+                    sqrt(self.node.matrix.determinant)
+                    if self.node.stroke_scaled
+                    else 1.0
+                )
+                node_stroke_width = self.node.stroke_width * factor
+                for idx, unit in enumerate(self.unit_choices):
+                    std = float(Length(f"1{unit}"))
+                    fraction = abs(node_stroke_width / std)
+                    if fraction == 0:
+                        continue
+                    curr_post = 0
+                    curr_pre = int(fraction)
+                    while fraction < 1:
+                        curr_post += 1
+                        fraction *= 10
+                    fraction -= curr_pre
+                    # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
+                    takespref = False
+                    if fraction < delta:
+                        takespref = True
+                    elif fraction == delta and curr_pre > best_pre:
+                        takespref = True
+                    elif fraction == delta and curr_post < best_post:
+                        takespref = True
+                    if takespref:
+                        best_pre = curr_pre
+                        delta = fraction
+                        best_post = curr_post
+                        idxunit = idx
+                        value = node_stroke_width / std
+                        found_something = True
 
-            if not found_something:
-                std = float(Length(f"1mm"))
-                if self.node.stroke_width / std < 0.1:
-                    idxunit = 0  # px
-                else:
-                    idxunit = 2  # mm
-                unit = self.unit_choices[idxunit]
-                std = float(Length(f"1{unit}"))
-                value = self.node.stroke_width / std
+                if not found_something:
+                    std = float(Length(f"1mm"))
+                    if node_stroke_width / std < 0.1:
+                        idxunit = 0  # px
+                    else:
+                        idxunit = 2  # mm
+                    unit = self.unit_choices[idxunit]
+                    std = float(Length(f"1{unit}"))
+                    value = node_stroke_width / std
             self.text_width.SetValue(str(round(value, 6)))
             self.combo_units.SetSelection(idxunit)
 
