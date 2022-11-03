@@ -523,7 +523,7 @@ class PassesPanel(wx.Panel):
         sizer_passes.Add(self.check_passes, 0, wx.EXPAND, 0)
 
         self.text_passes = TextCtrl(
-            self, wx.ID_ANY, "1", limited=True, check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "1", limited=True, check="int", style=wx.TE_PROCESS_ENTER
         )
         OPERATION_PASSES_TOOLTIP = (
             _("How many times to repeat this operation?")
