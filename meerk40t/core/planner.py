@@ -42,112 +42,6 @@ def plugin(kernel, lifecycle=None):
 
         choices = [
             {
-                "attr": "opt_reduce_travel",
-                "object": context,
-                "default": True,
-                "type": bool,
-                "label": _("Reduce Travel Time"),
-                "tip": _(
-                    "Using this option can significantly reduce the time spent "
-                    + "moving between elements with the laser off "
-                    + "by optimizing the sequence that elements are burned. "
-                )
-                + "\n\n"
-                + _(
-                    "When this option is NOT checked, elements are burned strictly "
-                    + "in the order they appear in the Operation tree, "
-                    + "and the Merge options will have no effect on the burn time. "
-                )
-                + "\n\n"
-                + _(
-                    "When this option IS checked, Meerk40t will burn each subpath "
-                    + "and then move to the nearest remaining subpath instead, "
-                    + "reducing the time taken moving between burn items."
-                ),
-                "page": "Optimizations",
-                "section": "",
-            },
-            {
-                "attr": "opt_complete_subpaths",
-                "object": context,
-                "default": True,
-                "type": bool,
-                "label": _("Burn Complete Subpaths"),
-                "tip": _(
-                    "By default Reduce Travel Time optimises using SVG individual path segments, "
-                    + "which means that non-closed subpaths can be burned in several shorter separate burns "
-                    + "rather than one continuous burn from start to end. "
-                )
-                + "\n\n"
-                + _(
-                    "This option only affects non-closed paths. "
-                    + "When this option is checked, non-closed subpaths are always burned in one continuous burn "
-                    + "from start to end rather than having burns start in the middle. "
-                    + "Whilst this may create a longer travel move to the end of the subpath,"
-                    + "it also avoids later travel moves to or from the intermediate point. "
-                    + "The total travel time may therefore be shorter or longer. "
-                    + "It may also avoid minor differences in total burn depth "
-                    + "at the point the burns join. "
-                ),
-                "page": "Optimizations",
-                "section": "Burn sequence",
-                "conditional": (context, "opt_reduce_travel"),
-            },
-            {
-                "attr": "opt_merge_passes",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "label": _("Merge Passes"),
-                "tip": _(
-                    "Combine multiple passes into the same optimization. "
-                    + "This will typically result in each subpath being burned multiple times in succession, "
-                    + "burning closed paths round-and-round "
-                    + "and non-closed paths back-and-forth, "
-                    + "before Meerk40t moves to the next path. "
-                )
-                + "\n\n"
-                + _(
-                    "If you have a complex design with many paths and are burning with multiple passes, "
-                    + "using this option can significantly REDUCE the optimisation time. "
-                )
-                + "\n\n"
-                + _(
-                    "NOTE: Where you burn very short paths multiple times in quick succession, "
-                    + "this does not allow time for the material to cool down between burns, "
-                    + "and this can result in greater charring "
-                    + "or even an increased risk of the material catching fire."
-                ),
-                "page": "Optimizations",
-                "section": "Merging",
-                "conditional": (context, "opt_reduce_travel"),
-            },
-            {
-                "attr": "opt_merge_ops",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "label": _("Merge Operations"),
-                "tip": _(
-                    "Combine multiple consecutive burn operations and optimise across them globally. "
-                    + "Operations of different types will be optimised together to reduce travel time, "
-                    + "so vector and raster burns will be mixed. "
-                )
-                + "\n\n"
-                + _(
-                    "If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
-                    + "If Merge Passes is also checked, then all burns will be optimised globally."
-                )
-                + "\n\n"
-                + _(
-                    "If you have a complex design with many paths across multiple consecutive burn operations, "
-                    + "using this option can significantly INCREASE the optimisation time. "
-                ),
-                "page": "Optimizations",
-                "section": "Merging",
-                "conditional": (context, "opt_reduce_travel"),
-            },
-            {
                 "attr": "opt_inner_first",
                 "object": context,
                 "default": True,
@@ -167,7 +61,7 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Optimizations",
                 "section": "Burn sequence",
-                "subsection": "Inner burn",
+                # "subsection": "Inner burn",
             },
             {
                 "attr": "opt_inner_tolerance",
@@ -178,7 +72,7 @@ def plugin(kernel, lifecycle=None):
                 "tip": _("Tolerance to decide if a shape is truly inside another one."),
                 "page": "Optimizations",
                 "section": "Burn sequence",
-                "subsection": "Inner burn",
+                # "subsection": "Inner burn",
                 "conditional": (context, "opt_inner_first"),
             },
             {
@@ -209,6 +103,112 @@ def plugin(kernel, lifecycle=None):
                 "page": "Optimizations",
                 "section": "Burn sequence",
                 "conditional": (context, "opt_inner_first"),
+            },
+            {
+                "attr": "opt_reduce_travel",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Reduce Travel Time"),
+                "tip": _(
+                    "Using this option can significantly reduce the time spent "
+                    + "moving between elements with the laser off "
+                    + "by optimizing the sequence that elements are burned. "
+                )
+                       + "\n\n"
+                       + _(
+                    "When this option is NOT checked, elements are burned strictly "
+                    + "in the order they appear in the Operation tree, "
+                    + "and the Merge options will have no effect on the burn time. "
+                )
+                       + "\n\n"
+                       + _(
+                    "When this option IS checked, Meerk40t will burn each subpath "
+                    + "and then move to the nearest remaining subpath instead, "
+                    + "reducing the time taken moving between burn items."
+                ),
+                "page": "Optimizations",
+                "section": "",
+            },
+            {
+                "attr": "opt_complete_subpaths",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Burn Complete Subpaths"),
+                "tip": _(
+                    "By default Reduce Travel Time optimises using SVG individual path segments, "
+                    + "which means that non-closed subpaths can be burned in several shorter separate burns "
+                    + "rather than one continuous burn from start to end. "
+                )
+                       + "\n\n"
+                       + _(
+                    "This option only affects non-closed paths. "
+                    + "When this option is checked, non-closed subpaths are always burned in one continuous burn "
+                    + "from start to end rather than having burns start in the middle. "
+                    + "Whilst this may create a longer travel move to the end of the subpath,"
+                    + "it also avoids later travel moves to or from the intermediate point. "
+                    + "The total travel time may therefore be shorter or longer. "
+                    + "It may also avoid minor differences in total burn depth "
+                    + "at the point the burns join. "
+                ),
+                "page": "Optimizations",
+                "section": "",
+                "conditional": (context, "opt_reduce_travel"),
+            },
+            {
+                "attr": "opt_merge_passes",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Merge Passes"),
+                "tip": _(
+                    "Combine multiple passes into the same optimization. "
+                    + "This will typically result in each subpath being burned multiple times in succession, "
+                    + "burning closed paths round-and-round "
+                    + "and non-closed paths back-and-forth, "
+                    + "before Meerk40t moves to the next path. "
+                )
+                       + "\n\n"
+                       + _(
+                    "If you have a complex design with many paths and are burning with multiple passes, "
+                    + "using this option can significantly REDUCE the optimisation time. "
+                )
+                       + "\n\n"
+                       + _(
+                    "NOTE: Where you burn very short paths multiple times in quick succession, "
+                    + "this does not allow time for the material to cool down between burns, "
+                    + "and this can result in greater charring "
+                    + "or even an increased risk of the material catching fire."
+                ),
+                "page": "Optimizations",
+                "section": "",
+                "conditional": (context, "opt_reduce_travel"),
+            },
+            {
+                "attr": "opt_merge_ops",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Merge Operations"),
+                "tip": _(
+                    "Combine multiple consecutive burn operations and optimise across them globally. "
+                    + "Operations of different types will be optimised together to reduce travel time, "
+                    + "so vector and raster burns will be mixed. "
+                )
+                       + "\n\n"
+                       + _(
+                    "If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
+                    + "If Merge Passes is also checked, then all burns will be optimised globally."
+                )
+                       + "\n\n"
+                       + _(
+                    "If you have a complex design with many paths across multiple consecutive burn operations, "
+                    + "using this option can significantly INCREASE the optimisation time. "
+                ),
+                "page": "Optimizations",
+                "section": "",
+                "conditional": (context, "opt_reduce_travel"),
             },
             {
                 "attr": "opt_closed_distance",
