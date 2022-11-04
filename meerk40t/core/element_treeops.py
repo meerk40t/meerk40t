@@ -1092,10 +1092,19 @@ def init_tree(kernel):
         help="",
     )
     def dup_n_copies(node, copies=1, **kwargs):
+        # Code in series.
+        # add_nodes = list(node.children)
+        # add_nodes *= copies
+        # for n in add_nodes:
+        #     node.add_reference(n.node)
+
+        # Code in parallel.
         add_nodes = list(node.children)
-        add_nodes *= copies
-        for n in add_nodes:
-            node.add_reference(n.node)
+        for i in range(len(add_nodes) - 1, -1, -1):
+            n = add_nodes[i]
+            for k in range(copies):
+                node.add_reference(n.node, pos=i)
+
         self.signal("refresh_tree")
 
     @tree_operation(

@@ -91,6 +91,7 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Optimizations",
                 "section": "Burn sequence",
+                "conditional": (context, "opt_reduce_travel"),
             },
             {
                 "attr": "opt_merge_passes",
@@ -119,6 +120,7 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Optimizations",
                 "section": "Merging",
+                "conditional": (context, "opt_reduce_travel"),
             },
             {
                 "attr": "opt_merge_ops",
@@ -143,6 +145,7 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Optimizations",
                 "section": "Merging",
+                "conditional": (context, "opt_reduce_travel"),
             },
             {
                 "attr": "opt_inner_first",
@@ -164,7 +167,8 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Optimizations",
                 "section": "Burn sequence",
-                "subsection": "Inner burn",            },
+                "subsection": "Inner burn",
+            },
             {
                 "attr": "opt_inner_tolerance",
                 "object": context,
@@ -204,6 +208,7 @@ def plugin(kernel, lifecycle=None):
                 ),
                 "page": "Optimizations",
                 "section": "Burn sequence",
+                "conditional": (context, "opt_inner_first"),
             },
             {
                 "attr": "opt_closed_distance",
