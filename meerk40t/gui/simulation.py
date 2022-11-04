@@ -528,7 +528,8 @@ class CutcodePanel(wx.Panel):
 
     def on_listbox_operation_select(self, event):
         for cut in self.last_selected:
-            self.cutcode[cut].highlighted = False
+            if cut<len(self.cutcode):
+                self.cutcode[cut].highlighted = False
         self.last_selected = self.list_cutcode.GetSelections()
         if self.last_selected is None:
             self.last_selected = []
