@@ -42,69 +42,6 @@ def plugin(kernel, lifecycle=None):
 
         choices = [
             {
-                "attr": "opt_inner_first",
-                "object": context,
-                "default": True,
-                "type": bool,
-                "label": _("Burn Inner First"),
-                "tip": _(
-                    "Ensure that inside burns are done before an outside cut in order to ensure that burns inside "
-                    + "a cut-out piece are done before the cut piece shifts or drops out of the material."
-                )
-                + "\n\n"
-                + _(
-                    "If you find that using this option significantly increases the optimisation time, "
-                    + "alternatives are: \n"
-                    + "* Deselecting Cut Inner First if you are not cutting fully through your material \n"
-                    + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
-                    + "* If you are using multiple passes, check Merge Passes"
-                ),
-                "page": "Optimizations",
-                "section": "Burn sequence",
-                # "subsection": "Inner burn",
-            },
-            {
-                "attr": "opt_inner_tolerance",
-                "object": context,
-                "default": "0",
-                "type": Length,
-                "label": _("Tolerance"),
-                "tip": _("Tolerance to decide if a shape is truly inside another one."),
-                "page": "Optimizations",
-                "section": "Burn sequence",
-                # "subsection": "Inner burn",
-                "conditional": (context, "opt_inner_first"),
-            },
-            {
-                "attr": "opt_inners_grouped",
-                "object": context,
-                "default": False,
-                "type": bool,
-                "label": _("Group Inner Burns"),
-                "tip": _(
-                    "Try to complete a set of inner burns and the associated outer cut before moving onto other elements."
-                    + "This option only does something if Burn Inner First is also selected. "
-                    + "If your design has multiple separate pieces on it, "
-                    + "this should mostly cause each piece to be burned in entirety "
-                    + "before moving on to burn another piece. "
-                    + "This can reduce the risk of e.g. a shift ruining an entire piece of material "
-                    + "by trying to ensure that one piece is finished before starting on another."
-                )
-                + "\n\n"
-                + _(
-                    "This optimization works best with Merge Operations also checked though this is not a requirement. "
-                )
-                + "\n\n"
-                + _(
-                    "Because this optimisation is done once rasters have been turned into images, "
-                    + "inner elements may span multiple design pieces, "
-                    + "in which case they may be optimised together."
-                ),
-                "page": "Optimizations",
-                "section": "Burn sequence",
-                "conditional": (context, "opt_inner_first"),
-            },
-            {
                 "attr": "opt_reduce_travel",
                 "object": context,
                 "default": True,
@@ -153,8 +90,7 @@ def plugin(kernel, lifecycle=None):
                     + "at the point the burns join. "
                 ),
                 "page": "Optimizations",
-                "section": "",
-                "conditional": (context, "opt_reduce_travel"),
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_merge_passes",
@@ -182,8 +118,7 @@ def plugin(kernel, lifecycle=None):
                     + "or even an increased risk of the material catching fire."
                 ),
                 "page": "Optimizations",
-                "section": "",
-                "conditional": (context, "opt_reduce_travel"),
+                "section": "Merging",
             },
             {
                 "attr": "opt_merge_ops",
@@ -207,8 +142,68 @@ def plugin(kernel, lifecycle=None):
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
                 "page": "Optimizations",
-                "section": "",
-                "conditional": (context, "opt_reduce_travel"),
+                "section": "Merging",
+            },
+            {
+                "attr": "opt_inner_first",
+                "object": context,
+                "default": True,
+                "type": bool,
+                "label": _("Burn Inner First"),
+                "tip": _(
+                    "Ensure that inside burns are done before an outside cut in order to ensure that burns inside "
+                    + "a cut-out piece are done before the cut piece shifts or drops out of the material."
+                )
+                       + "\n\n"
+                       + _(
+                    "If you find that using this option significantly increases the optimisation time, "
+                    + "alternatives are: \n"
+                    + "* Deselecting Cut Inner First if you are not cutting fully through your material \n"
+                    + "* Putting the inner paths into a separate earlier operation(s) and not using Merge Operations or Cut Inner First \n"
+                    + "* If you are using multiple passes, check Merge Passes"
+                ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
+                "subsection": "Inner burn", },
+            {
+                "attr": "opt_inner_tolerance",
+                "object": context,
+                "default": "0",
+                "type": Length,
+                "label": _("Tolerance"),
+                "tip": _("Tolerance to decide if a shape is truly inside another one."),
+                "page": "Optimizations",
+                "section": "Burn sequence",
+                "subsection": "Inner burn",
+                "conditional": (context, "opt_inner_first"),
+            },
+            {
+                "attr": "opt_inners_grouped",
+                "object": context,
+                "default": False,
+                "type": bool,
+                "label": _("Group Inner Burns"),
+                "tip": _(
+                    "Try to complete a set of inner burns and the associated outer cut before moving onto other elements."
+                    + "This option only does something if Burn Inner First is also selected. "
+                    + "If your design has multiple separate pieces on it, "
+                    + "this should mostly cause each piece to be burned in entirety "
+                    + "before moving on to burn another piece. "
+                    + "This can reduce the risk of e.g. a shift ruining an entire piece of material "
+                    + "by trying to ensure that one piece is finished before starting on another."
+                )
+                       + "\n\n"
+                       + _(
+                    "This optimization works best with Merge Operations also checked though this is not a requirement. "
+                )
+                       + "\n\n"
+                       + _(
+                    "Because this optimisation is done once rasters have been turned into images, "
+                    + "inner elements may span multiple design pieces, "
+                    + "in which case they may be optimised together."
+                ),
+                "page": "Optimizations",
+                "section": "Burn sequence",
             },
             {
                 "attr": "opt_closed_distance",
