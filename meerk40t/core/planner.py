@@ -52,14 +52,14 @@ def plugin(kernel, lifecycle=None):
                     + "moving between elements with the laser off "
                     + "by optimizing the sequence that elements are burned. "
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "When this option is NOT checked, elements are burned strictly "
                     + "in the order they appear in the Operation tree, "
                     + "and the Merge options will have no effect on the burn time. "
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "When this option IS checked, Meerk40t will burn each subpath "
                     + "and then move to the nearest remaining subpath instead, "
                     + "reducing the time taken moving between burn items."
@@ -78,8 +78,8 @@ def plugin(kernel, lifecycle=None):
                     + "which means that non-closed subpaths can be burned in several shorter separate burns "
                     + "rather than one continuous burn from start to end. "
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "This option only affects non-closed paths. "
                     + "When this option is checked, non-closed subpaths are always burned in one continuous burn "
                     + "from start to end rather than having burns start in the middle. "
@@ -106,13 +106,13 @@ def plugin(kernel, lifecycle=None):
                     + "and non-closed paths back-and-forth, "
                     + "before Meerk40t moves to the next path. "
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "If you have a complex design with many paths and are burning with multiple passes, "
                     + "using this option can significantly REDUCE the optimisation time. "
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "NOTE: Where you burn very short paths multiple times in quick succession, "
                     + "this does not allow time for the material to cool down between burns, "
                     + "and this can result in greater charring "
@@ -133,13 +133,13 @@ def plugin(kernel, lifecycle=None):
                     + "Operations of different types will be optimised together to reduce travel time, "
                     + "so vector and raster burns will be mixed. "
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "If Merge Passes is not checked, Operations with >1 passes will only have the same passes merged. "
                     + "If Merge Passes is also checked, then all burns will be optimised globally."
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "If you have a complex design with many paths across multiple consecutive burn operations, "
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
@@ -157,8 +157,8 @@ def plugin(kernel, lifecycle=None):
                     "Ensure that inside burns are done before an outside cut in order to ensure that burns inside "
                     + "a cut-out piece are done before the cut piece shifts or drops out of the material."
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "If you find that using this option significantly increases the optimisation time, "
                     + "alternatives are: \n"
                     + "* Deselecting Cut Inner First if you are not cutting fully through your material \n"
@@ -196,12 +196,12 @@ def plugin(kernel, lifecycle=None):
                     + "This can reduce the risk of e.g. a shift ruining an entire piece of material "
                     + "by trying to ensure that one piece is finished before starting on another."
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "This optimization works best with Merge Operations also checked though this is not a requirement. "
                 )
-                       + "\n\n"
-                       + _(
+                + "\n\n"
+                + _(
                     "Because this optimisation is done once rasters have been turned into images, "
                     + "inner elements may span multiple design pieces, "
                     + "in which case they may be optimised together."
