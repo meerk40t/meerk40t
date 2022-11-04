@@ -10830,6 +10830,9 @@ msgstr "Länge"
 msgid "Area"
 msgstr "Fläche"
 
+msgid "Area (w/wo stroke)"
+msgstr "Fläche (mit/ohne Rand)"
+
 msgid "Perimeter"
 msgstr "Umfang"
 
