@@ -65,7 +65,7 @@ def plugin(kernel, lifecycle=None):
                     + "reducing the time taken moving between burn items."
                 ),
                 "page": "Optimizations",
-                "section": "",
+                "section": "_20_Optimizations",
             },
             {
                 "attr": "opt_complete_subpaths",
@@ -90,7 +90,7 @@ def plugin(kernel, lifecycle=None):
                     + "at the point the burns join. "
                 ),
                 "page": "Optimizations",
-                "section": "Burn sequence",
+                "section": "_20_Optimizations",
                 "conditional": (context, "opt_reduce_travel"),
             },
             {
@@ -119,7 +119,7 @@ def plugin(kernel, lifecycle=None):
                     + "or even an increased risk of the material catching fire."
                 ),
                 "page": "Optimizations",
-                "section": "Merging",
+                "section": "_20_Optimizations",
                 "conditional": (context, "opt_reduce_travel"),
             },
             {
@@ -144,7 +144,7 @@ def plugin(kernel, lifecycle=None):
                     + "using this option can significantly INCREASE the optimisation time. "
                 ),
                 "page": "Optimizations",
-                "section": "Merging",
+                "section": "_20_Optimizations",
                 "conditional": (context, "opt_reduce_travel"),
             },
             {
@@ -166,8 +166,7 @@ def plugin(kernel, lifecycle=None):
                     + "* If you are using multiple passes, check Merge Passes"
                 ),
                 "page": "Optimizations",
-                "section": "Burn sequence",
-                "subsection": "Inner burn",
+                "section": "_10_Burn sequence",
             },
             {
                 "attr": "opt_inner_tolerance",
@@ -177,8 +176,7 @@ def plugin(kernel, lifecycle=None):
                 "label": _("Tolerance"),
                 "tip": _("Tolerance to decide if a shape is truly inside another one."),
                 "page": "Optimizations",
-                "section": "Burn sequence",
-                "subsection": "Inner burn",
+                "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
             {
@@ -207,7 +205,7 @@ def plugin(kernel, lifecycle=None):
                     + "in which case they may be optimised together."
                 ),
                 "page": "Optimizations",
-                "section": "Burn sequence",
+                "section": "_10_Burn sequence",
                 "conditional": (context, "opt_inner_first"),
             },
             {
@@ -220,7 +218,7 @@ def plugin(kernel, lifecycle=None):
                     "How close in device specific natural units do endpoints need to be to count as closed?"
                 ),
                 "page": "Optimizations",
-                "section": "",
+                "section": "_20_Optimizations",
             },
         ]
         kernel.register_choices("optimize", choices)

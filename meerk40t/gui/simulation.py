@@ -45,7 +45,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import disable_window
+from .wxutils import disable_window, ScrolledPanel
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -829,11 +829,12 @@ class SimulationPanel(wx.Panel, Job):
         self.btn_slide_options.SetToolTip(
             _("Show/Hide optimization options for this job.")
         )
-        choices = self.context.lookup("choices/optimize")[:7]
+        choices = self.context.lookup("choices/optimize")
         self.subpanel_optimize = wx.Panel(self, wx.ID_ANY)
         self.options_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
+        self.options_optimize.SetupScrolling()
         self.subpanel_operations = OperationsPanel(
             self, wx.ID_ANY, context=self.context, cutplan=self.cutplan
         )

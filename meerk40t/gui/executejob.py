@@ -34,7 +34,7 @@ class PlannerPanel(wx.Panel):
         self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
         self.list_command = wx.ListBox(self, wx.ID_ANY, choices=[])
 
-        choices = self.context.lookup("choices/optimize")[:7]
+        choices = self.context.lookup("choices/optimize") # [:7]
         self.panel_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
