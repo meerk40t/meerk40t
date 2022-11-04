@@ -1367,16 +1367,22 @@ class Elemental(Service):
         data = dragging_nodes
         success = False
         special_occasion = False
+        to_classify = []
         for drag_node in data:
             if drop_node is drag_node:
                 continue
             if drop_node.drop(drag_node, modify=False):
+                # Is the drag node coming from the regmarks branch?
+                # If yes then we might need to classify.
+                if drag_node._parent.type == "branch reg":
+                    to_classify.append(drag_node)
                 if special_occasion:
                     for ref in list(drag_node._references):
                         ref.remove_node()
                 drop_node.drop(drag_node, modify=True)
                 success = True
-
+        if self.classify_new and len(to_classify) > 0:
+            self.classify(to_classify)
         # Refresh the target node so any changes like color materialize...
         self.signal("element_property_reload", drop_node)
         return success
