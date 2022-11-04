@@ -829,7 +829,12 @@ class SimulationPanel(wx.Panel, Job):
         self.btn_slide_options.SetToolTip(
             _("Show/Hide optimization options for this job.")
         )
-        choices = self.context.lookup("choices/optimize")
+        from copy import copy
+        prechoices = copy(context.lookup("choices/optimize"))
+        choices = list(map(copy, prechoices))
+        # Clear the page-entry
+        for entry in choices:
+            entry["page"] = ""
         self.subpanel_optimize = wx.Panel(self, wx.ID_ANY)
         self.options_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
