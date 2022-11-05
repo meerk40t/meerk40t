@@ -5658,7 +5658,7 @@ def init_commands(kernel):
         "undolist",
     )
     def undo_list(command, channel, _, **kwgs):
-        for entry in self.undo.undolist:
+        for entry in self.undo.undolist():
             channel(entry)
 
     # ==========
