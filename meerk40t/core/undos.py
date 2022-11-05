@@ -8,11 +8,11 @@ execute undo and redo operations for the tree.
 
 
 class UndoState:
-    def __init__(self, elements, message=None):
-        self.elements = elements
+    def __init__(self, state, message=None):
+        self.state = state
         self.message = message
         if self.message is None:
-            self.message = str(id(elements))
+            self.message = str(id(state))
 
     def __str__(self):
         return self.message
@@ -27,7 +27,7 @@ class Undo:
         self.message = None
 
     def __str__(self):
-        return f"Undo({self._undo_index} of {len(self._undo_stack)})"
+        return f"Undo(#{self._undo_index} in list of {len(self._undo_stack)} states)"
 
     def mark(self, message=None):
         self._undo_index += 1
@@ -45,7 +45,8 @@ class Undo:
             return False
         self._undo_index -= 1
         undo = self._undo_stack[self._undo_index]
-        self.tree.restore_tree(undo)
+        self.tree.restore_tree(undo.state)
+        undo.state = self.tree.backup_tree()  # Get unused copy
         return True
 
     def redo(self):
@@ -53,7 +54,8 @@ class Undo:
             return False
         self._undo_index += 1
         redo = self._undo_stack[self._undo_index]
-        self.tree.restore_tree(redo)
+        self.tree.restore_tree(redo.state)
+        redo.state = self.tree.backup_tree()  # Get unused copy
         return True
 
     def undolist(self):
