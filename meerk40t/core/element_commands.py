@@ -5631,24 +5631,16 @@ def init_commands(kernel):
         "save_restore_point",
     )
     def undo_mark(data=None, **kwgs):
-        self._undo_index += 1
-        self._undo_stack.insert(self._undo_index, self._tree.backup_tree())
-        del self._undo_stack[self._undo_index + 1 :]
-        return "undo", self._undo_stack[self._undo_index]
+        self.undo.mark()
 
     @self.console_command(
         "undo",
     )
     def undo_undo(command, channel, _, **kwgs):
-        if not self._undo_stack:
-            return
-        if self._undo_index == 0:
+        if not self.undo.undo():
             # At bottom of stack.
             channel("No undo available.")
             return
-        self._undo_index -= 1
-        undo = self._undo_stack[self._undo_index]
-        self._tree.restore_tree(undo)
         self.signal("refresh_scene")
         self.signal("rebuild_tree")
 
@@ -5656,14 +5648,9 @@ def init_commands(kernel):
         "redo",
     )
     def undo_redo(command, channel, _, data=None, **kwgs):
-        if not self._undo_stack:
-            return
-        if self._undo_index >= len(self._undo_stack) - 1:
+        if not self.undo.redo():
             channel("No redo available.")
             return
-        self._undo_index += 1
-        redo = self._undo_stack[self._undo_index]
-        self._tree.restore_tree(redo)
         self.signal("refresh_scene")
         self.signal("rebuild_tree")
 
@@ -5671,9 +5658,8 @@ def init_commands(kernel):
         "undolist",
     )
     def undo_list(command, channel, _, **kwgs):
-        for i, v in enumerate(self._undo_stack):
-            q = "*" if i == self._undo_index else " "
-            channel(f"{q}{str(i).ljust(5)}: undo {id(v)}:{str(v)} elements ")
+        for entry in self.undo.undolist:
+            channel(entry)
 
     # ==========
     # CLIPBOARD COMMANDS

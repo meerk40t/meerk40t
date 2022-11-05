@@ -3,6 +3,7 @@ from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings
+from .undos import Undo
 
 from ..svgelements import Color, SVGElement
 from .element_types import *
@@ -393,8 +394,6 @@ class Elemental(Service):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
         )
-        self._undo_stack = []
-        self._undo_index = -1
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -404,7 +403,8 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
         self._save_restore_job = ConsoleFunction(self, "save_restore_point\n", times=1)
-        self("save_restore_point\n")
+
+        self.undo = Undo(self._tree)
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
