@@ -556,6 +556,12 @@ class Node:
         if self._parent is not None:
             self._parent.invalidated()
 
+    def updated(self):
+        """
+        The nodes display information may have changed but nothing about the matrix or the internal data is altered.
+        """
+        self.notify_update(self)
+
     def modified(self):
         """
         The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
@@ -617,23 +623,50 @@ class Node:
         return self.add(node=node, type="reference", pos=pos, **kwargs)
 
     def add_node(self, node, pos=None):
+        """
+        Attach an already created node to the tree.
+
+        Requires that this node be validated to avoid loops.
+
+        @param node:
+        @param pos:
+        @return:
+        """
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, pos=pos)
+        self._attach_node(node, pos=pos)
 
     def create(self, type=None, id=None, **kwargs):
+        """
+        Create node of type with attributes via node bootstrapping.
+
+        @param type:
+        @param id:
+        @param kwargs:
+        @return:
+        """
         node_class = self._root.bootstrap.get(type, Node)
         node = node_class(**kwargs)
         node.type = type
         node.id = id
         if self._root is not None:
             self._root.notify_created(node)
+        return node
+
+    def _attach_node(self, node, pos=None):
+        """
+        Attach a valid and created node to tree.
+        @param node:
+        @param pos:
+        @return:
+        """
+        node._parent = self
+        node._root = self._root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        node.notify_attached(node, parent=self, pos=pos)
         return node
 
     def add(self, type=None, id=None, pos=None, **kwargs):
@@ -647,13 +680,7 @@ class Node:
         @return:
         """
         node = self.create(type=type, id=id, **kwargs)
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, pos=pos)
+        self._attach_node(node, pos=pos)
         return node
 
     def _flatten(self, node):

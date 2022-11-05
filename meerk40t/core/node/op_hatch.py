@@ -242,7 +242,7 @@ class HatchOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)

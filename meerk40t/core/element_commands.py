@@ -1046,7 +1046,7 @@ def init_commands(kernel):
         for op in data:
             if op.type in ("op raster", "op image"):
                 op.dpi = dpi
-                op.notify_update()
+                op.updated()
         return "ops", data
 
     @self.console_option(
@@ -1119,7 +1119,7 @@ def init_commands(kernel):
                     name=str(op), old_speed=old, speed=s
                 )
             )
-            op.notify_update()
+            op.updated()
         return "ops", data
 
     @self.console_argument(
@@ -1181,7 +1181,7 @@ def init_commands(kernel):
                     name=str(op), old_power=old, power=s
                 )
             )
-            op.notify_update()
+            op.updated()
         return "ops", data
 
     @self.console_argument(
@@ -1241,7 +1241,7 @@ def init_commands(kernel):
                     "Frequency for '{name}' updated {old_frequency} -> {frequency}"
                 ).format(name=str(op), old_frequency=old, frequency=s)
             )
-            op.notify_update()
+            op.updated()
         return "ops", data
 
     @self.console_argument("passes", type=int, help=_("Set operation passes"))
@@ -1268,7 +1268,7 @@ def init_commands(kernel):
                     name=str(op), old_passes=old_passes, passes=passes
                 )
             )
-            op.notify_update()
+            op.updated()
         return "ops", data
 
     @self.console_argument(
@@ -1331,7 +1331,7 @@ def init_commands(kernel):
                     "Hatch Distance for '{name}' updated {old_distance} -> {distance}"
                 ).format(name=str(op), old_distance=old, distance=op.hatch_distance)
             )
-            op.notify_update()
+            op.updated()
         return "ops", data
 
     @self.console_argument(
@@ -1402,7 +1402,7 @@ def init_commands(kernel):
                     angle_degree=new_hatch_angle_deg,
                 )
             )
-            op.notify_update()
+            op.updated()
         return "ops", data
 
     @self.console_command(
@@ -1418,7 +1418,7 @@ def init_commands(kernel):
                 try:
                     op.output = False
                     channel(_("Operation '{name}' disabled.").format(name=str(op)))
-                    op.notify_update()
+                    op.updated()
                     no_op = False
                 except AttributeError:
                     pass
@@ -1439,7 +1439,7 @@ def init_commands(kernel):
                 try:
                     op.output = True
                     channel(_("Operation '{name}' enabled.").format(name=str(op)))
-                    op.notify_update()
+                    op.updated()
                     no_op = False
                 except AttributeError:
                     pass

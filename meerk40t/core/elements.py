@@ -404,6 +404,7 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
         self._save_restore_job = ConsoleFunction(self, "save_restore_point\n", times=1)
+        self("save_restore_point\n")
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -1038,6 +1039,12 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
+        self.schedule(self._save_restore_job)
+
+    def node_attached(self, node, parent, pos):
+        self.schedule(self._save_restore_job)
+
+    def node_detached(self, node, parent, pos):
         self.schedule(self._save_restore_job)
 
     def listen_tree(self, listener):
