@@ -54,6 +54,10 @@ class Fillrule(IntEnum):
 class Node:
     """
     Nodes are elements within the tree which stores most of the objects in Elements.
+
+    All nodes have children, root, parent, and reference links. The children are subnodes,
+    the root points to the tree root, the parent points to the immediate parent, and references
+    refers to nodes that point to this node type.
     """
 
     def __init__(self, type=None, *args, **kwargs):
