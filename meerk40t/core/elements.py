@@ -441,7 +441,7 @@ class Elemental(Service):
             self.load_default(performclassify=False)
         if list(self.ops()):
             # Something was loaded for default ops. Mark that.
-            self.undo.mark()  # Mark defaulted
+            self.undo.mark("op-loaded")  # Mark defaulted
         self._default_stroke = None
         self._default_fill = None
         self._first_emphasized = None
