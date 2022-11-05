@@ -1041,10 +1041,10 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self.schedule(self._save_restore_job)
 
-    def node_attached(self, node, parent, pos):
+    def node_attached(self, node, **kwargs):
         self.schedule(self._save_restore_job)
 
-    def node_detached(self, node, parent, pos):
+    def node_detached(self, node, **kwargs):
         self.schedule(self._save_restore_job)
 
     def listen_tree(self, listener):
