@@ -300,7 +300,7 @@ class ImageNode(Node):
             self._process_image_failed = False
         except (MemoryError, Image.DecompressionBombError):
             self._process_image_failed = True
-        self.altered()
+        self.updated()
 
     @property
     def opaque_image(self):
