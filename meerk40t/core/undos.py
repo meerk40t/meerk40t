@@ -1,5 +1,5 @@
 """
-Undoer
+Undo States
 
 The undo class centralizes the undo stack and related commands. It's passed the
 rootnode of the tree and can perform marks to save the current tree states and will
@@ -30,6 +30,13 @@ class Undo:
         return f"Undo(#{self._undo_index} in list of {len(self._undo_stack)} states)"
 
     def mark(self, message=None):
+        """
+        Marks an undo state require a backup the tree information.
+
+        @param message: Optional message to be applied to the tree change.
+
+        @return:
+        """
         self._undo_index += 1
         if message is None:
             message = self.message
@@ -40,6 +47,13 @@ class Undo:
         self.message = None
 
     def undo(self):
+        """
+        Performs an undo operation restoring the tree state.
+
+        Note: because the undo.state is used directly, the UndoState's state must be
+        given a fresh copy.
+        @return:
+        """
         if self._undo_index == 0:
             # At bottom of stack.
             return False
@@ -50,6 +64,9 @@ class Undo:
         return True
 
     def redo(self):
+        """
+        Performs a redo operation restoring the tree state.
+        """
         if self._undo_index >= len(self._undo_stack) - 1:
             return False
         self._undo_index += 1
