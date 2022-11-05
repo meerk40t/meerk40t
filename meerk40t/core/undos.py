@@ -12,6 +12,7 @@ class Undo:
         self.tree = tree
         self._undo_stack = []
         self._undo_index = -1
+        self.mark()  # Set initial tree state.
 
     def mark(self):
         self._undo_index += 1

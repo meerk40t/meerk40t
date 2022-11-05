@@ -976,7 +976,6 @@ class Elemental(Service):
         self.unlisten_tree(self)
 
     def service_attach(self, *args, **kwargs):
-        self.schedule(self._save_restore_job)
         self.listen_tree(self)
 
     def shutdown(self, *args, **kwargs):
