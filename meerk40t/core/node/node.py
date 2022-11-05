@@ -262,9 +262,11 @@ class Node:
             assert c in c._parent._children
             c._validate_tree()
 
-    def _build_links(self, links=None):
+    def _build_copy_nodes(self, links=None):
         """
-        Build links and copy nodes.
+        Creates a copy of each node, linked to the ID of the original node. This will create
+        a map between id of original node and copy node. Without any structure. The original
+        root will link to `None` since root copies are in-effective.
 
         @param links:
         @return:
@@ -272,7 +274,7 @@ class Node:
         if links is None:
             links = {id(self): (self, None)}
         for c in self._children:
-            c._build_links(links=links)
+            c._build_copy_nodes(links=links)
             node_copy = copy(c)
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
@@ -280,30 +282,32 @@ class Node:
 
     def backup_tree(self):
         """
-        Copy of tree creates a copy of a rooted tree at the current node. It should create a copy of the tree structure
-        with the children replaced with copied children and the parents replaced with copied parents and the root also
-        replaced with a copy of the root (assuming it was called at the rootnode).
+        Creates structured copy of the branches of the tree at the current node.
 
-        @param root:
+        This creates a copied nodes, relinks the structure and returns branches of
+        the current node.
         @return:
         """
-        links = self._build_links()
-        for node_id, n in links.items():
+        links = self._build_copy_nodes()
 
+        # Rebuild structure.
+        for uid, n in links.items():
             node, node_copy = n
             if node.type == "reference":
                 continue
             if node._parent is None:
                 # Root.
                 continue
+            # Find copy-parent of copy-node and link.
             original_parent, copied_parent = links[id(node._parent)]
             if copied_parent is None:
+                # copy_parent should have been copied root, but roots don't copy
                 node_copy._parent = self._root
                 continue
             node_copy._parent = copied_parent
             copied_parent._children.append(node_copy)
-        backup = [links[id(c)][1] for c in self._children]
-        return backup
+        branches = [links[id(c)][1] for c in self._children]
+        return branches
 
     def create_label(self, text=None):
         if text is None:
