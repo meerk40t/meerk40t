@@ -114,7 +114,10 @@ class CircleTool(ToolWidget):
             self.scene.tool_active = False
             try:
                 if self.p1 is None:
-                    return
+                    self.scene.request_refresh()
+                    self.scene.context.signal("statusmsg", "")
+                    response = RESPONSE_ABORT
+                    return response
                 if nearest_snap is None:
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
@@ -123,6 +126,14 @@ class CircleTool(ToolWidget):
                 cy = self.p1.imag
                 dx = self.p1.real - self.p2.real
                 dy = self.p1.imag - self.p2.imag
+                if abs(dx) < 1E-10 or abs(dy) < 1E-10:
+                    # Degenerate? Ignore!
+                    self.p1 = None
+                    self.p2 = None
+                    self.scene.request_refresh()
+                    self.scene.context.signal("statusmsg", "")
+                    response = RESPONSE_ABORT
+                    return response
                 radius = sqrt(dx * dx + dy * dy)
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
