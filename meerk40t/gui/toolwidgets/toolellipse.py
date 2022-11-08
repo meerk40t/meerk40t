@@ -103,6 +103,16 @@ class EllipseTool(ToolWidget):
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
+                dx = self.p1.real - self.p2.real
+                dy = self.p1.imag - self.p2.imag
+                if abs(dx) < 1E-10 or abs(dy) < 1E-10:
+                    # Degenerate? Ignore!
+                    self.p1 = None
+                    self.p2 = None
+                    self.scene.request_refresh()
+                    self.scene.context.signal("statusmsg", "")
+                    response = RESPONSE_ABORT
+                    return response
                 ellipse = Ellipse(
                     (x1 + x0) / 2.0,
                     (y1 + y0) / 2.0,
