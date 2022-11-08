@@ -632,7 +632,8 @@ class Node:
         @param pos:
         @return:
         """
-        return self.add(node=node, type="reference", pos=pos, **kwargs)
+        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        node._references.append(ref)
 
     def add_node(self, node, pos=None):
         """

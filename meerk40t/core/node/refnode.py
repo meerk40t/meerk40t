@@ -8,7 +8,6 @@ class ReferenceNode(Node):
 
     def __init__(self, node, **kwargs):
         super(ReferenceNode, self).__init__(type="reference", **kwargs)
-        node._references.append(self)
         self._formatter = "*{reference}"
         self.node = node
 
