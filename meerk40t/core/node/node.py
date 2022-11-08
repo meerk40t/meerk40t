@@ -264,6 +264,10 @@ class Node:
             assert c._parent is self
             assert c._root is self._root
             assert c in c._parent._children
+            for q in c._references:
+                assert q.node is c
+            if c.type == "reference":
+                assert c in c.node._references
             c._validate_tree()
 
     def _build_copy_nodes(self, links=None):
