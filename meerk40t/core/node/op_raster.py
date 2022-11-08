@@ -131,7 +131,7 @@ class RasterOpNode(Node, Parameters):
         count = 0
         existing = 0
         result = False
-        if drag_node.type.startswith("elem"):
+        if drag_node.type.startswith("elem") and not drag_node._parent.type == "branch reg":
             existing += 1
             # if drag_node.type == "elem image":
             #     return False

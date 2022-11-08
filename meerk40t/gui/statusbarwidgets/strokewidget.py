@@ -1,3 +1,5 @@
+from math import sqrt
+
 import wx
 
 from ...core.element_types import elem_nodes
@@ -138,11 +140,11 @@ class StrokeWidget(StatusBarWidget):
         self.spin_width.SetMinSize(wx.Size(30, -1))
         self.spin_width.SetMaxSize(wx.Size(80, -1))
 
-        self.choices = ["px", "pt", "mm", "cm", "inch", "mil"]
+        self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
         self.combo_units = wx.ComboBox(
             self.parent,
             wx.ID_ANY,
-            choices=self.choices,
+            choices=self.unit_choices,
             style=wx.CB_DROPDOWN | wx.CB_READONLY,
         )
         self.combo_units.SetFont(
@@ -190,7 +192,7 @@ class StrokeWidget(StatusBarWidget):
             self.context.signal(
                 "selstrokewidth",
                 f"{float(self.spin_width.GetValue()):.2f}"
-                f"{self.choices[self.combo_units.GetSelection()]}",
+                f"{self.unit_choices[self.combo_units.GetSelection()]}",
             )
         except ValueError:
             pass
@@ -200,18 +202,67 @@ class StrokeWidget(StatusBarWidget):
             value = self.context.elements.has_emphasis()
             sw_default = None
             ck_default = True
+            mat_default = None
             for e in self.context.elements.flat(types=elem_nodes, emphasized=True):
                 if hasattr(e, "stroke_width") and hasattr(e, "stroke_scaled"):
                     if sw_default is None:
                         sw_default = e.stroke_width
+                        mat_default = e.matrix
                         ck_default = e.stroke_scaled
                         break
             if sw_default is not None:
                 # Set Values
                 self.startup = True
-                stdlen = float(Length("1mm"))
-                value = f"{sw_default / stdlen:.2f}"
-                self.spin_width.SetValue(value)
-                self.combo_units.SetSelection(self.choices.index("mm"))
+                # Lets establish which unit might be the best to represent the display
+                found_something = False
+                if sw_default == 0:
+                    value = 0
+                    idxunit = 0  # px
+                    found_something = True
+                else:
+                    best_post = 99999999
+                    delta = 0.99999999
+                    best_pre = 0
+                    factor = sqrt(mat_default.determinant) if ck_default else 1.0
+                    node_stroke_width = sw_default * factor
+                    for idx, unit in enumerate(self.unit_choices):
+                        std = float(Length(f"1{unit}"))
+                        fraction = abs(node_stroke_width / std)
+                        if fraction == 0:
+                            continue
+                        curr_post = 0
+                        curr_pre = int(fraction)
+                        while fraction < 1:
+                            curr_post += 1
+                            fraction *= 10
+                        fraction -= curr_pre
+                        # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
+                        takespref = False
+                        if fraction < delta:
+                            takespref = True
+                        elif fraction == delta and curr_pre > best_pre:
+                            takespref = True
+                        elif fraction == delta and curr_post < best_post:
+                            takespref = True
+                        if takespref:
+                            best_pre = curr_pre
+                            delta = fraction
+                            best_post = curr_post
+                            idxunit = idx
+                            value = node_stroke_width / std
+                            found_something = True
+
+                    if not found_something:
+                        std = float(Length(f"1mm"))
+                        if node_stroke_width / std < 0.1:
+                            idxunit = 0  # px
+                        else:
+                            idxunit = 2  # mm
+                        unit = self.unit_choices[idxunit]
+                        std = float(Length(f"1{unit}"))
+                        value = node_stroke_width / std
+
+                self.spin_width.SetValue(str(round(value, 4)))
+                self.combo_units.SetSelection(idxunit)
                 self.chk_scale.SetValue(ck_default)
                 self.startup = False

@@ -5209,6 +5209,18 @@ msgstr "Aktualisiee Plan..."
 msgid "Preparing simulation..."
 msgstr "Bereite Simulation vor..."
 
+msgid "Please select a cutcode entry"
+msgstr "Bitte zunächst einen cutcode-Eintrag"
+
+msgid "from the operations panel"
+msgstr "aus der Arbeitsablauf-Liste auswählen"
+
+msgid "Tolerance to decide if a shape is truly inside another one."
+msgstr ""
+"Toleranz bei der Überprüfung, ob ein Element wirklich vollständig\n"
+"innerhalb eines anderen liegt. Sollte maximal auf Laserschnittbreite\n"
+"gesetzt werden."
+
 #: meerk40t/gui/lasertoolpanel.py:40
 msgid "Find center"
 msgstr "Finde Mittelpunkt"
@@ -10345,13 +10357,24 @@ msgid ""
 "MAJORITY: prefers to connect the color (black or white) that occurs most frequently in a local neighborhood of the current position.\n"
 "RANDOM: choose randomly."
 msgstr ""
+"Dieser Parameter legt fest, wie mit Doppeldeutigkeiten beim Zerlegen der Grafik in Vektorpfade verfahren wird.\n\n"
+"BLACK: bevorzugt schwarze (Vordergrund) Komponenten zu verbinden.\n"
+"WHITE: bevorzugt weiße (Hintergrund) Komponenten zu verbinden.\n"
+"LEFT: geht immer zum linksliegenden Punkt.\n"
+"RIGHT: geht immer zum rechtsliegenden Punkt.\n"
+"MINORITY: bevorzugt die Farbe (schwarz oder weiß), die am wenigsten häufig in der Umgebung vorkommt.\n"
+"MAJORITY: bevorzugt die Farbe (schwarz oder weiß), die am häufigsten in der Umgebung vorkommt.\n"
+"RANDOM: zufällige Auswahl."
 
 msgid "Suppress speckles of up to this size (default 2 px)"
 msgstr "Unterdrückt Flecken bis zu dieser Größe (Standard 2 px)"
 
 msgid ""
-"This parameter is a threshold for the detection of corners. It controls the smoothness of the traced curve."
+"This parameter is a threshold for the detection of corners. "
+"It controls the smoothness of the traced curve."
 msgstr ""
+"Dieser Parameter ist ein Schwellwert für das Erkennen von Ecken. "
+"Er bestimmt die 'Glattheit' der erzeugten Kurve."
 
 msgid "Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
 msgstr "Versucht die Kurve zu 'vereinfachen', indem die Zahl der Bezier-Segment verringert wird."
@@ -10360,6 +10383,8 @@ msgid ""
 "This defines the amount of error allowed in this simplification.\n"
 "Larger values tend to decrease the number of segments, at the expense of less accuracy."
 msgstr ""
+"Legt die erlaubte Toleranz beim Vereinfachen fest. Größere Werte führen zu einer geringeren "
+"Anzahl von Segmenten, aber auf Kosten der Genauigkeit."
 
 msgid "Establish when 'black' starts"
 msgstr "Definiert, wann 'Schwarz' beginnt"
@@ -10804,6 +10829,9 @@ msgstr "Länge"
 #: meerk40t/gui/propertypanels/pathproperty.py:175
 msgid "Area"
 msgstr "Fläche"
+
+msgid "Area (w/wo stroke)"
+msgstr "Fläche (mit/ohne Rand)"
 
 msgid "Perimeter"
 msgstr "Umfang"

@@ -45,7 +45,7 @@ from .scene.scenepanel import ScenePanel
 from .scene.widget import Widget
 from .scenewidgets.bedwidget import BedWidget
 from .scenewidgets.gridwidget import GridWidget
-from .wxutils import disable_window
+from .wxutils import disable_window, ScrolledPanel
 from .zmatrix import ZMatrix
 
 _ = wx.GetTranslation
@@ -97,6 +97,7 @@ class OperationsPanel(wx.Panel):
                 return e.__name__
             except AttributeError:
                 return str(e)
+
         oldidx = self.list_operations.GetSelection()
         self.cutplan = cutplan
         self.plan_name = self.cutplan.name
@@ -379,7 +380,9 @@ class CutcodePanel(wx.Panel):
         self.context = context
         self.cutcode = cutcode
         self.plan_name = plan_name
-        self.list_cutcode = wx.ListBox(self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE)
+        self.list_cutcode = wx.ListBox(
+            self, wx.ID_ANY, choices=[], style=wx.LB_MULTIPLE
+        )
         self.last_selected = []
         # self.text_operation_param = wx.TextCtrl(
         #     self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
@@ -455,7 +458,7 @@ class CutcodePanel(wx.Panel):
         self.list_cutcode.Enable(True)
         if self.cutcode is None:
             self.list_cutcode.InsertItems(
-                ["Please select a cutcode entry", "from the operations panel"], 0
+                [_("Please select a cutcode entry"), _("from the operations panel")], 0
             )
             self.list_cutcode.Enable(False)
         elif len(self.cutcode) != 0:
@@ -528,7 +531,8 @@ class CutcodePanel(wx.Panel):
 
     def on_listbox_operation_select(self, event):
         for cut in self.last_selected:
-            self.cutcode[cut].highlighted = False
+            if cut < len(self.cutcode):
+                self.cutcode[cut].highlighted = False
         self.last_selected = self.list_cutcode.GetSelections()
         if self.last_selected is None:
             self.last_selected = []
@@ -578,7 +582,7 @@ class CutcodePanel(wx.Panel):
                 return
             #
             idx = len(selected) - 1
-            while idx>=0:
+            while idx >= 0:
                 entry = selected[idx]
                 self.cutcode.pop(entry)
                 idx -= 1
@@ -601,7 +605,7 @@ class CutcodePanel(wx.Panel):
             #
             entry = selected[-1]
             if entry < len(self.cutcode) - 1:
-                del self.cutcode[entry + 1:]
+                del self.cutcode[entry + 1 :]
                 self.context.signal("plan", self.plan_name, 1)
 
         def append_operation(cutcode):
@@ -741,7 +745,7 @@ class CutcodePanel(wx.Panel):
                         except ValueError:
                             opparam = None
                     if opparam is not None:
-                        addop = WaitCut(wait=1000*opparam)
+                        addop = WaitCut(wait=1000 * opparam)
                 if addop is not None:
                     pre_items.append([desc, addop])
 
@@ -825,11 +829,17 @@ class SimulationPanel(wx.Panel, Job):
         self.btn_slide_options.SetToolTip(
             _("Show/Hide optimization options for this job.")
         )
-        choices = self.context.lookup("choices/optimize")[:7]
+        from copy import copy
+        prechoices = copy(context.lookup("choices/optimize"))
+        choices = list(map(copy, prechoices))
+        # Clear the page-entry
+        for entry in choices:
+            entry["page"] = ""
         self.subpanel_optimize = wx.Panel(self, wx.ID_ANY)
         self.options_optimize = ChoicePropertyPanel(
             self, wx.ID_ANY, context=self.context, choices=choices, scrolling=False
         )
+        self.options_optimize.SetupScrolling()
         self.subpanel_operations = OperationsPanel(
             self, wx.ID_ANY, context=self.context, cutplan=self.cutplan
         )

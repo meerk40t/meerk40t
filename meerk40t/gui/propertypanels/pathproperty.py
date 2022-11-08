@@ -1,17 +1,20 @@
+from copy import copy
+
 import wx
 
-from meerk40t.gui.wxutils import ScrolledPanel
-
-from ...core.units import Length
-from ..icons import icons8_vector_50
-from ..mwindow import MWindow
-from .attributes import (
+from meerk40t.core.node.node import Node
+from meerk40t.core.units import UNITS_PER_INCH, Length
+from meerk40t.gui.icons import icons8_vector_50
+from meerk40t.gui.mwindow import MWindow
+from meerk40t.gui.propertypanels.attributes import (
     ColorPanel,
     IdPanel,
     LinePropPanel,
     PositionSizePanel,
     StrokeWidthPanel,
 )
+from meerk40t.gui.wxutils import ScrolledPanel
+from meerk40t.svgelements import Color
 
 _ = wx.GetTranslation
 
@@ -95,6 +98,85 @@ class PathPropertyPanel(ScrolledPanel):
             return True
         return False
 
+    def covered_area(self, nodes):
+        area_with_stroke = 0
+        area_without_stroke = 0
+        make_raster = self.context.root.lookup("render-op/make_raster")
+        if nodes is None or len(nodes) == 0 or not make_raster:
+            return 0, 0
+        ratio = 0
+        dpi = 300
+        dots_per_units = dpi / UNITS_PER_INCH
+        _mm = float(Length("1mm"))
+        data = []
+        for node in nodes:
+            e = copy(node)
+            if hasattr(e, "fill"):
+                e.fill = Color("black")
+            data.append(e)
+
+        for with_stroke in (True, False):
+            no_stroke = True
+            for e in data:
+                if hasattr(e, "stroke"):
+                    no_stroke = False
+                    e.stroke = Color("black")
+                    if not with_stroke:
+                        e.stroke_width = 1
+                    e.altered()
+
+            if with_stroke:
+                bounds = Node.union_bounds(data, attr="paint_bounds")
+            else:
+                bounds = Node.union_bounds(data)
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+            new_width = int(width * dots_per_units)
+            new_height = int(height * dots_per_units)
+            # print(f"Width: {width:.0f} -> {new_width}")
+            # print(f"Height: {height:.0f} -> {new_height}")
+            keep_ratio = True
+            ratio = 0
+
+            all_pixel = new_height * new_width
+            if all_pixel > 0:
+                image = make_raster(
+                    data,
+                    bounds=bounds,
+                    width=new_width,
+                    height=new_height,
+                    keep_ratio=keep_ratio,
+                )
+                white_pixel = sum(
+                    image.point(lambda x: 255 if x else 0)
+                    .convert("L")
+                    .point(bool)
+                    .getdata()
+                )
+                black_pixel = all_pixel - white_pixel
+                # print(
+                #     f"Mode: {with_stroke}, pixels: {all_pixel}, white={white_pixel}, black={black_pixel}"
+                # )
+                ratio = black_pixel / all_pixel
+                area = (
+                    ratio
+                    * (bounds[2] - bounds[0])
+                    * (bounds[3] - bounds[1])
+                    / (_mm * _mm)
+                )
+                if with_stroke:
+                    area_with_stroke = area
+                else:
+                    area_without_stroke = area
+                if no_stroke:
+                    # No sense of doing it again
+                    if area_without_stroke == 0:
+                        area_without_stroke = area_with_stroke
+                    break
+
+        # print(f"Area, with: {area_with_stroke:.0f}, without: {area_without_stroke:.0f}")
+        return area_with_stroke, area_without_stroke
+
     def on_btn_get_infos(self, event):
         def closed_path(path):
             p1 = path.first_point
@@ -153,16 +235,17 @@ class PathPropertyPanel(ScrolledPanel):
         _mm = float(Length("1mm"))
         total_area = 0
         total_length = 0
+        if hasattr(self.node, "as_path"):
+            path = self.node.as_path()
+            total_length = path.length()
+        else:
+            total_length = 0
+        total_area, second_area = self.covered_area([self.node])
 
-        this_area, this_length = elements.get_information(self.node, density=50)
-        total_area += this_area
-        total_length += this_length
-
-        total_area = total_area / (_mm * _mm)
         total_length = total_length / _mm
         points = calc_points(self.node)
 
-        self.lbl_info_area.SetValue(f"{total_area:.1f} mm²")
+        self.lbl_info_area.SetValue(f"{total_area:.0f} mm² ({second_area:.0f} mm²)")
         self.lbl_info_length.SetValue(f"{total_length:.1f} mm")
         self.lbl_info_points.SetValue(f"{points:d}")
 
@@ -198,12 +281,12 @@ class PathPropertyPanel(ScrolledPanel):
         sizer_info2.Add(self.lbl_info_length, 1, wx.EXPAND, 0)
 
         sizer_info3 = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, _("Area")), wx.VERTICAL
+            wx.StaticBox(self, wx.ID_ANY, _("Area (w/wo stroke)")), wx.VERTICAL
         )
         sizer_info3.Add(self.lbl_info_area, 1, wx.EXPAND, 0)
 
-        sizer_h_infos.Add(sizer_info1, 1, wx.EXPAND, 0)
-        sizer_h_infos.Add(sizer_info2, 1, wx.EXPAND, 0)
+        sizer_h_infos.Add(sizer_info1, 0, wx.EXPAND, 0)
+        sizer_h_infos.Add(sizer_info2, 0, wx.EXPAND, 0)
         sizer_h_infos.Add(sizer_info3, 1, wx.EXPAND, 0)
         sizer_h_infos.Add(self.btn_info_get, 0, wx.EXPAND, 0)
 

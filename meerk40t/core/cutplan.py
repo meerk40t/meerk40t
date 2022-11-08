@@ -22,7 +22,7 @@ from typing import Optional
 from ..svgelements import Group, Matrix, Polygon
 from ..tools.pathtools import VectorMontonizer
 from .cutcode import CutCode, CutGroup, CutObject, RasterCut
-
+from .units import Length
 
 class CutPlanningFailedError(Exception):
     pass
@@ -422,12 +422,21 @@ class CutPlan:
         Optimize cuts at optimize stage on cutcode
         @return:
         """
+        tolerance = 0
+        if self.context.opt_inner_first:
+            stol = self.context.opt_inner_tolerance
+            try:
+                tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
+            except ValueError:
+                pass
+        # print(f"Tolerance: {tolerance}")
+
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel)
+                    self.plan[i] = inner_first_ident(c, channel=channel, tolerance=tolerance)
                     c = self.plan[i]
                 self.plan[i] = inner_selection_cutcode(
                     c,
@@ -444,12 +453,21 @@ class CutPlan:
             last = self.context.device.native
         except AttributeError:
             last = None
+        tolerance = 0
+        if self.context.opt_inner_first:
+            stol = self.context.opt_inner_tolerance
+            try:
+                tolerance = float(Length(stol)) * 2 / (self.context.device.native_scale_x + self.context.device.native_scale_y)
+            except ValueError:
+                pass
+        # print(f"Tolerance: {tolerance}")
+
         channel = self.context.channel("optimize", timestamp=True)
         grouped_inner = self.context.opt_inner_first and self.context.opt_inners_grouped
         for i, c in enumerate(self.plan):
             if isinstance(c, CutCode):
                 if c.constrained:
-                    self.plan[i] = inner_first_ident(c, channel=channel)
+                    self.plan[i] = inner_first_ident(c, channel=channel, tolerance=tolerance)
                     c = self.plan[i]
                 if last is not None:
                     c._start_x, c._start_y = last
@@ -478,15 +496,19 @@ class CutPlan:
         self.commands.clear()
 
 
-def is_inside(inner, outer):
+def is_inside(inner, outer, tolerance=0):
     """
     Test that path1 is inside path2.
     @param inner: inner path
     @param outer: outer path
     @return: whether path1 is wholly inside path2.
     """
+    # We still consider a path to be inside another path if it is
+    # within a certain tolerance
     inner_path = inner
     outer_path = outer
+    if outer == inner:  # This is the same object.
+        return False
     if hasattr(inner, "path") and inner.path is not None:
         inner_path = inner.path
     if hasattr(outer, "path") and outer.path is not None:
@@ -502,21 +524,21 @@ def is_inside(inner, outer):
     # Raster is inner if the bboxes overlap anywhere
     if isinstance(inner, RasterCut):
         return (
-            inner.bounding_box[0] <= outer.bounding_box[2]
-            and inner.bounding_box[1] <= outer.bounding_box[3]
-            and inner.bounding_box[2] >= outer.bounding_box[0]
-            and inner.bounding_box[3] >= outer.bounding_box[1]
+            inner.bounding_box[0] <= outer.bounding_box[2] + tolerance
+            and inner.bounding_box[1] <= outer.bounding_box[3] + tolerance
+            and inner.bounding_box[2] >= outer.bounding_box[0] - tolerance
+            and inner.bounding_box[3] >= outer.bounding_box[1] - tolerance
         )
-    if outer.bounding_box[0] > inner.bounding_box[0]:
+    if outer.bounding_box[0] > inner.bounding_box[0] + tolerance:
         # outer minx > inner minx (is not contained)
         return False
-    if outer.bounding_box[1] > inner.bounding_box[1]:
+    if outer.bounding_box[1] > inner.bounding_box[1] + tolerance:
         # outer miny > inner miny (is not contained)
         return False
-    if outer.bounding_box[2] < inner.bounding_box[2]:
+    if outer.bounding_box[2] < inner.bounding_box[2] - tolerance:
         # outer maxx < inner maxx (is not contained)
         return False
-    if outer.bounding_box[3] < inner.bounding_box[3]:
+    if outer.bounding_box[3] < inner.bounding_box[3] - tolerance:
         # outer maxy < inner maxy (is not contained)
         return False
     if outer.bounding_box == inner.bounding_box:
@@ -543,7 +565,7 @@ def is_inside(inner, outer):
         outer.vm = vm
     for i in range(101):
         p = inner_path.point(i / 100.0, error=1e4)
-        if not outer.vm.is_point_inside(p.x, p.y):
+        if not outer.vm.is_point_inside(p.x, p.y, tolerance=tolerance):
             return False
     return True
 
@@ -597,7 +619,7 @@ def correct_empty(context: CutGroup):
             del context[index]
 
 
-def inner_first_ident(context: CutGroup, channel=None):
+def inner_first_ident(context: CutGroup, channel=None, tolerance=0):
     """
     Identifies closed CutGroups and then identifies any other CutGroups which
     are entirely inside.
@@ -625,7 +647,8 @@ def inner_first_ident(context: CutGroup, channel=None):
             # if outer is inside inner, then inner cannot be inside outer
             if inner.contains and outer in inner.contains:
                 continue
-            if is_inside(inner, outer):
+
+            if is_inside(inner, outer, tolerance):
                 constrained = True
                 if outer.contains is None:
                     outer.contains = list()
