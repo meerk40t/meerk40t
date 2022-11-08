@@ -38,6 +38,16 @@ from .icons import (
     icons8_pause_50,
     icons8_play_50,
     icons8_route_50,
+    icons8_bell_20,
+    icons8_close_window_20,
+    icons8_home_20,
+    icons8_input_20,
+    icons8_output_20,
+    icons8_return_20,
+    icons8_stop_gesture_20,
+    icons8_system_task_20,
+    icons8_timer_20,
+    icons8_visit_20,
 )
 from .laserrender import DRAW_MODE_BACKGROUND, LaserRender
 from .mwindow import MWindow
@@ -67,9 +77,13 @@ class OperationsPanel(wx.Panel):
             self.plan_name = ""
         else:
             self.plan_name = self.cutplan.name
-        self.list_operations = wx.ListBox(self, wx.ID_ANY, choices=[])
+        self.list_operations = wx.ListCtrl(self, wx.ID_ANY, style=wx.LC_LIST)
         self.text_operation_param = wx.TextCtrl(
             self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER
+        )
+        self.check_decompile = wx.CheckBox(self, wx.ID_ANY, "D")
+        self.check_decompile.SetToolTip(
+            _("Decompile cutplan = make operations visible and editable again")
         )
         self.text_operation_param.SetToolTip(
             _("Modify operation parameter, press Enter to apply")
@@ -79,47 +93,203 @@ class OperationsPanel(wx.Panel):
             wx.EVT_RIGHT_DOWN, self.on_listbox_operation_rightclick
         )
         self.list_operations.Bind(
-            wx.EVT_LISTBOX_DCLICK, self.on_listbox_operation_dclick
+            wx.EVT_LIST_ITEM_SELECTED, self.on_listbox_operation_select
         )
-        self.list_operations.Bind(wx.EVT_LISTBOX, self.on_listbox_operation_select)
         self.text_operation_param.Bind(wx.EVT_TEXT_ENTER, self.on_text_operation_param)
+        self.check_decompile.Bind(wx.EVT_CHECKBOX, self.on_check_decompile)
 
         ops_sizer = wx.BoxSizer(wx.VERTICAL)
         ops_sizer.Add(self.list_operations, 1, wx.EXPAND, 0)
-        ops_sizer.Add(self.text_operation_param, 0, wx.EXPAND, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(self.text_operation_param, 1, wx.EXPAND, 0)
+        hsizer.Add(self.check_decompile, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        ops_sizer.Add(hsizer, 0, wx.EXPAND, 0)
+        self.setup_state_images()
         self.SetSizer(ops_sizer)
         self.Layout()
+        self.context.setting(bool, "cutplan_decompile", False)
+        decompile = self.context.cutplan_decompile
+        self.check_decompile.SetValue(decompile)
         self.set_cut_plan(self.cutplan)
+
+    def setup_state_images(self):
+        iconsize = 20
+        self.default_images = [
+            ["beep", icons8_bell_20],
+            ["interrupt", icons8_stop_gesture_20],
+            ["quit", icons8_close_window_20],
+            ["wait", icons8_timer_20],
+            ["home", icons8_home_20],
+            ["goto", icons8_return_20],
+            ["origin", icons8_return_20],
+            ["setorigin", icons8_visit_20],
+            ["output", icons8_output_20],
+            ["input", icons8_input_20],
+            ["cutcode", icons8_laser_beam_hazard2_50],
+            # Intentionally the last...
+            ["console", icons8_system_task_20],
+        ]
+        self.options_images = wx.ImageList()
+        self.options_images.Create(width=iconsize, height=iconsize)
+        for entry in self.default_images:
+            image = entry[1].GetBitmap(resize=(iconsize, iconsize), noadjustment=True)
+            image_id1 = self.options_images.Add(bitmap=image)
+        self.list_operations.AssignImageList(self.options_images, wx.IMAGE_LIST_SMALL)
+
+    def establish_state(self, typename, opname):
+        # Establish icon
+        stateidx = -1
+        tofind = opname.lower()
+        for idx, entry in enumerate(self.default_images):
+            if tofind.startswith(entry[0]):
+                stateidx = idx
+                break
+        if stateidx<0 and typename == "ConsoleOperation":
+            stateidx = len(self.default_images) - 1
+        # print(f"opname={opname}, parameter={parameter}, state={stateidx}")
+        return stateidx
+
+    def on_check_decompile(self, event):
+        flag = self.check_decompile.GetValue()
+        if self.context.cutplan_decompile != flag:
+            self.context.cutplan_decompile = flag
+            if flag:
+                self.set_cut_plan(self.cutplan)
 
     def set_cut_plan(self, cutplan):
         def name_str(e):
+            res1 = type(e).__name__
             try:
-                return e.__name__
+                res2 = e.__name__
             except AttributeError:
-                return str(e)
+                res2 = str(e)
+            # print(f"{res1} -> {res2}")
+            return res1, res2
 
-        oldidx = self.list_operations.GetSelection()
+        decompile = self.context.cutplan_decompile
+        oldidx = self.list_operations.GetFirstSelected()
         self.cutplan = cutplan
         self.plan_name = self.cutplan.name
-        self.list_operations.Clear()
+        if decompile:
+            changes = True
+            while changes:
+                changes = False  # Prove me wrong...
+                for idx, cut in enumerate(self.cutplan.plan):
+                    if isinstance(cut, CutCode):
+                        # Lets have a look at the beginning
+                        myidx = idx
+                        while len(cut) > 0:
+                            entry = cut[0]
+                            if isinstance(entry, GotoCut):
+                                # reverse engineer
+                                changes = True
+                                x = entry._start_x
+                                y = entry._start_y
+                                newop = GotoOperation(x=x, y=y)
+                                self.cutplan.plan.insert(myidx, newop)
+                                myidx += 1
+                                cut.pop(0)
+                            elif isinstance(entry, HomeCut):
+                                # reverse engineer
+                                changes = True
+                                newop = HomeOperation()
+                                self.cutplan.plan.insert(myidx, newop)
+                                myidx += 1
+                                cut.pop(0)
+                            elif isinstance(entry, WaitCut):
+                                # reverse engineer
+                                changes = True
+                                wt = entry.dwell_time
+                                newop = WaitOperation(wait=wt)
+                                self.cutplan.plan.insert(myidx, newop)
+                                myidx += 1
+                                cut.pop(0)
+                            elif isinstance(entry, SetOriginCut):
+                                # reverse engineer
+                                changes = True
+                                x = entry._start_x
+                                y = entry._start_y
+                                newop = SetOriginOperation(x=x, y=y)
+                                self.cutplan.plan.insert(myidx, newop)
+                                myidx += 1
+                                cut.pop(0)
+                            else:
+                                # 'Real ' stuff starts that's enough...
+                                break
+
+                        # And now look to the end
+                        while len(cut) > 0:
+                            last = len(cut) - 1
+                            entry = cut[last]
+                            if isinstance(entry, GotoCut):
+                                # reverse engineer
+                                changes = True
+                                x = entry._start_x
+                                y = entry._start_y
+                                newop = GotoOperation(x=x, y=y)
+                                self.cutplan.plan.insert(myidx + 1, newop)
+                                cut.pop(last)
+                            elif isinstance(entry, HomeCut):
+                                # reverse engineer
+                                changes = True
+                                newop = HomeOperation()
+                                self.cutplan.plan.insert(myidx + 1, newop)
+                                cut.pop(last)
+                            elif isinstance(entry, WaitCut):
+                                # reverse engineer
+                                changes = True
+                                wt = entry.dwell_time
+                                newop = WaitOperation(wait=wt)
+                                self.cutplan.plan.insert(myidx + 1, newop)
+                                cut.pop(last)
+                            elif isinstance(entry, SetOriginCut):
+                                # reverse engineer
+                                changes = True
+                                x = entry._start_x
+                                y = entry._start_y
+                                newop = SetOriginOperation(x=x, y=y)
+                                self.cutplan.plan.insert(myidx + 1, newop)
+                                cut.pop(last)
+                            else:
+                                # 'Real ' stuff starts that's enough...
+                                break
+                        if len(cut) == 0:
+                            idx = self.cutplan.plan.index(cut)
+                            self.cutplan.plan.pop(idx)
+                            changes = True
+
+                    if changes:
+                        # Break from inner loop and try again...
+                        break
+
+        self.list_operations.DeleteAllItems()
         if self.cutplan.plan is not None and len(self.cutplan.plan) != 0:
-            self.list_operations.InsertItems(
-                [name_str(e) for e in self.cutplan.plan], 0
-            )
+            for idx, entry in enumerate(self.cutplan.plan):
+                tname, info = name_str(entry)
+                item = self.list_operations.InsertItem(
+                    self.list_operations.GetItemCount(), f"{idx:02d}# - {info}"
+                )
+
+                state = self.establish_state(tname, info)
+                if state >= 0:
+                    self.list_operations.SetItemImage(item, state)
+
         if 0 <= oldidx < len(self.cutplan.plan):
-            self.list_operations.SetSelection(oldidx)
+            self.list_operations.SetItemState(
+                oldidx, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED
+            )
             self.on_listbox_operation_select(None)
 
-    def on_listbox_operation_drag_drop(self, event):
-        idx1 = 0
-        idx2 = 0
-        temp = self.cutplan.plan[idx1]
-        self.cutplan.plan[idx1] = self.cutplan.plan[idx2]
-        self.cutplan.plan[idx2] = temp
+    # def on_listbox_operation_drag_drop(self, event):
+    #     idx1 = 0
+    #     idx2 = 0
+    #     temp = self.cutplan.plan[idx1]
+    #     self.cutplan.plan[idx1] = self.cutplan.plan[idx2]
+    #     self.cutplan.plan[idx2] = temp
 
     def on_text_operation_param(self, event):
         content = self.text_operation_param.GetValue()
-        idx = self.list_operations.GetSelection()
+        idx = self.list_operations.GetFirstSelected()
         flag = False
         if idx >= 0:
             op = self.cutplan.plan[idx]
@@ -178,7 +348,7 @@ class OperationsPanel(wx.Panel):
     def on_listbox_operation_select(self, event):
         flag = False
         content = ""
-        idx = self.list_operations.GetSelection()
+        idx = self.list_operations.GetFirstSelected()
         cutcode = None
         if idx >= 0:
             op = self.cutplan.plan[idx]
@@ -203,20 +373,9 @@ class OperationsPanel(wx.Panel):
         self.text_operation_param.SetValue(content)
         self.text_operation_param.Enable(flag)
 
-    def on_listbox_operation_dclick(self, event):
-        # No useful logic yet, the old logic fails as it is opening a wrong node
-        # There are no property panels for CutObjects yet
-        return
-        # node_index = self.list_operations.GetSelection()
-        # if node_index == -1:
-        #     return
-        # obj = self.cutplan.plan[node_index]
-        # self.context.open("window/Properties", self)
-        # self.context.kernel.activate_instance(obj)
-
     def on_listbox_operation_rightclick(self, event):
         def remove_operation(event):
-            idx = self.list_operations.GetSelection()
+            idx = self.list_operations.GetFirstSelected()
             self.cutplan.plan.pop(idx)
             self.context.signal("plan", self.plan_name, 1)
             # self._refresh_simulated_plan()
@@ -232,14 +391,14 @@ class OperationsPanel(wx.Panel):
         def insert_operation(operation):
             def check(event):
                 self.cutplan.plan.insert(
-                    self.list_operations.GetSelection(), my_operation
+                    self.list_operations.GetFirstSelected(), my_operation
                 )
                 self.context.signal("plan", self.plan_name, 1)
 
             my_operation = operation
             return check
 
-        if self.list_operations.GetSelection() < 0:
+        if self.list_operations.GetFirstSelected() < 0:
             return
 
         gui = self
@@ -464,71 +623,6 @@ class CutcodePanel(wx.Panel):
         elif len(self.cutcode) != 0:
             self.list_cutcode.InsertItems([name_str(e) for e in self.cutcode], 0)
 
-    def on_listbox_operation_drag_drop(self, event):
-        idx1 = 0
-        idx2 = 0
-        temp = self.cutcode[idx1]
-        self.cutcode[idx1] = self.cutcode[idx2]
-        self.cutcode[idx2] = temp
-
-    # def on_text_operation_param(self, event):
-    #     content = self.text_operation_param.GetValue()
-    #     idx = self.list_cutcode.GetSelection()
-    #     flag = False
-    #     if idx >= 0:
-    #         op = self.cutcode[idx]
-    #         if isinstance(op, ConsoleOperation):
-    #             op.command = content
-    #             flag = True
-    #         elif isinstance(op, GotoOperation):
-    #             params = content.split(",")
-    #             x = 0
-    #             y = 0
-    #             if len(params) > 0:
-    #                 try:
-    #                     x = float(Length(params[0]))
-    #                 except ValueError:
-    #                     return
-    #             if len(params) > 1:
-    #                 try:
-    #                     y = float(Length(params[1]))
-    #                 except ValueError:
-    #                     return
-    #             op.x = x
-    #             op.y = y
-    #             flag = True
-    #         elif isinstance(op, WaitOperation):
-    #             try:
-    #                 duration = float(content)
-    #                 op.wait = duration
-    #                 flag = True
-    #             except ValueError:
-    #                 return
-    #         elif isinstance(op, SetOriginOperation):
-    #             if content != "":
-    #                 params = content.split(",")
-    #                 x = 0
-    #                 y = 0
-    #                 if len(params) > 0:
-    #                     try:
-    #                         x = float(Length(params[0]))
-    #                     except ValueError:
-    #                         return
-    #                 if len(params) > 1:
-    #                     try:
-    #                         y = float(Length(params[1]))
-    #                     except ValueError:
-    #                         return
-    #                 op.x = x
-    #                 op.y = y
-    #                 flag = True
-    #             else:
-    #                 op.x = None
-    #                 op.y = None
-    #                 flag = True
-    #     if flag:
-    #         self.context.signal("plan", self.plan_name, 1)
-
     def on_listbox_operation_select(self, event):
         for cut in self.last_selected:
             if cut < len(self.cutcode):
@@ -540,40 +634,10 @@ class CutcodePanel(wx.Panel):
             self.cutcode[cut].highlighted = True
         self.context.signal("refresh_simulation")
 
-        # flag = False
-        # content = ""
-        # idx = self.list_cutcode.GetSelection()
-        # if idx >= 0:
-        #     op = self.cutcode[idx]
-        #     if isinstance(op, ConsoleOperation):
-        #         content = op.command
-        #         flag = True
-        #     elif isinstance(op, GotoOperation):
-        #         content = str(op.x) + "," + str(op.y)
-        #         flag = True
-        #     elif isinstance(op, WaitOperation):
-        #         content = str(op.wait)
-        #         flag = True
-        #     elif isinstance(op, SetOriginOperation):
-        #         if op.x is None or op.y is None:
-        #             content = ""
-        #         else:
-        #             content = str(op.x) + "," + str(op.y)
-        #         flag = True
-
-        # self.text_operation_param.SetValue(content)
-        # self.text_operation_param.Enable(flag)
-
     def on_listbox_operation_dclick(self, event):
         # No useful logic yet, the old logic fails as it is opening a wrong node
         # There are no property panels for CutObjects yet
         return
-        # node_index = self.list_cutcode.GetSelection()
-        # if node_index == -1:
-        #     return
-        # obj = self.cutcode[node_index]
-        # self.context.open("window/Properties", self)
-        # self.context.kernel.activate_instance(obj)
 
     def on_listbox_operation_rightclick(self, event):
         def remove_operation(event):
@@ -830,6 +894,7 @@ class SimulationPanel(wx.Panel, Job):
             _("Show/Hide optimization options for this job.")
         )
         from copy import copy
+
         prechoices = copy(context.lookup("choices/optimize"))
         choices = list(map(copy, prechoices))
         # Clear the page-entry
