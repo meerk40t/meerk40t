@@ -314,6 +314,13 @@ class Node:
                 continue
             node_copy._parent = copied_parent
             copied_parent._children.append(node_copy)
+        for uid, n in links.items():
+            node, node_copy = n
+            if node.type != "reference":
+                continue
+            original_parent, copied_parent = links[id(node._parent)]
+            original_referenced, copied_referenced = links[id(node.node)]
+            copied_parent.add_reference(copied_referenced)
         branches = [links[id(c)][1] for c in self._children]
         return branches
 
