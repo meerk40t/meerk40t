@@ -292,7 +292,7 @@ class Node:
         """
         Creates structured copy of the branches of the tree at the current node.
 
-        This creates a copied nodes, relinks the structure and returns branches of
+        This creates copied nodes, relinks the structure and returns branches of
         the current node.
         @return:
         """
@@ -367,6 +367,9 @@ class Node:
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
+
+    def valid_node_for_reference(self, node):
+        return True
 
     def is_movable(self):
         return True
@@ -639,6 +642,11 @@ class Node:
         @param pos:
         @return:
         """
+        if node is None:
+            return
+        if not self.valid_node_for_reference(node):
+            # We could raise a ValueError but that will break things...
+            return
         ref = self.add(node=node, type="reference", pos=pos, **kwargs)
         node._references.append(ref)
 
