@@ -402,7 +402,7 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
-        self._save_restore_job = ConsoleFunction(self, "save_restore_point\n", times=1)
+        self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
 
         self.undo = Undo(self._tree)
 
