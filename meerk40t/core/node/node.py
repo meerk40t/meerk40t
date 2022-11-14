@@ -18,6 +18,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
+import ast
 from copy import copy
 from enum import IntEnum
 from time import time
@@ -59,29 +60,42 @@ class Node:
     the root points to the tree root, the parent points to the immediate parent, and references
     refers to nodes that point to this node type.
 
-    All nodes contain a type. This is a string value of the given node type and is used to delineate nodes.
+    All nodes have type, id, label, and lock values.
+
+    Type is a string value of the given node type and is used to delineate nodes.
+    Label is a string value that will often describe the node.
+    Id is a string value, during saving, we make sure this is a unique id.
+
 
     Node bounds exist, but not all nodes are have geometric bounds.
-    Node paint_bounds exists, this is the size of the paint area bounds.
+    Node paint_bounds exists, not all nodes have painted area bounds.
 
     Nodes can be emphasized. This is selecting the given node.
     Nodes can be highlighted.
     Nodes can be targeted.
-
-    All nodes have a label.
-    All nodes have an id. During saving, we make sure this is a unique id.
-
     """
 
-    def __init__(self, type=None, *args, **kwargs):
-        super().__init__()
-        self._formatter = "{element_type}:{id}"
+    def __init__(self, *args, **kwargs):
+        self.type = None
+        self.id = None
+        self.label = None
+        self.lock = False
+
+        for k, v in kwargs.items():
+            if k.startswith("_"):
+                continue
+            if isinstance(v, str):
+                try:
+                    v = ast.literal_eval(v)
+                except (ValueError, SyntaxError):
+                    pass
+            self.__dict__[k] = v
+
         self._children = list()
         self._root = None
         self._parent = None
         self._references = list()
-
-        self.type = type
+        self._formatter = "{element_type}:{id}"
 
         self._points = list()
         self._points_dirty = True
@@ -103,9 +117,6 @@ class Node:
         self.item = None
         self.icon = None
         self.cache = None
-        self.id = None
-        # Label
-        self.label = None
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
