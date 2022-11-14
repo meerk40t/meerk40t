@@ -59,21 +59,22 @@ class Node:
     the root points to the tree root, the parent points to the immediate parent, and references
     refers to nodes that point to this node type.
 
-    All nodes contain a type. This is a string value of the given node type and is used to delineate nodes.
+    All nodes have type, id, label, and lock values.
+
+    Type is a string value of the given node type and is used to delineate nodes.
+    Label is a string value that will often describe the node.
+    Id is a string value, during saving, we make sure this is a unique id.
+
 
     Node bounds exist, but not all nodes are have geometric bounds.
-    Node paint_bounds exists, this is the size of the paint area bounds.
+    Node paint_bounds exists, not all nodes have painted area bounds.
 
     Nodes can be emphasized. This is selecting the given node.
     Nodes can be highlighted.
     Nodes can be targeted.
-
-    All nodes have a label.
-    All nodes have an id. During saving, we make sure this is a unique id.
-
     """
 
-    def __init__(self, type=None, *args, **kwargs):
+    def __init__(self, type=None, id=None, label=None, lock=False, *args, **kwargs):
         super().__init__()
         self._formatter = "{element_type}:{id}"
         self._children = list()
@@ -82,6 +83,9 @@ class Node:
         self._references = list()
 
         self.type = type
+        self.id = id
+        self.label = label
+        self.lock = lock
 
         self._points = list()
         self._points_dirty = True
@@ -100,12 +104,10 @@ class Node:
         self._paint_bounds = None
         self._paint_bounds_dirty = True
 
+        # These are direct maps for gui values
         self.item = None
         self.icon = None
         self.cache = None
-        self.id = None
-        # Label
-        self.label = None
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
