@@ -1,3 +1,11 @@
+"""
+Galvo USB Connection
+
+Performs the required interactions with the Galvo backend through pyusb and libusb.
+"""
+
+import time
+
 import usb.core
 import usb.util
 from usb.backend.libusb1 import LIBUSB_ERROR_ACCESS, LIBUSB_ERROR_NOT_FOUND
@@ -247,7 +255,7 @@ class USBConnection:
             except ConnectionError:
                 pass
 
-    def write(self, index=0, packet=None):
+    def write(self, index=0, packet=None, attempt=0):
         packet_length = len(packet)
         assert packet_length == 0xC or packet_length == 0xC00
         if packet is not None:
@@ -257,6 +265,14 @@ class USBConnection:
                     endpoint=WRITE_ENDPOINT, data=packet, timeout=self.timeout
                 )
             except usb.core.USBError as e:
+                if attempt <= 3:
+                    try:
+                        self.close(index)
+                        self.open(index)
+                    except ConnectionError:
+                        time.sleep(1)
+                    self.write(index, packet, attempt + 1)
+                    return
                 self.backend_error_code = e.backend_error_code
 
                 self.channel(str(e))
@@ -264,12 +280,19 @@ class USBConnection:
             except KeyError:
                 raise ConnectionError("Not Connected.")
 
-    def read(self, index=0):
+    def read(self, index=0, attempt=0):
         try:
             return self.devices[index].read(
                 endpoint=READ_ENDPOINT, size_or_buffer=8, timeout=self.timeout
             )
         except usb.core.USBError as e:
+            if attempt <= 3:
+                try:
+                    self.close(index)
+                    self.open(index)
+                except ConnectionError:
+                    time.sleep(1)
+                return self.read(index, attempt + 1)
             self.backend_error_code = e.backend_error_code
 
             self.channel(str(e))

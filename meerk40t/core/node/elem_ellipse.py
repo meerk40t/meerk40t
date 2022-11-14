@@ -5,6 +5,8 @@ from meerk40t.core.node.node import Fillrule, Node
 from meerk40t.svgelements import (
     SVG_ATTR_VECTOR_EFFECT,
     SVG_VALUE_NON_SCALING_STROKE,
+    Circle,
+    Ellipse,
     Path,
 )
 
@@ -35,6 +37,7 @@ class EllipseNode(Node):
             del settings["type"]
         super(EllipseNode, self).__init__(type="elem ellipse", **settings)
         self.__formatter = "{element_type} {id} {stroke}"
+        assert isinstance(shape, (Ellipse, Circle))
         self.shape = shape
         self.settings = settings
         self.matrix = shape.transform if matrix is None else matrix
@@ -46,6 +49,7 @@ class EllipseNode(Node):
             if stroke_scale is None
             else stroke_scale
         )
+        self.set_dirty_bounds()
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
         self.label = label
         self.lock = lock
@@ -87,14 +91,15 @@ class EllipseNode(Node):
         """If the stroke is not scaled, the matrix scale will scale the stroke, and we
         need to countermand that scaling by dividing by the square root of the absolute
         value of the determinant of the local matrix (1d matrix scaling)"""
-        scalefactor = 1.0 if self._stroke_scaled else sqrt(abs(self.matrix.determinant))
-        sw = self.stroke_width / scalefactor
-        limit = 25 * sqrt(zoomscale) / scalefactor
-        if sw < limit:
-            sw = limit
-        return sw
+        scalefactor = sqrt(abs(self.matrix.determinant))
+        if self.stroke_scaled:
+            # Our implied stroke-width is prescaled.
+            return self.stroke_width
+        else:
+            sw = self.stroke_width / scalefactor
+            return sw
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         self.stroke_scaled = True
         self.matrix *= matrix
         self.stroke_scaled = False
@@ -157,6 +162,12 @@ class EllipseNode(Node):
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
+        self.shape.stroke = self.stroke
+        try:
+            del self.shape.values["viewport_transform"]
+            # If we had transforming viewport that is no longer relevant
+        except KeyError:
+            pass
 
     def as_path(self):
         self._sync_svg()

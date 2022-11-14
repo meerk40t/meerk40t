@@ -46,6 +46,8 @@ class Widget(list):
         self.parent = None
         self.properties = ORIENTATION_RELATIVE
         self.visible = True
+        # If this property is set, then it won't be counted as topmost in the hitchain...
+        self.transparent = False
         if all:
             # contains all points
             self.left = -float("inf")
@@ -118,7 +120,14 @@ class Widget(list):
             and self.top <= y <= self.bottom
         )
 
-    def event(self, window_pos=None, space_pos=None, event_type=None, nearest_snap=None, **kwargs):
+    def event(
+        self,
+        window_pos=None,
+        space_pos=None,
+        event_type=None,
+        nearest_snap=None,
+        **kwargs,
+    ):
         """
         Default event which simply chains the event to the next hittable object.
         """
@@ -472,7 +481,7 @@ class Widget(list):
 
     def show(self, flag=None):
         """
-        This does not automically display the widget (yet)
+        This does not automatically display the widget (yet)
         """
         if flag is None:
             flag = True
@@ -480,7 +489,7 @@ class Widget(list):
 
     def hide(self, flag=None):
         """
-        This does not automically display the widget (yet)
+        This does not automatically display the widget (yet)
         """
         if flag is None:
             flag = True

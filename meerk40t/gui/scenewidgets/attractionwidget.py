@@ -21,6 +21,8 @@ class AttractionWidget(Widget):
     def __init__(self, scene):
         Widget.__init__(self, scene, all=True)
         # Respond to Snap is not necessary, but for the sake of completeness...
+        # We want to be unrecognized
+        self.transparent = True
         self.context = self.scene.context
         self.attraction_points = None  # Clear all
         self.my_x = None
@@ -64,10 +66,9 @@ class AttractionWidget(Widget):
             self.my_x = space_pos[0]
             self.my_y = space_pos[1]
             self.calculate_display_points()
-            if (
-                event_type in ("leftdown", "move", "hover", "hover_start")
-                and (self.scene.tool_active or self.scene.modif_active)
-            ):
+            if event_type in ("leftdown", "move", "hover", "hover_start") and (
+                self.scene.tool_active or self.scene.modif_active
+            ) and "shift" not in modifiers:
                 self._show_snap_points = True
             else:
                 self._show_snap_points = False
@@ -76,7 +77,7 @@ class AttractionWidget(Widget):
             "leftup",
             "leftclick",
             "move",
-            "hover",
+            # "hover",
         ):
             # Check whether shift key is pressed...
             if "shift" not in modifiers:
@@ -110,7 +111,6 @@ class AttractionWidget(Widget):
                         ):
                             # Is the distance small enough?
                             response = (RESPONSE_CHAIN, new_x, new_y)
-
         return response
 
     def draw_caret(self, gc, x, y, closeup):
@@ -332,8 +332,9 @@ class AttractionWidget(Widget):
         ):
             dummy = 0
             for pts in self.attraction_points:
-                # doit = not pts[3] # not emphasized
                 doit = True  # Not sure why not :-)
+                if self.scene.modif_active:
+                    doit = not pts[3]  # not emphasized
                 if doit:
                     if (
                         abs(pts[0] - self.my_x) <= pixel

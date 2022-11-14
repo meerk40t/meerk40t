@@ -35,7 +35,6 @@ def process_event(
         inside = widget.contains(space_pos[0], space_pos[1])
     except TypeError:
         # Widget already destroyed ?!
-        # print ("Something went wrong for %s" % widget_identifier)
         return RESPONSE_CHAIN
     # if event_type in ("move", "leftdown", "leftup"):
     #     print(f"Event for {widget_identifier}: {event_type}, {nearest_snap}")
@@ -49,10 +48,11 @@ def process_event(
         return RESPONSE_CHAIN
 
     if event_type == "hover_start":
-        widget.scene.cursor(widget.cursor)
-        widget.hovering = True
-        widget.scene.context.signal("statusmsg", _(helptext))
-        return RESPONSE_CONSUME
+        if inside:
+            widget.scene.cursor(widget.cursor)
+            widget.hovering = True
+            widget.scene.context.signal("statusmsg", _(helptext))
+            return RESPONSE_CONSUME
     elif event_type == "hover_end" or event_type == "lost":
         widget.scene.cursor("arrow")
         widget.hovering = False
@@ -75,11 +75,22 @@ def process_event(
 
     if event_type == "leftdown":
         # We want to establish that we don't have a singular Shift key or a singular ctrl-key
-        if not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers)):
+        # as these will extend / reduce the selection
+        if widget_identifier == "move" or (
+            not (len(modifiers) == 1 and ("shift" in modifiers or "ctrl" in modifiers))
+        ):
+            cx = (widget.left + widget.right) / 2
+            cy = (widget.top + widget.bottom) / 2
+            # print(f"Start: x={space_pos[0]}, y={space_pos[1]}, dx={space_pos[4]}, dy={space_pos[5]}")
+            # print(f"Widget: cx={cx}, cy={cy}")
+            # Set them to the center of the widget
+            widget.master.offset_x = cx - space_pos[0]
+            widget.master.offset_y = cy - space_pos[1]
             widget.was_lb_raised = True
             widget.save_width = widget.master.width
             widget.save_height = widget.master.height
             widget.uniform = not widget.master.key_alt_pressed
+            widget.master.total_delta_y = dy
             widget.master.total_delta_x = dx
             widget.master.total_delta_y = dy
             widget.master.tool_running = optimize_drawing
@@ -1223,6 +1234,8 @@ class MoveWidget(Widget):
             self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
         )
         self.cursor = "sizing"
+        self.total_dx = 0
+        self.total_dy = 0
         self.update()
 
     def update(self):
@@ -1249,12 +1262,37 @@ class MoveWidget(Widget):
         context = self.scene.context
         elements = context.elements
         copy_nodes = list()
+        changed_nodes = list()
+        delta_wordlist = 1
         for e in list(elements.elems(emphasized=True)):
             copy_node = copy(e)
-            if hasattr(e, "wxfont"):
-                copy_node.wxfont = e.wxfont
+            had_optional = False
+            for optional in ("wxfont", "mktext", "mkfont", "mkfontsize"):
+                if hasattr(e, optional):
+                    setattr(copy_node, optional, getattr(e, optional))
+                    had_optional = True
             e.parent.add_node(copy_node)
             copy_nodes.append(copy_node)
+            # The copy remains at the same place, we are moving the originals,
+            # to provide the impression we are doing the right thing, we amend
+            # consequently the original.
+            if elements.copy_increases_wordlist_references and hasattr(e, "text"):
+                e.text = elements.wordlist_delta(copy_node.text, delta_wordlist)
+                e.altered()
+                changed_nodes.append(e)
+            elif elements.copy_increases_wordlist_references and hasattr(e, "mktext"):
+                e.mktext = elements.wordlist_delta(e.mktext, delta_wordlist)
+                e.altered()
+                changed_nodes.append(e)
+            delta_wordlist = 1
+            if had_optional:
+                for property_op in self.scene.context.kernel.lookup_all(
+                    "path_updater/.*"
+                ):
+                    property_op(self.scene.context, e)
+
+        if len(changed_nodes) > 0:
+            self.scene.context.signal("element_property_update", changed_nodes)
         elements.classify(copy_nodes)
 
     def process_draw(self, gc):
@@ -1299,16 +1337,21 @@ class MoveWidget(Widget):
         """
         Change the position of the selected elements.
         """
+
         def move_to(dx, dy):
+            if dx == 0 and dy == 0:
+                return
+            self.total_dx += dx
+            self.total_dy += dy
             b = elements._emphasized_bounds
+            if b is None:
+                b = elements.selected_area()
             allowlockmove = elements.lock_allows_move
             for e in elements.flat(types=elem_nodes, emphasized=True):
                 if hasattr(e, "lock") and e.lock and not allowlockmove:
                     continue
                 e.matrix.post_translate(dx, dy)
-
             self.translate(dx, dy)
-
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
@@ -1317,7 +1360,11 @@ class MoveWidget(Widget):
         if nearest_snap is None:
             # print ("Took last snap instead...")
             nearest_snap = self.scene.last_snap
-        if nearest_snap is not None:
+        # sweeping it under the rug for now until we have figured out a way
+        # to move a defined reference and not an arbitrary point on the
+        # Widget area.
+        # nearest_snap = None
+        if nearest_snap is not None and event != -1:
             # Position is space_pos:
             # 0, 1: current x, y
             # 2, 3: last pos x, y
@@ -1344,18 +1391,25 @@ class MoveWidget(Widget):
             # )
 
         if event == 1:  # end
-            move_to(lastdx, lastdy)
+            if nearest_snap is None:
+                move_to(lastdx, lastdy)
+            else:
+                move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
             self.check_for_magnets()
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
+            if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
+                # Did we actually move?
+                for e in elements.flat(types=elem_group_nodes, emphasized=True):
+                    try:
+                        e.modified()
+                    except AttributeError:
+                        pass
             self.scene.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
             self.scene.modif_active = True
+            self.total_dx = 0
+            self.total_dy = 0
         elif event == 0:  # move
             # b = elements.selected_area()  # correct, but slow...
             move_to(dx, dy)
@@ -1464,8 +1518,8 @@ class MoveRotationOriginWidget(Widget):
             position[5] = position[1] - position[3]
 
         if event == 1:  # end
-            self.master.rotation_cx += lastdx
-            self.master.rotation_cy += lastdy
+            self.master.rotation_cx += lastdx - self.master.offset_x
+            self.master.rotation_cy += lastdy - self.master.offset_y
             self.master.invalidate_rot_center()
             self.scene.modif_active = False
             self.scene.request_refresh()
@@ -1490,7 +1544,7 @@ class MoveRotationOriginWidget(Widget):
         **kwargs,
     ):
         s_me = "rotcenter"
-        if event_type=="doubleclick":
+        if event_type == "doubleclick":
             self.master.rotation_cx = None
             self.master.rotation_cy = None
             self.master.invalidate_rot_center()
@@ -2000,6 +2054,9 @@ class SelectionWidget(Widget):
         self.rotated_angle = 0
         self.total_delta_x = 0
         self.total_delta_y = 0
+        self.offset_x = 0
+        self.offset_y = 0
+
         self.was_lb_raised = False
         self.hovering = False
         self.use_handle_rotate = True
@@ -2231,19 +2288,41 @@ class SelectionWidget(Widget):
         self.modifiers = modifiers
         elements = self.scene.context.elements
         if event_type == "hover_start":
-            self.hovering = True
-            self.scene.context.signal("statusmsg", "")
-            self.tool_running = False
+            if space_pos is not None:
+                if self.contains(space_pos[0], space_pos[1]):
+                    self.hovering = True
+                    self.scene.context.signal("statusmsg", "")
+                    self.tool_running = False
 
         elif event_type == "hover_end" or event_type == "lost":
             self.scene.cursor(self.cursor)
             self.hovering = False
+            if space_pos is not None:
+                for subwidget in self:
+                    if (
+                        hasattr(subwidget, "hovering")
+                        and subwidget.hovering
+                        and not subwidget.contains(space_pos[0], space_pos[1])
+                    ):
+                        subwidget.hovering = False
+            self.scene.cursor("arrow")
             self.scene.context.signal("statusmsg", "")
         elif event_type == "hover":
             if self.hovering:
                 self.scene.cursor(self.cursor)
             # self.tool_running = False
             self.scene.context.signal("statusmsg", "")
+            if space_pos is not None:
+                for subwidget in self:
+                    if (
+                        hasattr(subwidget, "hovering")
+                        and subwidget.hovering
+                        and not subwidget.contains(space_pos[0], space_pos[1])
+                    ):
+                        subwidget.hovering = False
+                        self.scene.cursor("arrow")
+                        self.scene.context.signal("statusmsg", "")
+
         elif event_type in ("leftdown", "leftup", "leftclick", "move"):
             # self.scene.tool_active = False
             pass

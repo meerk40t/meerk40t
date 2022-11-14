@@ -5,7 +5,7 @@ from math import tau
 from meerk40t.svgelements import Matrix
 
 PATTERN_FLOAT = r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?"
-REGEX_LENGTH = re.compile(r"(%s)([A-Za-z%%]*)" % PATTERN_FLOAT)
+REGEX_LENGTH = re.compile(r"(%s)\.?([A-Za-z%%]*)" % PATTERN_FLOAT)
 ERROR = 1e-11
 DEFAULT_PPI = 96.0
 NATIVE_UNIT_PER_INCH = 65535
@@ -33,6 +33,7 @@ PX_PER_CM = DEFAULT_PPI / CM_PER_INCH
 PX_PER_PIXEL = 1
 
 
+UNITS_PER_TAT = 1
 UNITS_PER_INCH = NATIVE_UNIT_PER_INCH
 UNITS_PER_MIL = NATIVE_UNIT_PER_INCH / MIL_PER_INCH
 UNITS_PER_uM = NATIVE_UNIT_PER_INCH / uM_PER_INCH
@@ -86,6 +87,8 @@ class ViewPort:
         swap_xy=False,
         show_origin_x=None,
         show_origin_y=None,
+        show_flip_x=None,
+        show_flip_y=None,
     ):
         self._device_to_scene_matrix = None
         self._device_to_show_matrix = None
@@ -109,8 +112,14 @@ class ViewPort:
             show_origin_x = origin_x
         if show_origin_y is None:
             show_origin_y = origin_y
+        if show_flip_x is None:
+            show_flip_x = flip_x
+        if show_flip_y is None:
+            show_flip_y = flip_y
         self.show_origin_x = show_origin_x
         self.show_origin_y = show_origin_y
+        self.show_flip_x = show_flip_x
+        self.show_flip_y = show_flip_y
 
         self._width = None
         self._height = None
@@ -151,6 +160,8 @@ class ViewPort:
         """
         unit_x = Length(x, relative_length=self._width, unitless=unitless).units
         unit_y = Length(y, relative_length=self._height, unitless=unitless).units
+        if self.swap_xy:
+            return unit_y, unit_x
         return unit_x, unit_y
 
     def physical_to_show_position(self, x, y, unitless=1):
@@ -342,19 +353,19 @@ class ViewPort:
 
         @return:
         """
+        sx = self.user_scale_x * self.native_scale_x
+        sy = self.user_scale_y * self.native_scale_y
+        dx = self.unit_width * self.origin_x
+        dy = self.unit_height * self.origin_y
         ops = []
-        _scale_x = self.user_scale_x * self.native_scale_x
-        _scale_y = self.user_scale_y * self.native_scale_y
-        if _scale_x != 1.0 or _scale_y != 1.0:
-            ops.append(f"scale({1.0 / _scale_x:.13f}, {1.0 / _scale_y:.13f})")
-        _offset_x = self.unit_width * self.origin_x
-        _offset_y = self.unit_height * self.origin_y
-        if _offset_x != 0 or _offset_y != 0:
-            ops.append(f"translate({_offset_x:.13f}, {_offset_y:.13f})")
+        if sx != 1.0 or sy != 1.0:
+            ops.append(f"scale({1.0 / sx:.13f}, {1.0 / sy:.13f})")
         if self.flip_y:
             ops.append("scale(1.0, -1.0)")
         if self.flip_x:
             ops.append("scale(-1.0, 1.0)")
+        if dx != 0 or dy != 0:
+            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:
             ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
@@ -363,15 +374,15 @@ class ViewPort:
         """
         @return:
         """
+        dx = self.unit_width * self.show_origin_x
+        dy = self.unit_height * self.show_origin_y
         ops = []
-        _offset_x = self.unit_width * (self.origin_x - self.show_origin_x)
-        _offset_y = self.unit_height * (self.origin_y - self.show_origin_y)
-        if _offset_x != 0 or _offset_y != 0:
-            ops.append(f"translate({_offset_x:.13f}, {_offset_y:.13f})")
-        if self.flip_y:
-            ops.append("scale(1.0, -1.0)")
-        if self.flip_x:
+        if self.show_flip_x:
             ops.append("scale(-1.0, 1.0)")
+        if self.show_flip_y:
+            ops.append("scale(1.0, -1.0)")
+        if dx != 0 or dy != 0:
+            ops.append(f"translate({-dx:.13f}, {-dy:.13f})")
         if self.swap_xy:
             ops.append("scale(-1.0, 1.0) rotate(90deg)")
         return " ".join(ops)
@@ -613,7 +624,20 @@ class ViewPort:
         return Length(f"{amount}{units}").preferred
 
 
-ACCEPTED_UNITS = ("", "cm", "mm", "in", "inch", "inches", "mil", "pt", "pc", "px", "%")
+ACCEPTED_UNITS = (
+    "",
+    "cm",
+    "mm",
+    "in",
+    "inch",
+    "inches",
+    "mil",
+    "pt",
+    "pc",
+    "px",
+    "%",
+    "tat",
+)
 
 
 class Length(object):
@@ -652,6 +676,8 @@ class Length(object):
             if units == "":
                 if unitless:
                     scale = unitless
+            elif units == "tat":
+                scale = UNITS_PER_TAT
             elif units == "mm":
                 scale = UNITS_PER_MM
             elif units == "cm":

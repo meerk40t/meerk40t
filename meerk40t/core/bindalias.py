@@ -70,6 +70,13 @@ DEFAULT_KEYMAP = {
         "",
         "window open Console",
     ),
+    "ctrl+f6": ("page home",),
+    "ctrl+f7": ("page design",),
+    "ctrl+f8": (
+        "page modify",
+        "dialog_flip",
+    ),
+    "ctrl+f9": ("page config",),
     "delete": (
         "tree selected delete",
         "tree emphasized delete",
@@ -152,7 +159,11 @@ DEFAULT_KEYMAP = {
     ),
     "ctrl+v": ("clipboard paste",),
     "ctrl+x": ("clipboard cut",),
-    "ctrl+z": ("reset",),
+    "ctrl+z": (
+        "undo",
+        "reset",
+    ),
+    "ctrl+shift+z": ("redo",),
     "ctrl+1": ("bind 1 move $x $y",),
     "ctrl+2": ("bind 2 move $x $y",),
     "ctrl+3": ("bind 3 move $x $y",),
@@ -161,10 +172,6 @@ DEFAULT_KEYMAP = {
     "ctrl+f3": (
         "",
         "rotaryview",
-    ),
-    "ctrl+f9": (
-        "",
-        "dialog_flip",
     ),
     "ctrl+alt+d": ("image wizard Gold",),
     "ctrl+alt+e": ("image wizard Simple",),

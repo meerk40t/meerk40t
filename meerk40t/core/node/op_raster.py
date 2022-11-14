@@ -131,7 +131,7 @@ class RasterOpNode(Node, Parameters):
         count = 0
         existing = 0
         result = False
-        if drag_node.type.startswith("elem"):
+        if drag_node.type.startswith("elem") and not drag_node._parent.type == "branch reg":
             existing += 1
             # if drag_node.type == "elem image":
             #     return False
@@ -184,8 +184,11 @@ class RasterOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
-    def valid_node(self, node):
-        return True
+    def valid_node_for_reference(self, node):
+        if node.type in self._allowed_elements_dnd:
+            return True
+        else:
+            return False
 
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
         def matching_color(col1, col2):
@@ -205,9 +208,11 @@ class RasterOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
+        feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
                 if self.has_attributes():
+                    result = False
                     for attribute in self.allowed_attributes:
                         if (
                             hasattr(node, attribute)
@@ -216,12 +221,15 @@ class RasterOpNode(Node, Parameters):
                             plain_color_op = abs(self.color)
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
-                                if self.valid_node(node):
+                                if self.valid_node_for_reference(node):
+                                    result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
-                                    return True, self.stopop
+                                    feedback.append(attribute)
+                    if result:
+                        return True, self.stopop, feedback
                 else:  # empty ? Anything with either a solid fill or a plain white stroke goes
-                    if self.valid_node(node):
+                    if self.valid_node_for_reference(node):
                         addit = False
                         if node.type == "elem image":
                             addit = True
@@ -232,22 +240,27 @@ class RasterOpNode(Node, Parameters):
                                 # if matching_color(node.fill, Color("black")):
                                 #     addit = True
                                 addit = True
+                                feedback.append("fill")
                         if hasattr(node, "stroke"):
                             if node.stroke is not None and node.stroke.argb is not None:
                                 if matching_color(node.stroke, Color("white")):
                                     addit = True
+                                    feedback.append("stroke")
                                 if matching_color(node.stroke, Color("black")):
                                     addit = True
+                                    feedback.append("stroke")
                         if addit:
                             self.add_reference(node)
                             # Have classified but more classification might be needed
-                            return True, self.stopop
+                            return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
-                if self.valid_node(node):
+                if self.valid_node_for_reference(node):
                     self.add_reference(node)
-                    return True, self.stopop
-        return False, False
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
@@ -257,7 +270,7 @@ class RasterOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -305,17 +318,17 @@ class RasterOpNode(Node, Parameters):
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Preprocess is called during job planning. This should be called with
         the native matrix.
 
         @param context:
         @param matrix:
-        @param commands:
+        @param plan:
         @return:
         """
-
+        commands = plan.commands
         native_mm = abs(complex(*matrix.transform_vector([0, UNITS_PER_MM])))
         self.settings["native_mm"] = native_mm
         self.settings["native_speed"] = self.speed * native_mm
@@ -361,8 +374,8 @@ class RasterOpNode(Node, Parameters):
                 else:
                     img_mx.post_translate(0, bounds[3])
 
-            except (AssertionError, MemoryError):
-                raise CutPlanningFailedError("Raster too large.")
+            except (AssertionError, MemoryError) as e:
+                raise CutPlanningFailedError("Raster too large.") from e
             image = image.convert("L")
             image_node = ImageNode(image=image, matrix=img_mx)
             self.children.clear()

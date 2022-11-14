@@ -20,6 +20,68 @@ class ChoicePropertyPanel(ScrolledPanel):
     either registered in the Kernel as a choice or called directly on the ChoicePropertyPanel you can make dynamic
     controls to set various properties. This avoids needing to create a new static window when a panel is just
     providing options to change settings.
+    The choices need to be provided either as list of dictionaries or indirectly via
+    a string indicating a stored list registered in the given context under "choices"
+    The dictionary recognizes the following entries:
+
+        "object": The object to which the property defined in attr belongs to
+        "attr": The name of the atttribute
+        "default": The default value if no value has been given before
+        "label": The label will be used for labelling the to be created UI-elements
+        "trailer": this text will be displayed immediately after the element
+        "tip": The tooltip that will be used for this element
+        "type": This can be one of (no quotation marks, real python data types):
+            bool: will always be represented by a checkbox
+            str: normally be represented by a textbox (may be influenced by style)
+            int: normally be represented by a textbox (may be influenced by style)
+            float: normally be represented by a textbox (may be influenced by style)
+            Length: represented by a textbox
+            Angle: represented by a textbox
+            Color: represented by a color picker
+        "style": If given then the standard representation for a data-type (see above)
+            will be replaced by more tailored UI-elements:
+            "file": (only available for str) a file selection dialog is used,
+                this recognizes a further property "wildcard"
+            "slider:" Creates a slider (for int and float) that will use two additional
+                entries, "min" and "max.
+            "combo":
+            "combosmall": Available for str, int, float will fill the combo
+                with values defined in "choices" (additional parameter)
+            "binary": uses two additional settings "mask" and "bit" to
+                allow the bitwise manipulation of a int data type
+        "weight": only valid in subsections, default value 1, i.e. equal width
+            allocation, can be changed to force a different sizing behaviour
+    UI-Appearance
+        "page":
+        "section":
+        "subsection":
+        "priority":
+            These entries will create visible separation/joining of elements.
+            The dictionary list will be sorted first by priority, then page,
+            then section, then subsection. While normally every item ends up
+            on a new line, elements within a subsection remain in one horizontal
+            container.
+        Notabene:
+            a) to influence ordering without compromising the intended Page,
+            Section etc. names, the routine will remove a leading "_xxxx_" string
+            b) The Page, Section etc. names will be translated, so please provide
+            them in plain English
+
+    There are some special hacks to influence appearance / internal logic
+        "hidden": if set then this expert property will only appear if the
+            developer-mode has been set
+        "enabled": Is the control enabled (default yes, so does not need to be
+            provided)
+        "conditional": if given as tuple (cond_obj, cond_prop) then the (boolean)
+            value of the property cond_obj.cond_prop will decide if the element
+            will be enabled or not
+        "signals": This for advanced treatment, normally any change to a property
+            will be announced to the wider mk-universe by sending a signal with the
+            attributes name as signal-indicator (this is used to inform other UI-
+            elements with the same content of such a change). If you want to invoke
+            additional logic (or don't want to write a specific signal-listen routine
+            to forward it to other routines) then you can add a single signal-name
+            or a list of signal-names to be called
     """
 
     def __init__(
@@ -30,6 +92,7 @@ class ChoicePropertyPanel(ScrolledPanel):
         scrolling=True,
         constraint=None,
         entries_per_column=None,
+        injector=None,
         **kwds,
     ):
         # constraints are either
@@ -50,9 +113,18 @@ class ChoicePropertyPanel(ScrolledPanel):
         if choices is None:
             return
         if isinstance(choices, str):
-            choices = self.context.lookup("choices", choices)
+            tempchoices = self.context.lookup("choices", choices)
+            # we need to create an independent copy of the lookup, otherwise
+            # any amendments to choices like injector will affect the original
+            choices = []
+            for c in tempchoices:
+                choices.append(c)
             if choices is None:
                 return
+        if injector is not None:
+            # We have additional stuff to be added, so be it
+            for c in injector:
+                choices.append(c)
         # Let's see whether we have a section and a page property...
         for c in choices:
             try:
@@ -154,10 +226,11 @@ class ChoicePropertyPanel(ScrolledPanel):
         current_main_sizer = sizer_main
         current_sec_sizer = sizer_main
         current_sizer = sizer_main
-        # Bey default 0 as we are stacking up stuff
+        # By default 0 as we are stacking up stuff
         expansion_flag = 0
         current_col_entry = -1
         for i, c in enumerate(self.choices):
+            wants_listener = True
             current_col_entry += 1
             if self.entries_per_column is not None:
                 if current_col_entry >= self.entries_per_column:
@@ -276,22 +349,60 @@ class ChoicePropertyPanel(ScrolledPanel):
                 expansion_flag = 0
                 if this_subsection != "":
                     expansion_flag = 1
-                    last_box = wx.StaticBoxSizer(
-                        wx.StaticBox(
-                            self,
-                            id=wx.ID_ANY,
-                            label=_(self.unsorted_label(this_subsection)),
-                        ),
-                        wx.HORIZONTAL,
-                    )
+                    lbl = _(self.unsorted_label(this_subsection))
+                    if lbl != "":
+                        last_box = wx.StaticBoxSizer(
+                            wx.StaticBox(
+                                self,
+                                id=wx.ID_ANY,
+                                label=lbl,
+                            ),
+                            wx.HORIZONTAL,
+                        )
+                    else:
+                        last_box = wx.BoxSizer(wx.HORIZONTAL)
                     current_sec_sizer.Add(last_box, 0, wx.EXPAND, 0)
+                    img = c.get("icon", None)
+                    if img is not None:
+                        icon = wx.StaticBitmap(self, wx.ID_ANY, bitmap=img)
+                        last_box.Add(icon, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+                        last_box.AddSpacer(5)
                 else:
                     last_box = current_sec_sizer
                 current_sizer = last_box
 
             control = None
             control_sizer = None
-            if data_type == bool:
+            if data_type == str and data_style == "info":
+                # This is just an info box.
+                wants_listener = False
+                msgs = label.split("\n")
+                controls = []
+                for lbl in msgs:
+                    control = wx.StaticText(self, label=lbl)
+                    current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type == bool and data_style == "button":
+                # This is just a signal to the outside world.
+                wants_listener = False
+                control = wx.Button(self, label=label)
+
+                def on_button(param, obj, addsig):
+                    def check(event=None):
+                        # We just set it to True to kick it off
+                        setattr(obj, param, True)
+                        # We don't signal ourselves...
+                        self.context.signal(param, True, obj)
+                        for _sig in addsig:
+                            self.context.signal(_sig)
+
+                    return check
+
+                control.Bind(
+                    wx.EVT_BUTTON,
+                    on_button(attr, obj, additional_signal),
+                )
+                current_sizer.Add(control, expansion_flag * weight, wx.EXPAND, 0)
+            elif data_type == bool:
                 # Bool type objects get a checkbox.
                 control = CheckBox(self, label=label)
                 control.SetValue(data)
@@ -303,7 +414,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != bool(v):
                             setattr(obj, param, bool(v))
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -343,7 +454,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             if current_value != pathname:
                                 try:
                                     setattr(obj, param, pathname)
-                                    self.context.signal(param, pathname)
+                                    self.context.signal(param, pathname, obj)
                                     for _sig in addsig:
                                         self.context.signal(_sig)
                                 except ValueError:
@@ -362,9 +473,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (int, float) and data_style == "slider":
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 minvalue = c.get("min", 0)
                 maxvalue = c.get("max", 0)
                 if data_type == float:
@@ -388,7 +502,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -401,9 +515,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 )
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type in (str, int, float) and data_style == "combo":
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 choice_list = list(map(str, c.get("choices", [c.get("default")])))
                 control = wx.ComboBox(
                     self,
@@ -433,7 +550,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -482,7 +599,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != v:
                             setattr(obj, param, v)
-                            self.context.signal(param, v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -510,9 +627,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 if mask is not None and hasattr(obj, mask):
                     mask_bits = getattr(obj, mask)
 
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
                 def on_checkbox_check(param, ctrl, obj, bit, addsig, enable_ctrl=None):
                     def check(event=None):
@@ -527,7 +647,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                         current_value = getattr(obj, param)
                         if current_value != current:
                             setattr(obj, param, current)
-                            self.context.signal(f"{param}", v)
+                            self.context.signal(param, v, obj)
                             for _sig in addsig:
                                 self.context.signal(_sig)
 
@@ -624,7 +744,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 current_value = getattr(obj, param)
                                 if current_value != data_v:
                                     setattr(obj, param, data_v)
-                                    self.context.signal(param, data_v)
+                                    self.context.signal(param, data_v, obj)
                                     for _sig in addsig:
                                         self.context.signal(_sig)
                             except ValueError:
@@ -648,22 +768,31 @@ class ChoicePropertyPanel(ScrolledPanel):
 
             elif data_type in (str, int, float):
                 # str, int, and float type objects get a TextCtrl setter.
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 if data_type == int:
                     check_flag = "int"
+                    limit = True
                 elif data_type == float:
                     check_flag = "float"
+                    limit = True
                 else:
                     check_flag = ""
+                    limit = False
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
                     style=wx.TE_PROCESS_ENTER,
-                    limited=True,
+                    limited=limit,
                     check=check_flag,
                 )
+                ctrl_width = c.get("width", 0)
+                if ctrl_width > 0:
+                    control.SetMaxSize(wx.Size(ctrl_width, -1))
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
@@ -675,7 +804,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             current_value = getattr(obj, param)
                             if current_value != dtype_v:
                                 setattr(obj, param, dtype_v)
-                                self.context.signal(param, dtype_v)
+                                self.context.signal(param, dtype_v, obj)
                                 for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
@@ -690,9 +819,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Length:
                 # Length type is a TextCtrl with special checks
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
@@ -700,6 +832,10 @@ class ChoicePropertyPanel(ScrolledPanel):
                     limited=True,
                     check="length",
                 )
+                if isinstance(data, Length):
+                    if not data._digits:
+                        if data._preferred_units in ("mm", "cm", "in", "inch"):
+                           data._digits = 4
                 control.SetValue(str(data))
                 control_sizer.Add(control, 1, wx.EXPAND, 0)
 
@@ -711,7 +847,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             current_value = getattr(obj, param)
                             if str(current_value) != str(data_v):
                                 setattr(obj, param, data_v)
-                                self.context.signal(param, data_v)
+                                self.context.signal(param, data_v, obj)
                                 for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
@@ -726,9 +862,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Angle:
                 # Angle type is a TextCtrl with special checks
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 control = TextCtrl(
                     self,
                     wx.ID_ANY,
@@ -747,7 +886,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                             current_value = str(getattr(obj, param))
                             if current_value != data_v:
                                 setattr(obj, param, data_v)
-                                self.context.signal(param, data_v)
+                                self.context.signal(param, data_v, obj)
                                 for _sig in addsig:
                                     self.context.signal(_sig)
                         except ValueError:
@@ -762,9 +901,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                 current_sizer.Add(control_sizer, expansion_flag * weight, wx.EXPAND, 0)
             elif data_type == Color:
                 # Color data_type objects are get a button with the background.
-                control_sizer = wx.StaticBoxSizer(
-                    wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
-                )
+                if label != "":
+                    control_sizer = wx.StaticBoxSizer(
+                        wx.StaticBox(self, wx.ID_ANY, label), wx.HORIZONTAL
+                    )
+                else:
+                    control_sizer = wx.BoxSizer(wx.HORIZONTAL)
                 control = wx.Button(self, -1)
 
                 def set_color(ctrl, color: Color):
@@ -794,7 +936,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                                 current_value = getattr(obj, param)
                                 if current_value != data_v:
                                     setattr(obj, param, data_v)
-                                    self.context.signal(param, data_v)
+                                    self.context.signal(param, data_v, obj)
                                     for _sig in addsig:
                                         self.context.signal(_sig)
                             except ValueError:
@@ -835,7 +977,7 @@ class ChoicePropertyPanel(ScrolledPanel):
                     control.Enable(enabled)
 
                     def on_enable_listener(param, ctrl, obj):
-                        def listen(origin, value):
+                        def listen(origin, value, target=None):
                             try:
                                 ctrl.Enable(bool(getattr(obj, param)))
                             except RuntimeError:
@@ -850,8 +992,12 @@ class ChoicePropertyPanel(ScrolledPanel):
                     pass
 
             # Now we listen to 'ourselves' as well to learn about changes somewhere else...
-            def on_update_listener(param, ctrl, dtype, dstyle, choicelist):
-                def listen_to_myself(origin, value):
+            def on_update_listener(param, ctrl, dtype, dstyle, choicelist, sourceobj):
+                def listen_to_myself(origin, value, target=None):
+                    if target is None or target is not sourceobj:
+                        # print (f"Signal for {param}={value}, but no target given or different to source")
+                        return
+                    update_needed = False
                     # print (f"attr={param}, origin={origin}, value={value}, datatype={dtype}, datastyle={dstyle}")
                     data = None
                     if value is not None:
@@ -910,10 +1056,17 @@ class ChoicePropertyPanel(ScrolledPanel):
                         pass  # not supported...
                     elif dtype in (str, int, float):
                         if hasattr(ctrl, "GetValue"):
-                            if ctrl.GetValue() != str(data):
+                            try:
+                                if dtype(ctrl.GetValue()) != data:
+                                    update_needed = True
+                            except ValueError:
+                                update_needed = True
+                            if update_needed:
                                 ctrl.SetValue(str(data))
                     elif dtype == Length:
-                        if ctrl.GetValue() != str(data):
+                        if float(data) != float(Length(ctrl.GetValue())):
+                            update_needed = True
+                        if update_needed:
                             ctrl.SetValue(str(data))
                     elif dtype == Angle:
                         if ctrl.GetValue() != str(data):
@@ -935,11 +1088,12 @@ class ChoicePropertyPanel(ScrolledPanel):
 
                 return listen_to_myself
 
-            update_listener = on_update_listener(
-                attr, control, data_type, data_style, choice_list
-            )
-            self.listeners.append((attr, update_listener))
-            context.listen(attr, update_listener)
+            if wants_listener:
+                update_listener = on_update_listener(
+                    attr, control, data_type, data_style, choice_list, obj
+                )
+                self.listeners.append((attr, update_listener))
+                context.listen(attr, update_listener)
             tip = c.get("tip")
             if tip and not context.root.disable_tool_tips:
                 # Set the tool tip if 'tip' is available

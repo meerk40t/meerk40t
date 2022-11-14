@@ -134,6 +134,11 @@ class ImageNode(Node):
 
     @property
     def active_image(self):
+        if self._processed_image is None and (len(self.operations) > 0 or self.dither):
+            step = UNITS_PER_INCH / self.dpi
+            step_x = step
+            step_y = step
+            self.process_image(step_x, step_y)
         if self._processed_image is not None:
             return self._processed_image
         else:
@@ -145,7 +150,7 @@ class ImageNode(Node):
             return self.matrix
         return self._processed_matrix * self.matrix
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Preprocess step during the cut planning stages.
 
@@ -295,7 +300,20 @@ class ImageNode(Node):
             self._process_image_failed = False
         except (MemoryError, Image.DecompressionBombError):
             self._process_image_failed = True
-        self.altered()
+        self.updated()
+
+    @property
+    def opaque_image(self):
+        from PIL import Image
+
+        img = self.image
+        if img is not None:
+            if img.mode == "RGBA":
+                r, g, b, a = img.split()
+                background = Image.new("RGB", img.size, "white")
+                background.paste(img, mask=a)
+                img = background
+        return img
 
     def _convert_image_to_grayscale(self, image):
         # Precalculate RGB for L conversion.
@@ -376,8 +394,16 @@ class ImageNode(Node):
         """
         from PIL import ImageEnhance, ImageFilter, ImageOps
 
+        overall_left = 0
+        overall_top = 0
+        overall_right, overall_bottom = image.size
         for op in self.operations:
             name = op["name"]
+            if name == "resample":
+                # This is just a reminder, that while this may still appear in the scripts it is intentionally
+                # ignored (or needs to be revised with the upcoming appearance of passthrough) as it is not
+                # serving the purpose of the past
+                continue
             if name == "crop":
                 try:
                     if op["enable"] and op["bounds"] is not None:
@@ -386,6 +412,11 @@ class ImageNode(Node):
                         upper = int(crop[1])
                         right = int(crop[2])
                         lower = int(crop[3])
+                        w, h = image.size
+                        overall_left += left
+                        overall_top += upper
+                        overall_right -= w - right
+                        overall_bottom -= h - lower
                         image = image.crop((left, upper, right, lower))
                 except KeyError:
                     pass
@@ -494,7 +525,22 @@ class ImageNode(Node):
                         )
                 except KeyError:
                     pass
-        return image
+            elif name == "dither":
+                # Set dither
+                try:
+                    if op["enable"] and op["type"] is not None:
+                        self.dither_type = op["type"]
+                        self.dither = True
+                    else:
+                        # Takes precedence
+                        self.dither = False
+                        # image = self._apply_dither(image)
+                except KeyError:
+                    pass
+            else:
+                # print(f"Unknown operation in raster-script: {name}")
+                continue
+        return image, (overall_left, overall_top, overall_right, overall_bottom)
 
     def _apply_dither(self, image):
         """
@@ -526,7 +572,7 @@ class ImageNode(Node):
 
         transparent_mask = self._get_transparent_mask(image)
 
-        image = self._convert_image_to_grayscale(image)
+        image = self._convert_image_to_grayscale(self.opaque_image)
 
         image = self._apply_mask(image, transparent_mask)
 
@@ -629,7 +675,10 @@ class ImageNode(Node):
         # Find rejection mask of white pixels. (already inverted)
         reject_mask = image.point(lambda e: 0 if e == 255 else 255)
 
-        image = self._process_script(image)
+        image, newbounds = self._process_script(image)
+        # This may have again changed the size of the image (op crop)
+        # so we need to adjust the reject mask...
+        reject_mask = reject_mask.crop(newbounds)
 
         background = Image.new("L", image.size, "white")
         background.paste(image, mask=reject_mask)

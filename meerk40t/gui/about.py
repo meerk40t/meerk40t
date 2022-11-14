@@ -6,15 +6,14 @@ from .mwindow import MWindow
 
 _ = wx.GetTranslation
 
-HEADER_TEXT = _(
-    """MeerK40t is a free MIT Licensed open source project
-for lasering on K40 Devices.
-
-Participation in the project is highly encouraged.
-Past participation, and continuing participation is graciously thanked.
-This program is mostly the brainchild of Tatarize,
-who sincerely hopes his contributions will be but the barest trickle
-that becomes a raging river."""
+HEADER_TEXT = (
+    "MeerK40t is a free MIT Licensed open source project\n"
+    + "for lasering on K40 Devices.\n\n"
+    + "Participation in the project is highly encouraged.\n"
+    + "Past participation, and continuing participation is graciously thanked.\n"
+    + "This program is mostly the brainchild of Tatarize,\n"
+    + "who sincerely hopes his contributions will be but\n"
+    + "the barest trickle that becomes a raging river."
 )
 
 
@@ -63,7 +62,7 @@ class AboutPanel(wx.Panel):
         self.meerk40t_about_text_header = wx.StaticText(
             self,
             wx.ID_ANY,
-            HEADER_TEXT,
+            _(HEADER_TEXT),
         )
         self.meerk40t_about_text_header.SetFont(
             wx.Font(
@@ -260,7 +259,7 @@ class InformationPanel(wx.Panel):
             wx.TheClipboard.SetData(wx.TextDataObject(msg))
             wx.TheClipboard.Close()
         else:
-            # print ("COuldnt access clipboard")
+            # print ("couldn't access clipboard")
             wx.Bell()
 
 

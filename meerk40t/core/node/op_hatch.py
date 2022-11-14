@@ -109,7 +109,7 @@ class HatchOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if not drag_node.type in self._allowed_elements_dnd:
+            if drag_node.type not in self._allowed_elements_dnd or drag_node._parent.type == "branch reg":
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -153,7 +153,7 @@ class HatchOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
-    def valid_node(self, node):
+    def valid_node_for_reference(self, node):
         def is_valid_closed_path(p):
             valid = False
             if len(p) != 0:
@@ -162,11 +162,14 @@ class HatchOpNode(Node, Parameters):
                     valid = True
             return valid
 
+        # First check type per se
+        if node.type not in self._allowed_elements_dnd:
+            return False
+        # even then it might not be eligible
         result = False
         if hasattr(node, "path"):
             if is_valid_closed_path(node.path):
                 result = True
-
         elif node.type == "elem polyline":
             # Are they a closed path?
             obj = Path(node.shape)
@@ -195,9 +198,11 @@ class HatchOpNode(Node, Parameters):
                     result = col1 == col2
             return result
 
+        feedback = []
         if node.type in self._allowed_elements:
             if not self.default:
                 if self.has_attributes():
+                    result = False
                     for attribute in self.allowed_attributes:
                         if (
                             hasattr(node, attribute)
@@ -206,21 +211,28 @@ class HatchOpNode(Node, Parameters):
                             plain_color_op = abs(self.color)
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
-                                if self.valid_node(node):
+                                if self.valid_node_for_reference(node):
+                                    result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
-                                    return True, self.stopop
+                                    feedback.append(attribute)
+                    if result:
+                        return True, self.stopop, feedback
                 else:  # empty ? Anything goes
-                    if self.valid_node(node):
+                    if self.valid_node_for_reference(node):
                         self.add_reference(node)
                         # Have classified but more classification might be needed
-                        return True, self.stopop
+                        feedback.append("stroke")
+                        feedback.append("fill")
+                        return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
-                if self.valid_node(node):
+                if self.valid_node_for_reference(node):
                     self.add_reference(node)
-                    return True, self.stopop
-        return False, False
+                    feedback.append("stroke")
+                    feedback.append("fill")
+                    return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
@@ -230,7 +242,7 @@ class HatchOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -268,7 +280,7 @@ class HatchOpNode(Node, Parameters):
         if pos != len(points):
             yield points[pos : len(points)]
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Preprocess hatch values
 
@@ -350,6 +362,7 @@ class HatchOpNode(Node, Parameters):
                     self.add_node(node)
 
         if self.children:
+            commands = plan.commands
             commands.append(hatch)
 
     def as_cutobjects(self, closed_distance=15, passes=1):

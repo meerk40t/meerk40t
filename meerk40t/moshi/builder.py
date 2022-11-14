@@ -1,3 +1,10 @@
+"""
+Moshiboard Builder
+
+Builder for Moshiboard command data output information. Allows interactions through simple commands to export the
+required data to run a Moshiboard.
+"""
+
 swizzle_table = [
     [
         b"\x00",
@@ -310,10 +317,10 @@ MOSHI_READ = 14
 # 14 is also sometimes done as a keepalive each 3.4 seconds.
 
 
-class MoshiBlob:
+class MoshiBuilder:
     """
-    MoshiBlobs are datablobs of Moshi types. These are series of commands which should be executed as a program within
-    the Moshicontroller.
+    MoshiBuilder builds datablobs of Moshi type. These are series of commands which should be executed as a program
+    within the Moshicontroller.
     """
 
     def __init__(self, channel=None):
@@ -568,9 +575,9 @@ class MoshiBlob:
         randomly by Moshi's native software. The board itself reads these all the same.
         """
         if q & 1:
-            return MoshiBlob._swizzle(q, 7, 6, 2, 4, 3, 5, 1, 0)
+            return MoshiBuilder._swizzle(q, 7, 6, 2, 4, 3, 5, 1, 0)
         else:
-            return MoshiBlob._swizzle(q, 5, 1, 7, 2, 4, 3, 6, 0)
+            return MoshiBuilder._swizzle(q, 5, 1, 7, 2, 4, 3, 6, 0)
 
     @staticmethod
     def reconvert(q):
@@ -578,5 +585,5 @@ class MoshiBlob:
         Counter-translate a particular command code back into correct values.
         """
         for m in range(5):
-            q = MoshiBlob.convert(q)
+            q = MoshiBuilder.convert(q)
         return q

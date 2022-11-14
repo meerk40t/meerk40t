@@ -42,7 +42,7 @@ def plugin(service, lifecycle):
             },
         )
         service.register(
-            "button/config/Configuration",
+            "button/device/Configuration",
             {
                 "label": _("Config"),
                 "icon": icons8_computer_support_50,
@@ -102,6 +102,7 @@ def plugin(service, lifecycle):
                     "icon": icons8_light_off_50,
                     "tip": _("Turn light off"),
                     "action": lambda v: service("stop\n"),
+                    "signal": "stop_tracing",
                 },
             },
         )

@@ -2,6 +2,7 @@ import unittest
 from copy import copy
 from test import bootstrap
 
+from meerk40t.core.cutplan import CutPlan
 from meerk40t.fill.fills import eulerian_fill, scanline_fill
 from meerk40t.svgelements import Matrix, Rect
 
@@ -85,11 +86,10 @@ class TestFill(unittest.TestCase):
             rect = list(kernel.elements.elems())[0]
             hatch.hatch_type = "eulerian"
             hatch.add_node(copy(rect))
-            commands = list()
+            c = CutPlan("q", kernel.planner)
             # kernel.console("tree list\n")
-            hatch.preprocess(kernel.root, Matrix(), commands)
-            for command in commands:
-                command()
+            hatch.preprocess(kernel.root, Matrix(), c)
+            c.execute()
             # kernel.console("tree list\n")
             polyline_node = hatch.children[0]
             shape = polyline_node.shape
@@ -113,9 +113,9 @@ class TestFill(unittest.TestCase):
             hatch.add_node(copy(rect1))
             commands = list()
             # kernel.console("tree list\n")
-            hatch.preprocess(kernel.root, Matrix(), commands)
-            for command in commands:
-                command()
+            c = CutPlan("q", kernel.planner)
+            hatch.preprocess(kernel.root, Matrix(), c)
+            c.execute()
             # kernel.console("tree list\n")
             polyline_node0 = hatch.children[0]
             shape0 = polyline_node0.shape

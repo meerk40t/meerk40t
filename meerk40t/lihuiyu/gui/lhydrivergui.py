@@ -3,6 +3,7 @@ import wx
 
 from meerk40t.core.units import Length
 from meerk40t.device.gui.defaultactions import DefaultActionPanel
+from meerk40t.device.gui.formatterpanel import FormatterPanel
 from meerk40t.device.gui.warningpanel import WarningPanel
 from meerk40t.gui.icons import icons8_administrative_tools_50
 from meerk40t.gui.mwindow import MWindow
@@ -405,6 +406,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         self.context.device.realize()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_text_bedheight(self):
         ctrl = self.text_bedheight
@@ -419,6 +421,7 @@ class ConfigurationLaserPanel(wx.Panel):
         )
         self.context.device.realize()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_text_x_scale(self):
         try:
@@ -429,6 +432,7 @@ class ConfigurationLaserPanel(wx.Panel):
             )
             self.context.device.realize()
             self.context("viewport_update\n")
+            self.context.signal("bedsize", False)
         except ValueError:
             pass
 
@@ -443,6 +447,7 @@ class ConfigurationLaserPanel(wx.Panel):
             )
             self.context.device.realize()
             self.context("viewport_update\n")
+            self.context.signal("bedsize", False)
         except ValueError:
             pass
 
@@ -625,24 +630,43 @@ class ConfigurationInterfacePanel(ScrolledPanel):
     def on_check_swapxy(self, event=None):
         self.context.swap_xy = self.checkbox_swap_xy.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_flip_x(self, event=None):
         self.context.flip_x = self.checkbox_flip_x.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_home_right(self, event=None):
-        self.context.home_right = self.checkbox_home_right.GetValue()
-        self.context.origin_x = 1.0 if self.context.home_right else 0.0
+        direction = self.checkbox_home_right.GetValue()
+        self.context.home_right = direction
+        if direction:
+            self.context.show_flip_x = True
+            self.context.origin_x = 1.0
+        else:
+            self.context.show_flip_x = False
+            self.context.origin_x = 0.0
+        self.context.show_origin_x = self.context.origin_x
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_flip_y(self, event=None):
         self.context.flip_y = self.checkbox_flip_y.GetValue()
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_check_home_bottom(self, event=None):
-        self.context.home_bottom = self.checkbox_home_bottom.GetValue()
-        self.context.origin_y = 1.0 if self.context.home_bottom else 0.0
+        direction = self.checkbox_home_bottom.GetValue()
+        self.context.home_bottom = direction
+        if direction:
+            self.context.show_flip_y = True
+            self.context.origin_y = 1.0
+        else:
+            self.context.show_flip_y = False
+            self.context.origin_y = 0.0
+        self.context.show_origin_y = self.context.origin_y
         self.context("viewport_update\n")
+        self.context.signal("bedsize", False)
 
     def on_device_label(self):
         self.context.label = self.text_device_label.GetValue()
@@ -1126,16 +1150,19 @@ class LihuiyuDriverGui(MWindow):
 
         panel_warn = WarningPanel(self, id=wx.ID_ANY, context=self.context)
         panel_actions = DefaultActionPanel(self, id=wx.ID_ANY, context=self.context)
+        newpanel = FormatterPanel(self, id=wx.ID_ANY, context=self.context)
 
         self.panels.append(panel_config)
         self.panels.append(panel_setup)
         self.panels.append(panel_warn)
         self.panels.append(panel_actions)
+        self.panels.append(newpanel)
 
         self.notebook_main.AddPage(panel_config, _("Configuration"))
         self.notebook_main.AddPage(panel_setup, _("Setup"))
         self.notebook_main.AddPage(panel_warn, _("Warning"))
         self.notebook_main.AddPage(panel_actions, _("Default Actions"))
+        self.notebook_main.AddPage(newpanel, _("Display Options"))
 
         self.Layout()
 

@@ -40,19 +40,19 @@ def bootstrap():
 
     kernel.add_plugin(ch341.plugin)
 
-    from meerk40t.lihuiyu import device as lhystudiosdevice
+    from meerk40t.lihuiyu import plugin as lhystudiosdevice
 
     kernel.add_plugin(lhystudiosdevice.plugin)
 
-    from meerk40t.moshi import device as moshidevice
+    from meerk40t.moshi import plugin as moshidevice
 
     kernel.add_plugin(moshidevice.plugin)
 
-    # from meerk40t.grbl import device as grbldevice
-    #
-    # kernel.add_plugin(grbldevice.plugin)
+    from meerk40t.grbl import plugin as grbldevice
 
-    from meerk40t.ruida import device as ruidadevice
+    kernel.add_plugin(grbldevice.plugin)
+
+    from meerk40t.ruida import plugin as ruidadevice
 
     kernel.add_plugin(ruidadevice.plugin)
 

@@ -466,14 +466,6 @@ class TemplatePanel(wx.Panel):
                     True,
                 ),
                 (
-                    "pulse_width",
-                    preset_balor_pulse,
-                    _("Pulse Width"),
-                    "ns",
-                    False,
-                    True,
-                ),
-                (
                     "delay_laser_on",
                     preset_balor_timings,
                     _("Laser On Delay"),
@@ -522,6 +514,18 @@ class TemplatePanel(wx.Panel):
                     True,
                 ),
             ]
+            if self.context.device.pulse_width_enabled:
+                balor_choices.append(
+                    (
+                        "pulse_width",
+                        preset_balor_pulse,
+                        _("Pulse Width"),
+                        "ns",
+                        False,
+                        True,
+                    )
+                )
+
             for entry in balor_choices:
                 self.parameters.append(entry)
         choices = []
@@ -880,7 +884,7 @@ class TemplatePanel(wx.Panel):
                             stroke=set_color,
                             fill=fill_color,
                         )
-                        elem_type = "elem rect"
+                        elem_type = "elem ellipse"
                         elemnode = self.context.elements.elem_branch.add(
                             shape=pattern, type=elem_type
                         )

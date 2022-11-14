@@ -16,6 +16,7 @@ class BalorOperationPanel(ScrolledPanel):
         kwds["style"] = kwds.get("style", 0)
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
+        self.parent = args[0]
         self.operation = node
         params = Parameters(self.operation.settings)
         params.validate()
@@ -147,7 +148,7 @@ class BalorOperationPanel(ScrolledPanel):
         main_sizer.Add(self.panel, 1, wx.EXPAND, 0)
 
         self.SetSizer(main_sizer)
-
+        # self.parent.add_module_delegate(self.panel)
         self.Layout()
 
     def pane_hide(self):

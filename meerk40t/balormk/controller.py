@@ -1,3 +1,10 @@
+"""
+Galvo Controller
+
+The balor controller takes low level lmc galvo commands and converts them into lists and shorts commands to send
+to the hardware controller.
+"""
+
 import struct
 import time
 from copy import copy
@@ -229,10 +236,6 @@ class GalvoController:
         self.service = service
         self.is_shutdown = False  # Shutdown finished.
 
-        self.max_attempts = 5
-        self.refused_count = 0
-        self.count = 0
-
         name = self.service.label
         self.usb_log = service.channel(f"{name}/usb", buffer_size=500)
         self.usb_log.watch(lambda e: service.signal("pipe;usb_status", e))
@@ -318,22 +321,25 @@ class GalvoController:
                 self.connection = USBConnection(self.usb_log)
         self._is_opening = True
         self._abort_open = False
+        count = 0
         while not self.connection.is_open(self._machine_index):
             try:
-                v = self.connection.open(self._machine_index)
-                if v < 0:
-                    self.count += 1
-                    time.sleep(0.3)
-                    if self.is_shutdown or self._abort_open:
-                        self._is_opening = False
-                        self._abort_open = False
-                        return
-                    continue
+                if self.connection.open(self._machine_index) < 0:
+                    raise ConnectionError
                 self.init_laser()
             except (ConnectionError, ConnectionRefusedError):
-                self.connection.close(self._machine_index)
-                self.refused_count += 1
-                time.sleep(0.5)
+                count += 1
+                if self.is_shutdown or self._abort_open:
+                    self._is_opening = False
+                    self._abort_open = False
+                    return
+                if self.connection.is_open(self._machine_index):
+                    self.connection.close(self._machine_index)
+                if count >= 10:
+                    raise ConnectionRefusedError(
+                        "Could not connect to the LMC controller."
+                    )
+                time.sleep(0.3)
                 continue
         self._is_opening = False
         self._abort_open = False
@@ -881,8 +887,46 @@ class GalvoController:
             self.write_blank_correct_file()
             return
 
+    @staticmethod
+    def get_scale_from_correction_file(filename):
+        with open(filename, "rb") as f:
+            label = f.read(0x16)
+            if label.decode("utf-16") == "LMC1COR_1.0":
+                unk = f.read(2)
+                return struct.unpack("63d", f.read(0x1F8))[43]
+            else:
+                unk = f.read(6)
+                return struct.unpack("d", f.read(8))[0]
+
     def write_blank_correct_file(self):
         self.write_cor_table(False)
+
+    def _read_float_correction_file(self, f):
+        """
+        Read table for cor files marked: LMC1COR_1.0
+        @param f:
+        @return:
+        """
+        table = []
+        for j in range(65):
+            for k in range(65):
+                dx = int(round(struct.unpack("d", f.read(8))[0]))
+                dx = dx if dx >= 0 else -dx + 0x8000
+                dy = int(round(struct.unpack("d", f.read(8))[0]))
+                dy = dy if dy >= 0 else -dy + 0x8000
+                table.append([dx & 0xFFFF, dy & 0xFFFF])
+        return table
+
+    def _read_int_correction_file(self, f):
+        table = []
+        for j in range(65):
+            for k in range(65):
+                dx = int.from_bytes(f.read(4), "little", signed=True)
+                dx = dx if dx >= 0 else -dx + 0x8000
+                dy = int.from_bytes(f.read(4), "little", signed=True)
+                dy = dy if dy >= 0 else -dy + 0x8000
+                table.append([dx & 0xFFFF, dy & 0xFFFF])
+        return table
 
     def _read_correction_file(self, filename):
         """
@@ -891,17 +935,14 @@ class GalvoController:
         @param filename:
         @return:
         """
-        table = []
         with open(filename, "rb") as f:
-            f.seek(0x24)
-            for j in range(65):
-                for k in range(65):
-                    dx = int.from_bytes(f.read(4), "little", signed=True)
-                    dx = dx if dx >= 0 else -dx + 0x8000
-                    dy = int.from_bytes(f.read(4), "little", signed=True)
-                    dy = dy if dy >= 0 else -dy + 0x8000
-                    table.append([dx & 0xFFFF, dy & 0xFFFF])
-        return table
+            label = f.read(0x16)
+            if label.decode("utf-16") == "LMC1COR_1.0":
+                header = f.read(0x1FA)
+                return self._read_float_correction_file(f)
+            else:
+                header = f.read(0xE)
+                return self._read_int_correction_file(f)
 
     def _write_correction_table(self, table):
         assert len(table) == 65 * 65

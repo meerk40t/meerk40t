@@ -100,7 +100,7 @@ class ImageOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if not drag_node.type in self._allowed_elements_dnd:
+            if drag_node.type not in self._allowed_elements_dnd or drag_node._parent.type == "branch reg":
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:
@@ -130,12 +130,21 @@ class ImageOpNode(Node, Parameters):
             return some_nodes
         return False
 
+    def valid_node_for_reference(self, node):
+        if node.type in self._allowed_elements_dnd:
+            return True
+        else:
+            return False
+
     def classify(self, node, fuzzy=False, fuzzydistance=100, usedefault=False):
+        feedback = []
         if node.type in self._allowed_elements:
             self.add_reference(node)
             # Have classified and no more classification are needed
-            return True, self.stopop
-        return False, False
+            feedback.append("stroke")
+            feedback.append("fill")
+            return True, self.stopop, feedback
+        return False, False, None
 
     def load(self, settings, section):
         settings.read_persistent_attributes(section, self)
@@ -145,7 +154,7 @@ class ImageOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -206,12 +215,14 @@ class ImageOpNode(Node, Parameters):
         minutes, seconds = divmod(remainder, 60)
         return f"{int(hours)}:{str(int(minutes)).zfill(2)}:{str(int(seconds)).zfill(2)}"
 
-    def preprocess(self, context, matrix, commands):
+    def preprocess(self, context, matrix, plan):
         """
         Process the scale to native resolution done with the given matrix. In the case of image ops we are scaling
         the overscan length into usable native units.
 
+        @param context:
         @param matrix:
+        @param plan:
         @return:
         """
         overscan = float(Length(self.settings.get("overscan", "1mm")))
@@ -227,6 +238,7 @@ class ImageOpNode(Node, Parameters):
 
                 return process_images
 
+            commands = plan.commands
             commands.append(actual(node))
 
     def as_cutobjects(self, closed_distance=15, passes=1):

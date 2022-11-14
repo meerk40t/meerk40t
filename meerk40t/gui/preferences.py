@@ -306,13 +306,67 @@ class Preferences(MWindow):
 
         # self.panel_main = PreferencesPanel(self, wx.ID_ANY, context=self.context)
         self.panel_main = PreferencesMain(self, wx.ID_ANY, context=self.context)
-
+        inject_choices = [
+            {
+                "attr": "preset_classify_automatic",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Automatic"),
+                "tip": _("Set options for a good automatic experience"),
+                "page": "Classification",
+                "section": "_AA_Presets",
+                "subsection": "_0_",
+            },
+            {
+                "attr": "preset_classify_manual",
+                "object": self,
+                "default": False,
+                "type": bool,
+                "style": "button",
+                "label": _("Manual"),
+                "tip": _("Set options for complete manual control"),
+                "page": "Classification",
+                "section": "_AA_Presets",
+                "subsection": "_0_",
+            },
+            {
+                "attr": "dummy",
+                "default": "dummy",
+                "object": self,
+                "type": str,
+                "style": "info",
+                "label": _(
+                    "Classification is the (automatic) process of assigning an element to an operation."
+                )
+                + "\n"
+                + _("That link between element and operation is called an assignment."),
+                "page": "Classification",
+                # "section": "_000_Information",
+            },
+        ]
+        self.presets = [
+            # object, property, automatic, manual
+            (self.context.elements, "operation_default_empty", False, True),
+            (self.context.elements, "classify_reverse", False, False),
+            (self.context.elements, "classify_new", True, False),
+            (self.context.elements, "classify_fuzzy", True, True),
+            (self.context.elements, "classify_fuzzydistance", 100, 100),
+            (self.context.elements, "classify_black_as_raster", True, True),
+            (self.context.elements, "classify_default", True, False),
+            (self.context.elements, "classify_autogenerate", True, False),
+            (self.context.elements, "classify_auto_inherit", False, True),
+            (self.context.elements, "classify_on_color", True, False),
+            (self.context.elements, "classify_autogenerate_both", True, True),
+        ]
         self.panel_classification = ChoicePropertyPanel(
             self,
             id=wx.ID_ANY,
             context=self.context,
             choices="preferences",
             constraint=("Classification"),
+            injector=inject_choices,
         )
         self.panel_classification.SetupScrolling()
 
@@ -367,6 +421,15 @@ class Preferences(MWindow):
                 "signals": ("refresh_scene", "theme"),
             }
             colorchoices.append(singlechoice)
+        singlechoice = {
+            "attr": "color_reset",
+            "object": self,
+            "type": bool,
+            "style": "button",
+            "label": _("Reset Colors to Default"),
+            "section": "_ZZ_",
+        }
+        colorchoices.append(singlechoice)
 
         self.panel_color = ChoicePropertyPanel(
             self,
@@ -388,6 +451,44 @@ class Preferences(MWindow):
         _icon.CopyFromBitmap(icons8_administrative_tools_50.GetBitmap())
         self.SetIcon(_icon)
         self.SetTitle(_("Preferences"))
+
+    @property
+    def color_reset(self):
+        # Not relevant
+        return False
+
+    @color_reset.setter
+    def color_reset(self, value):
+        if value:
+            # We are resetting all GUI.colors
+            self.context("scene color unset\n")
+            self.context.signal("theme", True)
+
+    @property
+    def preset_classify_manual(self):
+        # Not relevant
+        return False
+
+    @preset_classify_manual.setter
+    def preset_classify_manual(self, value):
+        if value:
+            # We are setting presets for a couple of parameters
+            for preset in self.presets:
+                setattr(preset[0], preset[1], preset[3])
+                self.context.signal(preset[1], preset[3], preset[0])
+
+    @property
+    def preset_classify_automatic(self):
+        # Not relevant
+        return False
+
+    @preset_classify_automatic.setter
+    def preset_classify_automatic(self, value):
+        if value:
+            # We are setting presets for a couple of parameters
+            for preset in self.presets:
+                setattr(preset[0], preset[1], preset[2])
+                self.context.signal(preset[1], preset[2], preset[0])
 
     def delegates(self):
         yield self.panel_main

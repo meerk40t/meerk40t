@@ -1044,19 +1044,19 @@ msgstr ""
 "Inkscapes Objekt-Liste entsprechen"
 
 #: meerk40t/core/elements.py:148
-msgid "Classify newly created elements"
+msgid "Classify elements after creation"
 msgstr "Klassifiziere neu hinzugefügte Elemente"
 
 #: meerk40t/core/elements.py:149
-msgid "MK will immediately try to classify an element as soon as it is created,"
+msgid "MK will immediately try to classify (automatically assign) an element as soon as it is created,"
 msgstr "MK versucht sofort nach Erstellen eines Elements dieses zu klassifizieren,"
 
 #: meerk40t/core/elements.py:153
 msgid ""
-"if you want to defer this to apply manual classification, then untick "
+"if you want to defer this to apply manual assignment, then untick "
 "this option."
 msgstr ""
-"falls eine manuelle Zuordnung stattdessen bevorzugt wird, sollte diese "
+"falls stattdessen eine manuelle Zuordnung bevorzugt wird, sollte diese "
 "Option abgewählt werden."
 
 #: meerk40t/core/elements.py:164
@@ -1123,7 +1123,7 @@ msgstr "wird stattdessen eine als 'Standard' gekennzeichnete Operation verwendet
 
 #: meerk40t/core/elements.py:231
 msgid "Autogenerate Operations"
-msgstr "Erzeuge automatisch Operationen"
+msgstr "Erzeuge automatisch Arbeitsabläufe"
 
 #: meerk40t/core/elements.py:236
 msgid "or by assigning to a default operation (see above),"
@@ -1312,7 +1312,7 @@ msgid "list wordlist values"
 msgstr "liste Wortlist-Einträge auf"
 
 #: meerk40t/core/elements.py:1110
-msgid "Wordlist {name} (Type={type}, Index={index})):"
+msgid "Wordlist {name} (Type={type}, Index={index}):"
 msgstr ""
 
 #: meerk40t/core/elements.py:1117
@@ -2089,7 +2089,11 @@ msgstr ""
 " verwendet werden: {combinations}"
 
 #: meerk40t/core/elements.py:3881
-msgid "Convert given elements to a raster image"
+
+msgid "Create an image from the assigned elements."
+msgstr "Rendert die zugeordneten Elemente in ein Raster-Bild"
+
+msgid "Create a raster image from the given elements"
 msgstr "Rendert die ausgewählten Elemente in ein Raster-Bild"
 
 #: meerk40t/core/elements.py:3893
@@ -2623,7 +2627,7 @@ msgstr "Nichts zu löschen"
 
 #: meerk40t/core/elements.py:5859
 msgid ""
-"There were nodes across operations ({c1}), references ({c2}), elements "
+"There were nodes across operations ({c1}), assignments ({c2}), elements "
 "({c3}) and regmarks ({c4})."
 msgstr ""
 "Es gab Objekte bei Arbeitsabläufen ({c1}), Zuordnungen ({c2}), Elementen"
@@ -2794,7 +2798,7 @@ msgstr "Umwandeln zu Schneiden"
 
 #: meerk40t/core/elements.py:6556
 msgid "Convert to Hatch"
-msgstr "Konvertiere zu Gitter"
+msgstr "Umwandeln zu Gitter"
 
 #: meerk40t/core/elements.py:6565
 msgid "Convert to Dots"
@@ -2806,7 +2810,7 @@ msgstr "Raster-Assistent"
 
 #: meerk40t/core/elements.py:6574
 msgid "Set to None"
-msgstr ""
+msgstr "Zurücksetzen"
 
 #: meerk40t/core/elements.py:6586
 msgid "Apply: {script}"
@@ -3034,7 +3038,7 @@ msgstr "Hänge Arbeitsgang am Ende der Liste an"
 
 #: meerk40t/core/elements.py:7182
 msgid "Append Image"
-msgstr "Füge 'Image' hinzu"
+msgstr "Füge 'Bild' hinzu"
 
 #: meerk40t/core/elements.py:7187
 msgid "Append Raster"
@@ -3071,11 +3075,17 @@ msgstr "Füge Home hinzu"
 
 #: meerk40t/core/elements.py:7221
 msgid "Append Return to Origin"
-msgstr "Füge 'Zurück zum Ursprung' hinzu"
+msgstr "Füge 'Zurück zum Start' hinzu"
 
 #: meerk40t/core/elements.py:7233
 msgid "Append Set Origin"
-msgstr "Füge 'Setze Ursprung' hinzu"
+msgstr "Füge 'Setze Startpunkt' hinzu"
+
+msgid "Set Origin"
+msgstr "Setze Startpunkt"
+
+msgid "Goto Origin"
+msgstr "Zurück zum Start"
 
 #: meerk40t/core/elements.py:7246
 msgid "Append Beep"
@@ -3107,7 +3117,7 @@ msgstr "Füge 'Home + Beep + Nachricht' hinzu"
 
 #: meerk40t/core/elements.py:7307
 msgid "Append Shutdown"
-msgstr "Füge 'Shutdown' hinzu"
+msgstr "Füge 'Quit' hinzu"
 
 #: meerk40t/core/elements.py:7316
 msgid "Console command to append to operations?"
@@ -3377,7 +3387,7 @@ msgstr "Zerlegen gemäß Z-Tiefe"
 
 #: meerk40t/core/elements.py:7904
 msgid "Divide into {divide} images"
-msgstr ""
+msgstr "Zerlege in {divide} Bilder"
 
 #: meerk40t/core/elements.py:7916 meerk40t/core/elements.py:7922
 #: meerk40t/core/elements.py:7928 meerk40t/core/elements.py:7934
@@ -4332,22 +4342,20 @@ msgstr ""
 #: meerk40t/gui/about.py:9
 msgid ""
 "MeerK40t is a free MIT Licensed open source project\n"
-"for lasering on K40 Devices.\n"
-"\n"
+"for lasering on K40 Devices.\n\n"
 "Participation in the project is highly encouraged.\n"
 "Past participation, and continuing participation is graciously thanked.\n"
 "This program is mostly the brainchild of Tatarize,\n"
-"who sincerely hopes his contributions will be but the barest trickle\n"
-"that becomes a raging river."
+"who sincerely hopes his contributions will be but\n"
+"the barest trickle that becomes a raging river."
 msgstr ""
-"Meerk40t ist ein kostenloses, auf der MIT Lizenz ba-\n"
-"sierendes Open-Source Projekt, um auf K40 Geräten\n"
-"zu lasern.\n"
+"Meerk40t ist ein auf der MIT Lizenz basierendes\n"
+"Open-Source Projekt, um auf K40 Geräten zu lasern.\n\n"
 "Mithilfe bei diesem Projekt ist jederzeit willkommen.\n"
-"Vielen Dank für vergangene und künftige Hilfe.\n"
-"Dieses Programm ist v.a. das Werk von Tartarize,\n"
-"der hofft, dass seine Arbeit am Ende ein kleiner Teil\n"
-"viel größeren Werks sein wird."
+"Herzlichen Dank für vergangene und künftige Hilfe.\n"
+"Dieses Programm ist v.a. das Werk von Tatarize,\n"
+"der hofft, dass seine Arbeit am Ende ein kleiner\n"
+"Teil eines viel größeren Werks sein wird."
 
 #: meerk40t/gui/about.py:91
 msgid "Thanks go out to...\n"
@@ -4998,12 +5006,12 @@ msgid "Keyhole operation"
 msgstr "Schlüsselloch-Arbeitsgang"
 
 #: meerk40t/gui/imagesplitter.py:485
-msgid "Splitter"
-msgstr "Zerlegen"
+msgid "Image ops"
+msgstr "Bild-Manip."
 
 #: meerk40t/gui/imagesplitter.py:487
-msgid "Open create split image dialog"
-msgstr "Öffnet den Dialog um Bilder zu zerlegen"
+msgid "Open create split image dialog / keyhole generation"
+msgstr "Öffnet den Dialog, um Bilder zu zerlegen bzw. Bildaussschnitte zu erzeugen"
 
 #: meerk40t/gui/keymap.py:25
 msgid "Add Hotkey"
@@ -5201,6 +5209,18 @@ msgstr "Aktualisiee Plan..."
 msgid "Preparing simulation..."
 msgstr "Bereite Simulation vor..."
 
+msgid "Please select a cutcode entry"
+msgstr "Bitte zunächst einen cutcode-Eintrag"
+
+msgid "from the operations panel"
+msgstr "aus der Arbeitsablauf-Liste auswählen"
+
+msgid "Tolerance to decide if a shape is truly inside another one."
+msgstr ""
+"Toleranz bei der Überprüfung, ob ein Element wirklich vollständig\n"
+"innerhalb eines anderen liegt. Sollte maximal auf Laserschnittbreite\n"
+"gesetzt werden."
+
 #: meerk40t/gui/lasertoolpanel.py:40
 msgid "Find center"
 msgstr "Finde Mittelpunkt"
@@ -5246,7 +5266,7 @@ msgid ""
 "circle on the bed and confirm the position by clicking on the buttons "
 "below.\n"
 "MK will find the center for you and place the laser above it or will "
-"recreate the circle for futher processing."
+"recreate the circle for further processing."
 msgstr ""
 "Anleitung: Positioniere den Laser auf drei Punkte auf dem Umfang des Kreises "
 "auf dem Laserbett und bestätige diese mit den Knöpfen nebenan.\n"
@@ -5287,7 +5307,7 @@ msgid ""
 "Instruction: place the laser on one corner of the encompassing rectangle "
 "and confirm the position by clicking on the buttons below. Then choose "
 "the opposing corner.\n"
-"MK will create a rectangle for you for futher processing."
+"MK will create a rectangle for you for further processing."
 msgstr ""
 "Anleitung: positioniere den Laser auf einer Ecke des Rechtecks "
 "auf dem Laserbett und bestätige diesen mit den Knöpfen nebenan.\n"
@@ -5327,7 +5347,7 @@ msgid ""
 "Instruction: place the laser on two points of one side of a square on the"
 " bed and confirm the position by clicking on the buttons below. Then "
 "choose one point on the other side of the corner.\n"
-"MK will create a square for you for futher processing."
+"MK will create a square for you for further processing."
 msgstr ""
 "Anleitung: positioniere den Laser auf zwei Punkten einer Seite des Quadrats "
 "auf dem Laserbett und bestätige diesen mit den Knöpfen nebenan.\n"
@@ -6394,6 +6414,9 @@ msgstr "S&etup\tCtrl-,"
 msgid "Show/Hide the Preferences window"
 msgstr "Zeigt/verbirgt das Einstellungsfenster"
 
+msgid "Show/Hide optimization options for this job."
+msgstr "Optionen zur Optimierung dieses Jobs ein-/ausblenden"
+
 #: meerk40t/gui/simulation.py:72
 msgid "Recalculate"
 msgstr "Neuberechnen"
@@ -6403,12 +6426,24 @@ msgid "Send to Laser"
 msgstr "An Laser senden"
 
 #: meerk40t/gui/simulation.py:173 meerk40t/gui/simulation.py:176
+msgid "Distance Estimate: while Lasering"
+msgstr "Fahrweg während Laser an ist"
+
+msgid "Distance Estimate: Traveling"
+msgstr "Fahrweg während Laser aus ist"
+
+msgid "Distance Estimate: Total"
+msgstr "Gesamter Fahrweg"
+
 msgid "Time Estimate: Lasering Time"
 msgstr "Zeitschätzung: Laser-Dauer"
 
 #: meerk40t/gui/simulation.py:174 meerk40t/gui/simulation.py:177
 msgid "Time Estimate: Traveling Time"
 msgstr "Zeitschätzung: Schlitten-Bewegung-Dauer"
+
+msgid "Time Estimate: Extra Time (ie to swing around)"
+msgstr "Zeitschätzung: Extra-Dauer (etwa für Bewegungsumkehr)"
 
 #: meerk40t/gui/simulation.py:175 meerk40t/gui/simulation.py:178
 msgid "Time Estimate: Total Time"
@@ -6516,6 +6551,42 @@ msgstr "Simulation"
 msgid "Simulate the current laser job"
 msgstr "Simuliere den aktuellen Laser-Job"
 
+msgid "Mode"
+msgstr "Modus"
+
+msgid "Steps"
+msgstr "Schritte"
+
+msgid "Time (sec.)"
+msgstr "Zeit (sec)"
+
+msgid "Time (min)"
+msgstr "Zeit (min)"
+
+msgid "Cut operations Playback-Mode: play will jump from one completed operations to next"
+msgstr "Wiedergabe-Modus: springt vom kompletten Einzelbrennvorgang zum Nächsten"
+
+msgid "Timed Playback-Mode: play will jump from one second to next"
+msgstr "Wiedergabe-Modus: Zeitlich, zeigt Brennvorgang von Sekunde zu Sekunde"
+
+msgid "Timed Playback-Mode: play will jump from one minute to next"
+msgstr "Wiedergabe-Modus: Zeitlich, zeigt Brennvorgang von Minute zu Minute"
+
+msgid "Modify operation parameter, press Enter to apply"
+msgstr "Modifiziere den Parameter der Operation, drücke Return um Änderungen zu übernehmen"
+
+msgid "Remove operation"
+msgstr "Entferne Brenn-Operation"
+
+msgid "Removes the current operation from the active cutplan"
+msgstr "Entfernt den aktuellen Eintrag aus der Liste aller Brennvorgänge"
+
+msgid "Insert '{operation}' before"
+msgstr "Einfügen '{operation}'"
+
+msgid "Appends '{operation}' at end"
+msgstr "Anhängen: '{operation}'"
+
 #: meerk40t/gui/snapoptions.py:17
 msgid "Snap-Options"
 msgstr "Einrast-Optionen"
@@ -6581,6 +6652,27 @@ msgstr "Abgearbeitete Jobs:"
 msgid "Clear History"
 msgstr "Historie löschen"
 
+msgid "-- All available devices --"
+msgstr "-- Alle Geräte --"
+
+msgid "Delete..."
+msgstr "Lösche..."
+
+msgid "All entries"
+msgstr "alle Einträge"
+
+msgid "Older than {week} week"
+msgstr "älter als {week} Woche(n)"
+
+msgid "Delete this entry"
+msgstr "Diesen Eintrag löschen"
+
+msgid "Clear history on startup"
+msgstr "Historie bei Programmstart löschen"
+
+msgid "Ignore helper jobs"
+msgstr "Hilfs-Jobs ignorieren"
+
 #: meerk40t/gui/spoolerpanel.py:116
 msgid "List and modify the queued operations"
 msgstr "Zeigt die Arbeitsgänge in der Warteschlange und lässt Änderungen zu"
@@ -6635,9 +6727,21 @@ msgstr "Füge der aktiven Variable einen neuen Eintrag hinzu"
 msgid "Delete the current entry for the active variable"
 msgstr "Lösche den aktuellen Wert der aktiven Variable"
 
+msgid "Delete the current variable"
+msgstr "Lösche die aktuelle Variable"
+
 #: meerk40t/gui/wordlisteditor.py:90
 msgid "Edit the current entry for the active variable"
 msgstr "Verändere den aktuellen Wert der aktiven Variable"
+
+msgid "Edit the name of the active variable"
+msgstr "Verändere den Namen der aktuellen Variable"
+
+msgid "Can't delete internal variable {key}"
+msgstr "Die interne Variable {key} kann nicht gelöscht werden"
+
+msgid "Can't rename internal variable {key}"
+msgstr "Die interne Variable {key} kann nicht umbenannt werden"
 
 #: meerk40t/gui/wordlisteditor.py:93
 msgid ""
@@ -6729,156 +6833,6 @@ msgstr "Datei importiert, {col} Variablen, {row} Werte"
 msgid "How to use..."
 msgstr "Anleitung"
 
-#: meerk40t/gui/wordlisteditor.py:494
-msgid ""
-"The objective of this functionality is to create burning templates, that "
-"can be reused"
-msgstr "Das Ziel dieser Funktionalität ist es, wiederverwendbare aber variable Brennvorlagen zu unterstützen."
-
-#: meerk40t/gui/wordlisteditor.py:498
-msgid ""
-"Let's clarify the term variable first: a variable is a placeholder for "
-"some text"
-msgstr ""
-"Klären wir erst den Begriff Variable: eine Variable ist ein Platzhalter für beliebigen Text "
-#: meerk40t/gui/wordlisteditor.py:501
-msgid "that can be used as part of the text-definition of a Text-Object."
-msgstr "die als Teil des Text-Inhalts eines Text-Objekts genutzt werden kann."
-
-#: meerk40t/gui/wordlisteditor.py:504
-msgid ""
-"It's reference (i.e. variable name) is used within curly brackets to "
-"indicate"
-msgstr "Der Verweis (d.h der Variablen-Name) wird in geschweifte Klammern gesetzt, "
-
-#: meerk40t/gui/wordlisteditor.py:507
-msgid "that it will eventually be replaced by 'real' content."
-msgstr "um anzuzeigen, dass dieser Verweis am Ende durch 'richtigen' Inhalt ersetzt wird."
-
-#: meerk40t/gui/wordlisteditor.py:509
-msgid ""
-"Let's come back to our use-case, imagine you want to create a name-tag "
-"pattern that"
-msgstr ""
-"Kommen wir zu unserem Anwendungsfall: wir wollen eine Namensschild-Vorlage erstellen, "
-
-#: meerk40t/gui/wordlisteditor.py:512
-msgid ""
-"can be reused. Lets create a text-object inside a frame and set its text "
-"to"
-msgstr ""
-"die leicht wiederverwendbar ist. Erstellen wir ein Text-Objekt innerhalb eines Rahmens und "
-"setzen den Inhalt des Objektes auf:"
-
-#: meerk40t/gui/wordlisteditor.py:515
-msgid "'This item belongs to {NAME}'. If you define a variable named 'NAME' and"
-msgstr "'Dieser Gegenstand gehört {NAME}'. Wenn wir eine Variable namens 'NAME' definieren,"
-
-#: meerk40t/gui/wordlisteditor.py:518
-msgid "assign a value like 'John' to it, then the burned text will finally state:"
-msgstr "und ihr einen Wert wie 'John' zuordnen, dann wird der finale, zu brennende Text lauten:"
-
-#: meerk40t/gui/wordlisteditor.py:521
-msgid "'This item belongs to John'"
-msgstr "'Dieser Gegenstand gehört John'"
-
-#: meerk40t/gui/wordlisteditor.py:523
-msgid ""
-"You can define a set of variables (called wordlist) that could be "
-"populated"
-msgstr ""
-"Wir können einen ganzen Satz von Variablen (Wortliste genannt) definieren, der z.B. "
-
-#: meerk40t/gui/wordlisteditor.py:526
-msgid "by a standard comma-separated CSV file. The you could have not just one"
-msgstr ""
-"aus einer Standard Komma-separierten CSV-Datei eingelesen werden kann. "
-"Dann hätten wir nicht nur einen Eintrag für 'NAME', sondern"
-
-#: meerk40t/gui/wordlisteditor.py:529
-msgid "entry defined for 'NAME' but dozens of them. Which of the multiple entries"
-msgstr "Dutzende davon. Welcher der Mehrfach-Einträge gerade aktiv ist "
-
-#: meerk40t/gui/wordlisteditor.py:532
-msgid "is currently active is decided by its index value."
-msgstr "entscheidet der sogenannte Index."
-
-#: meerk40t/gui/wordlisteditor.py:533
-msgid "You are not restricted to a single use of a variable (useful e.g."
-msgstr "Wir sind nicht beschränkt auf eine einzelne Verwendung einer Variable"
-
-#: meerk40t/gui/wordlisteditor.py:536
-msgid ""
-"if you want to batch-burn a couple of name-tags). The standard use {NAME}"
-" indicates"
-msgstr ""
-"(nützlich beispielsweise wenn man nicht nur ein Schild sondern gleich mehrere "
-"brennen will). Die Standardverwendung {NAME} nimmt den "
-
-#: meerk40t/gui/wordlisteditor.py:539
-msgid ""
-"the value at position #index of the loaded list, {NAME#+1} (note the plus "
-"sign)"
-msgstr ""
-"Wert an der Position #index der geladenen Liste, {NAME#+1} (beachte das #+1 am Ende) "
-#: meerk40t/gui/wordlisteditor.py:542
-msgid "uses the next entry, {NAME#+2} the second entry after the current."
-msgstr ""
-"verwendet den nächsten Eintrag, {NAME#+2} den übernächsten usw."
-
-#: meerk40t/gui/wordlisteditor.py:545
-msgid ""
-"Note: This usage does not change the index position, you need to manually"
-" advance it."
-msgstr ""
-"Achtung: diese Nutzung verändert nicht die Index-Position, "
-"diese muss manuell weitergeschaltet werden."
-
-#: meerk40t/gui/wordlisteditor.py:548
-msgid ""
-"If you want to autoadvance the index after every use, then you can use "
-"{NAME++}."
-msgstr ""
-"Soll der Index bei jedem Aufruf weiterspringen, dann kann {NAME++} verwendet werden."
-
-#: meerk40t/gui/wordlisteditor.py:551
-msgid ""
-"There are couple of predefined variables, that refer to the current burn "
-"operation"
-msgstr ""
-"Es gibt eine Reihe von vordefinierten Variablen, die Infos zum aktuellen Arbeitsgang"
-
-#: meerk40t/gui/wordlisteditor.py:554
-msgid ""
-"(like {op_power}, {op_speed} or others) or contain date/time-information "
-"({date}, {time})."
-msgstr ""
-"(etwa {op_power}, {op_speed} u.a.) oder Datuns-Zeit-Infomationen liefern "
-"({date}, {time})."
-
-#: meerk40t/gui/wordlisteditor.py:557
-msgid ""
-"Please note that date and time may be provided in a format that allows to"
-" define their"
-msgstr ""
-"Die Variablen date und time können mit einem Format angegeben werden, so dass"
-
-#: meerk40t/gui/wordlisteditor.py:560
-#, python-format
-msgid ""
-"appearance according to local preferences: e.g. {date@%d.%m.%Y} will "
-"provide a date"
-msgstr ""
-"ihr Aussehen mit lokalen Standards übereinstimmt: z.B. {date@%d.%m.%Y} zeigt ein Datum"
-
-#: meerk40t/gui/wordlisteditor.py:563
-msgid "like 31.12.2022 and {time@%H:%M} a time like 23:59."
-msgstr "wie 31.12.2022 und {time@%H:%M} eine Zeit wie 23:59."
-
-#: meerk40t/gui/wordlisteditor.py:564
-msgid "For a complete set of format-directives see:"
-msgstr "Für eine komplette Lister der Format-Codes:"
-
 #: meerk40t/gui/wordlisteditor.py:606
 msgid "Import/Export"
 msgstr "Import/Export"
@@ -6897,7 +6851,7 @@ msgstr "Wortliste"
 
 #: meerk40t/gui/wordlisteditor.py:623
 msgid "Manages Wordlist-Entries"
-msgstr ""
+msgstr "Wortlisten-Einträge ändern/erstellen"
 
 #: meerk40t/gui/wxmeerk40t.py:89
 msgid "Processing and sending..."
@@ -7087,8 +7041,21 @@ msgid "Icon size:"
 msgstr "Icon-Größe:"
 
 #: meerk40t/gui/wxmmain.py:352
-msgid "Appearance of all icons in the GUI (requires a restart to take effect))"
+msgid "Appearance of all icons in the GUI (requires a restart to take effect)"
 msgstr "Darstellung der Icons in der Benutzeroberfläche (nach Neustart wirksam)"
+
+msgid "Suppress labels"
+msgstr "Unterdrücke Labels"
+
+msgid ""
+"Suppress the display of labels in the toolbar at the top of the window\n"
+"a) requires a restart to take effect\n"
+"b) will always suppressed if your system is in dark mode"
+msgstr ""
+"Falls aktiv, werden keine Labels unter den Icons in der Toolbar angezeigt\n"
+"a) erst nach Neustart wirksam\n"
+"b) werden immer unterdrückt, wenn die System-Benutzeroberfläche im Dark Mode ist"
+
 
 #: meerk40t/gui/wxmmain.py:384
 msgid "Default zoom margin:"
@@ -7737,6 +7704,12 @@ msgid "Don't use icons in the tree"
 msgstr "Verzichte auf die Anzeige von Icons im Baum"
 
 #: meerk40t/gui/wxmmain.py:2114
+msgid "Hide Origin-Indicator"
+msgstr "Ursprung ausblenden"
+
+msgid "Don't show the origin indicator"
+msgstr "Unterdrücke die Anzeige des Ursprungs-Indikator"
+
 msgid "Hide Grid"
 msgstr "Gitter ausblenden"
 
@@ -8280,6 +8253,15 @@ msgstr ""
 #: meerk40t/image/imagetools.py:33
 msgid "Image DPI Scaling"
 msgstr "Bild-DPI-Skalierung"
+
+msgid "Create a file-node for imported image"
+msgstr "Erzeuge Datei-Element für ein importiertes Bild"
+
+msgid "Unset: Attach the image directly to elements."
+msgstr "Inaktiv: Fügt das Bild direkt in die Elemente ein"
+
+msgid "Set: Put the image under a file-node created for it."
+msgstr "Aktiv: Fügt das Bild unterhalb eines Datei-Elements ein"
 
 #: meerk40t/image/imagetools.py:36
 msgid "Unset: Use the image as if it were 1000 pixels per inch."
@@ -9756,7 +9738,7 @@ msgstr "Startet einen Outline-Job für die Auswahl"
 
 #: meerk40t/balormk/gui/gui.py:70
 msgid "Live Bounds"
-msgstr "Live  (rechteck)"
+msgstr "Live  (Rechteck)"
 
 #: meerk40t/balormk/gui/gui.py:75
 msgid "Live Full"
@@ -9772,7 +9754,7 @@ msgstr "Rechteck Umriss"
 
 #: meerk40t/balormk/gui/gui.py:91
 msgid "Trace Ants"
-msgstr "Ameisen Umriss"
+msgstr "Ameisenpfad"
 
 #: meerk40t/balormk/gui/gui.py:96
 msgid "Trace Full"
@@ -10130,6 +10112,9 @@ msgstr "Verändere den Standard-Parameter des hinzuzufügenden Arbeitsgangs"
 msgid "Modify the parameter of the selected operation"
 msgstr "Verändere die Parameter des gewählten Arbeitsgangs"
 
+msgid "Beep"
+msgstr "Signalton"
+
 #: meerk40t/device/gui/warningpanel.py:69
 msgid "op"
 msgstr ""
@@ -10305,6 +10290,105 @@ msgstr "Dithering"
 msgid "Enable Dither"
 msgstr "Dithering aktivieren"
 
+msgid "Select image enhancement script to apply"
+msgstr "Welcher Algorithmus soll auf Bild angewandt werden?"
+
+msgid "Choose a script to apply"
+msgstr "Algorithmus ausführen"
+
+msgid "Image-Operation"
+msgstr "Bild-Manipulation"
+
+msgid "Image-Dimensions"
+msgstr "Bild zuschneiden"
+
+msgid "How many pixels do you want to crop from the left?"
+msgstr "Wieviele Pixel sollen auf der linken Seite abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the lefright?"
+msgstr "Wieviele Pixel sollen auf der rechten Seite abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the top?"
+msgstr "Wieviele Pixel sollen auf der oberen Kante abgeschnitten werden?"
+
+msgid "How many pixels do you want to crop from the bottom?"
+msgstr "Wieviele Pixel sollen auf der unteren Kante abgeschnitten werden?"
+
+msgid "Apply script"
+msgstr "Skript anwenden"
+
+msgid "Action"
+msgstr "Aktion"
+
+msgid "Vectorisation"
+msgstr "Vektorisieren"
+
+msgid "Vectorize"
+msgstr "Vektorisieren"
+
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid "Turnpolicy"
+msgstr ""
+
+msgid "Despeckle"
+msgstr "Flecken"
+
+msgid "Corners"
+msgstr "Ecken"
+
+msgid "Simplify"
+msgstr "Vereinfachen"
+
+msgid "Tolerance"
+msgstr "Toleranz"
+
+msgid "Black-Level"
+msgstr "Schwarzwert"
+
+msgid ""
+"This parameter determines how to resolve ambiguities during decomposition of bitmaps into paths.\n\n"
+"BLACK: prefers to connect black (foreground) components.\n"
+"WHITE: prefers to connect white (background) components.\n"
+"LEFT: always take a left turn.\n"
+"RIGHT: always take a right turn.\n"
+"MINORITY: prefers to connect the color (black or white) that occurs least frequently in a local neighborhood of the current position.\n"
+"MAJORITY: prefers to connect the color (black or white) that occurs most frequently in a local neighborhood of the current position.\n"
+"RANDOM: choose randomly."
+msgstr ""
+"Dieser Parameter legt fest, wie mit Doppeldeutigkeiten beim Zerlegen der Grafik in Vektorpfade verfahren wird.\n\n"
+"BLACK: bevorzugt schwarze (Vordergrund) Komponenten zu verbinden.\n"
+"WHITE: bevorzugt weiße (Hintergrund) Komponenten zu verbinden.\n"
+"LEFT: geht immer zum linksliegenden Punkt.\n"
+"RIGHT: geht immer zum rechtsliegenden Punkt.\n"
+"MINORITY: bevorzugt die Farbe (schwarz oder weiß), die am wenigsten häufig in der Umgebung vorkommt.\n"
+"MAJORITY: bevorzugt die Farbe (schwarz oder weiß), die am häufigsten in der Umgebung vorkommt.\n"
+"RANDOM: zufällige Auswahl."
+
+msgid "Suppress speckles of up to this size (default 2 px)"
+msgstr "Unterdrückt Flecken bis zu dieser Größe (Standard 2 px)"
+
+msgid ""
+"This parameter is a threshold for the detection of corners. "
+"It controls the smoothness of the traced curve."
+msgstr ""
+"Dieser Parameter ist ein Schwellwert für das Erkennen von Ecken. "
+"Er bestimmt die 'Glattheit' der erzeugten Kurve."
+
+msgid "Try to 'simplify' the final curve by reducing the number of Bezier curve segments."
+msgstr "Versucht die Kurve zu 'vereinfachen', indem die Zahl der Bezier-Segment verringert wird."
+
+msgid ""
+"This defines the amount of error allowed in this simplification.\n"
+"Larger values tend to decrease the number of segments, at the expense of less accuracy."
+msgstr ""
+"Legt die erlaubte Toleranz beim Vereinfachen fest. Größere Werte führen zu einer geringeren "
+"Anzahl von Segmenten, aber auf Kosten der Genauigkeit."
+
+msgid "Establish when 'black' starts"
+msgstr "Definiert, wann 'Schwarz' beginnt"
+
 #: meerk40t/gui/propertypanels/imageproperty.py:146
 msgid "Select dither algorithm to use"
 msgstr "Wählen Sie den zu verwendenden Dithering-Algorithmus aus"
@@ -10373,33 +10457,36 @@ msgstr ""
 msgid "Input bits for given value"
 msgstr ""
 
+msgid "Loop Properties"
+msgstr "Globale Wiederholungen"
+
 #: meerk40t/gui/propertypanels/opbranchproperties.py:24
 msgid "Loop Continuously"
-msgstr ""
+msgstr "Dauerschleife"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:25
 msgid "Operation job will run forever in a loop"
-msgstr ""
+msgstr "Der Laser-Job läuft für immer in einer Dauerschleife"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:32
 msgid "Loop Parameter"
-msgstr ""
+msgstr "Durchgänge"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:33
 msgid "Operation job should run set number of times"
-msgstr ""
+msgstr "Wie oft soll der Laser-Job wiederholt werden"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:41
 msgid "Loop"
-msgstr ""
+msgstr "Wiederholungen"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:42
 msgid "times"
-msgstr ""
+msgstr "mal"
 
 #: meerk40t/gui/propertypanels/opbranchproperties.py:43
 msgid "How many times should the operation job loop"
-msgstr ""
+msgstr "Wie oft soll der Job wiederholt werden?"
 
 #: meerk40t/gui/propertypanels/operationpropertymain.py:14
 msgid "Change/View color of this layer. When Meerk40t classifies elements to operations,"
@@ -10742,6 +10829,9 @@ msgstr "Länge"
 #: meerk40t/gui/propertypanels/pathproperty.py:175
 msgid "Area"
 msgstr "Fläche"
+
+msgid "Area (w/wo stroke)"
+msgstr "Fläche (mit/ohne Rand)"
 
 msgid "Perimeter"
 msgstr "Umfang"
@@ -11984,13 +12074,16 @@ msgstr ""
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:7
 msgid ""
 "The m2-nano controller has four acceleration settings, and automatically "
-"selects the appropriate setting for the Cut or Raster speed.\n"
-"This setting allows you to override the automatic selection and specify "
-"your own."
+"selects the appropriate setting for the Cut or Raster speed."
 msgstr ""
 "Der m2-nano Controller hat vier Beschleunigungs-Einstellungen, aus denen "
 "er automatisch die passenden Einstellungen für Brenn- und Gravur-"
-"Geschwindigkeit auswählt.\n"
+"Geschwindigkeit auswählt."
+
+msgid ""
+"This setting allows you to override the automatic selection and specify "
+"your own."
+msgstr ""
 "Diese Einstellung erlaubt die Standard-Einstellungen zu übersteuern und "
 "eigene Werte zu nutzen."
 
@@ -12003,37 +12096,40 @@ msgstr ""
 "Diagonal-Bewegung anstelle eines rechtwinkligen Schritts durchzuführen. "
 "(0.261 Standard)"
 
-#: meerk40t/lihuiyu/gui/lhyoperationproperties.py:16
-msgid ""
-"Pulse Grouping is an alternative means of reducing the incidence of "
-"stuttering, allowing you potentially to burn at higher speeds.\n"
-"\n"
-"This setting is an operation-by-operation equivalent to the Pulse "
-"Grouping option in Device Config.\n"
-"\n"
-"It works by swapping adjacent on or off bits to group on and off together"
-" and reduce the number of switches.\n"
-"\n"
-"As an example, instead of 1010 it will burn 1100 - because the laser beam"
-" is overlapping, and because a bit is only moved at most 1/1000\", the "
-"difference should not be visible even under magnification."
-msgstr ""
 
 #: meerk40t/lihuiyu/gui/lhyoperationproperties.py:26
 msgid ""
 "For Cut/Engrave operations, when using PPI, Dot Length sets the minimum "
-"length for the laser to be on in order to change a continuous lower power"
-" burn into a series of dashes.\n"
-"\n"
-"When this is set, the PPI effectively becomes the ratio of dashes to "
-"gaps. For example:\n"
-"\n"
-"If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" "
-"dashes and 1/2\" gaps.\n"
-"\n"
-"If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" "
-"dashes and 3/4\" gaps.\n"
+"length for the laser to be on in order to change a continuous lower power "
+"burn into a series of dashes."
 msgstr ""
+"Bei Schneid-/Gravur-Operationen (bei Nutzung "
+"der PPI-Optionen), bestimmt die "
+"Punkt-Länge die minimale Länge bei "
+"der der Laser eingeschaltet sein muss, "
+"damit eine stetiger Low-Power-Strahl"
+"zu einer Reihe von Strichen wird."
+
+msgid ""
+"When this is set, the PPI effectively becomes the ratio of dashes to "
+"gaps. For example:"
+msgstr ""
+"Wenn dies aktiv ist, wird der PPI-Wert quasi zum Verhältnis von "
+"Strichen zu Lücken. Beispiel:"
+
+msgid ""
+"If you set Dot Length to 500 = 1/2\", a PPI of 500 would result in 1/2\" "
+"dashes and 1/2\" gaps."
+msgstr ""
+"Wenn die Punkt-Länge auf 500 = 1/2 Zoll gesetzt wird, so führt "
+"ein PPI von 500 zu 1/2 Zoll Strichen und 1/2 Zoll Lücken."
+
+msgid ""
+"If you set Dot Length to 250 = 1/4\", a PPI of 250 would result in 1/4\" "
+"dashes and 3/4\" gaps."
+msgstr ""
+"Wenn die Punkt-Länge auf 250 = 1/4 Zoll gesetzt wird, so führt "
+"ein PPI von 250 zu 1/4 Zoll Strichen und 3/4 Zoll Lücken."
 
 #: meerk40t/moshi/gui/moshicontrollergui.py:24
 msgid "Mock USB Connection Mode"
@@ -12133,9 +12229,6 @@ msgstr "Anzeige"
 
 msgid "Shape-Attributes"
 msgstr "Element-Attribute"
-
-#~ msgid "About %s v%s"
-#~ msgstr "Über %s v%s"
 
 msgid "GUI Appearance"
 msgstr "GUI Erscheinungsbild"
@@ -12319,11 +12412,24 @@ msgstr "Ausgabe"
 #~ msgid "Automatically add an interrupt after all jobs"
 #~ msgstr "Füge ein 'Anhalten' am Ende jedes Jobs an"
 
-#~ msgid "After"
-#~ msgstr "Nach"
+msgid "Presets"
+msgstr "Voreinstellungen"
 
-#~ msgid "Automatic"
-#~ msgstr "Automatisch"
+msgid "Automatic"
+msgstr "Automatisch"
+
+msgid "Set options for a good automatic experience"
+msgstr ""
+"Setze Optionen so, dass MK eine gute automatische Zuordnung von Elementen "
+"zu Arbeitsabläufen vornimmt"
+
+msgid "Manual"
+msgstr "Manuell"
+
+msgid "Set options for complete manual control"
+msgstr ""
+"Setze Optionen so, dass sie weitgehende manuelle Kontrolle "
+"über die Klassifizierung erlauben"
 
 #~ msgid "Add a home"
 #~ msgstr "Füge 'Home' hinzu"
@@ -12551,8 +12657,8 @@ msgstr "Benutzerdefiniertes D-Verhältnis"
 msgid "Acceleration"
 msgstr "Beschleunigung"
 
-#~ msgid "Dot Length (mils)"
-#~ msgstr "Punktlänge (mils)"
+msgid "Dot Length"
+msgstr "Punktlänge"
 
 #~ msgid "Operation Properties"
 #~ msgstr "Eigenschaften"
@@ -12745,8 +12851,8 @@ msgstr "Beschleunigung"
 #~ msgid "Enables the ability to modify the diagonal ratio."
 #~ msgstr "Ermöglicht das Diagonalverhältnis zu ändern."
 
-#~ msgid "Enables acceleration override"
-#~ msgstr "Ermöglicht Beschleunigungs-Übersteuerung"
+msgid "Enables acceleration override"
+msgstr "Ermöglicht eigene Werte für Beschleunigung"
 
 #~ msgid ""
 #~ "The m2-nano controller has four "
@@ -12801,8 +12907,8 @@ msgstr "Beschleunigung"
 #~ " losing position."
 #~ msgstr ""
 
-#~ msgid "Enable Dot Length"
-#~ msgstr "Änder Punkt-Länge"
+msgid "Enable Dot Length"
+msgstr "Benutzerdefinierte Punkt-Länge"
 
 #~ msgid ""
 #~ "For Cut/Engrave operations, when using "
@@ -13378,46 +13484,6 @@ msgstr "Sonstiges"
 
 #~ msgid "Set Home Position based on the current position"
 #~ msgstr "Home-Position basierend auf aktueller Position einstellen"
-
-#~ msgid ""
-#~ "Pulse Grouping is an alternative means"
-#~ " of reducing the incidence of "
-#~ "stuttering, allowing you potentially to "
-#~ "burn at higher speeds. This setting "
-#~ "is a global equivalent to the "
-#~ "Pulse Grouping option in Operation "
-#~ "Properties."
-#~ msgstr ""
-#~ "Puls-Gruppierung ist eine weitere "
-#~ "Alternative zur Verringerung von Stotter-"
-#~ "Effekten, was potentiell höhere Brenn-"
-#~ "Geschwindigkeiten erlaubt. Diese Option ist"
-#~ " das übergreifende Äquivalent zur Puls-"
-#~ "Gruppen-Option in den Eigenschaften "
-#~ "eines Arbeitsganges."
-
-#~ msgid ""
-#~ "It works by swapping adjacent on "
-#~ "or off bits to group on and "
-#~ "off together and reduce the number "
-#~ "of switches e.g. instead of 1010 "
-#~ "it will burn 1100. Because the "
-#~ "laser beam is overlapping, and because"
-#~ " a bit is only moved at most"
-#~ " 1/1000\", the difference should not "
-#~ "be visible even under magnification."
-#~ msgstr ""
-#~ "Das Prinzip beruht darauf, angrenzende "
-#~ "Ein- bzw. Aus-Bits zu tauschen, um"
-#~ " so längere Ein- bzw. Aus-Gruppen "
-#~ "zu bilden. Somit wird die Anzahl "
-#~ "der Umschaltvorgänge verringert: aus '1010'"
-#~ " wird dann '1100'. Da der Laserstrahl"
-#~ " sich überlappt und weil bei einem"
-#~ " Bit der Kopf lediglich max. 1/1000\""
-#~ " weiterbewegt wird, sollte der Unterschied"
-#~ " selbst bei Vergrößerung nicht sichtbar "
-#~ "sein."
 
 #~ msgid ""
 #~ "The Pulse Grouping option in Operations"
@@ -14526,3 +14592,378 @@ msgstr "Debugge Klasifizierung"
 
 msgid "Shows info about the classification process in the console"
 msgstr "Zeigt Informationen zur Klassifizierung in der Konsole an"
+
+msgid "Autogenerate both for fill and stroke"
+msgstr "Erzeuge Arbeitsabläufe für Umriss + Füllung"
+
+msgid "Active: for both stroke and fill we look for a corresponding hit, if none was found we generate a matching operation"
+msgstr ""
+"Aktiv: für beide Attribute Umriss + Füllung wird indiviudell auf einen Treffer geprüft, "
+"wurde keiner gefunden so erzeugen wir für das Attribut einen passenden Arbeitsablauf"
+
+msgid "Inactive: one hit of either stroke or fill is enough to prevent autogeneration"
+msgstr ""
+"Inaktiv: mindestens ein Treffer für Umriss oder Füllung "
+"verhindert das Erzeugen eines weiteren Arbeitsablaufs"
+
+msgid "Clear unused"
+msgstr "Entferne ungenutzte Arbeitsabläufe"
+
+msgid "Clear operations without children"
+msgstr "Entferne alle Arbeitsabläufe, denen keine Element zugeordnet sind"
+
+msgid "_TREE_Operations"
+msgstr "Arbeitsabläufe"
+
+msgid "_TREE_Elements"
+msgstr "Elemente"
+
+msgid "_TREE_Regmarks"
+msgstr "Registriermarken"
+
+msgid "_TREE_Image"
+msgstr "Bild"
+
+msgid "_TREE_Dots"
+msgstr "Einzelpunkt"
+
+msgid "_TREE_Path"
+msgstr "Pfad"
+
+msgid "_TREE_Line"
+msgstr "Linie"
+
+msgid "_TREE_Ellipse"
+msgstr "Ellipse"
+
+msgid "_TREE_Rect"
+msgstr "Rechteck"
+
+msgid "_TREE_Group"
+msgstr "Gruppe"
+
+msgid "_TREE_File"
+msgstr "Datei"
+
+msgid "_TREE_Point"
+msgstr "Punkt"
+
+msgid "_TREE_Cut"
+msgstr "Schneiden"
+
+msgid "_TREE_Engrave"
+msgstr "Gravieren"
+
+msgid "_TREE_Hatch"
+msgstr "Gitter"
+
+msgid "_TREE_(Disabled) "
+msgstr "(Inaktiv) "
+
+msgid "_TREE_Origin"
+msgstr "Zurück zum Ursprung"
+
+msgid "_TREE_beep"
+msgstr "Signalton"
+
+msgid "_TREE_Wait"
+msgstr "Warte"
+
+msgid "Speed Code Features:"
+msgstr "Speed-Code Feature:"
+
+msgid "Custom D-Ratio"
+msgstr "Benutzerdefiniertes D-Ratio"
+
+msgid "Enables the ability to modify the diagonal ratio."
+msgstr "Ermöglicht das Verwenden eines benutzerdefinierten Diagonal-Faktors (D-Ratio)"
+
+msgid "Remove all assignments from operations"
+msgstr "Lösche alle bestehende Zuordnungen"
+
+msgid "Any existing assignment of this element to operations will be removed"
+msgstr "Dies wird alle Zuordnungen dieses Elements zu Arbeitsgängen entfernen"
+
+msgid "Any existing assignment of elements to operations will be removed"
+msgstr "Dies wird alle Zuordnungen zu Arbeitsgängen entfernen"
+
+msgid "What does the first row contain:"
+msgstr "Was enthält die erste Zeile:"
+
+msgid "Auto-Detect"
+msgstr "Auto-Detect"
+
+msgid "Contains Data"
+msgstr "Enthält Daten"
+
+msgid "Contains Variable-Names"
+msgstr "Enthält Variablen-Namen"
+
+msgid "Do yo want to use a bespoke formatter?"
+msgstr "Soll ein eigener Format-Code verwendet werden?"
+
+msgid "Bespoke formatter for this node-type"
+msgstr "Eigener Format-Code für diesen Arbeitsablauf"
+
+msgid "Operations (Special)"
+msgstr "Spezielle Aktionen"
+
+msgid "Please provide the grid-size in {units}"
+msgstr "Wert für den Gitterabstand in {units}"
+
+msgid "User-defined grid-size"
+msgstr "Benutzerdefinierte Gittergröße"
+
+msgid "Reset Colors to Default"
+msgstr "Farben auf Standard"
+
+msgid "Design"
+msgstr "Elemente"
+
+msgid "Modify"
+msgstr "Ändern"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Prepare"
+msgstr "Vorbereitung"
+
+msgid "Trace bitmap"
+msgstr "Vektorisiere"
+
+msgid "Vectorize the given element"
+msgstr "Erzeuge eine Vektor-Version des Bildes"
+
+msgid "Classification is the (automatic) process of assigning an element to an operation."
+msgstr "Klassifizierung ist der automatische Prozess, Elemente Arbeitsabläufen zuzuordnen."
+
+msgid "That link between element and operation is called an assignment."
+msgstr "Diese Verknüpfung zwischen Element und Arbeitsablauf nennen wir Zuordnung."
+
+msgid "Redlight-Offset"
+msgstr "Rotlicht-Versatz"
+
+msgid "Attributes"
+msgstr "Attribute"
+
+# Barcode-Plugin
+msgid "error correction, one of L (7%), M (15%), Q (25%), H (30%)"
+msgstr "Fehler-Korrektur: L (7%), M (15%), Q (25%), H (30%)"
+
+msgid "Boxsize (default 10)"
+msgstr "Box-Größe (Standard 10)"
+
+msgid "Border around qr-code (default 4)"
+msgstr "Rahmen um QR-Code (Standard 4)"
+
+msgid "size (1..40)"
+msgstr "Größe (1..40)"
+
+msgid "X-position of qr-code"
+msgstr "X-Position des QR-Codes (linke obere Ecke)"
+
+msgid "Y-position of qr-code"
+msgstr "Y-Position des QR-Codes (linke obere Ecke)"
+
+msgid "Width/length of qr-code"
+msgstr "Breite/Länge des zu erzeugenden QR-Codes"
+
+msgid "Text to create qr-code from"
+msgstr "Text aus dem der QR-Code erzeugt werden soll"
+
+msgid "suppress text display"
+msgstr "Textanzeige unterdrücken"
+
+msgid "create a group of rects instead of a path"
+msgstr "Erzeuge statt eines einzelnen Objektes Einzel-Rechtecke"
+
+msgid "X-Position of barcode"
+msgstr "X-Position des Barcodes"
+
+msgid "Y-Position of barcode"
+msgstr "Y-Position des Barcodes"
+
+msgid "Width of barcode, may be 'auto' to keep native width"
+msgstr "Breite des zu erzeugenden Barcodes, mit 'auto' erfolgt keine Anpassung"
+
+msgid "Height of barcode, may be 'auto' to keep native height"
+msgstr "Höhe des zu erzeugenden Barcodes, mit 'auto' erfolgt keine Anpassung"
+
+msgid "Barcode type"
+msgstr "Barcode-Typ"
+
+msgid "The code to process"
+msgstr "Der Text, aus dem der Barcode erzeugt werden soll"
+
+msgid "Barcode"
+msgstr "Barcode"
+
+msgid "Create an ean-barcode or a qr-code"
+msgstr "Erzeuge einen EAN-Barcode oder einen QR-Code"
+
+msgid "Create a barcode"
+msgstr "Erzeuge einen Barcode"
+
+msgid "Text to use:"
+msgstr "Zu verwendender Text:"
+
+msgid "The barcode/qrcode will be based on this content."
+msgstr ""
+
+msgid "Code:"
+msgstr "Code:"
+
+msgid "Coordinates:"
+msgstr "Koordinaten:"
+
+msgid "Where will the barcode will be located (top left corner)."
+msgstr "Wo soll der Barcode platziert werden (linke obere Ecke)"
+
+msgid "QR-Code"
+msgstr "QR-Code"
+
+msgid "Options:"
+msgstr "Optionen:"
+
+msgid "How wide/high will the resulting qr-code be?"
+msgstr "Welceh Größe soll der QR-Code haben?"
+
+msgid "Resolution:"
+msgstr "Auflösung:"
+
+msgid "How big will the qr-code become (1..40, default 1)?"
+msgstr "Wir groß soll der QR-Code werden (1..40, Standard 1)?"
+
+msgid "Boxsize:"
+msgstr "Box-Größe:"
+
+msgid "How big is the boxsize of the pixels (default 10)?"
+msgstr "Wie groß sollen die einzelnen Pixel des Codes werden (Standard 10)?"
+
+msgid "Establish the error correction used for the QR Code"
+msgstr "Fehlertoleranz des QR-Codes"
+
+msgid "Barcode:"
+msgstr "Barcode:"
+
+msgid "What kind of barcode do you want to create?"
+msgstr "Welcher Typ von Barcode soll verwendet werden?"
+
+msgid "How wide will the resulting barcode be?"
+msgstr "Wie breit soll der Bardcode werden (mit 'auto' erfolgt keine Anpassung)?"
+
+msgid "How high will the resulting barcode be?"
+msgstr "Wie breit soll der Bardcode werden (mit 'auto' erfolgt keine Anpassung)"
+
+msgid "No text:"
+msgstr "Kein Text:"
+
+msgid "Suppress the text under the barcode?"
+msgstr "Unterdrücke die Tex-Anzeige unterhalb des Barcodes?"
+
+msgid "Rectangles:"
+msgstr "Rechtecke:"
+
+msgid "Do you want to have the barcode as individual rectangles?"
+msgstr "Soll der Barcode aus einzelnen Rechtecken erzeugt werden?"
+
+msgid "Create a barcode/qrcode"
+msgstr "Erzeuge einen Barcode bzw. QR-Code"
+
+msgid "Close without creating anything"
+msgstr "Schließen, ohne etwas zu erzeugen"
+
+msgid "Prev"
+msgstr "Zurück"
+
+msgid "Next"
+msgstr "VOr"
+
+msgid "Wordlist: go to next entry"
+msgstr "Gehe zum nächsten Wortlisten-Eintrag"
+
+msgid "Wordlist: go to prev entry"
+msgstr "Gehe zum vorherigen Wortlisten-Eintrag"
+
+msgid "Vector Text"
+msgstr "Vektor Text"
+
+msgid "Add a vector text element"
+msgstr "Erstellt ein Vektor-Text-Element"
+
+msgid "Font-Manager"
+msgstr "Font-Manager"
+
+msgid "Open the vector-font management window."
+msgstr "Öffnet das Tool zum Verwalten der Vektor-Zeichensätze"
+
+msgid "Fonts"
+msgstr "Zeichensätze"
+
+msgid "Font-Directory"
+msgstr "Verzeichnis für die Zeichensätze"
+
+msgid "Goto a font-source..."
+msgstr "Gehe zu Zeichensatz-Quelle..."
+
+msgid "Hershey Fonts - #1"
+msgstr ""
+
+msgid "Hershey Fonts - #2"
+msgstr ""
+
+msgid "Autocad-SHX-Fonts"
+msgstr ""
+
+msgid ""
+"MeerK40t can use Hershey-Fonts or Autocad-86 shape fonts designed to be rendered purely with vectors.\n"
+"They can be scaled, burned like any other vector shape and are therefore very versatile.\n"
+"See more: https://en.wikipedia.org/wiki/Hershey_fonts , "
+msgstr ""
+"MeerK40t kann Hershey- bzw. Autocad-86-Zeichensätze verwenden, die aus einfachen Vektoren zusammengesetzt sind.\n"
+"Diese können wie jedes andere Basiselement skaliert und gebrannt (auch ausgeschnitten) werden.\n"
+"Mehr Details: https://en.wikipedia.org/wiki/Hershey_fonts"
+
+msgid "Choose font directory"
+msgstr "Zeichensatz-Verzeichnis auswählen"
+
+msgid "Select a font-file to be imported into the the font-directory {fontdir}"
+msgstr "Zeichensatz auswählen, der in das Verzeichnis {fontdir} importiert werden soll"
+
+msgid "Fonts imported: {count}"
+msgstr "Importierte Zeichensätze: {count}"
+
+msgid "Import completed"
+msgstr "Import abgeschlossen"
+
+msgid "Font-Import completed.\nImported: {ok}\nFailed: {fail}\nTotal: {total}"
+msgstr "Zeichensatz-Import abgeschlossen.\nImportiert: {ok}\nFehler: {fail}\nGesamt: {total}"
+
+msgid "Do you really want to delete this font: {font}"
+msgstr "Soll der Zeichensatz {font} wirklich gelöscht werden?"
+
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgid ""
+"You will be led now to a source in the web, where you can download free fonts.\n"
+"Please be respect individual property rights!\nDestination: {url}\n"
+msgstr ""
+"Wir gehen nun zu einer Quelle im Internet, wo freie Zeichensätze heruntergeladen werden können.\n"
+"Bitte beachten und respektieren Sie individuelle Rechte an diesen Dateien!\n{url}\n"
+
+msgid ""
+"Unpack the downloaded archive after the download and select the extracted files with help of the 'Import'-Button."
+msgstr ""
+"Bitte das vollständig heruntergeladene Archiv nach dem Download entpacken. "
+"Danach die Zeichensätze mit Hilfe der 'Import'-Funktion importieren."
+
+msgid "Complete text-entry by pressing either Enter or Escape"
+msgstr "Text-Eingabe mit Eingabetaste oder Escape abschließen."
+
+msgid "Outline element(s)..."
+msgstr "Umrande Elemente..."
+
+msgid "...with {offset}mm distance"
+msgstr "...mit {offset}mm Abstand"

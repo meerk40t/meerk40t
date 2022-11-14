@@ -92,8 +92,10 @@ def create_menu_for_choices(gui, choices: List[dict]) -> wx.Menu:
 
 def create_choices_for_node(node, elements) -> List[dict]:
     choices = []
+    from meerk40t.core.treeop import get_tree_operation_for_node
 
-    for func in elements.tree_operations_for_node(node):
+    tree_operations_for_node = get_tree_operation_for_node(elements)
+    for func in tree_operations_for_node(node):
         choice = {}
         choices.append(choice)
         choice["action"] = func
@@ -136,6 +138,9 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     menu = wx.Menu()
     submenus = {}
     radio_check_not_needed = []
+    from meerk40t.core.treeop import get_tree_operation_for_node
+
+    tree_operations_for_node = get_tree_operation_for_node(elements)
 
     def menu_functions(f, node):
         func_dict = dict(f.func_dict)
@@ -155,7 +160,8 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
     if optional_2nd_node is not None:
         mc1 = menu.MenuItemCount
         last_was_separator = False
-        for func in elements.tree_operations_for_node(optional_2nd_node):
+
+        for func in tree_operations_for_node(optional_2nd_node):
             submenu_name = func.submenu
             submenu = None
             if submenu_name in submenus:
@@ -227,7 +233,7 @@ def create_menu_for_node(gui, node, elements, optional_2nd_node=None) -> wx.Menu
         if not last_was_separator and mc2 - mc1 > 0:
             menu.AppendSeparator()
 
-    for func in elements.tree_operations_for_node(node):
+    for func in tree_operations_for_node(node):
         submenu_name = func.submenu
         submenu = None
         if submenu_name in submenus:
@@ -349,9 +355,10 @@ class TextCtrl(wx.TextCtrl):
             name=name,
         )
         self.parent = parent
+        self.extend_default_units_if_empty = True
         self._check = check
         self._style = style
-        # For the sake of readibility we allow multiple occurences of
+        # For the sake of readability we allow multiple occurrences of
         # the same character in the string even if it's unnecessary...
         floatstr = "+-.eE0123456789"
         unitstr = "".join(ACCEPTED_UNITS)
@@ -394,6 +401,8 @@ class TextCtrl(wx.TextCtrl):
         self._last_valid_value = None
         self._event_generated = None
         self._action_routine = None
+        # You can set this to False, i you don't want logic to interfere with text input
+        self.execute_action_on_change = True
 
         if self._check is not None and self._check != "":
             self.Bind(wx.EVT_KEY_DOWN, self.on_char)
@@ -499,11 +508,27 @@ class TextCtrl(wx.TextCtrl):
         return status
 
     def SetValue(self, newvalue):
+        identical = False
+        current = super().GetValue()
+        if self._check == "float":
+            try:
+                v1 = float(current)
+                v2 = float(newvalue)
+                if v1==v2:
+                    identical = True
+            except ValueError:
+                pass
+        if identical:
+            # print (f"...ignored {current}={v1}, {newvalue}={v2}")
+            return
+        # print(f"SetValue called: {current} != {newvalue}")
         self._last_valid_value = newvalue
         status = self.get_warn_status(newvalue)
         self.warn_status = status
-
+        cursor = self.GetInsertionPoint()
         super().SetValue(newvalue)
+        cursor = min(len(newvalue), cursor)
+        self.SetInsertionPoint(cursor)
 
     def set_error_level(self, err_min, err_max):
         self.lower_limit_err = err_min
@@ -517,21 +542,42 @@ class TextCtrl(wx.TextCtrl):
         self.lower_limit = range_min
         self.upper_limit = range_max
 
-    def prevalidate(self):
+    def prevalidate(self, origin=None):
         # Check whether the field is okay, if not then put it to the last value
+        txt = super().GetValue()
+        # print (f"prevalidate called from: {origin}, check={self._check}, content:{txt}")
         if self.warn_status == "error" and self._last_valid_value is not None:
             # ChangeValue is not creating any events...
             self.ChangeValue(self._last_valid_value)
             self.warn_status = ""
+        elif (
+            txt != "" and self._check == "length" and self.extend_default_units_if_empty
+        ):
+            # Do we have non-existing units provided? --> Change content
+            purenumber = True
+            unitstr = "".join(ACCEPTED_UNITS)
+            for c in unitstr:
+                if c in txt:
+                    purenumber = False
+                    break
+            if purenumber and hasattr(self.parent, "context"):
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "units_name", "mm")
+                units = root.units_name
+                if units in ("inch", "inches"):
+                    units = "in"
+                txt = txt.strip() + units
+                self.ChangeValue(txt)
 
     def on_enter_field(self, event):
-        self._last_valid_value = self.GetValue()
+        self._last_valid_value = super().GetValue()
         event.Skip()
 
     def on_leave_field(self, event):
         # Needs to be passed on
         event.Skip()
-        self.prevalidate()
+        self.prevalidate("leave")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_KILL_FOCUS
             self._action_routine()
@@ -544,7 +590,7 @@ class TextCtrl(wx.TextCtrl):
     def on_enter(self, event):
         # Let others deal with it after me
         event.Skip()
-        self.prevalidate()
+        self.prevalidate("enter")
         if self._action_routine is not None:
             self._event_generated = wx.EVT_TEXT_ENTER
             self._action_routine()
@@ -601,18 +647,66 @@ class TextCtrl(wx.TextCtrl):
 
     def on_check(self, event):
         event.Skip()
-        txt = self.GetValue()
+        txt = super().GetValue()
         status = self.get_warn_status(txt)
         if status == "":
             status = "modified"
         self.warn_status = status
         # Is it a valid value?
-        if status == "modified" and hasattr(self.parent, "context"):
+        lenokay = True
+        if len(txt) == 0 and self._check in (
+            "float",
+            "length",
+            "angle",
+            "int",
+            "percent",
+        ):
+            lenokay = False
+        if (
+            self.execute_action_on_change
+            and status == "modified"
+            and hasattr(self.parent, "context")
+            and lenokay
+        ):
             if getattr(self.parent.context.root, "process_while_typing", False):
                 if self._action_routine is not None:
                     self._event_generated = wx.EVT_TEXT
                     self._action_routine()
                     self._event_generated = None
+
+    @property
+    def is_changed(self):
+        return self.GetValue() != self._last_valid_value
+
+    @property
+    def Value(self):
+        return self.GetValue()
+
+    def GetValue(self):
+        result = super().GetValue()
+        if (
+            result != ""
+            and self._check == "length"
+            and self.extend_default_units_if_empty
+        ):
+            purenumber = True
+            unitstr = "".join(ACCEPTED_UNITS)
+            for c in unitstr:
+                if c in result:
+                    purenumber = False
+                    break
+            if purenumber and hasattr(self.parent, "context"):
+                context = self.parent.context
+                root = context.root
+                root.setting(str, "units_name", "mm")
+                units = root.units_name
+                if units in ("inch", "inches"):
+                    units = "in"
+                result = result.strip()
+                if result.endswith("."):
+                    result += "0"
+                result += units
+        return result
 
 
 class CheckBox(wx.CheckBox):
@@ -820,7 +914,7 @@ def disable_window(window):
 
 def set_ctrl_value(ctrl, value):
     # Let's try to save the caret position
-    cursor = ctrl.GetLastPosition()
+    cursor = ctrl.GetInsertionPoint()
     if ctrl.GetValue() != value:
         ctrl.SetValue(value)
         ctrl.SetInsertionPoint(min(len(value), cursor))

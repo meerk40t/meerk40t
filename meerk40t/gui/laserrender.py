@@ -61,6 +61,7 @@ DRAW_MODE_INVERT = 0x400000
 DRAW_MODE_FLIPXY = 0x800000
 DRAW_MODE_LINEWIDTH = 0x1000000
 DRAW_MODE_ALPHABLACK = 0x2000000  # Set means do not alphablack images
+DRAW_MODE_ORIGIN = 0x4000000
 
 
 def swizzlecolor(c):
@@ -424,11 +425,24 @@ class LaserRender:
         @param y: offset in y direction
         @return:
         """
+        highlight_color = Color("magenta")
+        wx_color = wx.Colour(swizzlecolor(highlight_color))
+        highlight_pen = wx.Pen(wx_color, width=3, style=wx.PENSTYLE_SHORT_DASH)
         p = None
         last_point = None
         color = None
         for cut in cutcode:
-            c = cut.line_color
+            if cut.highlighted:
+                c = highlight_color
+            else:
+                c = cut.line_color
+            if c is None:
+                c = 0
+            try:
+                if c.value is None:
+                    c = 0
+            except AttributeError:
+                pass
             if c is not color:
                 color = c
                 last_point = None
@@ -491,8 +505,10 @@ class LaserRender:
                 if cut.cache is not None:
                     # Cache exists and is valid.
                     gc.DrawBitmap(cut.cache, 0, 0, cut._cache_width, cut._cache_height)
-                    # gc.SetBrush(wx.RED_BRUSH)
-                    # gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
+                    if cut.highlighted:
+                        # gc.SetBrush(wx.RED_BRUSH)
+                        gc.SetPen(highlight_pen)
+                        gc.DrawRectangle(0, 0, cut._cache_width, cut._cache_height)
                 else:
                     # Image was too large to cache, draw a red rectangle instead.
                     gc.SetBrush(wx.RED_BRUSH)
@@ -654,6 +670,8 @@ class LaserRender:
         gc.PopState()
 
     def draw_text_node(self, node, gc, draw_mode=0, zoomscale=1.0, alpha=255):
+        if node is None:
+            return
         text = node.text
         if text is None or text == "":
             return
@@ -689,7 +707,7 @@ class LaserRender:
 
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(text, node)
+            text = self.context.elements.wordlist_translate(text, elemnode=node)
         if node.texttransform is not None:
             ttf = node.texttransform.lower()
             if ttf == "capitalize":
@@ -773,17 +791,21 @@ class LaserRender:
         @param node:
         @return:
         """
-
-        bmp = wx.Bitmap(1000, 500, 32)
+        dimension_x = 1000
+        dimension_y = 500
+        bmp = wx.Bitmap(dimension_x, dimension_y, 32)
         dc = wx.MemoryDC()
         dc.SelectObject(bmp)
         dc.SetBackground(wx.BLACK_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
+
         draw_mode = self.context.draw_mode
         if draw_mode & DRAW_MODE_VARIABLES:
             # Only if flag show the translated values
-            text = self.context.elements.wordlist_translate(node.text, node)
+            text = self.context.elements.wordlist_translate(
+                node.text, elemnode=node, increment=False
+            )
             node.bounds_with_variables_translated = True
         else:
             text = node.text
@@ -798,8 +820,25 @@ class LaserRender:
                 text = text.lower()
         svgfont_to_wx(node)
         gc.SetFont(node.wxfont, wx.WHITE)
-        gc.DrawText(text, 0, 0)
         f_width, f_height, f_descent, f_external_leading = gc.GetFullTextExtent(text)
+        needs_revision = False
+        revision_factor = 3
+        if revision_factor * f_width >= dimension_x:
+            dimension_x = revision_factor * f_width
+            needs_revision = True
+        if revision_factor * f_height > dimension_y:
+            dimension_y = revision_factor * f_height
+            needs_revision = True
+        if needs_revision:
+            bmp = wx.Bitmap(dimension_x, dimension_y, 32)
+            dc = wx.MemoryDC()
+            dc.SelectObject(bmp)
+            dc.SetBackground(wx.BLACK_BRUSH)
+            dc.Clear()
+            gc = wx.GraphicsContext.Create(dc)
+            gc.SetFont(node.wxfont, wx.WHITE)
+
+        gc.DrawText(text, 0, 0)
         try:
             img = bmp.ConvertToImage()
             buf = img.GetData()
@@ -808,7 +847,10 @@ class LaserRender:
             )
             node.text_cache = image
             node.raw_bbox = image.getbbox()
-            height = node.raw_bbox[3] - node.raw_bbox[1] + 1
+            if node.raw_bbox is None:
+                height = 0
+            else:
+                height = node.raw_bbox[3] - node.raw_bbox[1] + 1
         except MemoryError:
             node.text_cache = None
             node.raw_bbox = None
@@ -884,6 +926,11 @@ class LaserRender:
 
         for item in _nodes:
             bb = item.paint_bounds
+            if bb is None:
+                # Fall back to bounds
+                bb = item.bounds
+            if bb is None:
+                continue
             if bb[0] < x_min:
                 x_min = bb[0]
             if bb[1] < y_min:

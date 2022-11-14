@@ -1,5 +1,5 @@
 import wx
-
+from math import sqrt
 from meerk40t.core.units import Length
 from meerk40t.gui.laserrender import swizzlecolor
 from meerk40t.gui.wxutils import CheckBox, TextCtrl
@@ -95,6 +95,19 @@ class ColorPanel(wx.Panel):
                 nodecol = wx.Colour(swizzlecolor(cvalue))
             color_data = wx.ColourData()
             color_data.SetColour(wx.Colour(nodecol))
+            # We try to prepopulate user defined colors from
+            # the colors of the existing operations
+            idx = 0
+            for operation in self.context.elements.ops():
+                if hasattr(operation, "color"):
+                    if operation.color is not None and operation.color.argb is not None:
+                        color_data.SetCustomColour(
+                            idx, wx.Colour(swizzlecolor(operation.color))
+                        )
+                        idx += 1
+                        # There are only 16 colors available
+                        if idx > 15:
+                            break
             dlg = wx.ColourDialog(self, color_data)
             if dlg.ShowModal() == wx.ID_OK:
                 color_data = dlg.GetColourData()
@@ -286,6 +299,281 @@ class IdPanel(wx.Panel):
             self.Hide()
 
 
+class LinePropPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+        capchoices = (_("Butt"), _("Round"), _("Square"))
+        joinchoices = (_("Arcs"), _("Bevel"), _("Miter"), _("Miter-Clip"), _("Round"))
+        fillchoices = (_("Non-Zero"), _("Even-Odd"))
+        self.combo_cap = wx.ComboBox(
+            self, wx.ID_ANY, choices=capchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_join = wx.ComboBox(
+            self, wx.ID_ANY, choices=joinchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_fill = wx.ComboBox(
+            self, wx.ID_ANY, choices=fillchoices, style=wx.CB_DROPDOWN | wx.CB_READONLY
+        )
+        self.combo_cap.SetMaxSize(wx.Size(100, -1))
+        self.combo_join.SetMaxSize(wx.Size(100, -1))
+        self.combo_fill.SetMaxSize(wx.Size(100, -1))
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer_attributes = wx.BoxSizer(wx.HORIZONTAL)
+        self.box_cap = wx.StaticBox(self, wx.ID_ANY, _("Line-End"))
+        self.sizer_cap = wx.StaticBoxSizer(self.box_cap, wx.VERTICAL)
+        self.sizer_cap.Add(self.combo_cap, 1, wx.EXPAND, 0)
+
+        self.box_join = wx.StaticBox(self, wx.ID_ANY, _("Line-Join"))
+        self.sizer_join = wx.StaticBoxSizer(self.box_join, wx.VERTICAL)
+        self.sizer_join.Add(self.combo_join, 1, wx.EXPAND, 0)
+        self.box_fill = wx.StaticBox(self, wx.ID_ANY, _("Fillrule"))
+        self.sizer_fill = wx.StaticBoxSizer(self.box_fill, wx.VERTICAL)
+        self.sizer_fill.Add(self.combo_fill, 1, wx.EXPAND, 0)
+
+        sizer_attributes.Add(self.sizer_cap, 1, wx.EXPAND, 0)
+        sizer_attributes.Add(self.sizer_join, 1, wx.EXPAND, 0)
+        sizer_attributes.Add(self.sizer_fill, 1, wx.EXPAND, 0)
+
+        main_sizer.Add(sizer_attributes, 0, wx.EXPAND, 0)
+
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.combo_cap.Bind(wx.EVT_COMBOBOX, self.on_cap)
+        self.combo_join.Bind(wx.EVT_COMBOBOX, self.on_join)
+        self.combo_fill.Bind(wx.EVT_COMBOBOX, self.on_fill)
+        self.set_widgets(self.node)
+
+    def on_cap(self, event):
+        if self.node is None or self.node.lock:
+            return
+        id = self.combo_cap.GetSelection()
+        try:
+            self.node.linecap = id
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def on_join(self, event):
+        if self.node is None or self.node.lock:
+            return
+        id = self.combo_join.GetSelection()
+        try:
+            self.node.linejoin = id
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def on_fill(self, event):
+        if self.node is None or self.node.lock:
+            return
+        id = self.combo_fill.GetSelection()
+        try:
+            self.node.fillrule = id
+            self.context.signal("element_property_update", self.node)
+            self.context.signal("refresh_scene", "Scene")
+        except AttributeError:
+            pass
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+    def set_widgets(self, node):
+        self.node = node
+        # print(f"set_widget for {self.attribute} to {str(node)}")
+        vis1 = False
+        vis2 = False
+        vis3 = False
+        if hasattr(self.node, "linecap"):
+            vis1 = True
+            self.combo_cap.SetSelection(int(node.linecap))
+        if hasattr(self.node, "linejoin"):
+            vis2 = True
+            self.combo_join.SetSelection(int(node.linejoin))
+        if hasattr(self.node, "fillrule"):
+            vis3 = True
+            self.combo_fill.SetSelection(int(node.fillrule))
+
+        self.combo_cap.Show(vis1)
+        self.box_cap.Show(vis1)
+        self.combo_join.Show(vis2)
+        self.box_join.Show(vis2)
+        self.combo_fill.Show(vis3)
+        self.box_fill.Show(vis3)
+
+        if vis1 or vis2 or vis3:
+            self.Show()
+        else:
+            self.Hide()
+
+
+class StrokeWidthPanel(wx.Panel):
+    def __init__(self, *args, context=None, node=None, **kwds):
+        # begin wxGlade: LayerSettingPanel.__init__
+        kwds["style"] = kwds.get("style", 0)
+        wx.Panel.__init__(self, *args, **kwds)
+        self.context = context
+        self.node = node
+
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        s_sizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, _("Stroke-Width")), wx.HORIZONTAL
+        )
+        main_sizer.Add(s_sizer, 1, wx.EXPAND, 0)
+        # Plus one combobox + value field for stroke width
+        strokewidth_label = wx.StaticText(self, wx.ID_ANY, label=_("Width:"))
+        self.text_width = wx.TextCtrl(
+            self, wx.ID_ANY, value="0.10", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_width.SetMaxSize(wx.Size(100, -1))
+
+        self.unit_choices = ["px", "pt", "mm", "cm", "inch", "mil"]
+        self.combo_units = wx.ComboBox(
+            self,
+            wx.ID_ANY,
+            choices=self.unit_choices,
+            style=wx.CB_DROPDOWN | wx.CB_READONLY,
+        )
+        self.combo_units.SetSelection(0)
+        self.combo_units.SetMaxSize(wx.Size(100, -1))
+
+        self.chk_scale = wx.CheckBox(self, wx.ID_ANY, _("Scale"))
+        self.chk_scale.SetToolTip(
+            _("Toggle the behaviour of stroke-growth.")
+            + "\n"
+            + _("Active: stroke width remains the same, regardless of the element size")
+            + "\n"
+            + _("Inactive: stroke grows/shrink with scaled element")
+        )
+        s_sizer.Add(strokewidth_label, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        s_sizer.Add(self.text_width, 1, wx.EXPAND, 0)
+        s_sizer.Add(self.combo_units, 1, wx.EXPAND, 0)
+        s_sizer.Add(self.chk_scale, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        self.Bind(wx.EVT_COMBOBOX, self.on_stroke_width, self.combo_units)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_stroke_width, self.text_width)
+        self.Bind(wx.EVT_CHECKBOX, self.on_chk_scale, self.chk_scale)
+        self.SetSizer(main_sizer)
+        self.Layout()
+        self.set_widgets(self.node)
+
+    def on_chk_scale(self, event):
+        if self.node is None or self.node.lock:
+            return
+        flag = self.chk_scale.GetValue()
+        try:
+            if self.node.stroke_scaled != flag:
+                self.node.stroke_scaled = flag
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
+    def on_stroke_width(self, event):
+        if self.node is None or self.node.lock:
+            return
+        try:
+            swidth = float(
+                Length(
+                    f"{self.text_width.GetValue()}{self.unit_choices[self.combo_units.GetSelection()]}"
+                )
+            )
+            stroke_scale = (
+                sqrt(self.node.matrix.determinant) if self.node.stroke_scaled else 1.0
+            )
+            stroke_width = swidth / stroke_scale
+            if self.node.stroke_width != stroke_width:
+                self.node.stroke_width = stroke_width
+                self.node.altered()
+                self.context.signal("refresh_scene", "Scene")
+                self.context.signal("element_property_update", self.node)
+        except (ValueError, AttributeError):
+            pass
+
+    def set_widgets(self, node):
+        self.node = node
+        enable = False
+        if self.node is None:
+            self.text_width.SetValue("0")
+            self.combo_units.SetSelection(0)
+            self.chk_scale.SetValue(True)
+        elif hasattr(self.node, "stroke_width") and hasattr(self.node, "stroke_scaled"):
+            enable = True
+            self.chk_scale.SetValue(self.node.stroke_scaled)
+            # Lets establish which unit might be the best to represent the display
+            found_something = False
+            if self.node.stroke_width is None or self.node.stroke_width == 0:
+                value = 0
+                idxunit = 0  # px
+                found_something = True
+            else:
+                best_post = 99999999
+                delta = 0.99999999
+                best_pre = 0
+                factor = (
+                    sqrt(self.node.matrix.determinant)
+                    if self.node.stroke_scaled
+                    else 1.0
+                )
+                node_stroke_width = self.node.stroke_width * factor
+                for idx, unit in enumerate(self.unit_choices):
+                    std = float(Length(f"1{unit}"))
+                    fraction = abs(node_stroke_width / std)
+                    if fraction == 0:
+                        continue
+                    curr_post = 0
+                    curr_pre = int(fraction)
+                    while fraction < 1:
+                        curr_post += 1
+                        fraction *= 10
+                    fraction -= curr_pre
+                    # print (f"unit={unit}, fraction={fraction}, digits={curr_post}, value={self.node.stroke_width / std}")
+                    takespref = False
+                    if fraction < delta:
+                        takespref = True
+                    elif fraction == delta and curr_pre > best_pre:
+                        takespref = True
+                    elif fraction == delta and curr_post < best_post:
+                        takespref = True
+                    if takespref:
+                        best_pre = curr_pre
+                        delta = fraction
+                        best_post = curr_post
+                        idxunit = idx
+                        value = node_stroke_width / std
+                        found_something = True
+
+                if not found_something:
+                    std = float(Length(f"1mm"))
+                    if node_stroke_width / std < 0.1:
+                        idxunit = 0  # px
+                    else:
+                        idxunit = 2  # mm
+                    unit = self.unit_choices[idxunit]
+                    std = float(Length(f"1{unit}"))
+                    value = node_stroke_width / std
+            self.text_width.SetValue(str(round(value, 6)))
+            self.combo_units.SetSelection(idxunit)
+
+        self.text_width.Enable(enable)
+        self.combo_units.Enable(enable)
+        self.chk_scale.Enable(enable)
+
+    def pane_hide(self):
+        pass
+
+    def pane_show(self):
+        pass
+
+
 class PositionSizePanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -343,16 +631,16 @@ class PositionSizePanel(wx.Panel):
         sizer_h_xy.Add(sizer_x, 1, wx.EXPAND, 0)
         sizer_h_xy.Add(sizer_y, 1, wx.EXPAND, 0)
 
-        sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
-        sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
-        sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
+        self.sizer_h_wh = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer_h_wh.Add(sizer_w, 1, wx.EXPAND, 0)
+        self.sizer_h_wh.Add(sizer_h, 1, wx.EXPAND, 0)
 
-        sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
-        sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
-        sizer_v_xywh.Add(sizer_h_wh, 0, wx.EXPAND, 0)
+        self.sizer_v_xywh = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_v_xywh.Add(sizer_h_xy, 0, wx.EXPAND, 0)
+        self.sizer_v_xywh.Add(self.sizer_h_wh, 0, wx.EXPAND, 0)
 
         sizer_main.Add(sizer_lock, 0, wx.EXPAND, 0)
-        sizer_main.Add(sizer_v_xywh, 0, wx.EXPAND, 0)
+        sizer_main.Add(self.sizer_v_xywh, 0, wx.EXPAND, 0)
 
         self.SetSizer(sizer_main)
         sizer_main.Fit(self)
@@ -369,7 +657,9 @@ class PositionSizePanel(wx.Panel):
             _("New Y-coordinate of left top corner (enter to apply)")
         )
         self.check_lock.SetToolTip(
-            _("If active then this element is effectly prevented from being modified")
+            _(
+                "If active then this element is effectively prevented from being modified"
+            )
         )
 
     def pane_hide(self):
@@ -384,6 +674,13 @@ class PositionSizePanel(wx.Panel):
         self.text_w.SetValue("")
         self.text_h.SetValue("")
         self.Hide()
+
+    def show_hide_wh(self, displaythem):
+        self.text_w.Show(show=displaythem)
+        self.text_h.Show(show=displaythem)
+        self.sizer_h_wh.ShowItems(displaythem)
+        self.sizer_v_xywh.Layout()
+        self.Layout()
 
     def set_widgets(self, node):
         self.node = node
@@ -413,14 +710,27 @@ class PositionSizePanel(wx.Panel):
         y = bb[1]
         w = bb[2] - bb[0]
         h = bb[3] - bb[1]
-        self.text_x.SetValue(Length(x, digits=4).length_mm)
-        self.text_y.SetValue(Length(y, digits=4).length_mm)
-        self.text_w.SetValue(Length(w, digits=4).length_mm)
-        self.text_h.SetValue(Length(h, digits=4).length_mm)
+        units = self.context.units_name
+        if units in ("inch", "inches"):
+            units = "in"
+
+        self.text_x.SetValue(
+            f"{Length(amount=x, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_y.SetValue(
+            f"{Length(amount=y, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_w.SetValue(
+            f"{Length(amount=w, preferred_units=units, digits=4).preferred_length}"
+        )
+        self.text_h.SetValue(
+            f"{Length(amount=h, preferred_units=units, digits=4).preferred_length}"
+        )
         self.text_x.Enable(en_xy)
         self.text_y.Enable(en_xy)
         self.text_w.Enable(en_wh)
         self.text_h.Enable(en_wh)
+        self.show_hide_wh(node.type != "elem point")
         self.Show()
 
     def translate_it(self):

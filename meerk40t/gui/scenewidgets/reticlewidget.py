@@ -44,6 +44,7 @@ class ReticleWidget(Widget):
         Update of emulator adds and ensures the location of the e+origin position
         """
         self.reticles["e" + origin] = pos[2], pos[3]
+        self.scene.request_refresh_for_animation()
 
     def process_draw(self, gc):
         """

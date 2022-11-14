@@ -248,7 +248,7 @@ class Scene(Module, Job):
         result = self._last_snap_position
         # Too old? Discard
         if (time.time() - self._last_snap_ts) > 0.5:
-           result = None
+            result = None
         return result
 
     @last_snap.setter
@@ -709,7 +709,9 @@ class Scene(Module, Job):
             if current_widget.contains(hit_point.x, hit_point.y):
                 self.hit_chain.append((current_widget, current_matrix))
 
-    def event(self, window_pos, event_type="", nearest_snap=None, modifiers=None):
+    def event(
+        self, window_pos, event_type="", nearest_snap=None, modifiers=None, keycode=None
+    ):
         """
         Scene event code. Processes all the events for a particular mouse event bound in the ScenePanel.
 
@@ -726,7 +728,7 @@ class Scene(Module, Job):
         """
         if self.log_events:
             self.log_events(
-                f"{event_type}: {str(window_pos)} {str(nearest_snap)} {str(modifiers)}"
+                f"{event_type}: {str(window_pos)} {str(nearest_snap)} {str(modifiers)} {str(keycode)}"
             )
 
         if window_pos is None:
@@ -756,10 +758,17 @@ class Scene(Module, Job):
             dy,
         )
         self.last_position = window_pos
+        previous_top_element = None
         try:
-            previous_top_element = self.hit_chain[0][0]
+            idx = 0
+            while idx < len(self.hit_chain):
+                if not self.hit_chain[idx][0].transparent:
+                    previous_top_element = self.hit_chain[idx][0]
+                    break
+                idx += 1
+
         except (IndexError, TypeError):
-            previous_top_element = None
+            pass
 
         if event_type in (
             "key_down",
@@ -788,6 +797,7 @@ class Scene(Module, Job):
                     event_type=event_type,
                     nearest_snap=nearest_snap,
                     modifiers=modifiers,
+                    keycode=keycode,
                 )
 
                 if response == RESPONSE_ABORT:
@@ -855,6 +865,7 @@ class Scene(Module, Job):
                         event_type="hover_end",
                         nearest_snap=None,
                         modifiers=modifiers,
+                        keycode=keycode,
                     )
                 current_widget.event(
                     window_pos=window_pos,
@@ -862,6 +873,7 @@ class Scene(Module, Job):
                     event_type="hover_start",
                     nearest_snap=None,
                     modifiers=modifiers,
+                    keycode=keycode,
                 )
                 if self.log_events:
                     self.log_events(f"Converted hover_start: {str(window_pos)}")
@@ -878,6 +890,7 @@ class Scene(Module, Job):
                     event_type="leftclick",
                     nearest_snap=nearest_snap,
                     modifiers=modifiers,
+                    keycode=keycode,
                 )
                 if self.log_events:
                     self.log_events(f"Converted leftclick: {str(window_pos)}")
@@ -892,6 +905,7 @@ class Scene(Module, Job):
                     event_type=event_type,
                     nearest_snap=nearest_snap,
                     modifiers=modifiers,
+                    keycode=keycode,
                 )
                 # print ("Leftup called for widget #%d" % i )
                 # print (response)
@@ -902,6 +916,7 @@ class Scene(Module, Job):
                     event_type=event_type,
                     nearest_snap=nearest_snap,
                     modifiers=modifiers,
+                    keycode=keycode,
                 )
 
             ##################

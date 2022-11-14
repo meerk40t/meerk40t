@@ -27,7 +27,22 @@ class PropertyWindow(MWindow):
             | aui.AUI_NB_TAB_SPLIT
             | aui.AUI_NB_TAB_MOVE,
         )
+        self.notebook_main.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.Layout()
+
+    def on_page_changed(self, event):
+        event.Skip()
+        page = self.notebook_main.GetCurrentPage()
+        if page is None:
+            return
+        for panel in self.panel_instances:
+            try:
+                if panel is page:
+                    page.pane_active()
+                else:
+                    panel.pane_deactive()
+            except AttributeError:
+                pass
 
     @signal_listener("selected")
     def on_selected(self, origin, *args):
@@ -112,12 +127,23 @@ class PropertyWindow(MWindow):
 
         self.Layout()
         self.Thaw()
+        # self.Refresh()
 
     @staticmethod
     def sub_register(kernel):
         # kernel.register("wxpane/Properties", register_panel_property)
         kernel.register(
-            "button/control/Properties",
+            "button/preparation/Properties",
+            {
+                "label": _("Property Window"),
+                "icon": icons8_computer_support_50,
+                "tip": _("Opens Properties Window"),
+                "action": lambda v: kernel.console("window toggle Properties\n"),
+                "priority": 2,
+            },
+        )
+        kernel.register(
+            "button/extended_tools/Properties",
             {
                 "label": _("Property Window"),
                 "icon": icons8_computer_support_50,

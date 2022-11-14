@@ -10,7 +10,7 @@ from meerk40t.gui.scene.sceneconst import (
     RESPONSE_CONSUME,
 )
 from meerk40t.gui.toolwidgets.toolwidget import ToolWidget
-from meerk40t.svgelements import Circle, Path
+from meerk40t.svgelements import Ellipse
 
 
 class CircleTool(ToolWidget):
@@ -58,19 +58,22 @@ class CircleTool(ToolWidget):
                     )
                 )
             if self.creation_mode == 1:
-                ellipse = Circle(cx, cy, radius)
+                ellipse = Ellipse(cx=cx, cy=cy, r=radius)
             else:
-                ellipse = Circle(
-                    (x1 + x0) / 2.0, (y1 + y0) / 2.0, abs(self.p1 - self.p2) / 2
+                ellipse = Ellipse(
+                    cx=(x1 + x0) / 2.0, cy=(y1 + y0) / 2.0, r=abs(self.p1 - self.p2) / 2
                 )
-            t = Path(ellipse)
-            bbox = t.bbox()
+            bbox = ellipse.bbox()
             if bbox is not None:
                 gc.DrawEllipse(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1])
                 units = self.scene.context.units_name
                 s = "C=({cx}, {cy}), R={radius}".format(
-                    cx=Length(amount=(bbox[0] + bbox[2]) / 2, digits=2, preferred_units=units),
-                    cy=Length(amount=(bbox[1] + bbox[3]) / 2, digits=2, preferred_units=units),
+                    cx=Length(
+                        amount=(bbox[0] + bbox[2]) / 2, digits=2, preferred_units=units
+                    ),
+                    cy=Length(
+                        amount=(bbox[1] + bbox[3]) / 2, digits=2, preferred_units=units
+                    ),
                     radius=Length(amount=radius, digits=2, preferred_units=units),
                 )
                 self.scene.context.signal("statusmsg", s)
@@ -111,7 +114,10 @@ class CircleTool(ToolWidget):
             self.scene.tool_active = False
             try:
                 if self.p1 is None:
-                    return
+                    self.scene.request_refresh()
+                    self.scene.context.signal("statusmsg", "")
+                    response = RESPONSE_ABORT
+                    return response
                 if nearest_snap is None:
                     self.p2 = complex(space_pos[0], space_pos[1])
                 else:
@@ -120,22 +126,30 @@ class CircleTool(ToolWidget):
                 cy = self.p1.imag
                 dx = self.p1.real - self.p2.real
                 dy = self.p1.imag - self.p2.imag
+                if abs(dx) < 1E-10 or abs(dy) < 1E-10:
+                    # Degenerate? Ignore!
+                    self.p1 = None
+                    self.p2 = None
+                    self.scene.request_refresh()
+                    self.scene.context.signal("statusmsg", "")
+                    response = RESPONSE_ABORT
+                    return response
                 radius = sqrt(dx * dx + dy * dy)
                 x0 = min(self.p1.real, self.p2.real)
                 y0 = min(self.p1.imag, self.p2.imag)
                 x1 = max(self.p1.real, self.p2.real)
                 y1 = max(self.p1.imag, self.p2.imag)
                 if self.creation_mode == 1:
-                    ellipse = Circle(
-                        cx,
-                        cy,
-                        radius,
+                    ellipse = Ellipse(
+                        cx=cx,
+                        cy=cy,
+                        r=radius,
                     )
                 else:
-                    ellipse = Circle(
-                        (x1 + x0) / 2.0,
-                        (y1 + y0) / 2.0,
-                        abs(self.p1 - self.p2) / 2,
+                    ellipse = Ellipse(
+                        cx=(x1 + x0) / 2.0,
+                        cy=(y1 + y0) / 2.0,
+                        r=abs(self.p1 - self.p2) / 2,
                     )
 
                 if not ellipse.is_degenerate():

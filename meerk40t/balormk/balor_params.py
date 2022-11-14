@@ -1,3 +1,8 @@
+"""
+Balor Parameters is a helper class which serves to treat a dict settings object as an attribute object. This differs
+from the core parameters in the parameters it uses.
+"""
+
 from typing import Dict
 
 FLOAT_PARAMETERS = (

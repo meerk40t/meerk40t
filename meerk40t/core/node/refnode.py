@@ -4,13 +4,10 @@ from meerk40t.core.node.node import Node
 class ReferenceNode(Node):
     """
     ReferenceNode is the bootstrapped node type for the reference type.
-
-    ReferenceNode track referenced nodes within the tree.
     """
 
     def __init__(self, node, **kwargs):
         super(ReferenceNode, self).__init__(type="reference", **kwargs)
-        node._references.append(self)
         self._formatter = "*{reference}"
         self.node = node
 

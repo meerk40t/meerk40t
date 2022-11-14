@@ -4,6 +4,7 @@ from wx import aui
 from meerk40t.core.element_types import elem_nodes
 from meerk40t.core.units import UNITS_PER_PIXEL, Length
 from meerk40t.gui.icons import icons8_up_left_50
+from meerk40t.gui.wxutils import TextCtrl
 
 _ = wx.GetTranslation
 
@@ -32,10 +33,18 @@ class PositionPanel(wx.Panel):
         kwds["style"] = kwds.get("style", 0) | wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
-        self.text_x = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_y = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_w = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
-        self.text_h = wx.TextCtrl(self, wx.ID_ANY, "", style=wx.TE_PROCESS_ENTER)
+        self.text_x = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_y = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_w = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
+        self.text_h = TextCtrl(
+            self, wx.ID_ANY, "", check="float", style=wx.TE_PROCESS_ENTER
+        )
         self.text_x.SetMinSize((70, 23))
         self.text_y.SetMinSize((70, 23))
         self.text_w.SetMinSize((70, 23))
@@ -57,14 +66,15 @@ class PositionPanel(wx.Panel):
         self.__set_properties()
         self.__do_layout()
 
-        self.text_x.Bind(wx.EVT_TEXT_ENTER, self.on_text_x_enter)
-        self.text_x.Bind(wx.EVT_KILL_FOCUS, self.on_text_x_focus)
-        self.text_y.Bind(wx.EVT_TEXT_ENTER, self.on_text_y_enter)
-        self.text_y.Bind(wx.EVT_KILL_FOCUS, self.on_text_y_focus)
-        self.text_w.Bind(wx.EVT_TEXT_ENTER, self.on_text_w_enter)
-        self.text_w.Bind(wx.EVT_KILL_FOCUS, self.on_text_w_focus)
-        self.text_h.Bind(wx.EVT_TEXT_ENTER, self.on_text_h_enter)
-        self.text_h.Bind(wx.EVT_KILL_FOCUS, self.on_text_h_focus)
+        self.text_x.SetActionRoutine(self.on_text_x_enter)
+        self.text_y.SetActionRoutine(self.on_text_y_enter)
+        self.text_w.SetActionRoutine(self.on_text_w_enter)
+        self.text_h.SetActionRoutine(self.on_text_h_enter)
+        self.text_x.execute_action_on_change = False
+        self.text_y.execute_action_on_change = False
+        self.text_w.execute_action_on_change = False
+        self.text_h.execute_action_on_change = False
+
         self.Bind(wx.EVT_COMBOBOX, self.on_combo_box_units, self.combo_box_units)
         self.Bind(wx.EVT_BUTTON, self.on_button_execute, self.button_execute)
         self.Bind(wx.EVT_CHECKBOX, self.on_chk_lock, self.chk_lock)
@@ -263,37 +273,21 @@ class PositionPanel(wx.Panel):
     def on_chk_lock(self, event):
         self.position_aspect_ratio = self.chk_lock.GetValue()
 
-    def on_text_w_enter(self, event):
-        event.Skip()
-        self.on_text_w_action(True)
+    def on_text_w_enter(self):
+        if self.text_w.is_changed:
+            self.on_text_w_action(True)
 
-    def on_text_w_focus(self, event):
-        event.Skip()
-        self.on_text_w_action(False)
+    def on_text_h_enter(self):
+        if self.text_h.is_changed:
+            self.on_text_h_action(True)
 
-    def on_text_h_enter(self, event):
-        event.Skip()
-        self.on_text_h_action(True)
+    def on_text_x_enter(self):
+        if self.text_x.is_changed:
+            self.on_text_x_action(True)
 
-    def on_text_h_focus(self, event):
-        event.Skip()
-        self.on_text_h_action(False)
-
-    def on_text_x_enter(self, event):
-        event.Skip()
-        self.on_text_x_action(True)
-
-    def on_text_x_focus(self, event):
-        event.Skip()
-        self.on_text_x_action(False)
-
-    def on_text_y_enter(self, event):
-        event.Skip()
-        self.on_text_y_action(True)
-
-    def on_text_y_focus(self, event):
-        event.Skip()
-        self.on_text_y_action(False)
+    def on_text_y_enter(self):
+        if self.text_y.is_changed:
+            self.on_text_y_action(True)
 
     def execute_wh_changes(self, refresh_after=True):
         delta = 1.0e-6
@@ -443,6 +437,8 @@ class PositionPanel(wx.Panel):
                     )
                 except ValueError:
                     return
+        if isinstance(w, str):
+            return
         if abs(w) < 1e-8:
             self.text_w.SetValue(str(self.position_w))
             return
@@ -476,6 +472,8 @@ class PositionPanel(wx.Panel):
                     )
                 except ValueError:
                     return
+        if isinstance(h, str):
+            return
         if abs(h) < 1e-8:
             self.text_h.SetValue(str(self.position_h))
             return

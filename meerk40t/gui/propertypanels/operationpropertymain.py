@@ -19,10 +19,6 @@ _ = wx.GetTranslation
 # )
 
 
-
-
-
-
 class LayerSettingPanel(wx.Panel):
     def __init__(self, *args, context=None, node=None, **kwds):
         # begin wxGlade: LayerSettingPanel.__init__
@@ -318,7 +314,7 @@ class SpeedPpiPanel(wx.Panel):
         power_max = None
 
         op = node.type
-        if op.startswith("op "):  # Should, shouldnt it?
+        if op.startswith("op "):  # Should, shouldn't it?
             op = op[3:]
         else:
             op = ""
@@ -527,7 +523,7 @@ class PassesPanel(wx.Panel):
         sizer_passes.Add(self.check_passes, 0, wx.EXPAND, 0)
 
         self.text_passes = TextCtrl(
-            self, wx.ID_ANY, "1", limited=True, check="float", style=wx.TE_PROCESS_ENTER
+            self, wx.ID_ANY, "1", limited=True, check="int", style=wx.TE_PROCESS_ENTER
         )
         OPERATION_PASSES_TOOLTIP = (
             _("How many times to repeat this operation?")
@@ -990,12 +986,17 @@ class PanelStartPreference(wx.Panel):
 
     def refresh_in_ui(self):
         """Performs redrawing of the data in the UI thread."""
+        try:
+            visible = self.Shown
+        except RuntimeError:
+            # May have already been deleted....
+            return
         dc = wx.MemoryDC()
         dc.SelectObject(self._Buffer)
         dc.SetBackground(wx.WHITE_BRUSH)
         dc.Clear()
         gc = wx.GraphicsContext.Create(dc)
-        if self.Shown:
+        if visible:
             if self.raster_lines is None:
                 self.calculate_raster_lines()
             if self.raster_lines is not None:
@@ -1099,19 +1100,33 @@ class RasterSettingsPanel(wx.Panel):
         )
         self.text_dpi.set_error_level(1, 100000)
         OPERATION_DPI_TOOLTIP = (
-            _("In a raster engrave, the step size is the distance between raster lines in 1/1000\" ") +
-            _("and also the number of raster dots that get combined together.")
-            + "\n" +
-            _("Because the laser dot is >> 1/1000\" in diameter, at step 1 the raster lines overlap a lot, ") +
-            _("and consequently you can raster with steps > 1 without leaving gaps between the lines.")
-            + "\n" +
-            _("The step size before you get gaps will depend on your focus and the size of your laser dot.")
-            + "\n" +
-            _("Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase ") +
-            _("power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed.")
-            + "\n" +
-            _("Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed") +
-            _("this can prevent your laser from stuttering.")
+            _(
+                'In a raster engrave, the step size is the distance between raster lines in 1/1000" '
+            )
+            + _("and also the number of raster dots that get combined together.")
+            + "\n"
+            + _(
+                'Because the laser dot is >> 1/1000" in diameter, at step 1 the raster lines overlap a lot, '
+            )
+            + _(
+                "and consequently you can raster with steps > 1 without leaving gaps between the lines."
+            )
+            + "\n"
+            + _(
+                "The step size before you get gaps will depend on your focus and the size of your laser dot."
+            )
+            + "\n"
+            + _(
+                "Step size > 1 reduces the laser energy delivered by the same factor, so you may need to increase "
+            )
+            + _(
+                "power equivalently with a higher front-panel power, a higher PPI or by rastering at a slower speed."
+            )
+            + "\n"
+            + _(
+                "Step size > 1 also turns the laser on and off fewer times, and combined with a slower speed"
+            )
+            + _("this can prevent your laser from stuttering.")
         )
         self.text_dpi.SetToolTip(OPERATION_DPI_TOOLTIP)
         sizer_3.Add(self.text_dpi, 1, wx.EXPAND, 0)
@@ -1190,9 +1205,15 @@ class RasterSettingsPanel(wx.Panel):
             style=wx.RA_SPECIFY_ROWS,
         )
         OPERATION_RASTERSWING_TOOLTIP = (
-            _("Raster on forward and backswing or only forward swing?") + "\n" +
-            _("Rastering only on forward swings will double the time required to complete the raster.") + "\n" +
-            _("It seems doubtful that there will be significant quality benefits from rastering in one direction.")
+            _("Raster on forward and backswing or only forward swing?")
+            + "\n"
+            + _(
+                "Rastering only on forward swings will double the time required to complete the raster."
+            )
+            + "\n"
+            + _(
+                "It seems doubtful that there will be significant quality benefits from rastering in one direction."
+            )
         )
         self.radio_directional_raster.SetToolTip(OPERATION_RASTERSWING_TOOLTIP)
         self.radio_directional_raster.SetSelection(0)
