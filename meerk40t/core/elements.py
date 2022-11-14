@@ -3,6 +3,7 @@ from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
 from meerk40t.kernel import ConsoleFunction, Service, Settings
+from .undos import Undo
 
 from ..svgelements import Color, SVGElement
 from .element_types import *
@@ -393,8 +394,6 @@ class Elemental(Service):
         Service.__init__(
             self, kernel, "elements" if index is None else f"elements{index}"
         )
-        self._undo_stack = []
-        self._undo_index = -1
         self._clipboard = {}
         self._clipboard_default = "0"
 
@@ -403,7 +402,9 @@ class Elemental(Service):
         self._emphasized_bounds_painted = None
         self._emphasized_bounds_dirty = True
         self._tree = RootNode(self)
-        self._save_restore_job = ConsoleFunction(self, "save_restore_point\n", times=1)
+        self._save_restore_job = ConsoleFunction(self, ".save_restore_point\n", times=1)
+
+        self.undo = Undo(self._tree)
 
         self.setting(bool, "classify_reverse", False)
         self.setting(bool, "legacy_classification", False)
@@ -438,7 +439,9 @@ class Elemental(Service):
         ops = list(self.ops())
         if not len(ops) and not self.operation_default_empty:
             self.load_default(performclassify=False)
-
+        if list(self.ops()):
+            # Something was loaded for default ops. Mark that.
+            self.undo.mark("op-loaded")  # Mark defaulted
         self._default_stroke = None
         self._default_fill = None
         self._first_emphasized = None
@@ -1032,17 +1035,19 @@ class Elemental(Service):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        # TODO: Reenable when Undo Completed
-        if self.setting(bool, "developer_mode", False):
-            self.schedule(self._save_restore_job)
+        self.schedule(self._save_restore_job)
 
     def modified(self, *args):
         self._emphasized_bounds_dirty = True
         self._emphasized_bounds = None
         self._emphasized_bounds_painted = None
-        # TODO: Reenable when Undo Completed
-        if self.setting(bool, "developer_mode", False):
-            self.schedule(self._save_restore_job)
+        self.schedule(self._save_restore_job)
+
+    def node_attached(self, node, **kwargs):
+        self.schedule(self._save_restore_job)
+
+    def node_detached(self, node, **kwargs):
+        self.schedule(self._save_restore_job)
 
     def listen_tree(self, listener):
         self._tree.listen(listener)

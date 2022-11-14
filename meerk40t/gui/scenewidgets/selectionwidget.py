@@ -1234,6 +1234,8 @@ class MoveWidget(Widget):
             self, scene, -self.half_x, -self.half_y, self.half_x, self.half_y
         )
         self.cursor = "sizing"
+        self.total_dx = 0
+        self.total_dy = 0
         self.update()
 
     def update(self):
@@ -1337,6 +1339,10 @@ class MoveWidget(Widget):
         """
 
         def move_to(dx, dy):
+            if dx == 0 and dy == 0:
+                return
+            self.total_dx += dx
+            self.total_dy += dy
             b = elements._emphasized_bounds
             if b is None:
                 b = elements.selected_area()
@@ -1345,9 +1351,7 @@ class MoveWidget(Widget):
                 if hasattr(e, "lock") and e.lock and not allowlockmove:
                     continue
                 e.matrix.post_translate(dx, dy)
-
             self.translate(dx, dy)
-
             elements.update_bounds([b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy])
 
         elements = self.scene.context.elements
@@ -1392,16 +1396,20 @@ class MoveWidget(Widget):
             else:
                 move_to(lastdx - self.master.offset_x, lastdy - self.master.offset_y)
             self.check_for_magnets()
-            for e in elements.flat(types=elem_group_nodes, emphasized=True):
-                try:
-                    e.modified()
-                except AttributeError:
-                    pass
+            if abs(self.total_dx) + abs(self.total_dy) > 1e-3:
+                # Did we actually move?
+                for e in elements.flat(types=elem_group_nodes, emphasized=True):
+                    try:
+                        e.modified()
+                    except AttributeError:
+                        pass
             self.scene.modif_active = False
         elif event == -1:  # start
             if "alt" in modifiers:
                 self.create_duplicate()
             self.scene.modif_active = True
+            self.total_dx = 0
+            self.total_dy = 0
         elif event == 0:  # move
             # b = elements.selected_area()  # correct, but slow...
             move_to(dx, dy)

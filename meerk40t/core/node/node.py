@@ -54,6 +54,10 @@ class Fillrule(IntEnum):
 class Node:
     """
     Nodes are elements within the tree which stores most of the objects in Elements.
+
+    All nodes have children, root, parent, and reference links. The children are subnodes,
+    the root points to the tree root, the parent points to the immediate parent, and references
+    refers to nodes that point to this node type.
     """
 
     def __init__(self, type=None, *args, **kwargs):
@@ -260,11 +264,17 @@ class Node:
             assert c._parent is self
             assert c._root is self._root
             assert c in c._parent._children
+            for q in c._references:
+                assert q.node is c
+            if c.type == "reference":
+                assert c in c.node._references
             c._validate_tree()
 
-    def _build_links(self, links=None):
+    def _build_copy_nodes(self, links=None):
         """
-        Build links and copy nodes.
+        Creates a copy of each node, linked to the ID of the original node. This will create
+        a map between id of original node and copy node. Without any structure. The original
+        root will link to `None` since root copies are in-effective.
 
         @param links:
         @return:
@@ -272,7 +282,7 @@ class Node:
         if links is None:
             links = {id(self): (self, None)}
         for c in self._children:
-            c._build_links(links=links)
+            c._build_copy_nodes(links=links)
             node_copy = copy(c)
             node_copy._root = self._root
             links[id(c)] = (c, node_copy)
@@ -280,30 +290,34 @@ class Node:
 
     def backup_tree(self):
         """
-        Copy of tree creates a copy of a rooted tree at the current node. It should create a copy of the tree structure
-        with the children replaced with copied children and the parents replaced with copied parents and the root also
-        replaced with a copy of the root (assuming it was called at the rootnode).
+        Creates structured copy of the branches of the tree at the current node.
 
-        @param root:
+        This creates copied nodes, relinks the structure and returns branches of
+        the current node.
         @return:
         """
-        links = self._build_links()
-        for node_id, n in links.items():
+        links = self._build_copy_nodes()
 
+        # Rebuild structure.
+        for uid, n in links.items():
             node, node_copy = n
-            if node.type == "reference":
-                continue
             if node._parent is None:
                 # Root.
                 continue
+            # Find copy-parent of copy-node and link.
             original_parent, copied_parent = links[id(node._parent)]
             if copied_parent is None:
+                # copy_parent should have been copied root, but roots don't copy
                 node_copy._parent = self._root
                 continue
             node_copy._parent = copied_parent
             copied_parent._children.append(node_copy)
-        backup = [links[id(c)][1] for c in self._children]
-        return backup
+            if node.type == "reference":
+                original_referenced, copied_referenced = links[id(node.node)]
+                node_copy.node = copied_referenced
+                copied_referenced._references.append(node_copy)
+        branches = [links[id(c)][1] for c in self._children]
+        return branches
 
     def create_label(self, text=None):
         if text is None:
@@ -348,6 +362,9 @@ class Node:
         default_map["element_type"] = "Node"
         default_map["node_type"] = self.type
         return default_map
+
+    def valid_node_for_reference(self, node):
+        return True
 
     def is_movable(self):
         return True
@@ -556,6 +573,12 @@ class Node:
         if self._parent is not None:
             self._parent.invalidated()
 
+    def updated(self):
+        """
+        The nodes display information may have changed but nothing about the matrix or the internal data is altered.
+        """
+        self.notify_update(self)
+
     def modified(self):
         """
         The matrix transformation was changed. The object is shaped differently but fundamentally the same structure of
@@ -614,26 +637,59 @@ class Node:
         @param pos:
         @return:
         """
-        return self.add(node=node, type="reference", pos=pos, **kwargs)
+        if node is None:
+            return
+        if not self.valid_node_for_reference(node):
+            # We could raise a ValueError but that will break things...
+            return
+        ref = self.add(node=node, type="reference", pos=pos, **kwargs)
+        node._references.append(ref)
 
     def add_node(self, node, pos=None):
+        """
+        Attach an already created node to the tree.
+
+        Requires that this node be validated to avoid loops.
+
+        @param node:
+        @param pos:
+        @return:
+        """
         if node._parent is not None:
             raise ValueError("Cannot reparent node on add.")
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, pos=pos)
+        self._attach_node(node, pos=pos)
 
     def create(self, type=None, id=None, **kwargs):
+        """
+        Create node of type with attributes via node bootstrapping.
+
+        @param type:
+        @param id:
+        @param kwargs:
+        @return:
+        """
         node_class = self._root.bootstrap.get(type, Node)
         node = node_class(**kwargs)
         node.type = type
         node.id = id
         if self._root is not None:
             self._root.notify_created(node)
+        return node
+
+    def _attach_node(self, node, pos=None):
+        """
+        Attach a valid and created node to tree.
+        @param node:
+        @param pos:
+        @return:
+        """
+        node._parent = self
+        node._root = self._root
+        if pos is None:
+            self._children.append(node)
+        else:
+            self._children.insert(pos, node)
+        node.notify_attached(node, parent=self, pos=pos)
         return node
 
     def add(self, type=None, id=None, pos=None, **kwargs):
@@ -647,13 +703,7 @@ class Node:
         @return:
         """
         node = self.create(type=type, id=id, **kwargs)
-        node._parent = self
-        node._root = self._root
-        if pos is None:
-            self._children.append(node)
-        else:
-            self._children.insert(pos, node)
-        node.notify_attached(node, pos=pos)
+        self._attach_node(node, pos=pos)
         return node
 
     def _flatten(self, node):

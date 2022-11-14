@@ -153,7 +153,7 @@ class HatchOpNode(Node, Parameters):
     def has_attributes(self):
         return "stroke" in self.allowed_attributes or "fill" in self.allowed_attributes
 
-    def valid_node(self, node):
+    def valid_node_for_reference(self, node):
         def is_valid_closed_path(p):
             valid = False
             if len(p) != 0:
@@ -211,7 +211,7 @@ class HatchOpNode(Node, Parameters):
                             plain_color_op = abs(self.color)
                             plain_color_node = abs(getattr(node, attribute))
                             if matching_color(plain_color_op, plain_color_node):
-                                if self.valid_node(node):
+                                if self.valid_node_for_reference(node):
                                     result = True
                                     self.add_reference(node)
                                     # Have classified but more classification might be needed
@@ -219,7 +219,7 @@ class HatchOpNode(Node, Parameters):
                     if result:
                         return True, self.stopop, feedback
                 else:  # empty ? Anything goes
-                    if self.valid_node(node):
+                    if self.valid_node_for_reference(node):
                         self.add_reference(node)
                         # Have classified but more classification might be needed
                         feedback.append("stroke")
@@ -227,7 +227,7 @@ class HatchOpNode(Node, Parameters):
                         return True, self.stopop, feedback
             elif self.default and usedefault:
                 # Have classified but more classification might be needed
-                if self.valid_node(node):
+                if self.valid_node_for_reference(node):
                     self.add_reference(node)
                     feedback.append("stroke")
                     feedback.append("fill")
@@ -242,7 +242,7 @@ class HatchOpNode(Node, Parameters):
         hexa = self.settings.get("hex_color")
         if hexa is not None:
             self.color = Color(hexa)
-        self.notify_update()
+        self.updated()
 
     def save(self, settings, section):
         settings.write_persistent_attributes(section, self)
@@ -376,18 +376,3 @@ class HatchOpNode(Node, Parameters):
                 x, y = p
                 plot.plot_append(int(round(x)), int(round(y)), 1)
             yield plot
-
-    def add_reference(self, node=None, pos=None, **kwargs):
-        """
-        Add a new node bound to the data_object of the type to the current node.
-        If the data_object itself is a node already it is merely attached.
-
-        @param node:
-        @param pos:
-        @return:
-        """
-        if node is not None:
-            if not self.valid_node(node):
-                # We could raise a ValueError but that will break things...
-                return
-        return super().add_reference(node=node, pos=pos, **kwargs)

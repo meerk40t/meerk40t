@@ -622,6 +622,9 @@ class ShadowTree:
         @return:
         """
         item = node.item
+        if item is None:
+            # Could be a faulty refresh during an undo.
+            return
         if not item.IsOk():
             raise ValueError("Bad Item")
         self.set_icon(node, force=False)
