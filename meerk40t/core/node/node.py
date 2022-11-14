@@ -18,6 +18,7 @@ rasternode: theoretical: would store all the refelems to be rastered. Such that 
 
 Tree Functions are to be stored: tree/command/type. These store many functions like the commands.
 """
+import ast
 from copy import copy
 from enum import IntEnum
 from time import time
@@ -74,18 +75,27 @@ class Node:
     Nodes can be targeted.
     """
 
-    def __init__(self, type=None, id=None, label=None, lock=False, *args, **kwargs):
-        super().__init__()
-        self._formatter = "{element_type}:{id}"
+    def __init__(self, *args, **kwargs):
+        self.type = None
+        self.id = None
+        self.label = None
+        self.lock = False
+
+        for k, v in kwargs.items():
+            if k.startswith("_"):
+                continue
+            if isinstance(v, str):
+                try:
+                    v = ast.literal_eval(v)
+                except (ValueError, SyntaxError):
+                    pass
+            self.__dict__[k] = v
+
         self._children = list()
         self._root = None
         self._parent = None
         self._references = list()
-
-        self.type = type
-        self.id = id
-        self.label = label
-        self.lock = lock
+        self._formatter = "{element_type}:{id}"
 
         self._points = list()
         self._points_dirty = True
