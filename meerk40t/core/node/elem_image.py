@@ -31,6 +31,7 @@ class ImageNode(Node):
         green=None,
         blue=None,
         lightness=None,
+        passthrough=False,
         label=None,
         lock=False,
         settings=None,
@@ -95,6 +96,7 @@ class ImageNode(Node):
             operations = list()
         self.operations = operations
         self.view_invert = False
+        self.passthrough = passthrough
 
         self._needs_update = False
         self._update_thread = None
@@ -124,6 +126,7 @@ class ImageNode(Node):
             green=self.green,
             blue=self.blue,
             lightness=self.lightness,
+            passthrough=self.passthrough,
             label=self.label,
             lock=self.lock,
             settings=self.settings,
