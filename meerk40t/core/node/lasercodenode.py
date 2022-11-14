@@ -9,8 +9,8 @@ class LaserCodeNode(Node):
     Node type "lasercode"
     """
 
-    def __init__(self, commands=None, **kwargs):
-        super().__init__(type="lasercode", **kwargs)
+    def __init__(self, commands=None, id=None, label=None, lock=False, **kwargs):
+        super().__init__(type="lasercode", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{element_type} {command_count}"
         if "name" in kwargs:
             self._name = kwargs["name"]
@@ -23,7 +23,9 @@ class LaserCodeNode(Node):
         return f"LaserCode('{self.name}', '{str(self.commands)}')"
 
     def __copy__(self):
-        return LaserCodeNode(self.commands, name=self.name)
+        return LaserCodeNode(
+            self.commands, name=self.name, id=self.id, label=self.label, lock=self.lock
+        )
 
     def __len__(self):
         return len(self.commands)

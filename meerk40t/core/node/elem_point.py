@@ -16,6 +16,7 @@ class PointNode(Node):
         fill=None,
         stroke=None,
         stroke_width=None,
+        id=None,
         label=None,
         lock=False,
         settings=None,
@@ -26,7 +27,9 @@ class PointNode(Node):
         settings.update(kwargs)
         if "type" in settings:
             del settings["type"]
-        super(PointNode, self).__init__(type="elem point", **settings)
+        super(PointNode, self).__init__(
+            type="elem point", id=id, label=label, lock=lock, **settings
+        )
         self._formatter = "{element_type} {id} {stroke}"
         self.point = point
         self.matrix = matrix
@@ -34,8 +37,6 @@ class PointNode(Node):
         self.fill = fill
         self.stroke = stroke
         self.stroke_width = stroke_width
-        self.label = label
-        self.lock = lock
 
     def __copy__(self):
         return PointNode(
@@ -44,6 +45,7 @@ class PointNode(Node):
             fill=copy(self.fill),
             stroke=copy(self.stroke),
             stroke_width=self.stroke_width,
+            id=self.id,
             label=self.label,
             lock=self.lock,
             settings=self.settings,

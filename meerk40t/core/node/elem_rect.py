@@ -25,6 +25,7 @@ class RectNode(Node):
         stroke_scale=None,
         linejoin=None,
         fillrule=None,
+        id=None,
         label=None,
         lock=False,
         settings=None,
@@ -35,7 +36,9 @@ class RectNode(Node):
         settings.update(kwargs)
         if "type" in settings:
             del settings["type"]
-        super(RectNode, self).__init__(type="elem rect", **settings)
+        super(RectNode, self).__init__(
+            type="elem rect", id=id, label=label, lock=lock, **settings
+        )
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(shape, Rect)
         self.shape = shape
@@ -52,8 +55,6 @@ class RectNode(Node):
         self.set_dirty_bounds()
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
-        self.label = label
-        self.lock = lock
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
@@ -68,6 +69,7 @@ class RectNode(Node):
             stroke_scale=self._stroke_scaled,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
+            id=self.id,
             label=self.label,
             lock=self.lock,
             settings=self.settings,

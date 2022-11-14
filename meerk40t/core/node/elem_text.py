@@ -66,6 +66,7 @@ class TextNode(Node):
         leading=None,
         raw_bbox=None,
         path=None,
+        id=None,
         label=None,
         lock=False,
         settings=None,
@@ -77,7 +78,9 @@ class TextNode(Node):
         if "type" in settings:
             del settings["type"]
 
-        super(TextNode, self).__init__(type="elem text", **settings)
+        super(TextNode, self).__init__(
+            type="elem text", id=id, label=label, lock=lock, **settings
+        )
         self._formatter = "{element_type} {id}: {text}"
         self.text = text
         self.settings = settings
@@ -130,8 +133,6 @@ class TextNode(Node):
         self.leading = leading
         self.raw_bbox = raw_bbox
         self.path = path
-        self.label = label
-        self.lock = lock
 
     def __copy__(self):
         return TextNode(
@@ -154,6 +155,7 @@ class TextNode(Node):
             leading=self.leading,
             raw_bbox=self.raw_bbox,
             path=self.path,
+            id=self.id,
             label=self.label,
             lock=self.lock,
             settings=self.settings,

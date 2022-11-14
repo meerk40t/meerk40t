@@ -25,8 +25,8 @@ class CutOpNode(Node, Parameters):
     This is a Node of type "op cut".
     """
 
-    def __init__(self, *args, **kwargs):
-        Node.__init__(self, type="op cut", **kwargs)
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
+        Node.__init__(self, type="op cut", id=id, label=label, lock=lock, **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = "{enabled}{pass}{element_type} {speed}mm/s @{power} {color}"
         self.settings.update(kwargs)
@@ -64,7 +64,7 @@ class CutOpNode(Node, Parameters):
         return "CutOpNode()"
 
     def __copy__(self):
-        return CutOpNode(self)
+        return CutOpNode(self, id=self.id, label=self.label, lock=self.lock)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
@@ -108,7 +108,10 @@ class CutOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if drag_node.type not in self._allowed_elements_dnd or drag_node._parent.type == "branch reg":
+            if (
+                drag_node.type not in self._allowed_elements_dnd
+                or drag_node._parent.type == "branch reg"
+            ):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:

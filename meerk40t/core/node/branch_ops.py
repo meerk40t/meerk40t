@@ -7,8 +7,10 @@ class BranchOperationsNode(Node):
     Bootstrapped type: 'branch reg'
     """
 
-    def __init__(self, **kwargs):
-        super(BranchOperationsNode, self).__init__(**kwargs)
+    def __init__(self, id=None, label=None, lock=False, **kwargs):
+        super(BranchOperationsNode, self).__init__(
+            type="branch ops", id=id, label=label, lock=lock, **kwargs
+        )
         self.loop_enabled = False
         self.loop_continuous = False
         self.loop_n = 1

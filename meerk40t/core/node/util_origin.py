@@ -10,8 +10,8 @@ class SetOriginOperation(Node):
     Node type "util origin"
     """
 
-    def __init__(self, x=None, y=None, **kwargs):
-        super().__init__(type="util origin", **kwargs)
+    def __init__(self, x=None, y=None, id=None, label=None, lock=False, **kwargs):
+        super().__init__(type="util origin", id=id, label=label, lock=lock, **kwargs)
         self.settings = {"x": x, "y": y, "output": True}
         self._formatter = "{enabled}{element_type} {x} {y}"
 
@@ -19,7 +19,9 @@ class SetOriginOperation(Node):
         return f"SetOriginOperation('{self.x}, {self.y}')"
 
     def __copy__(self):
-        return SetOriginOperation(self.x, self.y)
+        return SetOriginOperation(
+            self.x, self.y, id=self.id, label=self.label, lock=self.lock
+        )
 
     def __len__(self):
         return 1

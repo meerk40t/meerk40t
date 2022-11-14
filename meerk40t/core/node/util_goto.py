@@ -10,8 +10,8 @@ class GotoOperation(Node):
     Node type "util goto"
     """
 
-    def __init__(self, x=0.0, y=0.0, **kwargs):
-        super().__init__(type="util goto", **kwargs)
+    def __init__(self, x=0.0, y=0.0, id=None, label=None, lock=False, **kwargs):
+        super().__init__(type="util goto", id=id, label=label, lock=lock, **kwargs)
         self.settings = {"x": x, "y": y, "output": True}
         self._formatter = "{enabled}{element_type} {x} {y}"
 
@@ -19,7 +19,14 @@ class GotoOperation(Node):
         return f"GotoOperation('{self.x}, {self.y}')"
 
     def __copy__(self):
-        return GotoOperation(self.x, self.y)
+        return GotoOperation(
+            self.x,
+            self.y,
+            id=self.id,
+            label=self.label,
+            lock=self.lock,
+            **self.settings,
+        )
 
     def __len__(self):
         return 1

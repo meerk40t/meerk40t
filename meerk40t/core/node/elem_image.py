@@ -32,6 +32,7 @@ class ImageNode(Node):
         blue=None,
         lightness=None,
         passthrough=False,
+        id=None,
         label=None,
         lock=False,
         settings=None,
@@ -42,7 +43,9 @@ class ImageNode(Node):
         settings.update(kwargs)
         if "type" in settings:
             del settings["type"]
-        super(ImageNode, self).__init__(type="elem image", **settings)
+        super(ImageNode, self).__init__(
+            type="elem image", id=id, label=label, lock=lock, **settings
+        )
         self.__formatter = "{element_type} {id} {width}x{height}"
         if matrix is None:
             matrix = Matrix()
@@ -81,8 +84,6 @@ class ImageNode(Node):
         self.dpi = dpi
         self.step_x = None
         self.step_y = None
-        self.label = label
-        self.lock = lock
 
         self.invert = False if invert is None else invert
         self.red = 1.0 if red is None else red
@@ -127,6 +128,7 @@ class ImageNode(Node):
             blue=self.blue,
             lightness=self.lightness,
             passthrough=self.passthrough,
+            id=self.id,
             label=self.label,
             lock=self.lock,
             settings=self.settings,

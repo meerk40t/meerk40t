@@ -26,6 +26,7 @@ class LineNode(Node):
         linecap=None,
         linejoin=None,
         fillrule=None,
+        id=None,
         label=None,
         lock=False,
         settings=None,
@@ -36,7 +37,9 @@ class LineNode(Node):
         settings.update(kwargs)
         if "type" in settings:
             del settings["type"]
-        super(LineNode, self).__init__(type="elem line", **settings)
+        super(LineNode, self).__init__(
+            type="elem line", id=id, label=label, lock=lock, **settings
+        )
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(shape, SimpleLine)
         self.shape = shape
@@ -54,8 +57,6 @@ class LineNode(Node):
         self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
-        self.label = label
-        self.lock = lock
 
     def __copy__(self):
         return LineNode(
@@ -68,6 +69,7 @@ class LineNode(Node):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
+            id=self.id,
             label=self.label,
             lock=self.lock,
             setting=self.settings,

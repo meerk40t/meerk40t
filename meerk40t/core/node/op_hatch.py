@@ -17,12 +17,12 @@ class HatchOpNode(Node, Parameters):
     This is a Node of type "hatch op".
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, id=None, label=None, lock=False, **kwargs):
         if "setting" in kwargs:
             kwargs = kwargs["settings"]
             if "type" in kwargs:
                 del kwargs["type"]
-        Node.__init__(self, type="op hatch", **kwargs)
+        Node.__init__(self, type="op hatch", id=id, label=label, lock=lock, **kwargs)
         Parameters.__init__(self, None, **kwargs)
         self._formatter = (
             "{enabled}{penpass}{pass}{element_type} {speed}mm/s @{power} {color}"
@@ -63,7 +63,7 @@ class HatchOpNode(Node, Parameters):
         return "HatchOpNode()"
 
     def __copy__(self):
-        return HatchOpNode(self)
+        return HatchOpNode(self, id=self.id, label=self.label, lock=self.lock)
 
     # def is_dangerous(self, minpower, maxspeed):
     #     result = False
@@ -109,7 +109,10 @@ class HatchOpNode(Node, Parameters):
     def drop(self, drag_node, modify=True):
         # Default routine for drag + drop for an op node - irrelevant for others...
         if drag_node.type.startswith("elem"):
-            if drag_node.type not in self._allowed_elements_dnd or drag_node._parent.type == "branch reg":
+            if (
+                drag_node.type not in self._allowed_elements_dnd
+                or drag_node._parent.type == "branch reg"
+            ):
                 return False
             # Dragging element onto operation adds that element to the op.
             if modify:

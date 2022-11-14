@@ -9,8 +9,10 @@ class FileNode(Node):
     Bootstrapped type: 'file'
     """
 
-    def __init__(self, filepath=None, **kwargs):
-        super(FileNode, self).__init__(type="file", **kwargs)
+    def __init__(self, filepath=None, id=None, label=None, lock=False, **kwargs):
+        super(FileNode, self).__init__(
+            type="file", id=id, label=label, lock=lock, **kwargs
+        )
         self._filepath = filepath
         self._formatter = "{element_type}: {filename}"
 

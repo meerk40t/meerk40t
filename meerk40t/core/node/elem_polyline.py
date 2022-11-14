@@ -27,9 +27,10 @@ class PolylineNode(Node):
         linecap=None,
         linejoin=None,
         fillrule=None,
+        id=None,
         label=None,
-        settings=None,
         lock=False,
+        settings=None,
         **kwargs,
     ):
         if settings is None:
@@ -37,7 +38,9 @@ class PolylineNode(Node):
         settings.update(kwargs)
         if "type" in settings:
             del settings["type"]
-        super(PolylineNode, self).__init__(type="elem polyline", **settings)
+        super(PolylineNode, self).__init__(
+            type="elem polyline", id=id, label=label, lock=lock, **settings
+        )
         self._formatter = "{element_type} {id} {stroke}"
         assert isinstance(shape, (Polyline, Polygon))
         self.shape = shape
@@ -55,8 +58,6 @@ class PolylineNode(Node):
         self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
         self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
         self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
-        self.label = label
-        self.lock = lock
 
     def __copy__(self):
         return PolylineNode(
@@ -69,6 +70,7 @@ class PolylineNode(Node):
             linecap=self.linecap,
             linejoin=self.linejoin,
             fillrule=self.fillrule,
+            id=self.id,
             label=self.label,
             lock=self.lock,
             settings=self.settings,

@@ -7,8 +7,10 @@ class BranchElementsNode(Node):
     Bootstrapped type: 'branch elems'
     """
 
-    def __init__(self, **kwargs):
-        super(BranchElementsNode, self).__init__(**kwargs)
+    def __init__(self, id=None, label=None, lock=False, **kwargs):
+        super(BranchElementsNode, self).__init__(
+            type="branch elems", id=id, label=label, lock=lock, **kwargs
+        )
         self._formatter = "{element_type}"
 
     def default_map(self, default_map=None):

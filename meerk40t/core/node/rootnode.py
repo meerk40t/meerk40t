@@ -40,9 +40,11 @@ class RootNode(Node):
     The notifications are shallow. They refer *only* to the node in question, not to any children or parents.
     """
 
-    def __init__(self, context, **kwargs):
+    def __init__(self, context, id=None, label=None, lock=False, **kwargs):
         _ = context._
-        super(RootNode, self).__init__(type="root", **kwargs)
+        super(RootNode, self).__init__(
+            type="root", id=id, label=label, lock=lock, **kwargs
+        )
         self._root = self
         self.context = context
         self.listeners = []
@@ -55,7 +57,7 @@ class RootNode(Node):
         return f"RootNode({str(self.context)})"
 
     def __copy__(self):
-        return RootNode(self.context)
+        return RootNode(self.context, id=self.id, label=self.label, lock=self.lock)
 
     def is_draggable(self):
         return False

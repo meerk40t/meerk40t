@@ -9,13 +9,24 @@ class ConsoleOperation(Node):
     Node type "util console"
     """
 
-    def __init__(self, command=None, **kwargs):
-        super().__init__(type="util console", **kwargs)
+    def __init__(self, command=None, id=None, label=None, lock=False, **kwargs):
+        super().__init__(type="util console", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{enabled}{command}"
         self.settings = {}
         if command is not None:
             self.settings["command"] = command
         self.settings["output"] = True
+
+    def __repr__(self):
+        return f"ConsoleOperation('{self.command}')"
+
+    def __copy__(self):
+        return ConsoleOperation(
+            self.command, id=self.id, label=self.label, lock=self.lock, **self.settings
+        )
+
+    def __len__(self):
+        return 1
 
     def set_command(self, command):
         self.settings["command"] = command
@@ -50,15 +61,6 @@ class ConsoleOperation(Node):
                     )
             except (KeyError, ValueError):
                 pass
-
-    def __repr__(self):
-        return f"ConsoleOperation('{self.command}')"
-
-    def __copy__(self):
-        return ConsoleOperation(self.command)
-
-    def __len__(self):
-        return 1
 
     def default_map(self, default_map=None):
         default_map = super(ConsoleOperation, self).default_map(default_map=default_map)

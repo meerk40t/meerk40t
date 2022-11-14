@@ -10,8 +10,10 @@ class OutputOperation(Node):
     Node type "util output"
     """
 
-    def __init__(self, mask=0, value=0, message=None, **kwargs):
-        super().__init__(type="util output", **kwargs)
+    def __init__(
+        self, mask=0, value=0, message=None, id=None, label=None, lock=False, **kwargs
+    ):
+        super().__init__(type="util output", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{enabled}{element_type} {bits}"
         self.settings = {
             "output_mask": mask,
@@ -24,7 +26,14 @@ class OutputOperation(Node):
         return f"OutputOperation('{self.mask}')"
 
     def __copy__(self):
-        return OutputOperation(self.mask, self.value, self.message)
+        return OutputOperation(
+            self.mask,
+            self.value,
+            self.message,
+            id=self.id,
+            label=self.label,
+            lock=self.lock,
+        )
 
     def __len__(self):
         return 1

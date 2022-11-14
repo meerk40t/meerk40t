@@ -10,8 +10,8 @@ class HomeOperation(Node):
     Node type "util home"
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(type="util home", **kwargs)
+    def __init__(self, id=None, label=None, lock=False, **kwargs):
+        super().__init__(type="util home", id=id, label=label, lock=lock, **kwargs)
         self.settings = {"output": True}
         self._formatter = "{enabled}{element_type}"
 
@@ -19,7 +19,9 @@ class HomeOperation(Node):
         return "HomeOperation()"
 
     def __copy__(self):
-        return HomeOperation()
+        return HomeOperation(
+            id=self.id, label=self.label, lock=self.lock, **self.settings
+        )
 
     def __len__(self):
         return 1

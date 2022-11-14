@@ -10,8 +10,10 @@ class InputOperation(Node):
     Node type "util input"
     """
 
-    def __init__(self, mask=0, value=0, message=None, **kwargs):
-        super().__init__(type="util input", **kwargs)
+    def __init__(
+        self, mask=0, value=0, message=None, id=None, label=None, lock=False, **kwargs
+    ):
+        super().__init__(type="util input", id=id, label=label, lock=lock, **kwargs)
         self._formatter = "{enabled}{element_type} {bits}"
         self.settings = {
             "input_mask": mask,
@@ -24,7 +26,14 @@ class InputOperation(Node):
         return f"InputOperation('{self.mask}')"
 
     def __copy__(self):
-        return InputOperation(self.mask, self.value, self.message)
+        return InputOperation(
+            self.mask,
+            self.value,
+            self.message,
+            id=self.id,
+            label=self.label,
+            lock=self.lock,
+        )
 
     def __len__(self):
         return 1

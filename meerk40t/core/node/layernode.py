@@ -6,8 +6,10 @@ class LayerNode(Node):
     Bootstrapped type: 'layer'
     """
 
-    def __init__(self, layer_name=None, **kwargs):
-        super(LayerNode, self).__init__(type="layer", **kwargs)
+    def __init__(self, layer_name=None, id=None, label=None, lock=False, **kwargs):
+        super(LayerNode, self).__init__(
+            type="layer", id=id, label=label, lock=lock, **kwargs
+        )
         self._formatter = "{element_type} {id} ({children} elems)"
         self.layer_name = layer_name
 

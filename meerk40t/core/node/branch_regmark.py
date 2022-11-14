@@ -7,8 +7,10 @@ class BranchRegmarkNode(Node):
     Bootstrapped type: 'branch reg'
     """
 
-    def __init__(self, **kwargs):
-        super(BranchRegmarkNode, self).__init__(**kwargs)
+    def __init__(self, id=None, label=None, lock=False, **kwargs):
+        super(BranchRegmarkNode, self).__init__(
+            type="branch reg", id=id, label=label, lock=lock, **kwargs
+        )
         self._formatter = "{element_type}"
 
     def default_map(self, default_map=None):

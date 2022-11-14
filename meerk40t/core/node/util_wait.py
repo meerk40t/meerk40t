@@ -12,8 +12,8 @@ class WaitOperation(Node):
     Node type "util wait"
     """
 
-    def __init__(self, wait=1.0, **kwargs):
-        super().__init__(type="util wait", **kwargs)
+    def __init__(self, wait=1.0, id=None, label=None, lock=False, **kwargs):
+        super().__init__(type="util wait", id=id, label=label, lock=lock, **kwargs)
         self.settings = {"wait": wait, "output": True}
         self._formatter = "{enabled}{element_type} {wait}"
 
@@ -21,7 +21,7 @@ class WaitOperation(Node):
         return f"WaitOperation('{self.wait}')"
 
     def __copy__(self):
-        return WaitOperation(self.wait)
+        return WaitOperation(self.wait, id=self.id, label=self.label, lock=self.lock)
 
     def __len__(self):
         return 1
