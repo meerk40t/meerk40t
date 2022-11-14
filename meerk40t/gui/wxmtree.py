@@ -1386,7 +1386,7 @@ class ShadowTree:
                 # Different typefamilies
                 event.Skip()
                 return
-            if not n.is_movable():
+            if not n.is_draggable():
                 event.Skip()
                 return
         event.Allow()

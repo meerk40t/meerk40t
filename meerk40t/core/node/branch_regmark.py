@@ -31,5 +31,5 @@ class BranchRegmarkNode(Node):
             return True
         return False
 
-    def is_movable(self):
+    def is_draggable(self):
         return False
