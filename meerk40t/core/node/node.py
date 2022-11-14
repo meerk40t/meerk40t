@@ -301,8 +301,6 @@ class Node:
         # Rebuild structure.
         for uid, n in links.items():
             node, node_copy = n
-            if node.type == "reference":
-                continue
             if node._parent is None:
                 # Root.
                 continue
@@ -314,13 +312,10 @@ class Node:
                 continue
             node_copy._parent = copied_parent
             copied_parent._children.append(node_copy)
-        for uid, n in links.items():
-            node, node_copy = n
-            if node.type != "reference":
-                continue
-            original_parent, copied_parent = links[id(node._parent)]
-            original_referenced, copied_referenced = links[id(node.node)]
-            copied_parent.add_reference(copied_referenced)
+            if node.type == "reference":
+                original_referenced, copied_referenced = links[id(node.node)]
+                node_copy.node = copied_referenced
+                copied_referenced._references.append(node_copy)
         branches = [links[id(c)][1] for c in self._children]
         return branches
 
