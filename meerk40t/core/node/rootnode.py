@@ -57,7 +57,7 @@ class RootNode(Node):
     def __copy__(self):
         return RootNode(self.context)
 
-    def is_movable(self):
+    def is_draggable(self):
         return False
 
     def listen(self, listener):

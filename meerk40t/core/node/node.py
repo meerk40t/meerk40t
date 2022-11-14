@@ -366,7 +366,7 @@ class Node:
     def valid_node_for_reference(self, node):
         return True
 
-    def is_movable(self):
+    def is_draggable(self):
         return True
 
     def drop(self, drag_node, modify=True):
