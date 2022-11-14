@@ -167,7 +167,7 @@ def init_tree(kernel):
             if hasattr(n, "output"):
                 try:
                     n.output = not n.output
-                    n.notify_update()
+                    n.updated()
                 except AttributeError:
                     pass
 
