@@ -58,6 +58,19 @@ class Node:
     All nodes have children, root, parent, and reference links. The children are subnodes,
     the root points to the tree root, the parent points to the immediate parent, and references
     refers to nodes that point to this node type.
+
+    All nodes contain a type. This is a string value of the given node type and is used to delineate nodes.
+
+    Node bounds exist, but not all nodes are have geometric bounds.
+    Node paint_bounds exists, this is the size of the paint area bounds.
+
+    Nodes can be emphasized. This is selecting the given node.
+    Nodes can be highlighted.
+    Nodes can be targeted.
+
+    All nodes have a label.
+    All nodes have an id. During saving, we make sure this is a unique id.
+
     """
 
     def __init__(self, type=None, *args, **kwargs):
@@ -370,6 +383,13 @@ class Node:
         return True
 
     def drop(self, drag_node, modify=True):
+        """
+        Process drag and drop node values for tree reordering.
+
+        @param drag_node:
+        @param modify:
+        @return:
+        """
         return False
 
     def reverse(self):
