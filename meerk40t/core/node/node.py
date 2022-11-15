@@ -769,7 +769,10 @@ class Node:
         @return:
         """
         node_class = self._root.bootstrap.get(type, Node)
-        node = node_class(**kwargs)
+        node_defaults = self._root.defaults.get(type, {})
+        nd = dict(node_defaults)
+        nd.update(kwargs)
+        node = node_class(**nd)
         if self._root is not None:
             self._root.notify_created(node)
         return node
@@ -790,17 +793,16 @@ class Node:
         node.notify_attached(node, parent=self, pos=pos)
         return node
 
-    def add(self, type=None, id=None, pos=None, **kwargs):
+    def add(self, type=None, pos=None, **kwargs):
         """
         Add a new node bound to the data_object of the type to the current node.
         If the data_object itself is a node already it is merely attached.
 
         @param type: Node type to be bootstrapped
-        @param id: Node id to be set
         @param pos: Position within current node to add this node
         @return:
         """
-        node = self.create(type=type, id=id, **kwargs)
+        node = self.create(type=type, **kwargs)
         self._attach_node(node, pos=pos)
         return node
 
