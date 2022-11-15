@@ -20,8 +20,8 @@ class FileNode(Node):
         if self.filepath is None:
             s = "None"
         else:
-            s = os.path.basename(self._filepath)
-        default_map["full_filename"] = self._filepath
+            s = os.path.basename(self.filepath)
+        default_map["full_filename"] = self.filepath
         default_map["filename"] = s
         return default_map
 
@@ -36,5 +36,5 @@ class FileNode(Node):
         if self.filepath is None:
             s = None
         else:
-            s = os.path.basename(self._filepath)
+            s = os.path.basename(self.filepath)
         return s
