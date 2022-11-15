@@ -10,56 +10,27 @@ class NumpathNode(Node, Parameters):
     NumpathNode is the bootstrapped node type for the 'elem numpath' type.
     """
 
-    def __init__(
-        self,
-        *args,
-        path=None,
-        matrix=None,
-        fill=None,
-        stroke=None,
-        stroke_width=None,
-        linecap=Linecap.CAP_BUTT,
-        linejoin=Linejoin.JOIN_MITER,
-        fillrule=Fillrule.FILLRULE_EVENODD,
-        label=None,
-        lock=False,
-        settings=None,
-        **kwargs,
-    ):
-        if settings is None:
-            settings = dict()
-        settings.update(kwargs)
-        if "type" in settings:
-            del settings["type"]
-        super().__init__(*args, **settings)
+    def __init__(self, **kwargs):
+        self.path = None
+        self.matrix = None
+        self.fill = None
+        self.stroke = None
+        self.stroke_width = None
+        self.linecap = Linecap.CAP_BUTT
+        self.linejoin = Linejoin.JOIN_MITER
+        self.fillrule = Fillrule.FILLRULE_EVENODD
+        super().__init__(type="numpath", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
-        self.path = path
-        if matrix is None:
-            matrix = Matrix()
-        self.matrix = matrix
-        self.fill = fill
-        self.stroke = stroke
-        self.stroke_width = stroke_width
-        self.linecap = linecap
-        self.linejoin = linejoin
-        self.fillrule = fillrule
-        self.label = label
-        self.lock = lock
+        if self.matrix is None:
+            self.matrix = Matrix()
 
     def __copy__(self):
-        return NumpathNode(
-            path=copy(self.path),
-            matrix=copy(self.matrix),
-            fill=copy(self.fill),
-            stroke=copy(self.stroke),
-            stroke_width=self.stroke_width,
-            linecap=self.linecap,
-            linejoin=self.linejoin,
-            fillrule=self.fillrule,
-            label=self.label,
-            lock=self.lock,
-            settings=self.settings,
-        )
+        nd = self.node_dict
+        nd['path'] = copy(self.path)
+        nd['matrix'] = copy(self.matrix)
+        nd['fill'] = copy(self.fill)
+        nd['stroke_width'] = copy(self.stroke_width)
+        return NumpathNode(**nd)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(len(self.path))}, {str(self._parent)})"
