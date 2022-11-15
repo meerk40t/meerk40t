@@ -17,9 +17,6 @@ class CutNode(Node):
     def __repr__(self):
         return f"CutNode('{self.type}', {str(self.cutcode)}, {str(self._parent)})"
 
-    def __copy__(self):
-        return CutNode(**self.node_dict)
-
     def __len__(self):
         return 1
 

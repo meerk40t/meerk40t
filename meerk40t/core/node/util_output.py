@@ -21,9 +21,6 @@ class OutputOperation(Node):
     def __repr__(self):
         return f"OutputOperation('{self.output_mask}')"
 
-    def __copy__(self):
-        return OutputOperation(**self.node_dict)
-
     def __len__(self):
         return 1
 

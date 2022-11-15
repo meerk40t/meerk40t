@@ -18,9 +18,6 @@ class BlobNode(Node):
         super().__init__(type="blob", **kwargs)
         self._formatter = "{element_type}:{data_type}:{label} @{length}"
 
-    def __copy__(self):
-        return BlobNode(**self.node_dict)
-
     def __len__(self):
         return len(self.data)
 

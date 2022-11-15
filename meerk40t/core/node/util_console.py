@@ -18,9 +18,6 @@ class ConsoleOperation(Node):
     def __repr__(self):
         return f"ConsoleOperation('{self.command}')"
 
-    def __copy__(self):
-        return ConsoleOperation(**self.node_dict)
-
     def __len__(self):
         return 1
 

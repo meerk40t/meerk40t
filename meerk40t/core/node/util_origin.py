@@ -20,9 +20,6 @@ class SetOriginOperation(Node):
     def __repr__(self):
         return f"SetOriginOperation('{self.x}, {self.y}')"
 
-    def __copy__(self):
-        return SetOriginOperation(**self.node_dict)
-
     def __len__(self):
         return 1
 

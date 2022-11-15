@@ -21,9 +21,6 @@ class WaitOperation(Node):
     def __repr__(self):
         return f"WaitOperation('{self.wait}')"
 
-    def __copy__(self):
-        return WaitOperation(**self.node_dict)
-
     def __len__(self):
         return 1
 
