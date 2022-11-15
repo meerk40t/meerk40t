@@ -7,10 +7,8 @@ class GroupNode(Node):
     All group types are bootstrapped into this node object.
     """
 
-    def __init__(self, id=None, label=None, lock=False, **kwargs):
-        super(GroupNode, self).__init__(
-            type="group", id=id, label=label, lock=lock, **kwargs
-        )
+    def __init__(self, **kwargs):
+        super(GroupNode, self).__init__(type="group", **kwargs)
         self._formatter = "{element_type} {id} ({children} elems)"
 
     def __repr__(self):
