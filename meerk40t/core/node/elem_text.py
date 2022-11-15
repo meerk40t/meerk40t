@@ -47,7 +47,6 @@ class TextNode(Node):
         self.text = None
         self.x = 0
         self.y = 0
-        self.font = None
         self.anchor = "start"  # start, middle, end.
         self.baseline = "hanging"
         self.matrix = None
@@ -92,12 +91,12 @@ class TextNode(Node):
         if font is not None:
             self.parse_font(font)
         else:
-            self.font_size = getattr(self, SVG_ATTR_FONT_SIZE)
-            self.font_style = getattr(self, SVG_ATTR_FONT_STYLE)
-            self.font_variant = getattr(self, SVG_ATTR_FONT_VARIANT)
-            self.font_weight = getattr(self, SVG_ATTR_FONT_WEIGHT)
-            self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH)
-            self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY)
+            self.font_size = getattr(self, SVG_ATTR_FONT_SIZE, None)
+            self.font_style = getattr(self, SVG_ATTR_FONT_STYLE, None)
+            self.font_variant = getattr(self, SVG_ATTR_FONT_VARIANT, None)
+            self.font_weight = getattr(self, SVG_ATTR_FONT_WEIGHT, None)
+            self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH, None)
+            self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY, None)
             self.validate_font()
 
     def __copy__(self):
