@@ -9,26 +9,17 @@ class BlobNode(Node):
     """
 
     def __init__(
-        self, data_type=None, data=None, id=None, label=None, lock=False, **kwargs
+        self, **kwargs
     ):
-        super().__init__(type="blob", id=id, label=label, lock=lock, **kwargs)
-        self._formatter = "{element_type}:{data_type}:{label} @{length}"
-        if self.label is None:
-            self.label = "Blob"
-        self.data = data
-        self.data_type = data_type
+        self.data = None
+        self.data_type = None
+        self.label = "Blob"
         self.output = True
-        self.settings = dict(**kwargs)
+        super().__init__(type="blob", **kwargs)
+        self._formatter = "{element_type}:{data_type}:{label} @{length}"
 
     def __copy__(self):
-        return BlobNode(
-            data_type=self.data_type,
-            data=self.data,
-            id=self.id,
-            label=self.label,
-            lock=self.lock,
-            **self.settings,
-        )
+        return BlobNode(**self.node_dict)
 
     def __len__(self):
         return len(self.data)
