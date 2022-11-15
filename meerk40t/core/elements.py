@@ -1057,38 +1057,37 @@ class Elemental(Service):
 
     def load_default(self, performclassify=True):
         self.clear_operations()
-        self.add_op(
-            ImageOpNode(
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
+        self.op_branch.add(
+            type="op image",
+            color="black",
+            speed=140.0,
+            power=1000.0,
+            raster_step=3,
         )
-        self.add_op(RasterOpNode())
-        self.add_op(EngraveOpNode())
-        self.add_op(CutOpNode())
+        self.op_branch.add(type="op raster")
+        self.op_branch.add(type="op engrave")
+        self.op_branch.add(type="op cut")
         if performclassify:
             self.classify(list(self.elems()))
         self.signal("tree_changed")
 
     def load_default2(self, performclassify=True):
         self.clear_operations()
-        self.add_op(
-            ImageOpNode(
-                color="black",
-                speed=140.0,
-                power=1000.0,
-                raster_step=3,
-            )
+        self.op_branch.add(
+            type="op image",
+            color="black",
+            speed=140.0,
+            power=1000.0,
+            raster_step=3,
         )
-        self.add_op(RasterOpNode())
-        self.add_op(EngraveOpNode(color="blue"))
-        self.add_op(EngraveOpNode(color="green"))
-        self.add_op(EngraveOpNode(color="magenta"))
-        self.add_op(EngraveOpNode(color="cyan"))
-        self.add_op(EngraveOpNode(color="yellow"))
-        self.add_op(CutOpNode())
+        self.op_branch.add(type="op raster")
+        self.op_branch.add(type="op engrave")
+        self.op_branch.add(type="op engrave", color="blue")
+        self.op_branch.add(type="op engrave", color="green")
+        self.op_branch.add(type="op engrave", color="magenta")
+        self.op_branch.add(type="op engrave", color="cyan")
+        self.op_branch.add(type="op engrave", color="yellow")
+        self.op_branch.add(type="op cut")
         if performclassify:
             self.classify(list(self.elems()))
         self.signal("tree_changed")
