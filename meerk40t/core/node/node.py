@@ -763,7 +763,7 @@ class Node:
             raise ValueError("Cannot reparent node on add.")
         self._attach_node(node, pos=pos)
 
-    def create(self, type=None, **kwargs):
+    def create(self, type, **kwargs):
         """
         Create node of type with attributes via node bootstrapping.
 
