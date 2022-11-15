@@ -465,9 +465,25 @@ class Node:
         self.notify_reorder()
 
     def load(self, settings, section):
+        """
+        Default loading will read the persistence object, such that any values found in the given section of the
+        settings file. Will load parse the file to the correct type and set the attributes on this node.
+
+        @param settings:
+        @param section:
+        @return:
+        """
         settings.read_persistent_object(section, self)
 
     def save(self, settings, section):
+        """
+        The default node saving to a settings will write the persistence dictionary of the instance dictionary. This
+        will save to that section any non `_` attributes.
+
+        @param settings:
+        @param section:
+        @return:
+        """
         settings.write_persistent_dict(section, self.__dict__)
 
     def revalidate_points(self):
