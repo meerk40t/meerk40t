@@ -14,9 +14,6 @@ class FileNode(Node):
         super(FileNode, self).__init__(type="file", **kwargs)
         self._formatter = "{element_type}: {filename}"
 
-    def __copy__(self):
-        return FileNode(**self.node_dict)
-
     def default_map(self, default_map=None):
         default_map = super(FileNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "File"
