@@ -1005,7 +1005,7 @@ def init_commands(kernel):
         **kwargs,
     ):
         if command == "inputop":
-            op = InputOperation(mask=mask, value=value)
+            op = InputOperation(input_mask=mask, input_value=value)
         else:
             op = OutputOperation(mask=mask, value=value)
 
