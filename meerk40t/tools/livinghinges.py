@@ -1,12 +1,12 @@
 import wx
-from wx import aui
 
+from meerk40t.kernel import signal_listener
 from meerk40t.core.units import Length
 from meerk40t.gui.icons import icons8_hinges_50
 from meerk40t.gui.laserrender import LaserRender
 from meerk40t.gui.mwindow import MWindow
 from meerk40t.gui.wxutils import TextCtrl
-from meerk40t.svgelements import Color, Path, Point
+from meerk40t.svgelements import Color, Path, Point, Matrix
 
 _ = wx.GetTranslation
 
@@ -285,10 +285,12 @@ class LivingHinges:
     This class generates a predefined pattern in a *rectangular* area
     """
 
-    def __init__(self, width, height):
+    def __init__(self, xpos, ypos, width, height):
         self.pattern = None
         self.cols = 0
         self.rows = 0
+        self.start_x = xpos
+        self.start_y = ypos
         self.width = width
         self.height = height
         # We set it off somewhat...
@@ -296,17 +298,12 @@ class LivingHinges:
         self.y0 = height / 4
         self.x1 = width * 3 / 4
         self.y1 = height * 3 / 4
-        self.cell_width_percentage = 10
-        self.cell_height_percentage = 5
-        self.cell_width = self.width * self.cell_width_percentage / 100
-        self.cell_height = self.height * self.cell_height_percentage / 100
-        self.cell_offset_h_percentage = 2
-        self.cell_offset_v_percentage = 2
-        self.cell_padding_h = self.width * self.cell_offset_h_percentage / 100
-        self.cell_padding_v = self.height * self.cell_offset_v_percentage / 100
-        self.pattern = []
-        self.set_predefined_pattern("line")
+        # Requires recalculation
         self.path = None
+        self.pattern = []
+        self.set_cell_values(10, 10)
+        self.set_padding_values(5, 5)
+        self.set_predefined_pattern("line")
 
     def get_patterns(self):
         yield "line"
@@ -359,6 +356,7 @@ class LivingHinges:
 
         elif cutshape == "wavy":
             pass
+        self.path = None
 
     def make_outline(self, x0, y0, x1, y1):
         # Draw a rectangle
@@ -403,12 +401,37 @@ class LivingHinges:
                 endpoint = create_point(entry[3], entry[4])
                 self.path.cubic(control1, endpoint)
 
-    def generate(self, show_outline=False):
-        self.path = Path(stroke=Color("red"), stroke_width=500)
+    def set_hinge_area(self, hinge_left, hinge_top, hinge_width, hinge_height):
+        self.start_x = hinge_left
+        self.start_y = hinge_top
+        self.width = hinge_width
+        self.height = hinge_height
+        # Requires recalculation
+        self.path = None
+
+    def set_cell_values(self, percentage_x, percentage_y):
+        self.cell_width_percentage = percentage_x
+        self.cell_height_percentage = percentage_y
+        # Requires recalculation
+        self.path = None
+
+    def set_padding_values(self, padding_x, padding_y):
+        self.cell_padding_h_percentage = padding_x
+        self.cell_padding_v_percentage = padding_y
+        # Requires recalculation
+        self.path = None
+
+    def generate(self, show_outline=False, force=False):
+        if self.path is not None and not force:
+            # No need to recalculate...
+            return
+
         self.cell_width = self.width * self.cell_width_percentage / 100
         self.cell_height = self.height * self.cell_height_percentage / 100
-        self.cell_padding_h = self.width * self.cell_offset_h_percentage / 100
-        self.cell_padding_v = self.height * self.cell_offset_v_percentage / 100
+        self.cell_padding_h = self.width * self.cell_padding_h_percentage / 100
+        self.cell_padding_v = self.height * self.cell_padding_v_percentage / 100
+
+        self.path = Path(stroke=Color("red"), stroke_width=500)
 
         if show_outline:
             self.make_outline(self.x0, self.y0, self.x1, self.y1)
@@ -460,6 +483,7 @@ class LivingHinges:
                             x_current + self.cell_width,
                             y_current + self.cell_height,
                         )
+        self.path.transform *= Matrix.translate(self.start_x, self.start_y)
 
 
 class HingePanel(wx.Panel):
@@ -469,6 +493,8 @@ class HingePanel(wx.Panel):
         wx.Panel.__init__(self, *args, **kwds)
         self.context = context
         self.renderer = LaserRender(context)
+        self.text_origin_x = wx.TextCtrl(self, wx.ID_ANY, "")
+        self.text_origin_y = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_width = wx.TextCtrl(self, wx.ID_ANY, "")
         self.text_height = wx.TextCtrl(self, wx.ID_ANY, "")
         self.combo_style = wx.ComboBox(self, wx.ID_ANY, choices=[], style=wx.CB_DROPDOWN)
@@ -492,22 +518,21 @@ class HingePanel(wx.Panel):
             self,
             wx.ID_ANY,
             1,
-            1,
-            100,
+            -50,
+            50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
         self.slider_offset_y = wx.Slider(
             self,
             wx.ID_ANY,
             1,
-            1,
-            100,
+            -50,
+            50,
             style=wx.SL_HORIZONTAL | wx.SL_VALUE_LABEL,
         )
 
         self.hinge_generator = LivingHinges(
-            float(Length("5cm")),
-            float(Length("5cm"))
+            0, 0, float(Length("5cm")), float(Length("5cm"))
         )
         self.patterns = list(self.hinge_generator.get_patterns())
         self.combo_style.Set(self.patterns)
@@ -541,8 +566,28 @@ class HingePanel(wx.Panel):
         )
         main_left.Add(vsizer_dimension, 0, wx.EXPAND, 0)
 
+        hsizer_originx = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer_dimension.Add(hsizer_originx, 0, wx.EXPAND, 0)
+
+        label_x = wx.StaticText(self, wx.ID_ANY, _("X:"))
+        label_x.SetMinSize((90, -1))
+        hsizer_originx.Add(label_x, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.text_origin_x.SetToolTip(_("X-Coordinate of the hinge area"))
+        hsizer_originx.Add(self.text_origin_x, 0, 0, 0)
+
+        hsizer_originy = wx.BoxSizer(wx.HORIZONTAL)
+        vsizer_dimension.Add(hsizer_originy, 0, wx.EXPAND, 0)
+
+        label_y = wx.StaticText(self, wx.ID_ANY, _("Y:"))
+        label_y.SetMinSize((90, -1))
+        hsizer_originy.Add(label_y, 0, wx.ALIGN_CENTER_VERTICAL, 0)
+
+        self.text_origin_y.SetToolTip(_("Y-Coordinate of the hinge area"))
+        hsizer_originy.Add(self.text_origin_y, 0, 0, 0)
+
         hsizer_width = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_dimension.Add(hsizer_width, 1, wx.EXPAND, 0)
+        vsizer_dimension.Add(hsizer_width, 0, wx.EXPAND, 0)
 
         label_width = wx.StaticText(self, wx.ID_ANY, _("Width:"))
         label_width.SetMinSize((90, -1))
@@ -552,7 +597,7 @@ class HingePanel(wx.Panel):
         hsizer_width.Add(self.text_width, 0, 0, 0)
 
         hsizer_height = wx.BoxSizer(wx.HORIZONTAL)
-        vsizer_dimension.Add(hsizer_height, 1, wx.EXPAND, 0)
+        vsizer_dimension.Add(hsizer_height, 0, wx.EXPAND, 0)
 
         label_height = wx.StaticText(self, wx.ID_ANY, _("Height:"))
         label_height.SetMinSize((90, -1))
@@ -573,7 +618,7 @@ class HingePanel(wx.Panel):
         label_pattern.SetMinSize((90, -1))
         hsizer_pattern.Add(label_pattern, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
-        self.combo_style.SetToolTip(_("Choose the  hinge pattern"))
+        self.combo_style.SetToolTip(_("Choose the hinge pattern"))
         hsizer_pattern.Add(self.combo_style, 1, 0, 0)
 
         hsizer_cellwidth = wx.BoxSizer(wx.HORIZONTAL)
@@ -675,8 +720,14 @@ class HingePanel(wx.Panel):
         self.context("window toggle Hingetool\n")
 
     def on_button_generate(self, event):
-        # self.context.signal("")
-        return
+        self.hinge_generator.generate(show_outline=False)
+        self.context.elements.elem_branch.add(
+            path=abs(self.hinge_generator.path),
+            stroke_width=500,
+            color=Color("red"),
+            type="elem path",
+        )
+        self.context.signal("refresh_scene")
 
     def on_option_update(self, event):
         flag = True
@@ -697,55 +748,66 @@ class HingePanel(wx.Panel):
         except ValueError:
             flag = False
         cell_x = self.slider_width.GetValue()
+        cell_y = self.slider_width.GetValue()
         self.context.hinge_cells_x = cell_x
-        cell_y = self.slider_width.GetValue() / 100.0
         self.context.hinge_cells_y = cell_y
         offset_x = self.slider_offset_x.GetValue()
-        self.context.hinge_offset_x = offset_x
         offset_y = self.slider_offset_y.GetValue()
-        self.context.hinge_offset_y = offset_y
-
+        self.context.hinge_padding_x = offset_x
+        self.context.hinge_padding_y = offset_y
+        # Restore settings will call the LivingHinge class
         self._restore_settings(True)
         self.panel_preview.Refresh()
         self.button_generate.Enable(flag)
 
     def _setup_settings(self):
         self.context.setting(str, "hinge_type", "line")
+        self.context.setting(str, "hinge_origin_x", "0cm")
+        self.context.setting(str, "hinge_origin_y", "0cm")
         self.context.setting(str, "hinge_width", "5cm")
         self.context.setting(str, "hinge_height", "5cm")
         self.context.setting(int, "hinge_cells_x", 20)
         self.context.setting(int, "hinge_cells_y", 20)
-        self.context.setting(int, "hinge_offset_x", 10)
-        self.context.setting(int, "hinge_offset_y", 10)
+        self.context.setting(int, "hinge_padding_x", 10)
+        self.context.setting(int, "hinge_padding_y", 10)
 
     def _restore_settings(self, just_internal=False):
         if self.context.hinge_type not in self.patterns:
             self.context.hinge_type = self.patterns[0]
-        self.hinge_generator.width = float(Length(self.context.hinge_width))
-        self.hinge_generator.height = float(Length(self.context.hinge_height))
         self.hinge_generator.set_predefined_pattern(self.context.hinge_type)
-        self.hinge_generator.cell_width_percentage = self.context.hinge_cells_x
-        self.hinge_generator.cell_height_percentage = self.context.hinge_cells_y
-        self.hinge_generator.cell_offset_h_percentage = self.context.hinge_offset_x
-        self.hinge_generator.cell_offset_v_percentage = self.context.hinge_offset_y
+        x = float(Length(self.context.hinge_origin_x))
+        y = float(Length(self.context.hinge_origin_y))
+        wd = float(Length(self.context.hinge_width))
+        ht = float(Length(self.context.hinge_height))
+        self.hinge_generator.set_hinge_area(x, y, wd, ht)
+        self.hinge_generator.set_cell_values(self.context.hinge_cells_x, self.context.hinge_cells_y)
+        self.hinge_generator.set_padding_values(self.context.hinge_padding_x, self.context.hinge_padding_y)
         if just_internal:
             return
         self.combo_style.SetSelection(self.patterns.index(self.context.hinge_type))
+        self.text_origin_x.SetValue(self.context.hinge_origin_x)
+        self.text_origin_y.SetValue(self.context.hinge_origin_y)
+        self.text_height.SetValue(self.context.hinge_origin_y)
         self.text_width.SetValue(self.context.hinge_width)
         self.text_height.SetValue(self.context.hinge_height)
         self.slider_width.SetValue(self.context.hinge_cells_x)
         self.slider_height.SetValue(self.context.hinge_cells_y)
-        self.slider_offset_x.SetValue(self.context.hinge_offset_x)
-        self.slider_offset_y.SetValue(self.context.hinge_offset_y)
+        self.slider_offset_x.SetValue(self.context.hinge_padding_x)
+        self.slider_offset_y.SetValue(self.context.hinge_padding_y)
 
     def pane_show(self):
         bounds = self.context.elements._emphasized_bounds
         if bounds is not None:
             units = self.context.units_name
+            start_x = bounds[0]
+            start_y = bounds[1]
             wd = bounds[2] - bounds[0]
             ht = bounds[3] - bounds[1]
+            self.text_origin_x.SetValue(Length(amount=start_x, digits=2, preferred_units=units).preferred_length)
+            self.text_origin_y.SetValue(Length(amount=start_y, digits=2, preferred_units=units).preferred_length)
             self.text_width.SetValue(Length(amount=wd, digits=2, preferred_units=units).preferred_length)
             self.text_height.SetValue(Length(amount=ht, digits=2, preferred_units=units).preferred_length)
+            self.hinge_generator.set_hinge_area(start_x, start_y, wd, ht)
 
 class LivingHingeTool(MWindow):
     def __init__(self, *args, **kwds):
@@ -768,6 +830,10 @@ class LivingHingeTool(MWindow):
 
     def window_close(self):
         pass
+
+    @signal_listener("emphasized")
+    def on_emphasized_elements_changed(self, origin, *args):
+        self.panel_template.pane_show()
 
     @staticmethod
     def submenu():
