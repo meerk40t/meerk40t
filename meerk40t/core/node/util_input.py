@@ -21,9 +21,6 @@ class InputOperation(Node):
     def __repr__(self):
         return f"InputOperation('{self.input_mask}')"
 
-    def __copy__(self):
-        return InputOperation(**self.node_dict)
-
     def __len__(self):
         return 1
 

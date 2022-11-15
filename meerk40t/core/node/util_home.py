@@ -18,9 +18,6 @@ class HomeOperation(Node):
     def __repr__(self):
         return "HomeOperation()"
 
-    def __copy__(self):
-        return HomeOperation(**self.node_dict)
-
     def __len__(self):
         return 1
 
