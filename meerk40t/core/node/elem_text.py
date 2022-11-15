@@ -43,52 +43,29 @@ class TextNode(Node):
     TextNode is the bootstrapped node type for the 'elem text' type.
     """
 
-    def __init__(
-        self,
-        text=None,
-        x=0,
-        y=0,
-        font=None,
-        anchor=None,
-        baseline=None,
-        matrix=None,
-        fill=None,
-        stroke=None,
-        stroke_width=0,
-        stroke_scale=True,
-        underline=None,
-        strikethrough=None,
-        overline=None,
-        texttransform=None,
-        width=None,
-        height=None,
-        descent=None,
-        leading=None,
-        raw_bbox=None,
-        path=None,
-        label=None,
-        lock=False,
-        settings=None,
-        **kwargs,
-    ):
-        if settings is None:
-            settings = dict()
-        settings.update(kwargs)
-        if "type" in settings:
-            del settings["type"]
-
-        super(TextNode, self).__init__(type="elem text", **settings)
-        self._formatter = "{element_type} {id}: {text}"
-        self.text = text
-        self.settings = settings
-        self.matrix = Matrix() if matrix is None else matrix
-        self.fill = fill
-        self.stroke = stroke
-        self.stroke_width = stroke_width
-        self._stroke_scaled = stroke_scale
-        if x != 0 or y != 0:
-            self.matrix.pre_translate(x, y)
-
+    def __init__(self, **kwargs):
+        self.text = None
+        self.x = 0
+        self.y = 0
+        self.font = None
+        self.anchor = "start"  # start, middle, end.
+        self.baseline = "hanging"
+        self.matrix = None
+        self.fill = None
+        self.stroke = None
+        self.stroke_width = 0
+        self.stroke_scale = True
+        self.underline = False
+        self.strikethrough = False
+        # For sake of completeness, afaik there is no way to display it with wxpython
+        self.overline = False
+        self.texttransform = ""
+        self.width = None
+        self.height = None
+        self.descent = None
+        self.leading = None
+        self.raw_bbox = None
+        self.path = None
         self.font_style = "normal"
         self.font_variant = "normal"
         self.font_weight = 400
@@ -99,65 +76,36 @@ class TextNode(Node):
         # Offset values to allow to fix the drawing of slanted fonts outside of the GetTextExtentBoundaries
         self.offset_x = 0
         self.offset_y = 0
+        if "font" in kwargs:
+            font = kwargs["font"]
+            del kwargs["font"]
+        else:
+            font = None
+        super(TextNode, self).__init__(type="elem text", **kwargs)
+        self._formatter = "{element_type} {id}: {text}"
+        if self.matrix is None:
+            self.matrix = Matrix()
+        if self.x != 0 or self.y != 0:
+            self.matrix.pre_translate(self.x, self.y)
         self.bounds_with_variables_translated = None
 
         if font is not None:
             self.parse_font(font)
         else:
-            self.font_size = self.settings.get(SVG_ATTR_FONT_SIZE)
-            self.font_style = self.settings.get(SVG_ATTR_FONT_STYLE)
-            self.font_variant = self.settings.get(SVG_ATTR_FONT_VARIANT)
-            self.font_weight = self.settings.get(SVG_ATTR_FONT_WEIGHT)
-            self.font_stretch = self.settings.get(SVG_ATTR_FONT_STRETCH)
-            self.font_family = self.settings.get(SVG_ATTR_FONT_FAMILY)
+            self.font_size = getattr(self, SVG_ATTR_FONT_SIZE)
+            self.font_style = getattr(self, SVG_ATTR_FONT_STYLE)
+            self.font_variant = getattr(self, SVG_ATTR_FONT_VARIANT)
+            self.font_weight = getattr(self, SVG_ATTR_FONT_WEIGHT)
+            self.font_stretch = getattr(self, SVG_ATTR_FONT_STRETCH)
+            self.font_family = getattr(self, SVG_ATTR_FONT_FAMILY)
             self.validate_font()
 
-        self.underline = False if underline is None else underline
-        self.strikethrough = False if strikethrough is None else strikethrough
-
-        # For sake of completeness, afaik there is no way to display it with wxpython
-        self.overline = False if overline is None else overline
-        self.texttransform = "" if texttransform is None else texttransform
-
-        self.anchor = "start" if anchor is None else anchor  # start, middle, end.
-        self.baseline = (
-            "hanging" if baseline is None else baseline
-        )  # Hanging or baseline (usually).
-
-        self.width = width
-        self.height = height
-        self.descent = descent
-        self.leading = leading
-        self.raw_bbox = raw_bbox
-        self.path = path
-        self.label = label
-        self.lock = lock
-
     def __copy__(self):
-        return TextNode(
-            text=self.text,
-            matrix=copy(self.matrix),
-            fill=copy(self.fill),
-            stroke=copy(self.stroke),
-            stroke_width=self.stroke_width,
-            stroke_scale=self._stroke_scaled,
-            font=self.font,
-            anchor=self.anchor,
-            baseline=self.baseline,
-            underline=self.underline,
-            strikethrough=self.strikethrough,
-            overline=self.overline,
-            texttransform=self.texttransform,
-            width=self.width,
-            height=self.height,
-            descent=self.descent,
-            leading=self.leading,
-            raw_bbox=self.raw_bbox,
-            path=self.path,
-            label=self.label,
-            lock=self.lock,
-            settings=self.settings,
-        )
+        nd = self.node_dict
+        nd['matrix'] = copy(self.matrix)
+        nd['fill'] = copy(self.fill)
+        nd['stroke_width'] = copy(self.stroke_width)
+        return TextNode(**nd)
 
     @property
     def font(self):
@@ -175,24 +123,24 @@ class TextNode(Node):
 
     @property
     def stroke_scaled(self):
-        return self._stroke_scaled
+        return self.stroke_scale
 
     @stroke_scaled.setter
     def stroke_scaled(self, v):
-        if not v and self._stroke_scaled:
+        if not v and self.stroke_scale:
             matrix = self.matrix
             self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self._stroke_scaled:
+        if v and not self.stroke_scale:
             matrix = self.matrix
             self.stroke_width /= sqrt(abs(matrix.determinant))
-        self._stroke_scaled = v
+        self.stroke_scale = v
 
     def implied_stroke_width(self, zoomscale=1.0):
         """If the stroke is not scaled, the matrix scale will scale the stroke, and we
         need to countermand that scaling by dividing by the square root of the absolute
         value of the determinant of the local matrix (1d matrix scaling)"""
         scalefactor = sqrt(abs(self.matrix.determinant))
-        if self.stroke_scaled:
+        if self.stroke_scale:
             # Our implied stroke-width is prescaled.
             return self.stroke_width
         else:
@@ -216,12 +164,7 @@ class TextNode(Node):
     def default_map(self, default_map=None):
         default_map = super(TextNode, self).default_map(default_map=default_map)
         default_map["element_type"] = "Text"
-        default_map.update(self.settings)
-        default_map["text"] = self.text
-        default_map["stroke"] = self.stroke
-        default_map["fill"] = self.fill
-        default_map["stroke-width"] = self.stroke_width
-        default_map["matrix"] = self.matrix
+        default_map.update(self.__dict__)
         return default_map
 
     def drop(self, drag_node, modify=True):
