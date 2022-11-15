@@ -6,12 +6,10 @@ class LayerNode(Node):
     Bootstrapped type: 'layer'
     """
 
-    def __init__(self, layer_name=None, id=None, label=None, lock=False, **kwargs):
-        super(LayerNode, self).__init__(
-            type="layer", id=id, label=label, lock=lock, **kwargs
-        )
+    def __init__(self, **kwargs):
+        self.layer_name = None
+        super(LayerNode, self).__init__(type="layer", **kwargs)
         self._formatter = "{element_type} {id} ({children} elems)"
-        self.layer_name = layer_name
 
     def default_map(self, default_map=None):
         default_map = super(LayerNode, self).default_map(default_map=default_map)
