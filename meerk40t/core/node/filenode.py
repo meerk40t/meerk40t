@@ -9,12 +9,13 @@ class FileNode(Node):
     Bootstrapped type: 'file'
     """
 
-    def __init__(self, filepath=None, id=None, label=None, lock=False, **kwargs):
-        super(FileNode, self).__init__(
-            type="file", id=id, label=label, lock=lock, **kwargs
-        )
-        self._filepath = filepath
+    def __init__(self, **kwargs):
+        self.filepath = None
+        super(FileNode, self).__init__(type="file", **kwargs)
         self._formatter = "{element_type}: {filename}"
+
+    def __copy__(self):
+        return FileNode(**self.node_dict)
 
     def default_map(self, default_map=None):
         default_map = super(FileNode, self).default_map(default_map=default_map)
@@ -32,14 +33,6 @@ class FileNode(Node):
             if modify:
                 self.append_child(drag_node)
         return False
-
-    @property
-    def filepath(self):
-        return self._filepath
-
-    @filepath.setter
-    def filepath(self, value):
-        self._filepath = value
 
     @property
     def name(self):
