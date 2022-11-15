@@ -55,7 +55,7 @@ class LineNode(Node):
 
     @property
     def stroke_scaled(self):
-        return self._stroke_scaled
+        return self.stroke_scaled
 
     @stroke_scaled.setter
     def stroke_scaled(self, v):
