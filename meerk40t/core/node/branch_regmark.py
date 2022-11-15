@@ -8,7 +8,7 @@ class BranchRegmarkNode(Node):
     """
 
     def __init__(self, **kwargs):
-        super(BranchRegmarkNode, self).__init__(**kwargs)
+        super(BranchRegmarkNode, self).__init__(type="branch reg", **kwargs)
         self._formatter = "{element_type}"
 
     def default_map(self, default_map=None):
