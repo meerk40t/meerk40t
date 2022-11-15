@@ -122,10 +122,7 @@ class Node:
         return f"{self.__class__.__name__}('{self.type}', {str(self._parent)})"
 
     def __copy__(self):
-        settings = {}
-        if hasattr(self, "settings"):
-            settings.update(self.settings)
-        return self.create(type=self.type, id=self.id, **settings)
+        return self.create(self.type, **self.node_dict)
 
     def __str__(self):
         text = self._formatter
