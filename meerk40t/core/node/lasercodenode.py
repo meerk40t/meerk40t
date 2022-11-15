@@ -9,21 +9,15 @@ class LaserCodeNode(Node):
     Node type "lasercode"
     """
 
-    def __init__(self, commands=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.commands = None
+        self.output = True
+        self.label = "LaserCode"
         super().__init__(type="lasercode", **kwargs)
         self._formatter = "{element_type} {command_count}"
-        if "name" in kwargs:
-            self._name = kwargs["name"]
-        else:
-            self._name = "LaserCode"
-        self.commands = commands
-        self.output = True
 
     def __repr__(self):
-        return f"LaserCode('{self.name}', '{str(self.commands)}')"
-
-    def __copy__(self):
-        return LaserCodeNode(self.commands, name=self.name)
+        return f"LaserCode('{self.label}', '{str(self.commands)}')"
 
     def __len__(self):
         return len(self.commands)
@@ -53,6 +47,13 @@ class LaserCodeNode(Node):
             if modify:
                 drop_node.append_child(drag_node)
             return True
+        return False
+
+    def allow_save(self):
+        """
+        Returns false to prevent saving of blob types into operations.
+        @return:
+        """
         return False
 
     def generate(self):
