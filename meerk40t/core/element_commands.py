@@ -976,8 +976,7 @@ def init_commands(kernel):
         time=None,
         **kwargs,
     ):
-        op = WaitOperation(wait=time)
-        self.add_op(op)
+        op = self.op_branch.add(type="util wait", wait=time)
         return "ops", [op]
 
     @self.console_argument(
@@ -1005,11 +1004,9 @@ def init_commands(kernel):
         **kwargs,
     ):
         if command == "inputop":
-            op = InputOperation(input_mask=mask, input_value=value)
+            op = self.op_branch.add(type="util input", input_mask=mask, input_value=value)
         else:
-            op = OutputOperation(output_mask=mask, output_value=value)
-
-        self.add_op(op)
+            op = self.op_branch.add(type="util output", output_mask=mask, output_value=value)
         return "ops", [op]
 
     @self.console_command(
@@ -1022,8 +1019,7 @@ def init_commands(kernel):
         **kwargs,
     ):
         if remainder is not None:
-            op = ConsoleOperation(command=remainder)
-            self.add_op(op)
+            op = self.op_branch.add(type="util console", command=remainder)
             return "ops", [op]
 
     @self.console_argument("dpi", type=int, help=_("raster dpi"))
