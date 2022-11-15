@@ -2,7 +2,7 @@ import os.path
 from os.path import realpath
 
 from meerk40t.core.exceptions import BadFileError
-from meerk40t.kernel import ConsoleFunction, Service, Settings
+from meerk40t.kernel import ConsoleFunction, Service, Settings, signal_listener
 from .undos import Undo
 
 from ..svgelements import Color, SVGElement
@@ -1699,6 +1699,20 @@ class Elemental(Service):
             self._emphasized_bounds = None
             self._emphasized_bounds_painted = None
             self.set_emphasis(None)
+
+    @signal_listener("classify_new")
+    def ask_for_classification(self, origin, data, *args):
+        # Why are we doing it here? An immediate classification
+        # at the end of the element creation might not provide
+        # the right assignment as additional commands might be
+        # chained to it:
+        # e.g. "circle 1cm 1cm 1cm" will classify differently than
+        # "circle 1cm 1cm 1cm stroke red"
+        if not isinstance(data, (list, tuple)):
+            data = [data]
+        if self.classify_new and len(data)>0:
+            self.classify(data)
+            self.signal("tree_changed")
 
     def classify(self, elements, operations=None, add_op_function=None):
         """
