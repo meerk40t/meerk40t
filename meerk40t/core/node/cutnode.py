@@ -8,17 +8,17 @@ class CutNode(Node):
     object.
     """
 
-    def __init__(self, cutcode=None, **kwargs):
-        super().__init__(type="cutcode", **kwargs)
+    def __init__(self, **kwargs):
         self.output = True
-        self.cutcode = cutcode
+        self.cutcode = None
+        super().__init__(type="cutcode", **kwargs)
         self._formatter = "{element_type}"
 
     def __repr__(self):
         return f"CutNode('{self.type}', {str(self.cutcode)}, {str(self._parent)})"
 
     def __copy__(self):
-        return CutNode(self.cutcode)
+        return CutNode(**self.node_dict)
 
     def __len__(self):
         return 1
