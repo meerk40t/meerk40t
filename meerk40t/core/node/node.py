@@ -465,10 +465,10 @@ class Node:
         self.notify_reorder()
 
     def load(self, settings, section):
-        pass
+        settings.read_persistent_object(section, self)
 
     def save(self, settings, section):
-        pass
+        settings.write_persistent_dict(section, self.__dict__)
 
     def revalidate_points(self):
         """
