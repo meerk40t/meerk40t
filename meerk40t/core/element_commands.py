@@ -5673,6 +5673,7 @@ def init_commands(kernel):
             # At bottom of stack.
             channel("No undo available.")
             return
+        self.validate_selected_area()
         channel(f"Undo: {self.undo}")
         self.signal("refresh_scene")
         self.signal("rebuild_tree")
