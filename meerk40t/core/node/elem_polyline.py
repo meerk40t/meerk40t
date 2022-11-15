@@ -16,89 +16,63 @@ class PolylineNode(Node):
     PolylineNode is the bootstrapped node type for the 'elem polyline' type.
     """
 
-    def __init__(
-        self,
-        shape=None,
-        matrix=None,
-        fill=None,
-        stroke=None,
-        stroke_width=None,
-        stroke_scale=None,
-        linecap=None,
-        linejoin=None,
-        fillrule=None,
-        id=None,
-        label=None,
-        lock=False,
-        settings=None,
-        **kwargs,
-    ):
-        if settings is None:
-            settings = dict()
-        settings.update(kwargs)
-        if "type" in settings:
-            del settings["type"]
-        super(PolylineNode, self).__init__(
-            type="elem polyline", id=id, label=label, lock=lock, **settings
-        )
+    def __init__(self, **kwargs):
+        self.shape = None
+        self.matrix = None
+        self.fill = None
+        self.stroke = None
+        self.stroke_width = None
+        self.stroke_scale = None
+        self.linecap = Linecap.CAP_BUTT
+        self.linejoin = Linejoin.JOIN_MITER
+        self.fillrule = Fillrule.FILLRULE_EVENODD
+
+        super(PolylineNode, self).__init__(type="elem polyline", **kwargs)
         self._formatter = "{element_type} {id} {stroke}"
-        assert isinstance(shape, (Polyline, Polygon))
-        self.shape = shape
-        self.settings = settings
-        self.matrix = shape.transform if matrix is None else matrix
-        self.fill = shape.fill if fill is None else fill
-        self.stroke = shape.stroke if stroke is None else stroke
-        self.stroke_width = shape.stroke_width if stroke_width is None else stroke_width
-        self._stroke_scaled = (
-            (shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE)
-            if stroke_scale is None
-            else stroke_scale
-        )
+        assert isinstance(self.shape, (Polyline, Polygon))
+        if self.matrix is None:
+            self.matrix = self.shape.transform
+        if self.fill is None:
+            self.fill = self.shape.fill
+        if self.stroke is None:
+            self.stroke = self.shape.stroke
+        if self.stroke_width is None:
+            self.stroke_width = self.shape.stroke_width
+        if self.stroke_scale is None:
+            self.stroke_scale = self.shape.values.get(SVG_ATTR_VECTOR_EFFECT) != SVG_VALUE_NON_SCALING_STROKE
         self.set_dirty_bounds()
-        self.linecap = Linecap.CAP_BUTT if linecap is None else linecap
-        self.linejoin = Linejoin.JOIN_MITER if linejoin is None else linejoin
-        self.fillrule = Fillrule.FILLRULE_EVENODD if fillrule is None else fillrule
 
     def __copy__(self):
-        return PolylineNode(
-            shape=copy(self.shape),
-            matrix=copy(self.matrix),
-            fill=copy(self.fill),
-            stroke=copy(self.stroke),
-            stroke_width=self.stroke_width,
-            stroke_scale=self._stroke_scaled,
-            linecap=self.linecap,
-            linejoin=self.linejoin,
-            fillrule=self.fillrule,
-            id=self.id,
-            label=self.label,
-            lock=self.lock,
-            settings=self.settings,
-        )
+        nd = self.node_dict
+        nd['shape'] = copy(self.shape)
+        nd['matrix'] = copy(self.matrix)
+        nd['fill'] = copy(self.fill)
+        nd['stroke_width'] = copy(self.stroke_width)
+        return PolylineNode(**nd)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self.type}', {str(self.shape)}, {str(self._parent)})"
 
     @property
     def stroke_scaled(self):
-        return self._stroke_scaled
+        return self.stroke_scale
 
     @stroke_scaled.setter
     def stroke_scaled(self, v):
-        if not v and self._stroke_scaled:
+        if not v and self.stroke_scale:
             matrix = self.matrix
             self.stroke_width *= sqrt(abs(matrix.determinant))
-        if v and not self._stroke_scaled:
+        if v and not self.stroke_scale:
             matrix = self.matrix
             self.stroke_width /= sqrt(abs(matrix.determinant))
-        self._stroke_scaled = v
+        self.stroke_scale = v
 
     def implied_stroke_width(self, zoomscale=1.0):
         """If the stroke is not scaled, the matrix scale will scale the stroke, and we
         need to countermand that scaling by dividing by the square root of the absolute
         value of the determinant of the local matrix (1d matrix scaling)"""
         scalefactor = sqrt(abs(self.matrix.determinant))
-        if self.stroke_scaled:
+        if self.stroke_scale:
             # Our implied stroke-width is prescaled.
             return self.stroke_width
         else:
@@ -168,7 +142,7 @@ class PolylineNode(Node):
 
     def _sync_svg(self):
         self.shape.values[SVG_ATTR_VECTOR_EFFECT] = (
-            SVG_VALUE_NON_SCALING_STROKE if not self._stroke_scaled else ""
+            SVG_VALUE_NON_SCALING_STROKE if not self.stroke_scale else ""
         )
         self.shape.transform = self.matrix
         self.shape.stroke_width = self.stroke_width
