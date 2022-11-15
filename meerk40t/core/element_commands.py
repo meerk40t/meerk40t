@@ -1007,7 +1007,7 @@ def init_commands(kernel):
         if command == "inputop":
             op = InputOperation(input_mask=mask, input_value=value)
         else:
-            op = OutputOperation(mask=mask, value=value)
+            op = OutputOperation(output_mask=mask, output_value=value)
 
         self.add_op(op)
         return "ops", [op]

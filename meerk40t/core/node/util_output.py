@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode.outputcut import OutputCut
+from meerk40t.core.cutcode import OutputCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
@@ -10,82 +10,31 @@ class OutputOperation(Node):
     Node type "util output"
     """
 
-    def __init__(self, mask=0, value=0, message=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.output_mask = 0
+        self.output_value = 0
+        self.output_message = None
+        self.output = True
         super().__init__(type="util output", **kwargs)
         self._formatter = "{enabled}{element_type} {bits}"
-        self.settings = {
-            "output_mask": mask,
-            "output_value": value,
-            "output_message": message,
-            "output": True,
-        }
-
+        
     def __repr__(self):
-        return f"OutputOperation('{self.mask}')"
+        return f"OutputOperation('{self.output_mask}')"
 
     def __copy__(self):
-        return OutputOperation(self.mask, self.value, self.message)
+        return OutputOperation(**self.node_dict)
 
     def __len__(self):
         return 1
 
     def bitstring(self):
-        mask = self.mask
-        value = self.value
+        mask = self.output_mask
+        value = self.output_value
         bits = bytearray(b"X" * 16)
         for m in range(16):
             if (mask >> m) & 1:
                 bits[m] = ord("1") if (value >> m) & 1 else ord("0")
         return bits.decode("utf8")
-
-    def validate(self):
-        parameters = [
-            ("output", lambda v: str(v).lower() == "true"),
-            ("output_message", str),
-            ("output_value", int),
-            ("output_mask", int),
-        ]
-        settings = self.settings
-        for param, cast in parameters:
-            try:
-                if param in settings and settings[param] is not None:
-                    settings[param] = (
-                        cast(settings[param]) if settings[param] != "None" else None
-                    )
-            except (KeyError, ValueError):
-                pass
-
-    @property
-    def mask(self):
-        return self.settings.get("output_mask")
-
-    @mask.setter
-    def mask(self, v):
-        self.settings["output_mask"] = v
-
-    @property
-    def value(self):
-        return self.settings.get("output_value")
-
-    @value.setter
-    def value(self, v):
-        self.settings["output_value"] = v
-
-    @property
-    def message(self):
-        return self.settings.get("output_message")
-
-    @message.setter
-    def message(self, v):
-        self.settings["output_message"] = v
-
-    @property
-    def output(self):
-        return self.settings.get("output", True)
-
-    @output.setter
-    def output(self, v):
-        self.settings["output"] = v
 
     @property
     def implicit_passes(self):
@@ -93,41 +42,41 @@ class OutputOperation(Node):
 
     def get_mask(self, bit=None):
         if bit is None:
-            return self.mask
-        return (self.mask >> bit) & 1
+            return self.output_mask
+        return (self.output_mask >> bit) & 1
 
     def get_value(self, bit=None):
         if bit is None:
-            return self.value
-        return (self.value >> bit) & 1
+            return self.output_value
+        return (self.output_value >> bit) & 1
 
     def mask_toggle(self, bit):
-        self.mask = self.mask ^ (1 << bit)
+        self.output_mask = self.output_mask ^ (1 << bit)
 
     def mask_on(self, bit):
-        self.mask = self.mask | (1 << bit)
+        self.output_mask = self.output_mask | (1 << bit)
 
     def mask_off(self, bit):
-        self.mask = ~((~self.mask) | (1 << bit))
+        self.output_mask = ~((~self.output_mask) | (1 << bit))
 
     def value_toggle(self, bit):
-        self.value = self.value ^ (1 << bit)
+        self.output_value = self.output_value ^ (1 << bit)
 
     def value_on(self, bit):
-        self.value = self.value | (1 << bit)
+        self.output_value = self.output_value | (1 << bit)
 
     def value_off(self, bit):
-        self.value = ~((~self.value) | (1 << bit))
+        self.output_value = ~((~self.output_value) | (1 << bit))
 
     def default_map(self, default_map=None):
         default_map = super(OutputOperation, self).default_map(default_map=default_map)
         default_map["element_type"] = "Output"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
-        default_map["mask"] = self.mask
-        default_map["value"] = self.value
-        default_map["message"] = self.message
+        default_map["mask"] = self.output_mask
+        default_map["value"] = self.output_value
+        default_map["message"] = self.output_message
         default_map["bits"] = self.bitstring()
-        default_map.update(self.settings)
+        default_map.update(self.__dict__)
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -143,14 +92,6 @@ class OutputOperation(Node):
             return True
         return False
 
-    def load(self, settings, section):
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-
-    def save(self, settings, section):
-        settings.write_persistent_dict(section, self.settings)
-
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
         Generator of cutobjects for a raster operation. This takes any image node children
@@ -159,6 +100,6 @@ class OutputOperation(Node):
 
         The preference for raster shapes is to use the settings set on this operation rather than on the image-node.
         """
-        output = OutputCut(self.mask, self.value, self.message)
+        output = OutputCut(self.output_mask, self.output_value, self.output_message)
         output.original_op = self.type
         yield output
