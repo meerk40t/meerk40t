@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode.setorigincut import SetOriginCut
+from meerk40t.core.cutcode import SetOriginCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
@@ -10,59 +10,21 @@ class SetOriginOperation(Node):
     Node type "util origin"
     """
 
-    def __init__(self, x=None, y=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.x = None
+        self.y = None
+        self.output = True
         super().__init__(type="util origin", **kwargs)
-        self.settings = {"x": x, "y": y, "output": True}
         self._formatter = "{enabled}{element_type} {x} {y}"
 
     def __repr__(self):
         return f"SetOriginOperation('{self.x}, {self.y}')"
 
     def __copy__(self):
-        return SetOriginOperation(self.x, self.y)
+        return SetOriginOperation(**self.node_dict)
 
     def __len__(self):
         return 1
-
-    def validate(self):
-        parameters = [
-            ("output", lambda v: str(v).lower() == "true"),
-            ("x", float),
-            ("y", float),
-        ]
-        settings = self.settings
-        for param, cast in parameters:
-            try:
-                if param in settings and settings[param] is not None:
-                    settings[param] = (
-                        cast(settings[param]) if settings[param] != "None" else None
-                    )
-            except (KeyError, ValueError):
-                pass
-
-    @property
-    def x(self):
-        return self.settings.get("x")
-
-    @x.setter
-    def x(self, v):
-        self.settings["x"] = v
-
-    @property
-    def y(self):
-        return self.settings.get("y")
-
-    @y.setter
-    def y(self, v):
-        self.settings["y"] = v
-
-    @property
-    def output(self):
-        return self.settings.get("output", True)
-
-    @output.setter
-    def output(self, v):
-        self.settings["output"] = v
 
     @property
     def implicit_passes(self):
@@ -81,7 +43,7 @@ class SetOriginOperation(Node):
         )
         default_map["x"] = self.x
         default_map["y"] = self.y
-        default_map.update(self.settings)
+        default_map.update(self.__dict__)
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -96,14 +58,6 @@ class SetOriginOperation(Node):
                 drop_node.append_child(drag_node)
             return True
         return False
-
-    def load(self, settings, section):
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-
-    def save(self, settings, section):
-        settings.write_persistent_dict(section, self.settings)
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
