@@ -1,4 +1,4 @@
-from meerk40t.core.cutcode.waitcut import WaitCut
+from meerk40t.core.cutcode import WaitCut
 from meerk40t.core.element_types import *
 from meerk40t.core.node.node import Node
 
@@ -12,50 +12,20 @@ class WaitOperation(Node):
     Node type "util wait"
     """
 
-    def __init__(self, wait=1.0, **kwargs):
+    def __init__(self, **kwargs):
+        self.wait = 1.0
+        self.output = True
         super().__init__(type="util wait", **kwargs)
-        self.settings = {"wait": wait, "output": True}
         self._formatter = "{enabled}{element_type} {wait}"
 
     def __repr__(self):
         return f"WaitOperation('{self.wait}')"
 
     def __copy__(self):
-        return WaitOperation(self.wait)
+        return WaitOperation(**self.node_dict)
 
     def __len__(self):
         return 1
-
-    def validate(self):
-        parameters = [
-            ("output", lambda v: str(v).lower() == "true"),
-            ("wait", float),
-        ]
-        settings = self.settings
-        for param, cast in parameters:
-            try:
-                if param in settings and settings[param] is not None:
-                    settings[param] = (
-                        cast(settings[param]) if settings[param] != "None" else None
-                    )
-            except (KeyError, ValueError):
-                pass
-
-    @property
-    def wait(self):
-        return self.settings.get("wait")
-
-    @wait.setter
-    def wait(self, v):
-        self.settings["wait"] = v
-
-    @property
-    def output(self):
-        return self.settings.get("output", True)
-
-    @output.setter
-    def output(self, v):
-        self.settings["output"] = v
 
     @property
     def implicit_passes(self):
@@ -66,7 +36,7 @@ class WaitOperation(Node):
         default_map["element_type"] = "Wait"
         default_map["enabled"] = "(Disabled) " if not self.output else ""
         default_map["wait"] = self.wait
-        default_map.update(self.settings)
+        default_map.update(self.__dict__)
         return default_map
 
     def drop(self, drag_node, modify=True):
@@ -81,14 +51,6 @@ class WaitOperation(Node):
                 drop_node.append_child(drag_node)
             return True
         return False
-
-    def load(self, settings, section):
-        update_dict = settings.read_persistent_string_dict(section, suffix=True)
-        self.settings.update(update_dict)
-        self.validate()
-
-    def save(self, settings, section):
-        settings.write_persistent_dict(section, self.settings)
 
     def as_cutobjects(self, closed_distance=15, passes=1):
         """
